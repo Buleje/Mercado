@@ -30,6 +30,31 @@ export const CUSTOM_DOMAIN_PREFIX = "custom--";
 export const DEFAULT_TENANT_ID = "main";
 
 /**
+ * Path prefixes whose tenant may be resolved from the ADMIN SESSION context
+ * (JWT → active-tenant cookie → Referer) when the host is the bare main
+ * domain. These are backend/admin surfaces that operate ON a specific tenant
+ * and need to know which one even without a subdomain (e.g. an owner opening
+ * `localhost:3000/admin`).
+ *
+ * PUBLIC storefront pages (`/`, `/marketplace`, `/tiendas`, `/cuenta`, …) are
+ * intentionally EXCLUDED. On the main host they must ALWAYS resolve to the
+ * marketplace ("main"), even if an admin session cookie is present — otherwise
+ * the marketplace home at "/" would render the logged-in admin's OWN storefront
+ * (TenantStoreHome) instead of the marketplace catalog. Brandon 2026-06-11.
+ *
+ * Note: subdomain / custom-domain hosts and `/t/[slug]` paths resolve the
+ * tenant earlier (host resolution / Source 0) and never reach this gate.
+ */
+export const SESSION_TENANT_PATH_PREFIXES = [
+  "/api",
+  "/admin",
+  "/superadmin",
+  "/panel",
+  "/cms",
+  "/supplier",
+] as const;
+
+/**
  * API routes that are admin-only (all HTTP methods require a valid
  * admin session cookie). Any request whose pathname starts with one
  * of these prefixes is gated in proxy.ts → authGuards.requireAdminApi.

@@ -13,13 +13,15 @@ import {
   ShoppingCart,
   Store as StoreIcon,
   GitCompareArrows,
-  Check,
+  // Brandon 2026-06-11: Minus + Plus re-incorporados — el CTA del card ahora es
+  // un stepper inline (− N +) una vez agregado, sin borde de caja. Reemplaza el
+  // botón circular con borde + badge flotante. El decremento ya no obliga a ir
+  // al carrito: se hace desde la misma card.
+  Minus,
+  Plus,
   Heart,
   MessageCircle,
   Timer,
-  // Brandon 2026-05-18 v5: Minus + Plus removidos — el stepper mobile inferior
-  // se quitó porque ahora el CTA mobile = círculo icon-only (igual que desktop).
-  // El decremento se hace desde el carrito.
   // Audit P0 UX #2 (2026-05-18): Lucide icons reemplazan los emoji unicode
   // del fallback — los emoji no rinden consistente en todos los browsers
   // (vimos cajitas vacías en Chromium sin emoji-font). Los Lucide siempre
@@ -214,9 +216,8 @@ export default function UnifiedProductCard({
   // el flow de modifiers — cuando el cliente confirma desde el modal de
   // adicionales NO queremos abrir el AddedToCartDrawer encima (sería un
   // modal sobre otro modal). El producto se agrega al cart y se cierra.
-  const { items: cartItems, addItem } = useMarketplaceCart();
+  const { items: cartItems, addItem, updateQuantity } = useMarketplaceCart();
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
-  const [justAdded, setJustAdded] = useState(false);
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [modifierModalOpen, setModifierModalOpen] = useState(false);
@@ -240,15 +241,29 @@ export default function UnifiedProductCard({
   }, [product.storeId, product.id]);
   const countdown = useCountdown(variant === "flash" ? endsAt : undefined);
 
-  // Cantidad ya en el carrito de ESTA tienda — se usa para mostrar contador
-  // visible en la card y dar feedback inmediato sin abrir el drawer.
-  const inCartQty = useMemo(() => {
-    if (!product.storeId) return 0;
-    const found = cartItems.find(
-      (i) => i.productId === product.id && i.storeId === product.storeId,
-    );
-    return found?.quantity ?? 0;
-  }, [cartItems, product.id, product.storeId]);
+  // Líneas del carrito que corresponden a ESTE producto. Puede haber varias si
+  // se agregó con distintos adicionales (mismo producto, modifierHash distinto).
+  // El stepper de la card opera sobre estas líneas para sumar/restar.
+  // Brandon 2026-06-09 fix: el match por storeId fallaba en secciones que no
+  // pasan storeId (ej. "Lo más pedido hoy") → contador siempre 0. Ahora se
+  // matchea por storeProductId (clave única store-producto que pasan top-today,
+  // catálogo y storefront) con fallback a storeId/storeSlug.
+  const cartLines = useMemo(() => {
+    return cartItems.filter((i) => {
+      if (product.storeProductId && i.storeProductId)
+        return i.storeProductId === product.storeProductId;
+      if (i.productId !== product.id) return false;
+      if (product.storeId) return i.storeId === product.storeId;
+      if (product.storeSlug) return i.storeSlug === product.storeSlug;
+      return false;
+    });
+  }, [cartItems, product.id, product.storeId, product.storeSlug, product.storeProductId]);
+
+  // Cantidad total ya en el carrito — suma todas las líneas del producto.
+  const inCartQty = useMemo(
+    () => cartLines.reduce((acc, i) => acc + i.quantity, 0),
+    [cartLines],
+  );
 
   const productHref =
     href ??
@@ -330,6 +345,58 @@ export default function UnifiedProductCard({
     },
     [addItem, product],
   );
+
+  // Tope de stock: si el producto controla stock, no dejar sumar más allá.
+  const atStockCap =
+    product.stock != null && product.stock > 0 && inCartQty >= product.stock;
+
+  // Stepper "+": suma una unidad. Con adicionales abre el modal (para elegir
+  // los del nuevo ítem); producto simple suma directo a la línea base.
+  const handleIncrement = useCallback(() => {
+    if (isOutOfStock || atStockCap) return;
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(20);
+      } catch {
+        /* silent */
+      }
+    }
+    if ((product.modifierGroups?.length ?? 0) > 0) {
+      setModifierModalOpen(true);
+      return;
+    }
+    addItem({
+      storeId: product.storeId ?? "",
+      storeName: product.storeName ?? "",
+      storeSlug: product.storeSlug ?? "",
+      storeProductId: product.storeProductId ?? String(product.id),
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      basePrice: product.price,
+      image: product.image ?? null,
+      unit: product.unit ?? null,
+      modifiers: [],
+      modifierHash: modifierHashOf([]),
+      quantity: 1,
+      stock: product.stock ?? undefined,
+    });
+  }, [isOutOfStock, atStockCap, product, addItem]);
+
+  // Stepper "−": resta una unidad de la ÚLTIMA línea agregada del producto.
+  // Si la línea llega a 0, updateQuantity la elimina. Maneja multi-línea.
+  const handleDecrement = useCallback(() => {
+    const line = cartLines[cartLines.length - 1];
+    if (!line) return;
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(20);
+      } catch {
+        /* silent */
+      }
+    }
+    updateQuantity(line.storeId, line.productId, line.quantity - 1, line.modifierHash);
+  }, [cartLines, updateQuantity]);
 
   /* ── Badges top-left ───────────────────────────────────────────── */
   const showOfertaBadge =
@@ -668,73 +735,78 @@ export default function UnifiedProductCard({
             )}
           </div>
 
-          {/* Brandon 2026-05-18 v5: CTA inline UNIFICADO desktop + mobile.
-              Antes el mobile tenía un CTA full-width separado debajo del
-              contenido — Brandon pidió "solo el icono", así que ahora el
-              círculo h-12 w-12 al lado del precio (mismo que desktop) se
-              muestra también en mobile. La imagen del card ocupa más ancho
-              (w-44/176px) sin competir con un CTA full-width. */}
-          <div className="relative shrink-0 flex">
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={isOutOfStock}
-              aria-label={
-                isOutOfStock
-                  ? `${product.name} — agotado`
-                  : inCartQty > 0
-                    ? `Agregar otro ${product.name} al carrito (${inCartQty} en carrito)`
-                    : `Agregar ${product.name} al carrito`
-              }
-              className={cn(
-                "inline-flex h-12 w-12 items-center justify-center rounded-full max-md:rounded-none transition-all duration-200 border-2 shrink-0",
-                isOutOfStock
-                  ? "bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed border-[var(--rule-base)]"
-                  : justAdded
-                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)] scale-90 border-[var(--text-primary)]"
-                    : inCartQty > 0
-                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)] border-[var(--text-primary)] hover:opacity-90 hover:scale-105 active:scale-95"
-                      : "bg-transparent text-[var(--text-primary)] border-[var(--text-primary)]/25 hover:border-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--surface-raised)] hover:scale-105 active:scale-95",
-              )}
-            >
-              {justAdded ? (
-                <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-              ) : (
-                <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
-              )}
-            </button>
-            {inCartQty > 0 && !justAdded && (
-              <motion.span
-                key={inCartQty}
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                aria-hidden
-                className="absolute -top-1.5 -right-1.5 inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-[var(--text-primary)] px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--surface-canvas)] shadow-md ring-2 ring-[var(--surface-raised)]"
+          {/* Brandon 2026-06-11: CTA del card. Estado vacío = ÍCONO LIMPIO de
+              carrito (sin borde, sin caja). Al agregar se transforma en un
+              STEPPER inline (− N +) también sin borde de caja, para sumar/restar
+              sin abrir el carrito. Reemplaza el círculo border-2 + badge flotante
+              + pill "Ya pediste". Unificado desktop + mobile. */}
+          <div className="shrink-0">
+            {inCartQty > 0 && !isOutOfStock ? (
+              <div
+                role="group"
+                aria-label={`${product.name}: ${inCartQty} en el carrito`}
+                className="inline-flex h-12 items-center gap-0.5"
               >
-                {inCartQty > 99 ? "99+" : inCartQty}
-              </motion.span>
+                {/* − restar una unidad */}
+                <button
+                  type="button"
+                  onClick={handleDecrement}
+                  aria-label={`Quitar un ${product.name} del carrito`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-primary)] transition-all duration-150 hover:bg-[var(--surface-sunken)] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                >
+                  <Minus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+                </button>
+                {/* contador — la nueva forma de contabilizar lo agregado */}
+                <motion.span
+                  key={inCartQty}
+                  initial={{ scale: 0.6, opacity: 0.4 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                  aria-hidden
+                  className="min-w-[1.75rem] text-center text-base sm:text-lg font-black tabular-nums leading-none text-[var(--text-primary)]"
+                >
+                  {inCartQty > 99 ? "99+" : inCartQty}
+                </motion.span>
+                {/* + sumar otra unidad */}
+                <button
+                  type="button"
+                  onClick={handleIncrement}
+                  disabled={atStockCap}
+                  aria-label={
+                    atStockCap
+                      ? `${product.name}: alcanzaste el stock disponible`
+                      : `Agregar otro ${product.name} al carrito`
+                  }
+                  className={cn(
+                    "inline-flex h-10 w-10 items-center justify-center rounded-full transition-all duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+                    atStockCap
+                      ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
+                      : "bg-[var(--text-primary)] text-[var(--surface-raised)] hover:opacity-90 hover:scale-105",
+                  )}
+                >
+                  <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={isOutOfStock}
+                aria-label={
+                  isOutOfStock ? `${product.name} — agotado` : `Agregar ${product.name} al carrito`
+                }
+                className={cn(
+                  "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+                  isOutOfStock
+                    ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                    : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:scale-105",
+                )}
+              >
+                <ShoppingCart className="h-6 w-6" strokeWidth={2} aria-hidden />
+              </button>
             )}
           </div>
         </div>
-
-        {/* Pill "✓ Ya pediste N" — feedback secundario debajo del precio.
-            Brandon 2026-05-18 v3: oculto en mobile porque el stepper inline
-            de abajo ya muestra la cantidad. Solo sm+. */}
-        {inCartQty > 0 && (
-          <div className="hidden sm:flex mt-2 -mb-1 items-center justify-end">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
-              <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden />
-              Ya pediste {inCartQty}
-            </span>
-          </div>
-        )}
-
-        {/* Brandon 2026-05-18 v5: CTA mobile inferior REMOVIDO. El botón
-            circular icon-only (h-12 w-12) inline al lado del precio
-            arriba ya sirve tanto para mobile como desktop — un solo CTA,
-            sin duplicación visual. Más espacio para que la imagen w-44
-            (176px) ocupe más del ancho del card. */}
 
         {/* Aviso limite comparar */}
         {compareLimitMsg && (
@@ -781,8 +853,6 @@ export default function UnifiedProductCard({
             } else {
               addDirect(qty);
               setQuickViewOpen(false);
-              setJustAdded(true);
-              setTimeout(() => setJustAdded(false), 1200);
             }
           }}
         />
@@ -831,9 +901,7 @@ export default function UnifiedProductCard({
               quantity,
             });
             setModifierModalOpen(false);
-            setJustAdded(true);
             celebrate({ intensity: "sm" }); // 🎉 agregado al carrito
-            setTimeout(() => setJustAdded(false), 1200);
           }}
         />
       )}

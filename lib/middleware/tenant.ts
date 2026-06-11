@@ -21,6 +21,7 @@ import {
   ROOT_DOMAIN,
   CUSTOM_DOMAIN_PREFIX,
   DEFAULT_TENANT_ID,
+  SESSION_TENANT_PATH_PREFIXES,
 } from "./constants";
 import { getSessionPayload } from "@/lib/session";
 
@@ -124,6 +125,18 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
     }
     return rawSlug; // compat legacy: retorna el slug crudo
   }
+
+  // ── GATE (Brandon 2026-06-11): el fallback por SESIÓN (JWT/cookie/Referer)
+  // solo aplica a superficies backend/admin que operan SOBRE un tenant. Las
+  // páginas públicas del storefront en el host principal deben quedarse en
+  // "main" (marketplace) aunque exista una cookie de sesión admin — si no, la
+  // home del marketplace en "/" renderizaba la tienda del admin logueado
+  // (TenantStoreHome) en vez del catálogo. Los subdominios y /t/[slug] ya
+  // resolvieron antes y nunca llegan acá.
+  const usesSessionTenant = SESSION_TENANT_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+  if (!usesSessionTenant) return baseTenant;
 
   // Source 1: Admin session JWT — canonical tenantId (CUID).
   // SECURITY FIX (P0 #2): verifica HMAC via getSessionPayload() antes de
