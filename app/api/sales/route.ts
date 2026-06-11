@@ -90,12 +90,23 @@ export async function GET(req: NextRequest) {
     const isCajeroOnly = auth.role === "cajero";
     const effectiveCashierId = isCajeroOnly ? auth.username : cashierIdParam || undefined;
 
+    // QA Brandon 2026-06-10 #13: from/to "YYYY-MM-DD" se parseaban como
+    // MEDIANOCHE UTC → con to=hoy, las ventas del día (que en UTC caen
+    // después de las 00:00) quedaban EXCLUIDAS. Comisiones mostraba "Sin
+    // ventas en el periodo" pese a haber ventas. Ahora date-only se
+    // interpreta como día completo en hora de Perú (UTC-5):
+    //   from → 00:00:00 Lima · to → 23:59:59.999 Lima.
+    const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
     const fromDate = fromParam ? (() => {
-      const d = new Date(fromParam);
+      const d = DATE_ONLY.test(fromParam)
+        ? new Date(`${fromParam}T00:00:00.000-05:00`)
+        : new Date(fromParam);
       return Number.isNaN(d.getTime()) ? undefined : d;
     })() : undefined;
     const toDate = toParam ? (() => {
-      const d = new Date(toParam);
+      const d = DATE_ONLY.test(toParam)
+        ? new Date(`${toParam}T23:59:59.999-05:00`)
+        : new Date(toParam);
       return Number.isNaN(d.getTime()) ? undefined : d;
     })() : undefined;
 

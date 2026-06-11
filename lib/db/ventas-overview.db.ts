@@ -342,7 +342,11 @@ export const VentasOverviewDB = {
 
       for (const mv of openCash.movements) {
         const amt = toNumOrZero(mv.amount);
-        if (mv.type === "venta" || mv.type === "apertura") {
+        // QA Brandon 2026-06-10 #1: el movimiento type "apertura" NO suma —
+        // el saldo ya arranca con openingAmount (línea de arriba). Antes se
+        // sumaban ambos → el Tablero mostraba S/235 en vez de S/135 (la
+        // apertura contada dos veces).
+        if (mv.type === "venta") {
           saldoActual += amt;
         } else if (mv.type === "ingreso") {
           saldoActual += amt;

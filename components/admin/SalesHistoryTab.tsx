@@ -12,6 +12,7 @@ import { CardTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import ProductImagePlaceholder from "@/components/store/ProductImagePlaceholder";
 import { cn } from "@/lib/utils";
+import { extractIgv } from "@/lib/tax";
 import { exportToExcel } from "@/lib/export-excel";
 import { escapeHtml } from "@/lib/safe-html";
 
@@ -741,7 +742,11 @@ function DetailModal({ item, onClose }: { item: TransactionItem; onClose: () => 
     w.document.close();
   };
 
-  const subtotal = item.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  // QA Brandon 2026-06-10 #5: los precios YA incluyen IGV — antes esta suma
+  // se mostraba como "Subtotal" (confuso contablemente: era el total).
+  // Desglosamos igual que el POS: Subtotal (base sin IGV) + IGV = Total.
+  const totalConIgv = item.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const { base: subtotal, igv } = extractIgv(totalConIgv);
 
   return (
     <div
@@ -897,9 +902,16 @@ function DetailModal({ item, onClose }: { item: TransactionItem; onClose: () => 
               Resumen
             </p>
             <div className="space-y-2">
+              {/* QA Brandon 2026-06-10 #5: desglose IGV como en el POS —
+                  Subtotal = base sin IGV; antes se mostraba el total con IGV
+                  bajo la etiqueta "Subtotal" (confusión contable). */}
               <div className="flex justify-between text-sm">
-                <span className="text-[var(--text-secondary)]">Subtotal</span>
+                <span className="text-[var(--text-secondary)]">Subtotal (sin IGV)</span>
                 <span className="font-semibold text-[var(--text-primary)] tabular-nums">S/ {subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--text-secondary)]">IGV (18%)</span>
+                <span className="font-semibold text-[var(--text-primary)] tabular-nums">S/ {igv.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm items-center">
                 <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">

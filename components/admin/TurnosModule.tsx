@@ -287,6 +287,7 @@ export default function TurnosModule() {
       setEfectivoInicial("");
       setSelectedCajero("");
       fetchData();
+      window.dispatchEvent(new CustomEvent("buleje:turno-changed", { detail: { abierto: true } }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
@@ -479,6 +480,7 @@ export default function TurnosModule() {
       resetCierreState();
       setShowResumen(true);
       fetchData();
+      window.dispatchEvent(new CustomEvent("buleje:turno-changed", { detail: { abierto: false } }));
     } catch (e) {
       setCloseError(e instanceof Error ? e.message : "Error");
     } finally {

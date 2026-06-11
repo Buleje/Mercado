@@ -72,14 +72,18 @@ export default function FiadoFormModal({
         {/* Body */}
         <div className="px-6 py-5 space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cliente <span className="text-[var(--text-tertiary)] font-normal">(nombre o teléfono)</span></label>
+                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cliente <span className="text-[var(--text-tertiary)] font-normal">(número de celular)</span></label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
                       <input
                         type="text"
                         value={newForm.customerId}
-                        onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, customerId: e.target.value }))}
-                        placeholder="Ej: 987654321 o Maria Rodríguez"
+                        onChange={e => {
+                          setNewForm((p: FiadoNewForm) => ({ ...p, customerId: e.target.value }));
+                          // Fix #10: limpiar error de submit previo al modificar el campo
+                          setCreateError(null);
+                        }}
+                        placeholder="Ej: 987654321"
                         className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       />
                     </div>
@@ -128,9 +132,20 @@ export default function FiadoFormModal({
                         </div>
                       )
                     ) : clienteEsNuevo ? (
-                      <div className="border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
-                        <p className="text-xs text-[var(--text-tertiary)]">Cliente nuevo — sin historial de fiados</p>
-                      </div>
+                      // Fix #9: si el valor no parece un teléfono (pocos dígitos),
+                      // mostrar aviso preventivo en lugar del mensaje positivo engañoso
+                      /^[\d\s+\-]{6,}$/.test(newForm.customerId.trim()) ? (
+                        <div className="border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 rounded-xl p-3">
+                          <p className="text-xs text-[var(--text-tertiary)]">Cliente nuevo — sin historial de fiados</p>
+                        </div>
+                      ) : (
+                        <div className="border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 flex items-start gap-2">
+                          <span className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)]" aria-hidden>!</span>
+                          <p className="text-xs text-[var(--data-warning-500)] font-medium">
+                            Ingresa el número de celular del cliente (ej. 987654321) — los fiados se identifican por teléfono, no por nombre.
+                          </p>
+                        </div>
+                      )
                     ) : null
                   )}
 

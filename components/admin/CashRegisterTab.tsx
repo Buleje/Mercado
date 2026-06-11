@@ -262,13 +262,23 @@ export default function CashRegisterTab() {
   const computedTimeline = useMemo(() => {
     if (!currentRegister) return [];
     const items: { time: string; type: string; description: string; amount: number; badge: string; method?: string; saleId?: string; movementId?: string }[] = [];
-    items.push({
-      time: currentRegister.openedAt,
-      type: "apertura",
-      description: "Apertura de turno",
-      amount: currentRegister.openingAmount,
-      badge: "Apertura",
-    });
+    // QA Brandon 2026-06-10 #7: la DB ya registra un movimiento type "apertura"
+    // ("Apertura de caja") al abrir la caja. Antes acá se agregaba SIEMPRE un
+    // ítem sintético "Apertura de turno" extra → el timeline mostraba +S/100
+    // DOS veces (mismo dinero, dos vistas). El sintético queda solo como
+    // fallback para registros legacy sin movimiento de apertura en DB.
+    const hasAperturaMovement = currentRegister.movements.some(
+      (m) => m.type === "apertura",
+    );
+    if (!hasAperturaMovement) {
+      items.push({
+        time: currentRegister.openedAt,
+        type: "apertura",
+        description: "Apertura de turno",
+        amount: currentRegister.openingAmount,
+        badge: "Apertura",
+      });
+    }
     for (const m of currentRegister.movements) {
       items.push({
         time: m.createdAt,
@@ -675,13 +685,13 @@ export default function CashRegisterTab() {
               {/* Actions */}
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => { setMvType("ingreso"); setShowMovement(true); }}
+                  onClick={() => { setMvType("ingreso"); setMvMotivo(""); setShowMovement(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors"
                 >
                   <ArrowUp className="h-4 w-4" /> Ingreso
                 </button>
                 <button
-                  onClick={() => { setMvType("egreso"); setShowMovement(true); }}
+                  onClick={() => { setMvType("egreso"); setMvMotivo(""); setShowMovement(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] font-bold text-xs hover:bg-[var(--data-error-100)] transition-colors"
                 >
                   <ArrowDown className="h-4 w-4" /> Egreso
@@ -779,7 +789,7 @@ export default function CashRegisterTab() {
                     description="Considera hacer un retiro parcial para seguridad"
                     action={
                       <button
-                        onClick={() => { setMvType("egreso"); setShowMovement(true); }}
+                        onClick={() => { setMvType("egreso"); setMvMotivo(""); setShowMovement(true); }}
                         className="px-3 py-1.5 rounded-lg bg-[var(--data-warning-500)] text-white text-xs font-bold hover:opacity-90 transition-opacity shrink-0"
                       >
                         Registrar retiro
@@ -1610,14 +1620,26 @@ export default function CashRegisterTab() {
                   onChange={e => setMvMotivo(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 >
+                  {/* QA Brandon 2026-06-10 #8: motivos separados por tipo —
+                      antes la lista era única y Egreso ofrecía "Ingreso extra"
+                      (y viceversa), mezclando categorías contables. */}
                   <option value="">Selecciona un motivo...</option>
-                  <option value="Cambio">Cambio</option>
-                  <option value="Pago a proveedor">Pago a proveedor</option>
-                  <option value="Retiro personal">Retiro personal</option>
-                  <option value="Ingreso extra">Ingreso extra</option>
-                  <option value="Cobro pendiente">Cobro pendiente</option>
-                  <option value="Compra de insumos">Compra de insumos</option>
-                  <option value="Otro">Otro</option>
+                  {mvType === "egreso" ? (
+                    <>
+                      <option value="Pago a proveedor">Pago a proveedor</option>
+                      <option value="Retiro personal">Retiro personal</option>
+                      <option value="Compra de insumos">Compra de insumos</option>
+                      <option value="Cambio">Cambio</option>
+                      <option value="Otro">Otro</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Ingreso extra">Ingreso extra</option>
+                      <option value="Cobro pendiente">Cobro pendiente</option>
+                      <option value="Cambio">Cambio</option>
+                      <option value="Otro">Otro</option>
+                    </>
+                  )}
                 </select>
                 {mvType === "egreso" && !mvMotivo && !mvDescription.trim() && (
                   <p className="text-sm text-[var(--data-error-500)] mt-1.5 font-medium">Motivo obligatorio para egresos</p>

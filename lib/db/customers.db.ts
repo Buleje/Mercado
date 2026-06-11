@@ -326,10 +326,13 @@ export const CustomersDB = {
     } catch (err) {
       const code = (err as { code?: string }).code;
       if (code === "P2002") {
-        // El teléfono ya existe en otro tenant — schema global @unique aún vigente.
+        // El teléfono ya existe en otro tenant — schema global @unique aún
+        // vigente (TD-040 Phase 3 pendiente: @@unique([tenantId, phone])).
+        // QA Brandon 2026-06-10 #11: el mensaje user-facing NO expone el
+        // ticket interno — eso queda solo en este comentario.
         throw new Error(
-          `El teléfono ${data.phone} ya está registrado en otra tienda. ` +
-            "Esta restricción es temporal (TD-040 Phase 3 pendiente).",
+          `El teléfono ${data.phone} ya está registrado en otra tienda de la red. ` +
+            "Verifica el número o usa otro para este cliente.",
         );
       }
       throw err;

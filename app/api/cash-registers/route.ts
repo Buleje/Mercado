@@ -58,7 +58,18 @@ export async function POST(req: NextRequest) {
       if (open) {
         return NextResponse.json({ error: "Ya hay una caja abierta" }, { status: 400 });
       }
-      const reg = await CashRegistersDB.open(auth.tenantId, openingAmount, body.notes);
+      // QA Brandon 2026-06-10 #12: el Cuadre (CashAuditTab) deriva el nombre
+      // del cajero parseando `notes.split(" (")[0]` — si notes iba vacío
+      // mostraba "Cajero" genérico. Ahora el nombre del operador autenticado
+      // SIEMPRE encabeza las notes con la convención "Nombre (detalle)".
+      const operator = (auth.name?.trim() || auth.username || "").trim();
+      const userNotes = typeof body.notes === "string" ? body.notes.trim() : "";
+      const notes = operator
+        ? userNotes
+          ? `${operator} (${userNotes})`
+          : operator
+        : userNotes || undefined;
+      const reg = await CashRegistersDB.open(auth.tenantId, openingAmount, notes);
       return NextResponse.json(reg, { status: 201 });
     }
 
