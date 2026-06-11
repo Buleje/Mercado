@@ -493,7 +493,13 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       if (typeof document !== "undefined" && document.hidden) return;
       try {
         const res = await fetch("/api/superadmin/auth", { method: "GET" });
-        if (!res.ok && active) setSessionExpired(true);
+        if (!res.ok && active) {
+          // QA Brandon 2026-06-10: tras detectar la expiración, DETENER el
+          // poll — antes seguía cada 2 min golpeando con 401 (ruido). El
+          // banner de "sesión expirada" ya queda visible para ir al login.
+          setSessionExpired(true);
+          clearInterval(timer);
+        }
       } catch {
         // Network error — no marcar como expirado
       }

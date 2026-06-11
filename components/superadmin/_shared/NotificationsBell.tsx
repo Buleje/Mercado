@@ -267,8 +267,14 @@ export function NotificationsBell() {
   // FIX 2026-05-06: prevenir race condition cuando polling y click-open
   // disparan load() concurrente (segundo fetch pisaba al primero en setData).
   const inFlight = useRef<AbortController | null>(null);
+  // QA Brandon 2026-06-10: si la sesión de plataforma expiró, el endpoint
+  // responde 401. Antes el poll seguía cada 60s → 401 en bucle (ruido en
+  // consola). Ahora al primer 401/403 dejamos de pollear (el banner de
+  // "sesión expirada" del shell se encarga de mandar al login).
+  const stopped = useRef(false);
 
   const load = async () => {
+    if (stopped.current) return;
     inFlight.current?.abort();
     const ctrl = new AbortController();
     inFlight.current = ctrl;
@@ -279,6 +285,10 @@ export function NotificationsBell() {
         cache: "no-store",
         signal: ctrl.signal,
       });
+      if (r.status === 401 || r.status === 403) {
+        stopped.current = true; // sesión ausente/expirada → no reintentar
+        return;
+      }
       if (!r.ok || ctrl.signal.aborted) return;
       const json = (await r.json()) as InboxResponse;
       // Guard de igualdad: no re-render si payload idéntico.
@@ -295,6 +305,7 @@ export function NotificationsBell() {
   useEffect(() => {
     void load();
     const id = setInterval(() => {
+      if (stopped.current) { clearInterval(id); return; }
       if (typeof document !== "undefined" && document.hidden) return;
       void load();
     }, 60_000);
