@@ -274,6 +274,14 @@ export default function POSCajaModule() {
     return () => window.removeEventListener("buleje:turno-changed", handler);
   }, []);
 
+  // QA Brandon 2026-06-10 #2: el modal "Caja sin abrir" del POS ofrece
+  // "Abrir caja primero" → salta al sub-tab de Caja Registradora.
+  useEffect(() => {
+    const goCaja = () => setSub("caja-registradora");
+    window.addEventListener("buleje:navigate-caja", goCaja);
+    return () => window.removeEventListener("buleje:navigate-caja", goCaja);
+  }, []);
+
   const handleOpenCloseModal = () => {
     if (pendingCount > 0) {
       alert(`Tienes ${pendingCount} ventas pendientes de sincronizar en modo Offline.\nPor favor, conecta a internet y pulsa "Sincronizar ahora" en la barra azul antes de cerrar el turno. De lo contrario esas ventas no se reflejarán en el corte.`);
