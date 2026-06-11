@@ -179,7 +179,9 @@ export function StatCard({
       type={onClick ? "button" : undefined}
       onClick={onClick}
       className={cn(
-        "w-full text-left rounded-xl border bg-[var(--surface-raised)] border-[var(--rule-base)]",
+        // Rediseño minimalista (Brandon 2026-06-10): rectangular (sin rounded),
+        // fondo blanco (surface-raised), hairline border, sin sombra.
+        "w-full text-left border bg-[var(--surface-raised)] border-[var(--rule-base)]",
         DENSITY_PADDING[density],
         "transition-colors",
         onClick && "hover:border-[var(--rule-strong)] cursor-pointer",
@@ -199,10 +201,9 @@ export function StatCard({
             <Caption className="mt-1 text-[var(--text-tertiary)]">{subValue}</Caption>
           )}
         </div>
+        {/* Icono plano (sin caja redondeada) — minimalista. */}
         {Icon && (
-          <div className="shrink-0 rounded-lg p-2 bg-[var(--surface-sunken)]">
-            <Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
-          </div>
+          <Icon className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
         )}
       </div>
       {(typeof delta === "number" || deltaLabel) && (

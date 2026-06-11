@@ -68,7 +68,9 @@ export function ChartCard({
   return (
     <div
       className={cn(
-        "bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] rounded-xl p-5 flex flex-col",
+        // Rediseño minimalista (Brandon 2026-06-10): rectangular (sin rounded),
+        // fondo blanco (surface-raised), hairline border, sin sombra.
+        "bg-[var(--surface-raised)] border border-[var(--rule-base)] p-5 flex flex-col",
         className,
       )}
     >
@@ -151,7 +153,7 @@ export function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-4 py-3 text-sm shadow-md min-w-[180px]">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-4 py-3 text-sm shadow-sm min-w-[180px]">
       {label && (
         <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1.5 text-base">
           {label}
