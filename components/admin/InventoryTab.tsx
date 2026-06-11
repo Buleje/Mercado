@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } fro
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
-  ScanBarcode, X, Camera, Download, CheckSquare, Filter, ChevronDown,
+  ScanBarcode, X, Camera, Download, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
   Warehouse, Maximize2, Copy, Sliders, LayoutGrid, LayoutList, Sparkles,
 } from "@buleje/design-system/icons";
@@ -536,7 +536,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkModal, setBulkModal] = useState(false);
-  const [bulkField, setBulkField] = useState<"active" | "category" | "priceAdjust" | "pricePercent" | "stock">("active");
+  const [bulkField, setBulkField] = useState<"active" | "category" | "price" | "priceDelta" | "pricePercent" | "stock" | "stockMin" | "stockMax" | "badge">("active");
   const [bulkValue, setBulkValue] = useState("");
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
@@ -937,9 +937,18 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     const fields: Record<string, unknown> = {};
     if (bulkField === "active") fields.active = bulkValue === "true";
     if (bulkField === "category") fields.category = bulkValue;
-    if (bulkField === "priceAdjust") fields.priceAdjust = Number(bulkValue);
-    if (bulkField === "pricePercent") fields.pricePercent = Number(bulkValue);
+    // Precio: fijar (absoluto), ajustar en soles (delta) o en porcentaje.
+    // FIX 2026-06-11: antes "priceAdjust" (etiquetado S/) se aplicaba como % y
+    // "pricePercent" se enviaba a un campo inexistente → no hacía nada. Ahora
+    // cada modo mapea al campo correcto del endpoint (/api/products/bulk).
+    if (bulkField === "price") fields.price = Number(bulkValue);
+    if (bulkField === "priceDelta") fields.priceDelta = Number(bulkValue);
+    if (bulkField === "pricePercent") fields.priceAdjust = Number(bulkValue);
     if (bulkField === "stock") fields.stock = Number(bulkValue);
+    if (bulkField === "stockMin") fields.stockMin = Number(bulkValue);
+    if (bulkField === "stockMax") fields.stockMax = Number(bulkValue);
+    // Etiqueta: string vacío → null = quitar la etiqueta.
+    if (bulkField === "badge") fields.badge = bulkValue.trim() || null;
 
     try {
       await fetch("/api/products/bulk", {
@@ -1010,6 +1019,32 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     }
     clearSelection();
     await load();
+  };
+
+  /**
+   * Exporta a CSV solo los productos seleccionados (acción masiva client-side,
+   * sin endpoint). Útil para revisar/editar en Excel o pasar a un proveedor.
+   */
+  const exportSelectedCSV = () => {
+    const rows = products
+      .filter((p) => selectedIds.has(p.id))
+      .map((p) => ({
+        id: p.id,
+        nombre: p.name,
+        categoria: p.category ?? "",
+        precio: Number(p.price ?? 0),
+        stock: p.stock ?? "",
+        stock_min: p.stockMin ?? "",
+        stock_max: p.stockMax ?? "",
+        unidad: p.unit ?? "",
+        sku: p.sku ?? "",
+        codigo_barras: p.barcode ?? "",
+        etiqueta: p.badge ?? "",
+        activo: p.active ? "Sí" : "No",
+      }));
+    if (rows.length === 0) return;
+    exportToCSV(rows, `productos-seleccion-${rows.length}`);
+    toast.success(`${rows.length} producto${rows.length > 1 ? "s" : ""} exportado${rows.length > 1 ? "s" : ""} a CSV`);
   };
 
   // ── Purchase Order Auto-Suggestion ──────────────────────────────────────
@@ -3148,14 +3183,18 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-primary text-white rounded-xl px-5 py-3 flex flex-wrap items-center gap-2 sm:gap-4 animate-[slideUp_0.2s_ease-out]">
-          <CheckSquare className="h-5 w-5 shrink-0" />
-          <span className="text-sm font-bold">{selectedIds.size} seleccionado{selectedIds.size > 1 ? "s" : ""}</span>
-          <button onClick={() => { setBulkField("active"); setBulkValue("true"); setBulkModal(true); }}
-            className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-semibold transition-colors">
-            Edición masiva
-          </button>
-          {/* IMPROVEMENT 2: Quick activate/deactivate */}
+        <div className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-0.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-2 py-1.5 shadow-lg backdrop-blur-md animate-[slideUp_0.2s_ease-out]">
+          {/* Conteo — chip discreto, sin barra de color saturada */}
+          <span className="inline-flex items-center gap-2 pl-1.5 pr-1 text-sm font-semibold text-[var(--text-primary)]">
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] px-1.5 text-xs font-black tabular-nums text-[var(--accent)]">
+              {selectedIds.size}
+            </span>
+            <span className="hidden sm:inline">seleccionado{selectedIds.size > 1 ? "s" : ""}</span>
+          </span>
+
+          <span className="mx-1 h-6 w-px bg-[var(--rule-soft)]" aria-hidden />
+
+          {/* Activar / Desactivar — toggle rápido del estado (ghost monocromo) */}
           <button
             onClick={async () => {
               const ids = Array.from(selectedIds);
@@ -3167,9 +3206,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               clearSelection();
               load();
             }}
-            className="px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-xs font-semibold transition-colors flex items-center gap-1"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
-            <Eye className="h-3 w-3" /> Activar
+            <Eye className="h-4 w-4" /> <span className="hidden sm:inline">Activar</span>
           </button>
           <button
             onClick={async () => {
@@ -3182,36 +3221,60 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               clearSelection();
               load();
             }}
-            className="px-3 py-1.5 rounded-lg bg-gray-500/80 hover:bg-gray-500 text-xs font-semibold transition-colors flex items-center gap-1"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
-            <EyeOff className="h-3 w-3" /> Desactivar
+            <EyeOff className="h-4 w-4" /> <span className="hidden sm:inline">Desactivar</span>
           </button>
+
+          {/* Editar campos — abre el modal con TODAS las opciones (precio, stock,
+              categoría, etiqueta…). Única acción con fondo sutil para marcarla
+              como primaria sin gritar. */}
           <button
-            onClick={() => {
-              // Si el user marco "no preguntar" antes, ejecutar directo
-              const skip =
-                typeof window !== "undefined" &&
-                localStorage.getItem("admin-skip-bulk-clear-images-confirm") === "1";
-              if (skip) {
-                executeBulkClearImages();
-              } else {
-                setBulkClearImagesConfirm(true);
-              }
-            }}
-            className="px-3 py-1.5 rounded-lg bg-[var(--data-warning-500)]/80 hover:bg-[var(--data-warning-500)] text-xs font-semibold transition-colors flex items-center gap-1"
-            title="Quita la imagen de los productos seleccionados (no los elimina)"
+            onClick={() => { setBulkField("active"); setBulkValue("true"); setBulkModal(true); }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--rule-soft)]"
           >
-            <Camera className="h-3 w-3" /> Quitar imágenes
+            <Sliders className="h-4 w-4" /> <span className="hidden sm:inline">Editar</span>
           </button>
+
+          {/* Overflow — acciones secundarias + la destructiva (Radix, auto-flip
+              hacia arriba porque el bar vive abajo). */}
+          <ModuleActionMenu
+            iconOnly
+            label="Más acciones"
+            align="end"
+            items={[
+              { label: "Exportar selección (CSV)", icon: Download, onClick: exportSelectedCSV },
+              {
+                label: "Quitar imágenes",
+                icon: Camera,
+                description: "Borra solo la imagen, no el producto",
+                onClick: () => {
+                  const skip =
+                    typeof window !== "undefined" &&
+                    localStorage.getItem("admin-skip-bulk-clear-images-confirm") === "1";
+                  if (skip) executeBulkClearImages();
+                  else setBulkClearImagesConfirm(true);
+                },
+              },
+              {
+                label: `Eliminar ${selectedIds.size} producto${selectedIds.size > 1 ? "s" : ""}`,
+                icon: Trash2,
+                destructive: true,
+                dividerBefore: true,
+                onClick: () => setBulkDeleteConfirm(true),
+              },
+            ]}
+          />
+
+          <span className="mx-1 h-6 w-px bg-[var(--rule-soft)]" aria-hidden />
+
+          {/* Limpiar selección */}
           <button
-            onClick={() => setBulkDeleteConfirm(true)}
-            className="px-3 py-1.5 rounded-lg bg-[var(--data-error-500)]/80 hover:bg-[var(--data-error-500)] text-xs font-semibold transition-colors flex items-center gap-1"
+            onClick={clearSelection}
+            aria-label="Limpiar selección"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
-            <Trash2 className="h-3 w-3" /> Eliminar
-          </button>
-          <button onClick={clearSelection}
-            className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold transition-colors">
-            Limpiar
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -3319,13 +3382,23 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <div>
                 <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Campo a modificar</label>
-                <select value={bulkField} onChange={e => { setBulkField(e.target.value as typeof bulkField); setBulkValue(""); }}
+                <select value={bulkField} onChange={e => { const v = e.target.value as typeof bulkField; setBulkField(v); setBulkValue(v === "active" ? "true" : ""); }}
                   className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm">
-                  <option value="active">Estado (activo/inactivo)</option>
-                  <option value="category">Categoría</option>
-                  <option value="priceAdjust">Ajuste de precio (S/)</option>
-                  <option value="pricePercent">Ajuste de precio (%)</option>
-                  <option value="stock">Stock</option>
+                  <optgroup label="General">
+                    <option value="active">Estado (activo / inactivo)</option>
+                    <option value="category">Categoría</option>
+                    <option value="badge">Etiqueta</option>
+                  </optgroup>
+                  <optgroup label="Precio">
+                    <option value="price">Fijar precio (S/)</option>
+                    <option value="priceDelta">Ajustar precio (± S/)</option>
+                    <option value="pricePercent">Ajustar precio (± %)</option>
+                  </optgroup>
+                  <optgroup label="Stock">
+                    <option value="stock">Fijar stock</option>
+                    <option value="stockMin">Stock mínimo (alerta)</option>
+                    <option value="stockMax">Stock máximo</option>
+                  </optgroup>
                 </select>
               </div>
               <div>
@@ -3342,19 +3415,51 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     <option value="">Seleccionar…</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
-                ) : bulkField === "priceAdjust" ? (
-                  <div className="mt-1">
-                    <input type="number" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 1.50 para aumentar S/1.50"
+                ) : bulkField === "badge" ? (
+                  <div className="mt-1 space-y-2">
+                    <input type="text" maxLength={50} value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: Oferta, Nuevo, Combo…"
                       className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
-                    <p className="text-xs text-[var(--text-tertiary)] mt-1">Monto en soles a sumar o restar del precio</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["Nuevo", "Oferta", "Combo", "Recomendado", "Más vendido"].map(b => (
+                        <button key={b} type="button" onClick={() => setBulkValue(b)}
+                          className="rounded-full border border-[var(--rule-base)] px-2.5 py-1 text-xs font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                          {b}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[var(--text-tertiary)]">Dejá el campo vacío y aplicá para <strong>quitar</strong> la etiqueta.</p>
+                  </div>
+                ) : bulkField === "price" ? (
+                  <div className="mt-1">
+                    <input type="number" min="0.01" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 12.50"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">Fija el mismo precio en {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}.</p>
+                  </div>
+                ) : bulkField === "priceDelta" ? (
+                  <div className="mt-1">
+                    <input type="number" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 1.50 sube · -2 baja"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma o resta soles al precio actual de cada producto.</p>
                   </div>
                 ) : bulkField === "pricePercent" ? (
                   <div className="mt-1">
-                    <input type="number" step="1" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 10 para +10%, -5 para -5%"
+                    <input type="number" step="1" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 10 = +10% · -5 = -5%"
                       className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                      Esto ajustará el precio de {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""} un {bulkValue ? `${bulkValue}%` : "...%"}
+                      Ajusta el precio {bulkValue ? `un ${bulkValue}%` : "un …%"} en {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}.
                     </p>
+                  </div>
+                ) : bulkField === "stockMin" ? (
+                  <div className="mt-1">
+                    <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 5"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">Umbral para la alerta de “stock bajo”.</p>
+                  </div>
+                ) : bulkField === "stockMax" ? (
+                  <div className="mt-1">
+                    <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 100"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">Capacidad máxima sugerida (para reposición).</p>
                   </div>
                 ) : (
                   <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Cantidad"
@@ -3364,7 +3469,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             </div>
             <div className="px-3 sm:px-6 py-4 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3">
               <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
-              <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active")}
+              <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active" && bulkField !== "badge")}
                 className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {bulkSaving ? "Aplicando…" : "Aplicar"}
               </button>

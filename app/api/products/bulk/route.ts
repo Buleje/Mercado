@@ -18,6 +18,7 @@ const BulkUpdateSchema = z.object({
   fields: z.object({
     price: z.number().positive().optional(),
     priceAdjust: z.number().optional(), // percentage: +10 = +10%, -5 = -5%
+    priceDelta: z.number().optional(), // soles: +1.5 = +S/1.50, -2 = -S/2.00
     stock: z.number().min(0).optional(),
     stockMin: z.number().min(0).optional(),
     stockMax: z.number().min(0).optional(),
@@ -61,15 +62,20 @@ export async function POST(req: NextRequest) {
     // CRITICAL FIX 2026-05-11 (audit P0): bulk update DEBE scopear por
     // auth.tenantId. Antes un admin con IDs de productos de OTRO tenant
     // podía modificarlos (cross-tenant write masivo).
-    if (fields.priceAdjust !== undefined) {
-      // Percentage-based price adjustment requires per-product update
-      // TD-018: p.price es Decimal
+    if (fields.priceAdjust !== undefined || fields.priceDelta !== undefined) {
+      // Ajustes RELATIVOS de precio (porcentual y/o en soles) requieren leer el
+      // precio actual de cada producto → update per-product. Se pueden combinar:
+      // primero se aplica el % y luego el delta en soles. Piso 0.01 para no dejar
+      // precios <= 0. TD-018: p.price es Decimal.
       const products = await prisma.product.findMany({
         where: { id: { in: ids }, tenantId: auth.tenantId },
         select: { id: true, price: true },
       });
       for (const p of products) {
-        const newPrice = Math.max(0.01, +(toNumOrZero(p.price) * (1 + fields.priceAdjust / 100)).toFixed(2));
+        let newPrice = toNumOrZero(p.price);
+        if (fields.priceAdjust !== undefined) newPrice = newPrice * (1 + fields.priceAdjust / 100);
+        if (fields.priceDelta !== undefined) newPrice = newPrice + fields.priceDelta;
+        newPrice = Math.max(0.01, +newPrice.toFixed(2));
         await prisma.product.updateMany({
           where: { id: p.id, tenantId: auth.tenantId },
           data: { price: newPrice },
