@@ -1078,6 +1078,9 @@ export const MarketplacePublicDB = {
   async getCatalogPage(opts: {
     q?: string;
     category?: string;
+    /** Vertical: filtra por TIPO de tienda (Store.category), case-insensitive.
+        Lo arma el API desde lib/marketplace/verticals.ts. */
+    storeCategories?: string[];
     storeSlug?: string;
     zone?: string;
     minPrice?: number;
@@ -1092,6 +1095,7 @@ export const MarketplacePublicDB = {
       [
         opts.q ?? "",
         opts.category ?? "",
+        (opts.storeCategories ?? []).join(",").toLowerCase(),
         opts.storeSlug ?? "",
         opts.zone ?? "",
         opts.minPrice ?? "",
@@ -1119,6 +1123,15 @@ export const MarketplacePublicDB = {
           tenant: { active: true },
           ...(opts.zone && { zone: opts.zone }),
           ...(opts.storeSlug && { slug: opts.storeSlug }),
+          // Vertical → filtra por tipo de tienda. Case-insensitive vía OR de
+          // equals (Prisma no soporta `in` con mode:insensitive). La data tiene
+          // valores como "Abarrotes"/"bodega"/"polleria" sin normalizar.
+          ...(opts.storeCategories &&
+            opts.storeCategories.length > 0 && {
+              OR: opts.storeCategories.map((c) => ({
+                category: { equals: c, mode: "insensitive" as const },
+              })),
+            }),
         },
         ...(opts.q && {
           product: { name: { contains: opts.q, mode: "insensitive" as const } },

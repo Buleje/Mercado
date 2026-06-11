@@ -40,6 +40,7 @@ import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoadin
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
+import MarketplaceVerticalChips, { ShowForVerticals } from "@/components/marketplace/home/MarketplaceVerticalChips";
 import {
   Store,
   ArrowUpRight,
@@ -1200,6 +1201,15 @@ export default async function Home() {
       {/* 1. Hero compacto con buscador */}
       <RappiStyleHero />
 
+      {/* 1.2 Verticales — los "mundos" del Inicio (Brandon 2026-06-11). Arranca
+          food-first (default "comida"); un toque cambia a Bodega/Ferretería/
+          Electro/Farmacia y filtra el catálogo. URL-driven (`?v=`). */}
+      <Suspense fallback={<div className="h-14" />}>
+        <section aria-label="Categorías del marketplace" className="pt-3 sm:pt-4">
+          <MarketplaceVerticalChips />
+        </section>
+      </Suspense>
+
       {/* 1.5 Visto recientemente — retoma lo que el usuario estaba mirando
           (per-usuario, localStorage). Self-hide si no vio nada. */}
       <HomeRecentlyViewed />
@@ -1225,10 +1235,15 @@ export default async function Home() {
       </Suspense>
 
       {/* 3.5 Lo más pedido hoy — productos cross-tienda con quick-add directo al
-          carrito (conversión: comprar sin entrar a cada tienda). Self-hide si vacío. */}
-      <Reveal>
-        <MarketplaceTopToday />
-      </Reveal>
+          carrito. Es food-céntrico → solo se muestra en el mundo "Comida"; al
+          cambiar a Ferretería/Electro desaparece y el catálogo filtrado manda. */}
+      <Suspense fallback={null}>
+        <ShowForVerticals only={["comida"]}>
+          <Reveal>
+            <MarketplaceTopToday />
+          </Reveal>
+        </ShowForVerticals>
+      </Suspense>
 
       {/* 3.6 Catálogo de productos — el GRID completo que vivía en /marketplace
           (fusión /marketplace → /, Brandon 2026-06-08). Scroll infinito: va antes

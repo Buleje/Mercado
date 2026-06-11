@@ -22,6 +22,7 @@ import {
   type CatalogSort,
 } from "@/components/marketplace/catalog-filter-context";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
+import { normalizeVertical } from "@/lib/marketplace/verticals";
 
 const MarketplaceCatalogViewSection = dynamic(
   () => import("@/components/marketplace/MarketplaceCatalogViewSection"),
@@ -52,12 +53,15 @@ function CatalogUrlSync() {
   const ctx = useCatalogFilter();
   const sortParam = sp.get("sort");
   const catParam = sp.get("cat") ?? sp.get("category");
+  // Vertical: el Inicio arranca food-first. Sin `?v=` → "comida" (default).
+  const vParam = sp.get("v");
   useEffect(() => {
     if (!ctx) return;
     const mapped = sortParam ? SORT_ALIAS[sortParam.toLowerCase()] : undefined;
     if (mapped) ctx.setSort(mapped);
     if (catParam) ctx.setCategory(catParam.toLowerCase());
-  }, [ctx, sortParam, catParam]);
+    ctx.setVertical(normalizeVertical(vParam));
+  }, [ctx, sortParam, catParam, vParam]);
   return null;
 }
 

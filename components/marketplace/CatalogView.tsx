@@ -96,6 +96,8 @@ export default function CatalogView({
   const [localCategory, setLocalCategory] = useState("todos");
   const sort = (filterCtx?.sort ?? localSort) as SortOption;
   const productCategory = filterCtx?.category ?? localCategory;
+  // Vertical (tipo de tienda): viene del contexto en la HOME. "" = sin filtro.
+  const vertical = filterCtx?.vertical ?? "";
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [hasMore, setHasMore] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -120,6 +122,7 @@ export default function CatalogView({
         if (searchQuery?.trim()) params.set("q", searchQuery.trim());
         if (zone) params.set("zone", zone);
         if (productCategory !== "todos") params.set("category", productCategory);
+        if (vertical) params.set("vertical", vertical);
         params.set("sort", sort);
         params.set("limit", "40");
         if (cursor) params.set("cursor", cursor);
@@ -147,7 +150,7 @@ export default function CatalogView({
       setLoading(false);
       setLoadingMore(false);
     },
-    [searchQuery, zone, sort, productCategory]
+    [searchQuery, zone, sort, productCategory, vertical]
   );
 
   // Initial fetch + refetch on filter changes

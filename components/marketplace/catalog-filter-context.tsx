@@ -18,6 +18,10 @@ interface CatalogFilterValue {
   setCategory: (c: string) => void;
   sort: CatalogSort;
   setSort: (s: CatalogSort) => void;
+  /** Vertical activo (Comida/Bodega/Ferretería/Electro/Farmacia). "" = sin
+      filtro de vertical. En la HOME lo setea CatalogUrlSync desde `?v=`. */
+  vertical: string;
+  setVertical: (v: string) => void;
 }
 
 const CatalogFilterContext = createContext<CatalogFilterValue | null>(null);
@@ -25,8 +29,9 @@ const CatalogFilterContext = createContext<CatalogFilterValue | null>(null);
 export function CatalogFilterProvider({ children }: { children: ReactNode }) {
   const [category, setCategory] = useState("todos");
   const [sort, setSort] = useState<CatalogSort>("popular");
+  const [vertical, setVertical] = useState("");
   return (
-    <CatalogFilterContext.Provider value={{ category, setCategory, sort, setSort }}>
+    <CatalogFilterContext.Provider value={{ category, setCategory, sort, setSort, vertical, setVertical }}>
       {children}
     </CatalogFilterContext.Provider>
   );

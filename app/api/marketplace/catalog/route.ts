@@ -13,6 +13,7 @@ import { resolveMarketplaceTenant } from "@/lib/auth/resolve-marketplace-tenant"
 import { logger } from "@/lib/logger";
 import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { verticalStoreCategories } from "@/lib/marketplace/verticals";
 
 
 /**
@@ -26,6 +27,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 const QuerySchema = z.object({
   q: z.string().max(100).optional(),
   category: z.string().optional(),
+  // Vertical (Comida/Bodega/Ferretería/Electro/Farmacia) → filtra por tipo de
+  // tienda. Brandon 2026-06-11 (Inicio food-first, materiales a un toque).
+  vertical: z.string().max(40).optional(),
   // F4: storeSlug para filtrar catálogo por tienda específica
   storeSlug: z.string().optional(),
   zone: z.string().optional(),
@@ -59,13 +63,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { q, category, storeSlug, zone, minPrice, maxPrice, sort, cursor, limit } =
+    const { q, category, vertical, storeSlug, zone, minPrice, maxPrice, sort, cursor, limit } =
       parsed.data;
+
+    // Vertical → set de tipos de tienda (vacío = sin filtro de vertical).
+    const storeCategories = vertical ? verticalStoreCategories(vertical) : undefined;
 
     logger.info("marketplace/catalog", {
       requestId,
       q,
       category,
+      vertical,
       zone,
       sort,
       limit,
@@ -77,6 +85,7 @@ export async function GET(req: NextRequest) {
     const results = await MarketplacePublicDB.getCatalogPage({
       q,
       category,
+      storeCategories,
       storeSlug,
       zone,
       minPrice,
