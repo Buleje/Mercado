@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Send, Paperclip, Smile, X, Plus, Minus, Search, Loader2, ShoppingCart, RefreshCw, ReceiptText, Trash2, Wallet } from "@buleje/design-system/icons";
+import { Send, Paperclip, Smile, X, Plus, Minus, Search, Loader2, ShoppingCart, RefreshCw, ReceiptText, Trash2, Wallet, Sparkles } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { getActiveTenantSlug } from "@/lib/tenant-fetch";
@@ -25,6 +25,8 @@ interface MessageComposerProps {
   onSendOrder?: (items: ChatOrderItem[]) => Promise<void> | void;
   /** Tanda 2: enviar una SOLICITUD de cobro Yape/Plin (manual, sin gateway). */
   onSendPayment?: (payment: ChatPayment) => Promise<void> | void;
+  /** Tanda 3: pide a la IA 3 respuestas sugeridas (no envía, solo propone). */
+  onSuggest?: () => Promise<string[]>;
 }
 
 interface CatalogHit {
@@ -57,10 +59,14 @@ export function MessageComposer({
   onProposeSubstitution,
   onSendOrder,
   onSendPayment,
+  onSuggest,
 }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  // Tanda 3: respuestas sugeridas por IA (chips arriba del input).
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggest, setLoadingSuggest] = useState(false);
   // Tanda 2: menú "+" (comercio) + panel compartido (producto/sustitución/pedido/cobro).
   const [menuOpen, setMenuOpen] = useState(false);
   const [mode, setMode] = useState<"product" | "substitution" | "order" | "payment">("product");
@@ -250,6 +256,30 @@ export function MessageComposer({
     } finally {
       setSending(false);
     }
+  }
+
+  async function handleSuggest() {
+    if (!onSuggest || loadingSuggest) return;
+    setLoadingSuggest(true);
+    setMenuOpen(false);
+    setPickerOpen(false);
+    setEmojiOpen(false);
+    try {
+      const s = await onSuggest();
+      setSuggestions(s);
+    } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
+      window.alert("No se pudieron generar sugerencias. Reintentá.");
+    } finally {
+      setLoadingSuggest(false);
+    }
+  }
+
+  /** Inserta la sugerencia en el input para revisar/editar antes de enviar. */
+  function applySuggestion(text: string) {
+    setBody(text);
+    setSuggestions([]);
+    textareaRef.current?.focus();
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -480,6 +510,48 @@ export function MessageComposer({
         </div>
       )}
 
+      {/* Respuestas sugeridas por IA (Tanda 3) — chips para revisar/editar */}
+      {(suggestions.length > 0 || loadingSuggest) && (
+        <div className="mb-2 rounded-xl border border-primary/20 bg-primary/5 p-2 dark:border-primary/30 dark:bg-primary/10">
+          <div className="mb-1.5 flex items-center justify-between px-1">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-primary">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden /> Sugerencias
+            </span>
+            {suggestions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSuggestions([])}
+                aria-label="Ocultar sugerencias"
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          {loadingSuggest ? (
+            <p className="flex items-center gap-2 px-1 py-1.5 text-[length:var(--ts-xs)] text-slate-500 dark:text-slate-400">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden /> Pensando respuestas…
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => applySuggestion(s)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:border-primary hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  {s}
+                </button>
+              ))}
+              <p className="px-1 pt-0.5 text-[length:var(--ts-2xs)] text-slate-400">
+                Tocá una para editarla antes de enviar.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Selector de emoji */}
       {emojiOpen && (
         <div className="mb-2 grid grid-cols-8 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800">
@@ -532,6 +604,27 @@ export function MessageComposer({
           <Paperclip className="h-4 w-4" aria-hidden />
           <span className="sr-only">Adjuntar archivo</span>
         </button>
+        {onSuggest && (
+          <button
+            type="button"
+            onClick={handleSuggest}
+            disabled={loadingSuggest || disabled}
+            aria-label="Sugerir respuestas con IA"
+            title="Sugerir respuestas con IA"
+            className={cn(
+              "rounded-full p-2 transition-colors disabled:opacity-60",
+              suggestions.length > 0 || loadingSuggest
+                ? "bg-primary/10 text-primary"
+                : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
+            )}
+          >
+            {loadingSuggest ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <Sparkles className="h-4 w-4" aria-hidden />
+            )}
+          </button>
+        )}
 
         <textarea
           ref={textareaRef}

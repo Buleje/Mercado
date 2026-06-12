@@ -281,6 +281,19 @@ export function useChatMessages(threadId: string | null) {
     [threadId, load],
   );
 
+  /** Tanda 3: pide a la IA 3 respuestas sugeridas para el último mensaje del
+      cliente. No envía nada — el vendedor elige/edita y manda. */
+  const suggestReplies = useCallback(async (): Promise<string[]> => {
+    if (!threadId) return [];
+    const res = await tenantFetch(
+      `/api/admin/chat/threads/${encodeURIComponent(threadId)}/suggest`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = (await res.json()) as { data?: { suggestions?: string[] } };
+    return Array.isArray(json.data?.suggestions) ? json.data!.suggestions! : [];
+  }, [threadId]);
+
   /** Increment 2b: avisa "escribiendo…" al cliente (throttle ~3.5s). */
   const pingTyping = useCallback(() => {
     if (!threadId) return;
@@ -293,5 +306,5 @@ export function useChatMessages(threadId: string | null) {
     ).catch(() => { /* efímero */ });
   }, [threadId]);
 
-  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, proposeSubstitution, sendOrder, sendPayment, presence };
+  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, proposeSubstitution, sendOrder, sendPayment, suggestReplies, presence };
 }

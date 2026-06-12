@@ -51,6 +51,7 @@ export default function ChatTab() {
     proposeSubstitution,
     sendOrder,
     sendPayment,
+    suggestReplies,
     presence,
   } = useChatMessages(selectedThreadId);
 
@@ -202,6 +203,7 @@ export default function ChatTab() {
               onProposeSubstitution={proposeSubstitution}
               onSendOrder={sendOrder}
               onSendPayment={sendPayment}
+              onSuggest={suggestReplies}
             />
           )}
           {selectedThread && selectedThread.status !== "open" && (
