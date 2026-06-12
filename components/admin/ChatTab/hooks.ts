@@ -219,6 +219,25 @@ export function useChatMessages(threadId: string | null) {
     [threadId, load],
   );
 
+  /** Tanda 2: propone una sustitución de faltante ("no hay X, ¿te mando Y?"). */
+  const proposeSubstitution = useCallback(
+    async (originalName: string, replacement: SharedChatProduct) => {
+      if (!threadId) return;
+      const body = `No tengo "${originalName}". ¿Te mando ${replacement.name} (${fmtSoles(replacement.price)}) en su lugar?`;
+      const res = await tenantFetch(
+        `/api/admin/chat/threads/${encodeURIComponent(threadId)}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body, metadataJson: JSON.stringify({ substitution: { originalName, replacement } }) }),
+        },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await load();
+    },
+    [threadId, load],
+  );
+
   /** Increment 2b: avisa "escribiendo…" al cliente (throttle ~3.5s). */
   const pingTyping = useCallback(() => {
     if (!threadId) return;
@@ -231,5 +250,5 @@ export function useChatMessages(threadId: string | null) {
     ).catch(() => { /* efímero */ });
   }, [threadId]);
 
-  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, presence };
+  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, proposeSubstitution, presence };
 }

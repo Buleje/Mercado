@@ -52,3 +52,28 @@ export function parseSharedProduct(raw: string | null): SharedChatProduct | null
 export function fmtSoles(n: number): string {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 }
+
+// ── Sustitución de faltante (Tanda 2) ────────────────────────────────────────
+// "No hay X, ¿te mando Y?" → el cliente acepta (agrega Y) o rechaza. Reusa
+// SharedChatProduct para el reemplazo (cart-ready).
+
+export interface ChatSubstitution {
+  originalName: string;
+  replacement: SharedChatProduct;
+}
+
+/** Extrae la sustitución de un metadataJson (o null). */
+export function parseSubstitution(raw: string | null): ChatSubstitution | null {
+  if (!raw) return null;
+  try {
+    const m = JSON.parse(raw) as { substitution?: { originalName?: unknown; replacement?: unknown } };
+    const s = m.substitution;
+    if (!s || typeof s.originalName !== "string") return null;
+    // Reusa el parser del producto (re-envuelto como { product }).
+    const replacement = parseSharedProduct(JSON.stringify({ product: s.replacement }));
+    if (!replacement) return null;
+    return { originalName: s.originalName, replacement };
+  } catch {
+    return null;
+  }
+}

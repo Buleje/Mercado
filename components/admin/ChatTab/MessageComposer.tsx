@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Send, Paperclip, Smile, X, Plus, Search, Loader2 } from "@buleje/design-system/icons";
+import { Send, Paperclip, Smile, X, Plus, Search, Loader2, ShoppingCart, RefreshCw } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { getActiveTenantSlug } from "@/lib/tenant-fetch";
@@ -19,6 +19,8 @@ interface MessageComposerProps {
   onTyping?: () => void;
   /** Tanda 2: compartir un producto del catálogo en el hilo. */
   onShareProduct?: (product: SharedChatProduct) => Promise<void> | void;
+  /** Tanda 2: proponer una sustitución de faltante (producto X → reemplazo Y). */
+  onProposeSubstitution?: (originalName: string, replacement: SharedChatProduct) => Promise<void> | void;
 }
 
 interface CatalogHit {
@@ -48,17 +50,30 @@ export function MessageComposer({
   onCancelReply,
   onTyping,
   onShareProduct,
+  onProposeSubstitution,
 }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
-  // Tanda 2: picker de "Compartir producto".
+  // Tanda 2: menú "+" (comercio) + picker compartido para producto/sustitución.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mode, setMode] = useState<"product" | "substitution">("product");
+  const [originalName, setOriginalName] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [sharingId, setSharingId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  function openMode(m: "product" | "substitution") {
+    setMode(m);
+    setMenuOpen(false);
+    setOriginalName("");
+    setQuery("");
+    setResults([]);
+    setPickerOpen(true);
+  }
 
   // Búsqueda en el catálogo de la tienda (debounce 300ms) cuando el picker abre.
   useEffect(() => {
@@ -104,6 +119,33 @@ export function MessageComposer({
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
       window.alert("No se pudo compartir el producto.");
+    } finally {
+      setSharingId(null);
+    }
+  }
+
+  async function handleSubstitute(hit: CatalogHit) {
+    if (!onProposeSubstitution || !originalName.trim()) return;
+    setSharingId(hit.storeProductId);
+    try {
+      await onProposeSubstitution(originalName.trim(), {
+        storeId: hit.storeId,
+        storeName: hit.storeName,
+        storeSlug: hit.storeSlug,
+        storeProductId: hit.storeProductId,
+        productId: hit.productId,
+        name: hit.name,
+        price: Number(hit.price),
+        image: hit.image,
+        unit: hit.unit,
+      });
+      setPickerOpen(false);
+      setQuery("");
+      setResults([]);
+      setOriginalName("");
+    } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
+      window.alert("No se pudo proponer la sustitución.");
     } finally {
       setSharingId(null);
     }
@@ -158,21 +200,62 @@ export function MessageComposer({
         </div>
       )}
 
-      {/* Picker "Compartir producto" (Tanda 2) */}
+      {/* Menú "+" de comercio (Tanda 2) */}
+      {menuOpen && (
+        <div className="mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <button
+            type="button"
+            onClick={() => openMode("product")}
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <ShoppingCart className="h-4 w-4 text-primary" aria-hidden /> Compartir producto
+          </button>
+          <button
+            type="button"
+            onClick={() => openMode("substitution")}
+            className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <RefreshCw className="h-4 w-4 text-primary" aria-hidden /> Sustitución de faltante
+          </button>
+        </div>
+      )}
+
+      {/* Picker de comercio (Tanda 2) — producto o sustitución */}
       {pickerOpen && (
         <div className="mb-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
+          <div className="mb-1.5 flex items-center justify-between px-1">
+            <span className="text-[length:var(--ts-xs)] font-bold text-slate-600 dark:text-slate-300">
+              {mode === "substitution" ? "Sustitución de faltante" : "Compartir producto"}
+            </span>
+            <button type="button" onClick={() => setPickerOpen(false)} aria-label="Cerrar" className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {/* Sustitución: qué producto falta */}
+          {mode === "substitution" && (
+            <input
+              value={originalName}
+              onChange={(e) => setOriginalName(e.target.value)}
+              placeholder="¿Qué producto falta? (ej: Inca Kola 1.5L)"
+              aria-label="Producto que falta"
+              className="mb-2 h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-sm outline-none focus:border-primary dark:border-slate-700 dark:bg-slate-800"
+            />
+          )}
           <div className="mb-2 flex items-center gap-2 rounded-lg border border-slate-200 px-2 dark:border-slate-700">
             <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar producto de tu catálogo…"
-              aria-label="Buscar producto para compartir"
+              placeholder={mode === "substitution" ? "Buscar el reemplazo…" : "Buscar producto de tu catálogo…"}
+              aria-label="Buscar producto"
               autoFocus
               className="h-9 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
             {searching && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" aria-hidden />}
           </div>
+          {mode === "substitution" && !originalName.trim() && (
+            <p className="mb-1 px-1 text-[length:var(--ts-2xs)] text-slate-400">Escribí qué falta y elegí el reemplazo.</p>
+          )}
           <div className="max-h-56 overflow-y-auto">
             {results.length === 0 ? (
               <p className="py-4 text-center text-xs text-slate-400">
@@ -183,8 +266,8 @@ export function MessageComposer({
                 <button
                   key={hit.storeProductId}
                   type="button"
-                  onClick={() => handleShare(hit)}
-                  disabled={!!sharingId}
+                  onClick={() => (mode === "substitution" ? handleSubstitute(hit) : handleShare(hit))}
+                  disabled={!!sharingId || (mode === "substitution" && !originalName.trim())}
                   className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left hover:bg-slate-50 disabled:opacity-60 dark:hover:bg-slate-800"
                 >
                   <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md bg-white">
@@ -228,13 +311,13 @@ export function MessageComposer({
       <div className="flex items-end gap-2">
         <button
           type="button"
-          onClick={() => setPickerOpen((o) => !o)}
-          aria-label="Compartir producto"
-          aria-pressed={pickerOpen}
-          title="Compartir producto"
+          onClick={() => { setMenuOpen((o) => !o); setPickerOpen(false); }}
+          aria-label="Acciones de comercio"
+          aria-pressed={menuOpen}
+          title="Compartir producto · Sustitución"
           className={cn(
             "rounded-full p-2 transition-colors",
-            pickerOpen ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
+            menuOpen || pickerOpen ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
           )}
         >
           <Plus className="h-4 w-4" aria-hidden />

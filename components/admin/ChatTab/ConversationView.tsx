@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Bot, User, Settings2, Undo2, ShoppingCart } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { parseSharedProduct, fmtSoles } from "@/lib/chat/shared-product";
+import { parseSharedProduct, parseSubstitution, fmtSoles } from "@/lib/chat/shared-product";
 import type { ChatMessageView } from "./types";
 import type { MsgReplySnapshot } from "./hooks";
 
@@ -113,6 +113,7 @@ function MessageBubble({
   });
   const meta = parseMeta(message.metadataJson);
   const shared = parseSharedProduct(message.metadataJson);
+  const sub = parseSubstitution(message.metadataJson);
 
   if (isSystem) {
     return (
@@ -200,6 +201,20 @@ function MessageBubble({
                   {fmtSoles(shared.price)}
                 </p>
               </div>
+            </div>
+          )}
+          {/* Sustitución propuesta (Tanda 2) — read-only */}
+          {sub && (
+            <div className={cn(
+              "mb-1 rounded-lg border p-2",
+              isSeller ? "border-white/30 bg-white/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+            )}>
+              <p className={cn("text-[length:var(--ts-2xs)] font-bold uppercase", isSeller ? "text-white/90" : "text-[var(--data-warning-700)]")}>
+                Cambio propuesto
+              </p>
+              <p className={cn("text-[length:var(--ts-xs)]", isSeller ? "text-white/90" : "text-slate-600 dark:text-slate-300")}>
+                Falta <strong>{sub.originalName}</strong> → <strong>{sub.replacement.name}</strong> ({fmtSoles(sub.replacement.price)})
+              </p>
             </div>
           )}
           <div className="whitespace-pre-wrap break-words">{message.body}</div>

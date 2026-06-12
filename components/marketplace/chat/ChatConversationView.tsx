@@ -23,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
-import { parseSharedProduct, fmtSoles, type SharedChatProduct } from "@/lib/chat/shared-product";
+import { parseSharedProduct, parseSubstitution, fmtSoles, type SharedChatProduct, type ChatSubstitution } from "@/lib/chat/shared-product";
 
 const POLL_MS = 5_000;
 
@@ -144,6 +144,8 @@ export default function ChatConversationView({
   // Tanda 2: agregar al carrito un producto compartido por la tienda.
   const { addItem } = useMarketplaceCart();
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
+  // Tanda 2: sustituciones ya respondidas (oculta los botones Sí/No).
+  const [respondedSubs, setRespondedSubs] = useState<Set<string>>(new Set());
 
   const addSharedToCart = useCallback((p: SharedChatProduct) => {
     addItem({
@@ -317,6 +319,18 @@ export default function ChatConversationView({
     }
   };
 
+  /** Tanda 2: el cliente acepta (agrega el reemplazo al carrito) o rechaza una
+      sustitución propuesta por la tienda; en ambos casos avisa por el chat. */
+  const respondSubstitution = async (messageId: string, sub: ChatSubstitution, accept: boolean) => {
+    setRespondedSubs((prev) => new Set(prev).add(messageId));
+    if (accept) {
+      addSharedToCart(sub.replacement);
+      await send(`✅ Dale, mandame ${sub.replacement.name} en lugar de "${sub.originalName}".`);
+    } else {
+      await send(`❌ No, gracias. Mejor sacá "${sub.originalName}" del pedido.`);
+    }
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Header — tienda + volver + ir a la tienda */}
@@ -407,6 +421,7 @@ export default function ChatConversationView({
               const isOrder = m.messageType === "order_link";
               const meta = parseMeta(m.metadataJson);
               const sharedProduct = parseSharedProduct(m.metadataJson);
+              const substitution = parseSubstitution(m.metadataJson);
               const active = activeMsgId === m.id;
 
               return (
@@ -505,6 +520,62 @@ export default function ChatConversationView({
                                   <><ShoppingCart className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Agregar al carrito</>
                                 )}
                               </button>
+                            )}
+                          </div>
+                        )}
+                        {/* Sustitución de faltante (Tanda 2) — la tienda propone un cambio */}
+                        {substitution && (
+                          <div className={cn(
+                            "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
+                            mine ? "border-white/30" : "border-[var(--rule-base)]",
+                          )}>
+                            <div className="px-3 pt-2.5">
+                              <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--data-warning-700)]">
+                                Cambio de producto
+                              </p>
+                              <p className="mt-0.5 text-sm font-medium text-[var(--text-primary)]">
+                                No hay <strong>{substitution.originalName}</strong>. La tienda propone:
+                              </p>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2.5 border-t border-[var(--rule-soft)] px-3 py-2">
+                              <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white">
+                                {substitution.replacement.image ? (
+                                  <Image src={substitution.replacement.image} alt="" fill sizes="48px" className="object-contain p-1" />
+                                ) : (
+                                  <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
+                                    <ShoppingCart className="h-4 w-4" aria-hidden />
+                                  </span>
+                                )}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-bold text-[var(--text-primary)]">{substitution.replacement.name}</p>
+                                <p className="text-base font-black tabular-nums text-[var(--accent)]">{fmtSoles(substitution.replacement.price)}</p>
+                              </div>
+                            </div>
+                            {!mine && (
+                              respondedSubs.has(m.id) ? (
+                                <p className="border-t border-[var(--rule-soft)] py-2 text-center text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">
+                                  Respuesta enviada ✓
+                                </p>
+                              ) : (
+                                <div className="flex border-t border-[var(--rule-soft)]">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); void respondSubstitution(m.id, substitution, true); }}
+                                    className="flex flex-1 items-center justify-center gap-1.5 py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+                                  >
+                                    <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Sí, dale
+                                  </button>
+                                  <span className="w-px bg-[var(--rule-soft)]" aria-hidden />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); void respondSubstitution(m.id, substitution, false); }}
+                                    className="flex flex-1 items-center justify-center gap-1.5 py-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                                  >
+                                    <X className="h-4 w-4" strokeWidth={2.5} aria-hidden /> No, gracias
+                                  </button>
+                                </div>
+                              )
                             )}
                           </div>
                         )}
