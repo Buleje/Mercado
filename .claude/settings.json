@@ -211,6 +211,12 @@
         "matcher": "",
         "hooks": [
           {
+            "type": "agent",
+            "prompt": "Sos el gate 'testear antes de reportar listo' (regla #1 de Brandon). Input del hook: $ARGUMENTS. Aprobá DE INMEDIATO si: stop_hook_active es true, o el turno fue conversacional/análisis sin edits de código. Si hubo edits, leé el final del transcript (transcript_path del input, usá `tail -c 20000`). Si el último mensaje afirma que algo quedó listo/funciona/arreglado/verificado y en el turno NO hay evidencia ejecutable (tsc/lint/test corrido, curl con respuesta, screenshot, output de comando que pruebe el claim), bloqueá con 1 línea diciendo exactamente qué verificar. Ante la duda, aprobá.",
+            "timeout": 45,
+            "statusMessage": "Gate: verificando evidencia antes de cerrar"
+          },
+          {
             "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/stop-checkpoint.mjs",
             "timeout": 5,
@@ -225,6 +231,18 @@
         ]
       }
     ]
+  },
+  "skillOverrides": {
+    "chaos": "user-invocable-only",
+    "dr-drill": "user-invocable-only",
+    "db-restore": "user-invocable-only",
+    "gdpr-export": "user-invocable-only",
+    "audit-search": "user-invocable-only",
+    "screen-stream": "user-invocable-only",
+    "voice": "user-invocable-only",
+    "tmux-bg": "user-invocable-only",
+    "compliance-status": "user-invocable-only",
+    "agent-report": "user-invocable-only"
   },
   "permissions": {
     "defaultMode": "acceptEdits",
