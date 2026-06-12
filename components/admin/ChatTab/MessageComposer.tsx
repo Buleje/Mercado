@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Send, Paperclip, Smile, X, Plus, Minus, Search, Loader2, ShoppingCart, RefreshCw, ReceiptText, Trash2, Wallet, Sparkles } from "@buleje/design-system/icons";
+import { Send, Paperclip, Smile, X, Plus, Minus, Search, Loader2, ShoppingCart, RefreshCw, ReceiptText, Trash2, Wallet, Sparkles, FileText } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { getActiveTenantSlug } from "@/lib/tenant-fetch";
 import { fmtSoles, orderTotal, type SharedChatProduct, type ChatOrderItem, type ChatPayment } from "@/lib/chat/shared-product";
+import { TemplatesPanel } from "./TemplatesPanel";
 import type { MsgReplySnapshot } from "./hooks";
 
 interface MessageComposerProps {
@@ -27,6 +28,10 @@ interface MessageComposerProps {
   onSendPayment?: (payment: ChatPayment) => Promise<void> | void;
   /** Tanda 3: pide a la IA 3 respuestas sugeridas (no envía, solo propone). */
   onSuggest?: () => Promise<string[]>;
+  /** Tanda 3: nombre del cliente del hilo, para la variable {nombre} de plantillas. */
+  customerName?: string;
+  /** Tanda 3: nombre de la tienda, para la variable {tienda} de plantillas. */
+  storeName?: string;
 }
 
 interface CatalogHit {
@@ -60,6 +65,8 @@ export function MessageComposer({
   onSendOrder,
   onSendPayment,
   onSuggest,
+  customerName,
+  storeName,
 }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -67,6 +74,8 @@ export function MessageComposer({
   // Tanda 3: respuestas sugeridas por IA (chips arriba del input).
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggest, setLoadingSuggest] = useState(false);
+  // Tanda 3: panel de plantillas.
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   // Tanda 2: menú "+" (comercio) + panel compartido (producto/sustitución/pedido/cobro).
   const [menuOpen, setMenuOpen] = useState(false);
   const [mode, setMode] = useState<"product" | "substitution" | "order" | "payment">("product");
@@ -510,6 +519,21 @@ export function MessageComposer({
         </div>
       )}
 
+      {/* Plantillas (Tanda 3) — respuestas guardadas con variables */}
+      {templatesOpen && (
+        <TemplatesPanel
+          tenantSlug={getActiveTenantSlug()}
+          customerName={customerName}
+          storeName={storeName}
+          onPick={(text) => {
+            setBody(text);
+            setTemplatesOpen(false);
+            textareaRef.current?.focus();
+          }}
+          onClose={() => setTemplatesOpen(false)}
+        />
+      )}
+
       {/* Respuestas sugeridas por IA (Tanda 3) — chips para revisar/editar */}
       {(suggestions.length > 0 || loadingSuggest) && (
         <div className="mb-2 rounded-xl border border-primary/20 bg-primary/5 p-2 dark:border-primary/30 dark:bg-primary/10">
@@ -603,6 +627,19 @@ export function MessageComposer({
         >
           <Paperclip className="h-4 w-4" aria-hidden />
           <span className="sr-only">Adjuntar archivo</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => { setTemplatesOpen((o) => !o); setSuggestions([]); setEmojiOpen(false); setMenuOpen(false); setPickerOpen(false); }}
+          aria-label="Plantillas de respuesta"
+          aria-pressed={templatesOpen}
+          title="Plantillas de respuesta"
+          className={cn(
+            "rounded-full p-2 transition-colors",
+            templatesOpen ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
+          )}
+        >
+          <FileText className="h-4 w-4" aria-hidden />
         </button>
         {onSuggest && (
           <button

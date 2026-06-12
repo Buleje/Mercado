@@ -9,6 +9,7 @@ import { ConversationView } from "./ConversationView";
 import { MessageComposer } from "./MessageComposer";
 import { useChatThreads, useChatMessages, type MsgReplySnapshot } from "./hooks";
 import { STATUS_LABELS } from "./types";
+import { useSettingsSafe } from "@/contexts/settings-context";
 
 /** "hace un momento · hace 5 min · hace 2 h · hace 3 d" para "Visto …". */
 function relativeSeen(ts: number): string {
@@ -31,6 +32,9 @@ function relativeSeen(ts: number): string {
  */
 export default function ChatTab() {
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  // Tanda 3: nombre de la tienda para la variable {tienda} de plantillas.
+  const settings = useSettingsSafe();
+  const storeName = settings?.businessName || undefined;
 
   const {
     threads,
@@ -204,6 +208,8 @@ export default function ChatTab() {
               onSendOrder={sendOrder}
               onSendPayment={sendPayment}
               onSuggest={suggestReplies}
+              customerName={selectedThread.customerName}
+              storeName={storeName}
             />
           )}
           {selectedThread && selectedThread.status !== "open" && (
