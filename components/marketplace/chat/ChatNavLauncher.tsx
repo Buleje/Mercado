@@ -18,7 +18,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
-import { X, Store as StoreIcon, ChevronRight, Loader2, MessageCircle } from "@buleje/design-system/icons";
+import { X, Store as StoreIcon, ChevronRight, Loader2, MessageCircle, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
 import {
@@ -105,6 +105,8 @@ export default function ChatNavLauncher({
   const [panelPos, setPanelPos] = useState<{ top: number; right: number } | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [active, setActive] = useState<ChatConversation | null>(null);
+  // Brandon 2026-06-12: buscador de la bandeja (filtra chats por nombre de tienda).
+  const [inboxQuery, setInboxQuery] = useState("");
   const [allStores, setAllStores] = useState<StoreLite[] | null>(null);
   const [toast, setToast] = useState<ChatIncomingDetail | null>(null);
   // ── Chat heads estilo Facebook (Brandon 2026-06-06 v3) ──────────────
@@ -450,8 +452,10 @@ export default function ChatNavLauncher({
               style={isDesktop && panelPos ? { top: panelPos.top, right: panelPos.right } : undefined}
               className={cn(
                 "absolute flex flex-col overflow-hidden bg-[var(--surface-canvas)] shadow-2xl shadow-black/25",
-                // Mobile: bottom sheet alto
-                "inset-x-0 bottom-0 h-[82vh] rounded-t-3xl",
+                // Mobile (Brandon 2026-06-12): PÁGINA full-screen estilo Messenger
+                // (antes era bottom-sheet a 82vh). Cubre toda la pantalla → entrás
+                // a "la app de chat" en vez de un panelcito.
+                "inset-0 h-[100dvh] rounded-none",
                 "motion-safe:animate-[slideUp_0.25s_cubic-bezier(0.32,0.72,0,1)]",
                 // Desktop: dropdown ACOPLADO bajo el ícono de chat (Brandon 2026-06-08).
                 // top/right salen del inline style (ancla al botón); inset-auto
@@ -498,6 +502,29 @@ export default function ChatNavLauncher({
                     </button>
                   </div>
 
+                  {/* Buscador de la bandeja (Brandon 2026-06-12) — filtra chats
+                      por nombre de tienda, estilo Messenger. */}
+                  {conversations.length > 3 && (
+                    <div className="shrink-0 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2">
+                      <div className="flex items-center gap-2 rounded-full bg-[var(--surface-sunken)] px-3 h-10">
+                        <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                        <input
+                          type="text"
+                          value={inboxQuery}
+                          onChange={(e) => setInboxQuery(e.target.value)}
+                          placeholder="Buscar un chat…"
+                          aria-label="Buscar chat por tienda"
+                          className="h-full min-w-0 flex-1 bg-transparent text-sm font-medium text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+                        />
+                        {inboxQuery && (
+                          <button type="button" onClick={() => setInboxQuery("")} aria-label="Limpiar búsqueda" className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
+                            <X className="h-4 w-4" aria-hidden />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex-1 min-h-0 overflow-y-auto">
                     {/* Conversaciones */}
                     {loading && conversations.length === 0 ? (
@@ -506,8 +533,21 @@ export default function ChatNavLauncher({
                         Cargando chats…
                       </div>
                     ) : conversations.length > 0 ? (
+                      (() => {
+                        const q = inboxQuery.trim().toLowerCase();
+                        const visible = q
+                          ? conversations.filter((c) => c.storeName.toLowerCase().includes(q))
+                          : conversations;
+                        if (visible.length === 0) {
+                          return (
+                            <p className="px-5 py-10 text-center text-sm font-medium text-[var(--text-tertiary)]">
+                              No hay chats con “{inboxQuery}”.
+                            </p>
+                          );
+                        }
+                        return (
                       <ul className="px-2 py-2">
-                        {conversations.map((c) => (
+                        {visible.map((c) => (
                           <li key={c.threadId ?? c.storeId}>
                             <button
                               type="button"
@@ -554,6 +594,8 @@ export default function ChatNavLauncher({
                           </li>
                         ))}
                       </ul>
+                        );
+                      })()
                     ) : (
                       <div className="px-5 py-8 text-center">
                         <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
