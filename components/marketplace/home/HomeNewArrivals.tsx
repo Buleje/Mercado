@@ -7,7 +7,7 @@ import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import UnifiedProductCard, {
   type UnifiedProductCardProduct,
 } from "@/components/marketplace/UnifiedProductCard";
-import { normalizeVertical } from "@/lib/marketplace/verticals";
+import { isValidVertical } from "@/lib/marketplace/verticals";
 import { BRAND_GEO } from "@/lib/geo";
 
 /**
@@ -37,18 +37,20 @@ function normalize(raw: Record<string, unknown>): UnifiedProductCardProduct {
 
 export default function HomeNewArrivals() {
   const [items, setItems] = useState<UnifiedProductCardProduct[] | null>(null);
-  // Audit mobile #18: "Recién llegados" se filtra por el vertical activo (?v=)
-  // → al estar en Comida no aparece madera de ferretería mezclada con pizzas.
+  // Brandon 2026-06-12: "Recién llegados" solo se muestra en "Todo" (el page lo
+  // gatea con ShowWhenAllVerticals), así que trae lo nuevo de TODO el marketplace.
   const sp = useSearchParams();
-  const vertical = normalizeVertical(sp.get("v"));
+  const vRaw = sp.get("v");
+  const vertical = isValidVertical(vRaw) ? vRaw!.toLowerCase() : "";
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(
-          `/api/marketplace/catalog?sort=newest&limit=12&vertical=${encodeURIComponent(vertical)}`,
-        );
+        const url = vertical
+          ? `/api/marketplace/catalog?sort=newest&limit=12&vertical=${encodeURIComponent(vertical)}`
+          : "/api/marketplace/catalog?sort=newest&limit=12";
+        const r = await fetch(url);
         if (!r.ok) throw new Error("catalog newest failed");
         const d = await r.json();
         const raw = Array.isArray(d?.data)

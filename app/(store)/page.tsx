@@ -41,7 +41,7 @@ import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import CatalogSortTabs from "@/components/marketplace/home/CatalogSortTabs";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
-import { ShowForVerticals } from "@/components/marketplace/home/MarketplaceVerticalChips";
+import { ShowWhenAllVerticals } from "@/components/marketplace/home/MarketplaceVerticalChips";
 import {
   Store,
   ArrowUpRight,
@@ -1216,13 +1216,20 @@ export default async function Home() {
           grande ya navega por el rail izquierdo + "Categorías", y el catálogo
           muestra todo (sin filtro de vertical). */}
 
-      {/* 1.5 Visto recientemente — retoma lo que el usuario estaba mirando
-          (per-usuario, localStorage). Self-hide si no vio nada. */}
-      <HomeRecentlyViewed />
+      {/* Brandon 2026-06-12: estas secciones de descubrimiento (visto, nuevos,
+          tiendas destacadas, lo más pedido) SOLO aparecen en "Todo". Al elegir
+          una categoría específica (Comida/Ferretería) se ocultan y queda solo el
+          catálogo general FILTRADO. */}
 
-      {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas.
-          Audit mobile #4: en celular DUPLICA la fila de chips de vertical (Comida/
-          Bodega/Ferretería) → se oculta. En desktop (lg+) aporta descubrimiento. */}
+      {/* 1.5 Visto recientemente — self-hide si no vio nada. */}
+      <Suspense fallback={null}>
+        <ShowWhenAllVerticals>
+          <HomeRecentlyViewed />
+        </ShowWhenAllVerticals>
+      </Suspense>
+
+      {/* 2. Categorías del superadmin (solo desktop lg+ — en mobile duplica los
+          chips de vertical). */}
       <div className="hidden lg:block">
         <Suspense fallback={<SectionSkeleton minH="min-h-[340px]" />}>
           <Reveal>
@@ -1231,28 +1238,31 @@ export default async function Home() {
         </Suspense>
       </div>
 
-      {/* 2.5 Nuevos en {ciudad} — descubrimiento: productos recién agregados al
-          marketplace (catalog?sort=newest). Carrusel, self-hide si vacío. */}
-      <Reveal>
-        <HomeNewArrivals />
-      </Reveal>
+      {/* 2.5 Nuevos en {ciudad} — recién agregados. Self-hide si vacío. */}
+      <Suspense fallback={null}>
+        <ShowWhenAllVerticals>
+          <Reveal>
+            <HomeNewArrivals />
+          </Reveal>
+        </ShowWhenAllVerticals>
+      </Suspense>
 
       {/* 3. Tiendas destacadas — cards con rating + categoría + zona */}
       <Suspense fallback={<SectionSkeleton minH="min-h-[520px]" />}>
-        <Reveal>
-          <TopStoresSection />
-        </Reveal>
+        <ShowWhenAllVerticals>
+          <Reveal>
+            <TopStoresSection />
+          </Reveal>
+        </ShowWhenAllVerticals>
       </Suspense>
 
-      {/* 3.5 Lo más pedido hoy — productos cross-tienda con quick-add directo al
-          carrito. Es food-céntrico → solo se muestra en el mundo "Comida"; al
-          cambiar a Ferretería/Electro desaparece y el catálogo filtrado manda. */}
+      {/* 3.5 Lo más pedido hoy — productos cross-tienda con quick-add. */}
       <Suspense fallback={null}>
-        <ShowForVerticals only={["comida"]}>
+        <ShowWhenAllVerticals>
           <Reveal>
             <MarketplaceTopToday />
           </Reveal>
-        </ShowForVerticals>
+        </ShowWhenAllVerticals>
       </Suspense>
 
       {/* 3.6 Catálogo de productos — el GRID completo que vivía en /marketplace
