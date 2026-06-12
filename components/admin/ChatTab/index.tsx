@@ -3,11 +3,22 @@
 import { PageTitle } from "@buleje/design-system";
 import { useMemo, useState } from "react";
 import { MessageCircle, AlertCircle, XCircle } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 import { ThreadsList } from "./ThreadsList";
 import { ConversationView } from "./ConversationView";
 import { MessageComposer } from "./MessageComposer";
-import { useChatThreads, useChatMessages } from "./hooks";
+import { useChatThreads, useChatMessages, type MsgReplySnapshot } from "./hooks";
 import { STATUS_LABELS } from "./types";
+
+/** "hace un momento · hace 5 min · hace 2 h · hace 3 d" para "Visto …". */
+function relativeSeen(ts: number): string {
+  const m = Math.floor((Date.now() - ts) / 60_000);
+  if (m < 1) return "hace un momento";
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `hace ${h} h`;
+  return `hace ${Math.floor(h / 24)} d`;
+}
 
 /**
  * ChatTab — panel admin del Bloque D2 del Marketplace (chat buyer ↔ seller).
@@ -34,7 +45,13 @@ export default function ChatTab() {
     messages,
     loading: messagesLoading,
     sendMessage,
+    react,
+    pingTyping,
+    presence,
   } = useChatMessages(selectedThreadId);
+
+  // Increment 2b: cita activa del composer del vendedor.
+  const [replyTo, setReplyTo] = useState<MsgReplySnapshot | null>(null);
 
   const selectedThread = useMemo(
     () => threads.find((t) => t.id === selectedThreadId) ?? null,
@@ -118,6 +135,21 @@ export default function ChatTab() {
                     {STATUS_LABELS[selectedThread.status]}
                   </span>
                 </div>
+                {/* Increment 2b: presencia del cliente */}
+                {presence && (presence.typing || presence.online || presence.lastSeen) && (
+                  <div
+                    className={cn(
+                      "text-[length:var(--ts-2xs)] font-semibold",
+                      presence.typing ? "text-primary" : "text-[var(--data-success-500)]",
+                    )}
+                  >
+                    {presence.typing
+                      ? "Escribiendo…"
+                      : presence.online
+                        ? "En línea"
+                        : `Visto ${relativeSeen(presence.lastSeen!)}`}
+                  </div>
+                )}
                 {selectedThread.customerPhone && (
                   <div className="text-[length:var(--ts-xs)] text-slate-500">
                     <a
@@ -146,6 +178,8 @@ export default function ChatTab() {
             <ConversationView
               messages={messages}
               loading={messagesLoading}
+              onReact={react}
+              onReply={setReplyTo}
               emptyState={
                 selectedThread
                   ? "Todavía no hay mensajes en esta conversación"
@@ -155,7 +189,12 @@ export default function ChatTab() {
           </div>
 
           {selectedThread && selectedThread.status === "open" && (
-            <MessageComposer onSend={sendMessage} />
+            <MessageComposer
+              onSend={sendMessage}
+              replyTo={replyTo}
+              onCancelReply={() => setReplyTo(null)}
+              onTyping={pingTyping}
+            />
           )}
           {selectedThread && selectedThread.status !== "open" && (
             <div className="border-t border-slate-200 bg-slate-100 p-3 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800">

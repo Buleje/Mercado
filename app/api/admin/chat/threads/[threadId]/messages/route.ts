@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
-import { markPresence, readPresence } from "@/lib/chat/presence";
+import { markPresence, markTyping, readPresence } from "@/lib/chat/presence";
 
 const MessageTypeSchema = z.enum([
   "text",
@@ -21,6 +21,12 @@ const SendBody = z.object({
   messageType:   MessageTypeSchema.optional(),
   attachmentUrl: z.string().url().max(500).optional(),
   metadataJson:  z.string().max(4000).optional(),
+});
+
+/** Reacción del vendedor a un mensaje (toggle). Tanda 1 · Increment 2b. */
+const ReactSchema = z.object({
+  messageId: z.string().min(1).max(100),
+  emoji:     z.string().min(1).max(16),
 });
 
 /**
@@ -44,6 +50,35 @@ export async function POST(
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const action = req.nextUrl.searchParams.get("action");
+
+  // ── Reacción del vendedor (toggle) — Increment 2b ──
+  if (action === "react") {
+    const r = ReactSchema.safeParse(body);
+    if (!r.success) {
+      return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+    }
+    try {
+      const { reactions } = await ChatMessagesDB.reactToMessage({
+        tenantId:  auth.tenantId,
+        threadId,
+        messageId: r.data.messageId,
+        emoji:     r.data.emoji,
+        by:        "seller",
+      });
+      return NextResponse.json({ data: { messageId: r.data.messageId, reactions } });
+    } catch (err) {
+      logger.error("[chat/messages] react failed", { err: String(err), threadId });
+      return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
+    }
+  }
+
+  // ── Typing del vendedor (efímero) — Increment 2b ──
+  if (action === "typing") {
+    markTyping(threadId, "seller");
+    return NextResponse.json({ ok: true });
   }
 
   const parsed = SendBody.safeParse(body);

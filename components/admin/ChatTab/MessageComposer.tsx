@@ -1,23 +1,38 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Send, Paperclip } from "@buleje/design-system/icons";
+import { Send, Paperclip, Smile, X } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
+import type { MsgReplySnapshot } from "./hooks";
 
 interface MessageComposerProps {
-  onSend: (body: string) => Promise<void>;
+  onSend: (body: string, replyTo?: MsgReplySnapshot) => Promise<void>;
   disabled?: boolean;
   placeholder?: string;
+  /** Increment 2b: cita activa + cancelar + ping de typing. */
+  replyTo?: MsgReplySnapshot | null;
+  onCancelReply?: () => void;
+  onTyping?: () => void;
 }
+
+const COMPOSER_EMOJIS = [
+  "😀", "😅", "😂", "😍", "😘", "🤔", "😎", "🥳",
+  "👍", "🙏", "🔥", "🎉", "❤️", "😮", "😢", "👏",
+  "🙌", "🛵", "💰", "✅", "📦", "🍗", "🍕", "🥤",
+];
 
 export function MessageComposer({
   onSend,
   disabled = false,
   placeholder = "Escribí tu respuesta…",
+  replyTo = null,
+  onCancelReply,
+  onTyping,
 }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   async function handleSend() {
@@ -25,9 +40,10 @@ export function MessageComposer({
     if (!trimmed || sending || disabled) return;
     setSending(true);
     try {
-      await onSend(trimmed);
+      await onSend(trimmed, replyTo ?? undefined);
       setBody("");
-      // Refocus
+      setEmojiOpen(false);
+      onCancelReply?.();
       textareaRef.current?.focus();
     } catch (err) {
       Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
@@ -38,7 +54,6 @@ export function MessageComposer({
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Enter → send, Shift+Enter → newline
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -47,7 +62,58 @@ export function MessageComposer({
 
   return (
     <div className="border-t border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+      {/* Cita activa (Increment 2b) */}
+      {replyTo && (
+        <div className="mb-2 flex items-center gap-2 rounded-lg border-l-[3px] border-primary bg-primary/10 px-2.5 py-1.5">
+          <div className="min-w-0 flex-1 leading-tight">
+            <div className="text-[length:var(--ts-2xs)] font-bold text-primary">
+              Respondiendo a {replyTo.senderType === "seller" ? "vos" : replyTo.senderName}
+            </div>
+            <div className="truncate text-[length:var(--ts-xs)] text-slate-600 dark:text-slate-300">
+              {replyTo.body}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onCancelReply}
+            aria-label="Cancelar respuesta"
+            className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Selector de emoji */}
+      {emojiOpen && (
+        <div className="mb-2 grid grid-cols-8 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800">
+          {COMPOSER_EMOJIS.map((e) => (
+            <button
+              key={e}
+              type="button"
+              onClick={() => setBody((t) => (t + e).slice(0, 4000))}
+              aria-label={`Insertar ${e}`}
+              className="inline-flex h-9 items-center justify-center rounded-lg text-xl transition-transform hover:scale-110 hover:bg-white dark:hover:bg-slate-900"
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-end gap-2">
+        <button
+          type="button"
+          onClick={() => setEmojiOpen((o) => !o)}
+          aria-label="Emojis"
+          aria-pressed={emojiOpen}
+          className={cn(
+            "rounded-full p-2 transition-colors",
+            emojiOpen ? "bg-primary/10 text-primary" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
+          )}
+        >
+          <Smile className="h-4 w-4" aria-hidden />
+        </button>
         <button
           type="button"
           disabled
@@ -61,7 +127,7 @@ export function MessageComposer({
         <textarea
           ref={textareaRef}
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={(e) => { setBody(e.target.value); onTyping?.(); }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled || sending}

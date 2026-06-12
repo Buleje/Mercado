@@ -1,22 +1,48 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Bot, User, Settings2 } from "@buleje/design-system/icons";
+import { useEffect, useRef, useState } from "react";
+import { Bot, User, Settings2, Undo2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { ChatMessageView } from "./types";
+import type { MsgReplySnapshot } from "./hooks";
 
 interface ConversationViewProps {
   messages: ChatMessageView[];
   loading: boolean;
   emptyState?: string;
+  /** Increment 2b: el vendedor reacciona a un mensaje. */
+  onReact?: (messageId: string, emoji: string) => void;
+  /** Increment 2b: el vendedor cita un mensaje para responder. */
+  onReply?: (snapshot: MsgReplySnapshot) => void;
+}
+
+// Increment 2b: reacciones rápidas (mismo set que el lado cliente).
+const REACTION_EMOJIS = ["❤️", "👍", "😂", "🔥", "🙏", "😮"];
+
+interface MetaReaction { emoji: string; by: string }
+interface MetaReply { id: string; body: string; senderType: string; senderName: string }
+function parseMeta(raw: string | null): { reactions: MetaReaction[]; replyTo: MetaReply | null } {
+  if (!raw) return { reactions: [], replyTo: null };
+  try {
+    const m = JSON.parse(raw) as { reactions?: MetaReaction[]; replyTo?: MetaReply };
+    return {
+      reactions: Array.isArray(m.reactions) ? m.reactions : [],
+      replyTo: m.replyTo ?? null,
+    };
+  } catch {
+    return { reactions: [], replyTo: null };
+  }
 }
 
 export function ConversationView({
   messages,
   loading,
   emptyState = "Seleccioná una conversación para verla",
+  onReact,
+  onReply,
 }: ConversationViewProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [activeMsgId, setActiveMsgId] = useState<string | null>(null);
 
   // Auto-scroll al fondo cuando llegan mensajes nuevos
   useEffect(() => {
@@ -51,19 +77,39 @@ export function ConversationView({
       aria-live="polite"
     >
       {messages.map((msg) => (
-        <MessageBubble key={msg.id} message={msg} />
+        <MessageBubble
+          key={msg.id}
+          message={msg}
+          active={activeMsgId === msg.id}
+          onToggle={() => setActiveMsgId((id) => (id === msg.id ? null : msg.id))}
+          onReact={onReact}
+          onReply={(snap) => { onReply?.(snap); setActiveMsgId(null); }}
+        />
       ))}
     </div>
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessageView }) {
+function MessageBubble({
+  message,
+  active,
+  onToggle,
+  onReact,
+  onReply,
+}: {
+  message: ChatMessageView;
+  active: boolean;
+  onToggle: () => void;
+  onReact?: (messageId: string, emoji: string) => void;
+  onReply?: (snapshot: MsgReplySnapshot) => void;
+}) {
   const isSeller = message.senderType === "seller";
   const isSystem = message.senderType === "system";
   const time = new Date(message.createdAt).toLocaleTimeString("es-PE", {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const meta = parseMeta(message.metadataJson);
 
   if (isSystem) {
     return (
@@ -92,23 +138,100 @@ function MessageBubble({ message }: { message: ChatMessageView }) {
         {isSeller ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
       </div>
 
-      {/* Bubble */}
-      <div className={cn("max-w-[70%]", isSeller ? "items-end" : "items-start")}>
-        <div
+      {/* Columna de la burbuja */}
+      <div className={cn("flex max-w-[70%] flex-col", isSeller ? "items-end" : "items-start")}>
+        {/* Burbuja — click abre la barra de acciones (reaccionar/responder) */}
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label="Reaccionar o responder"
           className={cn(
-            "rounded-xl px-4 py-2 text-sm leading-relaxed",
+            "rounded-xl px-4 py-2 text-left text-sm leading-relaxed outline-none transition-shadow",
+            active && "ring-2 ring-primary/40",
             isSeller
               ? "rounded-br-sm bg-primary text-white"
               : "rounded-bl-sm bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100",
           )}
         >
+          {/* Cita (reply) */}
+          {meta.replyTo && (
+            <div
+              className={cn(
+                "mb-1 rounded-md border-l-[3px] px-2 py-1",
+                isSeller ? "border-white/70 bg-white/15" : "border-primary bg-primary/10",
+              )}
+            >
+              <div className={cn("text-[length:var(--ts-2xs)] font-bold", isSeller ? "text-white/90" : "text-primary")}>
+                {meta.replyTo.senderType === "seller" ? "Vos" : meta.replyTo.senderName}
+              </div>
+              <div className={cn("truncate text-[length:var(--ts-xs)]", isSeller ? "text-white/80" : "text-slate-600 dark:text-slate-300")}>
+                {meta.replyTo.body}
+              </div>
+            </div>
+          )}
           {!isSeller && (
             <div className="mb-0.5 text-[length:var(--ts-xs)] font-semibold text-slate-500 dark:text-slate-400">
               {message.senderName}
             </div>
           )}
           <div className="whitespace-pre-wrap break-words">{message.body}</div>
-        </div>
+        </button>
+
+        {/* Barra de acciones — emojis + responder */}
+        {active && (
+          <div className="z-10 mt-1 flex items-center gap-0.5 rounded-full border border-slate-200 bg-white px-1.5 py-1 shadow-md dark:border-slate-700 dark:bg-slate-900">
+            {REACTION_EMOJIS.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => onReact?.(message.id, e)}
+                aria-label={`Reaccionar ${e}`}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-base transition-transform hover:scale-125"
+              >
+                {e}
+              </button>
+            ))}
+            <span className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" aria-hidden />
+            <button
+              type="button"
+              onClick={() =>
+                onReply?.({
+                  id: message.id,
+                  body: message.body.slice(0, 200),
+                  senderType: message.senderType,
+                  senderName: message.senderName,
+                })
+              }
+              aria-label="Responder a este mensaje"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
+              <Undo2 className="h-4 w-4" strokeWidth={2.25} />
+            </button>
+          </div>
+        )}
+
+        {/* Reacciones — pills bajo la burbuja */}
+        {meta.reactions.length > 0 && (
+          <div className="mt-0.5 flex flex-wrap gap-1">
+            {meta.reactions.map((r, idx) => (
+              <button
+                key={`${r.by}-${idx}`}
+                type="button"
+                onClick={() => { if (r.by === "seller") onReact?.(message.id, r.emoji); }}
+                aria-label={`Reacción ${r.emoji}${r.by === "seller" ? " (tuya)" : " del cliente"}`}
+                className={cn(
+                  "inline-flex items-center rounded-full border px-1.5 py-0.5 text-xs leading-none",
+                  r.by === "seller"
+                    ? "border-primary/40 bg-primary/10"
+                    : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+                )}
+              >
+                {r.emoji}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div
           className={cn(
             "mt-1 flex items-center gap-1 text-[length:var(--ts-2xs)] text-slate-400",
