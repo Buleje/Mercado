@@ -43,6 +43,38 @@ const QuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(40),
 });
 
+/**
+ * Brandon 2026-06-12: reordena una página de productos en round-robin por
+ * tienda (1 de cada tienda por vuelta) conservando el orden relativo dentro de
+ * cada tienda. Así el catálogo mezcla negocios en vez de mostrar todo de uno y
+ * después otro. Es reordenamiento de DISPLAY de la página — no toca el cursor.
+ */
+function roundRobinByStore<T>(items: T[], storeIdOf: (it: T) => string): T[] {
+  const groups = new Map<string, T[]>();
+  for (const it of items) {
+    const k = storeIdOf(it);
+    const bucket = groups.get(k);
+    if (bucket) bucket.push(it);
+    else groups.set(k, [it]);
+  }
+  // Una sola tienda → nada que mezclar.
+  if (groups.size <= 1) return items;
+  const buckets = [...groups.values()];
+  const out: T[] = [];
+  let added = true;
+  while (added) {
+    added = false;
+    for (const b of buckets) {
+      const next = b.shift();
+      if (next) {
+        out.push(next);
+        added = true;
+      }
+    }
+  }
+  return out;
+}
+
 export async function GET(req: NextRequest) {
   // SECURITY 2026-05-06 (audit storefront LOW): rate limit GENEROUS para
   // proteger contra scraping abusivo del catálogo. La pestaña normal del
@@ -82,6 +114,16 @@ export async function GET(req: NextRequest) {
     // cross-tenant OK — enriquecimiento usa tenantId solo para imágenes/variantes del tenant que sirve el catálogo
     const tenantId = resolveMarketplaceTenant(req, { context: "marketplace/catalog" });
 
+    // Brandon 2026-06-12: distribución EQUITATIVA en "popular" (Destacados). Con
+    // orderBy store.rating la tienda top llena toda la página; round-robin a
+    // nivel página no alcanza. Solución: para popular traemos una VENTANA amplia,
+    // la intercalamos round-robin por tienda y paginamos por OFFSET (el cursor es
+    // el índice). Los demás sorts (precio/nuevos) ya intercalan natural y siguen
+    // con cursor-por-id.
+    const isMixed = sort === "popular";
+    const MIX_WINDOW = 240;
+    const offset = isMixed && cursor ? Math.max(0, parseInt(cursor, 10) || 0) : 0;
+
     const results = await MarketplacePublicDB.getCatalogPage({
       q,
       category,
@@ -91,13 +133,23 @@ export async function GET(req: NextRequest) {
       minPrice,
       maxPrice,
       sort,
-      cursor,
-      limit,
+      cursor: isMixed ? undefined : cursor,
+      limit: isMixed ? MIX_WINDOW : limit,
     });
 
-    const hasMore = results.length > limit;
-    const items = results.slice(0, limit);
-    const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+    let items: typeof results;
+    let hasMore: boolean;
+    let nextCursor: string | undefined;
+    if (isMixed) {
+      const mixed = roundRobinByStore(results, (r) => r.store.id);
+      items = mixed.slice(offset, offset + limit);
+      hasMore = mixed.length > offset + limit;
+      nextCursor = hasMore ? String(offset + limit) : undefined;
+    } else {
+      hasMore = results.length > limit;
+      items = results.slice(0, limit);
+      nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+    }
 
     const productIds = items.map((r) => r.product.id);
     const { primaryImageMap, variantMap, ratingMap, bestSellerIds, commentCountMap } =
@@ -121,6 +173,9 @@ export async function GET(req: NextRequest) {
         storeProductId: r.id,
         productId: pid,
         name: r.product.name,
+        // Brandon 2026-06-12: descripción corta para mostrar en la card (1 línea
+        // con line-clamp). Antes el adapter del catálogo la descartaba.
+        description: r.product.description ?? null,
         price: r.retailPrice,
         image: primaryImageMap.get(pid) ?? r.product.image,
         images: primaryImageMap.has(pid) ? [primaryImageMap.get(pid)!] : (r.product.image ? [r.product.image] : []),
@@ -141,7 +196,8 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Aplicar sponsored ranking (máx 3 por página al tope)
+    // Aplicar sponsored ranking (máx 3 por página al tope). El orden equitativo
+    // (round-robin por tienda) ya se aplicó arriba a nivel filas para "popular".
     const rankedData = await applyBoostsToProducts(tenantId, data);
 
     return NextResponse.json(

@@ -1178,7 +1178,7 @@ export const MarketplacePublicDB = {
           retailPrice: true,
           minOrderQty: true,
           product: {
-            select: { id: true, name: true, image: true, category: true, unit: true, stock: true },
+            select: { id: true, name: true, description: true, image: true, category: true, unit: true, stock: true },
           },
           store: {
             select: { id: true, name: true, slug: true, logo: true, zone: true, rating: true, category: true },

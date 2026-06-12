@@ -32,6 +32,8 @@ interface CatalogProduct {
   storeProductId: string;
   productId: number;
   name: string;
+  /** Descripción corta — se muestra 1 línea (line-clamp) en la card. */
+  description?: string | null;
   price: number;
   image: string | null;
   unit: string | null;
@@ -59,6 +61,7 @@ function toCatalogCardProduct(product: CatalogProduct) {
   return {
     id: product.productId,
     name: product.name,
+    description: product.description ?? null,
     price: product.price,
     image: product.image,
     storeName: product.storeName,
@@ -260,6 +263,10 @@ export default function CatalogView({
               <UnifiedProductCard
                 product={toCatalogCardProduct(product)}
                 variant="default"
+                /* Brandon 2026-06-12: card VERTICAL compacta (foto arriba +
+                   nombre + desc 1 línea + precio + agregar) para el grid 2-col,
+                   en vez del horizontal. Muestra la descripción que ahora llega. */
+                layout="compact"
                 index={i}
                 href={`/marketplace/${product.storeSlug}`}
               />
