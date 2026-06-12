@@ -38,6 +38,7 @@ const HomeNewArrivals = dynamic(
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
+import CatalogSortTabs from "@/components/marketplace/home/CatalogSortTabs";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
 import { ShowForVerticals } from "@/components/marketplace/home/MarketplaceVerticalChips";
@@ -1264,6 +1265,12 @@ export default async function Home() {
           className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 scroll-mt-24"
         >
           <SectionHeading eyebrow="Catálogo" title="Todos los productos" />
+          {/* Audit mobile #6: tabs de orden → un solo grid que se reordena
+              (Destacados/Nuevos/Menor precio/Mejor valorado), en vez de carruseles
+              con productos repetidos. Setea ?sort= que el catálogo ya consume. */}
+          <Suspense fallback={<div className="mb-3 h-11 border-b border-[var(--rule-soft)]" />}>
+            <CatalogSortTabs />
+          </Suspense>
           <HomeCatalog />
         </section>
       </Reveal>
