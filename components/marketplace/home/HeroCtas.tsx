@@ -23,8 +23,10 @@ export default function HeroCtas() {
     <>
       {/* ── Buscador protagonista con autocomplete EN VIVO (acción #1 de la
           home). Sugiere productos/tiendas/categorías mientras tipeás +
-          historial de búsquedas. Reusa SearchAutocompleteInput. ── */}
-      <div className="mt-7 sm:mt-9 mx-auto w-full max-w-2xl text-left">
+          historial de búsquedas. Reusa SearchAutocompleteInput. ──
+          Brandon 2026-06-11: en celular/tablet sube pegado al H1 (sin saludo
+          decorativo de por medio) → el buscador queda above-the-fold. */}
+      <div className="mt-4 lg:mt-9 mx-auto w-full max-w-2xl text-left">
         <SearchAutocompleteInput
           size="lg"
           showSubmitButton

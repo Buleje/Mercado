@@ -492,9 +492,11 @@ async function RappiStyleHero() {
         className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-[var(--rule-soft)]"
       />
 
-      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-6 sm:pb-8 text-center">
-        {/* Eyebrow badge — teal de marca sobre fondo claro */}
-        <p className="inline-flex items-center gap-2 mb-3 sm:mb-4 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 lg:pt-12 pb-4 lg:pb-8 text-center">
+        {/* Eyebrow badge — teal de marca sobre fondo claro. Brandon 2026-06-11:
+            SOLO desktop (lg+). En celular/tablet la home va directa al grano
+            (buscador + categorías), sin saludo decorativo. */}
+        <p className="hidden lg:inline-flex items-center gap-2 mb-3 sm:mb-4 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
           <span
             aria-hidden
             className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-[var(--accent)]/40"
@@ -511,23 +513,21 @@ async function RappiStyleHero() {
         </p>
 
         {/* H1 híbrido: gancho emocional + keyword geo (la ciudad objetivo)
-            dentro del propio H1 (Google pesa mucho el H1 de la home). */}
-        <h1 className="text-[clamp(1.875rem,5vw,3rem)] font-extrabold leading-[1.06] tracking-[-0.03em] text-[var(--text-primary)] max-w-3xl mx-auto">
+            dentro del propio H1 (Google pesa mucho el H1 de la home). Brandon
+            2026-06-11: en celular/tablet queda COMPACTO (1.375rem) para no robar
+            el fold — pero sigue presente como H1 (SEO intacto). */}
+        <h1 className="text-[1.375rem] sm:text-[1.5rem] lg:text-[clamp(1.875rem,5vw,3rem)] font-extrabold leading-[1.1] lg:leading-[1.06] tracking-[-0.03em] text-[var(--text-primary)] max-w-3xl mx-auto">
           ¿Qué se te <span className="text-[var(--accent)]">antoja hoy</span> en{" "}
           {BRAND_GEO.city}?
         </h1>
 
-        {/* Subtítulo — text-base mín en mobile (regla bsm-typography: body
-            nunca <16px). Antes text-sm = 14px. audit home. */}
-        <p className="mt-3 sm:mt-4 max-w-2xl mx-auto text-base sm:text-lg text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
-          <span className="sm:hidden">
-            El marketplace de {BRAND_GEO.city} — delivery rápido, Yape o efectivo.
-          </span>
-          <span className="hidden sm:inline">
-            El marketplace #1 de {BRAND_GEO.city}, {BRAND_GEO.region}. Bodegas,
-            restaurantes y farmacias de tus vecinos en la Selva Central del Perú
-            — delivery rápido con Yape, Plin o efectivo.
-          </span>
+        {/* Subtítulo editorial — SOLO desktop (lg+). Brandon 2026-06-11: en
+            celular/tablet el "marketplace #1 / saludo" se corta para ir directo
+            al buscador. El claim de marca vive en la vidriera (desktop). */}
+        <p className="hidden lg:block mt-3 sm:mt-4 max-w-2xl mx-auto text-base sm:text-lg text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
+          El marketplace #1 de {BRAND_GEO.city}, {BRAND_GEO.region}. Bodegas,
+          restaurantes y farmacias de tus vecinos en la Selva Central del Perú
+          — delivery rápido con Yape, Plin o efectivo.
         </p>
 
         {/* Stats reales + trust pill Yape */}
@@ -542,11 +542,13 @@ async function RappiStyleHero() {
                 <span className="text-[var(--text-primary)]">{storeCount} tiendas activas</span>
               </span>
             )}
+            {/* "150+ productos" — solo desktop (Brandon 2026-06-11): en mobile/
+                tablet la línea de confianza se queda en "X tiendas activas · Yape". */}
             {productCount > 0 && (
-              <>
+              <span className="hidden lg:contents">
                 <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
                 <span className="text-[var(--text-primary)]">{productCount.toLocaleString("es-PE")}+ productos</span>
-              </>
+              </span>
             )}
             <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
             <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20">
