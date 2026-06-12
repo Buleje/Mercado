@@ -59,6 +59,12 @@ const StoreReviews = dynamic(() => import("./StoreReviews"), {
   ssr: false,
   loading: () => null,
 });
+// ADR-130: feed de Novedades de la tienda (publicaciones del dueño + comentarios
+// de los vecinos). Self-hide si la tienda no publicó nada.
+const StorePublications = dynamic(() => import("./StorePublications"), {
+  ssr: false,
+  loading: () => null,
+});
 const StorePoliciesBlock = dynamic(() => import("./StorePoliciesBlock"), {
   ssr: false,
   loading: () => null,
@@ -767,6 +773,11 @@ export default function StoreDetailClient({
           </div>
         </div>
       )}
+
+      {/* ── Novedades de la tienda (ADR-130) — self-hide si no publicó nada ── */}
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
+        <StorePublications storeSlug={store.slug} storeName={store.name} />
+      </div>
 
       {/* ── Reviews + Policies (compacto, divisores con tokens del DS) ────── */}
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 border-t border-[var(--rule-base)] py-8">

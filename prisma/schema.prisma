@@ -2647,12 +2647,52 @@ model Store {
   sponsoredBoosts     SponsoredBoost[]
   deliveryRoutes      DeliveryRoute[]
   conversationThreads ConversationThread[]
+  posts               StorePost[]
 
   @@index([tenantId])
   // Audit #3 (Brandon 2026-05-30): listado del directorio /tiendas ordena por
   // rating/reviewCount y filtra por isPublished + zona. Antes: seq scan sobre Store.
   @@index([isPublished, rating(sort: Desc), reviewCount(sort: Desc)])
   @@index([isPublished, zone])
+}
+
+// ─── ADR-130 — Publicaciones por tienda (feed social + comentarios) ──────────
+// Feed editorial del dueño (texto + imagen) que los vecinos comentan. Retención.
+// Migración ADITIVA (2 tablas nuevas). Plantilla: Review (tenantId/status/soft-del).
+model StorePost {
+  id           String             @id @default(cuid())
+  tenantId     String
+  storeId      String
+  store        Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  body         String
+  imageUrl     String?
+  pinned       Boolean            @default(false)
+  status       String             @default("published") // published | hidden
+  likeCount    Int                @default(0)
+  commentCount Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  deletedAt    DateTime?
+  comments     StorePostComment[]
+
+  @@index([tenantId])
+  @@index([storeId, status, pinned, createdAt(sort: Desc)], name: "StorePost_store_feed_idx")
+}
+
+model StorePostComment {
+  id         String    @id @default(cuid())
+  tenantId   String
+  postId     String
+  post       StorePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  customerId String?
+  authorName String
+  body       String
+  status     String    @default("published") // published | hidden
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+
+  @@index([tenantId])
+  @@index([postId, status, createdAt], name: "StorePostComment_post_idx")
 }
 
 model StoreBanner {
