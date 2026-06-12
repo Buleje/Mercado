@@ -492,7 +492,11 @@ async function RappiStyleHero() {
         className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-[var(--rule-soft)]"
       />
 
-      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 lg:pt-12 pb-4 lg:pb-8 text-center">
+      {/* Brandon 2026-06-11 (audit mobile P1): en celular el hero COLAPSA — el
+          buscador del header ya alcanza, así que acá no va nada visible. El H1
+          queda en sr-only (SEO) y el padding a 0 → el contenido (nav + productos)
+          arranca arriba de todo. Desktop (lg+) conserva el hero editorial. */}
+      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-0 lg:pt-12 lg:pb-8 text-center">
         {/* Eyebrow badge — teal de marca sobre fondo claro. Brandon 2026-06-11:
             SOLO desktop (lg+). En celular/tablet la home va directa al grano
             (buscador + categorías), sin saludo decorativo. */}
@@ -516,8 +520,8 @@ async function RappiStyleHero() {
             dentro del propio H1 (Google pesa mucho el H1 de la home). Brandon
             2026-06-11: en celular/tablet queda COMPACTO (1.375rem) para no robar
             el fold — pero sigue presente como H1 (SEO intacto). */}
-        <h1 className="text-[1.375rem] sm:text-[1.5rem] lg:text-[clamp(1.875rem,5vw,3rem)] font-extrabold leading-[1.1] lg:leading-[1.06] tracking-[-0.03em] text-[var(--text-primary)] max-w-3xl mx-auto">
-          ¿Qué se te <span className="text-[var(--accent)]">antoja hoy</span> en{" "}
+        <h1 className="sr-only lg:not-sr-only lg:text-[clamp(1.875rem,5vw,3rem)] lg:font-extrabold lg:leading-[1.06] lg:tracking-[-0.03em] lg:text-[var(--text-primary)] lg:max-w-3xl lg:mx-auto">
+          ¿Qué se te <span className="lg:text-[var(--accent)]">antoja hoy</span> en{" "}
           {BRAND_GEO.city}?
         </h1>
 
@@ -530,9 +534,10 @@ async function RappiStyleHero() {
           — delivery rápido con Yape, Plin o efectivo.
         </p>
 
-        {/* Stats reales + trust pill Yape */}
+        {/* Stats reales + trust pill Yape — SOLO desktop (audit mobile #15: en
+            celular "4 tiendas · 150+ productos" suena chico y roba espacio). */}
         {(storeCount > 0 || productCount > 0) && (
-          <div className="mt-4 flex items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
+          <div className="hidden lg:flex mt-4 items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
             {storeCount > 0 && (
               <span className="inline-flex items-center gap-1.5">
                 <span className="relative inline-flex h-1.5 w-1.5">
@@ -1214,12 +1219,16 @@ export default async function Home() {
           (per-usuario, localStorage). Self-hide si no vio nada. */}
       <HomeRecentlyViewed />
 
-      {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas */}
-      <Suspense fallback={<SectionSkeleton minH="min-h-[340px]" />}>
-        <Reveal>
-          <CategoriesGrid />
-        </Reveal>
-      </Suspense>
+      {/* 2. Categorías del superadmin: 2 XL (Restaurantes + Bodega) + resto chicas.
+          Audit mobile #4: en celular DUPLICA la fila de chips de vertical (Comida/
+          Bodega/Ferretería) → se oculta. En desktop (lg+) aporta descubrimiento. */}
+      <div className="hidden lg:block">
+        <Suspense fallback={<SectionSkeleton minH="min-h-[340px]" />}>
+          <Reveal>
+            <CategoriesGrid />
+          </Reveal>
+        </Suspense>
+      </div>
 
       {/* 2.5 Nuevos en {ciudad} — descubrimiento: productos recién agregados al
           marketplace (catalog?sort=newest). Carrusel, self-hide si vacío. */}

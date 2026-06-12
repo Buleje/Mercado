@@ -21,12 +21,10 @@ export default function HeroCtas() {
 
   return (
     <>
-      {/* ── Buscador protagonista con autocomplete EN VIVO (acción #1 de la
-          home). Sugiere productos/tiendas/categorías mientras tipeás +
-          historial de búsquedas. Reusa SearchAutocompleteInput. ──
-          Brandon 2026-06-11: en celular/tablet sube pegado al H1 (sin saludo
-          decorativo de por medio) → el buscador queda above-the-fold. */}
-      <div className="mt-4 lg:mt-9 mx-auto w-full max-w-2xl text-left">
+      {/* ── Buscador protagonista — SOLO desktop (audit mobile P1 #1: en celular
+          había DOS buscadores, el del header + este. Eliminamos el duplicado del
+          hero; el del header alcanza). En desktop sigue siendo la acción #1. ── */}
+      <div className="hidden lg:block mt-4 lg:mt-9 mx-auto w-full max-w-2xl text-left">
         <SearchAutocompleteInput
           size="lg"
           showSubmitButton
@@ -34,8 +32,10 @@ export default function HeroCtas() {
         />
       </div>
 
-      {/* ── Atajos secundarios (el buscador es la acción #1) ── */}
-      <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-center gap-3 sm:flex-wrap">
+      {/* ── Atajos secundarios — SOLO desktop (audit mobile #14: en celular la
+          nav (chips + bottom-nav) ya cubre tiendas/ofertas; estos botones solo
+          robaban fold). ── */}
+      <div className="hidden lg:flex mt-4 sm:mt-5 flex-col sm:flex-row items-stretch sm:items-center sm:justify-center gap-3 sm:flex-wrap">
         <Link
           href="/tiendas"
           aria-label="Ver todas las tiendas"
