@@ -87,10 +87,23 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
 
   if (categories.length === 0) return null;
 
-  // Activo cuando estamos en /marketplace/buscar?cat=ID
-  const activeCat =
-    pathname === "/marketplace/buscar" ? searchParams.get("cat") : null;
-  const isHome = pathname === "/marketplace" && !activeCat;
+  // Brandon 2026-06-12 (Q2 filtrado): en la HOME (embedded) la subcategoría
+  // filtra EN EL LUGAR — setea ?cat= que el catálogo de la home ya consume
+  // (CatalogUrlSync) y hace scroll a #catalogo. Standalone sigue yendo a /buscar.
+  const activeCat = embedded
+    ? (pathname === "/" ? searchParams.get("cat") : null)
+    : (pathname === "/marketplace/buscar" ? searchParams.get("cat") : null);
+  const isHome = embedded ? !activeCat : (pathname === "/marketplace" && !activeCat);
+
+  /** href para la home preservando el vertical (?v=) + opcional ?cat=. */
+  const homeHref = (cat?: string) => {
+    const params = new URLSearchParams();
+    const v = searchParams.get("v");
+    if (v) params.set("v", v);
+    if (cat) params.set("cat", cat);
+    const qs = params.toString();
+    return `/${qs ? `?${qs}` : ""}#catalogo`;
+  };
 
   // Brandon 2026-06-11 (rework mobile): tabs FLAT con subrayado de acento — sin
   // cápsulas redondeadas, sin fondo, sin sombra. Cohesivo con la fila de
@@ -116,9 +129,9 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
         className="flex gap-5 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden snap-x px-4"
         style={{ scrollbarWidth: "none" }}
       >
-        {/* "Todo" → home del marketplace */}
+        {/* "Todo" → limpia el filtro (home: ?cat= vacío · standalone: /marketplace) */}
         <Link
-          href="/marketplace"
+          href={embedded ? homeHref() : "/marketplace"}
           aria-current={isHome ? "page" : undefined}
           className={cn(tabBase, isHome ? tabActive : tabIdle)}
         >
@@ -131,7 +144,7 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
           return (
             <Link
               key={cat.id}
-              href={`/marketplace/buscar?cat=${encodeURIComponent(cat.id)}`}
+              href={embedded ? homeHref(cat.id) : `/marketplace/buscar?cat=${encodeURIComponent(cat.id)}`}
               aria-current={active ? "page" : undefined}
               className={cn(tabBase, active ? tabActive : tabIdle)}
             >
