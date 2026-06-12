@@ -73,10 +73,17 @@ interface Props {
   slot?: string;
   /** Zona del cliente para segmentación (banners v2 F4). */
   zone?: string | null;
+  /** perf audit P1: banners ya resueltos en el SERVER (RSC) — si llegan, se
+   *  pintan en el primer byte (sin cascada hidratar→fetch→pintar) y se omite el
+   *  fetch client. Si no, cae al fetch client (modo legacy). */
+  initialBanners?: PromoBanner[];
 }
 
-export default function HomeHeroBanner({ slot = "tiendas-hero", zone = null }: Props) {
-  const [banners, setBanners] = useState<PromoBanner[] | null>(null);
+export default function HomeHeroBanner({ slot = "tiendas-hero", zone = null, initialBanners }: Props) {
+  const hasInitial = !!initialBanners && initialBanners.length > 0;
+  const [banners, setBanners] = useState<PromoBanner[] | null>(
+    hasInitial ? initialBanners! : null,
+  );
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -86,8 +93,14 @@ export default function HomeHeroBanner({ slot = "tiendas-hero", zone = null }: P
   const [dragDx, setDragDx] = useState(0);
   const [dragging, setDragging] = useState(false);
 
-  // ── Fetch de banners del slot ──────────────────────────────────────────────
+  // ── Banners del slot ────────────────────────────────────────────────────────
+  // Con initialBanners del SERVER: ya están pintados, solo registramos la
+  // impresión (1 vez). Sin ellos: fetch client (legacy).
   useEffect(() => {
+    if (hasInitial) {
+      trackBanner("impression", initialBanners!.map((b) => b.id));
+      return;
+    }
     let cancelled = false;
     const qs = new URLSearchParams({ slot });
     if (zone) qs.set("zone", zone);
@@ -107,6 +120,7 @@ export default function HomeHeroBanner({ slot = "tiendas-hero", zone = null }: P
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot, zone]);
 
   const slides = banners ?? [];

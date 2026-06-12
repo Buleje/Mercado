@@ -7,6 +7,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { resolveStoreContext } from "@/lib/store-metadata";
 import TenantStoreHome from "@/components/store/TenantStoreHome";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
+import { getBannersForSlot } from "@/lib/promo-banners";
 // Brandon 2026-05-20 v5: LandingHeader removido — chrome unificado vive
 // en app/(store)/layout.tsx (mismo que /tiendas y /marketplace).
 
@@ -484,7 +485,13 @@ async function BulejeJsonLd() {
 // indexa igual; los metadatos y el JSON-LD viven aparte (generateMetadata +
 // BulejeJsonLd) y no se tocan. Los banners salen del slot `tiendas-hero`
 // (los MISMOS que antes vivían en la columna "Publicidad" del catálogo).
-function HomeHero() {
+async function HomeHero() {
+  // perf audit P1: resolvemos los banners en el SERVER (lectura del JSON de
+  // slots, sin red) y los pasamos como initialBanners → el hero se pinta en el
+  // primer byte, sin la cascada hidratar→fetch→pintar del fetch client.
+  const initialBanners = getBannersForSlot("tiendas-hero")
+    .filter((b) => b.active)
+    .sort((a, b) => a.order - b.order);
   return (
     <section aria-label="Inicio" className="relative">
       {/* H1 de la home — invisible pero presente (SEO). Mantiene la keyword geo
@@ -493,7 +500,7 @@ function HomeHero() {
         Pedí online en {BRAND_GEO.city}, {BRAND_GEO.region} — bodegas,
         restaurantes y farmacias con delivery rápido (Yape, Plin o efectivo)
       </h1>
-      <HomeHeroBanner />
+      <HomeHeroBanner initialBanners={initialBanners} />
     </section>
   );
 }
