@@ -540,8 +540,10 @@ export default function UnifiedProductCard({
           )}
         </div>
 
-        {/* Acciones top-right — heart + compare, aparecen en hover */}
-        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+        {/* Acciones top-right — quick view + compare. Audit mobile #5: son
+            features de DESKTOP (hover) → ocultas en celular para una card limpia
+            tipo Rappi. En lg+ aparecen al hover como siempre. */}
+        <div className="absolute top-2 right-2 z-10 hidden lg:flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
           {/* Quick view (heart slot) */}
           <button
             type="button"
@@ -712,25 +714,25 @@ export default function UnifiedProductCard({
                 </span>
               )}
             </div>
-            {/* MK-12 — Stock con jerarquía de urgencia: crítico (≤3) en rojo
-                con dot pulsante, bajo (≤5) en naranja, normal en muted. */}
-            {product.stock != null && product.stock > 0 && (
+            {/* MK-12 — Stock con jerarquía de urgencia. Audit mobile #5: la
+                urgencia (≤5: "Quedan 3 — se agota") sí ayuda a comprar y se ve
+                en TODOS lados. El genérico "Stock: 999" es ruido → SOLO desktop. */}
+            {product.stock != null && product.stock > 0 && product.stock <= 5 && (
               <span
                 className={cn(
-                  "mt-1 inline-flex items-center gap-1 text-xs font-bold",
-                  product.stock <= 3
-                    ? "text-[var(--data-error-500)] uppercase tracking-wider"
-                    : product.stock <= 5
-                      ? "text-[var(--data-warning-500)] uppercase tracking-wider"
-                      : "text-[var(--text-tertiary)] font-medium normal-case tracking-normal",
+                  "mt-1 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider",
+                  product.stock <= 3 ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]",
                 )}
               >
                 {product.stock <= 3 && (
                   <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)] animate-pulse" />
                 )}
-                {product.stock <= 5
-                  ? `Quedan ${product.stock}${product.stock <= 3 ? " — se agota" : ""}`
-                  : `Stock: ${product.stock}`}
+                {`Quedan ${product.stock}${product.stock <= 3 ? " — se agota" : ""}`}
+              </span>
+            )}
+            {product.stock != null && product.stock > 5 && (
+              <span className="mt-1 hidden lg:inline-flex items-center gap-1 text-xs font-medium text-[var(--text-tertiary)]">
+                {`Stock: ${product.stock}`}
               </span>
             )}
           </div>
