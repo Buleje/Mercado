@@ -30,6 +30,12 @@ const MarketplaceCatalogViewSection = dynamic(
 const MarketplaceRightRail = dynamic(
   () => import("@/components/marketplace/MarketplaceRightRail"),
 );
+// Brandon 2026-06-12: rail IZQUIERDO de filtros (Categorías · Precio · Tienda ·
+// Ordenar) montado en la home. Existía pero quedó huérfano tras la fusión
+// /marketplace → /. Solo lg+ (en mobile los filtros viven en los chips + tabs).
+const MarketplaceLeftRail = dynamic(
+  () => import("@/components/marketplace/MarketplaceLeftRail"),
+);
 
 /**
  * CatalogUrlSync — aplica los filtros del URL (?sort / ?cat) al catálogo de la
@@ -76,7 +82,16 @@ export default function HomeCatalog() {
         <Suspense fallback={null}>
           <CatalogUrlSync />
         </Suspense>
-        <div className="grid w-full grid-cols-1 items-start gap-5 lg:gap-10 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid w-full grid-cols-1 items-start gap-5 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[230px_minmax(0,1fr)_300px] xl:gap-10">
+          {/* ── IZQUIERDA: filtros del catálogo (sticky, solo lg+). En mobile
+               los filtros los aportan los chips + tabs de orden. ── */}
+          <aside
+            aria-label="Filtros del catálogo"
+            className="hidden lg:block lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <MarketplaceLeftRail />
+          </aside>
+
           {/* ── CENTRO: grid de catálogo ── */}
           <div className="min-w-0">
             <MarketplaceCatalogViewSection />

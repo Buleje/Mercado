@@ -11,10 +11,11 @@
  * (Sección "Explorar" removida a pedido.)
  */
 import { useEffect, useState } from "react";
+import { Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 import { useCatalogFilter } from "@/components/marketplace/catalog-filter-context";
-import { SORT_OPTIONS } from "@/components/marketplace/catalog-options";
+import { SORT_OPTIONS, PRICE_BUCKETS } from "@/components/marketplace/catalog-options";
 import { cachedJson } from "@/lib/client-cache-fetch";
 
 interface RealCategory {
@@ -38,6 +39,9 @@ export default function MarketplaceLeftRail() {
   const filter = useCatalogFilter();
   const category = filter?.category ?? "todos";
   const sort = filter?.sort ?? "popular";
+  const priceKey = filter?.priceKey ?? "";
+  const storeSlug = filter?.storeSlug ?? "";
+  const stores = filter?.stores ?? [];
 
   // Categorías REALES (con productos). Sin esto la lista era decorativa.
   const [categories, setCategories] = useState<RealCategory[]>([]);
@@ -116,6 +120,83 @@ export default function MarketplaceLeftRail() {
           })}
         </ul>
       </nav>
+
+      {/* Precio → buckets en chips (Brandon 2026-06-12). Tapeables, border-2
+          por las reglas de tipografía del storefront. */}
+      <div className={RAIL_CARD} aria-label="Filtrar por precio">
+        <h2 className={RAIL_HEADING}>Precio</h2>
+        <div className="flex flex-wrap gap-1.5 px-1 pb-1 pt-0.5">
+          <button
+            type="button"
+            onClick={() => filter?.setPriceKey("")}
+            aria-pressed={priceKey === ""}
+            className={cn(
+              "rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors",
+              priceKey === ""
+                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+            )}
+          >
+            Todos
+          </button>
+          {PRICE_BUCKETS.map((b) => {
+            const isActive = priceKey === b.key;
+            return (
+              <button
+                key={b.key}
+                type="button"
+                onClick={() => filter?.setPriceKey(isActive ? "" : b.key)}
+                aria-pressed={isActive}
+                className={cn(
+                  "rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors",
+                  isActive
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+                )}
+              >
+                {b.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tienda → solo si hay ≥2 tiendas en el catálogo (CatalogView las publica
+          al contexto). Con una sola tienda el filtro no aporta. */}
+      {stores.length > 1 && (
+        <nav className={RAIL_CARD} aria-label="Filtrar por tienda">
+          <h2 className={RAIL_HEADING}>Tienda</h2>
+          <ul className="space-y-0.5">
+            <li>
+              <button
+                type="button"
+                onClick={() => filter?.setStoreSlug("")}
+                aria-pressed={storeSlug === ""}
+                className={cn(itemBase, storeSlug === "" ? itemActive : itemIdle)}
+              >
+                <Store className="h-[1.15rem] w-[1.15rem] shrink-0" strokeWidth={1.75} />
+                Todas
+              </button>
+            </li>
+            {stores.map((s) => {
+              const isActive = storeSlug === s.slug;
+              return (
+                <li key={s.slug}>
+                  <button
+                    type="button"
+                    onClick={() => filter?.setStoreSlug(isActive ? "" : s.slug)}
+                    aria-pressed={isActive}
+                    className={cn(itemBase, isActive ? itemActive : itemIdle)}
+                  >
+                    <Store className="h-[1.15rem] w-[1.15rem] shrink-0" strokeWidth={1.75} />
+                    <span className="truncate">{s.name}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
 
       {/* Ordenar */}
       <div className={RAIL_CARD}>

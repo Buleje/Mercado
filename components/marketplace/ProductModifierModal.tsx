@@ -28,7 +28,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { DbStoreProductModifierGroup } from "@/lib/db/marketplace.db";
 import type { SelectedModifier } from "@/hooks/use-marketplace-cart";
-import ProductCommentsSection from "@/components/marketplace/ProductCommentsSection";
 
 interface ProductModifierModalProps {
   open: boolean;
@@ -589,16 +588,11 @@ export default function ProductModifierModal({
                 </div>
               )}
 
-              {/* ── Comentarios públicos del producto (estilo Instagram) ────
-                   Brandon 2026-06-06: reemplaza al cross-sell "Combiná con tu
-                   pedido" (era tedioso). El usuario comenta, se publica al
-                   instante y queda visible para todos los demás. */}
-              <ProductCommentsSection
-                open={open}
-                productId={product.id}
-                storeSlug={product.storeSlug}
-                className={cn(effectiveGroups.length > 0 && "border-t border-[var(--rule-soft)] pt-5")}
-              />
+              {/* Brandon 2026-06-12: los comentarios SE FUERON de acá. El modal
+                  de agregar quedó liviano (solo cantidad + modificadores +
+                  agregar). Los comentarios viven ahora en la PÁGINA DE DETALLE
+                  del producto (al hacer click en el card), donde tienen aire y
+                  no estorban el checkout rápido. */}
             </div>
 
             {/* ── Footer mobile/tablet — sticky con price breakdown ──────

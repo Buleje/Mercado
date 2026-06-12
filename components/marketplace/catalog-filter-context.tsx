@@ -13,6 +13,14 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 
 export type CatalogSort = "popular" | "price_asc" | "price_desc" | "newest" | "rating";
 
+/** Tienda disponible en el catálogo — la deriva CatalogView del set cargado y
+    la publica acá para que el rail muestre el filtro de Tienda sin pedir un
+    endpoint extra (Brandon 2026-06-12). */
+export interface CatalogStoreOption {
+  slug: string;
+  name: string;
+}
+
 interface CatalogFilterValue {
   category: string;
   setCategory: (c: string) => void;
@@ -22,6 +30,15 @@ interface CatalogFilterValue {
       filtro de vertical. En la HOME lo setea CatalogUrlSync desde `?v=`. */
   vertical: string;
   setVertical: (v: string) => void;
+  /** Bucket de precio activo (key de PRICE_BUCKETS). "" = todos. */
+  priceKey: string;
+  setPriceKey: (k: string) => void;
+  /** Slug de tienda activa. "" = todas. */
+  storeSlug: string;
+  setStoreSlug: (s: string) => void;
+  /** Tiendas presentes en el catálogo (las publica CatalogView). */
+  stores: CatalogStoreOption[];
+  setStores: (s: CatalogStoreOption[]) => void;
 }
 
 const CatalogFilterContext = createContext<CatalogFilterValue | null>(null);
@@ -30,8 +47,26 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
   const [category, setCategory] = useState("todos");
   const [sort, setSort] = useState<CatalogSort>("popular");
   const [vertical, setVertical] = useState("");
+  const [priceKey, setPriceKey] = useState("");
+  const [storeSlug, setStoreSlug] = useState("");
+  const [stores, setStores] = useState<CatalogStoreOption[]>([]);
   return (
-    <CatalogFilterContext.Provider value={{ category, setCategory, sort, setSort, vertical, setVertical }}>
+    <CatalogFilterContext.Provider
+      value={{
+        category,
+        setCategory,
+        sort,
+        setSort,
+        vertical,
+        setVertical,
+        priceKey,
+        setPriceKey,
+        storeSlug,
+        setStoreSlug,
+        stores,
+        setStores,
+      }}
+    >
       {children}
     </CatalogFilterContext.Provider>
   );

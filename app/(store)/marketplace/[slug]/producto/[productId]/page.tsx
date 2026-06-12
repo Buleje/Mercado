@@ -18,6 +18,9 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { Metadata } from "next";
 import { ProductDetailClient } from "@/components/marketplace/product-detail/ProductDetailClient";
 import BackToStoreButton from "@/components/marketplace/product-detail/BackToStoreButton";
+// Brandon 2026-06-12: los comentarios del producto se mudaron del modal de
+// agregar (que quedó liviano) a la página de detalle — su lugar natural.
+import ProductCommentsSection from "@/components/marketplace/ProductCommentsSection";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import type { RelatedProduct } from "@/components/marketplace/product-detail/ProductRelated";
 // generateStaticParams (build-time) usa la DB class directamente — no es prisma
@@ -426,6 +429,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
         relatedProducts={relatedProducts}
         storeProductId={product.storeProductId}
       />
+
+      {/* Comentarios del producto (estilo IG) — mudados desde el modal de
+          agregar. Acá tienen aire y no estorban el checkout rápido. */}
+      <section
+        aria-label="Comentarios del producto"
+        className="mx-auto max-w-[1600px] px-4 pb-14 pt-2 sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto max-w-2xl">
+          <ProductCommentsSection open productId={product.id} storeSlug={slug} />
+        </div>
+      </section>
     </>
   );
 }

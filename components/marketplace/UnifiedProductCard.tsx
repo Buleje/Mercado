@@ -21,6 +21,9 @@ import {
   Plus,
   Heart,
   MessageCircle,
+  // Brandon 2026-06-12: agotados ya no muestran un carrito muerto — muestran
+  // "Avísame" (campana) que abre WhatsApp a Buleje para avisar al reponer.
+  BellRing,
   Timer,
   // Audit P0 UX #2 (2026-05-18): Lucide icons reemplazan los emoji unicode
   // del fallback — los emoji no rinden consistente en todos los browsers
@@ -108,6 +111,7 @@ function ProductImageFallback({ name, category }: { name?: string | null; catego
   );
 }
 import { cn } from "@/lib/utils";
+import { BRAND_GEO } from "@/lib/geo";
 import { celebrate } from "@/lib/celebrate";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
@@ -272,6 +276,20 @@ export default function UnifiedProductCard({
   const { onMouseEnter, onMouseLeave } = useHoverPrefetch(productHref);
 
   const isOutOfStock = product.stock === 0;
+
+  // Brandon 2026-06-12: "Avísame cuando llegue" para agotados. Sin DB: abre
+  // WhatsApp al número central de Buleje con el producto + tienda prellenados.
+  // Captura demanda perdida (quién quería qué) y le da salida al cliente en
+  // vez de un carrito muerto. Upgrade futuro: waitlist persistida.
+  const notifyWaHref = useMemo(() => {
+    const digits = BRAND_GEO.phone.replace(/[^0-9]/g, "");
+    const text = encodeURIComponent(
+      `Hola Buleje 👋 Avísenme cuando vuelva a haber ${product.name}` +
+        (product.storeName ? ` de ${product.storeName}` : "") +
+        ", por favor.",
+    );
+    return `https://wa.me/${digits}?text=${text}`;
+  }, [product.name, product.storeName]);
   const inCompare = isInCompare(product.id);
 
   const handleCompare = useCallback(() => {
@@ -792,20 +810,26 @@ export default function UnifiedProductCard({
                   <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
                 </button>
               </div>
+            ) : isOutOfStock ? (
+              /* Agotado → "Avísame cuando llegue" (WhatsApp). Reemplaza el
+                 carrito muerto: le da salida al cliente y nos junta la demanda. */
+              <a
+                href={notifyWaHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Avísame cuando llegue ${product.name}`}
+                className="inline-flex h-12 items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3.5 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] transition-all duration-200 hover:bg-[var(--accent)] hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              >
+                <BellRing className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                <span className="whitespace-nowrap">Avísame</span>
+              </a>
             ) : (
               <button
                 type="button"
                 onClick={handleAdd}
-                disabled={isOutOfStock}
-                aria-label={
-                  isOutOfStock ? `${product.name} — agotado` : `Agregar ${product.name} al carrito`
-                }
-                className={cn(
-                  "inline-flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-                  isOutOfStock
-                    ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                    : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:scale-105",
-                )}
+                aria-label={`Agregar ${product.name} al carrito`}
+                className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[var(--text-primary)] transition-all duration-200 hover:bg-[var(--surface-sunken)] hover:scale-105 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
                 <ShoppingCart className="h-6 w-6" strokeWidth={2} aria-hidden />
               </button>

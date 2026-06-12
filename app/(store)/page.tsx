@@ -521,7 +521,12 @@ async function RappiStyleHero() {
             dentro del propio H1 (Google pesa mucho el H1 de la home). Brandon
             2026-06-11: en celular/tablet queda COMPACTO (1.375rem) para no robar
             el fold — pero sigue presente como H1 (SEO intacto). */}
-        <h1 className="sr-only lg:not-sr-only lg:text-[clamp(1.875rem,5vw,3rem)] lg:font-extrabold lg:leading-[1.06] lg:tracking-[-0.03em] lg:text-[var(--text-primary)] lg:max-w-3xl lg:mx-auto">
+        {/* Brandon 2026-06-12: el H1 volvió a aparecer en DESKTOP. El truco
+            `sr-only lg:not-sr-only` NO revertía el clip en Tailwind v4 (la
+            responsive no ganaba sobre sr-only por orden de fuente → quedaba
+            invisible en lg+). Ahora el sr-only se scopea SOLO a mobile
+            (`max-lg:sr-only`) y desktop usa estilos visibles normales. */}
+        <h1 className="max-lg:sr-only text-[clamp(1.875rem,5vw,3rem)] font-extrabold leading-[1.06] tracking-[-0.03em] text-[var(--text-primary)] max-w-3xl mx-auto">
           ¿Qué se te <span className="lg:text-[var(--accent)]">antoja hoy</span> en{" "}
           {BRAND_GEO.city}?
         </h1>

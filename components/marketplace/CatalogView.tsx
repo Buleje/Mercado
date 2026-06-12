@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import SponsoredBadge from "@/components/marketplace/SponsoredBadge";
 import { useCatalogFilter } from "@/components/marketplace/catalog-filter-context";
+import { PRICE_BUCKETS } from "@/components/marketplace/catalog-options";
 // Grid del catálogo: 1 COLUMNA en mobile (card horizontal full-width estilo
 // PedidosYa — imagen 176px + nombre/precio/CTA visibles, nada cortado), grid
 // vertical multi-columna desde sm. No reusa MARKETPLACE_GRID (que arranca en
@@ -101,6 +102,10 @@ export default function CatalogView({
   const productCategory = filterCtx?.category ?? localCategory;
   // Vertical (tipo de tienda): viene del contexto en la HOME. "" = sin filtro.
   const vertical = filterCtx?.vertical ?? "";
+  // Precio (bucket) + Tienda: vienen del contexto (rail izquierdo). En modo
+  // standalone (sin provider) no hay UI para estos, así que caen a "" (sin filtro).
+  const priceKey = filterCtx?.priceKey ?? "";
+  const storeFilter = filterCtx?.storeSlug ?? "";
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [hasMore, setHasMore] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -126,6 +131,11 @@ export default function CatalogView({
         if (zone) params.set("zone", zone);
         if (productCategory !== "todos") params.set("category", productCategory);
         if (vertical) params.set("vertical", vertical);
+        if (storeFilter) params.set("storeSlug", storeFilter);
+        // Precio: el bucket activo aporta minPrice/maxPrice (el API ya los soporta).
+        const bucket = PRICE_BUCKETS.find((b) => b.key === priceKey);
+        if (bucket?.min != null) params.set("minPrice", String(bucket.min));
+        if (bucket?.max != null) params.set("maxPrice", String(bucket.max));
         params.set("sort", sort);
         params.set("limit", "40");
         if (cursor) params.set("cursor", cursor);
@@ -143,7 +153,24 @@ export default function CatalogView({
             return [...prev, ...incoming];
           });
         } else {
-          setProducts(json.data ?? []);
+          const data: CatalogProduct[] = json.data ?? [];
+          setProducts(data);
+          // Publicar las tiendas presentes para el filtro del rail. Solo cuando
+          // NO hay filtro de tienda activo (si no, la lista colapsaría a 1).
+          // El round-robin del API asegura que la 1ª página cubra todas.
+          if (filterCtx && !storeFilter) {
+            const map = new Map<string, string>();
+            for (const p of data) {
+              if (p.storeSlug && !map.has(p.storeSlug)) {
+                map.set(p.storeSlug, p.storeName ?? p.storeSlug);
+              }
+            }
+            filterCtx.setStores(
+              Array.from(map, ([slug, name]) => ({ slug, name })).sort((a, b) =>
+                a.name.localeCompare(b.name, "es"),
+              ),
+            );
+          }
         }
         setNextCursor(json.nextCursor);
         setHasMore(json.hasMore ?? false);
@@ -153,7 +180,10 @@ export default function CatalogView({
       setLoading(false);
       setLoadingMore(false);
     },
-    [searchQuery, zone, sort, productCategory, vertical]
+    // filterCtx fuera de deps a propósito: su identidad cambia cada render
+    // (provider) y setStores es estable → incluirlo dispararía refetch en loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchQuery, zone, sort, productCategory, vertical, priceKey, storeFilter]
   );
 
   // Initial fetch + refetch on filter changes
@@ -199,6 +229,22 @@ export default function CatalogView({
     return counts;
   }, [products, productCategory]);
 
+  // Brandon 2026-06-12: agotados AL FONDO. Partición estable — disponibles
+  // primero (en el orden que mandó el server), agotados después. Mantiene el
+  // top del catálogo vivo en vez de intercalar "Sin foto + AGOTADO". Es
+  // client-side sobre lo ya cargado (el server sigue mandando su orden/cursor).
+  const displayProducts = useMemo(() => {
+    const inStock: CatalogProduct[] = [];
+    const out: CatalogProduct[] = [];
+    for (const p of products) ((p.stock ?? 0) > 0 ? inStock : out).push(p);
+    return [...inStock, ...out];
+  }, [products]);
+
+  const availableCount = useMemo(
+    () => products.reduce((n, p) => n + ((p.stock ?? 0) > 0 ? 1 : 0), 0),
+    [products],
+  );
+
   return (
     <div className="space-y-4">
       {/* Categorías y orden viven en el rail IZQUIERDO (layout 3-col). Acá
@@ -208,8 +254,8 @@ export default function CatalogView({
       {!loading && (
         <div className="flex items-center justify-between">
           <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
-            <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{products.length}</strong>{" "}
-            productos disponibles
+            <strong className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{availableCount}</strong>{" "}
+            {availableCount === 1 ? "producto disponible" : "productos disponibles"}
           </p>
         </div>
       )}
@@ -253,7 +299,7 @@ export default function CatalogView({
           ref={gridRef}
           className={CATALOG_GRID}
         >
-          {products.map((product, i) => (
+          {displayProducts.map((product, i) => (
             <div key={product.storeProductId} className="relative">
               {product.isSponsored && (
                 <div className="absolute top-2 left-2 z-20 pointer-events-none">
@@ -268,7 +314,12 @@ export default function CatalogView({
                    en vez del horizontal. Muestra la descripción que ahora llega. */
                 layout="compact"
                 index={i}
-                href={`/marketplace/${product.storeSlug}`}
+                /* Brandon 2026-06-12: click en el producto → DETALLE del
+                   producto, no a la tienda. id del card = productId, así que
+                   armamos /marketplace/[slug]/producto/[productId] (mismo
+                   patrón que StoreCatalog). El nombre de la tienda dentro del
+                   card sigue llevando a la tienda. */
+                href={`/marketplace/${product.storeSlug}/producto/${product.productId}`}
               />
             </div>
           ))}

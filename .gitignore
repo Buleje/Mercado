@@ -218,3 +218,10 @@ docs/security/vercel-env-backups/
 /.claude/*.bak
 /.claude/skills/**/*.bak
 /.claude/hooks/**/*.bak
+
+# Backups de .next que dejan los nukes/restarts de dev (no son fuente).
+/.next.old*
+/.next.*-bak
+/.next.bak*
+# .claude anidados dentro de app/ no son del plugin root (cruft de agentes).
+app/**/.claude/
