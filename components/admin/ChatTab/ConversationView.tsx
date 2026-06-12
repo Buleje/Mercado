@@ -23,16 +23,17 @@ const REACTION_EMOJIS = ["❤️", "👍", "😂", "🔥", "🙏", "😮"];
 
 interface MetaReaction { emoji: string; by: string }
 interface MetaReply { id: string; body: string; senderType: string; senderName: string }
-function parseMeta(raw: string | null): { reactions: MetaReaction[]; replyTo: MetaReply | null } {
-  if (!raw) return { reactions: [], replyTo: null };
+function parseMeta(raw: string | null): { reactions: MetaReaction[]; replyTo: MetaReply | null; autoReply: boolean } {
+  if (!raw) return { reactions: [], replyTo: null, autoReply: false };
   try {
-    const m = JSON.parse(raw) as { reactions?: MetaReaction[]; replyTo?: MetaReply };
+    const m = JSON.parse(raw) as { reactions?: MetaReaction[]; replyTo?: MetaReply; autoReply?: boolean };
     return {
       reactions: Array.isArray(m.reactions) ? m.reactions : [],
       replyTo: m.replyTo ?? null,
+      autoReply: m.autoReply === true,
     };
   } catch {
-    return { reactions: [], replyTo: null };
+    return { reactions: [], replyTo: null, autoReply: false };
   }
 }
 
@@ -173,6 +174,15 @@ function MessageBubble({
               <div className={cn("truncate text-[length:var(--ts-xs)]", isSeller ? "text-white/80" : "text-slate-600 dark:text-slate-300")}>
                 {meta.replyTo.body}
               </div>
+            </div>
+          )}
+          {/* Bot AI-first (Tanda 3) — marca las respuestas que mandó el asistente */}
+          {meta.autoReply && (
+            <div className={cn(
+              "mb-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
+              isSeller ? "bg-white/20 text-white" : "bg-primary/10 text-primary",
+            )}>
+              <Bot className="h-3 w-3" aria-hidden /> Asistente automático
             </div>
           )}
           {!isSeller && (

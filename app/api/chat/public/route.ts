@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { ChatPublicDB } from "@/lib/db/chat-public.db";
 import { ChatThreadsDB, ChatMessagesDB } from "@/lib/db/chat.db";
@@ -295,6 +295,18 @@ async function handleSend(body: unknown) {
         createdAt: message.createdAt,
       });
     } catch { /* fire-and-forget */ }
+
+    // Tanda 3: Bot AI-first — si el vendedor está offline y el tenant lo activó,
+    // el asistente responde primero. Corre POST-respuesta (after) para no
+    // demorar el envío del cliente; es opt-in + best-effort.
+    after(async () => {
+      const { maybeAutoReply } = await import("@/lib/chat/auto-reply");
+      await maybeAutoReply({
+        tenantId:  store.tenantId,
+        threadId:  parsed.data.threadId,
+        storeName: store.name,
+      });
+    });
 
     return NextResponse.json(
       {

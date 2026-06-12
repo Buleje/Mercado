@@ -18,7 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy,
+  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -53,17 +53,18 @@ const COMPOSER_EMOJIS = [
   "🙌", "🛵", "💰", "✅", "📦", "🍗", "🍕", "🥤",
 ];
 
-/** Parsea metadataJson de un mensaje a reactions + replyTo. */
-function parseMeta(raw: string | null): { reactions: MsgReaction[]; replyTo: MsgReply | null } {
-  if (!raw) return { reactions: [], replyTo: null };
+/** Parsea metadataJson de un mensaje a reactions + replyTo + autoReply. */
+function parseMeta(raw: string | null): { reactions: MsgReaction[]; replyTo: MsgReply | null; autoReply: boolean } {
+  if (!raw) return { reactions: [], replyTo: null, autoReply: false };
   try {
-    const m = JSON.parse(raw) as { reactions?: MsgReaction[]; replyTo?: MsgReply };
+    const m = JSON.parse(raw) as { reactions?: MsgReaction[]; replyTo?: MsgReply; autoReply?: boolean };
     return {
       reactions: Array.isArray(m.reactions) ? m.reactions : [],
       replyTo: m.replyTo ?? null,
+      autoReply: m.autoReply === true,
     };
   } catch {
-    return { reactions: [], replyTo: null };
+    return { reactions: [], replyTo: null, autoReply: false };
   }
 }
 
@@ -726,6 +727,12 @@ export default function ChatConversationView({
                           </div>
                         )}
                         <div className="px-3 py-2">
+                          {/* Bot AI-first (Tanda 3) — honestidad: el cliente sabe que es automático */}
+                          {meta.autoReply && !mine && (
+                            <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-[var(--accent)]">
+                              <Bot className="h-3 w-3" aria-hidden /> Asistente
+                            </span>
+                          )}
                           {!chatOrder && !chatPayment && (
                             <p className="whitespace-pre-wrap break-words text-sm font-medium leading-snug">
                               {m.body}

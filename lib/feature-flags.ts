@@ -32,6 +32,7 @@ export type FeatureFlag =
   | "marketplace-chat-public"      // Endpoints públicos del buyer /api/chat/public
   | "marketplace-chat-whatsapp"    // Worker BullMQ que dispara WhatsApp en eventos del chat
   | "marketplace-chat-realtime"    // Supabase Realtime para live updates (Fase 3)
+  | "marketplace-chat-autobot"     // Tanda 3: el asistente IA responde primero cuando el vendedor está offline
   | "marketplace-reviews"          // Bloque D3: UI admin de reviews + moderación
   | "marketplace-reviews-public"   // Endpoint público /api/marketplace/reviews (create + vote)
   | "marketplace-reviews-widget";  // Widget de reviews en el storefront
@@ -66,6 +67,11 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   "marketplace-chat-public": true,
   "marketplace-chat-whatsapp": false,
   "marketplace-chat-realtime": false,
+  // Tanda 3 (Brandon 2026-06-11): asistente IA que responde primero cuando el
+  // vendedor está offline. OFF por defecto (opt-in) — manda IA a clientes
+  // reales, así que cada tienda lo prende a conciencia. Requiere API key de IA;
+  // sin key, no hace nada. Sólo dispara si el vendedor NO está en línea.
+  "marketplace-chat-autobot": false,
   // Bloque D3 — Reviews verificadas. Todos arrancan OFF.
   // marketplace-reviews: tab admin de moderación
   // marketplace-reviews-public: endpoints públicos (create + vote)
