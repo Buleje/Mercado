@@ -1,9 +1,12 @@
 "use client";
 
 import { PageTitle } from "@buleje/design-system";
-import { useMemo, useState } from "react";
-import { MessageCircle, AlertCircle, XCircle } from "@buleje/design-system/icons";
+import { useEffect, useMemo, useState } from "react";
+import { MessageCircle, AlertCircle, XCircle, ReceiptText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
+import { fmtSoles } from "@/lib/chat/shared-product";
+import { orderStatusMeta, type ChatOrderContext } from "@/lib/chat/order-context";
 import { ThreadsList } from "./ThreadsList";
 import { ConversationView } from "./ConversationView";
 import { MessageComposer } from "./MessageComposer";
@@ -36,6 +39,19 @@ export default function ChatTab() {
   // Tanda 3: nombre de la tienda para la variable {tienda} de plantillas.
   const settings = useSettingsSafe();
   const storeName = settings?.businessName || undefined;
+  // Tanda 4: contexto del pedido fijado (se carga al abrir el hilo, no en poll).
+  const [orderContext, setOrderContext] = useState<ChatOrderContext | null>(null);
+
+  useEffect(() => {
+    if (!selectedThreadId) { setOrderContext(null); return; }
+    let cancelled = false;
+    setOrderContext(null);
+    tenantFetch(`/api/admin/chat/threads/${encodeURIComponent(selectedThreadId)}/order`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!cancelled) setOrderContext((j?.data as ChatOrderContext | null) ?? null); })
+      .catch(() => { /* contexto del pedido es best-effort: si falla, no se fija */ });
+    return () => { cancelled = true; };
+  }, [selectedThreadId]);
 
   const {
     threads,
@@ -187,6 +203,33 @@ export default function ChatTab() {
                   Cerrar
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Tanda 4: contexto del pedido fijado arriba de la conversación */}
+          {selectedThread && orderContext && (
+            <div className="border-b border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <ReceiptText className="h-3.5 w-3.5 text-primary" aria-hidden />
+                  Pedido #{orderContext.shortCode}
+                </span>
+                <span className={cn(
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold",
+                  orderStatusMeta(orderContext.status).chip,
+                )}>
+                  {orderStatusMeta(orderContext.status).label}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="truncate text-[length:var(--ts-xs)] text-slate-500 dark:text-slate-400">
+                  {orderContext.items.map((it) => `${it.quantity}× ${it.name}`).join(" · ")}
+                  {orderContext.itemCount > orderContext.items.reduce((a, i) => a + i.quantity, 0) && " …"}
+                </span>
+                <span className="shrink-0 text-sm font-black tabular-nums text-primary">
+                  {fmtSoles(orderContext.total)}
+                </span>
+              </div>
             </div>
           )}
 

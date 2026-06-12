@@ -27,6 +27,8 @@ export type ThreadOwnershipRow = {
   customerPhone: string;
   storeId: string;
   status: string;
+  /** Tanda 4: pedido del que nació el hilo (para fijar su contexto). */
+  orderId: string | null;
 };
 
 export const ChatPublicDB = {
@@ -51,7 +53,7 @@ export const ChatPublicDB = {
     tenantId: string,
   ): Promise<ThreadOwnershipRow | null> {
     const rows = await prisma.$queryRawUnsafe<ThreadOwnershipRow[]>(
-      `SELECT "customerPhone","storeId","status"
+      `SELECT "customerPhone","storeId","status","orderId"
          FROM "ConversationThread"
         WHERE "id" = $1 AND "tenantId" = $2 LIMIT 1`,
       threadId,

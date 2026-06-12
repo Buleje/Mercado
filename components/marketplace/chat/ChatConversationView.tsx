@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder, type ChatPayment } from "@/lib/chat/shared-product";
+import { parseOrderContext, orderStatusMeta, type ChatOrderContext } from "@/lib/chat/order-context";
 
 const POLL_MS = 5_000;
 
@@ -139,6 +140,8 @@ export default function ChatConversationView({
   const [emojiOpen, setEmojiOpen] = useState(false);
   // Increment 2: presencia de la tienda (en línea / escribiendo / visto).
   const [presence, setPresence] = useState<ChatPresence | null>(null);
+  // Tanda 4: contexto del pedido fijado arriba (si el hilo nació de un pedido).
+  const [orderContext, setOrderContext] = useState<ChatOrderContext | null>(null);
   const lastTypingPingRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
@@ -181,9 +184,10 @@ export default function ChatConversationView({
       // Hilo inaccesible (borrado / ownership / sesión) → cortar polling.
       if (res.status === 404 || res.status === 403) { setUnavailable(true); return; }
       if (!res.ok) return;
-      const j = (await res.json()) as { data: ThreadMsg[]; presence?: ChatPresence };
+      const j = (await res.json()) as { data: ThreadMsg[]; presence?: ChatPresence; orderContext?: unknown };
       setMessages(j.data ?? []);
       setPresence(j.presence ?? null);
+      setOrderContext(parseOrderContext(j.orderContext));
     } catch {
       /* polling no crítico */
     }
@@ -416,6 +420,33 @@ export default function ChatConversationView({
           </Link>
         )}
       </div>
+
+      {/* Contexto del pedido fijado (Tanda 4) — de qué pedido hablamos */}
+      {orderContext && (
+        <div className="shrink-0 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--text-secondary)]">
+              <ReceiptText className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden />
+              Pedido #{orderContext.shortCode}
+            </span>
+            <span className={cn(
+              "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold",
+              orderStatusMeta(orderContext.status).chip,
+            )}>
+              {orderStatusMeta(orderContext.status).label}
+            </span>
+          </div>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <span className="truncate text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+              {orderContext.items.map((it) => `${it.quantity}× ${it.name}`).join(" · ")}
+              {orderContext.itemCount > orderContext.items.reduce((a, i) => a + i.quantity, 0) && " …"}
+            </span>
+            <span className="shrink-0 text-sm font-black tabular-nums text-[var(--accent)]">
+              {fmtSoles(orderContext.total)}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Mensajes */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto bg-[var(--surface-canvas)] px-3 py-3">

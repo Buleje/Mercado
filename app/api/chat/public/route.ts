@@ -486,8 +486,22 @@ export async function GET(req: NextRequest) {
     markPresence(parsed.data.threadId, "buyer");
     const presence = readPresence(parsed.data.threadId, "seller");
 
+    // Tanda 4: contexto del pedido fijado — si el hilo nació de un pedido, el
+    // cliente ve su estado + items + total arriba (best-effort, no rompe el GET).
+    let orderContext = null;
+    if (threadCheck.orderId) {
+      try {
+        const { OrdersDB } = await import("@/lib/db/orders.db");
+        const { buildOrderContext } = await import("@/lib/chat/order-context");
+        const order = await OrdersDB.getById(store.tenantId, threadCheck.orderId);
+        if (order) orderContext = buildOrderContext(order);
+      } catch (err) {
+        logger.warn("[chat/public] orderContext failed", { err: String(err) });
+      }
+    }
+
     return NextResponse.json(
-      { data: safeMessages, presence },
+      { data: safeMessages, presence, orderContext },
       {
         headers: {
           "X-Total-Count": String(safeMessages.length),

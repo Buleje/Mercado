@@ -466,6 +466,18 @@ export const ChatThreadsDB = {
     logger.info("[ChatThreads] labels set", { tenantId, threadId, count: clean.length });
     return clean;
   },
+
+  /** Tanda 4: orderId del hilo (para fijar el contexto del pedido). null si el
+      hilo no nació de un pedido o no existe. */
+  async getOrderId(tenantId: string, threadId: string): Promise<string | null> {
+    const rows = await prisma.$queryRawUnsafe<Array<{ orderId: string | null }>>(
+      `SELECT "orderId" FROM "ConversationThread"
+        WHERE "id" = $1 AND "tenantId" = $2 LIMIT 1`,
+      threadId,
+      tenantId,
+    );
+    return rows[0]?.orderId ?? null;
+  },
 };
 
 // ─── ChatMessagesDB ───────────────────────────────────────────────────────────
