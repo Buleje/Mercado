@@ -279,13 +279,14 @@ export default function NotificationsMenu({ className }: NotificationsMenuProps)
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "relative inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors",
+          // Brandon 2026-06-12: más grande (h-12) + fondo de reposo para resaltar.
+          "relative inline-flex h-12 w-12 items-center justify-center rounded-full transition-colors",
           open
             ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
-            : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+            : "bg-[var(--surface-sunken)]/70 text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
         )}
       >
-        <Bell className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+        <Bell className="h-6 w-6 shrink-0" strokeWidth={2} aria-hidden="true" />
         {unreadCount > 0 && (
           <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-xs)] font-black text-white shadow-md ring-2 ring-[var(--surface-canvas)]">
             {unreadCount > 9 ? "9+" : unreadCount}

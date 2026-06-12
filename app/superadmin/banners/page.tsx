@@ -194,10 +194,11 @@ const SLOT_GROUPS: SlotGroup[] = [
     slots: [
       {
         id: "tiendas-hero",
-        label: "Hero de Tiendas",
-        position: "Bajo el buscador en /tiendas",
-        pageHref: "/tiendas",
-        description: "Banner rotativo cuando el usuario está explorando tiendas (sin búsqueda activa).",
+        label: "Hero de Inicio + Tiendas",
+        position: "Banner principal del Inicio (/) y de /tiendas",
+        pageHref: "/",
+        description:
+          "Banner rotativo FULL-WIDTH del Inicio (es el hero principal de la home) y también de /tiendas. Subí imágenes 1600×400 para que se vean profesionales. Rota cada 6s.",
         aspect: "wide",
         recommended: 4,
       },

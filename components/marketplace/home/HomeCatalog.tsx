@@ -5,9 +5,10 @@
  * MISMO layout (Brandon 2026-06-08, fusión /marketplace → /):
  *   · CENTRO: grid de catálogo (MarketplaceCatalogViewSection = CatalogSections +
  *     CatalogView, 5-col + scroll infinito + quick-add).
- *   · DERECHA (sticky, xl+): PUBLICIDAD (MarketplaceRightRail) — los banners.
- *   · IZQUIERDA: el rail de navegación lo aporta el shell del layout
- *     (MarketplaceSideRailShell), ya habilitado para `/`.
+ *   · IZQUIERDA (sticky, lg+): filtros del catálogo (MarketplaceLeftRail).
+ *
+ * Brandon 2026-06-12: la columna DERECHA de "Publicidad" se ELIMINÓ — esos
+ * banners ahora son el HERO de la home (HomeHeroBanner). Layout a 2 columnas.
  *
  * Providers auto-contenidos: CatalogFilterProvider (filtro categoría/sort) +
  * FlyToCartProvider (animación "volar al carrito"). El carrito lo da StoreProviders.
@@ -26,9 +27,6 @@ import { isValidVertical } from "@/lib/marketplace/verticals";
 
 const MarketplaceCatalogViewSection = dynamic(
   () => import("@/components/marketplace/MarketplaceCatalogViewSection"),
-);
-const MarketplaceRightRail = dynamic(
-  () => import("@/components/marketplace/MarketplaceRightRail"),
 );
 // Brandon 2026-06-12: rail IZQUIERDO de filtros (Categorías · Precio · Tienda ·
 // Ordenar) montado en la home. Existía pero quedó huérfano tras la fusión
@@ -82,7 +80,11 @@ export default function HomeCatalog() {
         <Suspense fallback={null}>
           <CatalogUrlSync />
         </Suspense>
-        <div className="grid w-full grid-cols-1 items-start gap-5 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[230px_minmax(0,1fr)_300px] xl:gap-10">
+        {/* Brandon 2026-06-12: la columna DERECHA de "Publicidad" se eliminó —
+            esos banners ahora son el HERO de la home (HomeHeroBanner). El
+            catálogo queda a 2 columnas (filtros + grid) y el grid ocupa todo el
+            ancho libre. */}
+        <div className="grid w-full grid-cols-1 items-start gap-5 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8">
           {/* ── IZQUIERDA: filtros del catálogo (sticky, solo lg+). En mobile
                los filtros los aportan los chips + tabs de orden. ── */}
           <aside
@@ -92,19 +94,10 @@ export default function HomeCatalog() {
             <MarketplaceLeftRail />
           </aside>
 
-          {/* ── CENTRO: grid de catálogo ── */}
+          {/* ── CENTRO: grid de catálogo (full ancho libre) ── */}
           <div className="min-w-0">
             <MarketplaceCatalogViewSection />
           </div>
-
-          {/* ── DERECHA: publicidad (banners) — sticky, solo xl+. Se auto-oculta
-               si no hay banners cargados. ── */}
-          <aside
-            aria-label="Publicidad"
-            className="hidden xl:block xl:sticky xl:top-28 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            <MarketplaceRightRail zone={null} />
-          </aside>
         </div>
       </CatalogFilterProvider>
     </FlyToCartProvider>

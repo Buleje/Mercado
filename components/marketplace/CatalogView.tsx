@@ -25,7 +25,7 @@ import { PRICE_BUCKETS } from "@/components/marketplace/catalog-options";
 // legibilidad (las 5-6 cols originales eran diminutas).
 // Brandon 2026-06-07: cards más compactas → hasta 5 por fila en desktop ancho.
 const CATALOG_GRID =
-  "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3";
+  "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 

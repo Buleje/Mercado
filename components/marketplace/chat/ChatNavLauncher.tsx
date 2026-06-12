@@ -367,10 +367,11 @@ export default function ChatNavLauncher({
           // (tablet) donde no hay bottom-nav y aún no entra el launcher desktop.
           variant === "bare"
             ? "h-9 w-9 hover:bg-[var(--surface-sunken)] active:scale-95 max-sm:hidden"
-            : "h-11 w-11 hover:bg-[var(--surface-sunken)]",
+            // Brandon 2026-06-12: desktop más grande (h-12) + fondo de reposo.
+            : "h-12 w-12 bg-[var(--surface-sunken)]/70 hover:bg-[var(--surface-sunken)]",
         )}
       >
-        <ChatGlyph className={variant === "bare" ? "h-5.5 w-5.5" : "h-6 w-6"} />
+        <ChatGlyph className={variant === "bare" ? "h-5.5 w-5.5" : "h-7 w-7"} />
         {unreadTotal > 0 && (
           <span
             className={cn(

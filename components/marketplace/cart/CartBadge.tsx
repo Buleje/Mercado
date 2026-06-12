@@ -74,15 +74,17 @@ export function CartBadge({
         whileTap={{ scale: 0.94 }}
         aria-label={`Carrito — ${itemCount} ${itemCount === 1 ? "producto" : "productos"}`}
         className={cn(
-          "relative inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
+          // Brandon 2026-06-12: más grande (h-12) + fondo de reposo para que
+          // resalte en el nav (antes transparente, se perdía).
+          "relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-sunken)]/70 text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]",
           pulse && "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]",
         )}
       >
         {/* Icono — limpio, sin badge encima */}
         <span className="relative inline-flex items-center justify-center">
           <ShoppingCart
-            className="h-5 w-5 shrink-0"
-            strokeWidth={1.75}
+            className="h-6 w-6 shrink-0"
+            strokeWidth={2}
             aria-hidden="true"
           />
           {/* Doble ring expansivo — primero rapido, segundo lento, mas notorio */}

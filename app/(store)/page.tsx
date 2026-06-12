@@ -35,9 +35,13 @@ const HomeCatalog = dynamic(
 const HomeNewArrivals = dynamic(
   () => import("@/components/marketplace/home/HomeNewArrivals"),
 );
+// Hero rotativo full-width estilo marketplace pro (Brandon 2026-06-12): reemplaza
+// el viejo hero "Pedí en {ciudad}" + buscador por un banner deslizable (swipe).
+const HomeHeroBanner = dynamic(
+  () => import("@/components/marketplace/home/HomeHeroBanner"),
+);
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
-import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import CatalogSortTabs from "@/components/marketplace/home/CatalogSortTabs";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
@@ -170,11 +174,6 @@ async function getSuperadminCategories(): Promise<SuperadminCategory[]> {
 import { MarketplaceStatsDB, MarketplacePublicDB, type FeaturedStorePreview } from "@/lib/db/marketplace-public.db";
 import { BRAND_GEO } from "@/lib/geo";
 import { storeListItem } from "@/lib/seo-store-schema";
-
-async function getMarketplaceStats() {
-  const { storeCount, productCount } = await MarketplaceStatsDB.getPublicMarketplaceStats();
-  return { storeCount, productCount };
-}
 
 interface TopStore {
   id: string;
@@ -467,111 +466,24 @@ async function BulejeJsonLd() {
   );
 }
 
-// ── 1. Hero Premium — gradiente rico + textura amazónica + buscador protagonista
-// v3 2026-05-26: fondo visual con gradiente teal/verde + textura sutil (sin
-// imagen rota). Buscador visualmente más grande. Stats y CTAs mantenidos.
-async function RappiStyleHero() {
-  const { storeCount, productCount } = await getMarketplaceStats();
+// ── 1. Hero = banner rotativo full-width (Brandon 2026-06-12) ────────────────
+// Antes: hero "Pedí en {ciudad}" + buscador + stats. Ahora: un banner grande
+// estilo marketplace pro (AliExpress/Temu) que abarca todo el ancho y se
+// desliza (swipe). El buscador vive en el header (chrome), por eso acá no va.
+// SEO INTACTO: el <h1> con keyword geo sigue presente (sr-only) — Google lo
+// indexa igual; los metadatos y el JSON-LD viven aparte (generateMetadata +
+// BulejeJsonLd) y no se tocan. Los banners salen del slot `tiendas-hero`
+// (los MISMOS que antes vivían en la columna "Publicidad" del catálogo).
+function HomeHero() {
   return (
-    <section
-      aria-label="Inicio"
-      className="relative overflow-hidden"
-      style={{
-        // Hero CLARO y limpio (Brandon 2026-05-26): fondo crema-blanco con
-        // un velo teal muy sutil arriba para dar vida sin oscurecer. Texto
-        // oscuro, acentos teal + naranja de marca. Estilo marketplace moderno.
-        background:
-          "linear-gradient(180deg, rgba(0, 160, 160,0.07) 0%, rgba(0, 160, 160,0.02) 35%, var(--surface-canvas) 100%)",
-      }}
-    >
-      {/* Brandon 2026-06-08 (de-neon): textura de puntos + orbs teal REMOVIDOS
-          — el hero queda limpio (solo un velo de fondo muy suave). */}
-
-      {/* Borde inferior sutil para separación de sección */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-[var(--rule-soft)]"
-      />
-
-      {/* Brandon 2026-06-11 (audit mobile P1): en celular el hero COLAPSA — el
-          buscador del header ya alcanza, así que acá no va nada visible. El H1
-          queda en sr-only (SEO) y el padding a 0 → el contenido (nav + productos)
-          arranca arriba de todo. Desktop (lg+) conserva el hero editorial. */}
-      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-0 lg:pt-12 lg:pb-8 text-center">
-        {/* Eyebrow badge — teal de marca sobre fondo claro. Brandon 2026-06-11:
-            SOLO desktop (lg+). En celular/tablet la home va directa al grano
-            (buscador + categorías), sin saludo decorativo. */}
-        <p className="hidden lg:inline-flex items-center gap-2 mb-3 sm:mb-4 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-          <span
-            aria-hidden
-            className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-[var(--accent)]/40"
-          />
-          <span aria-hidden className="relative inline-flex h-2 w-2">
-            <span className="hidden sm:absolute sm:inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 sm:animate-ping" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
-          </span>
-          Pedí online en {BRAND_GEO.city}
-          <span
-            aria-hidden
-            className="inline-block h-[2px] w-8 sm:w-10 rounded-full bg-[var(--accent)]/40"
-          />
-        </p>
-
-        {/* H1 híbrido: gancho emocional + keyword geo (la ciudad objetivo)
-            dentro del propio H1 (Google pesa mucho el H1 de la home). Brandon
-            2026-06-11: en celular/tablet queda COMPACTO (1.375rem) para no robar
-            el fold — pero sigue presente como H1 (SEO intacto). */}
-        {/* Brandon 2026-06-12: el H1 volvió a aparecer en DESKTOP. El truco
-            `sr-only lg:not-sr-only` NO revertía el clip en Tailwind v4 (la
-            responsive no ganaba sobre sr-only por orden de fuente → quedaba
-            invisible en lg+). Ahora el sr-only se scopea SOLO a mobile
-            (`max-lg:sr-only`) y desktop usa estilos visibles normales. */}
-        <h1 className="max-lg:sr-only text-[clamp(1.875rem,5vw,3rem)] font-extrabold leading-[1.06] tracking-[-0.03em] text-[var(--text-primary)] max-w-3xl mx-auto">
-          ¿Qué se te <span className="lg:text-[var(--accent)]">antoja hoy</span> en{" "}
-          {BRAND_GEO.city}?
-        </h1>
-
-        {/* Subtítulo editorial — SOLO desktop (lg+). Brandon 2026-06-11: en
-            celular/tablet el "marketplace #1 / saludo" se corta para ir directo
-            al buscador. El claim de marca vive en la vidriera (desktop). */}
-        <p className="hidden lg:block mt-3 sm:mt-4 max-w-2xl mx-auto text-base sm:text-lg text-[var(--text-secondary)] leading-snug sm:leading-[1.45]">
-          El marketplace #1 de {BRAND_GEO.city}, {BRAND_GEO.region}. Bodegas,
-          restaurantes y farmacias de tus vecinos en la Selva Central del Perú
-          — delivery rápido con Yape, Plin o efectivo.
-        </p>
-
-        {/* Stats reales + trust pill Yape — SOLO desktop (audit mobile #15: en
-            celular "4 tiendas · 150+ productos" suena chico y roba espacio). */}
-        {(storeCount > 0 || productCount > 0) && (
-          <div className="hidden lg:flex mt-4 items-center justify-center gap-3 sm:gap-5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] flex-wrap">
-            {storeCount > 0 && (
-              <span className="inline-flex items-center gap-1.5">
-                <span className="relative inline-flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                </span>
-                <span className="text-[var(--text-primary)]">{storeCount} tiendas activas</span>
-              </span>
-            )}
-            {/* "150+ productos" — solo desktop (Brandon 2026-06-11): en mobile/
-                tablet la línea de confianza se queda en "X tiendas activas · Yape". */}
-            {productCount > 0 && (
-              <span className="hidden lg:contents">
-                <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
-                <span className="text-[var(--text-primary)]">{productCount.toLocaleString("es-PE")}+ productos</span>
-              </span>
-            )}
-            <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20">
-              Yape · Plin · efectivo
-            </span>
-          </div>
-        )}
-
-        {/* CTAs — "Ver todas las tiendas" primario + "Ofertas del día" solo
-            fuera de modo tienda (client: lee el nav-mode del marketplace). */}
-        <HeroCtas />
-      </div>
+    <section aria-label="Inicio" className="relative">
+      {/* H1 de la home — invisible pero presente (SEO). Mantiene la keyword geo
+          que Google pondera fuerte en el H1 de la portada. */}
+      <h1 className="sr-only">
+        Pedí online en {BRAND_GEO.city}, {BRAND_GEO.region} — bodegas,
+        restaurantes y farmacias con delivery rápido (Yape, Plin o efectivo)
+      </h1>
+      <HomeHeroBanner />
     </section>
   );
 }
@@ -631,12 +543,18 @@ async function CategoriesGrid() {
 
   if (cats.length === 0) return null;
 
+  // Brandon 2026-06-12: con POCAS categorías el split featured-XL + grid-de-6
+  // dejaba huecos enormes. Si hay ≤4 rubros, una sola fila ADAPTATIVA donde las
+  // cards se reparten todo el ancho (auto-fit) y crecen para llenarlo. Con >4
+  // volvemos al layout featured + secundarias (que ya llena bien).
+  const fewCats = cats.length <= 4;
+
   return (
     <section
       aria-label="Categorías"
       className="bg-[var(--surface-canvas)] py-5 sm:py-7"
     >
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Categorías"
           title="Explora por categoría"
@@ -645,8 +563,53 @@ async function CategoriesGrid() {
           actionHref="/tiendas"
         />
 
+        {/* ── Pocas categorías → fila adaptativa que llena todo el ancho ── */}
+        {fewCats && (
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 sm:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
+            {cats.map((c, idx) => (
+              <Link
+                key={c.id}
+                href={hrefForCategory(c.id)}
+                className="group relative flex items-center gap-3 sm:gap-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-6 hover:border-[var(--accent)] transition-colors overflow-hidden min-h-[108px] sm:min-h-[132px]"
+              >
+                <span className="relative inline-flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-[var(--surface-sunken)] shrink-0 ring-1 ring-[var(--rule-soft)] overflow-hidden">
+                  {c.imageUrl ? (
+                    <Image
+                      src={c.imageUrl}
+                      alt={`${c.label} en ${BRAND_GEO.city} con delivery rápido`}
+                      fill
+                      sizes="(min-width: 640px) 80px, 64px"
+                      className="object-cover"
+                      priority={idx === 0}
+                    />
+                  ) : (() => {
+                    const CatIcon = CATEGORY_ICONS[c.id] ?? ShoppingBag;
+                    return (
+                      <CatIcon className="h-8 w-8 sm:h-10 sm:w-10 text-[var(--accent)]" strokeWidth={1.5} aria-hidden />
+                    );
+                  })()}
+                </span>
+                <div className="relative min-w-0 flex-1">
+                  <h3 className="text-lg sm:text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2">
+                    {c.label}
+                  </h3>
+                  {c.description && (
+                    <p className="mt-1 text-sm text-[var(--text-secondary)] leading-snug line-clamp-2">
+                      {c.description}
+                    </p>
+                  )}
+                  <span className="mt-2.5 inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
+                    Explorar
+                    <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
         {/* ── Featured XL: Restaurantes + Supermercado ────────────────── */}
-        {featured.length > 0 && (
+        {!fewCats && featured.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 mb-3 sm:mb-5">
             {featured.map((c, idx) => (
               <Link
@@ -703,7 +666,7 @@ async function CategoriesGrid() {
         )}
 
         {/* ── Secondary: categorías más chicas (3 cols mobile, 6 desktop) ── */}
-        {secondary.length > 0 && (
+        {!fewCats && secondary.length > 0 && (
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
             {secondary.map((c) => (
               <Link
@@ -1044,7 +1007,7 @@ async function TopStoresSection() {
         aria-label="Tiendas destacadas"
         className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-5 sm:py-7"
       >
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow="Tiendas destacadas"
             title={`Las más elegidas en ${BRAND_GEO.city}`}
@@ -1080,7 +1043,7 @@ async function TopStoresSection() {
 function EmptyStoresPlaceholder() {
   return (
     <section className="bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)] py-12 sm:py-16">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <span
           aria-hidden
           className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] mb-5"
@@ -1127,7 +1090,7 @@ function HomeFaqSection() {
       aria-labelledby="faq-heading"
       className="py-7 sm:py-9 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
     >
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           headingId="faq-heading"
           eyebrow="Preguntas frecuentes"
@@ -1211,8 +1174,8 @@ export default async function Home() {
     <main id="main-content">
       <BulejeJsonLd />
 
-      {/* 1. Hero compacto con buscador */}
-      <RappiStyleHero />
+      {/* 1. Hero = banner rotativo full-width (swipe) */}
+      <HomeHero />
 
       {/* 1.2 Verticales — SOLO MOBILE (Brandon 2026-06-11): los chips
           Comida/Bodega/Ferretería/Electro/Farmacia los aporta el chrome
@@ -1277,7 +1240,7 @@ export default async function Home() {
         <section
           id="catalogo"
           aria-label="Catálogo de productos"
-          className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 scroll-mt-24"
+          className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 scroll-mt-24"
         >
           <SectionHeading eyebrow="Catálogo" title="Todos los productos" />
           {/* Audit mobile #6: tabs de orden → un solo grid que se reordena

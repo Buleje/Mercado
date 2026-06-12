@@ -623,13 +623,77 @@ export default function UnifiedProductCard({
           </div>
         )}
 
-        {/* Brandon 2026-05-18 v3: CTA mobile MOVIDO al footer del card como
-            botón full-width (no overlay sobre la imagen). El overlay icon-only
-            de 44px era pequeño y compartía espacio con badges; ahora el CTA
-            ocupa todo el ancho del card debajo del precio, con label "Agregar"
-            + icon + badge de cantidad en cart. Más grande, más visible, más
-            click-friendly en pulgar. Renderizado en el bloque del precio
-            (líneas siguientes). */}
+        {/* Brandon 2026-06-12: CTA FLOTANTE dentro de la imagen, abajo-derecha
+            (estilo Rappi/PedidosYa). Estado vacío = botón circular accent con
+            carrito. Con items = stepper (− N +) en pill flotante. Agotado =
+            "Avísame". Toda la lógica (handleAdd/Increment/Decrement) intacta. */}
+        <div className="absolute bottom-2 right-2 z-20">
+          {inCartQty > 0 && !isOutOfStock ? (
+            <div
+              role="group"
+              aria-label={`${product.name}: ${inCartQty} en el carrito`}
+              className="inline-flex h-11 items-center gap-0.5 rounded-full bg-[var(--surface-raised)]/95 px-1 shadow-md ring-1 ring-[var(--rule-soft)] backdrop-blur"
+            >
+              <button
+                type="button"
+                onClick={handleDecrement}
+                aria-label={`Quitar un ${product.name} del carrito`}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-primary)] transition-all duration-150 hover:bg-[var(--surface-sunken)] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              >
+                <Minus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+              </button>
+              <motion.span
+                key={inCartQty}
+                initial={{ scale: 0.6, opacity: 0.4 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                aria-hidden
+                className="min-w-[1.5rem] text-center text-base font-black tabular-nums leading-none text-[var(--text-primary)]"
+              >
+                {inCartQty > 99 ? "99+" : inCartQty}
+              </motion.span>
+              <button
+                type="button"
+                onClick={handleIncrement}
+                disabled={atStockCap}
+                aria-label={
+                  atStockCap
+                    ? `${product.name}: alcanzaste el stock disponible`
+                    : `Agregar otro ${product.name} al carrito`
+                }
+                className={cn(
+                  "inline-flex h-9 w-9 items-center justify-center rounded-full transition-all duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+                  atStockCap
+                    ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
+                    : "bg-[var(--accent)] text-white hover:opacity-90 hover:scale-105",
+                )}
+              >
+                <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
+              </button>
+            </div>
+          ) : isOutOfStock ? (
+            <a
+              href={notifyWaHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Avísame cuando llegue ${product.name}`}
+              className="inline-flex h-11 items-center gap-1.5 rounded-full bg-[var(--surface-raised)]/95 px-3.5 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] shadow-md ring-1 ring-[var(--rule-soft)] backdrop-blur transition-all duration-200 hover:bg-[var(--accent)] hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            >
+              <BellRing className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+              <span className="whitespace-nowrap">Avísame</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAdd}
+              aria-label={`Agregar ${product.name} al carrito`}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/25 transition-all duration-200 hover:opacity-90 hover:scale-105 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]"
+            >
+              <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Contenido ──────────────────────────────────────────────────────────
@@ -701,11 +765,11 @@ export default function UnifiedProductCard({
           </button>
         )}
 
-        {/* Precio + CTA circular — precio RESALTADO + ahorro visible.
-            En mobile aumentamos el gap para que el botón del carrito
-            no se vea pegado al precio. */}
-        <div className="mt-auto pt-2 flex items-end justify-between gap-2">
-          <div className="min-w-0 flex-1">
+        {/* Precio — RESALTADO + ahorro visible. Brandon 2026-06-12: el CTA
+            (carrito) ahora FLOTA dentro de la imagen (abajo-derecha), así que
+            acá va SOLO el precio → bloque más compacto y junto. */}
+        <div className="mt-auto pt-1.5">
+          <div className="min-w-0">
             {/* Precio tachado + ahorro: si hay descuento, mostrar fila pre-precio */}
             {product.originalPrice && product.originalPrice > product.price && (
               <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
@@ -758,83 +822,6 @@ export default function UnifiedProductCard({
             )}
           </div>
 
-          {/* Brandon 2026-06-11: CTA del card. Estado vacío = ÍCONO LIMPIO de
-              carrito (sin borde, sin caja). Al agregar se transforma en un
-              STEPPER inline (− N +) también sin borde de caja, para sumar/restar
-              sin abrir el carrito. Reemplaza el círculo border-2 + badge flotante
-              + pill "Ya pediste". Unificado desktop + mobile. */}
-          <div className="shrink-0">
-            {inCartQty > 0 && !isOutOfStock ? (
-              <div
-                role="group"
-                aria-label={`${product.name}: ${inCartQty} en el carrito`}
-                className="inline-flex h-12 items-center gap-0.5"
-              >
-                {/* − restar una unidad */}
-                <button
-                  type="button"
-                  onClick={handleDecrement}
-                  aria-label={`Quitar un ${product.name} del carrito`}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-primary)] transition-all duration-150 hover:bg-[var(--surface-sunken)] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                >
-                  <Minus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-                </button>
-                {/* contador — la nueva forma de contabilizar lo agregado */}
-                <motion.span
-                  key={inCartQty}
-                  initial={{ scale: 0.6, opacity: 0.4 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                  aria-hidden
-                  className="min-w-[1.75rem] text-center text-base sm:text-lg font-black tabular-nums leading-none text-[var(--text-primary)]"
-                >
-                  {inCartQty > 99 ? "99+" : inCartQty}
-                </motion.span>
-                {/* + sumar otra unidad */}
-                <button
-                  type="button"
-                  onClick={handleIncrement}
-                  disabled={atStockCap}
-                  aria-label={
-                    atStockCap
-                      ? `${product.name}: alcanzaste el stock disponible`
-                      : `Agregar otro ${product.name} al carrito`
-                  }
-                  className={cn(
-                    "inline-flex h-10 w-10 items-center justify-center rounded-full transition-all duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-                    atStockCap
-                      ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
-                      : "bg-[var(--text-primary)] text-[var(--surface-raised)] hover:opacity-90 hover:scale-105",
-                  )}
-                >
-                  <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-                </button>
-              </div>
-            ) : isOutOfStock ? (
-              /* Agotado → "Avísame cuando llegue" (WhatsApp). Reemplaza el
-                 carrito muerto: le da salida al cliente y nos junta la demanda. */
-              <a
-                href={notifyWaHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                aria-label={`Avísame cuando llegue ${product.name}`}
-                className="inline-flex h-12 items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3.5 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] transition-all duration-200 hover:bg-[var(--accent)] hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-              >
-                <BellRing className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
-                <span className="whitespace-nowrap">Avísame</span>
-              </a>
-            ) : (
-              <button
-                type="button"
-                onClick={handleAdd}
-                aria-label={`Agregar ${product.name} al carrito`}
-                className="inline-flex h-12 w-12 items-center justify-center rounded-full text-[var(--text-primary)] transition-all duration-200 hover:bg-[var(--surface-sunken)] hover:scale-105 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-              >
-                <ShoppingCart className="h-6 w-6" strokeWidth={2} aria-hidden />
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Aviso limite comparar */}
