@@ -1203,9 +1203,18 @@ export default async function Home() {
 
       {/* 1.2 Verticales — los "mundos" del Inicio (Brandon 2026-06-11). Arranca
           food-first (default "comida"); un toque cambia a Bodega/Ferretería/
-          Electro/Farmacia y filtra el catálogo. URL-driven (`?v=`). */}
+          Electro/Farmacia y filtra el catálogo. URL-driven (`?v=`).
+          STICKY desktop (2026-06-11): en md+ se pega bajo el sub-nav de orden
+          (top-[112px] = navbar 64 + sub-nav 48), z-30 < navbar(50)/sub-nav(40),
+          con fondo translúcido + blur. En MOBILE queda en flujo (no sticky): el
+          chrome ya tiene su propia barra de categorías sticky (top-52) y apilar
+          dos comería pantalla; ademas esa barra es compartida con /marketplace/
+          [slug]. Stacking mobile = follow-up si Brandon lo pide. */}
       <Suspense fallback={<div className="h-14" />}>
-        <section aria-label="Categorías del marketplace" className="pt-3 sm:pt-4">
+        <section
+          aria-label="Categorías del marketplace"
+          className="border-b border-[var(--rule-soft)] py-2.5 md:sticky md:top-[112px] md:z-30 md:bg-[var(--surface-canvas)]/90 md:backdrop-blur-md"
+        >
           <MarketplaceVerticalChips />
         </section>
       </Suspense>
