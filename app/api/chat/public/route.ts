@@ -7,6 +7,7 @@ import { reportCriticalError } from "@/lib/sentry-alerts";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import { markPresence, markTyping, readPresence } from "@/lib/chat/presence";
 
 /** Normaliza phone PE: "51XXXXXXXXX" o "9XXXXXXXX" → "9XXXXXXXX". */
 function normalizePhone(phone: string): string {
@@ -100,6 +101,13 @@ const ReactBody = z.object({
   emoji:         z.string().min(1).max(16),
 });
 
+/** Ping de "escribiendo…" del buyer (efímero). Tanda 1 · Increment 2. */
+const TypingBody = z.object({
+  threadId:      z.string().min(1).max(100),
+  storeSlug:     z.string().min(1).max(200),
+  customerPhone: z.string().min(6).max(20),
+});
+
 /**
  * POST /api/chat/public?action=open
  * Abre o recupera un hilo existente entre el buyer y la tienda.
@@ -143,6 +151,9 @@ export async function POST(req: NextRequest) {
   }
   if (action === "react") {
     return handleReact(body);
+  }
+  if (action === "typing") {
+    return handleTyping(body);
   }
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
@@ -361,6 +372,36 @@ async function handleReact(body: unknown) {
   }
 }
 
+/** POST ?action=typing — marca al buyer "escribiendo…" (efímero, sin persistir). */
+async function handleTyping(body: unknown) {
+  const parsed = TypingBody.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+  }
+  try {
+    const store = await ChatPublicDB.findStoreBySlug(parsed.data.storeSlug);
+    if (!store || !store.isPublished) {
+      return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
+    }
+    const threadCheck = await ChatPublicDB.findThreadForOwnershipCheck(
+      parsed.data.threadId,
+      store.tenantId,
+    );
+    if (
+      !threadCheck ||
+      threadCheck.customerPhone !== parsed.data.customerPhone ||
+      threadCheck.storeId !== store.id
+    ) {
+      return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
+    }
+    markTyping(parsed.data.threadId, "buyer");
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    logger.error("[chat/public] typing failed", { err: String(err) });
+    return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
+  }
+}
+
 export async function GET(req: NextRequest) {
   if (!isFeatureEnabled("marketplace-chat-public")) {
     return NextResponse.json(
@@ -428,8 +469,13 @@ export async function GET(req: NextRequest) {
       logger.warn("[chat/public] markAsRead failed", { err: String(err) });
     });
 
+    // Presencia (Increment 2): el buyer está mirando → refrescar su flag; leer
+    // la de la tienda para pintar "En línea · Escribiendo… · Visto hace X".
+    markPresence(parsed.data.threadId, "buyer");
+    const presence = readPresence(parsed.data.threadId, "seller");
+
     return NextResponse.json(
-      { data: safeMessages },
+      { data: safeMessages, presence },
       {
         headers: {
           "X-Total-Count": String(safeMessages.length),

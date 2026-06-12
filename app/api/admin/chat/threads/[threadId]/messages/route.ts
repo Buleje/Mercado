@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { markPresence, readPresence } from "@/lib/chat/presence";
 
 const MessageTypeSchema = z.enum([
   "text",
@@ -127,8 +128,14 @@ export async function GET(
       });
     }
 
+    // Presencia (Increment 2): la tienda está mirando este hilo → refrescar su
+    // flag (el cliente verá "En línea"); leer la del buyer para el header del
+    // panel (lo consume la UI del vendedor en el siguiente increment).
+    markPresence(threadId, "seller");
+    const presence = readPresence(threadId, "buyer");
+
     return NextResponse.json(
-      { data: messages },
+      { data: messages, presence },
       {
         headers: { "X-Total-Count": String(messages.length) },
       },

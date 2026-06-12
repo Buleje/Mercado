@@ -85,6 +85,19 @@ const QUICK_REPLIES = [
   "¿Qué me recomiendan hoy?",
 ];
 
+// Increment 2: presencia de la tienda en el header.
+interface ChatPresence { typing: boolean; online: boolean; lastSeen: number | null }
+
+/** "hace un momento · hace 5 min · hace 2 h · hace 3 d" para "Visto …". */
+function relativeSeen(ts: number): string {
+  const m = Math.floor((Date.now() - ts) / 60_000);
+  if (m < 1) return "hace un momento";
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `hace ${h} h`;
+  return `hace ${Math.floor(h / 24)} d`;
+}
+
 function hhmm(iso: string): string {
   return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
 }
@@ -121,6 +134,9 @@ export default function ChatConversationView({
   const [replyTo, setReplyTo] = useState<MsgReply | null>(null);
   const [activeMsgId, setActiveMsgId] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  // Increment 2: presencia de la tienda (en línea / escribiendo / visto).
+  const [presence, setPresence] = useState<ChatPresence | null>(null);
+  const lastTypingPingRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
 
@@ -134,8 +150,9 @@ export default function ChatConversationView({
       // Hilo inaccesible (borrado / ownership / sesión) → cortar polling.
       if (res.status === 404 || res.status === 403) { setUnavailable(true); return; }
       if (!res.ok) return;
-      const j = (await res.json()) as { data: ThreadMsg[] };
+      const j = (await res.json()) as { data: ThreadMsg[]; presence?: ChatPresence };
       setMessages(j.data ?? []);
+      setPresence(j.presence ?? null);
     } catch {
       /* polling no crítico */
     }
@@ -191,6 +208,20 @@ export default function ChatConversationView({
         body: JSON.stringify({ threadId, storeSlug, customerPhone, messageId, emoji }),
       });
     } catch { /* el próximo poll reconcilia */ }
+  }, [threadId, storeSlug, customerPhone, unavailable]);
+
+  /** Increment 2: avisa "escribiendo…" a la tienda (throttle ~3.5s). */
+  const pingTyping = useCallback(() => {
+    if (!threadId || !storeSlug || unavailable) return;
+    const now = Date.now();
+    if (now - lastTypingPingRef.current < 3500) return;
+    lastTypingPingRef.current = now;
+    fetch("/api/chat/public?action=typing", {
+      method: "POST",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify({ threadId, storeSlug, customerPhone }),
+    }).catch(() => { /* efímero, no crítico */ });
   }, [threadId, storeSlug, customerPhone, unavailable]);
 
   const send = async (raw?: string) => {
@@ -281,8 +312,19 @@ export default function ChatConversationView({
         </span>
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{storeName}</p>
-          <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">
-            La tienda responde por acá o WhatsApp
+          <p
+            className={cn(
+              "truncate text-[length:var(--ts-2xs)] font-bold",
+              presence?.typing ? "text-[var(--accent)]" : "text-[var(--data-success-500)]",
+            )}
+          >
+            {presence?.typing
+              ? "Escribiendo…"
+              : presence?.online
+                ? "En línea"
+                : presence?.lastSeen
+                  ? `Visto ${relativeSeen(presence.lastSeen)}`
+                  : "La tienda responde por acá o WhatsApp"}
           </p>
         </div>
         {storeSlug && (
@@ -575,7 +617,7 @@ export default function ChatConversationView({
               <input
                 type="text"
                 value={text}
-                onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (error) setError(null); }}
+                onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (error) setError(null); pingTyping(); }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
                 placeholder={`Escribile a ${storeName}…`}
                 aria-label={`Mensaje para ${storeName}`}
