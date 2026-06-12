@@ -5,7 +5,7 @@
 // del compiler. Este componente se renderiza decenas de veces por página
 // de catálogo (UnifiedProductCard es la card principal del marketplace).
 // El compiler auto-memoiza props + hooks, reduce re-renders innecesarios.
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { m as motion } from "framer-motion";
@@ -13,12 +13,8 @@ import {
   ShoppingCart,
   Store as StoreIcon,
   GitCompareArrows,
-  // Brandon 2026-06-11: Minus + Plus re-incorporados — el CTA del card ahora es
-  // un stepper inline (− N +) una vez agregado, sin borde de caja. Reemplaza el
-  // botón circular con borde + badge flotante. El decremento ya no obliga a ir
-  // al carrito: se hace desde la misma card.
-  Minus,
-  Plus,
+  // Brandon 2026-06-12: el stepper (− N +) se quitó — el carrito de la card solo
+  // SUMA (icono + contador arriba). Por eso Minus/Plus ya no se importan.
   Heart,
   MessageCircle,
   // Brandon 2026-06-12: agotados ya no muestran un carrito muerto — muestran
@@ -220,7 +216,7 @@ export default function UnifiedProductCard({
   // el flow de modifiers — cuando el cliente confirma desde el modal de
   // adicionales NO queremos abrir el AddedToCartDrawer encima (sería un
   // modal sobre otro modal). El producto se agrega al cart y se cierra.
-  const { items: cartItems, addItem, updateQuantity } = useMarketplaceCart();
+  const { items: cartItems, addItem } = useMarketplaceCart();
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
@@ -368,8 +364,65 @@ export default function UnifiedProductCard({
   const atStockCap =
     product.stock != null && product.stock > 0 && inCartQty >= product.stock;
 
-  // Stepper "+": suma una unidad. Con adicionales abre el modal (para elegir
-  // los del nuevo ítem); producto simple suma directo a la línea base.
+  // Ref del well de la imagen — origen de la animación "vuela al carrito".
+  const imgWrapRef = useRef<HTMLDivElement>(null);
+
+  // Brandon 2026-06-12: animación suave al agregar — una mini-vista del producto
+  // sale de la card y "vuela" hasta el carrito del nav, que late al recibirla.
+  // Self-contained (DOM directo, sin provider): busca el botón Carrito del nav.
+  const flyToNavCart = useCallback(() => {
+    if (typeof document === "undefined") return;
+    const src = imgWrapRef.current;
+    const cart = document.querySelector('[aria-label^="Carrito"]') as HTMLElement | null;
+    if (!src || !cart) return;
+    const s = src.getBoundingClientRect();
+    const c = cart.getBoundingClientRect();
+    if (s.width === 0 || c.width === 0) return;
+    const SIZE = 46;
+    const node = document.createElement("div");
+    node.setAttribute("aria-hidden", "true");
+    node.style.cssText = [
+      "position:fixed",
+      `left:${s.left + s.width / 2 - SIZE / 2}px`,
+      `top:${s.top + s.height / 2 - SIZE / 2}px`,
+      `width:${SIZE}px`,
+      `height:${SIZE}px`,
+      "border-radius:9999px",
+      "overflow:hidden",
+      "z-index:9999",
+      "pointer-events:none",
+      "background:#fff",
+      "box-shadow:0 10px 30px rgba(0,0,0,.28)",
+      "transition:transform .7s cubic-bezier(.22,.7,.22,1),opacity .7s ease",
+    ].join(";");
+    if (product.image) {
+      const img = document.createElement("img");
+      img.src = product.image;
+      img.style.cssText = "width:100%;height:100%;object-fit:cover";
+      node.appendChild(img);
+    }
+    document.body.appendChild(node);
+    const dx = c.left + c.width / 2 - (s.left + s.width / 2);
+    const dy = c.top + c.height / 2 - (s.top + s.height / 2);
+    requestAnimationFrame(() => {
+      node.style.transform = `translate(${dx}px, ${dy}px) scale(0.18)`;
+      node.style.opacity = "0.25";
+    });
+    const cleanup = () => node.remove();
+    node.addEventListener("transitionend", cleanup, { once: true });
+    setTimeout(cleanup, 950);
+    // Latido del carrito del nav al "recibir" el producto.
+    setTimeout(() => {
+      cart.animate?.(
+        [{ transform: "scale(1)" }, { transform: "scale(1.28)" }, { transform: "scale(1)" }],
+        { duration: 320, easing: "ease-out" },
+      );
+    }, 640);
+  }, [product.image]);
+
+  // Agregar UNA unidad (Brandon 2026-06-12). Con adicionales abre el modal
+  // (hay que elegir opciones); producto simple suma directo + animación + 🎉.
+  // Reemplaza el stepper: el botón del carrito siempre SUMA (no hay restar).
   const handleIncrement = useCallback(() => {
     if (isOutOfStock || atStockCap) return;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -383,6 +436,7 @@ export default function UnifiedProductCard({
       setModifierModalOpen(true);
       return;
     }
+    flyToNavCart();
     addItem({
       storeId: product.storeId ?? "",
       storeName: product.storeName ?? "",
@@ -399,22 +453,8 @@ export default function UnifiedProductCard({
       quantity: 1,
       stock: product.stock ?? undefined,
     });
-  }, [isOutOfStock, atStockCap, product, addItem]);
-
-  // Stepper "−": resta una unidad de la ÚLTIMA línea agregada del producto.
-  // Si la línea llega a 0, updateQuantity la elimina. Maneja multi-línea.
-  const handleDecrement = useCallback(() => {
-    const line = cartLines[cartLines.length - 1];
-    if (!line) return;
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(20);
-      } catch {
-        /* silent */
-      }
-    }
-    updateQuantity(line.storeId, line.productId, line.quantity - 1, line.modifierHash);
-  }, [cartLines, updateQuantity]);
+    celebrate({ intensity: "sm" });
+  }, [isOutOfStock, atStockCap, product, addItem, flyToNavCart]);
 
   /* ── Badges top-left ───────────────────────────────────────────── */
   const showOfertaBadge =
@@ -481,6 +521,7 @@ export default function UnifiedProductCard({
               Brandon 2026-05-24: object-contain (no cover) + fondo claro para
               MOSTRAR LA FOTO COMPLETA del producto, sin recortar. */}
           <div
+            ref={imgWrapRef}
             className={cn(
               // Audit mobile #17: well SIEMPRE blanco (también en dark) — las
               // fotos de producto con fondo transparente se veían "ajedrez" gris
@@ -623,55 +664,12 @@ export default function UnifiedProductCard({
           </div>
         )}
 
-        {/* Brandon 2026-06-12: CTA FLOTANTE dentro de la imagen, abajo-derecha
-            (estilo Rappi/PedidosYa). Estado vacío = botón circular accent con
-            carrito. Con items = stepper (− N +) en pill flotante. Agotado =
-            "Avísame". Toda la lógica (handleAdd/Increment/Decrement) intacta. */}
+        {/* Brandon 2026-06-12: CTA flotante dentro de la imagen. Carrito BLANCO
+            (icono negro). Al agregar se mantiene el MISMO carrito con el CONTADOR
+            arriba (badge); cada toque suma +1 (sin botón de restar) + animación
+            "vuela al carrito" del nav. Agotado = "Avísame". */}
         <div className="absolute bottom-2 right-2 z-20">
-          {inCartQty > 0 && !isOutOfStock ? (
-            <div
-              role="group"
-              aria-label={`${product.name}: ${inCartQty} en el carrito`}
-              className="inline-flex h-11 items-center gap-0.5 rounded-full bg-[var(--surface-raised)]/95 px-1 shadow-md ring-1 ring-[var(--rule-soft)] backdrop-blur"
-            >
-              <button
-                type="button"
-                onClick={handleDecrement}
-                aria-label={`Quitar un ${product.name} del carrito`}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-primary)] transition-all duration-150 hover:bg-[var(--surface-sunken)] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-              >
-                <Minus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-              </button>
-              <motion.span
-                key={inCartQty}
-                initial={{ scale: 0.6, opacity: 0.4 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                aria-hidden
-                className="min-w-[1.5rem] text-center text-base font-black tabular-nums leading-none text-[var(--text-primary)]"
-              >
-                {inCartQty > 99 ? "99+" : inCartQty}
-              </motion.span>
-              <button
-                type="button"
-                onClick={handleIncrement}
-                disabled={atStockCap}
-                aria-label={
-                  atStockCap
-                    ? `${product.name}: alcanzaste el stock disponible`
-                    : `Agregar otro ${product.name} al carrito`
-                }
-                className={cn(
-                  "inline-flex h-9 w-9 items-center justify-center rounded-full transition-all duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-                  atStockCap
-                    ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
-                    : "bg-[var(--accent)] text-white hover:opacity-90 hover:scale-105",
-                )}
-              >
-                <Plus className="h-5 w-5" strokeWidth={2.75} aria-hidden />
-              </button>
-            </div>
-          ) : isOutOfStock ? (
+          {isOutOfStock ? (
             <a
               href={notifyWaHref}
               target="_blank"
@@ -686,14 +684,33 @@ export default function UnifiedProductCard({
           ) : (
             <button
               type="button"
-              onClick={handleAdd}
-              aria-label={`Agregar ${product.name} al carrito`}
-              // Brandon 2026-06-12: fondo BLANCO + icono NEGRO (antes accent).
-              // El well de la imagen es blanco también en dark → icono dark fijo
-              // (gray-900 en ambos temas) para contraste garantizado.
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-900 dark:text-gray-900 shadow-lg ring-1 ring-black/5 transition-all duration-200 hover:bg-white hover:scale-105 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]"
+              onClick={handleIncrement}
+              disabled={atStockCap}
+              aria-label={
+                inCartQty > 0
+                  ? atStockCap
+                    ? `${product.name}: alcanzaste el stock disponible`
+                    : `Agregar otro ${product.name} — ${inCartQty} en el carrito`
+                  : `Agregar ${product.name} al carrito`
+              }
+              // Fondo BLANCO + icono NEGRO fijo (el well de la imagen es blanco
+              // también en dark → contraste garantizado en ambos temas).
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-900 dark:text-gray-900 shadow-lg ring-1 ring-black/5 transition-all duration-200 hover:bg-white hover:scale-105 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]"
             >
               <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+              {/* Contador arriba del carrito — sin restar; cada toque suma +1. */}
+              {inCartQty > 0 && (
+                <motion.span
+                  key={inCartQty}
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                  aria-hidden
+                  className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-white"
+                >
+                  {inCartQty > 99 ? "99+" : inCartQty}
+                </motion.span>
+              )}
             </button>
           )}
         </div>

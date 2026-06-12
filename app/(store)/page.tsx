@@ -1211,11 +1211,22 @@ export default async function Home() {
         </Suspense>
       </div>
 
-      {/* 2.5 Nuevos en {ciudad} — recién agregados. Self-hide si vacío. */}
+      {/* 2.5 Descubrimiento — "Recién llegados" + "Ranking semanal" LADO A LADO
+          (Brandon 2026-06-12): una sola fila, 2 cajas; cada caja muestra ~3
+          cards deslizables. En mobile se apilan. Cada caja se auto-oculta si no
+          tiene datos. */}
       <Suspense fallback={null}>
         <ShowWhenAllVerticals>
           <Reveal>
-            <HomeNewArrivals />
+            <section
+              aria-label="Recién llegados y ranking"
+              className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-stretch">
+                <HomeNewArrivals boxed />
+                <MarketplaceTopToday boxed />
+              </div>
+            </section>
           </Reveal>
         </ShowWhenAllVerticals>
       </Suspense>
@@ -1231,14 +1242,8 @@ export default async function Home() {
         </ShowWhenAllVerticals>
       </Suspense>
 
-      {/* 3.5 Lo más pedido hoy — productos cross-tienda con quick-add. */}
-      <Suspense fallback={null}>
-        <ShowWhenAllVerticals>
-          <Reveal>
-            <MarketplaceTopToday />
-          </Reveal>
-        </ShowWhenAllVerticals>
-      </Suspense>
+      {/* "Lo más pedido" ahora vive en la fila de descubrimiento (2.5), lado a
+          lado con "Recién llegados". Brandon 2026-06-12. */}
 
       {/* 3.6 Catálogo de productos — el GRID completo que vivía en /marketplace
           (fusión /marketplace → /, Brandon 2026-06-08). Scroll infinito: va antes

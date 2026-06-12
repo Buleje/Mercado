@@ -5,6 +5,7 @@ import { MARKETPLACE_GRID } from "@/components/marketplace/MarketplaceSection";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceEmptyState from "@/components/marketplace/MarketplaceEmptyState";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
+import DiscoveryBox from "@/components/marketplace/home/DiscoveryBox";
 import { cn } from "@/lib/utils";
 import { BRAND_GEO } from "@/lib/geo";
 
@@ -61,7 +62,7 @@ function normalize(raw: Record<string, unknown>): TopProduct {
   };
 }
 
-export default function MarketplaceTopToday() {
+export default function MarketplaceTopToday({ boxed = false }: { boxed?: boolean } = {}) {
   const [items, setItems] = useState<TopProduct[] | null>(null);
   const [windowLabel, setWindowLabel] = useState<"24h" | "7d" | null>(null);
   const [error, setError] = useState(false);
@@ -113,6 +114,53 @@ export default function MarketplaceTopToday() {
     // dev-only diagnostic — never bubbles to real users
   }
   if (items !== null && items.length === 0) return null;
+
+  // Cards del ranking (compartidas entre la caja y la sección full-width).
+  const rankCards = (items ?? []).map((p, idx) => (
+    <UnifiedProductCard
+      key={p.storeProductId}
+      index={idx}
+      variant="top"
+      rank={idx + 1}
+      layout="compact"
+      href={`/marketplace/${p.store.slug}?p=${p.productId}`}
+      product={{
+        id: p.productId,
+        name: p.name,
+        price: p.price,
+        image: p.image,
+        unit: p.unit,
+        storeId: p.store.id,
+        storeName: p.store.name,
+        storeSlug: p.store.slug,
+        storeLogo: p.store.logo,
+        storeProductId: p.storeProductId,
+        description:
+          p.soldUnits != null && p.soldUnits > 0
+            ? `${p.soldUnits} vendidos · ranking ${idx + 1}`
+            : `Top ${idx + 1} en ${BRAND_GEO.city}`,
+        storeRating: p.avgRating,
+      }}
+    />
+  ));
+
+  // Brandon 2026-06-12: modo CAJA — va lado a lado con "Recién llegados".
+  if (boxed) {
+    return (
+      <DiscoveryBox
+        eyebrow={`Ranking ${windowLabel === "7d" ? "semanal" : "diario"}`}
+        title={`Lo más pedido ${windowLabel === "7d" ? "esta semana" : "hoy"}`}
+        actionHref="/#catalogo"
+        ariaLabel="Lo más pedido"
+      >
+        {items === null
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] rounded-2xl skeleton-shimmer" />
+            ))
+          : rankCards}
+      </DiscoveryBox>
+    );
+  }
 
   return (
     // Brandon 2026-06-01: oculto en celular (hidden md:block). El header usa el

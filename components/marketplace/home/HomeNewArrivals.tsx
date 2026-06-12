@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
+import DiscoveryBox from "@/components/marketplace/home/DiscoveryBox";
 import UnifiedProductCard, {
   type UnifiedProductCardProduct,
 } from "@/components/marketplace/UnifiedProductCard";
@@ -35,7 +36,7 @@ function normalize(raw: Record<string, unknown>): UnifiedProductCardProduct {
   };
 }
 
-export default function HomeNewArrivals() {
+export default function HomeNewArrivals({ boxed = false }: { boxed?: boolean } = {}) {
   const [items, setItems] = useState<UnifiedProductCardProduct[] | null>(null);
   // Brandon 2026-06-12: "Recién llegados" solo se muestra en "Todo" (el page lo
   // gatea con ShowWhenAllVerticals), así que trae lo nuevo de TODO el marketplace.
@@ -70,6 +71,37 @@ export default function HomeNewArrivals() {
 
   // Sin productos nuevos → no renderiza nada.
   if (items !== null && items.length === 0) return null;
+
+  // Cards (compartidas entre la caja y la sección full-width).
+  const cards =
+    items === null
+      ? Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="aspect-[3/4] rounded-2xl skeleton-shimmer" />
+        ))
+      : items.map((p, idx) => (
+          <UnifiedProductCard
+            key={p.storeProductId || p.id}
+            index={idx}
+            variant="default"
+            layout="compact"
+            href={`/marketplace/${p.storeSlug}?p=${p.id}`}
+            product={p}
+          />
+        ));
+
+  // Brandon 2026-06-12: modo CAJA — va lado a lado con "Ranking semanal".
+  if (boxed) {
+    return (
+      <DiscoveryBox
+        eyebrow="Recién llegados"
+        title={`Nuevos en ${BRAND_GEO.city}`}
+        actionHref="/?sort=newest#catalogo"
+        ariaLabel="Nuevos productos"
+      >
+        {cards}
+      </DiscoveryBox>
+    );
+  }
 
   return (
     <section

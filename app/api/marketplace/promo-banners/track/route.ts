@@ -1,10 +1,10 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { z } from "zod/v4";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { PROMO_BANNER_STATS_PATH } from "@/lib/promo-banner-stats-path";
 
 /**
  * POST /api/marketplace/promo-banners/track  (banners v2 F3 — analytics)
@@ -16,7 +16,9 @@ import { logger } from "@/lib/logger";
  * tabla con increment atómico (anotado en project_banners_v2).
  */
 
-const STATS_PATH = join(process.cwd(), "lib", "data", "promo-banner-stats.json");
+// Brandon 2026-06-12: en /tmp (fuera del árbol que vigila Turbopack) para no
+// disparar Fast Refresh en cada impresión → ver lib/promo-banner-stats-path.ts.
+const STATS_PATH = PROMO_BANNER_STATS_PATH;
 // id de banner: alfanumérico + guiones, máx 200 (evita inyección de claves raras).
 const ID_RE = /^[a-zA-Z0-9_-]{1,200}$/;
 
