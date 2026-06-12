@@ -96,21 +96,45 @@ export function useMarketplaceChats(panelOpen: boolean) {
     }
   }, [customer?.phone]);
 
-  // Carga inicial + polling adaptativo.
+  // Carga inicial + polling adaptativo CON GUARD DE VISIBILIDAD.
+  // Brandon 2026-06-12 (perf P0 del audit): el polling NO debe correr cuando la
+  // pestaña está en background — antes seguía pegándole al server cada 15s para
+  // cada usuario logueado con la pestaña minimizada/oculta. Ahora se pausa en
+  // `visibilitychange` y al volver hace un refresh inmediato + reanuda.
   useEffect(() => {
     if (!customer?.phone) return;
     let cancelled = false;
+    let interval: number | null = null;
+
     const tick = async () => {
-      if (cancelled) return;
+      if (cancelled || (typeof document !== "undefined" && document.hidden)) return;
       if (!loadedOnce.current) setLoading(true);
       await refresh();
       if (!cancelled) setLoading(false);
     };
-    void tick();
-    const interval = window.setInterval(tick, panelOpen ? POLL_ACTIVE_MS : POLL_IDLE_MS);
+    const start = () => {
+      if (interval !== null) return;
+      void tick();
+      interval = window.setInterval(tick, panelOpen ? POLL_ACTIVE_MS : POLL_IDLE_MS);
+    };
+    const stop = () => {
+      if (interval !== null) {
+        window.clearInterval(interval);
+        interval = null;
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+
+    if (typeof document === "undefined" || document.visibilityState === "visible") start();
+    if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      stop();
+      if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [customer?.phone, panelOpen, refresh]);
 
