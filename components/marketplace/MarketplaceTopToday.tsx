@@ -123,7 +123,7 @@ export default function MarketplaceTopToday() {
       aria-label="Lo más pedido hoy"
       className="hidden md:block bg-[var(--surface-canvas)] py-5 sm:py-7"
     >
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow={`Ranking ${windowLabel === "7d" ? "semanal" : "diario"}`}
           title={`Lo más pedido ${windowLabel === "7d" ? "esta semana" : "hoy"}`}

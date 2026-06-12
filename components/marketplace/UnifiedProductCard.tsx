@@ -688,7 +688,10 @@ export default function UnifiedProductCard({
               type="button"
               onClick={handleAdd}
               aria-label={`Agregar ${product.name} al carrito`}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/25 transition-all duration-200 hover:opacity-90 hover:scale-105 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]"
+              // Brandon 2026-06-12: fondo BLANCO + icono NEGRO (antes accent).
+              // El well de la imagen es blanco también en dark → icono dark fijo
+              // (gray-900 en ambos temas) para contraste garantizado.
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-900 dark:text-gray-900 shadow-lg ring-1 ring-black/5 transition-all duration-200 hover:bg-white hover:scale-105 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]"
             >
               <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             </button>

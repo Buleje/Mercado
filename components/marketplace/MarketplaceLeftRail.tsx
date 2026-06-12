@@ -42,6 +42,16 @@ export default function MarketplaceLeftRail() {
   const priceKey = filter?.priceKey ?? "";
   const storeSlug = filter?.storeSlug ?? "";
   const stores = filter?.stores ?? [];
+  // Brandon 2026-06-12: solo buckets de precio CON productos. Si el catálogo aún
+  // no publicó nada (vacío), fallback a todos. El bucket activo se mantiene
+  // visible aunque al filtrar quede solo él.
+  const availablePriceKeys = filter?.availablePriceKeys ?? [];
+  const visiblePriceBuckets =
+    availablePriceKeys.length > 0
+      ? PRICE_BUCKETS.filter(
+          (b) => availablePriceKeys.includes(b.key) || b.key === priceKey,
+        )
+      : PRICE_BUCKETS;
 
   // Categorías REALES (con productos). Sin esto la lista era decorativa.
   const [categories, setCategories] = useState<RealCategory[]>([]);
@@ -121,8 +131,9 @@ export default function MarketplaceLeftRail() {
         </ul>
       </nav>
 
-      {/* Precio → buckets en chips (Brandon 2026-06-12). Tapeables, border-2
-          por las reglas de tipografía del storefront. */}
+      {/* Precio → buckets en chips (Brandon 2026-06-12). Solo rangos CON
+          productos; si hay <2 disponibles el filtro no aporta → se oculta. */}
+      {visiblePriceBuckets.length >= 2 && (
       <div className={RAIL_CARD} aria-label="Filtrar por precio">
         <h2 className={RAIL_HEADING}>Precio</h2>
         <div className="flex flex-wrap gap-1.5 px-1 pb-1 pt-0.5">
@@ -139,7 +150,7 @@ export default function MarketplaceLeftRail() {
           >
             Todos
           </button>
-          {PRICE_BUCKETS.map((b) => {
+          {visiblePriceBuckets.map((b) => {
             const isActive = priceKey === b.key;
             return (
               <button
@@ -160,6 +171,7 @@ export default function MarketplaceLeftRail() {
           })}
         </div>
       </div>
+      )}
 
       {/* Tienda → solo si hay ≥2 tiendas en el catálogo (CatalogView las publica
           al contexto). Con una sola tienda el filtro no aporta. */}

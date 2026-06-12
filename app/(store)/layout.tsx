@@ -220,7 +220,9 @@ async function StoreLayoutContent({
                   </ConditionalShoppingChrome>
                 </HideInCheckoutMode>
                 <NavModeToast />
-                <StoreClientShell />
+                {/* Brandon 2026-06-12: marketplace SIN LiveChatWidget flotante
+                    (molesto) — ayuda por "Ayuda" (IA, nav) + "Mensaje" por tienda. */}
+                <StoreClientShell liveChat={false} />
                 <StoreFloatingWidgets />
                 {/* Widgets del marketplace (compare, dock, recently-viewed). */}
                 <MarketplaceFloatingWidgets />

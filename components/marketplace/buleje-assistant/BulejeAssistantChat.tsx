@@ -41,7 +41,7 @@ interface Message {
   content: string;
 }
 
-export default function BulejeAssistantChat() {
+export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boolean } = {}) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -62,6 +62,15 @@ export default function BulejeAssistantChat() {
     } catch {
       /* silent */
     }
+  }, []);
+
+  // Brandon 2026-06-12: el botón "Ayuda" del nav abre el asistente vía evento
+  // global (sin FAB flotante). Cualquier "Ayuda" del marketplace lo dispara.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const openHandler = () => setOpen(true);
+    window.addEventListener("buleje:open-assistant", openHandler);
+    return () => window.removeEventListener("buleje:open-assistant", openHandler);
   }, []);
 
   // Persistencia — guarda al cambiar
@@ -162,7 +171,7 @@ export default function BulejeAssistantChat() {
           con el BottomNav fijo + sticky cart bar. En mobile el cliente ya
           tiene chat por WhatsApp en el menú, no necesita un 3er botón
           flotante encima. Desktop sí lo mantiene (más real-estate). */}
-      {!open && (
+      {!open && !hideFab && (
         <button
           type="button"
           onClick={() => setOpen(true)}

@@ -94,8 +94,11 @@ function ChatGlyph({ className }: { className?: string }) {
 export default function ChatNavLauncher({
   variant = "default",
 }: {
-  /** "default": círculo con borde (desktop) · "bare": h-9 sin borde (fila mobile del nav) */
-  variant?: "default" | "bare";
+  /** "default": círculo con borde (desktop) · "bare": h-9 sin borde (fila mobile
+   *  del nav) · "headless" (Brandon 2026-06-12): NO renderiza ícono/burbuja/
+   *  chat-heads — solo el panel + listeners, para que el botón "Mensaje" del
+   *  storefront (buleje:open-chat) siga abriendo el Messenger sin trigger visible. */
+  variant?: "default" | "bare" | "headless";
 }) {
   const [open, setOpen] = useState(false);
   // ── Anclaje del panel al ícono (Brandon 2026-06-08) ──────────────────────
@@ -353,7 +356,8 @@ export default function ChatNavLauncher({
 
   return (
     <>
-      {/* ── Botón nav — ícono propio + badge ── */}
+      {/* ── Botón nav — ícono propio + badge (oculto en headless) ── */}
+      {variant !== "headless" && (
       <button
         ref={btnRef}
         type="button"
@@ -385,6 +389,7 @@ export default function ChatNavLauncher({
           </span>
         )}
       </button>
+      )}
 
       {/* ── Toast de mensaje entrante (estilo FB, abajo a la derecha) ── */}
       {variant === "default" && toast && typeof document !== "undefined" &&
@@ -462,6 +467,9 @@ export default function ChatNavLauncher({
                 // top/right salen del inline style (ancla al botón); inset-auto
                 // neutraliza el inset-x-0/bottom-0 del bottom-sheet mobile.
                 "sm:inset-auto sm:h-[560px] sm:max-h-[78vh] sm:w-[380px] sm:rounded-2xl sm:border sm:border-[var(--rule-base)]",
+                // Sin ancla (modo headless: abierto desde "Mensaje" del storefront,
+                // sin botón en el nav) → fija abajo-derecha en desktop.
+                !panelPos && "sm:bottom-6 sm:right-6",
                 "sm:motion-safe:animate-[fadeIn_0.15s_ease-out]",
               )}
             >
@@ -671,7 +679,7 @@ export default function ChatNavLauncher({
       {/* ── Chat heads estilo Facebook — burbujas con el logo del negocio ──
            Aparecen cuando una tienda te escribe; click abre la ventana
            flotante. X al hover para descartar (vuelve si llega otro msj). */}
-      {heads.length > 0 && typeof document !== "undefined" &&
+      {variant !== "headless" && heads.length > 0 && typeof document !== "undefined" &&
         createPortal(
           <div
             className="fixed bottom-44 right-4 z-[85] flex flex-col items-end gap-2.5"

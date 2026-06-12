@@ -155,6 +155,23 @@ export default function CatalogView({
         } else {
           const data: CatalogProduct[] = json.data ?? [];
           setProducts(data);
+          // Publicar los BUCKETS de precio con productos para ocultar en el rail
+          // los rangos vacíos (Brandon 2026-06-12). Solo cuando NO hay filtro de
+          // precio activo (con uno activo todo cae en 1 bucket y colapsaría).
+          if (filterCtx && !priceKey) {
+            const present = new Set<string>();
+            for (const p of data) {
+              const b = PRICE_BUCKETS.find(
+                (bk) =>
+                  (bk.min == null || p.price >= bk.min) &&
+                  (bk.max == null || p.price < bk.max),
+              );
+              if (b) present.add(b.key);
+            }
+            filterCtx.setAvailablePriceKeys(
+              PRICE_BUCKETS.filter((b) => present.has(b.key)).map((b) => b.key),
+            );
+          }
           // Publicar las tiendas presentes para el filtro del rail. Solo cuando
           // NO hay filtro de tienda activo (si no, la lista colapsaría a 1).
           // El round-robin del API asegura que la 1ª página cubra todas.

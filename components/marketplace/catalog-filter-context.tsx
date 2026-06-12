@@ -39,6 +39,10 @@ interface CatalogFilterValue {
   /** Tiendas presentes en el catálogo (las publica CatalogView). */
   stores: CatalogStoreOption[];
   setStores: (s: CatalogStoreOption[]) => void;
+  /** Buckets de precio con ≥1 producto en el catálogo actual (los publica
+      CatalogView). Vacío = desconocido → el rail muestra todos (fallback). */
+  availablePriceKeys: string[];
+  setAvailablePriceKeys: (k: string[]) => void;
 }
 
 const CatalogFilterContext = createContext<CatalogFilterValue | null>(null);
@@ -50,6 +54,7 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
   const [priceKey, setPriceKey] = useState("");
   const [storeSlug, setStoreSlug] = useState("");
   const [stores, setStores] = useState<CatalogStoreOption[]>([]);
+  const [availablePriceKeys, setAvailablePriceKeys] = useState<string[]>([]);
   return (
     <CatalogFilterContext.Provider
       value={{
@@ -65,6 +70,8 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
         setStoreSlug,
         stores,
         setStores,
+        availablePriceKeys,
+        setAvailablePriceKeys,
       }}
     >
       {children}

@@ -40,6 +40,11 @@ const HomeNewArrivals = dynamic(
 const HomeHeroBanner = dynamic(
   () => import("@/components/marketplace/home/HomeHeroBanner"),
 );
+// Banda animada con los logos de TODAS las tiendas (marquee infinito) — va
+// arriba de "Tiendas destacadas" (Brandon 2026-06-12).
+const StoreLogosMarquee = dynamic(
+  () => import("@/components/marketplace/home/StoreLogosMarquee"),
+);
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import CatalogSortTabs from "@/components/marketplace/home/CatalogSortTabs";
@@ -1215,10 +1220,12 @@ export default async function Home() {
         </ShowWhenAllVerticals>
       </Suspense>
 
-      {/* 3. Tiendas destacadas — cards con rating + categoría + zona */}
+      {/* 3. Tiendas destacadas — marquee de logos (todas las tiendas) + grid
+          con rating/categoría/zona. */}
       <Suspense fallback={<SectionSkeleton minH="min-h-[520px]" />}>
         <ShowWhenAllVerticals>
           <Reveal>
+            <StoreLogosMarquee />
             <TopStoresSection />
           </Reveal>
         </ShowWhenAllVerticals>

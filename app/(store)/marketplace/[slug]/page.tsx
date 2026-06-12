@@ -3,10 +3,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BRAND_GEO } from "@/lib/geo";
 import { cacheLife, cacheTag } from "next/cache";
-// Brandon 2026-05-21 perf v6: ChatBubble vía wrapper client-only con
-// dynamic({ ssr: false }) — saca ~20KB / 496 LOC del bundle inicial del
-// storefront. No afecta LCP ni SEO (es un floating widget interactivo).
-import ChatBubble from "@/components/marketplace/ChatBubble/ChatBubbleLazy";
 import StoreDetailClient from "@/components/marketplace/store-detail/StoreDetailClient";
 import StoreDetailLoading from "./loading";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
@@ -611,19 +607,10 @@ async function StoreDetailContent({ slug }: { slug: string }) {
         nextOpeningAt={nextOpenAt ? nextOpenAt.toISOString() : null}
       />
 
-      {/*
-        ChatBubble del Bloque D2 del Marketplace.
-        Se activa con el feature flag marketplace-chat-public en Vercel env.
-        Si el flag está off, el endpoint devuelve 503 y el widget muestra
-        "Chat temporalmente no disponible". Sin fricción si no está listo.
-
-        Brandon mayo 14 2026: oculto en mobile (sm-only). En cel satura
-        el viewport — el cliente tiene el sticky cart bar abajo y el
-        widget tapa el catálogo. En desktop sigue visible.
-      */}
-      <div className="hidden sm:contents">
-        <ChatBubble storeSlug={slug} storeName={store.name} />
-      </div>
+      {/* Brandon 2026-06-12: la burbuja flotante ChatBubble se REMOVIÓ (era
+          molesta). El chat tienda↔cliente vive ahora en el botón "Mensaje" del
+          StoreHero (dispara buleje:open-chat → Messenger headless del nav). La
+          ayuda general del marketplace está en el botón "Ayuda" del nav (IA). */}
     </>
   );
 }

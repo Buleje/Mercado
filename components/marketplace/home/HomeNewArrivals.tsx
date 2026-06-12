@@ -74,7 +74,7 @@ export default function HomeNewArrivals() {
   return (
     <section
       aria-label="Nuevos en Buleje"
-      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
+      className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
     >
       <SectionHeading
         eyebrow="Recién llegados"

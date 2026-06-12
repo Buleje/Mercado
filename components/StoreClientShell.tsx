@@ -34,7 +34,7 @@ function useDeferredMount(delay = 2500) {
  * Client-only utility shell — wraps modals, widgets, and tools that
  * require `ssr: false`. Deferred until idle to reduce initial TBT.
  */
-export default function StoreClientShell() {
+export default function StoreClientShell({ liveChat = true }: { liveChat?: boolean } = {}) {
   const ready = useDeferredMount(2500);
 
   if (!ready) return null;
@@ -46,7 +46,11 @@ export default function StoreClientShell() {
       <OrderStatusModalWrapper />
       <CompareBar />
       <NotificationPrompt />
-      <LiveChatWidget />
+      {/* Brandon 2026-06-12: LiveChatWidget ("chat con el negocio") queda SOLO
+          en tiendas white-label tenant. En el MARKETPLACE el FAB flotante se
+          quitó (molesto) → ayuda general por "Ayuda" (IA, nav) + chat por tienda
+          en el "Mensaje" del storefront. */}
+      {liveChat && <LiveChatWidget />}
       <WebVitalsReporter />
       <FirstVisitCouponModal />
     </>
