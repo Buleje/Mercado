@@ -15,7 +15,7 @@
     },
     {
       "id": "explorar-2",
-      "title": "Envío gratis a Pucallpa",
+      "title": "Envío gratis a Ciudad Constitución",
       "subtitle": "En compras desde S/50",
       "imageUrl": null,
       "ctaHref": "/marketplace/explorar",
@@ -44,7 +44,7 @@
     {
       "id": "explorar-mid-1",
       "title": "Delivery gratis hoy",
-      "subtitle": "En pedidos desde S/ 50 · Toda Pucallpa",
+      "subtitle": "En pedidos desde S/ 50 · Toda Ciudad Constitución",
       "imageUrl": null,
       "ctaHref": "/marketplace/explorar?delivery=free",
       "ctaLabel": "Aprovechar delivery",
@@ -263,7 +263,7 @@
   "tiendas-hero": [
     {
       "id": "tiendas-hero-1",
-      "title": "Tu mercado de Pucallpa, a domicilio",
+      "title": "Tu mercado de Ciudad Constitución, a domicilio",
       "subtitle": "Bodegas, restaurantes y mercados con delivery en 25 minutos",
       "imageUrl": null,
       "ctaHref": "/tiendas",
