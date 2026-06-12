@@ -735,9 +735,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               <NotificationsMenu />
 
               {/* Ayuda — abre el asistente IA (preguntas generales del
-                  marketplace). Brandon 2026-06-12: reemplaza el ícono de chat
-                  molesto. El chat tienda↔cliente sigue por el "Mensaje" del
-                  storefront (ChatNavLauncher headless, montado abajo). */}
+                  marketplace). Brandon 2026-06-12. */}
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("buleje:open-assistant"))}
@@ -747,6 +745,11 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 <HelpCircle className="h-6 w-6" strokeWidth={2} aria-hidden />
                 <span>Ayuda</span>
               </button>
+
+              {/* Mensajes — chat tienda↔cliente estilo Messenger (Brandon
+                  2026-06-12, al lado de Ayuda). Su panel también lo abre el
+                  "Mensaje" del storefront (buleje:open-chat). */}
+              <ChatNavLauncher />
 
               {/* Cart */}
               <span data-tour="cart" className="inline-flex">
@@ -979,9 +982,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                   ya vive en el bottom-nav (tab "Cuenta"). El nav mobile queda con
                   3 elementos: ☰ · buscador · carrito. */}
 
-              {/* Ayuda (mobile) — abre el asistente IA. Brandon 2026-06-12:
-                  reemplaza el ícono de chat. El Messenger tienda↔cliente vive en
-                  el "Mensaje" del storefront (launcher headless montado abajo). */}
+              {/* Ayuda (mobile) — abre el asistente IA. Brandon 2026-06-12. */}
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("buleje:open-assistant"))}
@@ -990,6 +991,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               >
                 <HelpCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               </button>
+
+              {/* Mensajes (mobile) — Messenger tienda↔cliente al lado de Ayuda. */}
+              <ChatNavLauncher variant="bare" />
 
               {/* Cart — compactado. Badge sigue siendo prominente con ring. */}
               <button
@@ -1047,13 +1051,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
         initialName={oauthInitialName ?? undefined}
       />
 
-      {/* Messenger tienda↔cliente — HEADLESS (sin ícono ni burbuja): solo el
-          panel + listener de buleje:open-chat para que el botón "Mensaje" del
-          storefront siga funcionando. Brandon 2026-06-12. */}
-      <ChatNavLauncher variant="headless" />
-
       {/* Asistente IA — abierto por el botón "Ayuda" del nav (evento
-          buleje:open-assistant), sin FAB flotante. */}
+          buleje:open-assistant), sin FAB flotante. El Messenger tienda↔cliente
+          ya vive en el cluster del nav (ChatNavLauncher, al lado de Ayuda). */}
       <BulejeAssistantChat hideFab />
     </>
   );
