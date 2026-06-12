@@ -18,7 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot,
+  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -128,6 +128,8 @@ export default function ChatConversationView({
   const [loading, setLoading] = useState(!!threadIdProp);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Brandon 2026-06-07: si el hilo ya no existe o no es tuyo (GET 404 por
   // ownership / thread borrado, o 403 por sesión que no coincide), marcamos
@@ -321,6 +323,49 @@ export default function ChatConversationView({
       setError("Sin conexión. Probá de nuevo.");
     } finally {
       setSending(false);
+    }
+  };
+
+  /** Tanda 4: el cliente adjunta una foto (comprobante de Yape/Plin) al hilo.
+      Sube la imagen y manda un mensaje con attachmentUrl + messageType image. */
+  const sendImage = async (file: File) => {
+    if (!file || sending || uploading || unavailable || !storeSlug) return;
+    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      // CSRF: el proxy exige x-csrf-token en POST. NO seteamos Content-Type:
+      // el browser pone el boundary del multipart solo.
+      const up = await fetch("/api/chat/public/upload", {
+        method: "POST",
+        headers: csrfHeaders(),
+        body: fd,
+        credentials: "include",
+      });
+      const uj = await up.json().catch(() => null);
+      if (!up.ok || !uj?.url) {
+        setError(uj?.error ?? "No se pudo subir la imagen.");
+        return;
+      }
+      const res = await fetch("/api/chat/public?action=send", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({
+          threadId, storeSlug, customerPhone, customerName,
+          body: "📷 Comprobante",
+          attachmentUrl: uj.url,
+          messageType: "image",
+        }),
+      });
+      if (!res.ok) { setError("No se pudo enviar la imagen."); return; }
+      window.setTimeout(() => { void fetchMessages(); }, 300);
+    } catch {
+      setError("Sin conexión. Probá de nuevo.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -764,7 +809,25 @@ export default function ChatConversationView({
                               <Bot className="h-3 w-3" aria-hidden /> Asistente
                             </span>
                           )}
-                          {!chatOrder && !chatPayment && (
+                          {/* Comprobante/foto en el hilo (Tanda 4) */}
+                          {m.messageType === "image" && m.attachmentUrl && (
+                            <a
+                              href={m.attachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="mb-1 block overflow-hidden rounded-xl"
+                            >
+                              <Image
+                                src={m.attachmentUrl}
+                                alt="Comprobante adjunto"
+                                width={240}
+                                height={240}
+                                className="h-auto max-h-64 w-full max-w-[240px] object-cover"
+                              />
+                            </a>
+                          )}
+                          {!chatOrder && !chatPayment && m.messageType !== "image" && (
                             <p className="whitespace-pre-wrap break-words text-sm font-medium leading-snug">
                               {m.body}
                             </p>
@@ -921,6 +984,30 @@ export default function ChatConversationView({
                 )}
               >
                 <Smile className="h-6 w-6" strokeWidth={2} aria-hidden />
+              </button>
+              {/* Tanda 4: adjuntar comprobante/foto */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void sendImage(f);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || sending || !threadId}
+                aria-label="Adjuntar comprobante o foto"
+                title="Adjuntar comprobante o foto"
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50"
+              >
+                {uploading
+                  ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+                  : <Paperclip className="h-6 w-6" strokeWidth={2} aria-hidden />}
               </button>
               <input
                 type="text"

@@ -290,7 +290,27 @@ function MessageBubble({
               )}
             </div>
           )}
-          {!order && !payment && <div className="whitespace-pre-wrap break-words">{message.body}</div>}
+          {/* Comprobante/foto en el hilo (Tanda 4) */}
+          {message.messageType === "image" && message.attachmentUrl && (
+            <a
+              href={message.attachmentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="mb-1 block overflow-hidden rounded-lg"
+            >
+              <Image
+                src={message.attachmentUrl}
+                alt="Comprobante adjunto"
+                width={220}
+                height={220}
+                className="h-auto max-h-56 w-full max-w-[220px] object-cover"
+              />
+            </a>
+          )}
+          {!order && !payment && message.messageType !== "image" && (
+            <div className="whitespace-pre-wrap break-words">{message.body}</div>
+          )}
         </button>
 
         {/* Barra de acciones — emojis + responder */}

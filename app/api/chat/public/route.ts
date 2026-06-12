@@ -90,6 +90,10 @@ const SendMessageBody = z.object({
   customerName:  z.string().min(1).max(150),
   body:          z.string().min(1).max(4000),
   replyTo:       ReplyToSchema.optional(),
+  // Tanda 4: comprobante/foto en el hilo. La imagen ya se subió vía
+  // /api/chat/public/upload; sólo aceptamos URLs de nuestro storage público.
+  attachmentUrl: z.string().url().max(600).optional(),
+  messageType:   z.enum(["text", "image"]).optional(),
 });
 
 /** Reacción emoji a un mensaje (toggle). Tanda 1. */
@@ -274,12 +278,20 @@ async function handleSend(body: unknown) {
       ? JSON.stringify({ replyTo: parsed.data.replyTo })
       : undefined;
 
+    // Tanda 4: sólo aceptamos imágenes servidas desde NUESTRO storage público
+    // (anti-abuso: no permitimos incrustar URLs externas arbitrarias).
+    const isOwnImage =
+      parsed.data.messageType === "image" &&
+      !!parsed.data.attachmentUrl &&
+      /\/storage\/v1\/object\/public\/media\/chat\//.test(parsed.data.attachmentUrl);
+
     const message = await ChatMessagesDB.send({
       tenantId:    store.tenantId,
       threadId:    parsed.data.threadId,
       senderType:  "buyer",
       senderName:  parsed.data.customerName,
       body:        parsed.data.body,
+      ...(isOwnImage && { messageType: "image" as const, attachmentUrl: parsed.data.attachmentUrl }),
       metadataJson,
     });
 
