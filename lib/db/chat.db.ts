@@ -47,6 +47,8 @@ export type DbConversationThread = {
   lastSenderType: SenderType | null;
   closedAt: string | null;
   closedReason: string | null;
+  /** Tanda 3: etiquetas de triage del vendedor (array JSON de strings). */
+  labels: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -70,6 +72,21 @@ export type DbConversationMessage = {
 
 const toISO = (d: Date | null | undefined): string | null =>
   d ? d.toISOString() : null;
+
+/** Tanda 3: parsea labelsJson (array de strings) de forma defensiva. */
+const parseLabels = (raw: string | null): string[] => {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+      .map((x) => x.trim().slice(0, 40))
+      .slice(0, 8);
+  } catch {
+    return [];
+  }
+};
 
 // ─── ChatThreadsDB ────────────────────────────────────────────────────────────
 
@@ -109,13 +126,14 @@ export const ChatThreadsDB = {
         lastSenderType: string | null;
         closedAt: Date | null;
         closedReason: string | null;
+        labelsJson: string | null;
         createdAt: Date;
         updatedAt: Date;
       }>
     >(
       `SELECT "id","tenantId","storeId","orderId","customerPhone","customerName","subject",
               "status","unreadForBuyer","unreadForSeller","lastMessageAt","lastMessageText",
-              "lastSenderType","closedAt","closedReason","createdAt","updatedAt"
+              "lastSenderType","closedAt","closedReason","labelsJson","createdAt","updatedAt"
          FROM "ConversationThread"
         WHERE "tenantId" = $1
           AND "storeId" = $2
@@ -147,6 +165,7 @@ export const ChatThreadsDB = {
         lastSenderType:  t.lastSenderType as SenderType | null,
         closedAt:        toISO(t.closedAt),
         closedReason:    t.closedReason,
+        labels:          parseLabels(t.labelsJson),
         createdAt:       t.createdAt.toISOString(),
         updatedAt:       t.updatedAt.toISOString(),
       };
@@ -195,6 +214,7 @@ export const ChatThreadsDB = {
       lastSenderType:  null,
       closedAt:        null,
       closedReason:    null,
+      labels:          [],
       createdAt:       now.toISOString(),
       updatedAt:       now.toISOString(),
     };
@@ -280,6 +300,8 @@ export const ChatThreadsDB = {
         lastSenderType:  t.lastSenderType as SenderType | null,
         closedAt:        toISO(t.closedAt),
         closedReason:    t.closedReason,
+        // Las etiquetas son triage interno del vendedor — el buyer no las ve.
+        labels:          [],
         createdAt:       t.createdAt.toISOString(),
         updatedAt:       t.updatedAt.toISOString(),
         storeName:       t.storeName,
@@ -331,13 +353,14 @@ export const ChatThreadsDB = {
           lastSenderType: string | null;
           closedAt: Date | null;
           closedReason: string | null;
+          labelsJson: string | null;
           createdAt: Date;
           updatedAt: Date;
         }>
       >(
         `SELECT "id","tenantId","storeId","orderId","customerPhone","customerName","subject",
                 "status","unreadForBuyer","unreadForSeller","lastMessageAt","lastMessageText",
-                "lastSenderType","closedAt","closedReason","createdAt","updatedAt"
+                "lastSenderType","closedAt","closedReason","labelsJson","createdAt","updatedAt"
            FROM "ConversationThread"
           WHERE "tenantId" = $1 ${whereExtras}
           ORDER BY COALESCE("lastMessageAt", "createdAt") DESC
@@ -361,6 +384,7 @@ export const ChatThreadsDB = {
         lastSenderType:  r.lastSenderType as SenderType | null,
         closedAt:        toISO(r.closedAt),
         closedReason:    r.closedReason,
+        labels:          parseLabels(r.labelsJson),
         createdAt:       r.createdAt.toISOString(),
         updatedAt:       r.updatedAt.toISOString(),
       }));
@@ -408,6 +432,39 @@ export const ChatThreadsDB = {
         });
       });
     }
+  },
+
+  /**
+   * Tanda 3: setea las etiquetas de triage de un hilo (reemplaza el set).
+   * Sanea el input (máx 8 etiquetas, 40 chars c/u, sin vacíos ni duplicados).
+   * Devuelve las etiquetas guardadas.
+   */
+  async setLabels(
+    tenantId: string,
+    threadId: string,
+    labels: string[],
+  ): Promise<string[]> {
+    const clean = Array.from(
+      new Set(
+        labels
+          .filter((x) => typeof x === "string" && x.trim().length > 0)
+          .map((x) => x.trim().slice(0, 40)),
+      ),
+    ).slice(0, 8);
+    const json = clean.length > 0 ? JSON.stringify(clean) : null;
+    await prisma.$executeRawUnsafe(
+      `UPDATE "ConversationThread"
+          SET "labelsJson" = $1,
+              "updatedAt" = $2
+        WHERE "id" = $3 AND "tenantId" = $4`,
+      json,
+      new Date(),
+      threadId,
+      tenantId,
+    );
+    invalidateByPrefix(`chat:threads:${tenantId}`);
+    logger.info("[ChatThreads] labels set", { tenantId, threadId, count: clean.length });
+    return clean;
   },
 };
 

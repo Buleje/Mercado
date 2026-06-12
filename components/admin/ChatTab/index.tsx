@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ThreadsList } from "./ThreadsList";
 import { ConversationView } from "./ConversationView";
 import { MessageComposer } from "./MessageComposer";
+import { LabelPicker } from "./LabelPicker";
 import { useChatThreads, useChatMessages, type MsgReplySnapshot } from "./hooks";
 import { STATUS_LABELS } from "./types";
 import { useSettingsSafe } from "@/contexts/settings-context";
@@ -43,6 +44,7 @@ export default function ChatTab() {
     statusFilter,
     setStatusFilter,
     closeThread,
+    setLabels,
   } = useChatThreads("open");
 
   const {
@@ -169,6 +171,11 @@ export default function ChatTab() {
                     </a>
                   </div>
                 )}
+                {/* Tanda 3: etiquetas de triage del hilo */}
+                <LabelPicker
+                  value={selectedThread.labels ?? []}
+                  onChange={(labels) => setLabels(selectedThread.id, labels)}
+                />
               </div>
               {selectedThread.status === "open" && (
                 <button

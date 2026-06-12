@@ -17,6 +17,12 @@ const CloseBody = z.object({
   reason:   z.string().max(300).optional(),
 });
 
+/** Tanda 3: setear etiquetas de triage de un hilo (reemplaza el set). */
+const LabelsBody = z.object({
+  threadId: z.string().min(1).max(100),
+  labels:   z.array(z.string().max(40)).max(8),
+});
+
 /**
  * GET /api/admin/chat/threads
  * Lista hilos del tenant ordenados por actividad reciente.
@@ -74,6 +80,24 @@ export async function PATCH(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // ── Etiquetas de triage (Tanda 3) ──
+  if (req.nextUrl.searchParams.get("action") === "labels") {
+    const l = LabelsBody.safeParse(body);
+    if (!l.success) {
+      return NextResponse.json(
+        { error: "Datos inválidos", issues: l.error.issues },
+        { status: 400 },
+      );
+    }
+    try {
+      const labels = await ChatThreadsDB.setLabels(auth.tenantId, l.data.threadId, l.data.labels);
+      return NextResponse.json({ data: { threadId: l.data.threadId, labels } });
+    } catch (err) {
+      logger.error("[chat/threads] set labels failed", { err: String(err) });
+      return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
+    }
   }
 
   const parsed = CloseBody.safeParse(body);

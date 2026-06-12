@@ -85,6 +85,20 @@ export function useChatThreads(initialStatus: ThreadStatus | "all" = "open") {
     [load],
   );
 
+  /** Tanda 3: setea las etiquetas de triage de un hilo (reemplaza el set). */
+  const setLabels = useCallback(
+    async (threadId: string, labels: string[]) => {
+      const res = await tenantFetch("/api/admin/chat/threads?action=labels", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ threadId, labels }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await load();
+    },
+    [load],
+  );
+
   return {
     threads,
     loading,
@@ -93,6 +107,7 @@ export function useChatThreads(initialStatus: ThreadStatus | "all" = "open") {
     setStatusFilter,
     reload: load,
     closeThread,
+    setLabels,
   };
 }
 

@@ -23,6 +23,8 @@ export interface ChatThreadView {
   lastSenderType: SenderType | null;
   closedAt: string | null;
   closedReason: string | null;
+  /** Tanda 3: etiquetas de triage del vendedor. */
+  labels: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -63,3 +65,29 @@ export const SENDER_LABELS: Record<SenderType, string> = {
   seller: "Tienda",
   system: "Sistema",
 };
+
+/**
+ * Tanda 3: etiquetas de triage preset. El vendedor las aplica desde el panel
+ * de la conversación; la bandeja se filtra por ellas. `chip` pinta el badge.
+ */
+export interface ThreadLabelPreset {
+  name: string;
+  /** Clases del badge (texto + fondo, light + dark). */
+  chip: string;
+}
+
+export const THREAD_LABEL_PRESETS: ThreadLabelPreset[] = [
+  { name: "Nuevo",     chip: "bg-[var(--data-info-100)] text-[var(--data-info-700)]" },
+  { name: "Pagado",    chip: "bg-[var(--data-success-100)] text-[var(--data-success-700)]" },
+  { name: "Reclamo",   chip: "bg-[var(--data-error-100)] text-[var(--data-error-700)]" },
+  { name: "Pendiente", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" },
+  { name: "VIP",       chip: "bg-primary/15 text-primary" },
+];
+
+/** Estilo del badge para una etiqueta (preset o custom → estilo neutro). */
+export function labelChipClass(name: string): string {
+  return (
+    THREAD_LABEL_PRESETS.find((p) => p.name.toLowerCase() === name.toLowerCase())?.chip ??
+    "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+  );
+}
