@@ -34,7 +34,7 @@ function prettyLabel(id: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-export default function MarketplaceCategoriesBar() {
+export default function MarketplaceCategoriesBar({ embedded = false }: { embedded?: boolean }) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -93,7 +93,16 @@ export default function MarketplaceCategoriesBar() {
     "bg-[var(--surface-sunken)] text-[var(--text-primary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]";
 
   return (
-    <div className="md:hidden sticky top-[52px] z-40 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
+    <div
+      className={cn(
+        "md:hidden border-b border-[var(--rule-soft)]",
+        // Brandon 2026-06-11: `embedded` = vive DENTRO del bloque sticky de los
+        // chips de vertical (home mobile) → no lleva su propio sticky/fondo (lo
+        // aporta el contenedor). Standalone conserva su sticky top-52 original.
+        !embedded &&
+          "sticky top-[52px] z-40 bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80",
+      )}
+    >
       <nav
         aria-label="Categorías de productos"
         className="flex gap-2 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden snap-x px-4 py-2.5"

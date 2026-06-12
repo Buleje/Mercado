@@ -1204,16 +1204,16 @@ export default async function Home() {
       {/* 1.2 Verticales — los "mundos" del Inicio (Brandon 2026-06-11). Arranca
           food-first (default "comida"); un toque cambia a Bodega/Ferretería/
           Electro/Farmacia y filtra el catálogo. URL-driven (`?v=`).
-          STICKY desktop (2026-06-11): en md+ se pega bajo el sub-nav de orden
-          (top-[112px] = navbar 64 + sub-nav 48), z-30 < navbar(50)/sub-nav(40),
-          con fondo translúcido + blur. En MOBILE queda en flujo (no sticky): el
-          chrome ya tiene su propia barra de categorías sticky (top-52) y apilar
-          dos comería pantalla; ademas esa barra es compartida con /marketplace/
-          [slug]. Stacking mobile = follow-up si Brandon lo pide. */}
-      <Suspense fallback={<div className="h-14" />}>
+          STICKY (2026-06-11): en DESKTOP (md+) los chips viven acá y se pegan
+          bajo el sub-nav de orden (top-[112px] = navbar 64 + sub-nav 48), z-30,
+          fondo translúcido + blur. En MOBILE esta copia se OCULTA (`hidden`): los
+          chips los aporta el chrome (ConditionalSecondaryNav) apilados sobre la
+          barra de categorías en un bloque sticky a top-52, para no romper el
+          stacking ni la barra compartida con /marketplace/[slug]. */}
+      <Suspense fallback={<div className="hidden md:block md:h-14" />}>
         <section
           aria-label="Categorías del marketplace"
-          className="border-b border-[var(--rule-soft)] py-2.5 md:sticky md:top-[112px] md:z-30 md:bg-[var(--surface-canvas)]/90 md:backdrop-blur-md"
+          className="hidden border-b border-[var(--rule-soft)] py-2.5 md:block md:sticky md:top-[112px] md:z-30 md:bg-[var(--surface-canvas)]/90 md:backdrop-blur-md"
         >
           <MarketplaceVerticalChips />
         </section>

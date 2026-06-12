@@ -8,9 +8,11 @@
  */
 
 import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { useMarketplaceNavMode } from "@/hooks/use-marketplace-nav-mode";
 import MarketplaceCategoriesBar from "@/components/marketplace/MarketplaceCategoriesBar";
+import MarketplaceVerticalChips from "@/components/marketplace/home/MarketplaceVerticalChips";
 
 const MarketplaceSecondaryNav = dynamic(
   () => import("@/components/marketplace/MarketplaceSecondaryNav"),
@@ -30,11 +32,29 @@ export default function ConditionalSecondaryNav() {
   // de producto (Bebidas, Guarniciones…) — /tiendas mobile más minimalista.
   const pathname = usePathname() ?? "";
   const onTiendas = pathname.startsWith("/tiendas");
+  const onHome = pathname === "/";
   return (
     <>
-      {/* Barra de categorías de PRODUCTO mobile (chips: Bebidas, Snacks…).
-          md:hidden — en desktop manda el mega-menú. Oculta en tiendas-only y /tiendas. */}
-      {showSubNav && !onTiendas && <MarketplaceCategoriesBar />}
+      {/* HOME mobile (Brandon 2026-06-11): chips de vertical (SIEMPRE — son la
+          nav principal del Inicio, no dependen del nav-mode) + la barra de
+          categorías de producto (si subnav) apilados en UN solo bloque sticky
+          (top-52). Stacking sin matemática de offsets: la barra de categorías
+          va `embedded` (sin su propio sticky). md:hidden — en desktop los chips
+          viven en la página (sticky top-112). */}
+      {onHome && (
+        <div className="md:hidden sticky top-[52px] z-40 bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
+          <Suspense fallback={<div className="h-[57px]" />}>
+            <div className="border-b border-[var(--rule-soft)] py-2.5">
+              <MarketplaceVerticalChips />
+            </div>
+          </Suspense>
+          {showSubNav && <MarketplaceCategoriesBar embedded />}
+        </div>
+      )}
+
+      {/* Fuera de la home: barra de categorías de PRODUCTO mobile con su propio
+          sticky. md:hidden — en desktop manda el mega-menú. Oculta en /tiendas. */}
+      {!onHome && showSubNav && !onTiendas && <MarketplaceCategoriesBar />}
 
       {/* Desktop: mega-menú + filtros rápidos. Solo full/minimo/custom. */}
       {showSubNav && <MarketplaceSecondaryNav />}
