@@ -18,13 +18,14 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip,
+  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder, type ChatPayment } from "@/lib/chat/shared-product";
 import { parseOrderContext, orderStatusMeta, type ChatOrderContext } from "@/lib/chat/order-context";
+import { parseChatLocation, osmTile, googleMapsUrl } from "@/lib/chat/location";
 
 const POLL_MS = 5_000;
 
@@ -129,6 +130,7 @@ export default function ChatConversationView({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Brandon 2026-06-07: si el hilo ya no existe o no es tuyo (GET 404 por
@@ -369,6 +371,42 @@ export default function ChatConversationView({
     }
   };
 
+  /** Tanda 4: el cliente comparte su ubicación GPS (one-shot) para coordinar la
+      entrega. Va en metadataJson.location (lo arma el server desde campos validados). */
+  const shareLocation = () => {
+    if (sending || uploading || locating || unavailable || !storeSlug) return;
+    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setError("Tu dispositivo no soporta ubicación."); return;
+    }
+    setLocating(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch("/api/chat/public?action=send", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            credentials: "include",
+            body: JSON.stringify({
+              threadId, storeSlug, customerPhone, customerName,
+              body: "📍 Mi ubicación",
+              location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+            }),
+          });
+          if (!res.ok) { setError("No se pudo enviar la ubicación."); return; }
+          window.setTimeout(() => { void fetchMessages(); }, 300);
+        } catch {
+          setError("Sin conexión. Probá de nuevo.");
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => { setError("No pudimos obtener tu ubicación. Activá el GPS."); setLocating(false); },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
   /** Tanda 2: el cliente acepta (agrega el reemplazo al carrito) o rechaza una
       sustitución propuesta por la tienda; en ambos casos avisa por el chat. */
   const respondSubstitution = async (messageId: string, sub: ChatSubstitution, accept: boolean) => {
@@ -536,6 +574,8 @@ export default function ChatConversationView({
               const substitution = parseSubstitution(m.metadataJson);
               const chatOrder = parseChatOrder(m.metadataJson);
               const chatPayment = parseChatPayment(m.metadataJson);
+              const location = parseChatLocation(m.metadataJson);
+              const tile = location ? osmTile(location.lat, location.lng) : null;
               const active = activeMsgId === m.id;
 
               return (
@@ -827,7 +867,35 @@ export default function ChatConversationView({
                               />
                             </a>
                           )}
-                          {!chatOrder && !chatPayment && m.messageType !== "image" && (
+                          {/* Ubicación compartida (Tanda 4) — mini-mapa + Maps */}
+                          {location && tile && (
+                            <a
+                              href={googleMapsUrl(location.lat, location.lng)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="mb-1 block overflow-hidden rounded-xl border border-[var(--rule-base)]"
+                            >
+                              <span className="relative block h-28 w-full max-w-[240px] overflow-hidden bg-[var(--surface-sunken)]">
+                                <Image src={tile.url} alt="Mapa de la ubicación" fill sizes="240px" className="object-cover" unoptimized />
+                                <MapPin
+                                  className="absolute h-7 w-7 -translate-x-1/2 -translate-y-full text-[var(--data-error-500)] drop-shadow-md"
+                                  style={{ left: `${tile.pinXPct}%`, top: `${tile.pinYPct}%` }}
+                                  strokeWidth={2.5}
+                                  aria-hidden
+                                />
+                              </span>
+                              <span className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+                                <span className="truncate text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)]">
+                                  {location.label ?? "Ubicación compartida"}
+                                </span>
+                                <span className="shrink-0 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-[var(--accent)]">
+                                  Abrir en Maps →
+                                </span>
+                              </span>
+                            </a>
+                          )}
+                          {!chatOrder && !chatPayment && !location && m.messageType !== "image" && (
                             <p className="whitespace-pre-wrap break-words text-sm font-medium leading-snug">
                               {m.body}
                             </p>
@@ -1008,6 +1076,19 @@ export default function ChatConversationView({
                 {uploading
                   ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
                   : <Paperclip className="h-6 w-6" strokeWidth={2} aria-hidden />}
+              </button>
+              {/* Tanda 4: compartir ubicación */}
+              <button
+                type="button"
+                onClick={shareLocation}
+                disabled={locating || sending || !threadId}
+                aria-label="Compartir mi ubicación"
+                title="Compartir mi ubicación"
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50"
+              >
+                {locating
+                  ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+                  : <MapPin className="h-6 w-6" strokeWidth={2} aria-hidden />}
               </button>
               <input
                 type="text"

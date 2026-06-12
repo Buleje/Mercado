@@ -94,6 +94,13 @@ const SendMessageBody = z.object({
   // /api/chat/public/upload; sólo aceptamos URLs de nuestro storage público.
   attachmentUrl: z.string().url().max(600).optional(),
   messageType:   z.enum(["text", "image"]).optional(),
+  // Tanda 4: ubicación compartida (GPS). El server arma el metadataJson — NO
+  // aceptamos metadataJson crudo del buyer (evita inyectar reactions/autoReply).
+  location: z.object({
+    lat:   z.number().min(-90).max(90),
+    lng:   z.number().min(-180).max(180),
+    label: z.string().max(120).optional(),
+  }).optional(),
 });
 
 /** Reacción emoji a un mensaje (toggle). Tanda 1. */
@@ -272,11 +279,12 @@ async function handleSend(body: unknown) {
       return NextResponse.json({ error: "Conversación cerrada" }, { status: 409 });
     }
 
-    // Tanda 1: si es una cita (reply), adjuntar el snapshot del mensaje citado
-    // en metadataJson para render sin join. El tipo sigue siendo "text".
-    const metadataJson = parsed.data.replyTo
-      ? JSON.stringify({ replyTo: parsed.data.replyTo })
-      : undefined;
+    // metadataJson lo arma el SERVER a partir de campos validados (replyTo,
+    // location) — nunca aceptamos un blob crudo del buyer.
+    const metaObj: Record<string, unknown> = {};
+    if (parsed.data.replyTo) metaObj.replyTo = parsed.data.replyTo;        // Tanda 1
+    if (parsed.data.location) metaObj.location = parsed.data.location;     // Tanda 4
+    const metadataJson = Object.keys(metaObj).length ? JSON.stringify(metaObj) : undefined;
 
     // Tanda 4: sólo aceptamos imágenes servidas desde NUESTRO storage público
     // (anti-abuso: no permitimos incrustar URLs externas arbitrarias).

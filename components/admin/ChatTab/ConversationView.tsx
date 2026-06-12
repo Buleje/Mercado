@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Bot, User, Settings2, Undo2, ShoppingCart, Wallet } from "@buleje/design-system/icons";
+import { Bot, User, Settings2, Undo2, ShoppingCart, Wallet, MapPin } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, fmtSoles } from "@/lib/chat/shared-product";
+import { parseChatLocation, osmTile, googleMapsUrl } from "@/lib/chat/location";
 import type { ChatMessageView } from "./types";
 import type { MsgReplySnapshot } from "./hooks";
 
@@ -117,6 +118,8 @@ function MessageBubble({
   const sub = parseSubstitution(message.metadataJson);
   const order = parseChatOrder(message.metadataJson);
   const payment = parseChatPayment(message.metadataJson);
+  const location = parseChatLocation(message.metadataJson);
+  const tile = location ? osmTile(location.lat, location.lng) : null;
 
   if (isSystem) {
     return (
@@ -308,7 +311,34 @@ function MessageBubble({
               />
             </a>
           )}
-          {!order && !payment && message.messageType !== "image" && (
+          {/* Ubicación compartida (Tanda 4) — mini-mapa + Maps */}
+          {location && tile && (
+            <a
+              href={googleMapsUrl(location.lat, location.lng)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="mb-1 block overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700"
+            >
+              <span className="relative block h-24 w-full max-w-[220px] overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <Image src={tile.url} alt="Mapa de la ubicación" fill sizes="220px" className="object-cover" unoptimized />
+                <MapPin
+                  className="absolute h-6 w-6 -translate-x-1/2 -translate-y-full text-[var(--data-error-500)] drop-shadow"
+                  style={{ left: `${tile.pinXPct}%`, top: `${tile.pinYPct}%` }}
+                  strokeWidth={2.5}
+                  aria-hidden
+                />
+              </span>
+              <span className={cn(
+                "flex items-center justify-between gap-2 px-2 py-1 text-[length:var(--ts-2xs)] font-bold",
+                isSeller ? "text-white" : "text-slate-700 dark:text-slate-200",
+              )}>
+                <span className="truncate">{location.label ?? "Ubicación del cliente"}</span>
+                <span className={isSeller ? "text-white/90" : "text-primary"}>Maps →</span>
+              </span>
+            </a>
+          )}
+          {!order && !payment && !location && message.messageType !== "image" && (
             <div className="whitespace-pre-wrap break-words">{message.body}</div>
           )}
         </button>

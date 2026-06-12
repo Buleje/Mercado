@@ -106,6 +106,8 @@ const nextConfig: NextConfig = {
       // Placeholders dev/staging
       { protocol: "https", hostname: "placehold.co" },
       { protocol: "https", hostname: "via.placeholder.com" },
+      // OpenStreetMap tiles — thumbnail de "compartir ubicación" en el chat (Tanda 4)
+      { protocol: "https", hostname: "tile.openstreetmap.org" },
     ],
   },
 
