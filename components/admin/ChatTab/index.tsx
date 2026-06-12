@@ -47,6 +47,7 @@ export default function ChatTab() {
     sendMessage,
     react,
     pingTyping,
+    shareProduct,
     presence,
   } = useChatMessages(selectedThreadId);
 
@@ -194,6 +195,7 @@ export default function ChatTab() {
               replyTo={replyTo}
               onCancelReply={() => setReplyTo(null)}
               onTyping={pingTyping}
+              onShareProduct={shareProduct}
             />
           )}
           {selectedThread && selectedThread.status !== "open" && (

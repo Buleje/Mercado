@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, User, Settings2, Undo2 } from "@buleje/design-system/icons";
+import Image from "next/image";
+import { Bot, User, Settings2, Undo2, ShoppingCart } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { parseSharedProduct, fmtSoles } from "@/lib/chat/shared-product";
 import type { ChatMessageView } from "./types";
 import type { MsgReplySnapshot } from "./hooks";
 
@@ -110,6 +112,7 @@ function MessageBubble({
     minute: "2-digit",
   });
   const meta = parseMeta(message.metadataJson);
+  const shared = parseSharedProduct(message.metadataJson);
 
   if (isSystem) {
     return (
@@ -172,6 +175,31 @@ function MessageBubble({
           {!isSeller && (
             <div className="mb-0.5 text-[length:var(--ts-xs)] font-semibold text-slate-500 dark:text-slate-400">
               {message.senderName}
+            </div>
+          )}
+          {/* Tarjeta de producto compartido (Tanda 2) — el vendedor ve lo que mandó */}
+          {shared && (
+            <div className={cn(
+              "mb-1 flex items-center gap-2 rounded-lg border p-2",
+              isSeller ? "border-white/30 bg-white/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+            )}>
+              <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-white">
+                {shared.image ? (
+                  <Image src={shared.image} alt="" fill sizes="44px" className="object-contain p-0.5" />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center text-slate-400">
+                    <ShoppingCart className="h-4 w-4" aria-hidden />
+                  </span>
+                )}
+              </span>
+              <div className="min-w-0">
+                <p className={cn("truncate text-[length:var(--ts-xs)] font-bold", isSeller ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+                  {shared.name}
+                </p>
+                <p className={cn("text-sm font-black tabular-nums", isSeller ? "text-white" : "text-primary")}>
+                  {fmtSoles(shared.price)}
+                </p>
+              </div>
             </div>
           )}
           <div className="whitespace-pre-wrap break-words">{message.body}</div>

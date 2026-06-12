@@ -18,10 +18,12 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X,
+  ReceiptText, Smile, Undo2, X, ShoppingCart,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
+import { parseSharedProduct, fmtSoles, type SharedChatProduct } from "@/lib/chat/shared-product";
 
 const POLL_MS = 5_000;
 
@@ -139,6 +141,32 @@ export default function ChatConversationView({
   const lastTypingPingRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
+  // Tanda 2: agregar al carrito un producto compartido por la tienda.
+  const { addItem } = useMarketplaceCart();
+  const [addedProductId, setAddedProductId] = useState<string | null>(null);
+
+  const addSharedToCart = useCallback((p: SharedChatProduct) => {
+    addItem({
+      storeId: p.storeId,
+      storeName: p.storeName,
+      storeSlug: p.storeSlug,
+      storeProductId: p.storeProductId,
+      productId: p.productId,
+      name: p.name,
+      price: p.price,
+      basePrice: p.price,
+      image: p.image,
+      unit: p.unit,
+      modifiers: [],
+      modifierHash: modifierHashOf([]),
+      quantity: 1,
+    });
+    setAddedProductId(p.storeProductId);
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate(30); } catch { /* sin soporte */ }
+    }
+    window.setTimeout(() => setAddedProductId(null), 1800);
+  }, [addItem]);
 
   const fetchMessages = useCallback(async () => {
     if (!threadId || !storeSlug) return;
@@ -378,6 +406,7 @@ export default function ChatConversationView({
               const isSystem = m.senderType === "system";
               const isOrder = m.messageType === "order_link";
               const meta = parseMeta(m.metadataJson);
+              const sharedProduct = parseSharedProduct(m.metadataJson);
               const active = activeMsgId === m.id;
 
               return (
@@ -436,6 +465,47 @@ export default function ChatConversationView({
                             )}>
                               {meta.replyTo.body}
                             </p>
+                          </div>
+                        )}
+                        {/* Tarjeta de PRODUCTO compartido por la tienda (Tanda 2) */}
+                        {sharedProduct && (
+                          <div className={cn(
+                            "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
+                            mine ? "border-white/30" : "border-[var(--rule-base)]",
+                          )}>
+                            <div className="flex items-center gap-2.5 p-2.5">
+                              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-white">
+                                {sharedProduct.image ? (
+                                  <Image src={sharedProduct.image} alt="" fill sizes="56px" className="object-contain p-1" />
+                                ) : (
+                                  <span className="absolute inset-0 flex items-center justify-center text-[var(--text-tertiary)]">
+                                    <ShoppingCart className="h-5 w-5" aria-hidden />
+                                  </span>
+                                )}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-bold text-[var(--text-primary)]">{sharedProduct.name}</p>
+                                <p className="text-base font-black tabular-nums text-[var(--accent)]">
+                                  {fmtSoles(sharedProduct.price)}
+                                  {sharedProduct.unit && (
+                                    <span className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]"> /{sharedProduct.unit}</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            {!mine && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); addSharedToCart(sharedProduct); }}
+                                className="flex w-full items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+                              >
+                                {addedProductId === sharedProduct.storeProductId ? (
+                                  <><Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Agregado ✓</>
+                                ) : (
+                                  <><ShoppingCart className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Agregar al carrito</>
+                                )}
+                              </button>
+                            )}
                           </div>
                         )}
                         {/* Tarjeta de pedido — order_link del checkout */}

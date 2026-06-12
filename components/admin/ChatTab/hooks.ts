@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tenantFetch } from "@/lib/tenant-fetch";
+import { fmtSoles, type SharedChatProduct } from "@/lib/chat/shared-product";
 import type { ChatThreadView, ChatMessageView, ThreadStatus } from "./types";
 
 // Increment 2b: cita + presencia del lado vendedor.
@@ -199,6 +200,25 @@ export function useChatMessages(threadId: string | null) {
     [threadId],
   );
 
+  /** Tanda 2: comparte un producto del catálogo en el hilo (tarjeta cart-ready). */
+  const shareProduct = useCallback(
+    async (product: SharedChatProduct) => {
+      if (!threadId) return;
+      const body = `Te comparto: ${product.name} — ${fmtSoles(product.price)}`;
+      const res = await tenantFetch(
+        `/api/admin/chat/threads/${encodeURIComponent(threadId)}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body, metadataJson: JSON.stringify({ product }) }),
+        },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await load();
+    },
+    [threadId, load],
+  );
+
   /** Increment 2b: avisa "escribiendo…" al cliente (throttle ~3.5s). */
   const pingTyping = useCallback(() => {
     if (!threadId) return;
@@ -211,5 +231,5 @@ export function useChatMessages(threadId: string | null) {
     ).catch(() => { /* efímero */ });
   }, [threadId]);
 
-  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, presence };
+  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, presence };
 }
