@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Bot, User, Settings2, Undo2, ShoppingCart, Wallet, MapPin } from "@buleje/design-system/icons";
+import { Bot, User, Settings2, Undo2, ShoppingCart, Wallet, MapPin, Star } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, fmtSoles } from "@/lib/chat/shared-product";
+import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, parseReviewRequest, fmtSoles } from "@/lib/chat/shared-product";
 import { parseChatLocation, osmTile, googleMapsUrl } from "@/lib/chat/location";
 import type { ChatMessageView } from "./types";
 import type { MsgReplySnapshot } from "./hooks";
@@ -120,6 +120,7 @@ function MessageBubble({
   const payment = parseChatPayment(message.metadataJson);
   const location = parseChatLocation(message.metadataJson);
   const tile = location ? osmTile(location.lat, location.lng) : null;
+  const reviewReq = parseReviewRequest(message.metadataJson);
 
   if (isSystem) {
     return (
@@ -338,7 +339,17 @@ function MessageBubble({
               </span>
             </a>
           )}
-          {!order && !payment && !location && message.messageType !== "image" && (
+          {/* Pedido de reseña post-entrega (Tanda 4) — read-only */}
+          {reviewReq && (
+            <div className={cn(
+              "mb-1 flex items-center gap-2 rounded-lg border px-2.5 py-1.5",
+              isSeller ? "border-white/30 bg-white/10 text-white" : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
+            )}>
+              <Star className={cn("h-4 w-4 shrink-0", isSeller ? "fill-white text-white" : "fill-[var(--data-warning-400)] text-[var(--data-warning-500)]")} aria-hidden />
+              <span className="text-[length:var(--ts-xs)] font-bold">Pediste una reseña</span>
+            </div>
+          )}
+          {!order && !payment && !location && !reviewReq && message.messageType !== "image" && (
             <div className="whitespace-pre-wrap break-words">{message.body}</div>
           )}
         </button>

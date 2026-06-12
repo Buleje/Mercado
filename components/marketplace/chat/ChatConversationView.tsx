@@ -18,12 +18,12 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin,
+  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin, Star,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
-import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder, type ChatPayment } from "@/lib/chat/shared-product";
+import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, parseReviewRequest, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder, type ChatPayment } from "@/lib/chat/shared-product";
 import { parseOrderContext, orderStatusMeta, type ChatOrderContext } from "@/lib/chat/order-context";
 import { parseChatLocation, osmTile, googleMapsUrl } from "@/lib/chat/location";
 
@@ -576,6 +576,7 @@ export default function ChatConversationView({
               const chatPayment = parseChatPayment(m.metadataJson);
               const location = parseChatLocation(m.metadataJson);
               const tile = location ? osmTile(location.lat, location.lng) : null;
+              const reviewReq = parseReviewRequest(m.metadataJson);
               const active = activeMsgId === m.id;
 
               return (
@@ -823,6 +824,36 @@ export default function ChatConversationView({
                             )}
                           </div>
                         )}
+                        {/* Pedido de reseña post-entrega (Tanda 4) */}
+                        {reviewReq && (
+                          <div className={cn(
+                            "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
+                            mine ? "border-white/30" : "border-[var(--rule-base)]",
+                          )}>
+                            <div className="flex flex-col items-center gap-1 px-3 pt-3">
+                              <div className="flex items-center gap-0.5">
+                                {[0, 1, 2, 3, 4].map((i) => (
+                                  <Star key={i} className="h-5 w-5 fill-[var(--data-warning-400)] text-[var(--data-warning-500)]" aria-hidden />
+                                ))}
+                              </div>
+                              <p className="text-center text-sm font-bold text-[var(--text-primary)]">
+                                ¿Cómo estuvo tu pedido?
+                              </p>
+                              <p className="text-center text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                                Tu opinión ayuda a {reviewReq.storeName ?? storeName}
+                              </p>
+                            </div>
+                            {!mine && (
+                              <Link
+                                href={`/marketplace/${reviewReq.storeSlug}#store-reviews-heading`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="mt-2 flex w-full items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] bg-[var(--accent)] py-2.5 text-sm font-bold text-white transition-[filter] hover:brightness-110"
+                              >
+                                <Star className="h-4 w-4 fill-white" strokeWidth={2} aria-hidden /> Dejar mi reseña
+                              </Link>
+                            )}
+                          </div>
+                        )}
                         {/* Tarjeta de pedido — order_link del checkout */}
                         {isOrder && (
                           <div className={cn(
@@ -895,7 +926,7 @@ export default function ChatConversationView({
                               </span>
                             </a>
                           )}
-                          {!chatOrder && !chatPayment && !location && m.messageType !== "image" && (
+                          {!chatOrder && !chatPayment && !location && !reviewReq && m.messageType !== "image" && (
                             <p className="whitespace-pre-wrap break-words text-sm font-medium leading-snug">
                               {m.body}
                             </p>

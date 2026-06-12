@@ -296,6 +296,26 @@ export function useChatMessages(threadId: string | null) {
     [threadId, load],
   );
 
+  /** Tanda 4: pide una reseña post-entrega. Manda una tarjeta con estrellas que
+      el cliente toca para opinar en la tienda. */
+  const requestReview = useCallback(
+    async (storeSlug: string, storeName: string) => {
+      if (!threadId || !storeSlug) return;
+      const body = "⭐ ¿Cómo estuvo tu pedido? Nos ayudaría un montón tu reseña 🙏";
+      const res = await tenantFetch(
+        `/api/admin/chat/threads/${encodeURIComponent(threadId)}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body, metadataJson: JSON.stringify({ reviewRequest: { storeSlug, storeName } }) }),
+        },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await load();
+    },
+    [threadId, load],
+  );
+
   /** Tanda 3: pide a la IA 3 respuestas sugeridas para el último mensaje del
       cliente. No envía nada — el vendedor elige/edita y manda. */
   const suggestReplies = useCallback(async (): Promise<string[]> => {
@@ -321,5 +341,5 @@ export function useChatMessages(threadId: string | null) {
     ).catch(() => { /* efímero */ });
   }, [threadId]);
 
-  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, proposeSubstitution, sendOrder, sendPayment, suggestReplies, presence };
+  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, proposeSubstitution, sendOrder, sendPayment, suggestReplies, requestReview, presence };
 }

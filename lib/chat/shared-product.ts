@@ -134,6 +134,31 @@ export function parseChatOrder(raw: string | null): ChatOrder | null {
   }
 }
 
+// ── Pedido de reseña post-entrega (Tanda 4) ──────────────────────────────────
+// La tienda pide una reseña cuando el pedido se entregó. El cliente ve una
+// tarjeta con estrellas que linkea a la sección de opiniones de la tienda.
+
+export interface ChatReviewRequest {
+  storeSlug: string;
+  storeName: string | null;
+}
+
+/** Extrae el pedido de reseña de un metadataJson (o null). */
+export function parseReviewRequest(raw: string | null): ChatReviewRequest | null {
+  if (!raw) return null;
+  try {
+    const m = JSON.parse(raw) as { reviewRequest?: Record<string, unknown> };
+    const r = m.reviewRequest;
+    if (!r || typeof r.storeSlug !== "string" || !r.storeSlug.trim()) return null;
+    return {
+      storeSlug: r.storeSlug.trim(),
+      storeName: typeof r.storeName === "string" && r.storeName.trim() ? r.storeName.trim() : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Extrae la sustitución de un metadataJson (o null). */
 export function parseSubstitution(raw: string | null): ChatSubstitution | null {
   if (!raw) return null;

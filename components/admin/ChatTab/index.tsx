@@ -74,6 +74,7 @@ export default function ChatTab() {
     sendOrder,
     sendPayment,
     suggestReplies,
+    requestReview,
     presence,
   } = useChatMessages(selectedThreadId);
 
@@ -260,6 +261,7 @@ export default function ChatTab() {
               onSuggest={suggestReplies}
               customerName={selectedThread.customerName}
               storeName={storeName}
+              onRequestReview={requestReview}
             />
           )}
           {selectedThread && selectedThread.status !== "open" && (

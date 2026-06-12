@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Send, Paperclip, Smile, X, Plus, Minus, Search, Loader2, ShoppingCart, RefreshCw, ReceiptText, Trash2, Wallet, Sparkles, FileText } from "@buleje/design-system/icons";
+import { Send, Paperclip, Smile, X, Plus, Minus, Search, Loader2, ShoppingCart, RefreshCw, ReceiptText, Trash2, Wallet, Sparkles, FileText, Star } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { getActiveTenantSlug } from "@/lib/tenant-fetch";
@@ -32,6 +32,8 @@ interface MessageComposerProps {
   customerName?: string;
   /** Tanda 3: nombre de la tienda, para la variable {tienda} de plantillas. */
   storeName?: string;
+  /** Tanda 4: pedir una reseña post-entrega (tarjeta de estrellas al cliente). */
+  onRequestReview?: (storeSlug: string, storeName: string) => Promise<void> | void;
 }
 
 interface CatalogHit {
@@ -67,6 +69,7 @@ export function MessageComposer({
   onSuggest,
   customerName,
   storeName,
+  onRequestReview,
 }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -105,6 +108,17 @@ export function MessageComposer({
     setPayAmount("");
     setPayNote("");
     setPickerOpen(true);
+  }
+
+  async function handleRequestReview() {
+    if (!onRequestReview) return;
+    setMenuOpen(false);
+    try {
+      await onRequestReview(getActiveTenantSlug() ?? "", storeName ?? "");
+    } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
+      window.alert("No se pudo pedir la reseña.");
+    }
   }
 
   async function handleSendPayment() {
@@ -353,6 +367,15 @@ export function MessageComposer({
           >
             <RefreshCw className="h-4 w-4 text-primary" aria-hidden /> Sustitución de faltante
           </button>
+          {onRequestReview && (
+            <button
+              type="button"
+              onClick={handleRequestReview}
+              className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              <Star className="h-4 w-4 text-primary" aria-hidden /> Pedir reseña
+            </button>
+          )}
         </div>
       )}
 
