@@ -41,9 +41,14 @@ const HomeHeroBanner = dynamic(
   () => import("@/components/marketplace/home/HomeHeroBanner"),
 );
 // Banda animada con los logos de TODAS las tiendas (marquee infinito) — va
-// arriba de "Tiendas destacadas" (Brandon 2026-06-12).
+// arriba de la fila Ofertas | Paquetes (Brandon 2026-06-12).
 const StoreLogosMarquee = dynamic(
   () => import("@/components/marketplace/home/StoreLogosMarquee"),
+);
+// Caja de descubrimiento genérica (catálogo) — Ofertas / Paquetes. Misma
+// temática que "Recién llegados" / "Ranking" (Brandon 2026-06-12).
+const HomeCatalogStrip = dynamic(
+  () => import("@/components/marketplace/home/HomeCatalogStrip"),
 );
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
@@ -1231,13 +1236,35 @@ export default async function Home() {
         </ShowWhenAllVerticals>
       </Suspense>
 
-      {/* 3. Tiendas destacadas — marquee de logos (todas las tiendas) + grid
-          con rating/categoría/zona. */}
-      <Suspense fallback={<SectionSkeleton minH="min-h-[520px]" />}>
+      {/* 3. Marquee de logos (todas las tiendas) + fila Ofertas | Paquetes.
+          Brandon 2026-06-12: reemplaza el grid de "Tiendas destacadas" por dos
+          cajas (Ofertas + Paquetes) con la misma temática de la fila de
+          descubrimiento. Cada caja se auto-oculta si no tiene productos. */}
+      <Suspense fallback={null}>
         <ShowWhenAllVerticals>
           <Reveal>
             <StoreLogosMarquee />
-            <TopStoresSection />
+            <section
+              aria-label="Ofertas y paquetes"
+              className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-stretch">
+                <HomeCatalogStrip
+                  fetchUrl="/api/marketplace/catalog?sort=price_asc&limit=12"
+                  eyebrow="Ofertas"
+                  title="Ofertas del día"
+                  actionHref="/?sort=price_asc#catalogo"
+                  ariaLabel="Ofertas"
+                />
+                <HomeCatalogStrip
+                  fetchUrl="/api/marketplace/catalog?category=promociones&limit=12"
+                  eyebrow="Paquetes"
+                  title="Combos y paquetes"
+                  actionHref="/?cat=promociones#catalogo"
+                  ariaLabel="Paquetes"
+                />
+              </div>
+            </section>
           </Reveal>
         </ShowWhenAllVerticals>
       </Suspense>

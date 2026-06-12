@@ -684,7 +684,11 @@ export default function UnifiedProductCard({
           ) : (
             <button
               type="button"
-              onClick={handleIncrement}
+              // Brandon 2026-06-12: primer agregado (vacío) → abre el MODAL de
+              // carrito ("Armá tu pedido"). Ya agregado → suma +1 directo (sin
+              // modal) + animación. Productos con adicionales: handleAdd/Increment
+              // ya abren el modal cuando hace falta elegir opciones.
+              onClick={inCartQty === 0 ? handleAdd : handleIncrement}
               disabled={atStockCap}
               aria-label={
                 inCartQty > 0
@@ -937,6 +941,7 @@ export default function UnifiedProductCard({
               quantity,
             });
             setModifierModalOpen(false);
+            flyToNavCart(); // ✈️ vuela al carrito del nav
             celebrate({ intensity: "sm" }); // 🎉 agregado al carrito
           }}
         />

@@ -48,6 +48,13 @@ export type HorizontalCarouselProps = {
   showBar?: boolean;
   /** Mostrar botones nav < > en desktop. Default true. */
   showNav?: boolean;
+  /** Fracción del ancho visible que avanza cada flecha. Default 0.8. Pasar 1
+      para paginar exacto (ej. 3 cards visibles → ver los 3 siguientes). */
+  scrollByFraction?: number;
+  /** Sangrado a los bordes (-mx/px) para alinear cards con el borde de una
+      sección full-width. Default true. Pasar false dentro de una caja con
+      padding propio (DiscoveryBox) para no romper esa separación. */
+  edgeBleed?: boolean;
   /** Clase extra para el container externo. */
   className?: string;
 };
@@ -63,6 +70,8 @@ export default function HorizontalCarousel({
   itemWidthClass = DEFAULT_ITEM_W,
   showBar = true,
   showNav = true,
+  scrollByFraction = 0.8,
+  edgeBleed = true,
   className,
 }: HorizontalCarouselProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -161,12 +170,12 @@ export default function HorizontalCarousel({
     }
   }, []);
 
-  // Botones nav: scroll por ~80% del viewport
+  // Botones nav: scroll por una fracción del viewport (default 80%).
   const scrollBy = useCallback((dir: 1 | -1) => {
     const el = scrollerRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
-  }, []);
+    el.scrollBy({ left: dir * el.clientWidth * scrollByFraction, behavior: "smooth" });
+  }, [scrollByFraction]);
 
   // Wrap children: cada uno recibe className del item width
   // (si el child ya tiene className, se preservan ambas via cn)
@@ -183,9 +192,9 @@ export default function HorizontalCarousel({
         onClickCapture={onClickCapture}
         style={{ touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}
         className={cn(
-          "flex gap-3 overflow-x-auto no-scrollbar snap-x",
-          "scroll-px-4 pb-0 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+          "flex gap-3 overflow-x-auto no-scrollbar snap-x pb-0",
           "[&::-webkit-scrollbar]:hidden",
+          edgeBleed && "scroll-px-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
           isDragging ? "cursor-grabbing select-none" : "cursor-grab",
         )}
       >
