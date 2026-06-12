@@ -16,16 +16,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { Store, Sparkles } from "@buleje/design-system/icons";
 
-interface MarqueeStore {
+export interface MarqueeStore {
   slug: string;
   name: string;
   logo: string | null;
 }
 
-export default function StoreLogosMarquee() {
-  const [stores, setStores] = useState<MarqueeStore[]>([]);
+export default function StoreLogosMarquee({ initialStores }: { initialStores?: MarqueeStore[] } = {}) {
+  // perf audit P1: si llegan las tiendas resueltas del SERVER (RSC), se pintan
+  // en el primer byte y se omite el fetch client. Sino, fetch legacy.
+  const hasInitial = !!initialStores && initialStores.length > 0;
+  const [stores, setStores] = useState<MarqueeStore[]>(hasInitial ? initialStores! : []);
 
   useEffect(() => {
+    if (hasInitial) return;
     let cancelled = false;
     fetch("/api/marketplace/featured-stores?limit=20&productsPerStore=0", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("fetch failed"))))
@@ -40,6 +44,7 @@ export default function StoreLogosMarquee() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (stores.length < 3) return null;

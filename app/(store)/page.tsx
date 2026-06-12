@@ -8,6 +8,7 @@ import { resolveStoreContext } from "@/lib/store-metadata";
 import TenantStoreHome from "@/components/store/TenantStoreHome";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { getBannersForSlot } from "@/lib/promo-banners";
+import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db";
 // Brandon 2026-05-20 v5: LandingHeader removido — chrome unificado vive
 // en app/(store)/layout.tsx (mismo que /tiendas y /marketplace).
 
@@ -502,6 +503,20 @@ async function HomeHero() {
       </h1>
       <HomeHeroBanner initialBanners={initialBanners} />
     </section>
+  );
+}
+
+// perf audit P1: el marquee de logos también se resuelve en el SERVER (los
+// logos vienen ya pintados, sin fetch client). getFeaturedStoresWithProducts
+// cachea internamente (getOrSet). productsPerStore:0 = solo identidad de tienda.
+async function StoreLogosMarqueeRSC() {
+  const stores = await getFeaturedStoresWithProducts({ limit: 20, productsPerStore: 0 }).catch(
+    () => [] as Awaited<ReturnType<typeof getFeaturedStoresWithProducts>>,
+  );
+  return (
+    <StoreLogosMarquee
+      initialStores={stores.map((s) => ({ slug: s.slug, name: s.name, logo: s.logo }))}
+    />
   );
 }
 
@@ -1250,7 +1265,7 @@ export default async function Home() {
       <Suspense fallback={null}>
         <ShowWhenAllVerticals>
           <Reveal>
-            <StoreLogosMarquee />
+            <StoreLogosMarqueeRSC />
             <section
               aria-label="Ofertas y paquetes"
               className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
