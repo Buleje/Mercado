@@ -23,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
-import { parseSharedProduct, parseSubstitution, fmtSoles, type SharedChatProduct, type ChatSubstitution } from "@/lib/chat/shared-product";
+import { parseSharedProduct, parseSubstitution, parseChatOrder, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder } from "@/lib/chat/shared-product";
 
 const POLL_MS = 5_000;
 
@@ -331,6 +331,33 @@ export default function ChatConversationView({
     }
   };
 
+  /** Tanda 2: el cliente confirma un pedido armado por la tienda → se le agrega
+      TODO al carrito y avisa por el chat (el checkout normal sigue después). */
+  const confirmOrder = async (messageId: string, order: ChatOrder) => {
+    setRespondedSubs((prev) => new Set(prev).add(messageId));
+    for (const it of order.items) {
+      addItem({
+        storeId: it.storeId,
+        storeName: it.storeName,
+        storeSlug: it.storeSlug,
+        storeProductId: it.storeProductId,
+        productId: it.productId,
+        name: it.name,
+        price: it.price,
+        basePrice: it.price,
+        image: it.image,
+        unit: it.unit,
+        modifiers: [],
+        modifierHash: modifierHashOf([]),
+        quantity: it.quantity,
+      });
+    }
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate(40); } catch { /* sin soporte */ }
+    }
+    await send(`✅ Confirmo el pedido (${fmtSoles(order.total)}). Lo agregué al carrito.`);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Header — tienda + volver + ir a la tienda */}
@@ -422,6 +449,7 @@ export default function ChatConversationView({
               const meta = parseMeta(m.metadataJson);
               const sharedProduct = parseSharedProduct(m.metadataJson);
               const substitution = parseSubstitution(m.metadataJson);
+              const chatOrder = parseChatOrder(m.metadataJson);
               const active = activeMsgId === m.id;
 
               return (
@@ -523,6 +551,47 @@ export default function ChatConversationView({
                             )}
                           </div>
                         )}
+                        {/* Pedido armado por la tienda (Tanda 2) */}
+                        {chatOrder && (
+                          <div className={cn(
+                            "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
+                            mine ? "border-white/30" : "border-[var(--rule-base)]",
+                          )}>
+                            <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--accent-soft)] px-3 py-2">
+                              <ReceiptText className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+                              <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
+                                Pedido armado por la tienda
+                              </span>
+                            </div>
+                            <ul>
+                              {chatOrder.items.map((it, i) => (
+                                <li key={`${it.storeProductId}-${i}`} className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-3 py-1.5 last:border-b-0">
+                                  <span className="min-w-0 truncate text-sm font-medium text-[var(--text-primary)]">{it.quantity}× {it.name}</span>
+                                  <span className="shrink-0 text-sm font-bold tabular-nums text-[var(--text-primary)]">{fmtSoles(it.price * it.quantity)}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            <div className="flex items-center justify-between border-t border-[var(--rule-soft)] px-3 py-2">
+                              <span className="text-sm font-bold text-[var(--text-secondary)]">Total</span>
+                              <span className="text-base font-black tabular-nums text-[var(--accent)]">{fmtSoles(chatOrder.total)}</span>
+                            </div>
+                            {!mine && (
+                              respondedSubs.has(m.id) ? (
+                                <p className="border-t border-[var(--rule-soft)] py-2 text-center text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">
+                                  Confirmado ✓ — está en tu carrito
+                                </p>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); void confirmOrder(m.id, chatOrder); }}
+                                  className="flex w-full items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] bg-[var(--accent)] py-2.5 text-sm font-bold text-white transition-[filter] hover:brightness-110"
+                                >
+                                  <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Confirmar y agregar al carrito
+                                </button>
+                              )
+                            )}
+                          </div>
+                        )}
                         {/* Sustitución de faltante (Tanda 2) — la tienda propone un cambio */}
                         {substitution && (
                           <div className={cn(
@@ -599,9 +668,11 @@ export default function ChatConversationView({
                           </div>
                         )}
                         <div className="px-3 py-2">
-                          <p className="whitespace-pre-wrap break-words text-sm font-medium leading-snug">
-                            {m.body}
-                          </p>
+                          {!chatOrder && (
+                            <p className="whitespace-pre-wrap break-words text-sm font-medium leading-snug">
+                              {m.body}
+                            </p>
+                          )}
                           <p
                             className={cn(
                               "mt-0.5 flex items-center justify-end gap-1 text-[length:var(--ts-2xs)] font-bold tabular-nums",

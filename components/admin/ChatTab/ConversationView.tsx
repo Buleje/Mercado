@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Bot, User, Settings2, Undo2, ShoppingCart } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { parseSharedProduct, parseSubstitution, fmtSoles } from "@/lib/chat/shared-product";
+import { parseSharedProduct, parseSubstitution, parseChatOrder, fmtSoles } from "@/lib/chat/shared-product";
 import type { ChatMessageView } from "./types";
 import type { MsgReplySnapshot } from "./hooks";
 
@@ -114,6 +114,7 @@ function MessageBubble({
   const meta = parseMeta(message.metadataJson);
   const shared = parseSharedProduct(message.metadataJson);
   const sub = parseSubstitution(message.metadataJson);
+  const order = parseChatOrder(message.metadataJson);
 
   if (isSystem) {
     return (
@@ -203,6 +204,34 @@ function MessageBubble({
               </div>
             </div>
           )}
+          {/* Pedido armado (Tanda 2) — read-only */}
+          {order && (
+            <div className={cn(
+              "mb-1 overflow-hidden rounded-lg border",
+              isSeller ? "border-white/30 bg-white/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+            )}>
+              <p className={cn("px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase", isSeller ? "text-white/90" : "text-primary")}>
+                Pedido armado
+              </p>
+              <ul>
+                {order.items.map((it, i) => (
+                  <li key={`${it.storeProductId}-${i}`} className={cn(
+                    "flex items-center justify-between gap-2 border-t px-2.5 py-1 text-[length:var(--ts-xs)]",
+                    isSeller ? "border-white/20 text-white/90" : "border-slate-100 text-slate-700 dark:border-slate-800 dark:text-slate-200",
+                  )}>
+                    <span className="min-w-0 truncate">{it.quantity}× {it.name}</span>
+                    <span className="shrink-0 font-bold tabular-nums">{fmtSoles(it.price * it.quantity)}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className={cn(
+                "flex items-center justify-between border-t px-2.5 py-1 text-[length:var(--ts-xs)] font-black",
+                isSeller ? "border-white/20 text-white" : "border-slate-100 text-primary dark:border-slate-800",
+              )}>
+                <span>Total</span><span className="tabular-nums">{fmtSoles(order.total)}</span>
+              </div>
+            </div>
+          )}
           {/* Sustitución propuesta (Tanda 2) — read-only */}
           {sub && (
             <div className={cn(
@@ -217,7 +246,7 @@ function MessageBubble({
               </p>
             </div>
           )}
-          <div className="whitespace-pre-wrap break-words">{message.body}</div>
+          {!order && <div className="whitespace-pre-wrap break-words">{message.body}</div>}
         </button>
 
         {/* Barra de acciones — emojis + responder */}

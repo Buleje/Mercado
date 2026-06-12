@@ -62,6 +62,45 @@ export interface ChatSubstitution {
   replacement: SharedChatProduct;
 }
 
+// ── Armar pedido in-chat (Tanda 2) ───────────────────────────────────────────
+// La tienda arma un carrito (varios productos + cantidades); el cliente confirma
+// y se le agrega TODO al carrito → sigue con el checkout normal. No crea pedido
+// directo (eso lo hace el checkout existente).
+
+export interface ChatOrderItem extends SharedChatProduct {
+  quantity: number;
+}
+export interface ChatOrder {
+  items: ChatOrderItem[];
+  total: number;
+}
+
+/** Suma cart-ready de un set de items. */
+export function orderTotal(items: ChatOrderItem[]): number {
+  return items.reduce((acc, it) => acc + it.price * it.quantity, 0);
+}
+
+/** Extrae el pedido armado de un metadataJson (o null). */
+export function parseChatOrder(raw: string | null): ChatOrder | null {
+  if (!raw) return null;
+  try {
+    const m = JSON.parse(raw) as { order?: { items?: unknown[] } };
+    const o = m.order;
+    if (!o || !Array.isArray(o.items)) return null;
+    const items: ChatOrderItem[] = [];
+    for (const it of o.items) {
+      const p = parseSharedProduct(JSON.stringify({ product: it }));
+      if (!p) continue;
+      const quantity = Math.max(1, Math.trunc(Number((it as { quantity?: unknown })?.quantity)) || 1);
+      items.push({ ...p, quantity });
+    }
+    if (items.length === 0) return null;
+    return { items, total: orderTotal(items) };
+  } catch {
+    return null;
+  }
+}
+
 /** Extrae la sustitución de un metadataJson (o null). */
 export function parseSubstitution(raw: string | null): ChatSubstitution | null {
   if (!raw) return null;

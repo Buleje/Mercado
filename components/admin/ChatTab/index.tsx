@@ -49,6 +49,7 @@ export default function ChatTab() {
     pingTyping,
     shareProduct,
     proposeSubstitution,
+    sendOrder,
     presence,
   } = useChatMessages(selectedThreadId);
 
@@ -198,6 +199,7 @@ export default function ChatTab() {
               onTyping={pingTyping}
               onShareProduct={shareProduct}
               onProposeSubstitution={proposeSubstitution}
+              onSendOrder={sendOrder}
             />
           )}
           {selectedThread && selectedThread.status !== "open" && (

@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Send, Paperclip, Smile, X, Plus, Search, Loader2, ShoppingCart, RefreshCw } from "@buleje/design-system/icons";
+import { Send, Paperclip, Smile, X, Plus, Minus, Search, Loader2, ShoppingCart, RefreshCw, ReceiptText, Trash2 } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 import { getActiveTenantSlug } from "@/lib/tenant-fetch";
-import { fmtSoles, type SharedChatProduct } from "@/lib/chat/shared-product";
+import { fmtSoles, orderTotal, type SharedChatProduct, type ChatOrderItem } from "@/lib/chat/shared-product";
 import type { MsgReplySnapshot } from "./hooks";
 
 interface MessageComposerProps {
@@ -21,6 +21,8 @@ interface MessageComposerProps {
   onShareProduct?: (product: SharedChatProduct) => Promise<void> | void;
   /** Tanda 2: proponer una sustitución de faltante (producto X → reemplazo Y). */
   onProposeSubstitution?: (originalName: string, replacement: SharedChatProduct) => Promise<void> | void;
+  /** Tanda 2: armar un pedido (varios productos) y enviarlo para que lo confirme. */
+  onSendOrder?: (items: ChatOrderItem[]) => Promise<void> | void;
 }
 
 interface CatalogHit {
@@ -51,14 +53,17 @@ export function MessageComposer({
   onTyping,
   onShareProduct,
   onProposeSubstitution,
+  onSendOrder,
 }: MessageComposerProps) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
-  // Tanda 2: menú "+" (comercio) + picker compartido para producto/sustitución.
+  // Tanda 2: menú "+" (comercio) + picker compartido (producto/sustitución/pedido).
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mode, setMode] = useState<"product" | "substitution">("product");
+  const [mode, setMode] = useState<"product" | "substitution" | "order">("product");
   const [originalName, setOriginalName] = useState("");
+  const [draft, setDraft] = useState<ChatOrderItem[]>([]);
+  const [sendingOrder, setSendingOrder] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CatalogHit[]>([]);
@@ -66,13 +71,58 @@ export function MessageComposer({
   const [sharingId, setSharingId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  function openMode(m: "product" | "substitution") {
+  function openMode(m: "product" | "substitution" | "order") {
     setMode(m);
     setMenuOpen(false);
     setOriginalName("");
+    setDraft([]);
     setQuery("");
     setResults([]);
     setPickerOpen(true);
+  }
+
+  // ── Builder del pedido (mode="order") ──
+  function hitToItem(hit: CatalogHit): ChatOrderItem {
+    return {
+      storeId: hit.storeId, storeName: hit.storeName, storeSlug: hit.storeSlug,
+      storeProductId: hit.storeProductId, productId: hit.productId,
+      name: hit.name, price: Number(hit.price), image: hit.image, unit: hit.unit,
+      quantity: 1,
+    };
+  }
+  function addToDraft(hit: CatalogHit) {
+    setDraft((prev) => {
+      const i = prev.findIndex((x) => x.storeProductId === hit.storeProductId);
+      if (i !== -1) {
+        const next = [...prev];
+        next[i] = { ...next[i], quantity: next[i].quantity + 1 };
+        return next;
+      }
+      return [...prev, hitToItem(hit)];
+    });
+  }
+  function setDraftQty(storeProductId: string, delta: number) {
+    setDraft((prev) =>
+      prev
+        .map((x) => (x.storeProductId === storeProductId ? { ...x, quantity: x.quantity + delta } : x))
+        .filter((x) => x.quantity > 0),
+    );
+  }
+  async function handleSendOrder() {
+    if (!onSendOrder || draft.length === 0) return;
+    setSendingOrder(true);
+    try {
+      await onSendOrder(draft);
+      setPickerOpen(false);
+      setDraft([]);
+      setQuery("");
+      setResults([]);
+    } catch (err) {
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
+      window.alert("No se pudo enviar el pedido.");
+    } finally {
+      setSendingOrder(false);
+    }
   }
 
   // Búsqueda en el catálogo de la tienda (debounce 300ms) cuando el picker abre.
@@ -212,6 +262,13 @@ export function MessageComposer({
           </button>
           <button
             type="button"
+            onClick={() => openMode("order")}
+            className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <ReceiptText className="h-4 w-4 text-primary" aria-hidden /> Armar pedido
+          </button>
+          <button
+            type="button"
             onClick={() => openMode("substitution")}
             className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800"
           >
@@ -225,7 +282,7 @@ export function MessageComposer({
         <div className="mb-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
           <div className="mb-1.5 flex items-center justify-between px-1">
             <span className="text-[length:var(--ts-xs)] font-bold text-slate-600 dark:text-slate-300">
-              {mode === "substitution" ? "Sustitución de faltante" : "Compartir producto"}
+              {mode === "substitution" ? "Sustitución de faltante" : mode === "order" ? "Armar pedido" : "Compartir producto"}
             </span>
             <button type="button" onClick={() => setPickerOpen(false)} aria-label="Cerrar" className="rounded-full p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
               <X className="h-3.5 w-3.5" />
@@ -266,7 +323,7 @@ export function MessageComposer({
                 <button
                   key={hit.storeProductId}
                   type="button"
-                  onClick={() => (mode === "substitution" ? handleSubstitute(hit) : handleShare(hit))}
+                  onClick={() => (mode === "order" ? addToDraft(hit) : mode === "substitution" ? handleSubstitute(hit) : handleShare(hit))}
                   disabled={!!sharingId || (mode === "substitution" && !originalName.trim())}
                   className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left hover:bg-slate-50 disabled:opacity-60 dark:hover:bg-slate-800"
                 >
@@ -288,6 +345,48 @@ export function MessageComposer({
               ))
             )}
           </div>
+          {/* Draft del pedido (mode order) */}
+          {mode === "order" && (
+            <div className="mt-2 border-t border-slate-200 pt-2 dark:border-slate-700">
+              {draft.length === 0 ? (
+                <p className="py-2 text-center text-xs text-slate-400">Agregá productos al pedido tocándolos arriba.</p>
+              ) : (
+                <>
+                  <div className="max-h-40 space-y-1 overflow-y-auto">
+                    {draft.map((it) => (
+                      <div key={it.storeProductId} className="flex items-center gap-2 rounded-lg bg-slate-50 p-1.5 dark:bg-slate-800">
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[length:var(--ts-xs)] font-semibold text-slate-800 dark:text-slate-100">{it.name}</span>
+                          <span className="text-[length:var(--ts-2xs)] font-bold text-primary">{fmtSoles(it.price * it.quantity)}</span>
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={() => setDraftQty(it.storeProductId, -1)} aria-label="Restar" className="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700">
+                            <Minus className="h-3.5 w-3.5" aria-hidden />
+                          </button>
+                          <span className="w-5 text-center text-sm font-bold tabular-nums text-slate-800 dark:text-slate-100">{it.quantity}</span>
+                          <button type="button" onClick={() => setDraftQty(it.storeProductId, 1)} aria-label="Sumar" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary hover:bg-primary/20">
+                            <Plus className="h-3.5 w-3.5" aria-hidden />
+                          </button>
+                        </div>
+                        <button type="button" onClick={() => setDraftQty(it.storeProductId, -it.quantity)} aria-label="Quitar" className="rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-[var(--data-error-500)] dark:hover:bg-slate-700">
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendOrder}
+                    disabled={sendingOrder}
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+                  >
+                    {sendingOrder ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ReceiptText className="h-4 w-4" aria-hidden />}
+                    Enviar pedido · {draft.reduce((a, i) => a + i.quantity, 0)} items · {fmtSoles(orderTotal(draft))}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
 

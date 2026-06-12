@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { tenantFetch } from "@/lib/tenant-fetch";
-import { fmtSoles, type SharedChatProduct } from "@/lib/chat/shared-product";
+import { fmtSoles, orderTotal, type SharedChatProduct, type ChatOrderItem } from "@/lib/chat/shared-product";
 import type { ChatThreadView, ChatMessageView, ThreadStatus } from "./types";
 
 // Increment 2b: cita + presencia del lado vendedor.
@@ -219,6 +219,27 @@ export function useChatMessages(threadId: string | null) {
     [threadId, load],
   );
 
+  /** Tanda 2: arma un pedido (varios productos) y lo manda para que el cliente
+      lo confirme (se le agrega todo al carrito → checkout normal). */
+  const sendOrder = useCallback(
+    async (items: ChatOrderItem[]) => {
+      if (!threadId || items.length === 0) return;
+      const lines = items.map((i) => `• ${i.quantity}× ${i.name}`).join("\n");
+      const body = `Te armé este pedido (${fmtSoles(orderTotal(items))}):\n${lines}\n¿Lo confirmás?`;
+      const res = await tenantFetch(
+        `/api/admin/chat/threads/${encodeURIComponent(threadId)}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body, metadataJson: JSON.stringify({ order: { items } }) }),
+        },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await load();
+    },
+    [threadId, load],
+  );
+
   /** Tanda 2: propone una sustitución de faltante ("no hay X, ¿te mando Y?"). */
   const proposeSubstitution = useCallback(
     async (originalName: string, replacement: SharedChatProduct) => {
@@ -250,5 +271,5 @@ export function useChatMessages(threadId: string | null) {
     ).catch(() => { /* efímero */ });
   }, [threadId]);
 
-  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, proposeSubstitution, presence };
+  return { messages, loading, error, reload: load, sendMessage, react, pingTyping, shareProduct, proposeSubstitution, sendOrder, presence };
 }
