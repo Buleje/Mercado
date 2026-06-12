@@ -18,12 +18,12 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X, ShoppingCart,
+  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
-import { parseSharedProduct, parseSubstitution, parseChatOrder, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder } from "@/lib/chat/shared-product";
+import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder, type ChatPayment } from "@/lib/chat/shared-product";
 
 const POLL_MS = 5_000;
 
@@ -358,6 +358,14 @@ export default function ChatConversationView({
     await send(`✅ Confirmo el pedido (${fmtSoles(order.total)}). Lo agregué al carrito.`);
   };
 
+  /** Tanda 2: el cliente marca que ya pagó un cobro Yape/Plin (confirmación
+      manual; el comprobante va por el flujo existente). */
+  const markPaid = async (messageId: string, payment: ChatPayment) => {
+    setRespondedSubs((prev) => new Set(prev).add(messageId));
+    const methodLabel = payment.method === "plin" ? "Plin" : "Yape";
+    await send(`✅ Ya pagué ${fmtSoles(payment.amount)} por ${methodLabel}. Te paso el comprobante.`);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Header — tienda + volver + ir a la tienda */}
@@ -450,6 +458,7 @@ export default function ChatConversationView({
               const sharedProduct = parseSharedProduct(m.metadataJson);
               const substitution = parseSubstitution(m.metadataJson);
               const chatOrder = parseChatOrder(m.metadataJson);
+              const chatPayment = parseChatPayment(m.metadataJson);
               const active = activeMsgId === m.id;
 
               return (
@@ -648,6 +657,55 @@ export default function ChatConversationView({
                             )}
                           </div>
                         )}
+                        {/* Cobro Yape/Plin (Tanda 2) — la tienda pide un pago manual */}
+                        {chatPayment && (
+                          <div className={cn(
+                            "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
+                            mine ? "border-white/30" : "border-[var(--rule-base)]",
+                          )}>
+                            <div className="flex items-center justify-between gap-2 bg-[var(--accent-soft)] px-3 py-2">
+                              <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
+                                <Wallet className="h-4 w-4" aria-hidden /> Cobro por {chatPayment.method === "plin" ? "Plin" : "Yape"}
+                              </span>
+                              <span className="text-lg font-black tabular-nums text-[var(--accent)]">{fmtSoles(chatPayment.amount)}</span>
+                            </div>
+                            {chatPayment.number && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(chatPayment.number!).catch(() => { /* clipboard sin permiso: el número igual está visible */ }); }}
+                                className="flex w-full items-center justify-between gap-2 border-t border-[var(--rule-soft)] px-3 py-2 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+                              >
+                                <span className="min-w-0">
+                                  <span className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                                    {chatPayment.method === "plin" ? "Plinéale al" : "Yapéale al"}
+                                  </span>
+                                  <span className="block truncate text-sm font-bold tabular-nums text-[var(--text-primary)]">{chatPayment.number}</span>
+                                </span>
+                                <span className="inline-flex shrink-0 items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent)]">
+                                  <Copy className="h-3.5 w-3.5" aria-hidden /> Copiar
+                                </span>
+                              </button>
+                            )}
+                            {chatPayment.note && (
+                              <p className="border-t border-[var(--rule-soft)] px-3 py-1.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">{chatPayment.note}</p>
+                            )}
+                            {!mine && (
+                              respondedSubs.has(m.id) ? (
+                                <p className="border-t border-[var(--rule-soft)] py-2 text-center text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">
+                                  Marcado como pagado ✓
+                                </p>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); void markPaid(m.id, chatPayment); }}
+                                  className="flex w-full items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] bg-[var(--accent)] py-2.5 text-sm font-bold text-white transition-[filter] hover:brightness-110"
+                                >
+                                  <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Ya pagué
+                                </button>
+                              )
+                            )}
+                          </div>
+                        )}
                         {/* Tarjeta de pedido — order_link del checkout */}
                         {isOrder && (
                           <div className={cn(
@@ -668,7 +726,7 @@ export default function ChatConversationView({
                           </div>
                         )}
                         <div className="px-3 py-2">
-                          {!chatOrder && (
+                          {!chatOrder && !chatPayment && (
                             <p className="whitespace-pre-wrap break-words text-sm font-medium leading-snug">
                               {m.body}
                             </p>

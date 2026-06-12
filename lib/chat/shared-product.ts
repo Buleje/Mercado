@@ -53,6 +53,39 @@ export function fmtSoles(n: number): string {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 }
 
+// ── Cobro Yape/Plin (Tanda 2) ────────────────────────────────────────────────
+// SOLICITUD de pago, NO procesamiento. Buleje usa Yape/Plin P2P con confirmación
+// MANUAL (no hay gateway). La tarjeta muestra monto + número; el cliente paga en
+// su app y marca "Ya pagué". No toca orders/treasury/idempotencia → fuera de la
+// zona de peligro de pagos.
+
+export interface ChatPayment {
+  amount: number;
+  method: "yape" | "plin";
+  /** Número/celular a Yapear (lo que el cliente usa para pagar). */
+  number: string | null;
+  note: string | null;
+}
+
+/** Extrae el cobro de un metadataJson (o null). Monto debe ser > 0. */
+export function parseChatPayment(raw: string | null): ChatPayment | null {
+  if (!raw) return null;
+  try {
+    const m = JSON.parse(raw) as { payment?: Record<string, unknown> };
+    const p = m.payment;
+    const amount = Number(p?.amount);
+    if (!p || !Number.isFinite(amount) || amount <= 0) return null;
+    return {
+      amount,
+      method: p.method === "plin" ? "plin" : "yape",
+      number: typeof p.number === "string" && p.number.trim() ? p.number.trim() : null,
+      note: typeof p.note === "string" && p.note.trim() ? p.note.trim() : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ── Sustitución de faltante (Tanda 2) ────────────────────────────────────────
 // "No hay X, ¿te mando Y?" → el cliente acepta (agrega Y) o rechaza. Reusa
 // SharedChatProduct para el reemplazo (cart-ready).

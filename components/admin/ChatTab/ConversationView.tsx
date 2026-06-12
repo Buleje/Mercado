@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Bot, User, Settings2, Undo2, ShoppingCart } from "@buleje/design-system/icons";
+import { Bot, User, Settings2, Undo2, ShoppingCart, Wallet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { parseSharedProduct, parseSubstitution, parseChatOrder, fmtSoles } from "@/lib/chat/shared-product";
+import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, fmtSoles } from "@/lib/chat/shared-product";
 import type { ChatMessageView } from "./types";
 import type { MsgReplySnapshot } from "./hooks";
 
@@ -115,6 +115,7 @@ function MessageBubble({
   const shared = parseSharedProduct(message.metadataJson);
   const sub = parseSubstitution(message.metadataJson);
   const order = parseChatOrder(message.metadataJson);
+  const payment = parseChatPayment(message.metadataJson);
 
   if (isSystem) {
     return (
@@ -246,7 +247,40 @@ function MessageBubble({
               </p>
             </div>
           )}
-          {!order && <div className="whitespace-pre-wrap break-words">{message.body}</div>}
+          {/* Cobro Yape/Plin (Tanda 2) — read-only, lo que pidió la tienda */}
+          {payment && (
+            <div className={cn(
+              "mb-1 overflow-hidden rounded-lg border",
+              isSeller ? "border-white/30 bg-white/10" : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+            )}>
+              <div className={cn(
+                "flex items-center justify-between gap-2 px-2.5 py-1.5",
+                isSeller ? "text-white" : "text-primary",
+              )}>
+                <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase">
+                  <Wallet className="h-3.5 w-3.5" aria-hidden /> Cobro {payment.method === "plin" ? "Plin" : "Yape"}
+                </span>
+                <span className="text-sm font-black tabular-nums">{fmtSoles(payment.amount)}</span>
+              </div>
+              {payment.number && (
+                <p className={cn(
+                  "border-t px-2.5 py-1 text-[length:var(--ts-xs)] tabular-nums",
+                  isSeller ? "border-white/20 text-white/90" : "border-slate-100 text-slate-600 dark:border-slate-800 dark:text-slate-300",
+                )}>
+                  {payment.method === "plin" ? "Plin" : "Yape"}: <strong>{payment.number}</strong>
+                </p>
+              )}
+              {payment.note && (
+                <p className={cn(
+                  "border-t px-2.5 py-1 text-[length:var(--ts-xs)]",
+                  isSeller ? "border-white/20 text-white/80" : "border-slate-100 text-slate-500 dark:border-slate-800 dark:text-slate-400",
+                )}>
+                  {payment.note}
+                </p>
+              )}
+            </div>
+          )}
+          {!order && !payment && <div className="whitespace-pre-wrap break-words">{message.body}</div>}
         </button>
 
         {/* Barra de acciones — emojis + responder */}
