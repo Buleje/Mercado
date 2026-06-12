@@ -6,6 +6,8 @@ import { Bot, User, Settings2, Undo2, ShoppingCart, Wallet, MapPin, Star } from 
 import { cn } from "@/lib/utils";
 import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, parseReviewRequest, fmtSoles } from "@/lib/chat/shared-product";
 import { parseChatLocation, osmTile, googleMapsUrl } from "@/lib/chat/location";
+import { parseChatVoice } from "@/lib/chat/voice";
+import { VoiceNotePlayer } from "@/components/marketplace/chat/VoiceNotePlayer";
 import type { ChatMessageView } from "./types";
 import type { MsgReplySnapshot } from "./hooks";
 
@@ -121,6 +123,7 @@ function MessageBubble({
   const location = parseChatLocation(message.metadataJson);
   const tile = location ? osmTile(location.lat, location.lng) : null;
   const reviewReq = parseReviewRequest(message.metadataJson);
+  const voice = parseChatVoice(message.metadataJson);
 
   if (isSystem) {
     return (
@@ -349,7 +352,18 @@ function MessageBubble({
               <span className="text-[length:var(--ts-xs)] font-bold">Pediste una reseña</span>
             </div>
           )}
-          {!order && !payment && !location && !reviewReq && message.messageType !== "image" && (
+          {/* Nota de voz (Tanda 4) */}
+          {voice && (
+            <div className="min-w-[180px] max-w-[230px]">
+              <VoiceNotePlayer
+                url={voice.url}
+                durationSec={voice.durationSec}
+                seed={message.id}
+                variant={isSeller ? "onAccent" : "onSurface"}
+              />
+            </div>
+          )}
+          {!order && !payment && !location && !reviewReq && !voice && message.messageType !== "image" && (
             <div className="whitespace-pre-wrap break-words">{message.body}</div>
           )}
         </button>

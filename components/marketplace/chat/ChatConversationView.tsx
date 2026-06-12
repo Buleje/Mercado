@@ -18,7 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin, Star,
+  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin, Star, Mic, Square, Trash2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -26,6 +26,8 @@ import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart
 import { parseSharedProduct, parseSubstitution, parseChatOrder, parseChatPayment, parseReviewRequest, fmtSoles, type SharedChatProduct, type ChatSubstitution, type ChatOrder, type ChatPayment } from "@/lib/chat/shared-product";
 import { parseOrderContext, orderStatusMeta, type ChatOrderContext } from "@/lib/chat/order-context";
 import { parseChatLocation, osmTile, googleMapsUrl } from "@/lib/chat/location";
+import { parseChatVoice, fmtDuration } from "@/lib/chat/voice";
+import { VoiceNotePlayer } from "./VoiceNotePlayer";
 
 const POLL_MS = 5_000;
 
@@ -132,6 +134,15 @@ export default function ChatConversationView({
   const [uploading, setUploading] = useState(false);
   const [locating, setLocating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // Tanda 4: grabación de nota de voz.
+  const [recording, setRecording] = useState(false);
+  const [recordSecs, setRecordSecs] = useState(0);
+  const [sendingVoice, setSendingVoice] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordStartRef = useRef(0);
+  const cancelRecordRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   // Brandon 2026-06-07: si el hilo ya no existe o no es tuyo (GET 404 por
   // ownership / thread borrado, o 403 por sesión que no coincide), marcamos
@@ -407,6 +418,96 @@ export default function ChatConversationView({
     );
   };
 
+  /** Tanda 4: sube el audio grabado y lo manda como nota de voz. */
+  const sendVoice = async (blob: Blob, durationSec: number) => {
+    if (!threadId || !storeSlug) return;
+    setSendingVoice(true);
+    setError(null);
+    try {
+      const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+      const fd = new FormData();
+      fd.append("file", new File([blob], `nota.${ext}`, { type: blob.type }));
+      const up = await fetch("/api/chat/public/upload-audio", {
+        method: "POST",
+        headers: csrfHeaders(),
+        body: fd,
+        credentials: "include",
+      });
+      const uj = await up.json().catch(() => null);
+      if (!up.ok || !uj?.url) { setError(uj?.error ?? "No se pudo subir la nota de voz."); return; }
+      const res = await fetch("/api/chat/public?action=send", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({
+          threadId, storeSlug, customerPhone, customerName,
+          body: "🎤 Nota de voz",
+          voice: { url: uj.url, durationSec },
+        }),
+      });
+      if (!res.ok) { setError("No se pudo enviar la nota de voz."); return; }
+      window.setTimeout(() => { void fetchMessages(); }, 300);
+    } catch {
+      setError("Sin conexión. Probá de nuevo.");
+    } finally {
+      setSendingVoice(false);
+    }
+  };
+
+  /** Tanda 4: arranca a grabar (pide permiso de micrófono). */
+  const startRecording = async () => {
+    if (recording || sendingVoice || unavailable) return;
+    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setError("Tu navegador no soporta grabar audio."); return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      audioChunksRef.current = [];
+      cancelRecordRef.current = false;
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+        const secs = Math.round((Date.now() - recordStartRef.current) / 1000);
+        setRecording(false);
+        setRecordSecs(0);
+        if (cancelRecordRef.current) return;
+        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || "audio/webm" });
+        if (blob.size > 256 && secs >= 1) void sendVoice(blob, secs);
+      };
+      mediaRecorderRef.current = mr;
+      recordStartRef.current = Date.now();
+      mr.start();
+      setRecording(true);
+      setRecordSecs(0);
+      setError(null);
+      recordTimerRef.current = setInterval(() => {
+        const s = Math.round((Date.now() - recordStartRef.current) / 1000);
+        setRecordSecs(s);
+        if (s >= 120) stopRecording(true); // tope 2 min
+      }, 250);
+    } catch {
+      setError("No pudimos acceder al micrófono. Dale permiso.");
+    }
+  };
+
+  /** Tanda 4: detiene la grabación (send=true manda, false descarta). */
+  const stopRecording = (send: boolean) => {
+    const mr = mediaRecorderRef.current;
+    if (!mr || mr.state === "inactive") return;
+    cancelRecordRef.current = !send;
+    mr.stop();
+  };
+
+  useEffect(() => () => {
+    if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== "inactive") { cancelRecordRef.current = true; mr.stop(); }
+  }, []);
+
   /** Tanda 2: el cliente acepta (agrega el reemplazo al carrito) o rechaza una
       sustitución propuesta por la tienda; en ambos casos avisa por el chat. */
   const respondSubstitution = async (messageId: string, sub: ChatSubstitution, accept: boolean) => {
@@ -577,6 +678,7 @@ export default function ChatConversationView({
               const location = parseChatLocation(m.metadataJson);
               const tile = location ? osmTile(location.lat, location.lng) : null;
               const reviewReq = parseReviewRequest(m.metadataJson);
+              const voice = parseChatVoice(m.metadataJson);
               const active = activeMsgId === m.id;
 
               return (
@@ -926,7 +1028,18 @@ export default function ChatConversationView({
                               </span>
                             </a>
                           )}
-                          {!chatOrder && !chatPayment && !location && !reviewReq && m.messageType !== "image" && (
+                          {/* Nota de voz (Tanda 4) */}
+                          {voice && (
+                            <div className="min-w-[180px] max-w-[240px]">
+                              <VoiceNotePlayer
+                                url={voice.url}
+                                durationSec={voice.durationSec}
+                                seed={m.id}
+                                variant={mine ? "onAccent" : "onSurface"}
+                              />
+                            </div>
+                          )}
+                          {!chatOrder && !chatPayment && !location && !reviewReq && !voice && m.messageType !== "image" && (
                             <p className="whitespace-pre-wrap break-words text-sm font-medium leading-snug">
                               {m.body}
                             </p>
@@ -1069,6 +1182,32 @@ export default function ChatConversationView({
                 {error}
               </p>
             )}
+            {recording ? (
+              /* Tanda 4: barra de grabación */
+              <div className="flex items-center gap-3 rounded-full border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-canvas)] px-3 py-1.5">
+                <button
+                  type="button"
+                  onClick={() => stopRecording(false)}
+                  aria-label="Cancelar grabación"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)]"
+                >
+                  <Trash2 className="h-5 w-5" aria-hidden />
+                </button>
+                <span className="flex flex-1 items-center gap-2">
+                  <span className="h-3 w-3 shrink-0 animate-pulse rounded-full bg-[var(--data-error-500)]" aria-hidden />
+                  <span className="text-sm font-bold tabular-nums text-[var(--text-primary)]">{fmtDuration(recordSecs)}</span>
+                  <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Grabando…</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => stopRecording(true)}
+                  aria-label="Enviar nota de voz"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-md transition-all hover:brightness-110 active:scale-95"
+                >
+                  <Send className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+                </button>
+              </div>
+            ) : (
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -1130,23 +1269,43 @@ export default function ChatConversationView({
                 aria-label={`Mensaje para ${storeName}`}
                 className="block h-12 min-w-0 flex-1 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
               />
-              <button
-                type="button"
-                onClick={() => void send()}
-                disabled={!text.trim() || sending}
-                aria-label="Enviar mensaje"
-                className={cn(
-                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all active:scale-95",
-                  text.trim() && !sending
-                    ? "bg-[var(--accent)] text-white shadow-md hover:brightness-110"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
-                )}
-              >
-                {sending
-                  ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-                  : <Send className="h-5 w-5" strokeWidth={2.5} aria-hidden />}
-              </button>
+              {text.trim() ? (
+                <button
+                  type="button"
+                  onClick={() => void send()}
+                  disabled={sending}
+                  aria-label="Enviar mensaje"
+                  className={cn(
+                    "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all active:scale-95",
+                    !sending
+                      ? "bg-[var(--accent)] text-white shadow-md hover:brightness-110"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",
+                  )}
+                >
+                  {sending
+                    ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                    : <Send className="h-5 w-5" strokeWidth={2.5} aria-hidden />}
+                </button>
+              ) : (
+                /* Tanda 4: nota de voz — botón micrófono cuando no hay texto */
+                <button
+                  type="button"
+                  onClick={() => void startRecording()}
+                  disabled={sendingVoice || !threadId}
+                  aria-label="Grabar nota de voz"
+                  title="Grabar nota de voz"
+                  className={cn(
+                    "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all active:scale-95",
+                    "bg-[var(--accent)] text-white shadow-md hover:brightness-110 disabled:opacity-50",
+                  )}
+                >
+                  {sendingVoice
+                    ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                    : <Mic className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
+                </button>
+              )}
             </div>
+          )}
           </>
         )}
       </div>

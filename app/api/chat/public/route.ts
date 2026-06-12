@@ -101,6 +101,11 @@ const SendMessageBody = z.object({
     lng:   z.number().min(-180).max(180),
     label: z.string().max(120).optional(),
   }).optional(),
+  // Tanda 4: nota de voz. El audio ya se subió vía /api/chat/public/upload-audio.
+  voice: z.object({
+    url:         z.string().url().max(600),
+    durationSec: z.number().min(0).max(600),
+  }).optional(),
 });
 
 /** Reacción emoji a un mensaje (toggle). Tanda 1. */
@@ -284,6 +289,13 @@ async function handleSend(body: unknown) {
     const metaObj: Record<string, unknown> = {};
     if (parsed.data.replyTo) metaObj.replyTo = parsed.data.replyTo;        // Tanda 1
     if (parsed.data.location) metaObj.location = parsed.data.location;     // Tanda 4
+    // Voz: sólo aceptamos audios de NUESTRO storage (anti-abuso, igual que imágenes).
+    if (
+      parsed.data.voice &&
+      /\/storage\/v1\/object\/public\/media\/chat-audio\//.test(parsed.data.voice.url)
+    ) {
+      metaObj.voice = parsed.data.voice;
+    }
     const metadataJson = Object.keys(metaObj).length ? JSON.stringify(metaObj) : undefined;
 
     // Tanda 4: sólo aceptamos imágenes servidas desde NUESTRO storage público
