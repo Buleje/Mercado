@@ -22,7 +22,7 @@ import {
   type CatalogSort,
 } from "@/components/marketplace/catalog-filter-context";
 import FlyToCartProvider from "@/components/marketplace/FlyToCart";
-import { normalizeVertical } from "@/lib/marketplace/verticals";
+import { DEFAULT_VERTICAL, isValidVertical } from "@/lib/marketplace/verticals";
 
 const MarketplaceCatalogViewSection = dynamic(
   () => import("@/components/marketplace/MarketplaceCatalogViewSection"),
@@ -60,7 +60,17 @@ function CatalogUrlSync() {
     const mapped = sortParam ? SORT_ALIAS[sortParam.toLowerCase()] : undefined;
     if (mapped) ctx.setSort(mapped);
     if (catParam) ctx.setCategory(catParam.toLowerCase());
-    ctx.setVertical(normalizeVertical(vParam));
+    // Vertical: si la URL trae uno válido, se respeta. Sin `?v=`, el default
+    // depende del dispositivo: MOBILE arranca food-first ("comida", donde viven
+    // los chips); DESKTOP sin filtro (todo) — Brandon quitó los chips en desktop.
+    if (isValidVertical(vParam)) {
+      ctx.setVertical(vParam!.toLowerCase());
+    } else {
+      const isMobile =
+        typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 767px)").matches;
+      ctx.setVertical(isMobile ? DEFAULT_VERTICAL : "");
+    }
   }, [ctx, sortParam, catParam, vParam]);
   return null;
 }

@@ -40,7 +40,7 @@ import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoadin
 import HeroCtas from "@/components/marketplace/home/HeroCtas";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
-import MarketplaceVerticalChips, { ShowForVerticals } from "@/components/marketplace/home/MarketplaceVerticalChips";
+import { ShowForVerticals } from "@/components/marketplace/home/MarketplaceVerticalChips";
 import {
   Store,
   ArrowUpRight,
@@ -1201,23 +1201,12 @@ export default async function Home() {
       {/* 1. Hero compacto con buscador */}
       <RappiStyleHero />
 
-      {/* 1.2 Verticales — los "mundos" del Inicio (Brandon 2026-06-11). Arranca
-          food-first (default "comida"); un toque cambia a Bodega/Ferretería/
-          Electro/Farmacia y filtra el catálogo. URL-driven (`?v=`).
-          STICKY (2026-06-11): en DESKTOP (md+) los chips viven acá y se pegan
-          bajo el sub-nav de orden (top-[112px] = navbar 64 + sub-nav 48), z-30,
-          fondo translúcido + blur. En MOBILE esta copia se OCULTA (`hidden`): los
-          chips los aporta el chrome (ConditionalSecondaryNav) apilados sobre la
-          barra de categorías en un bloque sticky a top-52, para no romper el
-          stacking ni la barra compartida con /marketplace/[slug]. */}
-      <Suspense fallback={<div className="hidden md:block md:h-14" />}>
-        <section
-          aria-label="Categorías del marketplace"
-          className="hidden border-b border-[var(--rule-soft)] py-2.5 md:block md:sticky md:top-[112px] md:z-30 md:bg-[var(--surface-canvas)]/90 md:backdrop-blur-md"
-        >
-          <MarketplaceVerticalChips />
-        </section>
-      </Suspense>
+      {/* 1.2 Verticales — SOLO MOBILE (Brandon 2026-06-11): los chips
+          Comida/Bodega/Ferretería/Electro/Farmacia los aporta el chrome
+          (ConditionalSecondaryNav), apilados sobre la barra de categorías en un
+          bloque sticky. En DESKTOP se quitaron a pedido de Brandon: la pantalla
+          grande ya navega por el rail izquierdo + "Categorías", y el catálogo
+          muestra todo (sin filtro de vertical). */}
 
       {/* 1.5 Visto recientemente — retoma lo que el usuario estaba mirando
           (per-usuario, localStorage). Self-hide si no vio nada. */}
