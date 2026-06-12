@@ -42,7 +42,9 @@ export type HorizontalCarouselProps = {
   ariaLabel?: string;
   /** Clase Tailwind para el ancho de cada item (default: w-[220px] sm:w-[240px]). */
   itemWidthClass?: string;
-  /** Mostrar barrita de progreso. Default false (estilo Amazon: solo nav). */
+  /** Mostrar barrita de progreso. Audit mobile #16 (Brandon 2026-06-11): default
+      TRUE — en celular no hay botones nav (md+), así que la barrita es el único
+      indicador de "hay más y dónde estás". Subtil (1px accent). */
   showBar?: boolean;
   /** Mostrar botones nav < > en desktop. Default true. */
   showNav?: boolean;
@@ -59,7 +61,7 @@ export default function HorizontalCarousel({
   children,
   ariaLabel,
   itemWidthClass = DEFAULT_ITEM_W,
-  showBar = false,
+  showBar = true,
   showNav = true,
   className,
 }: HorizontalCarouselProps) {

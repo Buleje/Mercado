@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import UnifiedProductCard, {
   type UnifiedProductCardProduct,
 } from "@/components/marketplace/UnifiedProductCard";
+import { normalizeVertical } from "@/lib/marketplace/verticals";
 import { BRAND_GEO } from "@/lib/geo";
 
 /**
@@ -35,12 +37,18 @@ function normalize(raw: Record<string, unknown>): UnifiedProductCardProduct {
 
 export default function HomeNewArrivals() {
   const [items, setItems] = useState<UnifiedProductCardProduct[] | null>(null);
+  // Audit mobile #18: "Recién llegados" se filtra por el vertical activo (?v=)
+  // → al estar en Comida no aparece madera de ferretería mezclada con pizzas.
+  const sp = useSearchParams();
+  const vertical = normalizeVertical(sp.get("v"));
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch("/api/marketplace/catalog?sort=newest&limit=12");
+        const r = await fetch(
+          `/api/marketplace/catalog?sort=newest&limit=12&vertical=${encodeURIComponent(vertical)}`,
+        );
         if (!r.ok) throw new Error("catalog newest failed");
         const d = await r.json();
         const raw = Array.isArray(d?.data)
@@ -56,7 +64,7 @@ export default function HomeNewArrivals() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [vertical]);
 
   // Sin productos nuevos → no renderiza nada.
   if (items !== null && items.length === 0) return null;

@@ -464,7 +464,10 @@ export default function UnifiedProductCard({
               MOSTRAR LA FOTO COMPLETA del producto, sin recortar. */}
           <div
             className={cn(
-              "relative overflow-hidden bg-white dark:bg-gray-900",
+              // Audit mobile #17: well SIEMPRE blanco (también en dark) — las
+              // fotos de producto con fondo transparente se veían "ajedrez" gris
+              // sobre gray-900. Sobre blanco lucen limpias en cualquier tema.
+              "relative overflow-hidden bg-white",
               isCompact ? "aspect-square h-auto" : "aspect-square sm:aspect-[4/3] h-full sm:h-auto",
             )}
           >
