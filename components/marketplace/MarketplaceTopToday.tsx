@@ -31,7 +31,7 @@ interface TopProduct {
   avgRating: number;
   soldUnits?: number;
   badges: string[];
-  store: { slug: string; name: string; rating: number; logo: string | null };
+  store: { id: string; slug: string; name: string; rating: number; logo: string | null };
 }
 
 function normalize(raw: Record<string, unknown>): TopProduct {
@@ -46,6 +46,9 @@ function normalize(raw: Record<string, unknown>): TopProduct {
     soldUnits: raw.soldUnits != null ? Number(raw.soldUnits) : undefined,
     badges: Array.isArray(raw.badges) ? (raw.badges as string[]) : [],
     store: {
+      // storeId real (para que addItem cree la MISMA línea de carrito que el
+      // storefront y el contador se sume bien). Brandon 2026-06-09.
+      id: String((raw.store as { id?: string })?.id ?? raw.storeId ?? ""),
       slug: String((raw.store as { slug?: string })?.slug ?? raw.storeSlug ?? ""),
       name: String((raw.store as { name?: string })?.name ?? raw.storeName ?? ""),
       rating: Number((raw.store as { rating?: number })?.rating ?? 0),
@@ -162,6 +165,7 @@ export default function MarketplaceTopToday() {
                     price: p.price,
                     image: p.image,
                     unit: p.unit,
+                    storeId: p.store.id,
                     storeName: p.store.name,
                     storeSlug: p.store.slug,
                     storeLogo: p.store.logo,

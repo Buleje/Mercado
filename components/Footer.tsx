@@ -106,56 +106,15 @@ function WhatsAppIcon({ className }: { className?: string }) {
 // (WhatsAppContactSection eliminado en v2 — CTA WhatsApp ahora vive en el
 //  HERO band y los logos sociales del bottom. Reducción de duplicación de UX.)
 
-// ── Detección de modo tienda ────────────────────────────────────────────
-// El footer se simplifica cuando estamos viendo el storefront de un vendor
-// (URL: /marketplace/<slug> o /marketplace/<slug>/...). Esto evita exponer
-// links cross-store (Explorar marketplace, Buleje en Vivo, Recetas, IA)
-// que son del marketplace global, no de esa tienda en particular.
-//
-// Las rutas globales del marketplace que NO son de tienda específica son
-// segmentos fijos del proyecto. Si pathname matchea uno de ellos, es modo
-// marketplace global. En cualquier otro `/marketplace/<algo>`, es tienda.
-const MARKETPLACE_GLOBAL_PATHS = new Set<string>([
-  "explorar",
-  "buscar",
-  "comparar",
-  "ofertas",
-  "recetas",
-  "en-vivo",
-  "gift-cards",
-  "registrar",
-  "repartidor",
-  "apply",
-  "favoritos",
-  "mi-cuenta",
-  "payment-result",
-  "categoria",
-  "main-categories",
-  "api-docs",
-  "tiendas",
-  "navegar",
-]);
-
-function isStoreModePath(pathname: string): boolean {
-  if (!pathname.startsWith("/marketplace/")) return false;
-  const seg = pathname.slice("/marketplace/".length).split("/")[0];
-  if (!seg) return false;
-  return !MARKETPLACE_GLOBAL_PATHS.has(seg);
-}
-
-// Footer simplificado para modo tienda: solo links relevantes a esa tienda.
-// Modo tienda: solo links que tienen sentido para el cliente que ESTA
-// viendo una tienda especifica. Sin enlaces a paginas globales del
-// marketplace (Explorar, Catalogo, Recetas, IA) ni redes sociales falsas.
-const storeModeLinks = [
-  { href: "/marketplace/ofertas", label: "Ofertas" },
-  { href: "/cuenta/pedidos", label: "Mis pedidos" },
-  // Mayo 2026: ambos links apuntaban a /ayuda/como-pagar (404) y
-  // /marketplace/como-pagar (real). Unificado al canónico marketplace.
-  { href: "/marketplace/como-pagar", label: "Cómo pagar" },
-  { href: "/ayuda#como-funciona", label: "Cómo funciona" },
-  { href: "/marketplace/registrar", label: "Crear tienda" },
-];
+// ── Footer unificado (sin "modo tienda") ─────────────────────────────────
+// Brandon 2026-06-11: el "modo tienda" SOLO se activaba en `/marketplace/<slug>`
+// (la ficha de tienda DENTRO del marketplace) y mostraba un footer recortado con
+// la etiqueta "Modo tienda". Pero esa página ES del marketplace, no la tienda
+// individual del comerciante (esa vive en subdominio / `/t/<slug>`, con su propio
+// chrome StorefrontNavbar). Mostrar un footer distinto ahí confundía: el nav era
+// el del marketplace y el footer decía "Modo tienda". Ahora `/marketplace/<slug>`
+// usa el MISMO footer que el resto del marketplace (tiendas-only o mega según
+// el modo de navegación del superadmin). Footer único = cero confusión.
 
 // Brandon 2026-05-30: el footer "Solo Tiendas" (tiendasFooterLinks) ahora se
 // construye DINÁMICO dentro del componente — gateado por la config del
@@ -268,7 +227,6 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
     pathname === "/checkout" ||
     pathname?.startsWith("/marketplace/mi-cuenta");
 
-  const isStoreMode = isStoreModePath(pathname);
   // Mayo 2026: footer simplificado en landing pages — antes 5 columnas
   // (Marketplace / Mi Cuenta / Vende en Buleje / Ayuda / Más) era aspiracional
   // para el tamaño actual del negocio y proyectaba desconfianza.
@@ -303,12 +261,10 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
   // en TODAS las páginas (inicio incluido) cuando el superadmin tiene el modo
   // tienda activo — footer ÚNICO y consistente. Antes solo aplicaba en /tiendas;
   // la home caía en isLandingMode (2 columnas), rompiendo la consistencia.
-  // Excluye el storefront de un vendor (isStoreMode tiene su propio footer).
   // navMode === null (SSR / antes de hidratar el hook) se trata como
   // "tiendas-only" porque ES el default del marketplace → evita el FOUC
   // (mega-footer parpadeando antes de recortar al footer de tiendas).
-  const isTiendasOnlyMode =
-    (navMode === "tiendas-only" || navMode === null) && !isStoreMode;
+  const isTiendasOnlyMode = navMode === "tiendas-only" || navMode === null;
 
   // Links del footer modo tienda gateados por la config del superadmin
   // (lib/nav-visibility). Inicio + Tiendas siempre; los demás solo si están
@@ -362,36 +318,6 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
       {/* Hairline superior — acento teal de marca (minimalista, 1 solo color) */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-teal-500/[0.05] to-transparent" />
-
-      {/* Modo tienda: footer reducido — links pertinentes a la tienda actual.
-          NO muestra Explorar / Recetas / Asistente IA / Buleje en Vivo
-          (son del marketplace global). Las redes y datos de contacto se
-          conservan via la columna de identidad del mega footer. */}
-      {isStoreMode && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
-            <nav aria-label="Esta tienda" className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              {storeModeLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-sm font-bold text-white/85 transition-colors hover:text-white"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-white/40">
-                {storeTheme?.name || "Tienda"}
-              </span>
-              <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/70">
-                Modo tienda
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Landing mode — footer minimalista 2 columnas honesto pre-launch.
           Solo si NO estamos en modo tienda (tiendas-only tiene precedencia →
@@ -580,7 +506,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
           Una sola banda HERO (logo + tagline + CTA WhatsApp) seguida de
           4 grupos de links con acordeón mobile. Marca: verde selva + ámbar
           Buleje como acento. Sin newsletter ni perks duplicados. */}
-      {!isStoreMode && !isLandingMode && !isTiendasOnlyMode && (
+      {!isLandingMode && !isTiendasOnlyMode && (
       <>
         {/* ── HERO BAND v2: 1 banda corta — logo + tagline + CTA WhatsApp ── */}
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-8 sm:pb-10">
