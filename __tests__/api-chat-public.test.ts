@@ -340,7 +340,7 @@ describe("GET /api/chat/public — listado", () => {
         body: "Hola",
         messageType: "text",
         attachmentUrl: null,
-        metadataJson: "{secret}",
+        metadataJson: '{"reactions":[{"emoji":"❤️","by":"buyer"}]}',
         readByBuyerAt: null,
         readBySellerAt: null,
         deletedAt: null,
@@ -361,8 +361,10 @@ describe("GET /api/chat/public — listado", () => {
     expect(msg.body).toBe("Hola");
     // Campos internos NO expuestos
     expect(msg.tenantId).toBeUndefined();
-    expect(msg.metadataJson).toBeUndefined();
     expect(msg.readByBuyerAt).toBeUndefined();
+    // metadataJson SÍ se expone desde 2026-06-11 (Tanda 1) — lleva reactions +
+    // replyTo (cita). Es contenido del propio hilo, no datos internos del vendor.
+    expect(msg.metadataJson).toBe('{"reactions":[{"emoji":"❤️","by":"buyer"}]}');
     // readBySellerAt SÍ se expone desde 2026-06-06 — habilita los ✓✓
     // estilo WhatsApp (el buyer ve si la tienda leyó su mensaje).
     expect("readBySellerAt" in msg).toBe(true);

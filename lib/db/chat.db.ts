@@ -676,4 +676,67 @@ export const ChatMessagesDB = {
 
     logger.info("[ChatMessages] marked as read", { tenantId, threadId, side });
   },
+
+  /**
+   * reactToMessage — Tanda 1 (Brandon 2026-06-11): toggle de reacción emoji a un
+   * mensaje, estilo WhatsApp/iMessage. Guardado en `metadataJson.reactions` (sin
+   * migración de schema). 1:1 → máximo UNA reacción por lado (buyer/seller):
+   *   - reaccionar con un emoji nuevo reemplaza la reacción previa de ese lado
+   *   - reaccionar con el MISMO emoji = toggle-off (quita la reacción)
+   * Devuelve el set de reacciones resultante para update optimista.
+   */
+  async reactToMessage(params: {
+    tenantId: string;
+    threadId: string;
+    messageId: string;
+    emoji: string;
+    by: "buyer" | "seller";
+  }): Promise<{ reactions: Array<{ emoji: string; by: "buyer" | "seller" }> }> {
+    const rows = await prisma.$queryRawUnsafe<Array<{ metadataJson: string | null }>>(
+      `SELECT "metadataJson" FROM "ConversationMessage"
+         WHERE "id" = $1 AND "threadId" = $2 AND "tenantId" = $3 AND "deletedAt" IS NULL
+         LIMIT 1`,
+      params.messageId,
+      params.threadId,
+      params.tenantId,
+    );
+    if (!rows[0]) throw new Error(`Message ${params.messageId} no existe`);
+
+    let meta: Record<string, unknown> = {};
+    try {
+      meta = rows[0].metadataJson ? (JSON.parse(rows[0].metadataJson) as Record<string, unknown>) : {};
+    } catch {
+      meta = {};
+    }
+    const prev: Array<{ emoji: string; by: "buyer" | "seller" }> = Array.isArray(meta.reactions)
+      ? (meta.reactions as Array<{ emoji: string; by: "buyer" | "seller" }>)
+      : [];
+    const mine = prev.find((r) => r.by === params.by);
+    let next = prev.filter((r) => r.by !== params.by);
+    // Si no tenía reacción, o tenía OTRO emoji → setear el nuevo. Si era el
+    // mismo → queda quitada (toggle-off).
+    if (!mine || mine.emoji !== params.emoji) {
+      next = [...next, { emoji: params.emoji, by: params.by }];
+    }
+    meta.reactions = next;
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE "ConversationMessage" SET "metadataJson" = $1
+         WHERE "id" = $2 AND "threadId" = $3 AND "tenantId" = $4`,
+      JSON.stringify(meta),
+      params.messageId,
+      params.threadId,
+      params.tenantId,
+    );
+
+    invalidateByPrefix(`chat:messages:${params.tenantId}:${params.threadId}`);
+    logger.info("[ChatMessages] reaction", {
+      tenantId: params.tenantId,
+      threadId: params.threadId,
+      messageId: params.messageId,
+      by: params.by,
+    });
+
+    return { reactions: next };
+  },
 };

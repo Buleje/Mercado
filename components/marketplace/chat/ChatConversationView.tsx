@@ -18,7 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText,
+  ReceiptText, Smile, Undo2, X,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -32,8 +32,37 @@ interface ThreadMsg {
   body: string;
   messageType: string;
   attachmentUrl: string | null;
+  /** Tanda 1: lleva reactions + replyTo (cita) en JSON. */
+  metadataJson: string | null;
   readBySellerAt: string | null;
   createdAt: string;
+}
+
+// ── Tanda 1 (Brandon 2026-06-11): reacciones + cita + emoji ──────────────────
+interface MsgReaction { emoji: string; by: "buyer" | "seller" }
+interface MsgReply { id: string; body: string; senderType: "buyer" | "seller" | "system"; senderName: string }
+
+/** Emojis de reacción rápida (la barra que sale al tocar un mensaje). */
+const REACTION_EMOJIS = ["❤️", "👍", "😂", "🔥", "🙏", "😮"];
+/** Set del selector de emoji del composer. */
+const COMPOSER_EMOJIS = [
+  "😀", "😅", "😂", "😍", "😘", "🤔", "😎", "🥳",
+  "👍", "🙏", "🔥", "🎉", "❤️", "😮", "😢", "👏",
+  "🙌", "🛵", "💰", "✅", "📦", "🍗", "🍕", "🥤",
+];
+
+/** Parsea metadataJson de un mensaje a reactions + replyTo. */
+function parseMeta(raw: string | null): { reactions: MsgReaction[]; replyTo: MsgReply | null } {
+  if (!raw) return { reactions: [], replyTo: null };
+  try {
+    const m = JSON.parse(raw) as { reactions?: MsgReaction[]; replyTo?: MsgReply };
+    return {
+      reactions: Array.isArray(m.reactions) ? m.reactions : [],
+      replyTo: m.replyTo ?? null,
+    };
+  } catch {
+    return { reactions: [], replyTo: null };
+  }
 }
 
 interface Props {
@@ -88,6 +117,10 @@ export default function ChatConversationView({
   // "no disponible" → cortamos el polling (evita el spam de 404 en consola) y
   // deshabilitamos el envío (evita el POST 403).
   const [unavailable, setUnavailable] = useState(false);
+  // Tanda 1: cita activa, mensaje con barra de acciones abierta, selector emoji.
+  const [replyTo, setReplyTo] = useState<MsgReply | null>(null);
+  const [activeMsgId, setActiveMsgId] = useState<string | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
 
@@ -132,6 +165,34 @@ export default function ChatConversationView({
     }
   }, [messages.length, onActivity]);
 
+  /** Tanda 1: toggle de reacción emoji (optimista + server). */
+  const react = useCallback(async (messageId: string, emoji: string) => {
+    if (!threadId || !storeSlug || unavailable) return;
+    setActiveMsgId(null);
+    // Optimista: replicar la lógica toggle del server localmente.
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== messageId) return m;
+        const { reactions, replyTo: rt } = parseMeta(m.metadataJson);
+        const mine = reactions.find((r) => r.by === "buyer");
+        let next = reactions.filter((r) => r.by !== "buyer");
+        if (!mine || mine.emoji !== emoji) next = [...next, { emoji, by: "buyer" as const }];
+        return { ...m, metadataJson: JSON.stringify({ ...(rt ? { replyTo: rt } : {}), reactions: next }) };
+      }),
+    );
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate(15); } catch { /* sin soporte */ }
+    }
+    try {
+      await fetch("/api/chat/public?action=react", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ threadId, storeSlug, customerPhone, messageId, emoji }),
+      });
+    } catch { /* el próximo poll reconcilia */ }
+  }, [threadId, storeSlug, customerPhone, unavailable]);
+
   const send = async (raw?: string) => {
     const trimmed = (raw ?? text).trim();
     if (!trimmed || sending || !storeSlug || unavailable) return;
@@ -163,6 +224,10 @@ export default function ChatConversationView({
             customerPhone,
             customerName,
             body: trimmed,
+            // Tanda 1: cita (reply) — snapshot del mensaje citado.
+            ...(replyTo
+              ? { replyTo: { ...replyTo, body: replyTo.body.slice(0, 200) } }
+              : {}),
           }),
         });
       }
@@ -182,6 +247,8 @@ export default function ChatConversationView({
         onThreadCreated?.(newThreadId);
       }
       setText("");
+      setReplyTo(null);
+      setEmojiOpen(false);
       // Refresca al toque para ver el mensaje persistido (y sus checks).
       window.setTimeout(() => { void fetchMessages(); }, 300);
     } catch {
@@ -268,6 +335,8 @@ export default function ChatConversationView({
               const mine = m.senderType === "buyer";
               const isSystem = m.senderType === "system";
               const isOrder = m.messageType === "order_link";
+              const meta = parseMeta(m.metadataJson);
+              const active = activeMsgId === m.id;
 
               return (
                 <li key={m.id}>
@@ -286,16 +355,47 @@ export default function ChatConversationView({
                       </span>
                     </div>
                   ) : (
-                    <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                    <div className={cn("flex flex-col", mine ? "items-end" : "items-start")}>
+                      {/* Burbuja — tap/click abre la barra de acciones (reaccionar/responder) */}
                       <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setActiveMsgId((id) => (id === m.id ? null : m.id))}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setActiveMsgId((id) => (id === m.id ? null : m.id)); } }}
+                        aria-label="Tocá para reaccionar o responder"
                         className={cn(
-                          "max-w-[80%] rounded-2xl shadow-sm",
+                          "max-w-[80%] cursor-pointer rounded-2xl shadow-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40",
                           isOrder && "w-full max-w-[88%]",
+                          active && "ring-2 ring-[var(--accent)]/40",
                           mine
                             ? "rounded-br-md bg-[var(--accent)] text-white"
                             : "rounded-bl-md border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)]",
                         )}
                       >
+                        {/* Cita (reply) — snapshot del mensaje citado */}
+                        {meta.replyTo && (
+                          <div
+                            className={cn(
+                              "mx-2 mt-2 rounded-lg border-l-[3px] px-2 py-1",
+                              mine
+                                ? "border-white/70 bg-white/15"
+                                : "border-[var(--accent)] bg-[var(--accent-soft)]",
+                            )}
+                          >
+                            <p className={cn(
+                              "text-[length:var(--ts-2xs)] font-black",
+                              mine ? "text-white/90" : "text-[var(--accent)]",
+                            )}>
+                              {meta.replyTo.senderType === "buyer" ? "Vos" : storeName}
+                            </p>
+                            <p className={cn(
+                              "truncate text-[length:var(--ts-xs)] font-medium",
+                              mine ? "text-white/80" : "text-[var(--text-secondary)]",
+                            )}>
+                              {meta.replyTo.body}
+                            </p>
+                          </div>
+                        )}
                         {/* Tarjeta de pedido — order_link del checkout */}
                         {isOrder && (
                           <div className={cn(
@@ -345,6 +445,57 @@ export default function ChatConversationView({
                           </p>
                         </div>
                       </div>
+
+                      {/* Barra de acciones — reaccionar (emojis) + responder */}
+                      {active && (
+                        <div className="z-10 mt-1 flex items-center gap-0.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-1.5 py-1 shadow-md">
+                          {REACTION_EMOJIS.map((e) => (
+                            <button
+                              key={e}
+                              type="button"
+                              onClick={() => void react(m.id, e)}
+                              aria-label={`Reaccionar ${e}`}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-base transition-transform hover:scale-125 active:scale-95"
+                            >
+                              {e}
+                            </button>
+                          ))}
+                          <span className="mx-0.5 h-5 w-px bg-[var(--rule-soft)]" aria-hidden />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplyTo({ id: m.id, body: m.body.slice(0, 200), senderType: m.senderType, senderName: m.senderName });
+                              setActiveMsgId(null);
+                            }}
+                            aria-label="Responder a este mensaje"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                          >
+                            <Undo2 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Reacciones — pills bajo la burbuja. Tap en la propia la quita. */}
+                      {meta.reactions.length > 0 && (
+                        <div className={cn("mt-0.5 flex flex-wrap gap-1", mine ? "justify-end pr-1" : "justify-start pl-1")}>
+                          {meta.reactions.map((r, idx) => (
+                            <button
+                              key={`${r.by}-${idx}`}
+                              type="button"
+                              onClick={() => { if (r.by === "buyer") void react(m.id, r.emoji); }}
+                              aria-label={`Reacción ${r.emoji}${r.by === "buyer" ? " (tuya, tocá para quitar)" : " de la tienda"}`}
+                              className={cn(
+                                "inline-flex items-center rounded-full border px-1.5 py-0.5 text-xs leading-none shadow-sm",
+                                r.by === "buyer"
+                                  ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]"
+                                  : "border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+                              )}
+                            >
+                              {r.emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </li>
@@ -362,12 +513,65 @@ export default function ChatConversationView({
           </p>
         ) : (
           <>
+            {/* Tira "Respondiendo a…" — cita activa (Tanda 1) */}
+            {replyTo && (
+              <div className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-[var(--accent)] bg-[var(--accent-soft)] px-2.5 py-1.5">
+                <div className="min-w-0 flex-1 leading-tight">
+                  <p className="text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">
+                    Respondiendo a {replyTo.senderType === "buyer" ? "vos" : storeName}
+                  </p>
+                  <p className="truncate text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)]">
+                    {replyTo.body}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReplyTo(null)}
+                  aria-label="Cancelar respuesta"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                >
+                  <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                </button>
+              </div>
+            )}
+
+            {/* Selector de emoji (Tanda 1) */}
+            {emojiOpen && (
+              <div className="mb-2 grid grid-cols-8 gap-1 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-2">
+                {COMPOSER_EMOJIS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setText((t) => (t + e).slice(0, 1000))}
+                    aria-label={`Insertar ${e}`}
+                    className="inline-flex h-9 items-center justify-center rounded-lg text-xl transition-transform hover:scale-110 hover:bg-[var(--surface-sunken)]"
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {error && (
               <p role="alert" className="mb-1.5 px-1 text-sm font-bold text-[var(--data-error-500)]">
                 {error}
               </p>
             )}
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setEmojiOpen((o) => !o)}
+                aria-label="Emojis"
+                aria-pressed={emojiOpen}
+                className={cn(
+                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors",
+                  emojiOpen
+                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <Smile className="h-6 w-6" strokeWidth={2} aria-hidden />
+              </button>
               <input
                 type="text"
                 value={text}

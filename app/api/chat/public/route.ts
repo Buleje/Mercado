@@ -74,12 +74,30 @@ const ListMessagesQuery = z.object({
   customerPhone: z.string().min(6).max(20),
 });
 
+/** Cita (reply) — snapshot del mensaje citado para render sin join. Tanda 1. */
+const ReplyToSchema = z.object({
+  id:         z.string().min(1).max(100),
+  body:       z.string().max(200),
+  senderType: z.enum(["buyer", "seller", "system"]),
+  senderName: z.string().max(150),
+});
+
 const SendMessageBody = z.object({
   threadId:      z.string().min(1).max(100),
   storeSlug:     z.string().min(1).max(200),
   customerPhone: z.string().min(6).max(20),
   customerName:  z.string().min(1).max(150),
   body:          z.string().min(1).max(4000),
+  replyTo:       ReplyToSchema.optional(),
+});
+
+/** Reacción emoji a un mensaje (toggle). Tanda 1. */
+const ReactBody = z.object({
+  threadId:      z.string().min(1).max(100),
+  storeSlug:     z.string().min(1).max(200),
+  customerPhone: z.string().min(6).max(20),
+  messageId:     z.string().min(1).max(100),
+  emoji:         z.string().min(1).max(16),
 });
 
 /**
@@ -122,6 +140,9 @@ export async function POST(req: NextRequest) {
   }
   if (action === "send") {
     return handleSend(body);
+  }
+  if (action === "react") {
+    return handleReact(body);
   }
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
@@ -236,12 +257,19 @@ async function handleSend(body: unknown) {
       return NextResponse.json({ error: "Conversación cerrada" }, { status: 409 });
     }
 
+    // Tanda 1: si es una cita (reply), adjuntar el snapshot del mensaje citado
+    // en metadataJson para render sin join. El tipo sigue siendo "text".
+    const metadataJson = parsed.data.replyTo
+      ? JSON.stringify({ replyTo: parsed.data.replyTo })
+      : undefined;
+
     const message = await ChatMessagesDB.send({
-      tenantId:   store.tenantId,
-      threadId:   parsed.data.threadId,
-      senderType: "buyer",
-      senderName: parsed.data.customerName,
-      body:       parsed.data.body,
+      tenantId:    store.tenantId,
+      threadId:    parsed.data.threadId,
+      senderType:  "buyer",
+      senderName:  parsed.data.customerName,
+      body:        parsed.data.body,
+      metadataJson,
     });
 
     // Brandon 2026-05-16 (realtime): emitir SSE al admin del tenant.
@@ -275,6 +303,60 @@ async function handleSend(body: unknown) {
       extra: { action: "send" },
       tags: { severity_user_facing: "true" },
     });
+    return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
+  }
+}
+
+/** POST ?action=react — toggle de reacción emoji del buyer sobre un mensaje. */
+async function handleReact(body: unknown) {
+  const parsed = ReactBody.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Datos inválidos", issues: parsed.error.issues },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const store = await ChatPublicDB.findStoreBySlug(parsed.data.storeSlug);
+    if (!store || !store.isPublished) {
+      return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
+    }
+    // Mismo ownership check que send: el buyer solo reacciona en SU hilo.
+    const threadCheck = await ChatPublicDB.findThreadForOwnershipCheck(
+      parsed.data.threadId,
+      store.tenantId,
+    );
+    if (
+      !threadCheck ||
+      threadCheck.customerPhone !== parsed.data.customerPhone ||
+      threadCheck.storeId !== store.id
+    ) {
+      return NextResponse.json({ error: "Thread no encontrado" }, { status: 404 });
+    }
+
+    const { reactions } = await ChatMessagesDB.reactToMessage({
+      tenantId:  store.tenantId,
+      threadId:  parsed.data.threadId,
+      messageId: parsed.data.messageId,
+      emoji:     parsed.data.emoji,
+      by:        "buyer",
+    });
+
+    // Realtime: avisar al admin que cambió una reacción (fire-and-forget).
+    try {
+      const { emitAdminSSE } = await import("@/lib/sse-emitter");
+      emitAdminSSE(store.tenantId, "chat_message_new", {
+        threadId: parsed.data.threadId,
+        senderType: "buyer",
+        reaction: true,
+        messageId: parsed.data.messageId,
+      });
+    } catch { /* fire-and-forget */ }
+
+    return NextResponse.json({ data: { messageId: parsed.data.messageId, reactions } });
+  } catch (err) {
+    logger.error("[chat/public] react failed", { err: String(err) });
     return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
   }
 }
@@ -334,6 +416,9 @@ export async function GET(req: NextRequest) {
       body:           m.body,
       messageType:    m.messageType,
       attachmentUrl:  m.attachmentUrl,
+      // metadataJson (Tanda 1, Brandon 2026-06-11): lleva reactions + replyTo
+      // (cita). Es contenido del propio hilo, no expone nada interno del vendor.
+      metadataJson:   m.metadataJson,
       readBySellerAt: m.readBySellerAt,
       createdAt:      m.createdAt,
     }));
