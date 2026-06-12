@@ -3,6 +3,7 @@ name: rag-search
 description: Búsqueda semántica del repo Buleje vía Qdrant local. Activar cuando Brandon pregunte "donde está X funcional", "qué archivos hacen Y", "encontrame todo lo de Z", "busca semántico", "rag search". Mejor que grep para queries conceptuales (no keyword exacto).
 model: sonnet
 argument-hint: "[query semántica]"
+allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # RAG Search — Búsqueda semántica local

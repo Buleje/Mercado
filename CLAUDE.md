@@ -1,6 +1,6 @@
 # CLAUDE.md — Buleje (Bodega San Martín)
 
-> **Última verificación:** 2026-06-02 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
+> **Última verificación:** 2026-06-12 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
 
 **Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa.
 
@@ -147,12 +147,12 @@ Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · S
 
 ## 5. Fast-Path Routing (ADR-058)
 
-| Tier | Criterio | Dispatch | Gates |
-|---|---|---|---|
-| **HOTFIX** | 1 archivo, <20 líneas | Subagente directo | lint + tsc |
-| **FEATURE** | 2-5 archivos, 1 área | Team slim (2-3) | lint + tsc + test |
-| **DANGER** | Zona peligrosa | Squad + security | Full pipeline |
-| **INITIATIVE** | 5+ archivos, ≥2 áreas | Hub BUILD→QUALITY→OPS | Todos los gates |
+| Tier | Criterio | Dispatch | Modelo/effort subagentes | Gates |
+|---|---|---|---|---|
+| **HOTFIX** | 1 archivo, <20 líneas | Subagente directo | `haiku`/`sonnet` (mecánico = barato) | lint + tsc |
+| **FEATURE** | 2-5 archivos, 1 área | Team slim (2-3) | default (heredar) | lint + tsc + test |
+| **DANGER** | Zona peligrosa | Squad + security | `opus`/effort alto | Full pipeline |
+| **INITIATIVE** | 5+ archivos, ≥2 áreas | Hub BUILD→QUALITY→OPS o **Workflow** (`audit-verificado` como template) | mixto por fase | Todos los gates |
 
 Templates en `.claude/team-templates/`. Arquitectura completa en `AGENTS.md` (Hub & Spoke v2: Director + 14 agentes canónicos + 3 specialists (dark-mode-auditor, storefront-visual-qa, typography-enforcer) = **17 agent defs activos** en `.claude/agents/`. 36 defs legacy absorbidos → archivados en `.claude/_agents-archive/`, NO se cargan; los skills referencian solo nombres canónicos).
 
@@ -212,6 +212,9 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 12. **Credenciales QA admin** (Playwright visual verify): `qaadmin` / `Qa-admin-1234` en tenant `main`. Crear con `node -r dotenv/config scripts/create-qa-admin-raw.mjs`.
 13. **Onboarding modal**: localStorage key real = `onboarding-completed-${tenantSlug}`. Setear a `"1"` en Playwright antes de screenshots.
 14. **Prisma schema drift** (suppliers `ColumnNotFound`): requiere `prisma migrate deploy` con DIRECT_URL accesible. DNS de Supabase directo puede fallar en algunas redes — correr desde red con acceso o aplicar la migration sobrante manualmente.
+15. **Claude Code 2026** (v2.1.175+): `/goal` = condición de completitud con evaluador externo (usar en corridas autónomas); `/btw` = preguntas laterales sin gastar contexto; `/rewind` antes de experimentos riesgosos; `/clear` entre tareas no relacionadas; tras 2 correcciones fallidas → replantear, no insistir. **Context resets + estado en archivos > compaction** en corridas largas.
+16. **Reglas path-scoped en `.claude/rules/`** — cargan solo al tocar archivos que matchean (db-classes, ui-components, danger-zone, agentic-style). Gotchas nuevos de capa → ahí, NO inflar este archivo.
+17. **Workflow `audit-verificado`** — auditorías con verificación adversarial integrada (cada hallazgo pasa por un refutador). Usar para "auditá X" en vez de N agentes sueltos.
 
 ---
 
@@ -225,7 +228,9 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 | `README.md` | Quick start, deployment Vercel, API endpoints |
 | `docs/adr/` | Decisiones de arquitectura vivas |
 | `SESSION_HANDOFF.md` | Estado de sesión anterior (si existe) |
-| `.claude/hooks/` | 28 hooks (danger zone, lint, tsc, rubric-check, ADR injector, deploy gates) |
+| `.claude/hooks/` | ~31 hooks (danger zone, lint, tsc, rubric-check, ADR injector, deploy gates) + utilidades CLI (hub-gate, agent-evolve) |
+| `.claude/rules/` | Reglas path-scoped 2026 — cargan SOLO al tocar archivos que matchean (db, ui, danger-zone, agentic-style) |
+| `.claude/workflows/` | Workflows guardados — `audit-verificado` (auditoría + refutación adversarial) |
 | `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — usa `outcome-evaluator` |
 | `.claude/skills/` | 62 skills (skill v2: frontmatter `allowed-tools`+`model`+`argument-hint`) |
 

@@ -1,6 +1,6 @@
 ---
 name: luis
-description: MODO MAXIMO — Arranque completo con todo el ecosistema. Carga 23 MCPs, 17 agentes, 65 skills, 31 hooks, auto-learning, sprint-autopilot. Diagnostica, propone y EJECUTA la accion mas ambiciosa sin pedir permiso.
+description: MODO MAXIMO — Arranque completo con todo el ecosistema. Carga TODOS los MCPs, agentes, skills y hooks del ecosistema, auto-learning, sprint-autopilot. Diagnostica, propone y EJECUTA la accion mas ambiciosa sin pedir permiso.
 user-invocable: true
 model: opus
 context: fork
@@ -40,7 +40,7 @@ Si no hay handoff reciente, confirmar en 1 tabla: pixel-agents (3456), timbre di
 
 Mostrar tabla con: Branch, TypeScript OK/FAIL, Lint OK/FAIL, Archivos dirty, Session anterior, Patrones aprendidos, Evoluciones.
 
-Resumen ecosistema: 17 agentes, 65 skills, 31 hooks, 23 MCPs, 5 crons, 3 learning stores.
+Resumen ecosistema: contar en vivo (ls .claude/agents .claude/skills .claude/hooks) — los numeros driftean; no hardcodear.
 
 ## FASE 3 — Detectar la accion mas ambiciosa
 
