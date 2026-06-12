@@ -477,9 +477,12 @@ export default function UnifiedProductCard({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 16 }}
+      // perf audit P2: las primeras ~4 cards (above-the-fold) pintan SIN fade ni
+      // delay para no penalizar el LCP; el resto conserva la entrada escalonada
+      // (con delay capeado a 6 para que no se acumule indefinidamente).
+      initial={index < 4 ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
+      transition={{ duration: 0.3, delay: Math.min(index, 6) * 0.04 }}
       whileHover={{ y: -6 }}
       className={cn(
         // Brandon 2026-05-18 v3: layout horizontal en mobile (estilo PedidosYa/
@@ -535,6 +538,9 @@ export default function UnifiedProductCard({
                 src={product.image}
                 alt={product.name}
                 fill
+                // perf audit P1: la imagen de las primeras ~4 cards es candidata
+                // a LCP — priority (eager + fetchpriority high) en vez de lazy.
+                priority={index < 4}
                 className="object-contain p-2 transition-transform duration-500 group-hover:scale-[1.04]"
                 sizes={
                   isCompact

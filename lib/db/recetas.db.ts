@@ -312,11 +312,19 @@ export const RecetasDB = {
       let movimientosCreados = 0;
       const stockIngrediente: ProductionResult["stockIngrediente"] = [];
 
+      // perf audit P1 (N+1): cargamos TODOS los productos de la receta en UNA
+      // sola query DENTRO de la transacción (stock fresco + scoped por tenantId,
+      // antes el findUnique por-id ni filtraba tenantId). Los updates siguen
+      // siendo por-producto porque cada uno descuenta su propio stock.
+      const ingProductIds = receta.ingredientes.map((i) => i.productoId);
+      const productos = await tx.product.findMany({
+        where: { id: { in: ingProductIds }, tenantId },
+      });
+      const productoPorId = new Map(productos.map((p) => [p.id, p]));
+
       for (const ing of receta.ingredientes) {
         const cantidadNecesaria = toNumOrZero(ing.cantidad) * quantity;
-        const producto = await tx.product.findUnique({
-          where: { id: ing.productoId },
-        });
+        const producto = productoPorId.get(ing.productoId);
         if (!producto) {
           throw new Error(`Producto ${ing.productoId} no encontrado`);
         }

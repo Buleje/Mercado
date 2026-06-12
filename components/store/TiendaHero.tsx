@@ -20,6 +20,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { ShoppingBag, ShoppingCart } from "@buleje/design-system/icons";
 import { DoniaElena } from "@/components/ui-system/illustrations/pucallpa-locals";
 import { useCart } from "@/contexts/cart-context";
@@ -91,14 +92,30 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
   return (
     <section
       className="relative overflow-hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] data-[bg=image]:bg-transparent"
-      style={
-        heroBg
-          ? { backgroundImage: `linear-gradient(to bottom, rgba(6,10,13,0.78), rgba(6,10,13,0.92)), url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }
-          : undefined
-      }
       data-bg={heroBg ? "image" : "solid"}
       aria-label="Bienvenida a la tienda"
     >
+      {/* perf audit P1: el fondo del hero pasó de CSS background-image (sin
+          optimizar) a next/image (optimizado, priority por ser LCP). El gradiente
+          oscuro queda como overlay separado encima de la imagen. */}
+      {heroBg && (
+        <>
+          <Image
+            src={heroBg}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to bottom, rgba(6,10,13,0.78), rgba(6,10,13,0.92))" }}
+          />
+        </>
+      )}
+
       {/* Ambient glows — solo cuando NO hay imagen de fondo (para no competir). */}
       {!heroBg && (
         <div className="pointer-events-none absolute inset-0">

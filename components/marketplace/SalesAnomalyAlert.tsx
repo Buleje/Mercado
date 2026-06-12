@@ -6,7 +6,8 @@
  * Auto-poll cada 5 min. Botón "Entendido" llama a acknowledge.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
+import { useVisiblePolling } from "@/hooks/use-visible-polling";
 import { m, AnimatePresence } from "framer-motion";
 import { TrendingDown, TrendingUp, X, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -64,7 +65,6 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
   const [items, setItems] = useState<AnomalyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [acknowledging, setAcknowledging] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchAnomalies = useCallback(async () => {
     if (!storeSlug) {
@@ -89,14 +89,8 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
     }
   }, [storeSlug]);
 
-  // Carga inicial + poll
-  useEffect(() => {
-    fetchAnomalies();
-    timerRef.current = setInterval(fetchAnomalies, POLL_INTERVAL_MS);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [fetchAnomalies]);
+  // perf audit: carga inicial + poll con guard de visibilidad (pausa en background).
+  useVisiblePolling(fetchAnomalies, POLL_INTERVAL_MS);
 
   const handleAcknowledge = async (id: string) => {
     setAcknowledging(id);

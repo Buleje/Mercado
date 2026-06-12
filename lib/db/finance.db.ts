@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { logger } from "@/lib/logger";
 import type {
   Payable as PPayable,
@@ -13,6 +13,25 @@ import {
   type PaymentMethod,
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+
+// perf audit P1: invalidación de caché tras writes. `revalidateTag` lanza si se
+// llama fuera de un contexto de request de Next (ej. unit tests que invocan la
+// db class directo) — lo envolvemos: la invalidación es fire-and-forget, no
+// crítica para la operación.
+function safeRevalidate(tag: string): void {
+  try {
+    revalidateTag(tag, "max");
+  } catch {
+    /* fuera de contexto de request (test/script) — no crítico */
+  }
+}
+
+// Tras escribir un gasto hay que invalidar su caché Y la del flujo de caja (los
+// gastos alimentan cash-flow). Antes no se invalidaba nada → resumen viejo 30-60s.
+function revalidateExpenses(tenantId: string): void {
+  safeRevalidate(`tenant:${tenantId}:expenses`);
+  safeRevalidate(`tenant:${tenantId}:cash-flow`);
+}
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -87,6 +106,7 @@ export const PayablesDB = {
       },
       include: { payments: true },
     });
+    safeRevalidate(`tenant:${tenantId}:payables`); // perf audit P1: invalidar caché tras write
     return mapPayable(row);
   },
   async update(tenantId: string, id: string, patch: Partial<DbPayable>): Promise<DbPayable | null> {
@@ -101,11 +121,12 @@ export const PayablesDB = {
     await prisma.payable.updateMany({ where: { id, tenantId }, data });
     const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
     if (!row) return null;
+    safeRevalidate(`tenant:${tenantId}:payables`); // perf audit P1: invalidar caché tras write
     return mapPayable(row);
   },
   async addPayment(tenantId: string, id: string, payment: DbPayment): Promise<DbPayable | null> {
     // F2: race lock — todo dentro de $transaction para evitar doble pago concurrente
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const current = await tx.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
       if (!current) return null;
 
@@ -137,9 +158,12 @@ export const PayablesDB = {
       if (!row) return null;
       return mapPayable(row);
     });
+    safeRevalidate(`tenant:${tenantId}:payables`); // perf audit P1: invalidar caché tras pago
+    return result;
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await prisma.payable.deleteMany({ where: { id, tenantId } }).catch((err) => logger.warn("[finance.db] payable delete failed", { id, tenantId, err: String(err) }));
+    safeRevalidate(`tenant:${tenantId}:payables`); // perf audit P1: invalidar caché tras delete
   },
 };
 
@@ -200,14 +224,17 @@ export const ExpensesDB = {
         recurring: false,
       },
     });
+    revalidateExpenses(tenantId);
     return mapExpense(row);
   },
   async add(tenantId: string, data: Omit<DbExpense, "id" | "createdAt">): Promise<DbExpense> {
     const row = await prisma.expense.create({ data: { category: data.category, description: data.description, amount: data.amount, date: new Date(data.date), recurring: data.recurring, tenantId } });
+    revalidateExpenses(tenantId);
     return mapExpense(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await prisma.expense.deleteMany({ where: { id, tenantId } }).catch((err) => logger.warn("[finance.db] expense delete failed", { id, tenantId, err: String(err) }));
+    revalidateExpenses(tenantId);
   },
   async getSummary(tenantId: string): Promise<{ category: string; total: number; count: number }[]> {
     "use cache";

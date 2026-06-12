@@ -13,7 +13,8 @@
  * Cuando haya endpoint real `/api/marketplace/live-stats`, reemplazar.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useVisiblePolling } from "@/hooks/use-visible-polling";
 import NumberFlow from "@number-flow/react";
 import { Truck, Store, Package, Users, type LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -46,30 +47,19 @@ export default function LiveStats() {
     buildStats({ ordersToday: 0, shoppersToday: 0, activeStores: 0, avgDeliveryMin: 0 }),
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    let live: ReturnType<typeof setInterval> | null = null;
-
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/marketplace/live-stats", { cache: "no-store" });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!cancelled && json.data) setStats(buildStats(json.data));
-      } catch {
-        /* silent */
-      }
-    };
-
-    // Initial fetch + cada 30s para sensación live (server cachea 60s)
-    fetchStats();
-    live = setInterval(fetchStats, 30_000);
-
-    return () => {
-      cancelled = true;
-      if (live) clearInterval(live);
-    };
+  // perf audit: cada 30s para sensación live (server cachea 60s), PERO solo con
+  // la pestaña visible (useVisiblePolling pausa en background).
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/marketplace/live-stats", { cache: "no-store" });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.data) setStats(buildStats(json.data));
+    } catch {
+      /* silent */
+    }
   }, []);
+  useVisiblePolling(fetchStats, 30_000);
 
   return (
     <section

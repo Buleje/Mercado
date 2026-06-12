@@ -10,7 +10,8 @@
  * MK-62 — Sprint 3 marketplace blueprint.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useVisiblePolling } from "@/hooks/use-visible-polling";
 import { Truck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -40,28 +41,23 @@ export default function LiveOrderCounter({ variant = "inline", className }: Prop
   const [stats, setStats] = useState<WeekStats>(FALLBACK);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/marketplace/stats/week", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json() as WeekStats;
-        if (cancelled) return;
-        setStats({
-          deliveredOrders: Number(data.deliveredOrders ?? FALLBACK.deliveredOrders),
-          activeStores: Number(data.activeStores ?? FALLBACK.activeStores),
-        });
-      } catch {
-        // mantener fallback
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void load();
-    const id = setInterval(() => void load(), POLL_MS);
-    return () => { cancelled = true; clearInterval(id); };
+  // perf audit: polling con guard de visibilidad (pausa en pestaña background).
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/marketplace/stats/week", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json() as WeekStats;
+      setStats({
+        deliveredOrders: Number(data.deliveredOrders ?? FALLBACK.deliveredOrders),
+        activeStores: Number(data.activeStores ?? FALLBACK.activeStores),
+      });
+    } catch {
+      // mantener fallback
+    } finally {
+      setLoading(false);
+    }
   }, []);
+  useVisiblePolling(load, POLL_MS);
 
   // Threshold guard: si los números reales son demasiado bajos, ocultar el
   // counter en vez de mostrar social proof anémico ("3 pedidos esta semana").
