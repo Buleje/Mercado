@@ -43,12 +43,19 @@ export default function ConditionalSecondaryNav() {
           viven en la página (sticky top-112). */}
       {onHome && (
         <div className="md:hidden sticky top-[52px] z-40 bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
-          <Suspense fallback={<div className="h-[57px]" />}>
-            <div className="border-b border-[var(--rule-soft)] py-2.5">
-              <MarketplaceVerticalChips />
-            </div>
+          {/* Brandon 2026-06-11: cada barra es dueña de su borde/padding y se
+              auto-oculta (verticales si ≤1 categoría; subcats si no hay). Así el
+              contenedor no deja una franja vacía cuando no hay nada que mostrar. */}
+          <Suspense fallback={null}>
+            <MarketplaceVerticalChips />
           </Suspense>
-          {showSubNav && <MarketplaceCategoriesBar embedded />}
+          {/* Brandon 2026-06-11: en la home las subcategorías de producto van
+              SIEMPRE (no dependen del nav-mode) — son la navegación directa que
+              pidió Brandon. Se acotan al vertical de arriba y se auto-ocultan si
+              ese vertical no tiene subcategorías. */}
+          <Suspense fallback={null}>
+            <MarketplaceCategoriesBar embedded />
+          </Suspense>
         </div>
       )}
 

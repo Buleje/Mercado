@@ -13,6 +13,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
+import { MARKETPLACE_VERTICALS } from "@/lib/marketplace/verticals";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
@@ -626,8 +627,27 @@ export const MarketplacePublicDB = {
    *
    * @cross-tenant intentional (ADR-082).
    */
-  async getProductCategories(): Promise<Array<{ id: string; count: number }>> {
-    return getOrSet("marketplace:product-categories:v2", 300, async () => {
+  async getProductCategories(
+    storeCategories?: string[],
+  ): Promise<Array<{ id: string; count: number }>> {
+    // Tanda mobile (Brandon 2026-06-11): cuando se pasa `storeCategories` (las
+    // categorías de tienda de un vertical), las subcategorías se acotan a los
+    // productos de esas tiendas → la barra de subcategorías depende del vertical
+    // elegido arriba. Sin el param = todo el catálogo (comportamiento original).
+    const scope = storeCategories?.map((c) => c.trim().toLowerCase()).filter(Boolean) ?? null;
+    const cacheKey = scope?.length
+      ? `marketplace:product-categories:v2:scope:${[...scope].sort().join(",")}`
+      : "marketplace:product-categories:v2";
+    return getOrSet(cacheKey, 300, async () => {
+      // store.category es case-inconsistente ("Abarrotes" vs "bodega") → OR de
+      // equals insensitive (Prisma `in` no soporta mode insensitive).
+      const storeWhere = scope?.length
+        ? {
+            isPublished: true,
+            tenant: { active: true },
+            OR: scope.map((c) => ({ category: { equals: c, mode: "insensitive" as const } })),
+          }
+        : { isPublished: true, tenant: { active: true } };
       // Audit 2026-06-10 P2: antes findMany take:10000 traía hasta 10k filas
       // para contar ~15 categorías en JS. groupBy agrega en la DB y devuelve
       // ~1 fila por variante de categoría. Nota: ahora cuenta productos
@@ -639,7 +659,7 @@ export const MarketplacePublicDB = {
           active: true,
           deletedAt: null,
           storeProducts: {
-            some: { isActive: true, store: { isPublished: true, tenant: { active: true } } },
+            some: { isActive: true, store: storeWhere },
           },
         },
         _count: { _all: true },
@@ -1558,6 +1578,19 @@ export const MarketplaceStatsDB = {
     } catch {
       return [];
     }
+  },
+
+  /**
+   * Verticales del Inicio que TIENEN tiendas publicadas (Brandon 2026-06-11).
+   * Cruza las categorías de tienda activas con cada vertical. Si devuelve ≤1,
+   * la UI oculta la fila de chips de vertical (no hay nada que elegir).
+   */
+  async getActiveVerticals(): Promise<string[]> {
+    const slugs = await this.getActiveStoreCategorySlugs();
+    const active = new Set(slugs.map((s) => s.toLowerCase()));
+    return MARKETPLACE_VERTICALS
+      .filter((v) => v.storeCategories.some((c) => active.has(c)))
+      .map((v) => v.id);
   },
 
   /**

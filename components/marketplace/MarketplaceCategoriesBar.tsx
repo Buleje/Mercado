@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
+import { normalizeVertical } from "@/lib/marketplace/verticals";
 import { cn } from "@/lib/utils";
 import { cachedJson } from "@/lib/client-cache-fetch";
 
@@ -39,12 +40,20 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Brandon 2026-06-11: las subcategorías DEPENDEN del vertical de arriba. En la
+  // home (embedded) usamos el vertical efectivo (default "comida"); standalone
+  // solo acota si `?v=` viene explícito (preserva el "todo el catálogo" previo).
+  const rawV = searchParams.get("v");
+  const vertical = rawV ? normalizeVertical(rawV) : embedded ? "comida" : null;
+
   useEffect(() => {
     let cancelled = false;
-    // Brandon 2026-05-31 (audit home #2 dedup): cachedJson dedupea + cachea 5min.
-    // Mismo URL que TiendasMainCategoriesGrid → comparten caché (coalescing), en
-    // vez de cada consumidor pidiendo product-categories por separado.
-    cachedJson<{ categories?: ProductCategory[] }>("/api/marketplace/product-categories", 300_000)
+    // cachedJson dedupea + cachea 5min. Scope por vertical → la URL (y la caché)
+    // cambian con el vertical, así la barra refetch-ea al cambiar de mundo.
+    const url = vertical
+      ? `/api/marketplace/product-categories?v=${encodeURIComponent(vertical)}`
+      : "/api/marketplace/product-categories";
+    cachedJson<{ categories?: ProductCategory[] }>(url, 300_000)
       .then((d) => {
         if (cancelled || !d) return;
         const list = d.categories ?? [];
@@ -56,7 +65,7 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [vertical]);
 
   // Brandon 2026-05-27: NO mostrar la barra dentro de una tienda
   // (/marketplace/[slug]). Ahí el storefront tiene su propia barra slim
@@ -83,36 +92,35 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
     pathname === "/marketplace/buscar" ? searchParams.get("cat") : null;
   const isHome = pathname === "/marketplace" && !activeCat;
 
-  // Minimalista (Brandon 2026-06-07): chips sólidos sin borde. Activo = fill
-  // accent; idle = fill sunken; hover = accent-soft. Sin border-2 ni ring
-  // decorativo (se mantiene focus-visible para a11y de teclado).
-  const chipBase =
-    "snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
-  const chipActive = "bg-[var(--accent)] text-white";
-  const chipIdle =
-    "bg-[var(--surface-sunken)] text-[var(--text-primary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]";
+  // Brandon 2026-06-11 (rework mobile): tabs FLAT con subrayado de acento — sin
+  // cápsulas redondeadas, sin fondo, sin sombra. Cohesivo con la fila de
+  // verticales de arriba; más limpio y "elaborado".
+  const tabBase =
+    "snap-start shrink-0 inline-flex items-center gap-1 border-b-2 py-2 text-[13px] font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  const tabActive = "border-[var(--accent)] text-[var(--accent)]";
+  const tabIdle =
+    "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]";
 
   return (
     <div
       className={cn(
         "md:hidden border-b border-[var(--rule-soft)]",
-        // Brandon 2026-06-11: `embedded` = vive DENTRO del bloque sticky de los
-        // chips de vertical (home mobile) → no lleva su propio sticky/fondo (lo
-        // aporta el contenedor). Standalone conserva su sticky top-52 original.
+        // `embedded` = vive DENTRO del bloque sticky de los verticales (home
+        // mobile) → sin sticky/fondo propio. Standalone conserva su sticky.
         !embedded &&
           "sticky top-[52px] z-40 bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80",
       )}
     >
       <nav
         aria-label="Categorías de productos"
-        className="flex gap-2 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden snap-x px-4 py-2.5"
+        className="flex gap-5 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden snap-x px-4"
         style={{ scrollbarWidth: "none" }}
       >
-        {/* Chip "Todo" → home del marketplace */}
+        {/* "Todo" → home del marketplace */}
         <Link
           href="/marketplace"
           aria-current={isHome ? "page" : undefined}
-          className={cn(chipBase, isHome ? chipActive : chipIdle)}
+          className={cn(tabBase, isHome ? tabActive : tabIdle)}
         >
           Todo
         </Link>
@@ -125,10 +133,10 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
               key={cat.id}
               href={`/marketplace/buscar?cat=${encodeURIComponent(cat.id)}`}
               aria-current={active ? "page" : undefined}
-              className={cn(chipBase, active ? chipActive : chipIdle)}
+              className={cn(tabBase, active ? tabActive : tabIdle)}
             >
               <Icon
-                className={cn("h-4 w-4 shrink-0", active ? "text-white" : "text-[var(--accent)]")}
+                className={cn("h-4 w-4 shrink-0", active ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]")}
                 strokeWidth={2}
                 aria-hidden
               />

@@ -1,18 +1,20 @@
 "use client";
 
 /**
- * MarketplaceVerticalChips — los "mundos" del Inicio (Brandon 2026-06-11).
+ * MarketplaceVerticalChips — los "mundos" del Inicio (Brandon 2026-06-11 v2).
  *
- * Chips horizontales: Comida · Bodega · Ferretería · Electro · Farmacia.
- * El Inicio arranca food-first (default "comida"); un toque cambia de mundo y
- * filtra el catálogo (vía `?v=` → CatalogUrlSync → CatalogFilterContext) sin
- * recargar. URL-driven = compartible + SSR-friendly, sin lifting de provider.
+ * Tabs horizontales (Comida · Bodega · Ferretería · Electro · Farmacia) que
+ * filtran el catálogo vía `?v=` sin recargar. URL-driven = compartible + SSR.
  *
- * Regla de corte: NO comestible/no — es "elijo la tienda" (comida preparada →
- * Comida) vs "comparo precio del producto" (commodity → catálogo). Ver la
- * conversación de IA con Brandon.
+ * Brandon 2026-06-11 (rework mobile):
+ *   - Solo se muestran los verticales QUE TIENEN tiendas. Si hay ≤1 → la fila
+ *     entera se oculta (no hay nada que elegir). El componente es dueño de su
+ *     propio contenedor/borde, así que al ocultarse no deja una barra vacía.
+ *   - Estilo flat: tabs con subrayado de acento, SIN cajas redondeadas ni
+ *     bordes/sombras. Más limpio y directo en celular.
  */
 
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import {
@@ -24,6 +26,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { MARKETPLACE_VERTICALS, normalizeVertical } from "@/lib/marketplace/verticals";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -39,42 +42,59 @@ export default function MarketplaceVerticalChips() {
   const router = useRouter();
   const active = normalizeVertical(sp.get("v"));
 
+  // Verticales que realmente tienen tiendas. null = aún cargando.
+  const [activeIds, setActiveIds] = useState<string[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    cachedJson<{ verticals?: string[] }>("/api/marketplace/active-verticals", 300_000)
+      .then((d) => { if (!cancelled) setActiveIds(d?.verticals ?? []); })
+      .catch(() => { if (!cancelled) setActiveIds([]); });
+    return () => { cancelled = true; };
+  }, []);
+
   const select = (id: string) => {
-    // Conserva otros params (sort, cat). Soft-nav sin saltar al tope: el
-    // catálogo y las secciones food-only reaccionan al cambio de `?v=`.
     const params = new URLSearchParams(Array.from(sp.entries()));
     params.set("v", id);
     router.push(`/?${params.toString()}`, { scroll: false });
   };
 
+  // Mientras carga, no pintamos nada (evita el flash de tabs que luego se ocultan).
+  if (activeIds === null) return null;
+
+  const shown = MARKETPLACE_VERTICALS.filter((v) => activeIds.includes(v.id));
+  // Regla Brandon: con 1 sola categoría no hay nada que elegir → ocultar la fila.
+  if (shown.length <= 1) return null;
+
   return (
     <nav
       aria-label="Categorías del marketplace"
-      className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8"
+      className="border-b border-[var(--rule-soft)]"
     >
-      <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {MARKETPLACE_VERTICALS.map((v) => {
-          const Icon = ICONS[v.id] ?? UtensilsCrossed;
-          const isActive = v.id === active;
-          return (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => select(v.id)}
-              aria-pressed={isActive}
-              className={cn(
-                "inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold whitespace-nowrap transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-                isActive
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
-              {v.label}
-            </button>
-          );
-        })}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {shown.map((v) => {
+            const Icon = ICONS[v.id] ?? UtensilsCrossed;
+            const isActive = v.id === active;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => select(v.id)}
+                aria-pressed={isActive}
+                className={cn(
+                  "group inline-flex shrink-0 items-center gap-1.5 border-b-2 py-2.5 text-[13px] font-bold whitespace-nowrap transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+                  isActive
+                    ? "border-[var(--accent)] text-[var(--accent)]"
+                    : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <Icon className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
+                {v.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
