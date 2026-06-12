@@ -83,6 +83,7 @@ export default function BottomNav() {
     pathname === "/checkout";
 
   const activeTab = useCallback((): TabId => {
+    if (pathname?.startsWith("/chat")) return "chat";
     if (pathname?.startsWith("/marketplace/mi-cuenta")) return "cuenta";
     if (pathname === "/") return "inicio";
     if (
@@ -111,12 +112,10 @@ export default function BottomNav() {
           router.push("/tiendas");
           break;
         case "chat":
-          // Brandon 2026-06-07: abre la BANDEJA del Messenger (chat con las
-          // tiendas). El ChatNavLauncher "bare" (montado en el nav, sin botón
-          // visible en celular) escucha `buleje:open-chat-list` y abre el panel.
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("buleje:open-chat-list"));
-          }
+          // Brandon 2026-06-12: el chat ahora es RUTA REAL (/chat), estilo
+          // Messenger nativo (atrás del celular + URL funcionan). Antes abría un
+          // overlay vía evento; ahora navegamos a la página.
+          router.push("/chat");
           break;
         case "cuenta":
           router.push("/marketplace/mi-cuenta");
@@ -197,18 +196,25 @@ export default function BottomNav() {
               aria-label={label}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-0.5 min-h-[60px] py-2 px-1",
+                "flex flex-1 flex-col items-center justify-center gap-1 min-h-[60px] py-2 px-1",
                 "relative select-none transition-colors duration-150",
                 "active:scale-95",
                 isActive
-                  ? "text-[var(--text-primary)]"
+                  ? "text-[var(--accent)]"
                   : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
               )}
             >
-              <span className="relative">
+              {/* Brandon 2026-06-12: pill de acento bajo el ícono en la pestaña
+                  activa (estilo Rappi/Glovo) — el link activo se ve claramente. */}
+              <span
+                className={cn(
+                  "relative inline-flex h-8 w-12 items-center justify-center rounded-full transition-colors duration-200",
+                  isActive ? "bg-[var(--accent-soft)]" : "bg-transparent",
+                )}
+              >
                 <Icon
                   className={cn(
-                    "h-5 w-5 transition-transform duration-150",
+                    "h-5 w-5 transition-transform duration-200",
                     isActive && "scale-110",
                   )}
                   strokeWidth={isActive ? 2.5 : 1.8}
@@ -218,17 +224,11 @@ export default function BottomNav() {
               <span
                 className={cn(
                   "text-[length:var(--ts-xs)] leading-tight tracking-tight",
-                  isActive ? "font-bold" : "font-semibold",
+                  isActive ? "font-black" : "font-semibold",
                 )}
               >
                 {label}
               </span>
-              {isActive && (
-                <span
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full bg-[var(--text-primary)]"
-                  aria-hidden
-                />
-              )}
             </button>
           );
         })}

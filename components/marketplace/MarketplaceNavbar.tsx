@@ -578,10 +578,10 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 UX universal. En storefront sigue siendo "/" pero también ofrecemos
                 volver al directorio /tiendas via breadcrumb interno. */}
             <Link
-              href={storefront.logo ? "/tiendas" : "/"}
+              href="/"
               aria-label={
                 storefront.logo
-                  ? `${storefront.name ?? "Tienda"} — Ver directorio`
+                  ? `${storefront.name ?? "Tienda"} — Ir al inicio`
                   : "Buleje — Ir al inicio"
               }
               className="hidden md:flex items-center gap-2 shrink-0 text-[var(--accent)]"
