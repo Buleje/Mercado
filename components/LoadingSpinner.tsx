@@ -35,7 +35,7 @@ export function LoadingSpinner({
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
+      <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-black/60 backdrop-blur-sm z-50">
         {content}
       </div>
     );
@@ -58,14 +58,14 @@ export function PageLoader() {
 
 export function SkeletonCard() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse">
-      <div className="h-48 bg-gray-200" />
+    <div className="bg-white dark:bg-[var(--surface-canvas)] rounded-lg border border-gray-200 dark:border-[var(--rule-base)] overflow-hidden animate-pulse">
+      <div className="h-48 bg-gray-200 dark:bg-[var(--surface-sunken)]" />
       <div className="p-4 space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-3/4" />
-        <div className="h-4 bg-gray-200 rounded w-1/2" />
+        <div className="h-4 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-3/4" />
+        <div className="h-4 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-1/2" />
         <div className="flex justify-between items-center pt-2">
-          <div className="h-6 bg-gray-200 rounded w-20" />
-          <div className="h-8 bg-gray-200 rounded w-24" />
+          <div className="h-6 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-20" />
+          <div className="h-8 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-24" />
         </div>
       </div>
     </div>
@@ -76,13 +76,13 @@ export function SkeletonList({ count = 5 }: { count?: number }) {
   return (
     <div className="space-y-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 animate-pulse">
-          <div className="w-16 h-16 bg-gray-200 rounded shrink-0" />
+        <div key={i} className="flex items-center gap-4 p-4 bg-white dark:bg-[var(--surface-canvas)] rounded-lg border border-gray-200 dark:border-[var(--rule-base)] animate-pulse">
+          <div className="w-16 h-16 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded shrink-0" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-3/4" />
-            <div className="h-3 bg-gray-200 rounded w-1/2" />
+            <div className="h-4 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-3/4" />
+            <div className="h-3 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-1/2" />
           </div>
-          <div className="h-8 w-20 bg-gray-200 rounded" />
+          <div className="h-8 w-20 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded" />
         </div>
       ))}
     </div>
@@ -94,20 +94,20 @@ export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200">
+          <tr className="border-b border-gray-200 dark:border-[var(--rule-base)]">
             {Array.from({ length: cols }).map((_, i) => (
               <th key={i} className="p-3 text-left">
-                <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                <div className="h-4 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-24 animate-pulse" />
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {Array.from({ length: rows }).map((_, rowIndex) => (
-            <tr key={rowIndex} className="border-b border-gray-100">
+            <tr key={rowIndex} className="border-b border-gray-100 dark:border-[var(--rule-soft)]">
               {Array.from({ length: cols }).map((_, colIndex) => (
                 <td key={colIndex} className="p-3">
-                  <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                  <div className="h-4 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-32 animate-pulse" />
                 </td>
               ))}
             </tr>
@@ -123,13 +123,13 @@ export function SkeletonForm() {
     <div className="space-y-4">
       {[1, 2, 3, 4].map((i) => (
         <div key={i} className="space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
-          <div className="h-10 bg-gray-200 rounded w-full animate-pulse" />
+          <div className="h-4 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-24 animate-pulse" />
+          <div className="h-10 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-full animate-pulse" />
         </div>
       ))}
       <div className="flex gap-3 pt-4">
-        <div className="h-10 bg-gray-200 rounded w-32 animate-pulse" />
-        <div className="h-10 bg-gray-200 rounded w-32 animate-pulse" />
+        <div className="h-10 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-32 animate-pulse" />
+        <div className="h-10 bg-gray-200 dark:bg-[var(--surface-sunken)] rounded w-32 animate-pulse" />
       </div>
     </div>
   );
