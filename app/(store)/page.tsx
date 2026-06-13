@@ -517,7 +517,16 @@ async function StoreLogosMarqueeRSC() {
   );
   return (
     <StoreLogosMarquee
-      initialStores={stores.map((s) => ({ slug: s.slug, name: s.name, logo: s.logo }))}
+      initialStores={stores.map((s) => ({
+        slug: s.slug,
+        name: s.name,
+        logo: s.logo,
+        category: s.category,
+        zone: s.zone,
+        rating: s.rating,
+        reviewCount: s.reviewCount,
+        productsCount: s.productsCount,
+      }))}
     />
   );
 }
