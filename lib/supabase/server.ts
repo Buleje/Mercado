@@ -48,7 +48,20 @@ export async function getSupabaseServer(): Promise<SupabaseClient> {
       ) => {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
+            // [SECURITY 2026-06-13] Forzamos httpOnly + secure + sameSite en el
+            // token de Supabase (`sb-<project>-auth-token`). El SDK por defecto
+            // lo deja legible por JS para que el browser-client lo lea, pero en
+            // esta app la sesión real es la cookie httpOnly propia
+            // (`buleje-customer-sess`): el token de Supabase solo se usa server-
+            // side durante el handoff OAuth (callback → exchangeCodeForSession →
+            // getUser). Hacerlo httpOnly cierra el robo de sesión vía XSS sin
+            // romper nada client-side (nadie lee `sb-...` desde el browser).
+            cookieStore.set(name, value, {
+              ...options,
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "lax",
+            });
           });
         } catch {
           // Server Components no pueden mutar cookies — se ignora y el SDK

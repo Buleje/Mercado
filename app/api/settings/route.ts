@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SettingsDB, type DbSettings } from "@/lib/jsondb";
 import { enqueueActivityLog } from "@/lib/queue";
-import { requireAdmin } from "@/lib/require-admin";
+import { requireAdmin, tryAdmin } from "@/lib/require-admin";
 import { resolveTenantIdForRoute } from "@/lib/resolve-tenant";
 import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
@@ -18,6 +18,32 @@ import {
 
 // [SECURITY] Defense-in-depth: validar formato slug antes de findUnique.
 const TENANT_SLUG_RE = /^[a-z0-9-]{2,40}$/i;
+
+// [SECURITY 2026-06-13] Campos de configuración INTERNA que solo el panel admin
+// (sesión autenticada) necesita. El GET público (storefront, recibos, botón WA)
+// NO debe exponerlos — son útiles para reconocimiento (límites de plan, infra
+// SMTP, políticas POS) o son PII (riders). Se eliminan de la respuesta cuando
+// el caller no tiene sesión admin. Whitelist de público = "todo lo demás menos
+// secretos", que ya cubre branding/horarios/pagos que el storefront sí usa.
+const ADMIN_ONLY_SETTING_FIELDS = [
+  // Plan / billing (recon)
+  "planName", "planExpiresAt", "maxProducts", "maxUsers", "maxBranches", "enabledModules",
+  // Infra correo (recon)
+  "smtpHost", "smtpPort", "smtpUser", "smtpFrom",
+  // WhatsApp interno
+  "whatsappBusinessNum", "whatsappWebhookUrl",
+  // Políticas POS / operaciones internas
+  "maxDiscountPercent", "discountRequiresAuth", "returnPolicyDays", "returnMaxNoAuth",
+  "autoCloseTime", "cashOpeningAmount", "cashAlertMax", "globalMinStock",
+  "stockAlertChannels", "adjustReasons", "fefoEnabled", "fefoAlertDays",
+  "inventoryCountFreq", "reorderReminderDays", "notifChannels", "defaultUnit",
+  // Compliance / infra (recon)
+  "logRetentionDays", "logActions", "backupSchedule", "lastBackupAt",
+  // SUNAT interno
+  "sunatProvider", "invoiceSeries", "invoiceStart", "enabledDocTypes",
+  // PII de personal
+  "riders", "deliveryMaxRadius", "deliveryHours",
+] as const;
 
 export async function GET(req: NextRequest) {
   try {
@@ -51,10 +77,23 @@ export async function GET(req: NextRequest) {
     const adminPasswordSet = Boolean(
       _pw && _pw !== "admin2024" && _pw !== ""
     );
-    return NextResponse.json({ ...publicSettings, adminPasswordSet }, {
-      headers: {
-        "Cache-Control": "private, no-cache, max-age=0",
-      },
+
+    // [SECURITY 2026-06-13] Split público/privado. El panel admin (sesión
+    // válida) recibe la config completa para editarla; cualquier otro caller
+    // (storefront, recibos, recon anónimo) recibe la respuesta SIN los campos
+    // internos (planes, SMTP, políticas POS, riders). `tryAdmin` NO lanza —
+    // devuelve null si no hay sesión, así el endpoint sigue siendo público.
+    const admin = await tryAdmin(req);
+    if (admin) {
+      return NextResponse.json({ ...publicSettings, adminPasswordSet }, {
+        headers: { "Cache-Control": "private, no-cache, max-age=0" },
+      });
+    }
+
+    const sanitized: Record<string, unknown> = { ...publicSettings };
+    for (const f of ADMIN_ONLY_SETTING_FIELDS) delete sanitized[f];
+    return NextResponse.json(sanitized, {
+      headers: { "Cache-Control": "private, no-cache, max-age=0" },
     });
   } catch (e) {
     logger.error("[settings] GET error", { err: e instanceof Error ? e.message : String(e) });
