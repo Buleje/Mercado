@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import DiscoveryBox from "@/components/marketplace/home/DiscoveryBox";
+import { Sparkles } from "@buleje/design-system/icons";
 import UnifiedProductCard, {
   type UnifiedProductCardProduct,
 } from "@/components/marketplace/UnifiedProductCard";
@@ -97,6 +98,7 @@ export default function HomeNewArrivals({ boxed = false }: { boxed?: boolean } =
         title={`Nuevos en ${BRAND_GEO.city}`}
         actionHref="/?sort=newest#catalogo"
         ariaLabel="Nuevos productos"
+        icon={<Sparkles className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
       >
         {cards}
       </DiscoveryBox>

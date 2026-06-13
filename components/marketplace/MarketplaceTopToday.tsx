@@ -6,6 +6,7 @@ import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceEmptyState from "@/components/marketplace/MarketplaceEmptyState";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import DiscoveryBox from "@/components/marketplace/home/DiscoveryBox";
+import { Flame } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BRAND_GEO } from "@/lib/geo";
 
@@ -152,6 +153,7 @@ export default function MarketplaceTopToday({ boxed = false }: { boxed?: boolean
         title={`Lo más pedido ${windowLabel === "7d" ? "esta semana" : "hoy"}`}
         actionHref="/#catalogo"
         ariaLabel="Lo más pedido"
+        icon={<Flame className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
       >
         {items === null
           ? Array.from({ length: 6 }).map((_, i) => (

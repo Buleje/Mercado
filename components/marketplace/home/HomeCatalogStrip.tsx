@@ -7,7 +7,7 @@
  * auto-oculta si no hay productos. Usada para "Ofertas" y "Paquetes".
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import UnifiedProductCard, {
   type UnifiedProductCardProduct,
 } from "@/components/marketplace/UnifiedProductCard";
@@ -43,6 +43,8 @@ interface Props {
   title: string;
   actionHref: string;
   ariaLabel: string;
+  /** Ícono del chip del header (identidad de la caja). */
+  icon?: ReactNode;
 }
 
 export default function HomeCatalogStrip({
@@ -51,6 +53,7 @@ export default function HomeCatalogStrip({
   title,
   actionHref,
   ariaLabel,
+  icon,
 }: Props) {
   const [items, setItems] = useState<UnifiedProductCardProduct[] | null>(null);
 
@@ -96,7 +99,7 @@ export default function HomeCatalogStrip({
         ));
 
   return (
-    <DiscoveryBox eyebrow={eyebrow} title={title} actionHref={actionHref} ariaLabel={ariaLabel}>
+    <DiscoveryBox eyebrow={eyebrow} title={title} actionHref={actionHref} ariaLabel={ariaLabel} icon={icon}>
       {cards}
     </DiscoveryBox>
   );

@@ -77,6 +77,8 @@ import {
   MapPin,
   ChevronDown,
   MessageCircle,
+  Tag,
+  Package,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -1277,6 +1279,7 @@ export default async function Home() {
                   title="Ofertas del día"
                   actionHref="/?sort=price_asc#catalogo"
                   ariaLabel="Ofertas"
+                  icon={<Tag className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
                 />
                 <HomeCatalogStrip
                   fetchUrl="/api/marketplace/catalog?category=promociones&limit=12"
@@ -1284,6 +1287,7 @@ export default async function Home() {
                   title="Combos y paquetes"
                   actionHref="/?cat=promociones#catalogo"
                   ariaLabel="Paquetes"
+                  icon={<Package className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
                 />
               </div>
             </section>
