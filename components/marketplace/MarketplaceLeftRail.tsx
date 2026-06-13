@@ -71,20 +71,11 @@ export default function MarketplaceLeftRail() {
     };
   }, []);
 
-  const totalCount = categories.reduce((s, c) => s + c.count, 0);
-
   const itemBase =
     "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors text-left";
   const itemActive = "bg-[var(--accent-soft)] text-[var(--accent)]";
   const itemIdle =
     "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
-  const countBadge = (active: boolean) =>
-    cn(
-      "ml-auto shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs,0.6875rem)] font-bold tabular-nums",
-      active
-        ? "bg-[var(--accent)]/15 text-[var(--accent)]"
-        : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-    );
 
   return (
     <div className="space-y-3">
@@ -105,9 +96,6 @@ export default function MarketplaceLeftRail() {
                 return <Icon className="h-[1.15rem] w-[1.15rem] shrink-0" strokeWidth={1.75} />;
               })()}
               Todo
-              {totalCount > 0 && (
-                <span className={countBadge(category === "todos")}>{totalCount}</span>
-              )}
             </button>
           </li>
           {categories.map((cat) => {
@@ -123,7 +111,6 @@ export default function MarketplaceLeftRail() {
                 >
                   <Icon className="h-[1.15rem] w-[1.15rem] shrink-0" strokeWidth={1.75} />
                   <span className="truncate">{prettyLabel(cat.id)}</span>
-                  <span className={countBadge(isActive)}>{cat.count}</span>
                 </button>
               </li>
             );

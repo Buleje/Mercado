@@ -68,7 +68,7 @@ function ItemRow({
     >
       <Link
         href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-        className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-none overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
+        className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
       >
         {item.image ? (
           <Image
@@ -192,6 +192,26 @@ export default function CarritoPage() {
   const storeIds = Object.keys(byStore);
   const isEmpty = storeIds.length === 0;
   const [couponDiscount, setCouponDiscount] = useState(0);
+
+  // Logos de tienda por slug (Brandon 2026-06-13): el CartItem no guarda el
+  // logo, así que lo resolvemos una vez desde /api/marketplace/stores y lo
+  // mostramos circular en el header de cada grupo. Fetch único, cacheado.
+  const [storeLogos, setStoreLogos] = useState<Record<string, string | null>>({});
+  useEffect(() => {
+    if (isEmpty) return;
+    let cancelled = false;
+    fetch("/api/marketplace/stores?limit=50", { headers: { "x-tenant-id": "main" } })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("stores failed"))))
+      .then((j) => {
+        if (cancelled) return;
+        const list = (j?.data ?? j?.stores ?? []) as Array<{ slug: string; logo: string | null }>;
+        const map: Record<string, string | null> = {};
+        for (const s of list) if (s.slug) map[s.slug] = s.logo ?? null;
+        setStoreLogos(map);
+      })
+      .catch(() => {/* no crítico: fallback a la inicial */});
+    return () => { cancelled = true; };
+  }, [isEmpty]);
 
   // "Seguir comprando" — destino inteligente (Brandon, mayo 14 2026):
   //  - 1 sola tienda: vuelve al storefront de esa tienda.
@@ -444,39 +464,42 @@ export default function CarritoPage() {
               return (
                 <article
                   key={sid}
-                  className="rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
+                  className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
                 >
-                  {/* Store header — flat, sin gradiente (minimalista) + avatar + ver tienda */}
-                  <header className="relative flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-5 py-2.5 sm:py-3">
+                  {/* Store header — compacto + minimalista: logo CIRCULAR de la
+                      tienda (fallback inicial), nombre, subtotal. Brandon 2026-06-13. */}
+                  <header className="relative flex items-center justify-between gap-3 px-3.5 sm:px-4 py-2.5">
                     <Link
                       href={`/marketplace/${group.storeSlug}`}
-                      className="flex items-center gap-3 min-w-0 group/store"
+                      className="flex items-center gap-2.5 min-w-0 group/store"
                     >
-                      <span
-                        aria-hidden
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-none bg-[var(--accent)] text-white text-sm font-black uppercase shrink-0"
-                      >
-                        {group.storeName?.charAt(0) ?? <Store className="h-5 w-5" />}
+                      <span className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-sm font-black uppercase shrink-0 ring-1 ring-[var(--rule-soft)]">
+                        {storeLogos[group.storeSlug] ? (
+                          <Image
+                            src={storeLogos[group.storeSlug]!}
+                            alt={group.storeName}
+                            fill
+                            sizes="36px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          group.storeName?.charAt(0) ?? <Store className="h-4 w-4" />
+                        )}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[length:var(--ts-sm)] sm:text-base font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] group-hover/store:text-[var(--accent)] transition-colors truncate leading-tight">
+                        <p className="text-[length:var(--ts-sm)] font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] group-hover/store:text-[var(--accent)] transition-colors truncate leading-tight">
                           {group.storeName}
                         </p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium leading-tight mt-0.5">
+                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium leading-tight mt-px">
                           {itemCountStore} {itemCountStore === 1 ? "producto" : "productos"}
                         </p>
                       </div>
                     </Link>
-                    <div className="text-right shrink-0">
-                      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
-                        Subtotal
-                      </p>
-                      <p className="text-base sm:text-lg font-black text-[var(--text-primary)] tabular-nums leading-tight mt-0.5">
-                        {fmt(subtotal)}
-                      </p>
-                    </div>
+                    <p className="shrink-0 text-base sm:text-lg font-black text-[var(--text-primary)] tabular-nums leading-tight">
+                      {fmt(subtotal)}
+                    </p>
                   </header>
-                  <div className="px-4 sm:px-5">
+                  <div className="border-t border-[var(--rule-soft)] px-3.5 sm:px-4">
                     <AnimatePresence initial={false} mode="popLayout">
                     {group.items.map((item) => {
                       // Mismo producto con modifiers distintos = línea

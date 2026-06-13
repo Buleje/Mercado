@@ -234,8 +234,12 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
   // ambas son landings de marketing y deben caer SIEMPRE en el mismo modo de
   // footer (antes /negocios caía en el mega-footer y /abrir-tienda en el slim,
   // divergiendo cuando el nav no estaba en "tiendas-only").
+  // Brandon 2026-06-13: `/` SALE de isLandingMode. El inicio ES el marketplace
+  // (no una landing de marketing), así que debe usar el MISMO footer que la
+  // ficha de tienda y el resto del marketplace — footer único en todas las
+  // páginas. Las landings reales (/negocios, /vender, /abrir-tienda,
+  // /repartidores) conservan el footer slim.
   const isLandingMode =
-    pathname === "/" ||
     pathname.startsWith("/repartidores") ||
     pathname.startsWith("/abrir-tienda") ||
     pathname.startsWith("/negocios") ||
