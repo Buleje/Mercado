@@ -3,76 +3,64 @@
 /**
  * MarketplaceSecondaryNav.tsx — Barra secundaria debajo del header principal.
  *
- * Desktop: trigger "Categoria" (hover/click → CategoryMegaMenu) + links rápidos.
+ * Desktop: chips de CATEGORÍAS reales (las más populares, según lo que más se
+ * compra) + trigger "Categorías" (hover/click → CategoryMegaMenu con TODAS).
+ * Brandon 2026-06-13: se quitaron los atajos Nuevos/Más vendidos/Mejor precio/
+ * Cerca de mí — en su lugar van categorías del gusto del usuario (top por
+ * popularidad), que filtran el catálogo de la home.
  * Mobile: oculta la barra. El acceso a categorías va por el drawer del navbar.
  *
  * Sticky a top-16 (altura del MarketplaceNavbar) con z-40.
- * Holded style: sin colores variados, sin sombra, texto sm, hover underline accent.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  ChevronDown,
-  LayoutGrid,
-  Banknote,
-  Sparkles,
-  Flame,
-  MapPin,
-  type LucideIcon,
-} from "@buleje/design-system/icons";
+import { ChevronDown, LayoutGrid } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import CategoryMegaMenu from "@/components/marketplace/CategoryMegaMenu";
 import { FreeShippingIndicator } from "@/components/marketplace/MarketplaceFreeShippingBar";
 
-// ── Filtros rápidos de la barra secundaria ───────────────────────────────────
-// REGLA "sin repetir": acá NO van "Ofertas" ni "Tiendas" — ambos ya son links
-// del nav principal (PRIMARY_LINKS en MarketplaceNavbar). El sub-nav es
-// complementario: el mega-menú de Categorías + atajos de filtrado del catálogo
-// que el nav no ofrece. Brandon 2026-05-30.
-type QuickLink = {
-  label: string;
-  href: string;
-  icon: LucideIcon;
-  matchPrefix?: string;
-};
+// Cantidad recomendada de categorías inline en el sub-nav (el resto vive en el
+// mega-menú "Categorías" a la derecha). 6 entra cómodo en desktop sin saturar.
+const INLINE_CATEGORY_COUNT = 6;
 
-// Atajos de filtrado del catálogo de la home. Apuntan a /?sort=X#catalogo: el
-// CatalogUrlSync aplica el orden + baja a #catalogo. Antes iban a /explorar, que
-// redirigía a la home BOTANDO el filtro (Brandon 2026-06-08, fix opción A).
-// Sin matchPrefix: usePathname() no ve el ?query, así que nunca matcheaban; son
-// filtros transitorios, no una página destino → no se resaltan.
-const QUICK_LINKS: readonly QuickLink[] = [
-  {
-    label: "Nuevos",
-    href: "/?sort=newest#catalogo",
-    icon: Sparkles,
-  },
-  {
-    label: "Más vendidos",
-    href: "/?sort=popular#catalogo",
-    icon: Flame,
-  },
-  {
-    label: "Mejor precio",
-    href: "/?sort=price_asc#catalogo",
-    icon: Banknote,
-  },
-  {
-    label: "Cerca de mí",
-    href: "/tiendas?zone=true",
-    icon: MapPin,
-    matchPrefix: "/tiendas",
-  },
-] as const;
+interface RealCategory {
+  id: string;
+  count: number;
+}
+
+/** "pollo-brasa" → "Pollo brasa" · "bebidas" → "Bebidas" */
+function prettyCategoryLabel(id: string): string {
+  const spaced = id.replace(/[-_]+/g, " ").trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
 
 // ── Componente ───────────────────────────────────────────────────────────────
 export default function MarketplaceSecondaryNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const hoverCloseTimer = useRef<number | null>(null);
-  const pathname = usePathname();
+
+  // Categorías reales (las más populares) → chips que filtran el catálogo de la
+  // home. Mismo endpoint que el rail/mega-menú (cacheado 5min). Solo con ≥1
+  // producto; tomamos las primeras INLINE_CATEGORY_COUNT (vienen por popularidad).
+  const [categories, setCategories] = useState<RealCategory[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    cachedJson<{ categories?: RealCategory[] }>(
+      "/api/marketplace/product-categories",
+      300_000,
+    )
+      .then((d) => {
+        if (cancelled || !d) return;
+        const real = (d.categories ?? []).filter((c) => c.id && c.count > 0);
+        setCategories(real.slice(0, INLINE_CATEGORY_COUNT));
+      })
+      .catch(() => {/* no crítico: la barra queda solo con el mega-menú */});
+    return () => { cancelled = true; };
+  }, []);
 
   const openMenu = useCallback(() => {
     if (hoverCloseTimer.current !== null) {
@@ -104,12 +92,6 @@ export default function MarketplaceSecondaryNav() {
     }
   }, []);
 
-  const isQuickLinkActive = (link: QuickLink) => {
-    if (!pathname) return false;
-    if (link.matchPrefix) return pathname.startsWith(link.matchPrefix);
-    return false;
-  };
-
   return (
     // Desktop: mega-menú de categorías + accesos rápidos. FIJO (Brandon
     // 2026-06-07): sin auto-hide al scrollear — permanece pegado bajo el nav.
@@ -126,42 +108,29 @@ export default function MarketplaceSecondaryNav() {
     <div className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40">
       <div className="relative w-full px-4 lg:px-8">
         <div className="flex items-center gap-2 lg:gap-4 h-12">
-          {/* ── Filtros rápidos — scrolleables en pantallas chicas (sin barra) ── */}
+          {/* ── Chips de CATEGORÍAS populares — scrolleables si no caben.
+               Filtran el catálogo de la home vía /?category=<id>#catalogo
+               (CatalogUrlSync aplica el filtro y baja a #catalogo). ── */}
           <nav
-            aria-label="Filtros rápidos del marketplace"
+            aria-label="Categorías populares"
             className="flex items-center gap-0.5 sm:gap-1 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {QUICK_LINKS.map((link) => {
-              const active = isQuickLinkActive(link);
-              const Icon = link.icon;
+            {categories.map((cat) => {
+              const Icon = getProductCategoryIcon(cat.id.toLowerCase());
               return (
                 <Link
-                  key={link.href}
-                  href={link.href}
-                  aria-current={active ? "page" : undefined}
-                  /* Active state minimalista (Brandon 2026-06-10): raya debajo,
-                     sin pill ni fondo difuminado. `shrink-0` para no comprimirse
-                     dentro del scroll horizontal. */
-                  className={cn(
-                    "shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 border-b-2 px-1.5 sm:px-2 h-9 text-[13px] sm:text-sm transition-colors",
-                    active
-                      ? "font-bold text-[var(--text-primary)] border-[var(--accent)]"
-                      : "font-semibold text-[var(--text-secondary)] border-transparent hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
-                  )}
+                  key={cat.id}
+                  href={`/?category=${encodeURIComponent(cat.id)}#catalogo`}
+                  className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 border-b-2 border-transparent px-1.5 sm:px-2 h-9 text-[13px] sm:text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]"
                 >
-                  <Icon
-                    className="h-4 w-4 shrink-0"
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  />
-                  {link.label}
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
+                  {prettyCategoryLabel(cat.id)}
                 </Link>
               );
             })}
           </nav>
 
-          {/* ── Barra de separación sutil entre "Cerca de mí" y "Categorías"
-               (Brandon 2026-06-10). ── */}
+          {/* ── Separación sutil entre chips y el mega-menú "Categorías". ── */}
           <div
             className="h-5 w-px bg-[var(--rule-soft)] shrink-0"
             aria-hidden="true"

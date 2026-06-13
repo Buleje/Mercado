@@ -1150,24 +1150,29 @@ function HomeFaqSection() {
               {HOME_FAQS.filter((_, i) => i % 2 === colIdx).map((f) => {
                 const n = HOME_FAQS.indexOf(f) + 1;
                 return (
+                  /* Brandon 2026-06-13: rediseño editorial SIN bordes redondeados.
+                     Tarjeta cuadrada con regla de acento a la IZQUIERDA (gris →
+                     acento al abrir), tinte suave + número resaltado en open. */
                   <details
                     key={n}
-                    className="group rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] open:border-[var(--accent)] open:bg-[var(--accent-soft)]/30 open:shadow-md transition-all"
+                    className="group border border-[var(--rule-base)] border-l-[3px] border-l-[var(--rule-strong)] bg-[var(--surface-raised)] transition-colors open:border-l-[var(--accent)] open:bg-[var(--accent-soft)]/25"
                   >
-                    <summary className="flex items-center gap-3 cursor-pointer list-none px-4 sm:px-5 py-4 [&::-webkit-details-marker]:hidden">
-                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[length:var(--ts-xs)] font-black tabular-nums text-[var(--accent)] transition-colors group-open:bg-[var(--accent)] group-open:text-white">
+                    <summary className="flex items-center gap-3.5 cursor-pointer list-none px-4 sm:px-5 py-4 [&::-webkit-details-marker]:hidden">
+                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center bg-[var(--surface-sunken)] text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-tertiary)] transition-colors group-open:bg-[var(--accent)] group-open:text-white">
                         {String(n).padStart(2, "0")}
                       </span>
-                      <span className="flex-1 text-base font-bold leading-snug text-[var(--text-primary)]">
+                      <span className="flex-1 text-base font-bold leading-snug text-[var(--text-primary)] transition-colors group-open:text-[var(--accent)]">
                         {f.q}
                       </span>
-                      <ChevronDown
-                        className="h-5 w-5 shrink-0 text-[var(--accent)] transition-transform duration-200 group-open:rotate-180"
-                        strokeWidth={2.5}
-                        aria-hidden
-                      />
+                      <span className="grid h-7 w-7 shrink-0 place-items-center text-[var(--text-tertiary)] transition-colors group-open:text-[var(--accent)]">
+                        <ChevronDown
+                          className="h-5 w-5 transition-transform duration-200 group-open:rotate-180"
+                          strokeWidth={2.5}
+                          aria-hidden
+                        />
+                      </span>
                     </summary>
-                    <div className="pl-[3.75rem] pr-5 pb-5 -mt-1">
+                    <div className="pl-[3.875rem] pr-5 pb-5 -mt-1">
                       <p className="text-base text-[var(--text-secondary)] leading-relaxed">
                         {f.a}
                       </p>
@@ -1179,8 +1184,9 @@ function HomeFaqSection() {
           ))}
         </div>
 
-        {/* Cierre — duda no resuelta → WhatsApp directo */}
-        <div className="mt-6 sm:mt-8 flex flex-col gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 sm:px-7 py-5 sm:flex-row sm:items-center sm:justify-between">
+        {/* Cierre — duda no resuelta → WhatsApp directo. Bloque cuadrado con
+            franja de acento a la izquierda (consistente con las tarjetas). */}
+        <div className="mt-6 sm:mt-8 flex flex-col gap-4 border border-[var(--rule-base)] border-l-[3px] border-l-[var(--accent)] bg-[var(--surface-raised)] px-5 sm:px-7 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">
               ¿Te quedó otra duda?
@@ -1195,7 +1201,7 @@ function HomeFaqSection() {
             )}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 h-12 text-sm font-extrabold text-white shadow-md transition-all hover:gap-3 hover:shadow-lg active:scale-95"
+            className="inline-flex shrink-0 items-center justify-center gap-2 bg-[var(--accent)] px-6 h-12 text-sm font-extrabold text-white shadow-sm transition-all hover:gap-3 hover:shadow-md active:scale-95"
           >
             <MessageCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
             Escribir por WhatsApp

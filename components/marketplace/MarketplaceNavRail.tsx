@@ -2,13 +2,11 @@
 
 /**
  * MarketplaceNavRail — rail de navegación lateral estilo YouTube (Brandon
- * 2026-06-07). Vive AL LADO del contenido (en la columna izquierda del grid,
- * NO es un overlay). Dos estados:
- *   · Colapsado (~72px): solo las opciones rápidas (icono + label chico).
- *   · Expandido (~220px): TODAS las opciones (icono + label).
- * El toggle lo controla la hamburguesa del navbar (evento
- * `buleje:toggle-navrail`) o el botón ☰ propio del rail. El contenido del
- * marketplace se expande sobre el espacio que el rail libera al colapsar.
+ * 2026-06-07 · v2 2026-06-13). Vive AL LADO del contenido (columna izquierda
+ * del grid, NO es overlay). Brandon 2026-06-13: SIN hamburguesa — el rail SIEMPRE
+ * muestra TODOS los enlaces (Inicio·Tiendas·Descubre·Recetas·Ofertas·Abre tu
+ * Tienda) en formato compacto (icono + label chico, vertical). Minimalista pero
+ * completo: ya no hace falta expandir para ver el resto.
  *
  * Estilo: sólido, sin bordes, contraste por fill (surface-raised). Sticky bajo
  * el nav + sub-nav fijos.
@@ -17,7 +15,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Menu,
   Home as HomeIcon,
   Store,
   Sparkles,
@@ -32,35 +29,22 @@ type RailLink = {
   href: string;
   label: string;
   Icon: LucideIcon;
-  /** Visible en estado colapsado (acceso rápido). */
-  quick?: boolean;
   matchPrefix?: string;
 };
 
-// Orden = orden de aparición. `quick` define qué se ve colapsado.
-// Brandon 2026-06-08 (oleada nav): "Explorar" REMOVIDO (su /marketplace/explorar
-// redirige a /marketplace) y "Bodegas" → "Mercado" (una sola palabra para
-// /marketplace). Orden: los 3 primarios (Inicio·Tiendas·Mercado) arriba, luego
-// secundarios. "Descubrí" → "Descubre" (tuteo).
-// Brandon 2026-06-10: "En Vivo" y "Negocios" OCULTOS del rail.
+// Orden = orden de aparición. TODOS visibles (sin estado colapsado).
+// "En Vivo" y "Negocios" siguen ocultos del rail (Brandon 2026-06-10).
 const RAIL_LINKS: readonly RailLink[] = [
-  { href: "/", label: "Inicio", Icon: HomeIcon, quick: true },
-  { href: "/tiendas", label: "Tiendas", Icon: Store, quick: true, matchPrefix: "/tiendas" },
-  { href: "/marketplace/para-vos", label: "Descubre", Icon: Sparkles, matchPrefix: "/marketplace/para-vos" },
-  { href: "/recetas", label: "Recetas", Icon: ChefHat, matchPrefix: "/recetas" },
+  { href: "/", label: "Inicio", Icon: HomeIcon },
+  { href: "/tiendas", label: "Tiendas", Icon: Store, matchPrefix: "/tiendas" },
   { href: "/marketplace/ofertas", label: "Ofertas", Icon: Tag, matchPrefix: "/marketplace/ofertas" },
-  { href: "/abrir-tienda", label: "Abre tu Tienda", Icon: Rocket, quick: true, matchPrefix: "/abrir-tienda" },
+  { href: "/recetas", label: "Recetas", Icon: ChefHat, matchPrefix: "/recetas" },
+  { href: "/marketplace/para-vos", label: "Descubre", Icon: Sparkles, matchPrefix: "/marketplace/para-vos" },
+  { href: "/abrir-tienda", label: "Abre tu Tienda", Icon: Rocket, matchPrefix: "/abrir-tienda" },
 ];
 
-export default function MarketplaceNavRail({
-  expanded,
-  onToggle,
-}: {
-  expanded: boolean;
-  onToggle: () => void;
-}) {
+export default function MarketplaceNavRail() {
   const pathname = usePathname() ?? "";
-  const links = expanded ? RAIL_LINKS : RAIL_LINKS.filter((l) => l.quick);
 
   const isActive = (l: RailLink) =>
     l.matchPrefix ? pathname.startsWith(l.matchPrefix) : pathname === l.href;
@@ -70,23 +54,8 @@ export default function MarketplaceNavRail({
       aria-label="Navegación lateral del marketplace"
       className="bg-[var(--surface-raised)] p-2"
     >
-      {/* Toggle ☰ — colapsa/expande (también lo dispara la hamburguesa del nav) */}
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label={expanded ? "Colapsar menú lateral" : "Expandir menú lateral"}
-        aria-expanded={expanded}
-        className={cn(
-          "flex items-center h-11 w-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-          expanded ? "gap-3 px-3" : "justify-center",
-        )}
-      >
-        <Menu className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
-        {expanded && <span className="text-sm font-bold">Menú</span>}
-      </button>
-
-      <ul className="mt-1 space-y-0.5">
-        {links.map((l) => {
+      <ul className="space-y-0.5">
+        {RAIL_LINKS.map((l) => {
           const active = isActive(l);
           const Icon = l.Icon;
           return (
@@ -94,25 +63,18 @@ export default function MarketplaceNavRail({
               <Link
                 href={l.href}
                 aria-current={active ? "page" : undefined}
-                title={!expanded ? l.label : undefined}
-                /* Active state minimalista (Brandon 2026-06-10): solo una raya
-                   debajo + texto fuerte. Sin fondo difuminado. Inactivo muestra
-                   una raya gris sutil al hover. */
+                /* Compacto vertical: icono + label chico centrado (wrap para
+                   labels largos como "Abre tu Tienda"). Activo = raya + texto
+                   fuerte; inactivo = raya gris al hover. Brandon 2026-06-13. */
                 className={cn(
-                  "flex items-center border-b-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-                  expanded ? "gap-3 px-3 h-11" : "flex-col gap-1 py-2.5 px-1",
+                  "flex flex-col items-center gap-1 border-b-2 py-2.5 px-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                   active
                     ? "border-[var(--accent)] text-[var(--text-primary)]"
                     : "border-transparent text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
                 )}
               >
-                <Icon className="h-5 w-5 shrink-0" strokeWidth={1.9} aria-hidden="true" />
-                <span
-                  className={cn(
-                    "font-semibold truncate",
-                    expanded ? "text-sm" : "text-[10px] leading-tight text-center w-full",
-                  )}
-                >
+                <Icon className="h-[1.35rem] w-[1.35rem] shrink-0" strokeWidth={1.9} aria-hidden="true" />
+                <span className="w-full text-center text-[10px] font-semibold leading-tight">
                   {l.label}
                 </span>
               </Link>
