@@ -30,6 +30,12 @@ export const AnalyticsMarginsDB = {
         quantity: true,
         product: { select: { category: true } },
       },
+      // Cap defensivo (Brandon 2026-06-13, audit perf): sin take, un tenant con
+      // cientos de miles de SaleItem → OOM en Vercel Fluid. 50k items cubre años
+      // de operación de una bodega; ordenamos por recientes para que el cálculo
+      // de márgenes refleje el período relevante si se llega al tope.
+      orderBy: { id: "desc" },
+      take: 50_000,
     });
   },
 };

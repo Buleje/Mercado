@@ -43,6 +43,10 @@ export const AnalyticsABCDB = {
     const rows = await prisma.saleItem.findMany({
       where: { sale: { tenantId } },
       select: { productId: true, price: true, quantity: true },
+      // Cap defensivo (Brandon 2026-06-13, audit perf): evita OOM si el tenant
+      // acumula cientos de miles de SaleItem. 50k cubre el análisis ABC real.
+      orderBy: { id: "desc" },
+      take: 50_000,
     });
 
     return rows.map((r) => ({
