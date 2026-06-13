@@ -636,18 +636,22 @@ export const MarketplacePublicDB = {
     // elegido arriba. Sin el param = todo el catálogo (comportamiento original).
     const scope = storeCategories?.map((c) => c.trim().toLowerCase()).filter(Boolean) ?? null;
     const cacheKey = scope?.length
-      ? `marketplace:product-categories:v2:scope:${[...scope].sort().join(",")}`
-      : "marketplace:product-categories:v2";
+      ? `marketplace:product-categories:v3:scope:${[...scope].sort().join(",")}`
+      : "marketplace:product-categories:v3";
     return getOrSet(cacheKey, 300, async () => {
       // store.category es case-inconsistente ("Abarrotes" vs "bodega") → OR de
       // equals insensitive (Prisma `in` no soporta mode insensitive).
+      // vacationMode excluido para CUADRAR con el catálogo cross-store (que filtra
+      // `vacationMode: { not: true }`): si una categoría solo vive en tiendas de
+      // vacaciones, su chip prometía productos que el catálogo nunca muestra.
       const storeWhere = scope?.length
         ? {
             isPublished: true,
+            vacationMode: { not: true as const },
             tenant: { active: true },
             OR: scope.map((c) => ({ category: { equals: c, mode: "insensitive" as const } })),
           }
-        : { isPublished: true, tenant: { active: true } };
+        : { isPublished: true, vacationMode: { not: true as const }, tenant: { active: true } };
       // Audit 2026-06-10 P2: antes findMany take:10000 traía hasta 10k filas
       // para contar ~15 categorías en JS. groupBy agrega en la DB y devuelve
       // ~1 fila por variante de categoría. Nota: ahora cuenta productos
@@ -658,6 +662,10 @@ export const MarketplacePublicDB = {
         where: {
           active: true,
           deletedAt: null,
+          // ADR-131: el catálogo cross-store (Inicio) excluye preparadas — el
+          // chip de categoría debe contar lo MISMO o quedaría un filtro muerto
+          // (existe pero al click no trae nada). null = grafías viejas = no-prep.
+          isPrepared: { not: true },
           storeProducts: {
             some: { isActive: true, store: storeWhere },
           },
@@ -1116,6 +1124,9 @@ export const MarketplacePublicDB = {
     // Cache key estable y compacta: solo campos que afectan la query.
     const cacheKey =
       "marketplace:catalog:" +
+      // v2: el match de categoría pasó a case-insensitive — versionado para no
+      // servir un `0` cacheado de cuando era exacto (Brandon 2026-06-13).
+      "v2|" +
       [
         opts.q ?? "",
         opts.category ?? "",
@@ -1144,7 +1155,13 @@ export const MarketplacePublicDB = {
       // spreads separados que se pisaban; ahora se mergean en un solo objeto.
       const productFilter: Record<string, unknown> = {};
       if (opts.q) productFilter.name = { contains: opts.q, mode: "insensitive" as const };
-      if (opts.category && opts.category !== "todos") productFilter.category = opts.category;
+      // Case-insensitive: el rail agrupa por categoría en minúscula y suma los
+      // counts de TODAS las grafías ("bebidas" + "Bebidas"), pero la BD guarda
+      // grafías mixtas ("Lácteos", "Carnes"). Un match exacto devolvía 0 para
+      // las capitalizadas → filtro vacío. `equals + insensitive` matchea todas
+      // las grafías y cuadra con el count que prometió el rail. (Brandon 2026-06-13)
+      if (opts.category && opts.category !== "todos")
+        productFilter.category = { equals: opts.category, mode: "insensitive" as const };
       // ADR-131: el Inicio (producto-first) excluye preparadas. isPrepared puede
       // ser null en filas viejas previas a la columna → tratamos null como false.
       if (opts.excludePrepared) productFilter.isPrepared = { not: true };
