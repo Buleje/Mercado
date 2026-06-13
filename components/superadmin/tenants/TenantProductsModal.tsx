@@ -8,6 +8,7 @@ import {
   CheckCircle2, XCircle, ImageIcon,
 } from "@buleje/design-system/icons";
 import { m as motion, AnimatePresence } from "framer-motion";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface ProductItem {
   id: number;
@@ -19,6 +20,7 @@ interface ProductItem {
   unit: string | null;
   image: string | null;
   active: boolean;
+  isPrepared?: boolean; // ADR-131
 }
 
 interface TenantProductsModalProps {
@@ -58,6 +60,33 @@ export function TenantProductsModal({
       setLoading(false);
     }
   }, [tenantSlug]);
+
+  // ADR-131: marcar un producto como preparada/empaquetada (optimista + PATCH).
+  const [savingId, setSavingId] = useState<number | null>(null);
+  const togglePrepared = useCallback(
+    async (id: number, next: boolean) => {
+      setSavingId(id);
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, isPrepared: next } : p)));
+      try {
+        const res = await fetch(
+          `/api/superadmin/tenants/${encodeURIComponent(tenantSlug)}/products`,
+          {
+            method: "PATCH",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            credentials: "include",
+            body: JSON.stringify({ productId: id, isPrepared: next }),
+          },
+        );
+        if (!res.ok) throw new Error("patch failed");
+      } catch {
+        // revertir si falló
+        setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, isPrepared: !next } : p)));
+      } finally {
+        setSavingId(null);
+      }
+    },
+    [tenantSlug],
+  );
 
   useEffect(() => {
     if (open) {
@@ -223,6 +252,42 @@ export function TenantProductsModal({
                           {p.category && <span>• {p.category}</span>}
                           {p.unit && <span>• {p.unit}</span>}
                         </div>
+                      </div>
+
+                      {/* ADR-131: distribución empaquetada vs preparada */}
+                      <div
+                        role="group"
+                        aria-label="Cómo se vende"
+                        className="shrink-0 inline-flex overflow-hidden rounded-lg border border-[var(--rule-base)] text-[length:var(--ts-2xs)] font-bold"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => togglePrepared(p.id, false)}
+                          disabled={savingId === p.id}
+                          aria-pressed={!p.isPrepared}
+                          title="Empaquetada → Inicio + tienda"
+                          className={`px-2 py-1 transition-colors disabled:opacity-50 ${
+                            !p.isPrepared
+                              ? "bg-[var(--accent)] text-white"
+                              : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                          }`}
+                        >
+                          Empaq.
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => togglePrepared(p.id, true)}
+                          disabled={savingId === p.id}
+                          aria-pressed={!!p.isPrepared}
+                          title="Preparada (comida) → solo tienda"
+                          className={`px-2 py-1 transition-colors disabled:opacity-50 ${
+                            p.isPrepared
+                              ? "bg-[var(--accent)] text-white"
+                              : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                          }`}
+                        >
+                          Prep.
+                        </button>
                       </div>
 
                       {/* Price + Stock */}

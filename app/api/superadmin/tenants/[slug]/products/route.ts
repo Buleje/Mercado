@@ -83,6 +83,7 @@ export async function GET(
         unit: true,
         image: true,
         active: true,
+        isPrepared: true, // ADR-131
       },
       orderBy: { name: "asc" },
       take: 500,
@@ -205,6 +206,60 @@ export async function POST(
     });
   } catch (error) {
     logger.error("[superadmin/tenants/products] POST error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
+}
+
+/**
+ * PATCH /api/superadmin/tenants/[slug]/products  (ADR-131)
+ * Edita campos de un producto existente del tenant. Hoy: isPrepared
+ * (empaquetada/preparada → distribución Inicio vs tienda).
+ * Body: { productId: number, isPrepared: boolean }
+ */
+const PatchProductSchema = z.object({
+  productId: z.number().int().positive(),
+  isPrepared: z.boolean(),
+});
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const _rl = await applyRateLimit(req, "GENEROUS", "superadmin-tenants-X-products"); if (_rl) return _rl;
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
+  try {
+    const session = await requirePlatform(req);
+    if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const { slug } = await params;
+    const tenant = await prisma.tenant.findFirst({
+      where: { OR: [{ slug }, { id: slug }] },
+      select: { id: true },
+    });
+    if (!tenant) return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
+
+    const parsed = PatchProductSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
+    }
+
+    // updateMany scoped por tenantId (defense-in-depth: no editar productos de otro tenant).
+    const result = await prisma.product.updateMany({
+      where: { id: parsed.data.productId, tenantId: tenant.id },
+      data: { isPrepared: parsed.data.isPrepared },
+    });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Producto no encontrado en este tenant" }, { status: 404 });
+    }
+
+    invalidateByPrefix(`products:${tenant.id}`);
+    invalidateByPrefix("marketplace:catalog"); // el flag cambia qué se ve en el Inicio
+
+    return NextResponse.json({ ok: true, productId: parsed.data.productId, isPrepared: parsed.data.isPrepared });
+  } catch (error) {
+    logger.error("[superadmin/tenants/products] PATCH error", {
       error: error instanceof Error ? error.message : String(error),
     });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
