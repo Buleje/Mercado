@@ -9,7 +9,7 @@
  * CatalogView funciona también SIN provider (fallback a estado local), para no
  * romper otros usos.
  */
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 
 export type CatalogSort = "popular" | "price_asc" | "price_desc" | "newest" | "rating";
 
@@ -55,28 +55,30 @@ export function CatalogFilterProvider({ children }: { children: ReactNode }) {
   const [storeSlug, setStoreSlug] = useState("");
   const [stores, setStores] = useState<CatalogStoreOption[]>([]);
   const [availablePriceKeys, setAvailablePriceKeys] = useState<string[]>([]);
-  return (
-    <CatalogFilterContext.Provider
-      value={{
-        category,
-        setCategory,
-        sort,
-        setSort,
-        vertical,
-        setVertical,
-        priceKey,
-        setPriceKey,
-        storeSlug,
-        setStoreSlug,
-        stores,
-        setStores,
-        availablePriceKeys,
-        setAvailablePriceKeys,
-      }}
-    >
-      {children}
-    </CatalogFilterContext.Provider>
+  // Brandon 2026-06-13 FIX: memoizar el value. Antes era un objeto inline nuevo
+  // en cada render → todo consumidor re-renderaba y, peor, CatalogUrlSync (que
+  // lo tenía en deps) reseteaba la categoría en loop. Los setters de useState
+  // son estables, así que las deps son solo los valores de estado.
+  const value = useMemo(
+    () => ({
+      category,
+      setCategory,
+      sort,
+      setSort,
+      vertical,
+      setVertical,
+      priceKey,
+      setPriceKey,
+      storeSlug,
+      setStoreSlug,
+      stores,
+      setStores,
+      availablePriceKeys,
+      setAvailablePriceKeys,
+    }),
+    [category, sort, vertical, priceKey, storeSlug, stores, availablePriceKeys],
   );
+  return <CatalogFilterContext.Provider value={value}>{children}</CatalogFilterContext.Provider>;
 }
 
 /** null si no hay provider (CatalogView usa estado local en ese caso). */

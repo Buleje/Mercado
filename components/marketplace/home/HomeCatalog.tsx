@@ -15,7 +15,7 @@
  */
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   CatalogFilterProvider,
@@ -55,21 +55,28 @@ const SORT_ALIAS: Record<string, CatalogSort> = {
 function CatalogUrlSync() {
   const sp = useSearchParams();
   const ctx = useCatalogFilter();
+  // Brandon 2026-06-13 FIX: el `ctx` cambia identidad en CADA render (el value
+  // del provider no estaba memoizado). Antes estaba en las deps de este effect,
+  // así que el effect corría en cada render y RESETEABA la categoría a "todos"
+  // (no hay ?cat= en el Inicio) → al clickear una categoría del rail, el
+  // re-render la borraba al instante. Ahora el ctx va por REF y el effect solo
+  // depende de los params de la URL → sincroniza URL→contexto, sin pisar las
+  // selecciones directas del rail lateral.
+  const ctxRef = useRef(ctx);
+  ctxRef.current = ctx;
   const sortParam = sp.get("sort");
   const catParam = sp.get("cat") ?? sp.get("category");
-  // Vertical: el Inicio arranca food-first. Sin `?v=` → "comida" (default).
   const vParam = sp.get("v");
   useEffect(() => {
-    if (!ctx) return;
+    const c = ctxRef.current;
+    if (!c) return;
     const mapped = sortParam ? SORT_ALIAS[sortParam.toLowerCase()] : undefined;
-    if (mapped) ctx.setSort(mapped);
-    // Categoría: si la URL la trae la aplica; si NO, la limpia (al volver a
-    // "Todo" o quitar el ?cat= el catálogo deja de filtrar por subcategoría).
-    ctx.setCategory(catParam ? catParam.toLowerCase() : "todos");
-    // Vertical: Brandon 2026-06-12 — "Todo" es el default. Solo filtramos si el
-    // ?v= es un vertical válido; sino sin filtro (muestra todo el catálogo).
-    ctx.setVertical(isValidVertical(vParam) ? vParam!.toLowerCase() : "");
-  }, [ctx, sortParam, catParam, vParam]);
+    if (mapped) c.setSort(mapped);
+    // Categoría: si la URL la trae la aplica; si NO, la limpia (volver a "Todo").
+    c.setCategory(catParam ? catParam.toLowerCase() : "todos");
+    // Vertical: solo si el ?v= es válido; sino sin filtro (todo el catálogo).
+    c.setVertical(isValidVertical(vParam) ? vParam!.toLowerCase() : "");
+  }, [sortParam, catParam, vParam]);
   return null;
 }
 
