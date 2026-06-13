@@ -116,6 +116,12 @@ model Product {
   // "product" (default) = ítem con stock/barcode/vencimiento.
   // "service" = sin stock; usa durationLabel/pricingUnit/notes.
   type          String   @default("product")
+  // ── Distribución preparada vs empaquetada (ADR-131, Brandon 2026-06-12) ──
+  // false (default) = EMPAQUETADA → se muestra en el Inicio (catálogo cruza-
+  //   tiendas, producto-first) Y en la ficha de la tienda.
+  // true = PREPARADA (hecha al momento: comida) → SOLO en la ficha de la tienda
+  //   (modelo tienda-first, 1 pedido por cocina). NO aparece en el Inicio.
+  isPrepared    Boolean  @default(false)
   // ── Producto completo ──
   brand         String? // marca / fabricante
   sku           String? // código interno del negocio (distinto del barcode)

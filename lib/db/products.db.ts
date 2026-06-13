@@ -50,7 +50,7 @@ const PRODUCT_SELECT = {
   id: true, name: true, category: true, price: true, costPrice: true,
   image: true, description: true, unit: true, badge: true, barcode: true,
   stock: true, stockMin: true, stockMax: true, active: true, tenantId: true,
-  type: true, brand: true, sku: true, taxType: true, weightKg: true,
+  type: true, isPrepared: true, brand: true, sku: true, taxType: true, weightKg: true,
   dimensions: true, durationLabel: true, pricingUnit: true, notes: true,
 } as const;
 
@@ -72,6 +72,7 @@ function mapProduct(p: PProduct): DbProduct {
     active: p.active,
     tenantId: p.tenantId,
     ...(p.type != null && { type: p.type }),
+    isPrepared: p.isPrepared ?? false,
     ...(p.brand != null && { brand: p.brand }),
     ...(p.sku != null && { sku: p.sku }),
     ...(p.taxType != null && { taxType: p.taxType }),
@@ -228,7 +229,7 @@ export const ProductsDB = {
       badge: product.badge, barcode: product.barcode, stock: product.stock,
       stockMin: product.stockMin, stockMax: product.stockMax, active: product.active,
       // undefined ⇒ Prisma omite el campo (no pisa). Producto/servicio completo.
-      type: product.type, brand: product.brand, sku: product.sku,
+      type: product.type, isPrepared: product.isPrepared, brand: product.brand, sku: product.sku,
       taxType: product.taxType, weightKg: product.weightKg, dimensions: product.dimensions,
       durationLabel: product.durationLabel, pricingUnit: product.pricingUnit, notes: product.notes,
     };
@@ -266,7 +267,7 @@ export const ProductsDB = {
         badge: product.badge, barcode: product.barcode, stock: product.stock,
         stockMin: product.stockMin, stockMax: product.stockMax, active: product.active,
         tenantId: product.tenantId,
-        type: product.type, brand: product.brand, sku: product.sku,
+        type: product.type, isPrepared: product.isPrepared ?? false, brand: product.brand, sku: product.sku,
         taxType: product.taxType, weightKg: product.weightKg, dimensions: product.dimensions,
         durationLabel: product.durationLabel, pricingUnit: product.pricingUnit, notes: product.notes,
       },

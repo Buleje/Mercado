@@ -46,6 +46,8 @@ export default function TenantAddProductModal({
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
   const [stock, setStock] = useState<number | "">("");
+  // ADR-131: empaquetada (default → Inicio + tienda) vs preparada (→ solo tienda).
+  const [isPrepared, setIsPrepared] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +113,7 @@ export default function TenantAddProductModal({
       image: image.trim() || null,
       stock: typeof stock === "number" ? stock : null,
       active: true,
+      isPrepared, // ADR-131
       modifierGroups: groups.map((g) => ({
         name: g.name.trim(),
         description: g.description?.trim() || null,
@@ -201,6 +204,31 @@ export default function TenantAddProductModal({
                   placeholder="pollo-brasa"
                 />
               </label>
+              {/* ADR-131: define DÓNDE se muestra el producto. */}
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-semibold text-[var(--text-secondary)]">¿Cómo se vende?</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { v: false, t: "Empaquetada", d: "Inicio + tienda" },
+                    { v: true, t: "Preparada", d: "Solo tienda (comida)" },
+                  ].map((opt) => (
+                    <button
+                      key={String(opt.v)}
+                      type="button"
+                      onClick={() => setIsPrepared(opt.v)}
+                      aria-pressed={isPrepared === opt.v}
+                      className={`rounded-lg border-2 px-3 py-2 text-left transition-colors ${
+                        isPrepared === opt.v
+                          ? "border-[var(--accent)] bg-[var(--accent)]/5"
+                          : "border-[var(--rule-base)] hover:border-[var(--accent)]/50"
+                      }`}
+                    >
+                      <span className="block text-sm font-bold text-[var(--text-primary)]">{opt.t}</span>
+                      <span className="block text-xs text-[var(--text-secondary)]">{opt.d}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <label className="flex flex-col gap-1">
                 <span className="text-sm font-semibold text-[var(--text-secondary)]">Precio (S/) *</span>
                 <input

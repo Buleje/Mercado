@@ -135,6 +135,10 @@ export async function GET(req: NextRequest) {
       sort,
       cursor: isMixed ? undefined : cursor,
       limit: isMixed ? MIX_WINDOW : limit,
+      // ADR-131: la vista CROSS-STORE (Inicio, producto-first) excluye productos
+      // PREPARADOS (comida al momento → tienda-first). Cuando hay storeSlug es una
+      // vista dentro de una tienda → se ven todos (incluidos los preparados).
+      excludePrepared: !storeSlug,
     });
 
     let items: typeof results;

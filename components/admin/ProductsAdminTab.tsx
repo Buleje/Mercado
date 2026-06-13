@@ -59,6 +59,7 @@ const DEFAULT_FORM: Omit<Product, "id"> = {
   stock: undefined,
   stockMin: undefined,
   active: true,
+  isPrepared: false,
 };
 
 const CATEGORY_OPTS = categories.filter((c) => c.id !== "todos");
@@ -525,6 +526,37 @@ function ProductFormModal({
                 >
                   {UNIT_OPTS.map((u) => <option key={u} value={u}>{u}</option>)}
                 </select>
+              </div>
+            </div>
+
+            {/* ADR-131: empaquetada vs preparada — define DÓNDE se muestra. */}
+            <div>
+              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                ¿Cómo se vende?
+              </label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                {[
+                  { v: false, t: "Empaquetada", d: "Sellada/lista. Aparece en el Inicio y en tu tienda." },
+                  { v: true, t: "Preparada", d: "Se hace al momento (comida). Solo en tu tienda." },
+                ].map((opt) => {
+                  const activeOpt = !!form.isPrepared === opt.v;
+                  return (
+                    <button
+                      key={String(opt.v)}
+                      type="button"
+                      onClick={() => set("isPrepared", opt.v)}
+                      aria-pressed={activeOpt}
+                      className={`rounded-lg border-2 p-3 text-left transition-colors ${
+                        activeOpt
+                          ? "border-primary bg-primary/5"
+                          : "border-[var(--rule-base)] hover:border-primary/50"
+                      }`}
+                    >
+                      <span className="block text-sm font-bold text-[var(--text-primary)]">{opt.t}</span>
+                      <span className="mt-0.5 block text-xs text-[var(--text-secondary)] dark:text-muted leading-snug">{opt.d}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

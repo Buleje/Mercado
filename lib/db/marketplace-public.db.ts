@@ -1108,6 +1108,10 @@ export const MarketplacePublicDB = {
     sort: "popular" | "price_asc" | "price_desc" | "newest" | "rating";
     cursor?: string;
     limit: number;
+    /** ADR-131: excluye productos PREPARADOS (comida al momento) del resultado.
+     *  Lo usa el catálogo del Inicio (producto-first, retail). La ficha de tienda
+     *  no lo pasa → ahí se ven todos. */
+    excludePrepared?: boolean;
   }) {
     // Cache key estable y compacta: solo campos que afectan la query.
     const cacheKey =
@@ -1123,6 +1127,7 @@ export const MarketplacePublicDB = {
         opts.sort,
         opts.cursor ?? "",
         opts.limit,
+        opts.excludePrepared ? "noprep" : "",
       ].join("|");
 
     return getOrSet(cacheKey, 60, async () => {
@@ -1134,6 +1139,15 @@ export const MarketplacePublicDB = {
             : opts.sort === "newest"
               ? { id: "desc" as const }
               : { store: { rating: "desc" as const } };
+
+      // Filtro de producto UNIFICADO (q + categoría + isPrepared) — antes eran
+      // spreads separados que se pisaban; ahora se mergean en un solo objeto.
+      const productFilter: Record<string, unknown> = {};
+      if (opts.q) productFilter.name = { contains: opts.q, mode: "insensitive" as const };
+      if (opts.category && opts.category !== "todos") productFilter.category = opts.category;
+      // ADR-131: el Inicio (producto-first) excluye preparadas. isPrepared puede
+      // ser null en filas viejas previas a la columna → tratamos null como false.
+      if (opts.excludePrepared) productFilter.isPrepared = { not: true };
 
       const where = {
         isActive: true,
@@ -1153,16 +1167,7 @@ export const MarketplacePublicDB = {
               })),
             }),
         },
-        ...(opts.q && {
-          product: { name: { contains: opts.q, mode: "insensitive" as const } },
-        }),
-        ...(opts.category &&
-          opts.category !== "todos" && {
-            product: {
-              ...((opts.q && { name: { contains: opts.q, mode: "insensitive" as const } }) || {}),
-              category: opts.category,
-            },
-          }),
+        ...(Object.keys(productFilter).length > 0 && { product: productFilter }),
         ...((opts.minPrice !== undefined || opts.maxPrice !== undefined) && {
           retailPrice: {
             ...(opts.minPrice !== undefined && { gte: opts.minPrice }),

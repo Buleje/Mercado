@@ -50,6 +50,8 @@ const ProductPostSchema = z.object({
   stockMax:    z.number().min(0).optional(),
   // ── Producto/servicio completo ──
   type:          z.enum(["product", "service"]).optional(),
+  // ADR-131: preparada (comida → solo tienda) vs empaquetada (→ Inicio + tienda).
+  isPrepared:    z.boolean().optional(),
   brand:         z.string().max(100).optional(),
   sku:           z.string().max(60).optional(),
   taxType:       z.enum(["gravado", "exonerado", "inafecto"]).optional(),
@@ -195,6 +197,7 @@ export async function POST(req: NextRequest) {
       stockMin:    isService ? undefined : (body.stockMin ?? undefined),
       stockMax:    isService ? undefined : (body.stockMax ?? undefined),
       type:        body.type ?? "product",
+      isPrepared:  body.isPrepared ?? false,
       brand:       body.brand || undefined,
       sku:         body.sku || undefined,
       taxType:     body.taxType ?? "gravado",

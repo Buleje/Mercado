@@ -40,6 +40,7 @@ const CreateProductSchema = z.object({
   stock: z.number().int().min(0).optional().nullable(),
   stockMin: z.number().int().min(0).optional().nullable(),
   active: z.boolean().default(true),
+  isPrepared: z.boolean().optional(), // ADR-131
   modifierGroups: z.array(ModifierGroupSchema).max(15).optional(),
 });
 
@@ -162,6 +163,7 @@ export async function POST(
           stock: productData.stock ?? 999,
           stockMin: productData.stockMin ?? 0,
           active: productData.active,
+          isPrepared: productData.isPrepared ?? false, // ADR-131
         },
       });
 

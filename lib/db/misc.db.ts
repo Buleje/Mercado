@@ -70,6 +70,9 @@ export type DbProduct = {
   tenantId: string;
   /** "product" (default) | "service". Servicio = sin stock/barcode/vencimiento. */
   type?: string;
+  /** ADR-131: true = PREPARADA (comida al momento → solo ficha de tienda);
+   *  false/undefined = EMPAQUETADA (→ Inicio + tienda). */
+  isPrepared?: boolean;
   // ── Producto completo ──
   brand?: string;
   sku?: string;

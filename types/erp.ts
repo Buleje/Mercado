@@ -17,6 +17,8 @@ export interface Product {
   barcode?: string;
   sku?: string;
   description?: string;
+  /** ADR-131: true = preparada (comida → solo tienda); false = empaquetada (→ Inicio + tienda). */
+  isPrepared?: boolean;
   supplierId?: string | number;
   expiryDate?: string;
   isVariant?: boolean;

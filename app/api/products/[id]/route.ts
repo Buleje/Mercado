@@ -37,6 +37,7 @@ const ProductUpdateSchema = z.object({
   // Sin .nullable() para mantener compatibilidad de tipos con DbProduct
   // (campos string|undefined). Para "limpiar" se envía "" desde la UI. ──
   type:          z.enum(["product", "service"]).optional(),
+  isPrepared:    z.boolean().optional(), // ADR-131
   brand:         z.string().max(100).optional(),
   sku:           z.string().max(60).optional(),
   taxType:       z.enum(["gravado", "exonerado", "inafecto"]).optional(),
