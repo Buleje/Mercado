@@ -37,9 +37,17 @@ import {
   AlertTriangle,
   List,
   LayoutGrid,
+  MessageCircle,
+  ExternalLink,
+  BarChart3,
+  CheckSquare,
+  Square,
+  Users,
+  TrendingUp,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
+import { buildWaLink } from "@/lib/wa-number";
 import { cn } from "@/lib/utils";
 
 type OrderStatus = "pendiente" | "confirmado" | "preparando" | "en_camino" | "entregado" | "cancelado";
@@ -177,6 +185,14 @@ function exportOrdersCSV(rows: OrderRow[]) {
   URL.revokeObjectURL(url);
 }
 
+/** Link wa.me al cliente, normalizando móviles PE (9 díg → +51). */
+function customerWaLink(phone: string | null | undefined, message?: string): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  const e164 = digits.length === 9 && digits.startsWith("9") ? `51${digits}` : digits;
+  return buildWaLink(e164, message);
+}
+
 const SLA_CLS: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
   warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
@@ -221,6 +237,9 @@ export function OrdersClient() {
   const [selected, setSelected] = useState<OrderRow | null>(null);
   // Densidad: compacto (default — ver más en menos espacio) vs cómodo (cards).
   const [viewMode, setViewMode] = useState<ViewMode>("compact");
+  const [slaBrokenOnly, setSlaBrokenOnly] = useState(false); // filtro rápido SLA roto
+  const [showAnalytics, setShowAnalytics] = useState(false); // panel de analítica
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set()); // selección masiva
 
   useEffect(() => {
     const saved = typeof window !== "undefined" ? window.localStorage.getItem("sa-orders-view") : null;
@@ -396,6 +415,62 @@ export function OrdersClient() {
     return { grouped, totalRev };
   }, [orders]);
 
+  // SLA roto: pendientes >2h sin atender (tone "bad").
+  const slaBrokenIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const o of orders) {
+      if (o.status === "pendiente" && slaInfoForOrder(o.createdAt).tone === "bad") s.add(o.id);
+    }
+    return s;
+  }, [orders]);
+
+  // Aplica el filtro rápido "SLA roto" sobre la lista ya filtrada/ordenada.
+  const visible = useMemo(
+    () => (slaBrokenOnly ? filtered.filter((o) => slaBrokenIds.has(o.id)) : filtered),
+    [filtered, slaBrokenOnly, slaBrokenIds],
+  );
+
+  // Analítica (sobre la muestra cargada): ticket promedio, cancelación, por día, top tiendas.
+  const analytics = useMemo(() => {
+    const n = orders.length;
+    const sumAll = orders.reduce((s, o) => s + o.total, 0);
+    const avgTicket = n ? sumAll / n : 0;
+    const cancelled = orders.filter((o) => o.status === "cancelado").length;
+    const cancelRate = n ? Math.round((cancelled / n) * 100) : 0;
+    // Pedidos por día (últimos 7).
+    const byDay: { label: string; count: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86_400_000);
+      const key = d.toISOString().slice(0, 10);
+      const label = d.toLocaleDateString("es-PE", { weekday: "short" });
+      const count = orders.filter((o) => o.createdAt?.slice(0, 10) === key).length;
+      byDay.push({ label, count });
+    }
+    // Top tiendas por GMV.
+    const byTenant = new Map<string, { name: string; gmv: number; count: number }>();
+    for (const o of orders) {
+      const cur = byTenant.get(o.tenant.slug) ?? { name: o.tenant.name, gmv: 0, count: 0 };
+      cur.gmv += o.total; cur.count += 1;
+      byTenant.set(o.tenant.slug, cur);
+    }
+    const topTenants = [...byTenant.values()].sort((a, b) => b.gmv - a.gmv).slice(0, 5);
+    return { avgTicket, cancelRate, byDay, topTenants, n };
+  }, [orders]);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+  const copySelectedPhones = useCallback(() => {
+    const phones = [...new Set(orders.filter((o) => selectedIds.has(o.id) && o.customer.phone).map((o) => o.customer.phone!))];
+    if (!phones.length) { pushToast("Ningún seleccionado tiene teléfono", "info"); return; }
+    void copy(phones.join(", "), `${phones.length} teléfono(s)`);
+  }, [orders, selectedIds, copy, pushToast]);
+
   return (
     <AdminTabShell
       title="Pedidos del marketplace"
@@ -495,12 +570,26 @@ export function OrdersClient() {
           <option value="total_asc">Menor monto</option>
         </select>
         <button
-          onClick={() => exportOrdersCSV(filtered)}
-          disabled={filtered.length === 0}
+          onClick={() => exportOrdersCSV(visible)}
+          disabled={visible.length === 0}
           className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <Download className="h-4 w-4" aria-hidden />
-          CSV ({filtered.length})
+          CSV ({visible.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowAnalytics((v) => !v)}
+          aria-pressed={showAnalytics}
+          className={cn(
+            "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 px-3.5 text-sm font-bold transition",
+            showAnalytics
+              ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+              : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]",
+          )}
+        >
+          <BarChart3 className="h-4 w-4" aria-hidden />
+          Analítica
         </button>
         <span className="ml-auto text-xs text-[var(--text-tertiary)]">
           Atajos:{" "}
@@ -563,29 +652,91 @@ export function OrdersClient() {
         })}
       </div>
 
+      {/* Banner SLA en vivo */}
+      {slaBrokenIds.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10 px-4 py-3">
+          <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-300 shrink-0" aria-hidden />
+          <p className="text-sm font-bold text-rose-700 dark:text-rose-300">
+            {slaBrokenIds.size} {slaBrokenIds.size === 1 ? "pedido pendiente" : "pedidos pendientes"} &gt;2h sin atender
+          </p>
+          <button
+            type="button"
+            onClick={() => setSlaBrokenOnly((v) => !v)}
+            aria-pressed={slaBrokenOnly}
+            className={cn(
+              "ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-bold transition",
+              slaBrokenOnly
+                ? "bg-rose-600 text-white"
+                : "bg-white dark:bg-transparent border border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/15",
+            )}
+          >
+            <Clock className="h-4 w-4" aria-hidden />
+            {slaBrokenOnly ? "Ver todos" : "Ver solo SLA roto"}
+          </button>
+        </div>
+      )}
+
+      {/* Panel de analítica (sobre la muestra cargada) */}
+      {showAnalytics && <AnalyticsPanel data={analytics} />}
+
       {/* Lista */}
       {loading && orders.length === 0 ? (
         <SkeletonRows />
-      ) : filtered.length === 0 ? (
+      ) : visible.length === 0 ? (
         <EmptyState
-          isFiltered={!!search || statusFilter !== "all" || tenantFilter !== "all"}
+          isFiltered={!!search || statusFilter !== "all" || tenantFilter !== "all" || slaBrokenOnly}
           onClear={() => {
             setSearch("");
             setStatusFilter("all");
             setTenantFilter("all");
+            setSlaBrokenOnly(false);
           }}
         />
       ) : viewMode === "compact" ? (
         <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] divide-y divide-[var(--rule-base)]">
-          {filtered.map((o) => (
-            <OrderRowCompact key={o.id} order={o} onOpen={() => setSelected(o)} />
+          {visible.map((o) => (
+            <OrderRowCompact
+              key={o.id}
+              order={o}
+              onOpen={() => setSelected(o)}
+              selected={selectedIds.has(o.id)}
+              onToggleSelect={() => toggleSelect(o.id)}
+              slaBroken={slaBrokenIds.has(o.id)}
+              onCopy={copy}
+            />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {filtered.map((o) => (
-            <OrderCard key={o.id} order={o} onOpen={() => setSelected(o)} />
+          {visible.map((o) => (
+            <OrderCard key={o.id} order={o} onOpen={() => setSelected(o)} onCopy={copy} />
           ))}
+        </div>
+      )}
+
+      {/* Barra de acciones masivas */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-2xl)]">
+          <span className="px-1 text-sm font-bold text-[var(--text-primary)] tabular-nums">{selectedIds.size} seleccionado{selectedIds.size === 1 ? "" : "s"}</span>
+          <button
+            onClick={() => exportOrdersCSV(orders.filter((o) => selectedIds.has(o.id)))}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-bold text-white hover:brightness-110"
+          >
+            <Download className="h-4 w-4" /> CSV selección
+          </button>
+          <button
+            onClick={copySelectedPhones}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40"
+          >
+            <Copy className="h-4 w-4" /> Copiar teléfonos
+          </button>
+          <button
+            onClick={clearSelection}
+            aria-label="Limpiar selección"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
@@ -636,7 +787,7 @@ function KpiCard({
   );
 }
 
-function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
+function OrderCard({ order, onOpen, onCopy }: { order: OrderRow; onOpen: () => void; onCopy: (text: string, label: string) => void }) {
   const meta = STATUS_META[order.status];
   const Icon = meta.icon;
   const itemCount = order.items.reduce((acc, it) => acc + it.quantity, 0);
@@ -644,10 +795,12 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
   const isPending = order.status === "pendiente";
   const sla = isPending ? slaInfoForOrder(order.createdAt) : null;
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
-      className="text-left rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--rule-strong)] hover:shadow-[var(--shadow-md)] transition-all overflow-hidden"
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+      className="cursor-pointer text-left rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--rule-strong)] hover:shadow-[var(--shadow-md)] transition-all overflow-hidden"
     >
       {/* Top: tienda + status */}
       <div className="px-4 py-3 flex items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
@@ -759,26 +912,60 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
             S/{Number(order.total).toFixed(2)}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">
-          Ver detalle <ChevronRight className="w-3.5 h-3.5" />
-        </span>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <RowActions order={order} onCopy={onCopy} />
+          <span className="ml-1 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">
+            Ver detalle <ChevronRight className="w-3.5 h-3.5" />
+          </span>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
 
-function OrderRowCompact({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
+function OrderRowCompact({
+  order,
+  onOpen,
+  selected,
+  onToggleSelect,
+  slaBroken,
+  onCopy,
+}: {
+  order: OrderRow;
+  onOpen: () => void;
+  selected: boolean;
+  onToggleSelect: () => void;
+  slaBroken: boolean;
+  onCopy: (text: string, label: string) => void;
+}) {
   const meta = STATUS_META[order.status];
   const Icon = meta.icon;
   const itemCount = order.items.reduce((acc, it) => acc + it.quantity, 0);
   const isPending = order.status === "pendiente";
   const sla = isPending ? slaInfoForOrder(order.createdAt) : null;
   return (
-    <button
-      type="button"
+    <div
       onClick={onOpen}
-      className="group w-full text-left flex items-center gap-3 px-3 py-2.5 bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)] transition-colors"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+      className={cn(
+        "group w-full text-left flex items-center gap-2.5 px-3 py-2.5 cursor-pointer transition-colors",
+        slaBroken ? "bg-rose-50/60 dark:bg-rose-500/10 border-l-4 border-rose-500" : "bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)]",
+        selected && "bg-[var(--accent)]/10",
+      )}
     >
+      {/* Checkbox selección */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}
+        aria-label={selected ? "Deseleccionar" : "Seleccionar"}
+        aria-pressed={selected}
+        className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--accent)]"
+      >
+        {selected ? <CheckSquare className="h-4 w-4 text-[var(--accent)]" /> : <Square className="h-4 w-4" />}
+      </button>
+
       {/* Tienda */}
       {order.tenant.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- logos externos/blob
@@ -799,6 +986,11 @@ function OrderRowCompact({ order, onOpen }: { order: OrderRow; onOpen: () => voi
           <Store className="w-3 h-3 shrink-0" /> {order.tenant.name}
           {order.customer.location && <span className="hidden sm:inline truncate">· {order.customer.location}</span>}
         </p>
+      </div>
+
+      {/* Acciones inline (aparecen en hover) */}
+      <div className="hidden md:flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <RowActions order={order} onCopy={onCopy} />
       </div>
 
       {/* Status + SLA */}
@@ -831,7 +1023,36 @@ function OrderRowCompact({ order, onOpen }: { order: OrderRow; onOpen: () => voi
       </span>
 
       <ChevronRight className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] shrink-0" />
-    </button>
+    </div>
+  );
+}
+
+/** Acciones rápidas sin abrir el drawer: WhatsApp, llamar, copiar, abrir panel del tenant. */
+function RowActions({ order, onCopy }: { order: OrderRow; onCopy: (text: string, label: string) => void }) {
+  const wa = customerWaLink(order.customer.phone, `Hola ${order.customer.name}, te escribo por tu pedido #${order.id.slice(-6)}.`);
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const btn = "inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--accent)]";
+  return (
+    <>
+      {wa && (
+        <a href={wa} target="_blank" rel="noopener noreferrer" onClick={stop} className={btn} title="WhatsApp al cliente" aria-label="WhatsApp al cliente">
+          <MessageCircle className="h-4 w-4" />
+        </a>
+      )}
+      {order.customer.phone && (
+        <a href={`tel:${order.customer.phone}`} onClick={stop} className={btn} title="Llamar" aria-label="Llamar">
+          <Phone className="h-4 w-4" />
+        </a>
+      )}
+      {order.customer.phone && (
+        <button type="button" onClick={(e) => { stop(e); onCopy(order.customer.phone!, "Teléfono"); }} className={btn} title="Copiar teléfono" aria-label="Copiar teléfono">
+          <Copy className="h-4 w-4" />
+        </button>
+      )}
+      <a href={`/t/${order.tenant.slug}/admin?tab=pedidos`} target="_blank" rel="noopener noreferrer" onClick={stop} className={btn} title={`Abrir panel de ${order.tenant.name}`} aria-label="Abrir panel del tenant">
+        <ExternalLink className="h-4 w-4" />
+      </a>
+    </>
   );
 }
 
@@ -1058,6 +1279,76 @@ function Field({ label, value }: { label: string; value: string }) {
     <div className="flex items-start justify-between gap-3 text-sm">
       <dt className="text-[var(--text-tertiary)] shrink-0">{label}</dt>
       <dd className="text-[var(--text-primary)] font-semibold text-right">{value}</dd>
+    </div>
+  );
+}
+
+function AnalyticsPanel({
+  data,
+}: {
+  data: {
+    avgTicket: number;
+    cancelRate: number;
+    byDay: { label: string; count: number }[];
+    topTenants: { name: string; gmv: number; count: number }[];
+    n: number;
+  };
+}) {
+  const maxDay = Math.max(1, ...data.byDay.map((d) => d.count));
+  const maxGmv = Math.max(1, ...data.topTenants.map((t) => t.gmv));
+  return (
+    <div className="mb-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <BarChart3 className="h-4 w-4 text-[var(--accent)]" />
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">Analítica</h3>
+        <span className="text-xs text-[var(--text-tertiary)]">muestra de {data.n} pedidos cargados</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Métricas */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Ticket prom.</p>
+            <p className="mt-1 font-display text-xl font-extrabold tabular-nums text-[var(--text-primary)]">S/{data.avgTicket.toFixed(0)}</p>
+          </div>
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Cancelación</p>
+            <p className={cn("mt-1 font-display text-xl font-extrabold tabular-nums", data.cancelRate >= 15 ? "text-rose-600 dark:text-rose-400" : "text-[var(--text-primary)]")}>{data.cancelRate}%</p>
+          </div>
+        </div>
+        {/* Pedidos por día */}
+        <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Pedidos · últimos 7 días</p>
+          <div className="flex items-end justify-between gap-1 h-16">
+            {data.byDay.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1 justify-end">
+                <div className="w-full rounded-t bg-[var(--accent)]" style={{ height: `${(d.count / maxDay) * 100}%`, minHeight: d.count > 0 ? 3 : 0 }} title={`${d.count} pedidos`} />
+                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{d.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Top tiendas por GMV */}
+        <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Top tiendas · GMV</p>
+          {data.topTenants.length === 0 ? (
+            <p className="text-xs text-[var(--text-tertiary)]">Sin datos</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {data.topTenants.map((t) => (
+                <li key={t.name} className="text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-[var(--text-secondary)] font-semibold">{t.name}</span>
+                    <span className="tabular-nums font-bold text-[var(--text-primary)] shrink-0">S/{t.gmv.toFixed(0)}</span>
+                  </div>
+                  <div className="mt-0.5 h-1.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+                    <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${(t.gmv / maxGmv) * 100}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
