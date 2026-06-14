@@ -2961,6 +2961,17 @@ body[data-marketplace-explorar] .tabular-nums {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+   BORDES RECTOS (Brandon 2026-06-14): estética "boxy" en todo el superadmin.
+   Cuadra cards, botones, inputs, badges, modales y contenedores — un solo
+   override scopeado en vez de tocar cientos de componentes. Mantiene
+   `rounded-full` circular (avatares, dots de estado, toggles) para no
+   romperlos. Aplica a clases rounded-* (incluye -t/-l/-[arbitrarias]).
+   ───────────────────────────────────────────────────────────────────────── */
+[data-area="superadmin"] [class*="rounded"]:not([class*="rounded-full"]) {
+  border-radius: 0 !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
    SKELETON shimmer — reemplaza el "bloque gris oscuro" por un gradient sutil.
    Aplica a cualquier bloque dentro de `.animate-pulse` que use superficie.
    ───────────────────────────────────────────────────────────────────────── */

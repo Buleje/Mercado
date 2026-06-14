@@ -7,6 +7,7 @@ import {
   CheckCircle2, XCircle, LayoutGrid, List, Bomb, Grid3x3,
   DollarSign, Sparkles, Bell,
   Clock, AlertTriangle, Check, Square, CheckSquare, Download, Mail, X, MessageSquare,
+  TrendingUp,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
@@ -18,30 +19,7 @@ import { TenantCard } from "@/components/superadmin/tenants/TenantCard";
 import { TenantCardCompact } from "@/components/superadmin/tenants/TenantCardCompact";
 import { TenantModulesModal } from "@/components/superadmin/tenants/TenantModulesModal";
 import { TenantTable } from "@/components/superadmin/tenants/TenantTable";
-import dynamic from "next/dynamic";
-
-const TenantGrowthTab = dynamic(
-  () =>
-    import("@/components/superadmin/tenants/TenantGrowthTab").then(
-      (m) => ({ default: m.TenantGrowthTab }),
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-72 animate-pulse bg-[var(--color-muted)] rounded-xl" />
-    ),
-  },
-);
-
-const TenantsGrowthRanking = dynamic(
-  () => import("@/components/superadmin/dashboard/TenantsGrowthRanking"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-72 animate-pulse bg-[var(--color-muted)] rounded-xl" />
-    ),
-  },
-);
+import Link from "next/link";
 import { TenantProductsModal } from "@/components/superadmin/tenants/TenantProductsModal";
 import TenantAddProductModal from "@/components/superadmin/tenants/TenantAddProductModal";
 import { InviteModal } from "@/components/superadmin/tenants/InviteModal";
@@ -50,7 +28,7 @@ import { TenantDetailModal } from "@/components/superadmin/tenants/TenantDetailM
 import { DeleteConfirmModal } from "@/components/superadmin/tenants/DeleteConfirmModal";
 import { NuclearResetModal } from "@/components/superadmin/tenants/NuclearResetModal";
 import { useTenantActions } from "@/components/superadmin/tenants/useTenantActions";
-import type { SortField, SortDir, ViewMode, GrowthEntry } from "@/components/superadmin/tenants/types";
+import type { SortField, SortDir, ViewMode } from "@/components/superadmin/tenants/types";
 
 const inputCls =
   "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40";
@@ -79,7 +57,6 @@ export default function TenantsPage() {
     setViewModeState(v);
     try { window.localStorage.setItem("sa-tenants-view", v); } catch { /* private mode */ }
   }, []);
-  const [pageTab, setPageTab] = useState<"tiendas" | "crecimiento">("tiendas");
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [inviteTarget, setInviteTarget] = useState<{ slug: string; name: string } | null>(null);
   const [detailTarget, setDetailTarget] = useState<TenantRow | null>(null);
@@ -91,8 +68,6 @@ export default function TenantsPage() {
   const [moduleOverrideCounts, setModuleOverrideCounts] = useState<Record<string, number>>({});
   const [nuclearResetOpen, setNuclearResetOpen] = useState(false);
   const [nuclearResetLoading, setNuclearResetLoading] = useState(false);
-  const [growthData, setGrowthData] = useState<GrowthEntry[]>([]);
-  const [growthLoading, setGrowthLoading] = useState(false);
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -183,22 +158,6 @@ export default function TenantsPage() {
     } catch { /* silencioso — columna muestra "Plantilla" */ }
   }, []);
   useEffect(() => { void loadModuleOverrideCounts(); }, [loadModuleOverrideCounts]);
-
-  const loadGrowth = useCallback(async () => {
-    setGrowthLoading(true);
-    try {
-      const res = await fetchSuperadmin("/api/superadmin/tenants/growth");
-      if (res.ok) {
-        const json = await res.json() as { data: GrowthEntry[] };
-        setGrowthData(json.data);
-      }
-    } catch { /* silent */ }
-    finally { setGrowthLoading(false); }
-  }, []);
-
-  useEffect(() => {
-    if (pageTab === "crecimiento" && growthData.length === 0) void loadGrowth();
-  }, [pageTab, growthData.length, loadGrowth]);
 
   const {
     handleToggleActive,
@@ -546,17 +505,15 @@ export default function TenantsPage() {
             perder espacio visual. `-mx-4 sm:-mx-6 px-4 sm:px-6` extiende
             al edge para que el blur cubra todo el ancho del main content. */}
       <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-[var(--surface-canvas)]/85 backdrop-blur-md border-b border-[var(--rule-soft)] flex flex-col lg:flex-row lg:items-center gap-3">
-        {/* Tabs principales — primero, jerarquía alta */}
-        <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1 shrink-0">
-          {(["tiendas", "crecimiento"] as const).map((tab) => (
-            <button key={tab} type="button" onClick={() => setPageTab(tab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${pageTab === tab ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
-              {tab === "tiendas" ? "Tiendas" : "Crecimiento"}
-            </button>
-          ))}
-        </div>
+        {/* Crecimiento ahora vive en su propia página (Brandon 2026-06-14). */}
+        <Link
+          href="/superadmin/tenants/growth"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40 transition-colors shrink-0"
+        >
+          <TrendingUp className="w-3.5 h-3.5" /> Ver crecimiento
+        </Link>
 
-        {pageTab === "tiendas" && (
+        {(
           <>
             {/* Search wide — flex-1 toma todo el espacio disponible.
                 Brandon 2026-05-21 high-impact: ref para "/" shortcut +
@@ -660,7 +617,7 @@ export default function TenantsPage() {
       </div>
 
       {/* Tab: Tiendas */}
-      {pageTab === "tiendas" && (
+      {(
         <>
           {/* ═══════ FILA 4 · Quick filter chips (4 principales + Más ▾) ═ */}
           <QuickFilters
@@ -807,15 +764,6 @@ export default function TenantsPage() {
             />
           )}
         </>
-      )}
-
-      {/* Tab: Crecimiento — ranking + tabla detallada existente */}
-      {pageTab === "crecimiento" && (
-        <div className="space-y-6">
-          {/* Nuevo: ranking ordenado por crecimiento, top 3 podio, sparklines, delta% */}
-          <TenantsGrowthRanking />
-          <TenantGrowthTab growthData={growthData} loading={growthLoading} />
-        </div>
       )}
 
       {/* Toast */}
