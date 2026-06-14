@@ -35,6 +35,8 @@ import {
   Download,
   Copy,
   AlertTriangle,
+  List,
+  LayoutGrid,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
@@ -75,6 +77,7 @@ interface OrderRow {
 type ToastTone = "success" | "error" | "info";
 type Toast = { id: number; text: string; tone: ToastTone };
 type SortKey = "recent" | "oldest" | "total_desc" | "total_asc";
+type ViewMode = "compact" | "comfort";
 
 const STATUS_META: Record<OrderStatus, { label: string; tone: string; icon: typeof CheckCircle2 }> = {
   pendiente: { label: "Pendiente", tone: "var(--data-warning-500)", icon: Clock },
@@ -216,6 +219,17 @@ export function OrdersClient() {
   const [sort, setSort] = useState<SortKey>("recent");
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selected, setSelected] = useState<OrderRow | null>(null);
+  // Densidad: compacto (default — ver más en menos espacio) vs cómodo (cards).
+  const [viewMode, setViewMode] = useState<ViewMode>("compact");
+
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? window.localStorage.getItem("sa-orders-view") : null;
+    if (saved === "compact" || saved === "comfort") setViewMode(saved);
+  }, []);
+  const changeViewMode = useCallback((m: ViewMode) => {
+    setViewMode(m);
+    try { window.localStorage.setItem("sa-orders-view", m); } catch { /* SSR/quota */ }
+  }, []);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(1);
@@ -442,6 +456,33 @@ export function OrdersClient() {
           />
           Auto 30s
         </label>
+        {/* Densidad de vista */}
+        <div className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1" role="group" aria-label="Densidad de vista">
+          <button
+            type="button"
+            onClick={() => changeViewMode("compact")}
+            aria-pressed={viewMode === "compact"}
+            title="Vista compacta (más pedidos en pantalla)"
+            className={cn(
+              "inline-flex h-full items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors",
+              viewMode === "compact" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            <List className="h-4 w-4" aria-hidden /> Compacto
+          </button>
+          <button
+            type="button"
+            onClick={() => changeViewMode("comfort")}
+            aria-pressed={viewMode === "comfort"}
+            title="Vista cómoda (tarjetas con detalle)"
+            className={cn(
+              "inline-flex h-full items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors",
+              viewMode === "comfort" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            <LayoutGrid className="h-4 w-4" aria-hidden /> Cómodo
+          </button>
+        </div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
@@ -534,6 +575,12 @@ export function OrdersClient() {
             setTenantFilter("all");
           }}
         />
+      ) : viewMode === "compact" ? (
+        <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] divide-y divide-[var(--rule-base)]">
+          {filtered.map((o) => (
+            <OrderRowCompact key={o.id} order={o} onOpen={() => setSelected(o)} />
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {filtered.map((o) => (
@@ -716,6 +763,74 @@ function OrderCard({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
           Ver detalle <ChevronRight className="w-3.5 h-3.5" />
         </span>
       </div>
+    </button>
+  );
+}
+
+function OrderRowCompact({ order, onOpen }: { order: OrderRow; onOpen: () => void }) {
+  const meta = STATUS_META[order.status];
+  const Icon = meta.icon;
+  const itemCount = order.items.reduce((acc, it) => acc + it.quantity, 0);
+  const isPending = order.status === "pendiente";
+  const sla = isPending ? slaInfoForOrder(order.createdAt) : null;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group w-full text-left flex items-center gap-3 px-3 py-2.5 bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)] transition-colors"
+    >
+      {/* Tienda */}
+      {order.tenant.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- logos externos/blob
+        <img src={order.tenant.logoUrl} alt={order.tenant.name} className="w-8 h-8 rounded-lg object-cover border border-[var(--rule-base)] shrink-0" />
+      ) : (
+        <div className="w-8 h-8 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] shrink-0">
+          {order.tenant.name.slice(0, 2).toUpperCase()}
+        </div>
+      )}
+
+      {/* ID + tienda + cliente */}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+          {order.customer.name}
+          <span className="ml-2 font-mono text-xs font-normal text-[var(--text-tertiary)] tabular-nums">#{order.id.slice(-6)}</span>
+        </p>
+        <p className="text-xs text-[var(--text-tertiary)] truncate flex items-center gap-1">
+          <Store className="w-3 h-3 shrink-0" /> {order.tenant.name}
+          {order.customer.location && <span className="hidden sm:inline truncate">· {order.customer.location}</span>}
+        </p>
+      </div>
+
+      {/* Status + SLA */}
+      <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+          style={{ background: `color-mix(in oklch, ${meta.tone} 14%, transparent)`, color: meta.tone }}
+        >
+          <Icon className="w-3 h-3" strokeWidth={2.5} />
+          {meta.label}
+        </span>
+        {sla && (
+          <span className={cn("inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums", SLA_CLS[sla.tone])} title={`Pendiente hace ${sla.minutes} min`}>
+            <Clock className="h-2.5 w-2.5" strokeWidth={2.5} aria-hidden />{sla.label}
+          </span>
+        )}
+      </div>
+
+      {/* Items */}
+      <span className="hidden md:inline-flex items-center gap-1 text-xs text-[var(--text-tertiary)] tabular-nums shrink-0 w-14 justify-end">
+        <Package className="w-3 h-3" />{itemCount}
+      </span>
+
+      {/* Tiempo */}
+      <span className="hidden lg:inline text-xs text-[var(--text-tertiary)] tabular-nums shrink-0 w-16 text-right">{timeAgo(order.createdAt)}</span>
+
+      {/* Total */}
+      <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums shrink-0 w-20 text-right">
+        S/{Number(order.total).toFixed(2)}
+      </span>
+
+      <ChevronRight className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent)] shrink-0" />
     </button>
   );
 }
