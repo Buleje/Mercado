@@ -30,13 +30,26 @@ export const loginPasswordSchema = z
  * NO romper este check sin coordinarlo con un script de migración
  * que fuerce rotación a los usuarios legacy.
  */
+// Blocklist de contraseñas comunes (las más usadas en brechas reales). Se
+// compara en minúsculas y sin espacios. Brandon 2026-06-14 (ADR-133).
+const COMMON_PASSWORDS = new Set([
+  "12345678", "123456789", "1234567890", "password", "password1", "contraseña",
+  "qwerty", "qwertyuiop", "111111", "000000", "abc123", "iloveyou", "admin123",
+  "administrador", "buleje", "buleje123", "bodega", "bodega123", "letmein",
+  "welcome", "bienvenido", "1q2w3e4r", "1qaz2wsx", "passw0rd", "p@ssword",
+]);
+
 export const newPasswordSchema = z
   .string()
-  .min(8, "Mínimo 8 caracteres")
+  .min(10, "Mínimo 10 caracteres")
   .max(128, "Máximo 128 caracteres")
   .refine(
     (v) => /[A-Za-zÁ-ÿ]/.test(v) && /[\d\W_]/.test(v),
     "Debe incluir al menos una letra y un número o símbolo",
+  )
+  .refine(
+    (v) => !COMMON_PASSWORDS.has(v.toLowerCase().replace(/\s/g, "")),
+    "Esa contraseña es demasiado común — elegí una más segura",
   );
 
 /**

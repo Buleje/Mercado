@@ -168,6 +168,7 @@ export default function AdminLoginPage() {
           onboardingPending?: boolean;
           tenantId?: string;
           tenantSlug?: string;
+          mustChangePassword?: boolean;
         };
 
         // ── Credencial en varias tiendas: mostrar selector ──────────────
@@ -195,6 +196,11 @@ export default function AdminLoginPage() {
         if (data.tenantSlug) {
           localStorage.setItem("active-tenant-slug", data.tenantSlug);
           sessionStorage.setItem("active-tenant-slug", data.tenantSlug);
+        }
+        // ── Contraseña temporal (reset del superadmin): forzar cambio (ADR-133) ──
+        if (data.mustChangePassword) {
+          router.push("/admin/cambiar-clave");
+          return;
         }
         if (data.onboardingPending && !fromRef.current) {
           router.push("/onboarding");

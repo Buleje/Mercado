@@ -6,7 +6,7 @@ import {
   X, Building2, ExternalLink, Loader2,
   Copy, Globe, RotateCcw, KeyRound, ShoppingBag,
   Eye, EyeOff, AlertTriangle, Pencil, Check, Clock,
-  Activity, StickyNote, Send, MessageSquare,
+  Activity, StickyNote, Send, MessageSquare, ShieldCheck, Lock,
 } from "@buleje/design-system/icons";
 import Link from "next/link";
 import type { TenantRow } from "@/lib/superadmin-types";
@@ -20,9 +20,10 @@ interface TenantDetailModalProps {
   onUpdated?: () => void;
 }
 
-type Tab = "resumen" | "uso" | "facturacion" | "actividad" | "notas";
+type Tab = "resumen" | "uso" | "facturacion" | "seguridad" | "actividad" | "notas";
 type ActivityRow = { id: string; action: string; detail?: string | null; user?: string | null; createdAt: string };
 type NoteRow = { id: string; body: string; author: string; createdAt: string };
+type SecurityInfo = { username: string | null; twoFactorEnabled: boolean; lastLoginAt: string | null; lastLoginDetail: string | null };
 
 function fmtD(d: string | null) {
   return d ? new Date(d).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -40,6 +41,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
   const [showPass, setShowPass] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
+  const [resetUsername, setResetUsername] = useState<string | null>(null);
   const [credCopied, setCredCopied] = useState(false);
   const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
   const storeInfo = t.stores?.[0];
@@ -57,6 +59,34 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
   const [notes, setNotes] = useState<NoteRow[] | null>(null);
   const [noteInput, setNoteInput] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  // ── Seguridad ──
+  const [security, setSecurity] = useState<SecurityInfo | null>(null);
+  const [secBusy, setSecBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tab !== "seguridad" || security !== null) return;
+    fetch(`/api/superadmin/tenants/${t.slug}/security`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setSecurity(d ?? { username: null, twoFactorEnabled: false, lastLoginAt: null, lastLoginDetail: null }))
+      .catch(() => setSecurity({ username: null, twoFactorEnabled: false, lastLoginAt: null, lastLoginDetail: null }));
+  }, [tab, security, t.slug]);
+
+  const secAction = async (action: "force-change" | "reset-2fa", confirmMsg: string) => {
+    if (!window.confirm(confirmMsg)) return;
+    const totpCode = window.prompt("Código TOTP (6 dígitos) para confirmar:");
+    if (!totpCode || !/^\d{6}$/.test(totpCode)) return;
+    setSecBusy(action);
+    try {
+      const res = await fetch(`/api/superadmin/tenants/${t.slug}/security`, {
+        method: "POST", credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ action, totpCode }),
+      });
+      if (res.ok) {
+        if (action === "reset-2fa") setSecurity((s) => (s ? { ...s, twoFactorEnabled: false } : s));
+      }
+    } finally { setSecBusy(null); }
+  };
 
   useEffect(() => {
     if (tab !== "actividad" || activity !== null) return;
@@ -122,8 +152,8 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ totpCode }),
       });
-      const data = await res.json() as { tempPassword?: string; error?: string };
-      if (res.ok && data.tempPassword) setResetResult(data.tempPassword);
+      const data = await res.json() as { tempPassword?: string; username?: string; error?: string };
+      if (res.ok && data.tempPassword) { setResetResult(data.tempPassword); setResetUsername(data.username ?? null); }
       else setResetResult(res.ok ? null : `Error: ${data.error ?? "No se pudo resetear"}`);
     } catch { setResetResult("Error de red."); }
     finally { setResetLoading(false); }
@@ -143,6 +173,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
     { id: "resumen", label: "Resumen", icon: Building2 },
     { id: "uso", label: "Uso", icon: KeyRound },
     { id: "facturacion", label: "Facturación", icon: ShoppingBag },
+    { id: "seguridad", label: "Seguridad", icon: ShieldCheck },
     { id: "actividad", label: "Actividad", icon: Activity },
     { id: "notas", label: "Notas", icon: StickyNote },
   ];
@@ -264,6 +295,21 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                           <button type="button" onClick={handleCopyTempPassword} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[var(--data-warning-500)] text-white text-xs font-extrabold"><Copy className="w-3 h-3" /> {tempPasswordCopied ? "Copiado" : "Copiar"}</button>
                         </div>
                       )}
+                      {!resetResult.startsWith("Error") && t.ownerPhone && (
+                        <a
+                          href={`https://wa.me/${t.ownerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                            `Hola ${t.name} 👋 Soy del equipo de Buleje. Reseteamos tu acceso al panel.\n\nUsuario: ${resetUsername ?? "admin"}\nContraseña temporal: ${resetResult}\n\nEntrá a ${typeof window !== "undefined" ? window.location.origin : "https://www.buleje.pe"}/admin/login y al ingresar te pedirá crear tu propia contraseña. Esta temporal es de un solo uso.`,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-[var(--data-success-600,#16a34a)] px-3 py-1.5 text-xs font-extrabold text-white hover:opacity-90"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" /> Enviar al dueño por WhatsApp
+                        </a>
+                      )}
+                      {!resetResult.startsWith("Error") && !t.ownerPhone && (
+                        <p className="text-[10px] text-[var(--text-tertiary)]">Sin teléfono registrado — copiá la clave y entregala por un canal seguro.</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -324,6 +370,39 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                 </div>
               )}
             </div>
+          )}
+
+          {tab === "seguridad" && (
+            security === null ? (
+              <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Cargando…</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-[var(--rule-base)] p-3">
+                    <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Doble factor (2FA)</p>
+                    <p className={`mt-1 text-sm font-bold ${security.twoFactorEnabled ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#d97706)]"}`}>
+                      {security.twoFactorEnabled ? "Activo ✓" : "No configurado"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[var(--rule-base)] p-3">
+                    <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Último ingreso</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{security.lastLoginAt ? fmtDT(security.lastLoginAt) : "—"}</p>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-[var(--surface-sunken)]/50 px-3 py-2 text-xs text-[var(--text-secondary)]">
+                  Admin principal: <strong>{security.username ?? "—"}</strong>
+                </div>
+                <div className="space-y-2">
+                  <button onClick={() => secAction("force-change", "¿Forzar a este negocio a cambiar su contraseña en el próximo login?")} disabled={!!secBusy} className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--data-warning-500)] text-[var(--data-warning-600,#d97706)] h-10 text-sm font-bold hover:bg-[var(--data-warning-50,#fffbeb)] disabled:opacity-50">
+                    {secBusy === "force-change" ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Forzar cambio de contraseña
+                  </button>
+                  <button onClick={() => secAction("reset-2fa", "¿Resetear el 2FA? El dueño deberá volver a configurarlo.")} disabled={!!secBusy || !security.twoFactorEnabled} className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] h-10 text-sm font-bold hover:bg-[var(--surface-sunken)] disabled:opacity-40">
+                    {secBusy === "reset-2fa" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Resetear 2FA
+                  </button>
+                </div>
+                <p className="text-[10px] text-[var(--text-tertiary)]">Estas acciones requieren tu código TOTP y quedan en el audit log.</p>
+              </div>
+            )
           )}
 
           {tab === "actividad" && (

@@ -1238,6 +1238,9 @@ model AdminUser {
   username              String
   tenantId              String
   passwordHash          String
+  // Seguridad (ADR-133): tras un reset del superadmin, fuerza al usuario a
+  // setear su propia clave en el primer login. La temporal es de un solo uso.
+  mustChangePassword    Boolean   @default(false)
   role                  String    @default("admin") // admin, cajero, almacenero
   name                  String    @default("")
   active                Boolean   @default(true)

@@ -50,12 +50,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "incorrect current password" }, { status: 403 });
     }
 
-    // Hash and save new password
+    // Hash and save new password + limpiar el flag de cambio forzado (ADR-133).
+    // Raw SQL para mustChangePassword (campo nuevo, evita depender de regenerar
+    // el cliente Prisma en runtime).
     const newHash = await hash(newPassword, 12);
-    await prisma.adminUser.update({
-      where: { tenantId_username: { tenantId: payload.tenantId, username: payload.username } },
-      data: { passwordHash: newHash },
-    });
+    await prisma.$executeRawUnsafe(
+      `UPDATE "AdminUser" SET "passwordHash" = $1, "mustChangePassword" = false, "updatedAt" = NOW()
+       WHERE "tenantId" = $2 AND username = $3`,
+      newHash,
+      payload.tenantId,
+      payload.username,
+    );
 
     // COMPLIANCE 2026-05-06 (audit Ley 29733 #5): trazar cambio de password.
     // Acción crítica de seguridad sin trazabilidad antes — Art. 18 lo requiere.

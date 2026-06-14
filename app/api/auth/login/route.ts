@@ -238,7 +238,20 @@ export async function POST(req: Request) {
       if (t) tenantSlug = t.slug;
     } catch { /* fallback: usar matchedTenantId como slug */ }
 
-    const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId: matchedTenantId, tenantSlug });
+    // ¿Contraseña temporal del superadmin? Forzar cambio en este login (ADR-133).
+    // Raw SQL: mustChangePassword es campo nuevo (evita depender del cliente
+    // Prisma regenerado en runtime).
+    let mustChangePassword = false;
+    try {
+      const rows = await prisma.$queryRawUnsafe<{ mustChangePassword: boolean }[]>(
+        `SELECT "mustChangePassword" FROM "AdminUser" WHERE "tenantId" = $1 AND username = $2 LIMIT 1`,
+        matchedTenantId,
+        u.username,
+      );
+      mustChangePassword = rows[0]?.mustChangePassword ?? false;
+    } catch { /* si falla, no bloquear el login */ }
+
+    const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId: matchedTenantId, tenantSlug, mustChangePassword });
     response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
     response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
     response.cookies.set("active-tenant", matchedTenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
