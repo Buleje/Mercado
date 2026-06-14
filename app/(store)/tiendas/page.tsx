@@ -7,6 +7,8 @@ import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import { BRAND_GEO } from "@/lib/geo";
+import { getBannersForSlot } from "@/lib/promo-banners";
+import HomeHeroBanner from "@/components/marketplace/home/HomeHeroBanner";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -120,6 +122,14 @@ export const metadata: Metadata = {
  */
 export default async function TiendasPage() {
   const initialStores = await getInitialMarketplaceStores();
+
+  // Banner promocional al tope, IGUAL que la home (mismo slot "tiendas-hero" →
+  // banners idénticos). Resuelto en el server (getBannersForSlot es síncrono)
+  // y pasado como initialBanners → se pinta en el primer byte, sin cascada
+  // hidratar→fetch→pintar. Brandon 2026-06-13: re-añadido a /tiendas.
+  const heroBanners = getBannersForSlot("tiendas-hero")
+    .filter((b) => b.active)
+    .sort((a, b) => a.order - b.order);
 
   // Productos para las cards Premium (beneficio superadmin): solo se necesitan
   // para las tiendas con displayTier "premium". Reusa el helper que ya embebe
@@ -317,6 +327,8 @@ export default async function TiendasPage() {
       <h1 className="sr-only">
         {`Tiendas y bodegas en ${BRAND_GEO.city} con delivery — Buleje Marketplace`}
       </h1>
+      {/* Banner promocional full-width, igual que el inicio (slot tiendas-hero) */}
+      <HomeHeroBanner initialBanners={heroBanners} />
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
 
       {/* Trabajá con nosotros — reclutamiento (tiendas/comercios/repartidores),

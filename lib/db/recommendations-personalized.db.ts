@@ -29,6 +29,17 @@ export type RecommendationParams = {
   limit?: number;
 };
 
+/**
+ * Señales de sesión de un visitante ANÓNIMO (sin login), recolectadas en
+ * localStorage del browser (productos vistos + categorías clickeadas + zona).
+ */
+export type RecommendationSignals = {
+  viewedProductIds?: number[];
+  viewedCategories?: string[];
+  zone?: string;
+  limit?: number;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Normaliza hora a entero 0-23. */
@@ -221,6 +232,140 @@ export const RecommendationsPersonalizedDB = {
 
       if (recentProductIds.has(pid)) {
         score -= 5; // anti-repetición
+      }
+
+      const reason = reasons.length > 0 ? reasons[0] : "Recomendado para ti";
+
+      return {
+        productId: pid,
+        productName: c.product.name,
+        category: c.product.category,
+        image: c.product.image,
+        unit: c.product.unit,
+        stock: c.product.stock,
+        storeId: c.store.id,
+        storeName: c.store.name,
+        storeSlug: c.store.slug,
+        // TD-018: retailPrice es Decimal
+        retailPrice: toNumOrZero(c.retailPrice),
+        avgRating: Math.round(avgRating * 10) / 10,
+        score,
+        reason,
+        isSponsored: false,
+        sponsoredBoostId: null,
+      };
+    });
+
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  },
+
+  /**
+   * Recomendaciones para VISITANTES ANÓNIMOS (sin login) basadas en señales
+   * de sesión recolectadas en el browser (localStorage): productos vistos,
+   * categorías clickeadas y zona. Mismo patrón de candidatos/ratings que
+   * forMe(), pero el scoring usa solo señales de sesión (no historial DB).
+   *
+   * Si no llega ninguna señal → cae a coldStart() (más vendidos del mes).
+   */
+  async fromSignals(
+    tenantId: string,
+    signals: RecommendationSignals,
+  ): Promise<DbRecommendedProduct[]> {
+    const { viewedProductIds = [], viewedCategories = [], zone, limit = 12 } = signals;
+
+    const hasSignals =
+      viewedProductIds.length > 0 || viewedCategories.length > 0 || Boolean(zone);
+    if (!hasSignals) {
+      return RecommendationsPersonalizedDB.coldStart(tenantId, { limit });
+    }
+
+    // 1. Candidatos: productos activos de tiendas publicadas del tenant
+    const candidates = await prisma.storeProduct.findMany({
+      where: {
+        isActive: true,
+        store: {
+          tenantId,
+          isPublished: true,
+        },
+      },
+      select: {
+        id: true,
+        retailPrice: true,
+        storeId: true,
+        productId: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            image: true,
+            unit: true,
+            stock: true,
+          },
+        },
+        store: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            zone: true,
+          },
+        },
+      },
+      take: 300,
+    });
+
+    if (candidates.length === 0) {
+      return [];
+    }
+
+    // 2. Ratings en batch
+    const productIds = candidates.map((c) => c.productId);
+    const ratingsAgg = await prisma.review.groupBy({
+      by: ["productId"],
+      where: {
+        productId: { in: productIds },
+        tenantId,
+        status: "approved",
+        deletedAt: null,
+      },
+      _avg: { rating: true },
+    });
+    const ratingMap = new Map(ratingsAgg.map((r) => [r.productId, r._avg.rating ?? 0]));
+
+    // 3. Señales normalizadas
+    const viewedCatSet = new Set(viewedCategories.map(normalize));
+    const viewedProductSet = new Set(viewedProductIds);
+    const normZone = zone ? normalize(zone) : null;
+
+    // 4. Scoring
+    const scored = candidates.map((c) => {
+      const pid = c.productId;
+      const cat = normalize(c.product.category);
+      const avgRating = ratingMap.get(pid) ?? 0;
+      const storeZone = c.store.zone;
+
+      let score = 0;
+      const reasons: string[] = [];
+
+      if (viewedCatSet.has(cat)) {
+        score += 3;
+        reasons.push(`Porque viste ${c.product.category}`);
+      }
+
+      if (normZone && storeZone && normalize(storeZone).includes(normZone)) {
+        score += 1;
+        reasons.push("Popular en tu zona");
+      }
+
+      if (avgRating >= 4) {
+        score += 0.5;
+      }
+
+      if (viewedProductSet.has(pid)) {
+        score -= 5; // anti-repetición de lo ya visto
       }
 
       const reason = reasons.length > 0 ? reasons[0] : "Recomendado para ti";

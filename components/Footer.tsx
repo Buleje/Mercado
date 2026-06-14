@@ -137,11 +137,13 @@ function LinkGroup({
   accent: "amber" | "emerald" | "sky" | "rose";
 }) {
   const [open, setOpen] = useState(false);
+  // Minimalista: un solo acento de marca (turquesa) para los 4 grupos.
+  // Antes 4 colores (amber/emerald/sky/rose) → ruido visual incoherente.
   const accentColor = {
-    amber: "text-amber-300",
-    emerald: "text-emerald-300",
-    sky: "text-sky-300",
-    rose: "text-rose-300",
+    amber: "text-teal-300",
+    emerald: "text-teal-300",
+    sky: "text-teal-300",
+    rose: "text-teal-300",
   }[accent];
 
   return (
@@ -164,7 +166,7 @@ function LinkGroup({
           aria-hidden
         />
       </button>
-      <ul className={`space-y-3 pb-4 lg:pb-0 ${open ? "block" : "hidden lg:block"}`}>
+      <ul className={`space-y-2.5 pb-3 lg:pb-0 ${open ? "block" : "hidden lg:block"}`}>
         {links.map((link) => (
           <li key={link.label}>
             <a
@@ -431,7 +433,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                 forceDark
                 size={46}
                 textSize={28}
-                className="text-white drop-shadow-[0_0_28px_rgba(20, 194, 194,0.28)]"
+                className="text-white drop-shadow-[0_0_18px_rgba(0,160,160,0.22)]"
               />
               <p className="mt-3.5 max-w-xl text-sm sm:text-base leading-snug font-medium">
                 <span className="text-teal-300 font-extrabold">Tu mercado desde la selva amazónica.</span>{" "}
@@ -478,10 +480,10 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
               })()}
               <div className="flex items-center gap-2.5 justify-center lg:justify-end">
                 <span className="text-sm font-semibold text-white/50">O síguenos</span>
-                <a href={fbUrl || hp.footerFacebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors">
+                <a href={fbUrl || hp.footerFacebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors">
                   <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
-                <a href={igUrl || hp.footerInstagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/12 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors">
+                <a href={igUrl || hp.footerInstagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors">
                   <Instagram className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
               </div>
@@ -513,31 +515,31 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
       {!isLandingMode && !isTiendasOnlyMode && (
       <>
         {/* ── HERO BAND v2: 1 banda corta — logo + tagline + CTA WhatsApp ── */}
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-8 sm:pb-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 lg:gap-12 items-center">
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6 sm:pb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-5 lg:gap-10 items-center">
             {/* IZQ: marca + tagline amazónico + chips */}
             <div>
               <BulejeWordmark
                 size={44}
                 strokeWidth={1.75}
                 textSize={26}
-                className="text-white drop-shadow-[0_0_24px_rgba(252,211,77,0.15)]"
+                className="text-white drop-shadow-[0_0_18px_rgba(0,160,160,0.22)]"
               />
-              <p className="mt-4 text-base sm:text-lg leading-snug font-medium max-w-xl">
-                <span className="text-amber-300 font-extrabold">Tu mercado desde la selva amazónica.</span>{" "}
+              <p className="mt-3 text-base leading-snug font-medium max-w-xl">
+                <span className="text-teal-300 font-extrabold">Tu mercado desde la selva amazónica.</span>{" "}
                 <span className="text-white/80">Bodegas, restaurantes y emprendedores de {platformCity}, en un solo lugar.</span>
               </p>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/35 px-3 py-1.5 text-xs font-extrabold text-emerald-200">
-                  <MapPin className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-500/12 border border-teal-400/25 px-3 py-1 text-xs font-extrabold text-teal-200">
+                  <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                   {platformCity}, {platformRegion}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 border border-amber-300/35 px-3 py-1.5 text-xs font-extrabold text-amber-200">
-                  <Star className="h-4 w-4 fill-current" strokeWidth={0} aria-hidden />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] border border-white/10 px-3 py-1 text-xs font-extrabold text-white/75">
+                  <Star className="h-3.5 w-3.5 text-teal-300 fill-current" strokeWidth={0} aria-hidden />
                   <span className="tabular-nums">{hp.footerRating}</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] border border-white/15 px-3 py-1.5 text-xs font-extrabold text-white/85">
-                  <Clock className="h-4 w-4 text-white/70" strokeWidth={2.5} aria-hidden />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] border border-white/10 px-3 py-1 text-xs font-extrabold text-white/75">
+                  <Clock className="h-3.5 w-3.5 text-white/55" strokeWidth={2.5} aria-hidden />
                   <span className="tabular-nums">{hoursLabel}</span>
                 </span>
               </div>
@@ -558,7 +560,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                     href={`https://wa.me/${rawPhone}?text=${text}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-3 h-14 px-6 w-full lg:w-auto rounded-2xl bg-emerald-500 text-white text-base font-extrabold hover:bg-emerald-400 transition-all shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)] hover:shadow-[0_8px_40px_-4px_rgba(16,185,129,0.6)]"
+                    className="group inline-flex items-center justify-center gap-2.5 h-12 px-5 w-full lg:w-auto rounded-xl bg-emerald-500 text-white text-base font-extrabold hover:bg-emerald-400 transition-all shadow-[0_8px_28px_-10px_rgba(16,185,129,0.45)]"
                   >
                     <WhatsAppIcon className="h-6 w-6" />
                     Haz tu pedido por WhatsApp
@@ -573,7 +575,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
                 >
                   <Facebook className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
@@ -582,14 +584,14 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
                 >
                   <Instagram className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
                 <a
                   href={`tel:${(storeTheme?.phone || platformPhone || "+51929340532").replace(/\s/g, "")}`}
                   aria-label="Llamar"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200 transition-colors"
                 >
                   <Phone className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </a>
@@ -604,7 +606,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
         </div>
 
         {/* ── LINKS: 4 grupos con acordeón mobile (cerrados) + abiertos desktop ── */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 pb-6 lg:py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-3 pb-5 lg:py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 lg:gap-10">
             <LinkGroup title={t("footer.marketplace")} icon={Store} links={marketplaceLinks} accent="amber" />
             <LinkGroup title={t("footer.myAccount")} icon={UserCircle2} links={cuentaLinks} accent="emerald" />
@@ -612,7 +614,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
             <LinkGroup title={t("footer.help")} icon={LifeBuoy} links={helpLinks} accent="rose" />
           </div>
           {/* Categorías como chips horizontales debajo de los 4 grupos */}
-          <div className="mt-6 lg:mt-10 pt-6 lg:pt-8 border-t border-white/10">
+          <div className="mt-5 lg:mt-8 pt-5 lg:pt-6 border-t border-white/10">
             <h4 className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-white/60 mb-3 inline-flex items-center gap-2">
               <Leaf className="h-4 w-4 text-emerald-300" strokeWidth={2.5} aria-hidden />
               Categorías populares
@@ -641,7 +643,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
           (~52px pegado encima del BottomNav) también tapa contenido — sumamos
           su altura solo en ese caso. Sin cart: 72px. Con cart: 130px. */}
       <div className={`border-t border-teal-400/15 bg-black/50 backdrop-blur-sm ${hasCart ? "pb-[calc(130px+env(safe-area-inset-bottom))]" : "pb-[calc(72px+env(safe-area-inset-bottom))]"} sm:pb-0`}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
             {/* Trust + payment chips — minimalista: pills neutras + ícono teal
                 (mono + 1 acento de marca). Sin 4 colores distintos. */}
