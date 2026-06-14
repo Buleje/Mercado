@@ -6,6 +6,7 @@ import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import MarketplaceEmptyState from "@/components/marketplace/MarketplaceEmptyState";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import DiscoveryBox from "@/components/marketplace/home/DiscoveryBox";
+import ComboMiniCard from "@/components/marketplace/home/ComboMiniCard";
 import { Flame } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { BRAND_GEO } from "@/lib/geo";
@@ -116,14 +117,13 @@ export default function MarketplaceTopToday({ boxed = false }: { boxed?: boolean
   }
   if (items !== null && items.length === 0) return null;
 
-  // Cards del ranking (compartidas entre la caja y la sección full-width).
+  // Cards del ranking en la CAJA — ComboMiniCard con nº de ranking + vendidos.
   const rankCards = (items ?? []).map((p, idx) => (
-    <UnifiedProductCard
+    <ComboMiniCard
       key={p.storeProductId}
       index={idx}
-      variant="top"
       rank={idx + 1}
-      layout="compact"
+      soldUnits={p.soldUnits}
       href={`/marketplace/${p.store.slug}?p=${p.productId}`}
       product={{
         id: p.productId,
@@ -136,10 +136,6 @@ export default function MarketplaceTopToday({ boxed = false }: { boxed?: boolean
         storeSlug: p.store.slug,
         storeLogo: p.store.logo,
         storeProductId: p.storeProductId,
-        description:
-          p.soldUnits != null && p.soldUnits > 0
-            ? `${p.soldUnits} vendidos · ranking ${idx + 1}`
-            : `Top ${idx + 1} en ${BRAND_GEO.city}`,
         storeRating: p.avgRating,
       }}
     />

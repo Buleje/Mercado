@@ -188,7 +188,7 @@ export default function ReviewCard({ review, onHelpful }: ReviewCardProps) {
     .toUpperCase();
 
   return (
-    <article className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
+    <article className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <header className="flex items-start gap-3">
         {review.userAvatar ? (
           <Image
@@ -199,17 +199,17 @@ export default function ReviewCard({ review, onHelpful }: ReviewCardProps) {
             className="h-10 w-10 rounded-full object-cover"
           />
         ) : (
-          <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
+          <div className="h-10 w-10 shrink-0 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] flex items-center justify-center text-sm font-semibold">
             {initials || <User className="h-4 w-4" />}
           </div>
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+            <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
               {review.userName}
             </span>
             {review.verifiedPurchase && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 text-success px-2 py-0.5 text-xs font-semibold">
+              <span className="inline-flex items-center gap-1 rounded-sm border border-[var(--rule-base)] text-[var(--data-success-600)] px-2 py-0.5 text-xs font-medium">
                 <ShieldCheck className="h-3 w-3" />
                 Compra verificada
               </span>
@@ -225,8 +225,8 @@ export default function ReviewCard({ review, onHelpful }: ReviewCardProps) {
       </header>
 
       <div className="mt-3">
-        <h4 className="text-sm font-bold text-gray-900 dark:text-white">{review.title}</h4>
-        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+        <h4 className="text-sm font-semibold text-[var(--text-primary)]">{review.title}</h4>
+        <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">
           {review.body}
         </p>
       </div>
@@ -239,7 +239,7 @@ export default function ReviewCard({ review, onHelpful }: ReviewCardProps) {
               type="button"
               onClick={() => setLightboxIndex(i)}
               aria-label={`Ampliar foto ${i + 1} de ${review.photos.length} de la reseña de ${review.userName}`}
-              className="group relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)] dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-[var(--accent)]/50 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50 focus-visible:outline-none"
+              className="group relative h-20 w-20 shrink-0 rounded-sm overflow-hidden bg-[var(--surface-sunken)] dark:bg-gray-800 border border-[var(--rule-soft)] hover:border-[var(--accent)]/50 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent)]/50 focus-visible:outline-none"
             >
               <Image
                 src={url}
@@ -272,10 +272,10 @@ export default function ReviewCard({ review, onHelpful }: ReviewCardProps) {
           onClick={handleVote}
           disabled={voted || voting}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
+            "inline-flex items-center gap-1.5 rounded-sm border px-3 py-1.5 text-xs font-medium transition-colors",
             voted
-              ? "border-primary bg-primary/5 dark:bg-primary/10 text-primary cursor-default"
-              : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-900 dark:hover:text-white",
+              ? "border-[var(--accent)] text-[var(--accent)] cursor-default"
+              : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
           )}
         >
           <ThumbsUp className={cn("h-3.5 w-3.5", voted && "fill-current")} />

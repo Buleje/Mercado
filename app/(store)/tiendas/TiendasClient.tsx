@@ -57,7 +57,7 @@ const ExplorarTracker = dynamic(
 // dos veces (mobile + desktop). Lazy-load del componente; el type sigue siendo
 // import estático para no romper el tipado de DEFAULT_FILTERS.
 import type { MarketplaceFiltersState } from "@/components/marketplace/MarketplaceFilters";
-import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal, Clock, List, Map as MapIcon, ArrowDownUp } from "@buleje/design-system/icons";
+import { Boxes, Package, Sparkles, Leaf, MoreHorizontal, Star, SlidersHorizontal, Clock, List, Map as MapIcon } from "@buleje/design-system/icons";
 // CupSoda no esta en el DS — import directo desde lucide (excepcion documentada).
 import { CupSoda } from "lucide-react";
 // Brandon 2026-05-21 v3: removido import default de QuickFilterChips (chips
@@ -1073,8 +1073,8 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
               filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
           <div className="hidden lg:flex items-center justify-between gap-2 pb-3 border-b border-[var(--rule-base)]">
             <div className="flex min-w-0 items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={2.25} aria-hidden />
-              <h2 className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">Filtros</h2>
+              <SlidersHorizontal className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={2} aria-hidden />
+              <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">Filtros</h2>
               {activeFilterCount > 0 && (
                 <span className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
                   · {activeFilterCount}
@@ -1102,9 +1102,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             </div>
           )}
 
-          {/* Vista lista / mapa — oculto en mobile (Brandon 2026-06-07: sin modo
-              mapa en celular, siempre lista). Visible en md+. */}
-          <div className="hidden md:grid grid-cols-2 rounded-md border border-[var(--rule-base)] overflow-hidden">
+          {/* Vista lista / mapa — solo TABLET (md..lg). En desktop (lg+) vive en
+              la toolbar arriba del grid; en mobile siempre lista. */}
+          <div className="hidden md:grid lg:hidden grid-cols-2 rounded-sm border border-[var(--rule-base)] overflow-hidden">
             <button
               type="button"
               onClick={() => setViewMode("list")}
@@ -1149,9 +1149,8 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                  minimalista, sin filtros de categoría. Visible en tablet/desktop. */
               className="max-md:hidden lg:pb-4 lg:mb-1 lg:border-b lg:border-[var(--rule-soft)]"
             >
-              <p className="mb-2.5 flex items-center gap-2 text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                <Sparkles className="h-5 w-5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
-                Lo que se te antoja
+              <p className="mb-2.5 text-sm font-semibold text-[var(--text-primary)]">
+                Categoría
               </p>
               {/* Mobile/tablet: tira horizontal con cards icono + label */}
               <div
@@ -1253,22 +1252,13 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
             </div>
           </div>
 
-          {/* ── DESKTOP: secciones limpias apiladas (sin drawer) ── */}
+          {/* ── DESKTOP: filtros reales apilados, lenguaje único (Brandon
+              2026-06-14). "Ordenar" se movió a la toolbar de arriba; títulos
+              normales (no eyebrows tipo admin), consistente con el resto. ── */}
           <div className="hidden lg:flex lg:flex-col lg:gap-4">
-            {/* ORDENAR */}
-            <div>
-              <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                <ArrowDownUp className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
-                Ordenar
-              </p>
-              {/* Override minimalista (Brandon 2026-06-10): radio sutil + hover
-                  sobrio en vez del pill redondeado/accent-soft del default. */}
-              <StoresSortSelector value={sortKey} onChange={handleSortChange} className="w-full justify-between !rounded-md hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40" />
-            </div>
             {/* CALIFICACIÓN */}
-            <div className="border-t border-[var(--rule-soft)] pt-3">
-              <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                <Star className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+            <div className="border-t border-[var(--rule-soft)] pt-4">
+              <p className="mb-2 text-sm font-semibold text-[var(--text-primary)]">
                 Calificación
               </p>
               <QuickFilterToggle
@@ -1280,11 +1270,9 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                 fillIconWhenActive
               />
             </div>
-            {/* DISPONIBILIDAD — toggle "Abierto ahora" (audit #11). Filtro ya
-                cableado en MarketplaceStoresView; acá solo el control desktop. */}
-            <div className="border-t border-[var(--rule-soft)] pt-3">
-              <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                <Clock className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+            {/* DISPONIBILIDAD */}
+            <div className="border-t border-[var(--rule-soft)] pt-4">
+              <p className="mb-2 text-sm font-semibold text-[var(--text-primary)]">
                 Disponibilidad
               </p>
               <QuickFilterToggle
@@ -1311,8 +1299,7 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
           {zonesForFilter.length > 1 && (
           <div className="hidden sm:block lg:border-t lg:border-[var(--rule-soft)] lg:pt-3">
             {/* Label solo visible en desktop sidebar */}
-            <p className="mb-2 hidden lg:flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              <MapPin className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+            <p className="mb-2 hidden lg:block text-sm font-semibold text-[var(--text-primary)]">
               Zona
             </p>
             <button
@@ -1468,11 +1455,48 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
 
         {/* ── MAIN: Grid de tiendas ── */}
         <div className="min-w-0">
-          {/* Brandon 2026-06-07: tira de categorías de arriba REMOVIDA — ya
-               vive en la barra lateral de filtros (sin duplicar). */}
-
-          {/* Brandon 2026-06-07: eyebrow "Todas nuestras tiendas" + toggle
-              REMOVIDOS de acá — el toggle Lista/Mapa vive en el sidebar. */}
+          {/* Toolbar superior (desktop) — Brandon 2026-06-14: Ordenar + Vista
+              (Lista/Mapa) viven ARRIBA del grid, NO mezclados con los filtros.
+              El sidebar queda solo con filtros reales. */}
+          <div className="hidden lg:flex items-center justify-end gap-3 mb-4 pb-3 border-b border-[var(--rule-soft)]">
+            <StoresSortSelector
+              value={sortKey}
+              onChange={handleSortChange}
+              className="!rounded-sm hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40"
+            />
+            <div className="grid grid-cols-2 rounded-sm border border-[var(--rule-base)] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                aria-pressed={viewMode === "list"}
+                aria-label="Ver como lista"
+                className={cn(
+                  "inline-flex h-9 items-center justify-center gap-1.5 px-3 text-sm font-medium transition-colors",
+                  viewMode === "list"
+                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <List className="h-4 w-4" strokeWidth={2} aria-hidden />
+                Lista
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("map")}
+                aria-pressed={viewMode === "map"}
+                aria-label="Ver en el mapa"
+                className={cn(
+                  "inline-flex h-9 items-center justify-center gap-1.5 border-l border-[var(--rule-base)] px-3 text-sm font-medium transition-colors",
+                  viewMode === "map"
+                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <MapIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                Mapa
+              </button>
+            </div>
+          </div>
 
           {/* Listado o Mapa según viewMode (Brandon 2026-06-02). */}
           {viewMode === "map" ? (

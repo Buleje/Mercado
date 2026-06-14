@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { MockReview } from "@/lib/mocks/product-reviews.mock";
 import RatingBreakdown, { type BreakdownData } from "./RatingBreakdown";
 import ReviewCard from "./ReviewCard";
-import WriteReviewModal from "./WriteReviewModal";
+import WriteReviewForm from "./WriteReviewForm";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 type ReviewFilter = "all" | "with_photos" | "verified" | "helpful";
@@ -121,7 +121,6 @@ export default function ProductReviews({ productId, productName }: ProductReview
 
   const handleFilterFromBreakdown = useCallback((f: "verified" | "with_photos") => {
     setFilter(f);
-    // scroll al bloque de reviews
     if (typeof window !== "undefined") {
       const el = document.getElementById(`reviews-list-${productId}`);
       el?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -129,31 +128,42 @@ export default function ProductReviews({ productId, productName }: ProductReview
   }, [productId]);
 
   return (
-    <section aria-labelledby={`reviews-heading-${productId}`} className="space-y-5">
+    <section aria-labelledby={`reviews-heading-${productId}`} className="space-y-4">
       <header className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-primary" />
+          <MessageSquare className="h-5 w-5 text-[var(--text-tertiary)]" />
           <h2
             id={`reviews-heading-${productId}`}
-            className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] dark:text-white"
+            className="text-lg sm:text-xl font-semibold text-[var(--text-primary)]"
           >
             Opiniones de la comunidad
             {total > 0 && (
-              <span className="ml-2 text-sm font-normal text-[var(--text-secondary)] dark:text-gray-400">
+              <span className="ml-2 text-sm font-normal text-[var(--text-secondary)]">
                 ({total})
               </span>
             )}
           </h2>
         </div>
-        <button
-          onClick={() => setWriteOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Escribir reseña</span>
-          <span className="sm:hidden">Reseñar</span>
-        </button>
+        {!writeOpen && (
+          <button
+            onClick={() => setWriteOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-sm border border-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Escribir reseña</span>
+            <span className="sm:hidden">Reseñar</span>
+          </button>
+        )}
       </header>
+
+      {/* Formulario INLINE (sin modal, Brandon 2026-06-14) */}
+      {writeOpen && (
+        <WriteReviewForm
+          productId={productId}
+          productName={productName}
+          onCancel={() => setWriteOpen(false)}
+        />
+      )}
 
       {breakdown && (
         <RatingBreakdown data={breakdown} onFilterClick={handleFilterFromBreakdown} />
@@ -161,17 +171,17 @@ export default function ProductReviews({ productId, productName }: ProductReview
 
       {/* Filtros + Sort */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="inline-flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] dark:bg-gray-800 p-1 overflow-x-auto">
-          <Filter className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-gray-400 mx-2 shrink-0" />
+        <div className="inline-flex items-center gap-1 border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1 overflow-x-auto">
+          <Filter className="h-3.5 w-3.5 text-[var(--text-tertiary)] mx-2 shrink-0" />
           {(["all", "with_photos", "helpful", "verified"] as ReviewFilter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors",
+                "px-3 py-1.5 rounded-sm text-xs font-medium whitespace-nowrap transition-colors",
                 filter === f
-                  ? "bg-white dark:bg-gray-900 text-[var(--text-primary)] dark:text-white shadow-sm"
-                  : "text-[var(--text-secondary)] dark:text-gray-400 hover:text-[var(--text-primary)] dark:hover:text-white",
+                  ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
               )}
             >
               {FILTER_LABELS[f]}
@@ -180,7 +190,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
         </div>
 
         <div className="inline-flex items-center gap-2">
-          <ArrowDownUp className="h-3.5 w-3.5 text-[var(--text-secondary)] dark:text-gray-400" />
+          <ArrowDownUp className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
           <label htmlFor={`rv-sort-${productId}`} className="sr-only">
             Ordenar reseñas
           </label>
@@ -188,7 +198,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
             id={`rv-sort-${productId}`}
             value={sort}
             onChange={(e) => setSort(e.target.value as ReviewSort)}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1.5 text-xs font-medium text-[var(--text-primary)] dark:text-gray-300 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="rounded-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1.5 text-xs font-medium text-[var(--text-primary)] focus:ring-1 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)] outline-none"
           >
             {(Object.keys(SORT_LABELS) as ReviewSort[]).map((s) => (
               <option key={s} value={s}>
@@ -202,20 +212,20 @@ export default function ProductReviews({ productId, productName }: ProductReview
       {/* Lista */}
       <div id={`reviews-list-${productId}`}>
         {loading && reviews.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-[var(--text-secondary)] dark:text-gray-400">
+          <div className="flex items-center justify-center py-12 text-[var(--text-secondary)]">
             <Loader2 className="h-5 w-5 animate-spin mr-2" />
             <span className="text-sm">Cargando reseñas…</span>
           </div>
         ) : reviews.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 py-12 text-center">
-            <MessageSquare className="mx-auto h-8 w-8 text-[var(--text-tertiary)] dark:text-gray-600" />
-            <p className="mt-3 text-sm text-[var(--text-secondary)] dark:text-gray-400">
+          <div className="border border-dashed border-[var(--rule-base)] py-12 text-center">
+            <MessageSquare className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
+            <p className="mt-3 text-sm text-[var(--text-secondary)]">
               No hay reseñas que coincidan con este filtro.
             </p>
             {filter !== "all" && (
               <button
                 onClick={() => setFilter("all")}
-                className="mt-2 text-sm font-semibold text-primary hover:text-primary-dark"
+                className="mt-2 text-sm font-semibold text-[var(--accent)] hover:underline"
               >
                 Ver todas las reseñas
               </button>
@@ -234,7 +244,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
             <button
               onClick={handleLoadMore}
               disabled={loadingMore}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] dark:text-gray-300 hover:bg-[var(--surface-alt)] dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
             >
               {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
               Ver más reseñas
@@ -242,13 +252,6 @@ export default function ProductReviews({ productId, productName }: ProductReview
           </div>
         )}
       </div>
-
-      <WriteReviewModal
-        open={writeOpen}
-        onClose={() => setWriteOpen(false)}
-        productId={productId}
-        productName={productName}
-      />
     </section>
   );
 }

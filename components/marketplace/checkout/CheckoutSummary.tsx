@@ -15,6 +15,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ShieldCheck,
   Truck,
@@ -22,6 +23,7 @@ import {
   Smartphone,
   CheckCircle2,
   TrendingDown,
+  ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
@@ -50,7 +52,58 @@ export type SummaryProps = {
   helperText?: string;
   /** Slot para CouponInput u otro widget encima del breakdown (ronda 4). */
   beforeBreakdown?: React.ReactNode;
+  /**
+   * Estilo del resumen:
+   *  - "shop" (default): estilo AliExpress — miniaturas + breakdown
+   *    "Total de artículos / Descuento / Subtotal / Envío / Estimación total"
+   *    + bloques de confianza. Igual en carrito / datos / entrega.
+   *  - "review": versión de revisión final (confirmar) — breakdown clásico.
+   */
+  variant?: "shop" | "review";
 };
+
+/**
+ * TrustBlock — bloque "Entrega rápida" / "Seguridad & Privacidad" estilo
+ * AliExpress: título con ícono + chevron, y bullets con check verde.
+ * Definido ANTES de CheckoutSummary (no al final) para que Fast Refresh /
+ * Turbopack no lo dejen como referencia no resuelta en bundles parciales.
+ */
+function TrustBlock({
+  Icon,
+  title,
+  lines,
+}: {
+  Icon: typeof Truck;
+  title: string;
+  lines: string[];
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <Icon className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+        <span className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)]">
+          {title}
+        </span>
+        <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} aria-hidden />
+      </div>
+      <ul className="mt-1.5 space-y-1 pl-6">
+        {lines.map((l) => (
+          <li
+            key={l}
+            className="flex items-start gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug"
+          >
+            <CheckCircle2
+              className="h-3.5 w-3.5 shrink-0 mt-0.5 text-[var(--data-success-600)]"
+              strokeWidth={2.25}
+              aria-hidden
+            />
+            {l}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default function CheckoutSummary({
   ctaLabel,
@@ -64,6 +117,7 @@ export default function CheckoutSummary({
   showItems = false,
   helperText,
   beforeBreakdown,
+  variant = "shop",
 }: SummaryProps) {
   const { byStore, grandTotal, itemCount, items } = useMarketplaceCart();
   const storeIds = Object.keys(byStore);
@@ -114,6 +168,173 @@ export default function CheckoutSummary({
     "bg-[var(--accent)] text-white hover:opacity-90",
     "disabled:cursor-not-allowed disabled:opacity-60",
   );
+
+  // ── Variante "shop" (AliExpress) — carrito / datos / entrega ──────────
+  if (variant === "shop") {
+    return (
+      <aside
+        aria-label="Resumen del pedido"
+        className={cn(
+          "lg:sticky lg:top-24 lg:self-start",
+          "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-sm",
+          "p-5 space-y-4",
+        )}
+      >
+        <h2 className="text-xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+          Resumen
+        </h2>
+
+        {/* Miniaturas de los productos (estilo AliExpress) */}
+        {!isEmpty && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {items.slice(0, 6).map((it, idx) => (
+              <span
+                key={`thumb-${idx}-${it.productId}`}
+                className="relative h-11 w-11 shrink-0 rounded-lg overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
+              >
+                {it.image ? (
+                  <Image src={it.image} alt={it.name} fill sizes="44px" className="object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-sm font-black uppercase text-[var(--accent)]">
+                    {it.name.trim().charAt(0)}
+                  </span>
+                )}
+                {it.quantity > 1 && (
+                  <span className="absolute bottom-0 right-0 bg-black/65 px-1 text-[9px] font-bold text-white leading-tight tabular-nums">
+                    ×{it.quantity}
+                  </span>
+                )}
+              </span>
+            ))}
+            {items.length > 6 && (
+              <span className="shrink-0 text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">
+                +{items.length - 6}
+              </span>
+            )}
+          </div>
+        )}
+
+        {!isEmpty && beforeBreakdown && <div>{beforeBreakdown}</div>}
+
+        {!isEmpty ? (
+          <dl className="space-y-2.5 text-[length:var(--ts-sm)] border-t border-[var(--rule-soft)] pt-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-[var(--text-secondary)]">Total de artículos</dt>
+              <dd className="tabular-nums text-[var(--text-secondary)]">
+                {offerSavingsCalc > 0 && (
+                  <span className="line-through text-[var(--text-tertiary)] mr-1.5">
+                    {fmt(subtotal + offerSavingsCalc)}
+                  </span>
+                )}
+                {fmt(subtotal)}
+              </dd>
+            </div>
+            {totalSavings > 0.005 && (
+              <div className="flex items-baseline justify-between gap-3 text-[var(--data-error-600)]">
+                <dt>Descuento de artículos</dt>
+                <dd className="tabular-nums font-semibold">−{fmt(totalSavings)}</dd>
+              </div>
+            )}
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="font-semibold text-[var(--text-primary)]">Subtotal</dt>
+              <dd className="font-bold tabular-nums text-[var(--text-primary)]">
+                {fmt(Math.max(0, subtotal - couponDiscount - loyaltyDiscount))}
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
+                <Truck className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                Envío
+              </dt>
+              <dd>
+                {shipping === 0 ? (
+                  <span className="font-bold uppercase text-[length:var(--ts-xs)] tracking-[var(--ls-wider)] text-[var(--accent)]">
+                    Gratis
+                  </span>
+                ) : (
+                  <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmt(shipping)}</span>
+                )}
+              </dd>
+            </div>
+            {remainingForFree > 0 && subtotal > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-snug">
+                  Agregá{" "}
+                  <span className="font-bold tabular-nums text-[var(--text-primary)]">
+                    {fmt(remainingForFree)}
+                  </span>{" "}
+                  más para <span className="font-semibold text-[var(--accent)]">envío gratis</span>
+                </p>
+                <div
+                  aria-hidden
+                  className="h-1.5 w-full rounded-full bg-[var(--surface-sunken)] overflow-hidden"
+                >
+                  <div
+                    className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500 ease-out"
+                    style={{
+                      width: `${Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </dl>
+        ) : (
+          <p className="text-sm text-[var(--text-tertiary)]">No hay productos en tu carrito.</p>
+        )}
+
+        {/* Estimación total */}
+        {!isEmpty && (
+          <div className="flex items-end justify-between gap-3 border-t border-[var(--rule-soft)] pt-4">
+            <span className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)]">
+              Estimación total
+            </span>
+            <span className="text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
+              {fmt(total)}
+            </span>
+          </div>
+        )}
+
+        {/* CTA */}
+        {!isEmpty && ctaHref && (
+          <Link href={ctaHref} className={ctaCls}>
+            {ctaInner}
+          </Link>
+        )}
+        {!isEmpty && !ctaHref && (
+          <button
+            type="button"
+            onClick={onCtaClick}
+            disabled={ctaDisabled || ctaLoading}
+            className={ctaCls}
+          >
+            {ctaInner}
+          </button>
+        )}
+        {!isEmpty && helperText && (
+          <p className="text-xs text-center text-[var(--text-tertiary)] leading-relaxed">
+            {helperText}
+          </p>
+        )}
+
+        {/* Bloques de confianza (estilo AliExpress, contenido real Buleje) */}
+        {!isEmpty && (
+          <div className="space-y-3 border-t border-[var(--rule-soft)] pt-4">
+            <TrustBlock
+              Icon={Truck}
+              title="Entrega rápida"
+              lines={["Delivery en ~25 min", "Pago al recibir o por Yape", "Coordinás todo por WhatsApp"]}
+            />
+            <TrustBlock
+              Icon={ShieldCheck}
+              title="Seguridad & Privacidad"
+              lines={["Pago seguro", "Tus datos personales protegidos"]}
+            />
+          </div>
+        )}
+      </aside>
+    );
+  }
 
   return (
     <aside

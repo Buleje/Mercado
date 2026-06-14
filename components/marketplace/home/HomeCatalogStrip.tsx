@@ -8,10 +8,9 @@
  */
 
 import { useEffect, useState, type ReactNode } from "react";
-import UnifiedProductCard, {
-  type UnifiedProductCardProduct,
-} from "@/components/marketplace/UnifiedProductCard";
+import { type UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
 import DiscoveryBox from "@/components/marketplace/home/DiscoveryBox";
+import ComboMiniCard from "@/components/marketplace/home/ComboMiniCard";
 
 function normalize(raw: Record<string, unknown>): UnifiedProductCardProduct {
   const store = (raw.store ?? {}) as Record<string, unknown>;
@@ -85,14 +84,12 @@ export default function HomeCatalogStrip({
   const cards =
     items === null
       ? Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="aspect-[3/4] rounded-2xl skeleton-shimmer" />
+          <div key={i} className="aspect-square rounded-md skeleton-shimmer" />
         ))
       : items.map((p, idx) => (
-          <UnifiedProductCard
+          <ComboMiniCard
             key={p.storeProductId || p.id}
             index={idx}
-            variant="default"
-            layout="compact"
             href={`/marketplace/${p.storeSlug}?p=${p.id}`}
             product={p}
           />

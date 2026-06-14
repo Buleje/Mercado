@@ -54,6 +54,9 @@ export type DbMarketplaceProduct = {
     name: string;
     slug: string | null;
     logo: string | null;
+    banner: string | null;
+    category: string | null;
+    rating: number | null;
     description: string | null;
     zone: string | null;
   };
@@ -238,6 +241,9 @@ export const MarketplacePublicDB = {
                     name: true,
                     slug: true,
                     logo: true,
+                    banner: true,
+                    category: true,
+                    rating: true,
                     description: true,
                     zone: true,
                   },

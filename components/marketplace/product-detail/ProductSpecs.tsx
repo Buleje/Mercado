@@ -1,6 +1,7 @@
 /**
  * ProductSpecs — Ficha técnica del producto.
- * Tabla 2-col con datos reales del producto + mock SUNAT/empaque.
+ * Rediseño Brandon 2026-06-14: estilo MercadoLibre — bordes RECTOS, tipografía
+ * suave (sin font-black), sin acentos neón. Tabla zebra 2-col con datos reales.
  */
 
 export interface ProductSpecsProps {
@@ -35,46 +36,30 @@ export function ProductSpecs({ name, category, unit, price }: ProductSpecsProps)
   return (
     <section
       aria-label="Ficha técnica"
-      className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8"
+      className="border border-[var(--rule-base)] bg-[var(--surface-raised)]"
     >
-      <div className="flex items-center gap-3">
-        <span aria-hidden className="inline-flex h-1 w-12 rounded-full bg-[var(--accent)]" />
-        <p className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">
-          Especificaciones
-        </p>
-      </div>
-      <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)]">
+      <h2 className="border-b border-[var(--rule-soft)] px-4 py-3 text-base sm:text-lg font-semibold text-[var(--text-primary)]">
         Ficha técnica
       </h2>
 
-      <div className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
-        <table className="w-full text-base">
-          <tbody>
-            {specs.map((row, i) => (
-              <tr
-                key={row.label}
-                className={
-                  i % 2 === 0
-                    ? "bg-[var(--surface-canvas)]"
-                    : "bg-[var(--surface-sunken)]"
-                }
-              >
-                <td className="py-3.5 px-5 font-semibold text-[var(--text-secondary)] w-2/5 border-r-2 border-[var(--rule-base)]">
-                  {row.label}
-                </td>
-                <td className="py-3.5 px-5 text-[var(--text-primary)] font-medium">
-                  {row.value}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="px-5 py-3 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-          <p className="text-sm text-[var(--text-tertiary)]">
-            Datos publicados por el vendedor.
-          </p>
-        </div>
-      </div>
+      <table className="w-full text-sm">
+        <tbody>
+          {specs.map((row, i) => (
+            <tr
+              key={row.label}
+              className={i % 2 === 0 ? "bg-[var(--surface-raised)]" : "bg-[var(--surface-sunken)]"}
+            >
+              <td className="py-3 px-4 text-[var(--text-secondary)] w-2/5 border-r border-[var(--rule-soft)]">
+                {row.label}
+              </td>
+              <td className="py-3 px-4 text-[var(--text-primary)]">{row.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="border-t border-[var(--rule-soft)] px-4 py-2.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+        Datos publicados por el vendedor.
+      </p>
     </section>
   );
 }

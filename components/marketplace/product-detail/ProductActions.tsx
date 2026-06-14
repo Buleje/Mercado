@@ -107,60 +107,44 @@ export function ProductActions({
   const previewTotal = format(price * quantity);
 
   return (
-    <div className="space-y-5">
-      {/* Trust strip — beneficios clave arriba de las acciones, tipografía legible */}
-      <div className="grid grid-cols-3 gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <div className="flex flex-col items-center text-center gap-1.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/10">
-            <Truck className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-          </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
-            Delivery
-          </p>
-          <p className="text-base font-bold text-[var(--text-primary)] leading-tight">
-            25 min
-          </p>
+    <div className="space-y-4">
+      {/* Trust strip — beneficios clave, bordes rectos, sin tintes neón */}
+      <div className="grid grid-cols-3 border border-[var(--rule-base)] divide-x divide-[var(--rule-soft)] bg-[var(--surface-raised)]">
+        <div className="flex flex-col items-center text-center gap-1 px-2 py-3">
+          <Truck className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-tight">Delivery</p>
+          <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">25 min</p>
         </div>
-        <div className="flex flex-col items-center text-center gap-1.5 border-x-2 border-[var(--rule-base)]">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/10">
-            <ShieldCheck className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-          </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
-            Pago
-          </p>
-          <p className="text-base font-bold text-[var(--text-primary)] leading-tight">
-            Al recibir
-          </p>
+        <div className="flex flex-col items-center text-center gap-1 px-2 py-3">
+          <ShieldCheck className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-tight">Pago</p>
+          <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">Al recibir</p>
         </div>
-        <div className="flex flex-col items-center text-center gap-1.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/10">
-            <RotateCcw className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-          </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
-            Devolución
-          </p>
-          <p className="text-base font-bold text-[var(--text-primary)] leading-tight">
-            Gratis
-          </p>
+        <div className="flex flex-col items-center text-center gap-1 px-2 py-3">
+          <RotateCcw className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-tight">Devolución</p>
+          <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">Gratis</p>
         </div>
       </div>
 
-      {/* Stepper — label legible, botones grandes (h-12 mín por ergonomía móvil) */}
-      <div>
-        <label className="block text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2.5">
+      {/* Stepper — bordes rectos, botones grandes (h-12 ergonomía móvil).
+          Es un grupo (− N +), no un input único → usamos <span> + role=group
+          con aria-label (a11y: evita label sin control asociado). */}
+      <div role="group" aria-label="Cantidad">
+        <span className="block text-[length:var(--ts-xs)] text-[var(--text-tertiary)] mb-2">
           Cantidad
-        </label>
-        <div className="inline-flex items-center border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden bg-[var(--surface-raised)]">
+        </span>
+        <div className="inline-flex items-center border border-[var(--rule-base)] rounded-sm overflow-hidden bg-[var(--surface-raised)]">
           <button
             onClick={handleDecrement}
             disabled={quantity <= minOrderQty}
             aria-label="Reducir cantidad"
-            className="h-12 w-12 flex items-center justify-center hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-11 w-11 flex items-center justify-center hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Minus className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={2.5} />
+            <Minus className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={2} />
           </button>
           <span
-            className="px-6 h-12 flex items-center text-xl font-black text-[var(--text-primary)] min-w-[4rem] justify-center tabular-nums border-x-2 border-[var(--rule-base)]"
+            className="px-6 h-11 flex items-center text-lg font-semibold text-[var(--text-primary)] min-w-[3.5rem] justify-center tabular-nums border-x border-[var(--rule-base)]"
             aria-live="polite"
             aria-label={`Cantidad: ${quantity}`}
           >
@@ -170,28 +154,28 @@ export function ProductActions({
             onClick={handleIncrement}
             disabled={quantity >= maxQty}
             aria-label="Aumentar cantidad"
-            className="h-12 w-12 flex items-center justify-center hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-11 w-11 flex items-center justify-center hover:bg-[var(--surface-sunken)] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Plus className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={2.5} />
+            <Plus className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={2} />
           </button>
         </div>
       </div>
 
-      {/* CTA: Agregar al carrito — botón grande (h-14), text-base font-bold */}
+      {/* CTA: Agregar al carrito — bordes rectos, sin sombras neón */}
       <button
         onClick={handleAddToCart}
         disabled={isOutOfStock}
         className={cn(
-          "w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-md hover:shadow-lg",
+          "w-full h-12 rounded-sm font-semibold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.99]",
           added
             ? "bg-[var(--accent-600,var(--accent))] text-white"
             : isOutOfStock
-            ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed border-2 border-[var(--rule-base)] shadow-none hover:shadow-none"
+            ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed border border-[var(--rule-base)]"
             : "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-95"
         )}
         aria-label={isOutOfStock ? "Producto agotado" : "Agregar al carrito"}
       >
-        <ShoppingCart className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+        <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
         {isOutOfStock
           ? t("product.outOfStock")
           : added
@@ -199,14 +183,14 @@ export function ProductActions({
           : `${t("cart.add")} · ${previewTotal}`}
       </button>
 
-      {/* CTA: Comprar ahora — h-14, border-2, text-base */}
+      {/* CTA: Comprar ahora — bordes rectos */}
       {!isOutOfStock && (
         <button
           onClick={handleBuyNow}
-          className="w-full h-14 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 border-2 border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[var(--accent)]/5 active:scale-[0.98] transition-all"
+          className="w-full h-12 rounded-sm font-semibold text-base flex items-center justify-center gap-2 border border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[var(--surface-sunken)] active:scale-[0.99] transition-all"
           aria-label={t("product.buyNow")}
         >
-          <Zap className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          <Zap className="h-5 w-5" strokeWidth={2} aria-hidden />
           {t("product.buyNow")}
         </button>
       )}
@@ -224,12 +208,12 @@ export function ProductActions({
         />
       )}
 
-      {/* Wishlist — h-12 con texto legible */}
+      {/* Wishlist — bordes rectos, texto legible */}
       <button
         onClick={() => setWishlisted((w) => !w)}
         aria-label={wishlisted ? t("product.inWishlist") : t("product.wishlist")}
         aria-pressed={wishlisted}
-        className="w-full h-12 rounded-2xl font-semibold text-base flex items-center justify-center gap-2.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-[0.98] transition-all border-2 border-transparent hover:border-[var(--rule-base)]"
+        className="w-full h-11 rounded-sm font-medium text-base flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] active:scale-[0.99] transition-all border border-transparent hover:border-[var(--rule-base)]"
       >
         <Heart
           className={cn(
@@ -242,6 +226,24 @@ export function ProductActions({
         />
         {wishlisted ? t("product.inWishlist") : t("product.wishlist")}
       </button>
+
+      {/* Garantías estilo MercadoLibre (Brandon 2026-06-14) — filas de confianza */}
+      <ul className="space-y-3 border-t border-[var(--rule-soft)] pt-4">
+        <li className="flex gap-2.5">
+          <RotateCcw className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-sm text-[var(--text-secondary)] leading-snug">
+            <span className="font-medium text-[var(--text-primary)]">Devolución coordinada.</span>{" "}
+            Si algo llega mal, lo resolvés con la tienda por WhatsApp.
+          </p>
+        </li>
+        <li className="flex gap-2.5">
+          <ShieldCheck className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+          <p className="text-sm text-[var(--text-secondary)] leading-snug">
+            <span className="font-medium text-[var(--text-primary)]">Compra protegida.</span>{" "}
+            Pagás al recibir — sin adelanto, sin sorpresas.
+          </p>
+        </li>
+      </ul>
     </div>
   );
 }

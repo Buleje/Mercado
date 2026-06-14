@@ -12,8 +12,19 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect } from "react";
-import { ChevronRight, Home, Store } from "@buleje/design-system/icons";
+import {
+  ChevronRight,
+  Home,
+  Store,
+  Smartphone,
+  Banknote,
+  ArrowLeft,
+  Share2,
+  Star,
+  CheckCircle2,
+} from "@buleje/design-system/icons";
 import { Caption } from "@buleje/design-system";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ProductGalleryDS } from "./ProductGalleryDS";
@@ -55,6 +66,8 @@ export interface PDPStore {
   km?: string | null;
   rating?: number;
   logo?: string | null;
+  banner?: string | null;
+  category?: string | null;
 }
 
 export interface PDPImages {
@@ -91,9 +104,91 @@ function deriveBadge(
   return null;
 }
 
-// ── Breadcrumb ─────────────────────────────────────────────────────────────────
+// ── Banner del negocio + identidad (cabecera del cuadro, estilo MercadoLibre) ───
 
-function Breadcrumb({
+function StoreBannerHeader({
+  storeName,
+  storeSlug,
+  logo,
+  banner,
+  category,
+  rating,
+}: {
+  storeName: string;
+  storeSlug: string;
+  logo?: string | null;
+  banner?: string | null;
+  category?: string | null;
+  rating?: number;
+}) {
+  const initial = storeName.trim().charAt(0).toUpperCase();
+  const hasBanner = Boolean(banner && banner.trim().length > 0);
+
+  return (
+    <>
+      {/* Banner FULL-BLEED (estilo MercadoLibre) — el mismo banner de la tienda
+          (Store.banner). Ocupa todo el ancho, FUERA del cuadro del detalle. */}
+      <div className="relative w-full h-40 sm:h-52 lg:h-60 overflow-hidden bg-[var(--surface-sunken)]">
+        {hasBanner ? (
+          <Image src={banner!} alt={`Banner de ${storeName}`} fill sizes="100vw" className="object-cover" priority />
+        ) : (
+          <div
+            aria-hidden
+            className="h-full w-full"
+            style={{
+              background:
+                "linear-gradient(115deg, var(--accent) 0%, color-mix(in oklch, var(--accent) 65%, #061a1e) 60%, #061a1e 100%)",
+            }}
+          />
+        )}
+        <div aria-hidden className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent" />
+      </div>
+
+      {/* Logo GRANDE solapado + identidad — centrado al ancho del cuadro,
+          flotando sobre el banner (como MercadoLibre). */}
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+        <div className="-mt-12 sm:-mt-14 mb-3 flex items-end gap-4">
+          <Link
+            href={`/marketplace/${storeSlug}`}
+            aria-label={`Ver tienda ${storeName}`}
+            className="relative z-10 grid h-24 w-24 sm:h-28 sm:w-28 shrink-0 place-items-center overflow-hidden rounded-md border-4 border-[var(--surface-canvas)] bg-[var(--surface-raised)] shadow-md"
+          >
+            {logo ? (
+              <Image src={logo} alt={`Logo de ${storeName}`} width={112} height={112} className="h-full w-full object-cover" />
+            ) : (
+              <span className="grid h-full w-full place-items-center bg-[var(--surface-sunken)] text-3xl font-semibold uppercase text-[var(--text-secondary)]">
+                {initial}
+              </span>
+            )}
+          </Link>
+          <div className="min-w-0 pb-1">
+            <Link
+              href={`/marketplace/${storeSlug}`}
+              className="inline-flex items-center gap-1 text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors truncate"
+            >
+              {storeName}
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-label="Tienda verificada" />
+            </Link>
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+              {rating ? (
+                <span className="inline-flex items-center gap-1">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" strokeWidth={0} aria-hidden />
+                  <span className="font-medium text-[var(--text-secondary)] tabular-nums">{rating.toFixed(1)}</span>
+                </span>
+              ) : null}
+              {category && <span className="capitalize">{category}</span>}
+              <span className="text-[var(--data-success-600)]">Tienda oficial</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Barra de ruta: Volver + breadcrumb + Compartir (dentro del cuadro) ──────────
+
+function RouteBar({
   storeName,
   storeSlug,
   category,
@@ -104,30 +199,48 @@ function Breadcrumb({
   category: string | null | undefined;
   productName: string;
 }) {
+  const handleShare = () => {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: productName, url }).catch(() => {
+        /* el usuario canceló el diálogo nativo de compartir — no es error */
+      });
+    } else {
+      navigator.clipboard?.writeText(url).catch(() => {
+        /* clipboard no disponible (contexto http o permisos) — silencioso */
+      });
+    }
+  };
+
   return (
-    <nav
-      aria-label="Ruta de navegación"
-      className="bg-[var(--surface-raised)] border-b border-[var(--rule-muted)]"
-    >
-      <div className="mx-auto max-w-6xl px-4 py-3">
-        <ol className="flex items-center gap-1.5 flex-wrap">
-          <li>
+    <div className="flex items-center justify-between gap-3 rounded-t-lg border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 sm:px-5 py-2.5">
+      <nav aria-label="Ruta de navegación" className="min-w-0">
+        <ol className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <li className="shrink-0">
+            <Link
+              href={`/marketplace/${storeSlug}`}
+              className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-medium text-[var(--accent)] hover:underline"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+              Volver
+            </Link>
+          </li>
+          <li aria-hidden className="shrink-0 text-[var(--rule-base)]">|</li>
+          <li className="shrink-0">
             <Link
               href="/marketplace"
-              className="flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-              aria-label="Inicio Marketplace"
+              className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
             >
-              <Home className="h-3.5 w-3.5" aria-hidden />
+              <Home className="h-3 w-3" aria-hidden />
               Inicio
             </Link>
           </li>
-          <li aria-hidden>
-            <ChevronRight className="h-3 w-3 text-[var(--text-tertiary)]" />
-          </li>
-          <li>
+          <li aria-hidden className="shrink-0"><ChevronRight className="h-3 w-3 text-[var(--text-tertiary)]" /></li>
+          <li className="shrink-0">
             <Link
               href={`/marketplace/${storeSlug}`}
-              className="flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+              className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
             >
               <Store className="h-3 w-3" aria-hidden />
               {storeName}
@@ -135,28 +248,27 @@ function Breadcrumb({
           </li>
           {category && (
             <>
-              <li aria-hidden>
-                <ChevronRight className="h-3 w-3 text-[var(--text-tertiary)]" />
-              </li>
-              <li>
-                <Caption className="text-[var(--text-tertiary)]">{category}</Caption>
-              </li>
+              <li aria-hidden className="shrink-0"><ChevronRight className="h-3 w-3 text-[var(--text-tertiary)]" /></li>
+              <li className="shrink-0"><Caption className="text-[var(--text-tertiary)] capitalize">{category}</Caption></li>
             </>
           )}
-          <li aria-hidden>
-            <ChevronRight className="h-3 w-3 text-[var(--text-tertiary)]" />
-          </li>
-          <li>
-            <Caption
-              className="text-[var(--text-primary)] font-medium truncate max-w-[12rem] sm:max-w-xs"
-              aria-current="page"
-            >
+          <li aria-hidden className="shrink-0"><ChevronRight className="h-3 w-3 text-[var(--text-tertiary)]" /></li>
+          <li className="min-w-0">
+            <Caption className="text-[var(--text-secondary)] truncate max-w-[10rem] sm:max-w-xs" aria-current="page">
               {productName}
             </Caption>
           </li>
         </ol>
-      </div>
-    </nav>
+      </nav>
+      <button
+        type="button"
+        onClick={handleShare}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-sm px-2.5 py-1 text-[length:var(--ts-xs)] font-medium text-[var(--accent)] hover:bg-[var(--surface-raised)] transition-colors"
+      >
+        <Share2 className="h-3.5 w-3.5" aria-hidden />
+        <span className="hidden sm:inline">Compartir</span>
+      </button>
+    </div>
   );
 }
 
@@ -177,6 +289,34 @@ export function ProductDetailClient({
     product.price
   );
 
+  // Resumen de reseñas (★ promedio + total) para el rating row estilo AliExpress
+  // bajo el título. ProductInfo ya lo renderiza si ratingCount > 0; el gap era
+  // que el orquestador no lo pasaba. Real: total del endpoint + promedio de las
+  // reseñas devueltas. Sin reseñas → row oculto (correcto).
+  const [reviewSummary, setReviewSummary] = useState<{ avg: number; count: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    // Mismos params que ProductReviews (el endpoint exige filter+sort+limit+offset;
+    // limit máx = 50). Con 50 alcanza para el promedio del rating row.
+    fetch(`/api/marketplace/reviews-enhanced/${product.id}?filter=all&sort=recent&limit=50&offset=0`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled || !j) return;
+        const list = Array.isArray(j.data) ? j.data : Array.isArray(j.reviews) ? j.reviews : [];
+        const count = typeof j.total === "number" ? j.total : list.length;
+        if (!count) return;
+        // Promedio: usa breakdown.average si viene; si no, promedia los ratings.
+        const ratings = list
+          .map((x: { rating?: unknown }) => Number(x?.rating))
+          .filter((n: number) => n > 0);
+        const fromList = ratings.length ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
+        const avg = Number(j?.breakdown?.average) > 0 ? Number(j.breakdown.average) : fromList;
+        setReviewSummary({ avg, count });
+      })
+      .catch(() => {/* sin resumen → rating row oculto */});
+    return () => { cancelled = true; };
+  }, [product.id]);
+
   // Track visit to populate "Recently viewed" drawer (ronda 4)
   useEffect(() => {
     track({
@@ -196,112 +336,182 @@ export function ProductDetailClient({
           con el primitivo `@/components/ui-system/Breadcrumbs`. Duplicarlo
           aquí generaba dos breadcrumbs visuales — fix 2026-04-20. */}
 
-      {/* Layout 2-col desktop / stack mobile — ancho editorial */}
-      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-        {/* Blob decorativo sutil */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-16 -right-32 h-[400px] w-[400px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
-        />
-        <div className="relative grid grid-cols-1 lg:grid-cols-[5fr_6fr] gap-10 lg:gap-16">
-          {/* LEFT — Gallery */}
-          <div className="lg:self-start lg:sticky lg:top-8">
-            <ProductGalleryDS
-              images={images}
-              productName={product.name}
-              category={product.category}
-              badge={galleryBadge}
-            />
-          </div>
+      {/* Banner FULL-BLEED del negocio + logo grande + identidad (Brandon
+          2026-06-14). El banner ocupa todo el ancho y queda FUERA del cuadro. */}
+      <StoreBannerHeader
+        storeName={store.name}
+        storeSlug={store.slug}
+        logo={store.logo}
+        banner={store.banner}
+        category={store.category}
+        rating={store.rating}
+      />
 
-          {/* RIGHT — Info + Actions */}
-          <div className="space-y-7">
-            <ProductInfo
-              name={product.name}
-              storeName={store.name}
-              storeSlug={store.slug}
-              storeZone={store.zone}
-              storeKm={store.km}
-              price={product.price}
-              previousPrice={product.previousPrice}
-              socioPrice={product.socioPrice}
-              unit={product.unit}
-              stock={product.stock}
-              category={product.category}
-              badge={product.badge}
-            />
-
-            {/* Stock bajo real — único trust signal sin datos inventados */}
-            {product.stock !== null && product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <LowStockBadge stock={product.stock} />
-              </div>
-            )}
-
-            <div className="border-t border-[var(--rule-soft)]" />
-
-            <ProductActions
-              productId={product.id}
-              storeId={store.id}
-              storeName={store.name}
-              storeSlug={store.slug}
-              storeProductId={storeProductId}
-              name={product.name}
-              price={product.price}
-              image={product.imageUrl}
-              unit={product.unit}
-              stock={product.stock}
-            />
-          </div>
-        </div>
-
-        {/* Sections below hero — cada componente trae su propio header */}
-        <div className="mt-16 sm:mt-24 space-y-12 sm:space-y-16">
-          <ProductDescription
-            description={product.description}
+      {/* Contenedor centrado */}
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pb-6">
+        {/* CUADRO (Brandon 2026-06-14): el borde arranca en Volver/ubicación y
+            envuelve el detalle HASTA opiniones. "Te podría interesar" queda
+            FUERA, suelto abajo. */}
+        <div className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm">
+          {/* Barra de ruta: Volver + breadcrumb + Compartir (inicio del cuadro) */}
+          <RouteBar
+            storeName={store.name}
+            storeSlug={store.slug}
+            category={product.category}
             productName={product.name}
           />
 
-          <div className="border-t border-[var(--rule-soft)]" />
+          {/* Cuerpo del cuadro */}
+          <div className="p-4 sm:p-5 lg:p-6">
+            {/* Layout 3-col: galería | info | buy-box sticky → 2-col lg → stack mobile */}
+            <div className="relative grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)_360px] gap-6 lg:gap-8 xl:gap-10 items-start">
+              {/* LEFT — Gallery */}
+              <div className="lg:self-start lg:sticky lg:top-6">
+                <ProductGalleryDS
+                  images={images}
+                  productName={product.name}
+                  category={product.category}
+                  badge={galleryBadge}
+                />
+              </div>
 
-          <ProductSpecs
-            name={product.name}
-            category={product.category}
-            unit={product.unit}
-            price={product.price}
-          />
+              {/* CENTER — Info */}
+              <div className="space-y-5 min-w-0">
+                <ProductInfo
+                  name={product.name}
+                  storeName={store.name}
+                  storeSlug={store.slug}
+                  storeZone={store.zone}
+                  storeKm={store.km}
+                  price={product.price}
+                  previousPrice={product.previousPrice}
+                  socioPrice={product.socioPrice}
+                  unit={product.unit}
+                  stock={product.stock}
+                  category={product.category}
+                  badge={product.badge}
+                  ratingAverage={reviewSummary?.avg ?? 0}
+                  ratingCount={reviewSummary?.count ?? 0}
+                />
 
-          <div className="border-t border-[var(--rule-soft)]" />
+                {/* Stock bajo real — único trust signal sin datos inventados */}
+                {product.stock !== null && product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <LowStockBadge stock={product.stock} />
+                  </div>
+                )}
+              </div>
 
-          <ProductSellerInfo
-            storeName={store.name}
-            storeSlug={store.slug}
-            storeDescription={store.description}
-            storeZone={store.zone}
-            storeKm={store.km}
-            storeRating={store.rating}
-          />
+              {/* RIGHT — Columna del carrito: buy-box + vendedor + medios de pago */}
+              <aside className="lg:col-span-2 xl:col-span-1 lg:sticky lg:top-6 space-y-3">
+                {/* Buy box */}
+                <div className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
+                  <ProductActions
+                    productId={product.id}
+                    storeId={store.id}
+                    storeName={store.name}
+                    storeSlug={store.slug}
+                    storeProductId={storeProductId}
+                    name={product.name}
+                    price={product.price}
+                    image={product.imageUrl}
+                    unit={product.unit}
+                    stock={product.stock}
+                  />
+                </div>
 
-          <div className="border-t border-[var(--rule-soft)]" />
+                {/* Vendedor (minimal) */}
+                <ProductSellerInfo
+                  storeName={store.name}
+                  storeSlug={store.slug}
+                  storeDescription={store.description}
+                  storeZone={store.zone}
+                  storeKm={store.km}
+                  storeRating={store.rating}
+                />
 
-          <FrequentlyBoughtTogether
-            productId={product.id}
-            storeId={store.id}
-            storeName={store.name}
-            storeSlug={store.slug}
-          />
+                {/* Medios de pago (minimal + iconos) */}
+                <section className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+                  <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Medios de pago</h2>
+                  <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mb-3">
+                    Pagás al recibir — sin tarjetas.
+                  </p>
+                  <ul className="space-y-2 text-sm text-[var(--text-primary)]">
+                    <li className="flex items-center gap-2">
+                      <Smartphone className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Yape
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Smartphone className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Plin
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Banknote className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Efectivo
+                    </li>
+                  </ul>
+                </section>
+              </aside>
+            </div>
 
-          <div className="border-t border-[var(--rule-soft)]" />
+            {/* Barra de TABS — ancla a cada sección de abajo */}
+            <nav
+              aria-label="Secciones del producto"
+              className="mt-7 border-b border-[var(--rule-base)] px-1 sm:px-2"
+            >
+              <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto h-11 text-sm font-medium [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {[
+                  { label: "Descripción", href: "#descripcion" },
+                  { label: "Detalles", href: "#detalles" },
+                  { label: "Valoraciones", href: "#valoraciones" },
+                  ...(relatedProducts.length > 0 ? [{ label: "Te podría interesar", href: "#recomendados" }] : []),
+                ].map((t) => (
+                  <a
+                    key={t.href}
+                    href={t.href}
+                    className="shrink-0 whitespace-nowrap px-3 sm:px-4 h-11 inline-flex items-center border-b-2 border-transparent text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                  >
+                    {t.label}
+                  </a>
+                ))}
+              </div>
+            </nav>
 
-          <ProductReviews productId={product.id} productName={product.name} />
+            {/* Secciones — hasta opiniones (todo dentro del cuadro) */}
+            <div className="mt-6 space-y-6">
+              <div id="descripcion" className="scroll-mt-28">
+                <ProductDescription
+                  description={product.description}
+                  productName={product.name}
+                />
+              </div>
 
-          {relatedProducts.length > 0 && (
-            <>
-              <div className="border-t border-[var(--rule-soft)]" />
-              <ProductRelated products={relatedProducts} storeSlug={store.slug} />
-            </>
-          )}
+              <div id="detalles" className="scroll-mt-28">
+                <ProductSpecs
+                  name={product.name}
+                  category={product.category}
+                  unit={product.unit}
+                  price={product.price}
+                />
+              </div>
+
+              <FrequentlyBoughtTogether
+                productId={product.id}
+                storeId={store.id}
+                storeName={store.name}
+                storeSlug={store.slug}
+              />
+
+              <div id="valoraciones" className="scroll-mt-28">
+                <ProductReviews productId={product.id} productName={product.name} />
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* FUERA del cuadro: Te podría interesar (sección libre) */}
+        {relatedProducts.length > 0 && (
+          <div id="recomendados" className="mt-6 sm:mt-8 scroll-mt-28">
+            <ProductRelated products={relatedProducts} storeSlug={store.slug} />
+          </div>
+        )}
       </div>
 
       {/* Sticky mobile bar */}
@@ -371,7 +581,7 @@ function MobileStickyBar({
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <Caption className="text-[var(--text-tertiary)] truncate">{name}</Caption>
-          <p className="text-[length:var(--ts-lg)] font-extrabold text-[var(--text-primary)] tabular-nums leading-tight">
+          <p className="text-[length:var(--ts-lg)] font-semibold text-[var(--text-primary)] tabular-nums leading-tight">
             S/ {price.toFixed(2)}
           </p>
         </div>
@@ -380,10 +590,10 @@ function MobileStickyBar({
           disabled={isOutOfStock}
           className={
             isOutOfStock
-              ? "px-5 py-3 rounded-xl font-semibold text-[length:var(--ts-sm)] text-[var(--text-tertiary)] bg-[var(--surface-sunken)] cursor-not-allowed"
+              ? "px-5 py-3 rounded-sm font-semibold text-[length:var(--ts-sm)] text-[var(--text-tertiary)] bg-[var(--surface-sunken)] cursor-not-allowed"
               : added
-              ? "px-5 py-3 rounded-xl font-semibold text-[length:var(--ts-sm)] text-white bg-[var(--accent-600,var(--accent))] active:scale-95 transition-all"
-              : "px-5 py-3 rounded-xl font-semibold text-[length:var(--ts-sm)] text-white bg-[var(--accent-600,var(--accent))] hover:opacity-90 active:scale-95 transition-all"
+              ? "px-5 py-3 rounded-sm font-semibold text-[length:var(--ts-sm)] text-white bg-[var(--accent-600,var(--accent))] active:scale-95 transition-all"
+              : "px-5 py-3 rounded-sm font-semibold text-[length:var(--ts-sm)] text-white bg-[var(--accent-600,var(--accent))] hover:opacity-90 active:scale-95 transition-all"
           }
           aria-label={isOutOfStock ? "Agotado" : "Agregar al carrito"}
         >

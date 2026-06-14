@@ -26,6 +26,7 @@ import {
   Wallet,
   Clock,
   Bookmark,
+  ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, modifierHashOf, type CartItem } from "@/hooks/use-marketplace-cart";
@@ -57,71 +58,96 @@ function ItemRow({
   onRemove: () => void;
   onSave: () => void;
 }) {
+  // Stock bajo → badge tipo AliExpress ("Quedan N" / "Último") sobre la imagen.
+  const lowStock = typeof item.stock === "number" && item.stock > 0 && item.stock <= 5;
   return (
     <m.div
       layout
-      initial={{ opacity: 0, x: -16 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 16, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0, borderWidth: 0 }}
-      transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="flex gap-3 py-2 sm:py-2.5 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
+      transition={{ duration: 0.22, ease: "easeInOut" }}
+      className="flex gap-3 sm:gap-4 px-3.5 sm:px-4 py-3.5 sm:py-4 border-b border-[var(--rule-soft)] last:border-b-0 overflow-hidden"
     >
+      {/* Imagen grande redondeada + badge de stock (estilo AliExpress) */}
       <Link
         href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-        className="relative h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
+        className="relative h-[72px] w-[72px] sm:h-20 sm:w-20 shrink-0 rounded-xl overflow-hidden bg-[var(--surface-sunken)] border border-[var(--rule-soft)] hover:border-[var(--accent)] transition-colors group/img"
       >
         {item.image ? (
           <Image
             src={item.image}
             alt={item.name}
             fill
-            sizes="96px"
+            sizes="80px"
             className="object-cover transition-transform group-hover/img:scale-105"
           />
         ) : (
           // Brandon 2026-05-18: fallback con INICIAL del producto + gradient accent.
-          // Antes mostraba un carrito gris vacío que se veía pobre cuando ningún
-          // item tenía foto. La inicial identifica el producto visualmente.
           <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-sunken)] to-[var(--accent-soft)]/60">
-            <span className="text-xl sm:text-2xl font-black text-[var(--accent)] uppercase">
+            <span className="text-2xl font-black text-[var(--accent)] uppercase">
               {item.name.trim().charAt(0)}
             </span>
           </div>
         )}
-        {item.quantity > 1 && (
-          <span
-            aria-hidden
-            className="absolute top-1.5 left-1.5 inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[10px] font-black text-white shadow-md tabular-nums leading-none"
-          >
-            ×{item.quantity}
+        {lowStock && (
+          <span className="absolute inset-x-0 bottom-0 bg-black/65 px-1 py-0.5 text-center text-[10px] font-semibold text-white leading-tight">
+            {item.stock === 1 ? "Último" : `Quedan ${item.stock}`}
           </span>
         )}
       </Link>
 
-      <div className="flex-1 min-w-0 flex flex-col">
-        <Link
-          href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
-          className="text-[length:var(--ts-sm)] font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-2 leading-tight"
-        >
-          {item.name}
-        </Link>
+      {/* Columna de detalle: título suave + acciones, variante, precio + stepper */}
+      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <Link
+            href={`/marketplace/${item.storeSlug}/producto/${item.productId}`}
+            className="text-[length:var(--ts-sm)] font-medium text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors line-clamp-2 leading-snug"
+          >
+            {item.name}
+          </Link>
+          <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-1.5">
+            <button
+              type="button"
+              onClick={onSave}
+              aria-label="Guardar para después"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+            >
+              <Bookmark className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={onRemove}
+              aria-label="Eliminar producto del carrito"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)]/50 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            </button>
+          </div>
+        </div>
 
-        <p className="mt-0.5 text-[length:var(--ts-sm)] font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
-          {fmt(item.price)}
-          {item.unit && (
-            <span className="ml-1 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
-              / {item.unit}
-            </span>
-          )}
-        </p>
-
+        {/* Variantes / modifiers como chip suave (estilo selector AliExpress) */}
         {item.modifiers && item.modifiers.length > 0 && (
-          <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] line-clamp-1">
+          <span className="inline-flex w-fit max-w-full items-center rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] truncate">
             {item.modifiers.map((m) => m.optionName).join(" · ")}
-          </p>
+          </span>
         )}
 
-        <div className="mt-1.5 flex items-center gap-2 sm:gap-3 flex-wrap">
+        {/* Precio unitario bold + subtotal (izq) · stepper redondeado (der) */}
+        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+          <div className="min-w-0">
+            <p className="text-base sm:text-lg font-bold text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)] leading-none">
+              {fmt(item.price)}
+              <span className="ml-1 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
+                {item.unit ? `/ ${item.unit}` : "c/u"}
+              </span>
+            </p>
+            {item.quantity > 1 && (
+              <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums truncate">
+                Subtotal {fmt(item.price * item.quantity)}
+              </p>
+            )}
+          </div>
           <QuantityStepper
             value={item.quantity}
             onChange={onQty}
@@ -130,36 +156,7 @@ function ItemRow({
             size="sm"
             label={`Cantidad de ${item.name}`}
           />
-
-          <button
-            type="button"
-            onClick={onSave}
-            aria-label="Guardar para después"
-            className="inline-flex items-center gap-1.5 min-h-[36px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-          >
-            <Bookmark className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-            <span className="hidden sm:inline">Guardar</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onRemove}
-            aria-label="Eliminar producto del carrito"
-            className="inline-flex items-center gap-1.5 min-h-[36px] px-2 -mx-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
-          >
-            <Trash2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-            <span className="hidden sm:inline">Eliminar</span>
-          </button>
         </div>
-      </div>
-
-      <div className="flex flex-col items-end shrink-0 self-start gap-0.5">
-        <p className="hidden sm:block text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] font-bold">
-          Subtotal
-        </p>
-        <p className="text-sm sm:text-lg font-black text-[var(--text-primary)] tabular-nums tracking-[var(--ls-tight)]">
-          {fmt(item.price * item.quantity)}
-        </p>
       </div>
     </m.div>
   );
@@ -236,7 +233,43 @@ export default function CarritoPage() {
   // dirección guardada (perfil completo), saltamos datos+entrega y vamos DIRECTO
   // a /checkout/confirmar (finalizar). Así no se ve la página de datos y "atrás"
   // desde confirmar vuelve al carrito (no a datos, que antes re-saltaba → loop).
-  const fastFlow = isCustomerProfileComplete(loggedCustomer);
+  // Fast-flow cross-tenant (Brandon 2026-06-13): la dirección+ubigeo se guarda
+  // POR-TENANT en localStorage (buleje-<tenant>-customer). En el marketplace el
+  // tenant activo (cookie active-tenant) puede ser un shard de TIENDA sin
+  // dirección, aunque el mismo cliente la tenga completa en otro shard (ej. main).
+  // Eso hacía que un logueado con dirección igual pasara por datos+entrega.
+  // Fix: si el customer activo está incompleto, buscamos POR TELÉFONO el shard
+  // que SÍ tenga perfil completo (read-only, mismo teléfono = misma persona).
+  const [resolvedCustomer, setResolvedCustomer] = useState<typeof loggedCustomer>(loggedCustomer);
+  useEffect(() => {
+    if (!loggedCustomer) { setResolvedCustomer(null); return; }
+    if (isCustomerProfileComplete(loggedCustomer)) { setResolvedCustomer(loggedCustomer); return; }
+    try {
+      const phone = (loggedCustomer.phone || "").replace(/\D/g, "").slice(-9);
+      let best = loggedCustomer;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !(k.endsWith("-customer") || k.endsWith("-accounts-list"))) continue;
+        let parsed: unknown;
+        try { parsed = JSON.parse(localStorage.getItem(k) || "null"); } catch { continue; }
+        const candidates = Array.isArray(parsed) ? parsed : [parsed];
+        for (const c of candidates) {
+          const cphone = ((c as { phone?: string } | null)?.phone || "").replace(/\D/g, "").slice(-9);
+          if (c && typeof c === "object" && cphone === phone && phone &&
+              isCustomerProfileComplete(c as typeof loggedCustomer)) {
+            best = c as typeof loggedCustomer;
+            break;
+          }
+        }
+        if (isCustomerProfileComplete(best)) break;
+      }
+      setResolvedCustomer(best);
+    } catch {
+      setResolvedCustomer(loggedCustomer);
+    }
+  }, [loggedCustomer]);
+
+  const fastFlow = isCustomerProfileComplete(resolvedCustomer);
   const continueHref = fastFlow ? "/checkout/confirmar" : "/checkout/datos";
   const handleContinueWithoutAuth = useCallback(() => openAuthModal(), [openAuthModal]);
 
@@ -246,8 +279,8 @@ export default function CarritoPage() {
   // carrito vive fuera del CheckoutDataProvider, por eso escribimos las keys
   // directo — es el mecanismo de persistencia documentado del context.)
   useEffect(() => {
-    if (!fastFlow || !loggedCustomer) return;
-    const c = loggedCustomer;
+    if (!fastFlow || !resolvedCustomer) return;
+    const c = resolvedCustomer;
     try {
       localStorage.setItem(
         "marketplace-checkout-customer",
@@ -278,7 +311,7 @@ export default function CarritoPage() {
     } catch {
       /* localStorage no disponible — confirmar caerá a su sync/guard normal */
     }
-  }, [fastFlow, loggedCustomer]);
+  }, [fastFlow, resolvedCustomer]);
 
   // Prefetch del próximo paso para que la transición sea instantánea
   useEffect(() => {
@@ -335,7 +368,7 @@ export default function CarritoPage() {
   );
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-4 sm:py-10 pb-32 lg:pb-10">
+    <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-32 lg:pb-10">
       {/* ── Hero header v3 (Brandon 2026-05-18 rediseño) ──
            Cambios vs v4:
            - "Compartir lista WhatsApp" full-width verde ELIMINADO del hero
@@ -347,30 +380,31 @@ export default function CarritoPage() {
              (antes ocupaba toda una fila).
            - Header más limpio: título + count + 3 íconos action (compartir,
              vaciar). Foco en los productos, no en chrome. */}
-      <div className="mb-5 sm:mb-7">
+      <div className="mb-4 sm:mb-5">
         <Link
           href={seguirComprandoHref}
-          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-3"
+          className="inline-flex items-center gap-1.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] hover:gap-2 transition-all mb-2"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           Seguir comprando
         </Link>
 
-        <div className="flex items-end justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
+        <div className="flex items-center justify-between gap-3">
+          {/* Título + conteo INLINE (compacto). Antes: h1 text-4xl + count debajo. */}
+          <div className="flex items-baseline gap-2 sm:gap-2.5 min-w-0 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none shrink-0">
               Tu carrito
             </h1>
             {itemCount > 0 ? (
-              <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+              <p className="text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-snug">
                 <span className="font-extrabold text-[var(--text-primary)] tabular-nums">{itemCount}</span>
                 {" "}{itemCount === 1 ? "producto" : "productos"}
-                <span className="mx-1.5 text-[var(--text-tertiary)]">·</span>
+                <span className="mx-1 text-[var(--text-tertiary)]">·</span>
                 <span className="font-extrabold text-[var(--text-primary)] tabular-nums">{storeIds.length}</span>
                 {" "}{storeIds.length === 1 ? "tienda" : "tiendas"}
               </p>
             ) : (
-              <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+              <p className="text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-snug">
                 Agrega productos para empezar
               </p>
             )}
@@ -420,7 +454,7 @@ export default function CarritoPage() {
       {isEmpty ? (
         <div
           className={cn(
-            "rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
+            "rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]",
             "px-6 py-10 sm:py-14 text-center flex flex-col items-center gap-4 sm:gap-5",
           )}
         >
@@ -452,11 +486,14 @@ export default function CarritoPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-3 sm:gap-4 lg:gap-5 items-start pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3 sm:gap-4 lg:gap-5 items-start pb-8">
           <section aria-label="Productos en tu carrito" className="space-y-3 sm:space-y-4">
             {/* Progreso hacia envío gratis */}
             <FreeShippingProgress />
 
+            {/* Estilo AliExpress (Brandon 2026-06-13): cada vendedor = su propia
+                tarjeta blanca con sombra suave y aire. Cabecera de tienda con
+                chevron, filas espaciosas, footer con subtotal. */}
             {storeIds.map((sid) => {
               const group = byStore[sid];
               const subtotal = totalByStore[sid]?.total ?? 0;
@@ -464,42 +501,40 @@ export default function CarritoPage() {
               return (
                 <article
                   key={sid}
-                  className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
+                  className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-sm overflow-hidden"
                 >
-                  {/* Store header — compacto + minimalista: logo CIRCULAR de la
-                      tienda (fallback inicial), nombre, subtotal. Brandon 2026-06-13. */}
-                  <header className="relative flex items-center justify-between gap-3 px-3.5 sm:px-4 py-2.5">
-                    <Link
-                      href={`/marketplace/${group.storeSlug}`}
-                      className="flex items-center gap-2.5 min-w-0 group/store"
-                    >
-                      <span className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-sm font-black uppercase shrink-0 ring-1 ring-[var(--rule-soft)]">
-                        {storeLogos[group.storeSlug] ? (
-                          <Image
-                            src={storeLogos[group.storeSlug]!}
-                            alt={group.storeName}
-                            fill
-                            sizes="36px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          group.storeName?.charAt(0) ?? <Store className="h-4 w-4" />
-                        )}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-[length:var(--ts-sm)] font-extrabold tracking-[var(--ls-tight)] text-[var(--text-primary)] group-hover/store:text-[var(--accent)] transition-colors truncate leading-tight">
-                          {group.storeName}
-                        </p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium leading-tight mt-px">
-                          {itemCountStore} {itemCountStore === 1 ? "producto" : "productos"}
-                        </p>
-                      </div>
-                    </Link>
-                    <p className="shrink-0 text-base sm:text-lg font-black text-[var(--text-primary)] tabular-nums leading-tight">
-                      {fmt(subtotal)}
-                    </p>
-                  </header>
-                  <div className="border-t border-[var(--rule-soft)] px-3.5 sm:px-4">
+                  {/* Cabecera de vendedor: logo + nombre + nº ítems + chevron */}
+                  <Link
+                    href={`/marketplace/${group.storeSlug}`}
+                    className="flex items-center gap-2.5 px-4 py-3 border-b border-[var(--rule-soft)] group/store hover:bg-[var(--surface-sunken)]/60 transition-colors"
+                  >
+                    <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-xs)] font-bold uppercase shrink-0 ring-1 ring-[var(--rule-soft)]">
+                      {storeLogos[group.storeSlug] ? (
+                        <Image
+                          src={storeLogos[group.storeSlug]!}
+                          alt={group.storeName}
+                          fill
+                          sizes="28px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        group.storeName?.charAt(0) ?? <Store className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)] group-hover/store:text-[var(--accent)] transition-colors">
+                      {group.storeName}
+                    </span>
+                    <span className="shrink-0 text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
+                      {itemCountStore} {itemCountStore === 1 ? "ítem" : "ítems"}
+                    </span>
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] group-hover/store:translate-x-0.5 transition-transform"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                  </Link>
+
+                  <div>
                     <AnimatePresence initial={false} mode="popLayout">
                     {group.items.map((item) => {
                       // Mismo producto con modifiers distintos = línea
@@ -517,6 +552,16 @@ export default function CarritoPage() {
                       );
                     })}
                     </AnimatePresence>
+                  </div>
+
+                  {/* Footer suave: subtotal del vendedor */}
+                  <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-[var(--surface-sunken)]/40 border-t border-[var(--rule-soft)]">
+                    <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                      Subtotal · {itemCountStore} {itemCountStore === 1 ? "producto" : "productos"}
+                    </span>
+                    <span className="text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] tabular-nums">
+                      {fmt(subtotal)}
+                    </span>
                   </div>
                 </article>
               );

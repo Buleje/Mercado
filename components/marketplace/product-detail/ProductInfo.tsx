@@ -2,17 +2,18 @@
 
 /**
  * ProductInfo — Bloque de identidad del producto en el PDP.
- *
- * Muestra: kicker tienda, H1 nombre, rating mock, ProductPrice DS,
- * stock indicator semántico, delivery estimate, métodos de pago.
+ * Rediseño Brandon 2026-06-14: estilo MercadoLibre — bordes RECTOS, tipografía
+ * suave (sin font-black), sin colores neón (sin tintes accent/10 de fondo).
  */
 
 import Link from "next/link";
-import { Store, MapPin, Truck } from "@buleje/design-system/icons";
-import { BodyText, Caption, ProductPrice, ProductBadge } from "@buleje/design-system";
+import { Store, Truck } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 import { SocioBadge } from "./SocioBadge";
 import RatingStars from "@/components/ui-system/RatingStars";
-import Tooltip from "@/components/ui-system/Tooltip";
+
+const fmt = (n: number) =>
+  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -34,33 +35,30 @@ export interface ProductInfoProps {
   ratingCount?: number;
 }
 
-// ── Stock indicator ────────────────────────────────────────────────────────────
+// ── Stock indicator (chip recto, sin pulso neón) ─────────────────────────────────
 
 function StockIndicator({ stock }: { stock: number | null | undefined }) {
   if (stock === null || stock === undefined || stock > 10) {
     return (
-      <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)]/10 px-3 py-1.5 border border-[var(--accent)]/20">
-        <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)] animate-pulse" />
-        <span className="text-sm font-semibold text-[var(--accent)]">En stock — listo para entregar</span>
-      </div>
+      <span className="inline-flex items-center gap-2 text-sm text-[var(--accent)]">
+        <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+        En stock — listo para entregar
+      </span>
     );
   }
   if (stock === 0) {
     return (
-      <div className="inline-flex items-center gap-2 rounded-full bg-[var(--data-error-600)]/10 px-3 py-1.5 border border-[var(--data-error-600)]/30">
-        <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-600)]" />
-        <span className="text-sm font-semibold text-[var(--data-error-600)]">Agotado</span>
-      </div>
+      <span className="inline-flex items-center gap-2 text-sm text-[var(--data-error-600)]">
+        <span className="h-2 w-2 rounded-full bg-[var(--data-error-600)]" />
+        Agotado
+      </span>
     );
   }
-  // stock entre 1-10
   return (
-    <div className="inline-flex items-center gap-2 rounded-full bg-[var(--data-warning-600)]/10 px-3 py-1.5 border border-[var(--data-warning-600)]/30">
-      <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-600)] animate-pulse" />
-      <span className="text-sm font-semibold text-[var(--data-warning-700)]">
-        ¡Últimas {stock} unidades!
-      </span>
-    </div>
+    <span className="inline-flex items-center gap-2 text-sm text-[var(--data-warning-700)]">
+      <span className="h-2 w-2 rounded-full bg-[var(--data-warning-600)]" />
+      ¡Últimas {stock} unidades!
+    </span>
   );
 }
 
@@ -77,7 +75,6 @@ export function ProductInfo({
   socioPrice,
   unit,
   stock,
-  badge,
   ratingAverage = 0,
   ratingCount = 0,
 }: ProductInfoProps) {
@@ -88,99 +85,98 @@ export function ProductInfo({
     : 0;
 
   return (
-    <div className="space-y-6">
-      {/* Kicker editorial: accent line + tienda — text-sm para legibilidad */}
+    <div className="space-y-3">
+      {/* Tienda — kicker chico */}
       <Link
         href={`/marketplace/${storeSlug}`}
-        className="inline-flex items-center gap-2.5 group"
+        className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--accent)] hover:underline"
         aria-label={`Ver tienda ${storeName}`}
       >
-        <span
-          aria-hidden
-          className="inline-flex h-1 w-12 rounded-full bg-[var(--accent)]"
-        />
-        <Store className="h-5 w-5 text-[var(--accent)]" />
-        <span className="text-sm font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] group-hover:underline">
-          {storeName}
-          {storeZone && ` · ${storeZone}`}
-          {storeKm && ` · ${storeKm}`}
-        </span>
+        <Store className="h-3.5 w-3.5" aria-hidden />
+        {storeName}
+        {storeZone && ` · ${storeZone}`}
+        {storeKm && ` · ${storeKm}`}
       </Link>
 
-      {/* Nombre del producto — clamp editorial más generoso */}
-      <h1 className="text-[clamp(2.25rem,5vw,3.75rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[1.02]">
+      {/* Título — suave (sin font-black) */}
+      <h1 className="text-lg sm:text-xl font-medium leading-snug text-[var(--text-primary)]">
         {name}
       </h1>
 
-      {/* Rating — solo mostrar si hay reseñas reales */}
-      {hasRating && (
-        <div className="flex items-center gap-3">
-          <RatingStars value={ratingAverage} count={ratingCount} size="md" />
-          <span className="text-sm font-medium text-[var(--text-secondary)]">
-            {ratingAverage.toFixed(1)} de 5 · {ratingCount} {ratingCount === 1 ? "reseña" : "reseñas"}
+      {/* Rating + valoraciones — SIEMPRE visible */}
+      <div className="flex items-center gap-2 text-sm">
+        <RatingStars value={hasRating ? ratingAverage : 0} count={ratingCount} size="sm" />
+        {hasRating ? (
+          <span className="text-[var(--text-secondary)]">
+            <span className="font-semibold text-[var(--text-primary)] tabular-nums">{ratingAverage.toFixed(1)}</span>
+            {" · "}
+            {ratingCount} {ratingCount === 1 ? "valoración" : "valoraciones"}
           </span>
-        </div>
-      )}
-
-      {/* Precio + badge oferta — destacado en card sutil */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-3">
-        <div className="flex items-end gap-3 flex-wrap">
-          <ProductPrice
-            price={price}
-            previousPrice={previousPrice ?? undefined}
-            unit={unit ?? undefined}
-            size="lg"
-          />
-          {hasDiscount && (
-            <ProductBadge intent="offer">-{discountPct}% OFF</ProductBadge>
-          )}
-          {badge && !hasDiscount && (
-            <ProductBadge intent="fresh">{badge}</ProductBadge>
-          )}
-        </div>
-
-        {/* Precio Socio Buleje */}
-        {socioPrice != null && socioPrice < price && (
-          <SocioBadge regularPrice={price} socioPrice={socioPrice} />
+        ) : (
+          <span className="text-[var(--text-tertiary)]">Nuevo · sé el primero en opinar</span>
         )}
-
-        {/* Stock indicator (pill prominente) */}
-        <StockIndicator stock={stock} />
       </div>
 
-      {/* Delivery estimate — más prominente, text-base */}
-      <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-[var(--accent)]/5 border-2 border-[var(--accent)]/20">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/15 shrink-0">
-          <Truck className="h-5 w-5 text-[var(--accent)]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <Tooltip content="Tiempo estimado desde que la bodega confirma tu pedido">
-            <p className="text-base font-semibold text-[var(--text-primary)] underline decoration-dotted decoration-[var(--accent)]/40 underline-offset-4 cursor-help">
-              Llega en 25 min aprox
-            </p>
-          </Tooltip>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <MapPin className="h-4 w-4 text-[var(--text-tertiary)]" />
-            <span className="text-sm text-[var(--text-secondary)]">Entrega en Ciudad Constitución</span>
-          </div>
-        </div>
-      </div>
+      <div className="border-t border-[var(--rule-soft)]" />
 
-      {/* Métodos de pago — chips más grandes y legibles */}
-      <div className="space-y-2.5">
-        <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-          Métodos de pago aceptados
-        </p>
-        <div className="flex items-center gap-2 flex-wrap">
-          {["Yape", "Plin", "Efectivo"].map((method) => (
-            <span
-              key={method}
-              className="inline-flex items-center px-3.5 py-2 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-primary)]"
-            >
-              {method}
+      {/* Precio — estilo MercadoLibre: grande pero tipografía suave, sin caja neón */}
+      <div className="space-y-1">
+        {hasDiscount && (
+          <span className="inline-flex items-center rounded-sm bg-[var(--data-error-500)] px-2 py-0.5 text-[length:var(--ts-xs)] font-semibold uppercase tracking-wide text-white">
+            Oferta −{discountPct}%
+          </span>
+        )}
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <span
+            className={cn(
+              "text-3xl font-semibold tabular-nums tracking-tight",
+              hasDiscount ? "text-[var(--data-error-600)]" : "text-[var(--text-primary)]",
+            )}
+          >
+            {fmt(price)}
+          </span>
+          {unit && <span className="text-sm text-[var(--text-tertiary)]">/ {unit}</span>}
+          {hasDiscount && (
+            <span className="text-base text-[var(--text-tertiary)] line-through tabular-nums">
+              {fmt(previousPrice!)}
             </span>
-          ))}
+          )}
         </div>
+        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+          Precio antes de impuestos · pago al recibir o por Yape
+        </p>
+        {socioPrice != null && socioPrice < price && (
+          <div className="pt-1">
+            <SocioBadge regularPrice={price} socioPrice={socioPrice} />
+          </div>
+        )}
+        <div className="pt-1">
+          <StockIndicator stock={stock} />
+        </div>
+      </div>
+
+      <div className="border-t border-[var(--rule-soft)]" />
+
+      {/* Delivery — fila simple, sin caja neón */}
+      <div className="flex items-center gap-2.5 text-sm">
+        <Truck className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" aria-hidden />
+        <p>
+          <span className="font-medium text-[var(--text-primary)]">Llega en ~25 min</span>
+          <span className="text-[var(--text-tertiary)]"> · Entrega en Ciudad Constitución</span>
+        </p>
+      </div>
+
+      {/* Métodos de pago — chips rectos neutros */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Pago:</span>
+        {["Yape", "Plin", "Efectivo"].map((method) => (
+          <span
+            key={method}
+            className="inline-flex items-center rounded-sm border border-[var(--rule-base)] px-2.5 py-1 text-sm text-[var(--text-secondary)]"
+          >
+            {method}
+          </span>
+        ))}
       </div>
     </div>
   );

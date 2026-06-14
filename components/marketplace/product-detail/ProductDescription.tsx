@@ -18,18 +18,12 @@ export function ProductDescription({ description, productName }: ProductDescript
   return (
     <section
       aria-label="Descripción del producto"
-      className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8"
+      className="border border-[var(--rule-base)] bg-[var(--surface-raised)]"
     >
-      <div className="flex items-center gap-3">
-        <span aria-hidden className="inline-flex h-1 w-12 rounded-full bg-[var(--accent)]" />
-        <p className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">
-          Sobre este producto
-        </p>
-      </div>
-      <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-[var(--text-primary)]">
+      <h2 className="border-b border-[var(--rule-soft)] px-4 py-3 text-base sm:text-lg font-semibold text-[var(--text-primary)]">
         Descripción
       </h2>
-      <p className="text-base sm:text-lg leading-relaxed text-[var(--text-secondary)] whitespace-pre-line max-w-3xl">
+      <p className="px-4 py-4 text-base leading-relaxed text-[var(--text-secondary)] whitespace-pre-line max-w-3xl">
         {text}
       </p>
     </section>

@@ -54,14 +54,14 @@ function Bar({
       </span>
       <Star className="h-3 w-3 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
       <div
-        className="flex-1 h-2 rounded-full bg-[var(--surface-sunken)] dark:bg-gray-800 overflow-hidden"
+        className="flex-1 h-2 rounded-sm bg-[var(--surface-sunken)] dark:bg-gray-800 overflow-hidden"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
         aria-valuemax={100}
       >
         <div
-          className="h-full bg-amber-400 rounded-full transition-all"
+          className="h-full bg-[var(--data-warning-500)] transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -78,12 +78,12 @@ export default function RatingBreakdown({ data, onFilterClick }: RatingBreakdown
 
   if (total === 0) {
     return (
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 text-center">
+      <div className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
         <Stars value={0} size="lg" />
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
           Aún no hay calificaciones.
         </p>
-        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+        <p className="mt-1 text-xs text-[var(--text-tertiary)]">
           Sé el primero en dejar tu opinión.
         </p>
       </div>
@@ -91,11 +91,11 @@ export default function RatingBreakdown({ data, onFilterClick }: RatingBreakdown
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 sm:p-6">
+    <div className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6">
       <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-6 items-start">
         {/* Promedio grande */}
-        <div className="flex flex-col items-center sm:items-start gap-2 sm:border-r sm:border-gray-200 sm:dark:border-gray-800 sm:pr-6">
-          <div className="text-5xl font-extrabold text-gray-900 dark:text-white tabular-nums">
+        <div className="flex flex-col items-center sm:items-start gap-2 sm:border-r sm:border-[var(--rule-soft)] sm:pr-6">
+          <div className="text-5xl font-semibold text-[var(--text-primary)] tabular-nums">
             {avg.toFixed(1)}
           </div>
           <Stars value={avg} size="md" />
@@ -117,22 +117,22 @@ export default function RatingBreakdown({ data, onFilterClick }: RatingBreakdown
         </div>
       </div>
 
-      {/* Badges de filtros rapidos */}
+      {/* Badges de filtros rapidos — bordes rectos, neutros */}
       {(data.verifiedCount > 0 || data.withPhotos > 0) && (
-        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-wrap gap-2">
+        <div className="mt-5 pt-4 border-t border-[var(--rule-soft)] flex flex-wrap gap-2">
           {data.verifiedCount > 0 && (
             <button
               onClick={() => onFilterClick?.("verified")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-success/10 text-success px-3 py-1 text-xs font-semibold hover:bg-success/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-[var(--rule-base)] text-[var(--text-secondary)] px-3 py-1 text-xs font-medium hover:bg-[var(--surface-sunken)] transition-colors"
             >
-              <ShieldCheck className="h-3.5 w-3.5" />
+              <ShieldCheck className="h-3.5 w-3.5 text-[var(--data-success-600)]" />
               {data.verifiedCount} compras verificadas
             </button>
           )}
           {data.withPhotos > 0 && (
             <button
               onClick={() => onFilterClick?.("with_photos")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1 text-xs font-semibold hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-[var(--rule-base)] text-[var(--text-secondary)] px-3 py-1 text-xs font-medium hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <Camera className="h-3.5 w-3.5" />
               {data.withPhotos} con fotos

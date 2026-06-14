@@ -17,14 +17,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, LayoutGrid } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 import { cachedJson } from "@/lib/client-cache-fetch";
 import CategoryMegaMenu from "@/components/marketplace/CategoryMegaMenu";
 import { FreeShippingIndicator } from "@/components/marketplace/MarketplaceFreeShippingBar";
 
-// Cantidad recomendada de categorías inline en el sub-nav (el resto vive en el
-// mega-menú "Categorías" a la derecha). 6 entra cómodo en desktop sin saturar.
-const INLINE_CATEGORY_COUNT = 6;
+// Cantidad de categorías inline en el sub-nav (el resto vive en el mega-menú
+// "Categorías"). Vienen ordenadas por popularidad (lo que más se compra) desde
+// el endpoint. Personalización per-usuario = pendiente (ver nota abajo).
+const INLINE_CATEGORY_COUNT = 8;
 
 interface RealCategory {
   id: string;
@@ -43,9 +43,16 @@ export default function MarketplaceSecondaryNav() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const hoverCloseTimer = useRef<number | null>(null);
 
-  // Categorías reales (las más populares) → chips que filtran el catálogo de la
-  // home. Mismo endpoint que el rail/mega-menú (cacheado 5min). Solo con ≥1
-  // producto; tomamos las primeras INLINE_CATEGORY_COUNT (vienen por popularidad).
+  // Categorías reales del catálogo, por POPULARIDAD (lo que más se compra), que
+  // ya es una señal de "lo que le interesa a la mayoría". Mismo endpoint que el
+  // mega-menú (cacheado 5min). Solo con ≥1 producto.
+  //
+  // NOTA (Brandon 2026-06-13): la personalización per-usuario (afinidad por
+  // historial) quedó PENDIENTE — los endpoints de recomendación existentes son
+  // per-tienda (/personalized exige tenant de tienda) o session-gated (/for-me
+  // exige cookie buleje-customer-sess, que el customer localStorage no tiene).
+  // Hace falta un endpoint marketplace-wide de afinidad por categoría. Por ahora:
+  // orden por popularidad (degradación honesta, sin fetch roto).
   const [categories, setCategories] = useState<RealCategory[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -106,7 +113,10 @@ export default function MarketplaceSecondaryNav() {
     // (no duplicar). Acá los filtros scrollean en horizontal si no caben en
     // tablet; "Categorías" queda SIEMPRE fijo a la derecha.
     <div className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40">
-      <div className="relative w-full px-4 lg:px-8">
+      {/* Brandon 2026-06-14: contenido centrado al MISMO ancho que el catálogo
+          y las secciones (max-w-[1760px]) para que nav, sub-nav y contenido
+          queden alineados. El mega-menú full-width es hermano (queda full). */}
+      <div className="relative mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2 lg:gap-4 h-12">
           {/* ── Chips de CATEGORÍAS populares — scrolleables si no caben.
                Filtran el catálogo de la home vía /?category=<id>#catalogo
@@ -115,19 +125,16 @@ export default function MarketplaceSecondaryNav() {
             aria-label="Categorías populares"
             className="flex items-center gap-0.5 sm:gap-1 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {categories.map((cat) => {
-              const Icon = getProductCategoryIcon(cat.id.toLowerCase());
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/?category=${encodeURIComponent(cat.id)}#catalogo`}
-                  className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 border-b-2 border-transparent px-1.5 sm:px-2 h-9 text-[13px] sm:text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]"
-                >
-                  <Icon className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
-                  {prettyCategoryLabel(cat.id)}
-                </Link>
-              );
-            })}
+            {/* Solo TEXTO (sin iconos) — Brandon 2026-06-13. */}
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/?category=${encodeURIComponent(cat.id)}#catalogo`}
+                className="shrink-0 whitespace-nowrap inline-flex items-center border-b-2 border-transparent px-2 sm:px-2.5 h-9 text-[13px] sm:text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              >
+                {prettyCategoryLabel(cat.id)}
+              </Link>
+            ))}
           </nav>
 
           {/* ── Separación sutil entre chips y el mega-menú "Categorías". ── */}

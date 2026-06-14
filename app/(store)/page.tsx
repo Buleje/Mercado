@@ -26,31 +26,24 @@ import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db"
 //    auto-oculta si no hay pedido previo). Recompra en 1 toque.
 //  - TopToday: "Lo más pedido hoy" cross-tienda con quick-add directo al carrito
 //    (se auto-oculta si no hay datos). Ambos self-fetch + self-contained.
-const MarketplaceTopToday = dynamic(
-  () => import("@/components/marketplace/MarketplaceTopToday"),
+// Fila ANCHA de descubrimiento con pestañas (Nuevos / Lo más pedido / Ofertas /
+// Combos) — reemplaza las dos cajas lado a lado (Brandon 2026-06-14, opción
+// "carrusel ancho con tabs").
+const HomeDiscoveryTabs = dynamic(
+  () => import("@/components/marketplace/home/HomeDiscoveryTabs"),
 );
 // Catálogo de productos completo (fusión /marketplace → /, Brandon 2026-06-08).
 const HomeCatalog = dynamic(
   () => import("@/components/marketplace/home/HomeCatalog"),
-);
-// "Nuevos en {ciudad}" — descubrimiento con productos recién agregados (real data).
-const HomeNewArrivals = dynamic(
-  () => import("@/components/marketplace/home/HomeNewArrivals"),
 );
 // Hero rotativo full-width estilo marketplace pro (Brandon 2026-06-12): reemplaza
 // el viejo hero "Pedí en {ciudad}" + buscador por un banner deslizable (swipe).
 const HomeHeroBanner = dynamic(
   () => import("@/components/marketplace/home/HomeHeroBanner"),
 );
-// Banda animada con los logos de TODAS las tiendas (marquee infinito) — va
-// arriba de la fila Ofertas | Paquetes (Brandon 2026-06-12).
+// Banda animada con los logos de TODAS las tiendas (marquee infinito).
 const StoreLogosMarquee = dynamic(
   () => import("@/components/marketplace/home/StoreLogosMarquee"),
-);
-// Caja de descubrimiento genérica (catálogo) — Ofertas / Paquetes. Misma
-// temática que "Recién llegados" / "Ranking" (Brandon 2026-06-12).
-const HomeCatalogStrip = dynamic(
-  () => import("@/components/marketplace/home/HomeCatalogStrip"),
 );
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
@@ -77,8 +70,6 @@ import {
   MapPin,
   ChevronDown,
   MessageCircle,
-  Tag,
-  Package,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -1255,57 +1246,29 @@ export default async function Home() {
         </Suspense>
       </div>
 
-      {/* 2.5 Descubrimiento — "Recién llegados" + "Ranking semanal" LADO A LADO
-          (Brandon 2026-06-12): una sola fila, 2 cajas; cada caja muestra ~3
-          cards deslizables. En mobile se apilan. Cada caja se auto-oculta si no
-          tiene datos. */}
+      {/* 2.5 Descubrimiento — CARRUSEL ANCHO CON PESTAÑAS (Brandon 2026-06-14):
+          una sola fila a todo el ancho con tabs (Nuevos / Lo más pedido /
+          Ofertas / Combos) que cambian el contenido. Reemplaza las dos cajas
+          lado a lado y la fila Ofertas|Paquetes. */}
       <Suspense fallback={null}>
         <ShowWhenAllVerticals>
           <Reveal>
             <section
-              aria-label="Recién llegados y ranking"
+              aria-label="Descubrí en Buleje"
               className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-stretch">
-                <HomeNewArrivals boxed />
-                <MarketplaceTopToday boxed />
-              </div>
+              <HomeDiscoveryTabs />
             </section>
           </Reveal>
         </ShowWhenAllVerticals>
       </Suspense>
 
-      {/* 3. Marquee de logos (todas las tiendas) + fila Ofertas | Paquetes.
-          Brandon 2026-06-12: reemplaza el grid de "Tiendas destacadas" por dos
-          cajas (Ofertas + Paquetes) con la misma temática de la fila de
-          descubrimiento. Cada caja se auto-oculta si no tiene productos. */}
+      {/* 3. Marquee de logos (todas las tiendas). Ofertas/Combos se movieron a
+          las pestañas del carrusel de descubrimiento (2.5), Brandon 2026-06-14. */}
       <Suspense fallback={null}>
         <ShowWhenAllVerticals>
           <Reveal>
             <StoreLogosMarqueeRSC />
-            <section
-              aria-label="Ofertas y paquetes"
-              className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-stretch">
-                <HomeCatalogStrip
-                  fetchUrl="/api/marketplace/catalog?sort=price_asc&limit=12"
-                  eyebrow="Ofertas"
-                  title="Ofertas del día"
-                  actionHref="/?sort=price_asc#catalogo"
-                  ariaLabel="Ofertas"
-                  icon={<Tag className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
-                />
-                <HomeCatalogStrip
-                  fetchUrl="/api/marketplace/catalog?category=promociones&limit=12"
-                  eyebrow="Paquetes"
-                  title="Combos y paquetes"
-                  actionHref="/?cat=promociones#catalogo"
-                  ariaLabel="Paquetes"
-                  icon={<Package className="h-5 w-5" strokeWidth={2.25} aria-hidden />}
-                />
-              </div>
-            </section>
           </Reveal>
         </ShowWhenAllVerticals>
       </Suspense>

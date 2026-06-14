@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import DiscoveryBox from "@/components/marketplace/home/DiscoveryBox";
+import ComboMiniCard from "@/components/marketplace/home/ComboMiniCard";
 import { Sparkles } from "@buleje/design-system/icons";
 import UnifiedProductCard, {
   type UnifiedProductCardProduct,
@@ -73,18 +74,16 @@ export default function HomeNewArrivals({ boxed = false }: { boxed?: boolean } =
   // Sin productos nuevos → no renderiza nada.
   if (items !== null && items.length === 0) return null;
 
-  // Cards (compartidas entre la caja y la sección full-width).
+  // Cards de la CAJA (estilo Combo: ComboMiniCard, sin carrito ni bordes).
   const cards =
     items === null
       ? Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="aspect-[3/4] rounded-2xl skeleton-shimmer" />
+          <div key={i} className="aspect-square rounded-md skeleton-shimmer" />
         ))
       : items.map((p, idx) => (
-          <UnifiedProductCard
+          <ComboMiniCard
             key={p.storeProductId || p.id}
             index={idx}
-            variant="default"
-            layout="compact"
             href={`/marketplace/${p.storeSlug}?p=${p.id}`}
             product={p}
           />

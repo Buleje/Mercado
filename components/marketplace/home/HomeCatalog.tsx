@@ -28,11 +28,12 @@ import { isValidVertical } from "@/lib/marketplace/verticals";
 const MarketplaceCatalogViewSection = dynamic(
   () => import("@/components/marketplace/MarketplaceCatalogViewSection"),
 );
-// Brandon 2026-06-12: rail IZQUIERDO de filtros (Categorías · Precio · Tienda ·
-// Ordenar) montado en la home. Existía pero quedó huérfano tras la fusión
-// /marketplace → /. Solo lg+ (en mobile los filtros viven en los chips + tabs).
-const MarketplaceLeftRail = dynamic(
-  () => import("@/components/marketplace/MarketplaceLeftRail"),
+// Brandon 2026-06-13: el rail IZQUIERDO fijo de filtros se reemplazó por un
+// botón "Filtros" → panel (estilo AliExpress/Temu). El catálogo ocupa TODO el
+// ancho (más columnas). Los filtros son los mismos (MarketplaceLeftRail dentro
+// del sheet), solo que bajo demanda.
+const CatalogFiltersSheet = dynamic(
+  () => import("@/components/marketplace/home/CatalogFiltersSheet"),
 );
 
 /**
@@ -87,21 +88,16 @@ export default function HomeCatalog() {
         <Suspense fallback={null}>
           <CatalogUrlSync />
         </Suspense>
-        {/* Brandon 2026-06-12: la columna DERECHA de "Publicidad" se eliminó —
-            esos banners ahora son el HERO de la home (HomeHeroBanner). El
-            catálogo queda a 2 columnas (filtros + grid) y el grid ocupa todo el
-            ancho libre. */}
-        <div className="grid w-full grid-cols-1 items-start gap-5 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8">
-          {/* ── IZQUIERDA: filtros del catálogo (sticky, solo lg+). En mobile
-               los filtros los aportan los chips + tabs de orden. ── */}
-          <aside
-            aria-label="Filtros del catálogo"
-            className="hidden lg:block lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            <MarketplaceLeftRail />
-          </aside>
+        {/* Brandon 2026-06-13: catálogo a TODO el ancho (estilo AliExpress/Temu).
+            Sin rail lateral fijo — los filtros viven en el botón "Filtros"
+            (panel) de la barra superior. Más columnas de producto. */}
+        <div className="w-full">
+          {/* Barra superior: botón Filtros (reemplaza al rail) */}
+          <div className="mb-4 flex items-center gap-2 px-1">
+            <CatalogFiltersSheet />
+          </div>
 
-          {/* ── CENTRO: grid de catálogo (full ancho libre) ── */}
+          {/* Grid de catálogo a ancho completo */}
           <div className="min-w-0">
             <MarketplaceCatalogViewSection />
           </div>

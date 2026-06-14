@@ -17,7 +17,6 @@ import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import type { Metadata } from "next";
 import { ProductDetailClient } from "@/components/marketplace/product-detail/ProductDetailClient";
-import BackToStoreButton from "@/components/marketplace/product-detail/BackToStoreButton";
 // Brandon 2026-06-12: los comentarios del producto se mudaron del modal de
 // agregar (que quedó liviano) a la página de detalle — su lugar natural.
 import ProductCommentsSection from "@/components/marketplace/ProductCommentsSection";
@@ -53,6 +52,8 @@ interface ApiProduct {
     name: string;
     slug: string;
     logo: string | null;
+    banner: string | null;
+    category: string | null;
     description: string | null;
     zone: string | null;
     rating?: number | null;
@@ -396,13 +397,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
         })()} en {product.store.name} ({product.store.zone ?? "Ciudad Constitución"})
       </h1>
 
-      {/* BreadcrumbSchema: JSON-LD para SERP + nav visible si visible=true */}
+      {/* BreadcrumbSchema: JSON-LD para SERP + nav visible si visible=true.
+          El "Volver" + ruta visibles ahora viven DENTRO del cuadro del PDP
+          (cabecera estilo MercadoLibre), no como barra suelta arriba. */}
       <BreadcrumbSchema items={breadcrumbItems} visible={false} />
-
-      {/* Botón Volver — más limpio que breadcrumbs, vuelve a la tienda. */}
-      <div className="mx-auto max-w-[1600px] px-4 pt-4 sm:px-6 lg:px-8">
-        <BackToStoreButton storeSlug={slug} storeName={product.store.name} />
-      </div>
 
       <ProductDetailClient
         product={{
@@ -421,6 +419,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
           id: product.store.id,
           name: product.store.name,
           slug: product.store.slug,
+          logo: product.store.logo,
+          banner: product.store.banner,
+          category: product.store.category,
+          rating: product.store.rating ?? undefined,
           description: product.store.description,
           zone: product.store.zone,
           km: product.store.zone ? "0.8 km" : null,

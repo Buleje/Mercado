@@ -20,12 +20,11 @@ import { PRICE_BUCKETS } from "@/components/marketplace/catalog-options";
 // PedidosYa — imagen 176px + nombre/precio/CTA visibles, nada cortado), grid
 // vertical multi-columna desde sm. No reusa MARKETPLACE_GRID (que arranca en
 // 2-col) porque el card list horizontal necesita el ancho completo en mobile.
-// Catálogo en la COLUMNA CENTRAL. Brandon pidió 4 por fila en desktop ancho:
-// 2 cols base → 3 en xl → 4 en pantallas anchas. Densidad sin perder
-// legibilidad (las 5-6 cols originales eran diminutas).
-// Brandon 2026-06-07: cards más compactas → hasta 5 por fila en desktop ancho.
+// Catálogo a TODO el ancho (Brandon 2026-06-13: se quitó el rail lateral de
+// filtros → el grid gana ~230px). Estilo AliExpress/Temu: más columnas para
+// descubrimiento/impulso. 2 base → 3 sm → 5 lg → 6 xl → 7 en pantallas anchas.
 const CATALOG_GRID =
-  "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3";
+  "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
