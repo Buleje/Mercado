@@ -46,7 +46,7 @@ import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useTheme } from "@/contexts/theme-context";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCustomer } from "@/contexts/customer-context";
-import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
+import { useAuthModal } from "@/components/auth/AuthModal";
 import { cn } from "@/lib/utils";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
@@ -83,6 +83,7 @@ const SharedMobileNavDrawer = dynamic(
   { ssr: false },
 );
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
+import DeliveryLocationMenu from "@/components/marketplace/DeliveryLocationMenu";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
@@ -402,18 +403,15 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   // Logo dinámico cuando estamos dentro de un storefront concreto.
   const storefront = useStorefrontLogo(pathname);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { authModalOpen, openAuthModal, closeAuthModal } = useAuthModal();
-  // Cuando volvemos del callback OAuth con `?oauth=complete&name=...`,
-  // pre-llenamos el AuthModal con el nombre del usuario y solo le pedimos
-  // el celular para terminar el registro.
-  const [oauthInitialName, setOauthInitialName] = useState<string | null>(null);
+  const { openAuthModal } = useAuthModal();
+  // Brandon 2026-06-14: el login es una PÁGINA (/login). Cuando volvemos del
+  // callback OAuth con `?oauth=complete&name=...`, mandamos a /login para
+  // completar el celular (en vez de abrir el modal).
   useEffect(() => {
     const oauth = navSearchParams.get("oauth");
     const oauthName = navSearchParams.get("name");
     if (oauth === "complete" && oauthName) {
-      setOauthInitialName(oauthName);
-      openAuthModal();
-      // Limpiamos el query param para evitar re-abrir al refresh.
+      // Limpiamos el query param actual antes de navegar.
       try {
         const url = new URL(window.location.href);
         url.searchParams.delete("oauth");
@@ -423,6 +421,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
       } catch {
         /* SSR guard */
       }
+      router.push(`/login?oauth=complete&name=${encodeURIComponent(oauthName)}`);
     }
     // intencional: solo correr al primer mount con los params
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -566,10 +565,13 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
           // Minimalista/ejecutivo (Brandon 2026-06-07): superficie sólida +
           // hairline inferior MUY suave (rule-soft). Sin backdrop-blur, sin
           // sombras, sin oscurecer el borde al hacer scroll (se veía duro).
-          "bg-[var(--surface-raised)] border-b border-[var(--rule-soft)]",
+          // Brandon 2026-06-14: en desktop (md+) el sub-nav va pegado abajo →
+          // sin border-b para que NO se vea la línea entre nav y sub-nav (leen
+          // como un solo bloque). En mobile (sin sub-nav) conserva el hairline.
+          "bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] md:border-b-0",
         )}
       >
-        <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8">
           {/* Brandon 2026-05-20 v6 — navbar mobile minimalista:
               h-16 (64px) → h-14 (56px) en mobile, h-16 desktop.
               Reduce el real-estate ocupado above-the-fold y se siente más
@@ -622,19 +624,10 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               )}
             </Link>
 
-            {/* ── Ubicación de entrega al lado del logo (Brandon 2026-06-07) —
-                solo modo completo. Ícono pin + lugar; click → direcciones. ── */}
-            {!isTiendasOnly && (
-              <button
-                type="button"
-                onClick={() => router.push("/marketplace/mi-cuenta/direcciones")}
-                aria-label="Tu ubicación de entrega"
-                className="hidden lg:inline-flex items-center gap-1.5 shrink-0 max-w-[180px] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-              >
-                <MapPin className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={2.25} aria-hidden="true" />
-                <span className="text-sm font-bold truncate">{platformCity}</span>
-              </button>
-            )}
+            {/* ── Ubicación de entrega al lado del logo (Brandon 2026-06-13) —
+                solo modo completo. Click → popover estilo AliExpress con
+                País/Departamento/Provincia/Distrito + GPS + mapa. ── */}
+            {!isTiendasOnly && <DeliveryLocationMenu fallbackLabel={platformCity} />}
 
             {/* ── Enlaces Inicio/Tiendas (Brandon 2026-06-02) — re-agregados en
                 modo tiendas, pegados al logo (antes de la pastilla). En lg+ para
@@ -1042,14 +1035,8 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
         storesOnly={isTiendasOnly}
       />
 
-      <AuthModal
-        open={authModalOpen}
-        onClose={() => {
-          setOauthInitialName(null);
-          closeAuthModal();
-        }}
-        initialName={oauthInitialName ?? undefined}
-      />
+      {/* Login: ahora es la página /login (Brandon 2026-06-14). El botón
+          "Ingresar" y el flujo OAuth navegan allí; ya no se monta el modal. */}
 
       {/* Asistente IA — abierto por el botón "Ayuda" del nav (evento
           buleje:open-assistant), sin FAB flotante. El Messenger tienda↔cliente

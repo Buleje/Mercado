@@ -7,6 +7,7 @@ import {
   useCallback,
   type KeyboardEvent,
 } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { X, User, Phone, Shield, Loader2, Search } from "lucide-react";
 import {
@@ -35,10 +36,21 @@ interface DniResponse {
 // Hook público — permite abrir/cerrar el modal desde cualquier componente
 // ---------------------------------------------------------------------------
 export function useAuthModal() {
-  const [open, setOpen] = useState(false);
-  const openAuthModal = useCallback(() => setOpen(true), []);
-  const closeAuthModal = useCallback(() => setOpen(false), []);
-  return { authModalOpen: open, openAuthModal, closeAuthModal };
+  // Brandon 2026-06-14: el login dejó de ser modal — ahora es una PÁGINA
+  // dedicada (/login). `openAuthModal` navega a /login?next=<ruta actual> en
+  // vez de abrir el modal. `authModalOpen` queda siempre false (el <AuthModal/>
+  // ya no se monta), así no hace falta tocar los 8 call sites.
+  const router = useRouter();
+  const pathname = usePathname();
+  const openAuthModal = useCallback(() => {
+    const next =
+      pathname && pathname !== "/login"
+        ? `?next=${encodeURIComponent(pathname)}`
+        : "";
+    router.push(`/login${next}`);
+  }, [router, pathname]);
+  const closeAuthModal = useCallback(() => {}, []);
+  return { authModalOpen: false, openAuthModal, closeAuthModal };
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +127,10 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
   // (sin esto el navbar no muestra iniciales y /checkout/auth no detecta sesión)
   const { register: registerCustomer } = useCustomer();
   const [step, setStep] = useState<Step>("phone");
+  // Vista del paso "phone" (Brandon 2026-06-14, estilo Rappi): "methods" =
+  // botones (Google / celular / Facebook); "form" = ingreso de celular. Si el
+  // usuario vuelve de OAuth (initialName), saltamos directo al form.
+  const [phoneView, setPhoneView] = useState<"methods" | "form">("methods");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState(initialName ?? "");
 
@@ -151,6 +167,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
       });
     } else {
       setVisible(false);
+      setPhoneView("methods"); // reset al cerrar → siempre abre en los botones
       const timer = setTimeout(() => setRendered(false), 300);
       return () => clearTimeout(timer);
     }
@@ -431,7 +448,7 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
       ref={backdropRef}
       onClick={handleBackdropClick}
       className={[
-        "fixed inset-0 z-200 flex items-end sm:items-center justify-center px-0 sm:px-4",
+        "fixed inset-0 z-[200] flex items-end sm:items-center justify-center px-0 sm:px-4 sm:py-6",
         "bg-black/60 backdrop-blur-md",
         "transition-opacity duration-300",
         visible ? "opacity-100" : "opacity-0 pointer-events-none",
@@ -449,9 +466,12 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
         aria-label="Autenticación — Buleje"
         onKeyDown={handleFocusTrap}
         className={[
-          "relative w-full sm:max-w-110 max-h-[90vh] overflow-y-auto",
-          "fixed inset-x-0 bottom-0 rounded-t-3xl",
-          "sm:static sm:rounded-3xl",
+          // Fix 2026-06-14: el panel ya NO es `fixed bottom-0` (chocaba con
+          // `sm:static` + max-h y cortaba el tope del modal sin scroll). El
+          // overlay flex (`items-end sm:items-center`) lo posiciona; el panel
+          // solo se autolimita en alto y scrollea internamente. dvh para mobile.
+          "relative w-full sm:max-w-[56rem] max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain",
+          "rounded-t-3xl sm:rounded-3xl",
           "bg-white dark:bg-gray-900 shadow-2xl",
           "transition-all duration-300 ease-out",
           visible
@@ -459,9 +479,6 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
             : "opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95",
         ].join(" ")}
       >
-        {/* ── Gradient header decoration ── */}
-        <div className="absolute inset-x-0 top-0 h-32 bg-gray-900 dark:bg-gray-800 opacity-[0.07] dark:opacity-[0.15] pointer-events-none" />
-
         {/* Toast */}
         {toast && (
           <div
@@ -482,7 +499,37 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative px-6 pb-8 pt-8 sm:px-8">
+        <div className="sm:flex">
+        {/* ── Panel promo (desktop, estilo Rappi/split-screen) ── */}
+        <aside
+          aria-hidden
+          className="relative hidden shrink-0 flex-col justify-between overflow-hidden p-8 text-white sm:flex sm:w-[42%] sm:rounded-l-3xl"
+          style={{
+            background:
+              "linear-gradient(150deg, var(--accent) 0%, color-mix(in oklch, var(--accent) 60%, #061a1e) 70%, #061a1e 100%)",
+          }}
+        >
+          <span className="text-lg font-black tracking-tight">Buleje</span>
+          <div>
+            <p className="text-[1.75rem] font-black leading-[1.1] tracking-tight">
+              Tu barrio,
+              <br />
+              a un toque.
+            </p>
+            <p className="mt-3 max-w-[16rem] text-sm font-medium text-white/85">
+              Pedí a las bodegas y restaurantes de Ciudad Constitución con delivery rápido.
+              Pagás al recibir — Yape, Plin o efectivo.
+            </p>
+          </div>
+          <ul className="space-y-1.5 text-sm font-medium text-white/90">
+            <li>Envío gratis desde S/50</li>
+            <li>10% OFF en tu primera compra</li>
+            <li>Seguí tu pedido en vivo</li>
+          </ul>
+        </aside>
+
+        {/* ── Contenido (auth) ── */}
+        <div className="relative flex-1 px-6 pb-8 pt-8 sm:px-10">
           {/* ── Logo + título ── */}
           <div className="mb-7 flex flex-col items-center gap-3">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-2xl font-black shadow-md ring-4 ring-white dark:ring-gray-900">
@@ -506,58 +553,60 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
             </div>
           </div>
 
-          {/* ── Botones sociales primero (paso phone) ──
-              Si el usuario viene de OAuth (initialName presente), ocultamos
-              los botones — ya está logueado, solo falta su celular. */}
-          {step === "phone" && !initialName && (
-            <>
-              <div className="space-y-2.5 mb-5">
-                <button
-                  ref={firstFocusableRef}
-                  onClick={handleGoogle}
-                  disabled={!oauthReady}
-                  title={oauthReady ? undefined : "Configuración pendiente"}
-                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm"
-                >
-                  <GoogleIcon />
-                  {oauthReady ? "Continuar con Google" : "Google — Próximamente"}
-                </button>
+          {/* ── Métodos (Brandon 2026-06-14, estilo Rappi): botones grandes
+              apilados. "Continuar con tu celular" cambia a la vista de ingreso
+              de número. Si viene de OAuth (initialName), saltea esto. ── */}
+          {step === "phone" && !initialName && phoneView === "methods" && (
+            <div className="space-y-3">
+              <button
+                ref={firstFocusableRef}
+                onClick={handleGoogle}
+                disabled={!oauthReady}
+                title={oauthReady ? undefined : "Configuración pendiente"}
+                className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <GoogleIcon />
+                {oauthReady ? "Continuar con Google" : "Google — Próximamente"}
+              </button>
 
-                <button
-                  onClick={handleFacebook}
-                  disabled={!oauthReady}
-                  title={oauthReady ? undefined : "Configuración pendiente"}
-                  className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm"
-                >
-                  <FacebookIcon />
-                  {oauthReady
-                    ? "Continuar con Facebook"
-                    : "Facebook — Próximamente"}
-                </button>
-              </div>
+              {/* Celular — acción principal (accent, estilo CTA verde de Rappi) */}
+              <button
+                onClick={() => setPhoneView("form")}
+                className="flex w-full min-h-12 items-center justify-center gap-2.5 rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-white shadow-md transition-all hover:opacity-95 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500"
+              >
+                <Phone className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                Continuar con tu celular
+              </button>
 
-              {/* Divider */}
-              <div className="mb-5 flex items-center gap-4">
-                <div className="h-px flex-1 bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
-                <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-widest">
-                  o con tu celular
-                </span>
-                <div className="h-px flex-1 bg-linear-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
-              </div>
-
-              {/* Tabs login/register eliminados (2026-04-21) — flujo
-                  unificado: el modal siempre muestra los mismos campos.
-                  Si el customer ya existe (lookup por teléfono), los
-                  campos vienen pre-llenados via useEffect debajo. */}
-            </>
+              <button
+                onClick={handleFacebook}
+                disabled={!oauthReady}
+                title={oauthReady ? undefined : "Configuración pendiente"}
+                className="group flex w-full min-h-12 items-center justify-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-200 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <FacebookIcon />
+                {oauthReady ? "Continuar con Facebook" : "Facebook — Próximamente"}
+              </button>
+            </div>
           )}
 
           {/* ── Paso 1: Formulario simplificado (phone primero) ──
               Cambio 2026-04-21: solo se requiere el celular. Si el customer
               ya existe, el nombre se autollena vía /api/auth/customer-lookup.
               Si NO existe (cliente nuevo), aparece el campo Nombre debajo. */}
-          {step === "phone" && (
+          {step === "phone" && (initialName || phoneView === "form") && (
             <div className="space-y-3.5">
+
+              {/* Volver a los métodos (solo si no viene de OAuth) */}
+              {!initialName && (
+                <button
+                  type="button"
+                  onClick={() => setPhoneView("methods")}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  ← Otras opciones
+                </button>
+              )}
 
               {/* Celular — campo principal y único en el primer paso */}
               <div>
@@ -736,7 +785,8 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
               Política de Privacidad
             </a>
           </p>
-        </div>
+        </div>{/* /contenido auth */}
+        </div>{/* /split-screen */}
       </div>
     </div>
   );

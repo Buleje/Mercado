@@ -21,6 +21,7 @@ import {
   ChefHat,
   Tag,
   Rocket,
+  MessageCircle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,9 @@ type RailLink = {
 const RAIL_LINKS: readonly RailLink[] = [
   { href: "/", label: "Inicio", Icon: HomeIcon },
   { href: "/tiendas", label: "Tiendas", Icon: Store, matchPrefix: "/tiendas" },
+  // Chat estilo Messenger — página propia (Brandon 2026-06-14). El icono del nav
+  // abre el panel flotante; este lleva a la página completa /chat.
+  { href: "/chat", label: "Chat", Icon: MessageCircle, matchPrefix: "/chat" },
   { href: "/marketplace/ofertas", label: "Ofertas", Icon: Tag, matchPrefix: "/marketplace/ofertas" },
   { href: "/recetas", label: "Recetas", Icon: ChefHat, matchPrefix: "/recetas" },
   { href: "/marketplace/para-vos", label: "Descubre", Icon: Sparkles, matchPrefix: "/marketplace/para-vos" },
