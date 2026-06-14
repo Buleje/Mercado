@@ -51,6 +51,7 @@ import {
   FileText,
   Search,
   TreePine,
+  Inbox,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -112,6 +113,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     items: [
       { label: "Dashboard",          icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"      },
       { label: "Chat",               icon: <MessageSquare   className="w-5 h-5 shrink-0" />, href: "/superadmin/chat"           },
+      { label: "Soporte",            icon: <Inbox           className="w-5 h-5 shrink-0" />, href: "/superadmin/support"        },
       { label: "Centro de control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
       { label: "Actividad",          icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"       },
     ],
