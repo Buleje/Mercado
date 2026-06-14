@@ -131,6 +131,7 @@ const NAV_GROUPS: NavGroupDef[] = [
       { label: "Uso & límites",      icon: <Gauge       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/usage"  },
       { label: "Activación",         icon: <Rocket      className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/onboarding" },
       { label: "Integraciones",      icon: <Zap         className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/integrations" },
+      { label: "Mapa",               icon: <MapIcon     className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/map" },
       // ADR-124 — Especializaciones por tenant: matriz de feature flags
       // que habilita módulos verticales (forestal CTP, salud, textil, etc.)
       // en el panel admin del negocio seleccionado.

@@ -28,6 +28,8 @@ model Tenant {
   // ── Branding white-label ─────────────────────────────
   logoUrl                String? // URL del logo (Vercel Blob o CDN)
   faviconUrl             String? // URL del favicon
+  lat                    Float? // Ubicación de la tienda (mapa superadmin, 2026-06-14)
+  lng                    Float?
   primaryColor           String    @default("#00B4A6") // Color principal del negocio
   secondaryColor         String    @default("#f4a261") // Color secundario
   // ── Referidos entre tiendas ──────────────────────────
