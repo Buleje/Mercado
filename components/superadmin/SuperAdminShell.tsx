@@ -53,6 +53,7 @@ import {
   TreePine,
   Inbox,
   Bell,
+  Zap,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -129,6 +130,7 @@ const NAV_GROUPS: NavGroupDef[] = [
       { label: "Crecimiento",        icon: <TrendingUp  className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/growth" },
       { label: "Uso & límites",      icon: <Gauge       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/usage"  },
       { label: "Activación",         icon: <Rocket      className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/onboarding" },
+      { label: "Integraciones",      icon: <Zap         className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/integrations" },
       // ADR-124 — Especializaciones por tenant: matriz de feature flags
       // que habilita módulos verticales (forestal CTP, salud, textil, etc.)
       // en el panel admin del negocio seleccionado.
