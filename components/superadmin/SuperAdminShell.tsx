@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import CommandPalette from "./CommandPalette";
 import { NotificationsBell } from "./_shared/NotificationsBell";
+import SuperAdminChatPopover from "./chat/SuperAdminChatPopover";
 import {
   LayoutDashboard,
   Building2,
@@ -36,6 +37,7 @@ import {
   Wallet,
   Server,
   Home,
+  MessageSquare,
   Store,
   Truck,
   Receipt,
@@ -109,6 +111,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     icon: <Home className="w-4 h-4 shrink-0" />,
     items: [
       { label: "Dashboard",          icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"      },
+      { label: "Chat",               icon: <MessageSquare   className="w-5 h-5 shrink-0" />, href: "/superadmin/chat"           },
       { label: "Centro de control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
       { label: "Actividad",          icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"       },
     ],
@@ -200,6 +203,7 @@ type PageMeta = { title: string; section: string };
 const PAGE_META: Record<string, PageMeta> = {
   "/superadmin":                  { title: "Dashboard",          section: "Inicio" },
   "/superadmin/dashboard":        { title: "Dashboard",          section: "Inicio" },
+  "/superadmin/chat":             { title: "Chat",               section: "Inicio" },
   "/superadmin/control-center":   { title: "Centro de control",  section: "Inicio" },
   "/superadmin/activity":         { title: "Actividad",          section: "Inicio" },
 
@@ -672,21 +676,33 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           </div>
         )}
 
-        {/* Nav — botones de grupo. Hover abre flyout lateral con los items
-            del grupo (mismo patrón que admin de negocios). Tipografía sm/base
-            para mejorar lectura (antes era 2xs/sm = muy chico). */}
+        {/* Nav (Brandon 2026-06-14): MISMO patrón que el panel admin de negocio.
+            - Expandido (w-60): acordeón inline single-open que sigue la ruta
+              activa (sección activa desplegada, las demás minimizadas).
+            - Colapsado (w-16, solo iconos): flyout lateral on hover. */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1.5">
-          <NavGroupsFlyout
-            groups={filteredGroups}
-            visibleHrefs={new Set(navItems.map((it) => it.href))}
-            pathname={pathname}
-            sidebarCollapsed={collapsed}
-            onItemClick={() => setMobileOpen(false)}
-            isBuleje={isBuleje}
-            density={visual.density}
-            iconClassName={iconClassName}
-            forceExpandAll={isSearching}
-          />
+          {collapsed ? (
+            <NavGroupsFlyout
+              groups={filteredGroups}
+              visibleHrefs={new Set(navItems.map((it) => it.href))}
+              pathname={pathname}
+              sidebarCollapsed={collapsed}
+              onItemClick={() => setMobileOpen(false)}
+              isBuleje={isBuleje}
+              density={visual.density}
+              iconClassName={iconClassName}
+              forceExpandAll={isSearching}
+            />
+          ) : (
+            <NavGroupsAccordion
+              groups={filteredGroups}
+              visibleHrefs={new Set(navItems.map((it) => it.href))}
+              pathname={pathname}
+              onItemClick={() => setMobileOpen(false)}
+              isBuleje={isBuleje}
+              forceExpandAll={isSearching}
+            />
+          )}
         </nav>
 
         {/* Collapse toggle (desktop) */}
@@ -832,7 +848,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div className="flex flex-col min-w-0 leading-tight">
+              <div className="flex flex-col min-w-0 leading-tight shrink-0">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)] truncate">
                   {pageMeta.section}
                 </span>
@@ -840,6 +856,28 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   {pageMeta.title}
                 </h1>
               </div>
+
+              {/* Barra de búsqueda global — misma firma visual que el header del
+                  panel admin de negocio (Brandon 2026-06-14). Abre el
+                  CommandPalette (Ctrl/Cmd+K) ya montado en el shell. */}
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }),
+                  )
+                }
+                aria-label="Buscar (atajo Ctrl+K)"
+                className="group hidden sm:flex items-center gap-2.5 h-10 flex-1 max-w-md px-3.5 ml-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] cursor-pointer transition-colors hover:border-[color-mix(in_oklab,var(--accent)_40%,transparent)] hover:bg-[var(--surface-raised)]"
+              >
+                <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]" />
+                <span className="flex-1 text-left text-sm font-medium text-[var(--text-tertiary)] truncate transition-colors group-hover:text-[var(--text-secondary)]">
+                  Buscar tiendas, módulos…
+                </span>
+                <kbd className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border border-[var(--rule-base)] text-[var(--text-tertiary)] bg-[var(--surface-raised)]">
+                  <span className="text-base leading-none">⌘</span>K
+                </kbd>
+              </button>
             </div>
 
             {/* Derecha — chip user · notificaciones · theme · salir.
@@ -855,6 +893,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
 
               {/* Divider visual — solo lg+ donde aparece el chip */}
               <div className="hidden lg:block w-px h-6 bg-[var(--rule-soft)] mx-1.5" />
+
+              {/* Popover Messenger — chat directo con los negocios (ADR-132) */}
+              <SuperAdminChatPopover />
 
               <NotificationsBell />
 
@@ -1277,25 +1318,20 @@ function NavGroupsAccordion({
   // En modo búsqueda, todos los grupos visibles se expanden automáticamente.
   const effectiveExpanded = forceExpandAll ? allGroupIds : expanded;
 
-  // Cuando cambia la ruta, asegurarse que el grupo de la ruta está expandido.
+  // Acordeón ESTRICTO single-open (Brandon 2026-06-14, igual que el admin):
+  // al cambiar de ruta se despliega SOLO la sección activa y se cierran las
+  // demás. Mantiene el guard de igualdad para no re-renderizar de más.
   useEffect(() => {
     if (activeGroupId) {
-      setExpanded((prev) => {
-        if (prev.has(activeGroupId)) return prev;
-        const next = new Set(prev);
-        next.add(activeGroupId);
-        return next;
-      });
+      setExpanded((prev) =>
+        prev.size === 1 && prev.has(activeGroupId) ? prev : new Set([activeGroupId]),
+      );
     }
   }, [activeGroupId]);
 
+  // Abrir una sección cierra las demás; re-click la colapsa.
   const toggle = (id: NavGroupId) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setExpanded((prev) => (prev.has(id) ? new Set() : new Set([id])));
   };
 
   const headerActive = isBuleje
@@ -1341,7 +1377,7 @@ function NavGroupsAccordion({
               />
             </button>
             {isOpen && (
-              <div id={panelId} className="mt-1 ml-2 pl-3 border-l border-white/10 dark:border-white/10 space-y-0.5">
+              <div id={panelId} className={["mt-1 ml-2 pl-3 border-l space-y-0.5", isBuleje ? "border-white/10" : "border-[var(--rule-base)]"].join(" ")}>
                 {items.map((item) => {
                   const active =
                     pathname === item.href ||

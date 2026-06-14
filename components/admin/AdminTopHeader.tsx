@@ -23,6 +23,7 @@ import { Menu, Search, Store as StoreIcon, ExternalLink } from "@buleje/design-s
 import Link from "next/link";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminChatNavButton from "@/components/admin/AdminChatNavButton";
+import AdminPlatformInboxButton from "@/components/admin/AdminPlatformInboxButton";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
@@ -241,7 +242,16 @@ export function AdminTopHeader({
             target="_blank"
             rel="noopener noreferrer"
             title="Ver mi tienda (abre en pestaña nueva)"
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] sm:px-3"
+            // Brandon 2026-06-14: botón branded theme-aware. Antes era
+            // text-[var(--text-primary)] fijo → en header oscuro (buleje/ejecutivo)
+            // quedaba texto oscuro sobre oscuro (ilegible). Ahora chip de acento
+            // con buen contraste en claro y oscuro.
+            className={cn(
+              "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-sm font-bold transition-colors sm:px-3",
+              isAutoDarkTheme
+                ? "border-[color-mix(in_oklab,var(--accent)_30%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[color-mix(in_oklab,var(--accent)_65%,white)] hover:bg-[color-mix(in_oklab,var(--accent)_20%,transparent)]"
+                : "border-[color-mix(in_oklab,var(--accent)_25%,transparent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[color-mix(in_oklab,var(--accent)_14%,var(--surface-raised))]"
+            )}
           >
             <StoreIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
             <span className="hidden sm:inline">Ver mi tienda</span>
@@ -250,6 +260,8 @@ export function AdminTopHeader({
         )}
         {/* Chat con clientes — bandeja Messenger (Brandon 2026-06-06) */}
         <AdminChatNavButton />
+        {/* Mensajes de la plataforma (Buleje → dueño) — Messenger ADR-132 */}
+        <AdminPlatformInboxButton />
         <div className="hidden sm:block">
           <NotificationBell />
         </div>
