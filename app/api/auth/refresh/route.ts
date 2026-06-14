@@ -11,6 +11,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
+import { isSessionRevoked } from "@/lib/auth/session-revocation";
 
 /**
  * POST /api/auth/refresh
@@ -36,6 +37,20 @@ export async function POST(req: NextRequest) {
     });
     // Clear stale cookies on invalid refresh
     const res = NextResponse.json({ error: "refresh token expired" }, { status: 401 });
+    res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+    res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+    return res;
+  }
+
+  // ADR-133 follow-up: "cerrar todas las sesiones". Si el refresh token fue
+  // emitido antes del corte de revocación masiva, NO rotar (sino re-emitiría un
+  // access nuevo y la sesión sobreviviría). Limpiar cookies → sesión muerta.
+  if (isSessionRevoked(payload.jti, payload.tenantId, payload.username)) {
+    logger.warn("[auth/refresh] Refresh rejected — sessions revoked (logout-all)", {
+      username: payload.username,
+      tenantId: payload.tenantId,
+    });
+    const res = NextResponse.json({ error: "session revoked" }, { status: 401 });
     res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
     res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
     return res;

@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
+import { revokeSessionsBefore } from "@/lib/auth/session-revocation";
 import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   }
 }
 
-const actionSchema = z.object({ action: z.enum(["force-change", "reset-2fa"]) });
+const actionSchema = z.object({ action: z.enum(["force-change", "reset-2fa", "logout-all"]) });
 
 // POST — acciones de seguridad (TOTP step-up obligatorio).
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
@@ -78,15 +79,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         `UPDATE "AdminUser" SET "mustChangePassword" = true, "updatedAt" = NOW() WHERE "tenantId" = $1 AND username = $2`,
         tenant.id, admin.username,
       );
-    } else {
+    } else if (parsed.data.action === "reset-2fa") {
       // Reset 2FA: el admin deberá volver a enrolar TOTP.
       await prisma.$executeRawUnsafe(
         `UPDATE "AdminUser" SET "totpSecret" = NULL, "totpEnabledAt" = NULL, "totpLastUsedStep" = NULL, "updatedAt" = NOW() WHERE "tenantId" = $1 AND username = $2`,
         tenant.id, admin.username,
       );
+    } else {
+      // logout-all: cerrar TODAS las sesiones activas de TODOS los admins del
+      // tenant (ADR-133). Corte de revocación masiva por el jti embebido.
+      const admins = await prisma.$queryRawUnsafe<{ username: string }[]>(
+        `SELECT username FROM "AdminUser" WHERE "tenantId" = $1 AND active = true`,
+        tenant.id,
+      );
+      const now = Date.now();
+      for (const a of admins) revokeSessionsBefore(tenant.id, a.username, now);
     }
+    const auditAction =
+      parsed.data.action === "force-change" ? "force_password_change"
+        : parsed.data.action === "reset-2fa" ? "reset_2fa"
+        : "logout_all_sessions";
     logSuperadminAction(
-      parsed.data.action === "force-change" ? "force_password_change" : "reset_2fa",
+      auditAction,
       `${parsed.data.action} en ${slug} (${tenant.name}), usuario ${admin.username}`,
       { tenantSlug: slug, username: admin.username },
       session.username,

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit, createRateLimiter } from "@/lib/rate-limit";
 import { AdminTotpDB } from "@/lib/db/admin-totp.db";
+import { prisma } from "@/lib/prisma";
 import { verifyTotpCode } from "@/lib/auth/totp";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -193,7 +194,18 @@ export async function POST(req: NextRequest) {
         createSessionToken(authOriginalRole, auth.username, auth.tenantId, auth.name),
         createRefreshToken(authOriginalRole, auth.username, auth.tenantId, auth.name),
       ]);
-      const response = NextResponse.json({ ok: true, activated: !wasAlreadyActive, loggedIn: true });
+      // ADR-133 follow-up: forzar cambio de clave también tras 2FA (no solo login
+      // directo). Raw SQL: campo nuevo, evita depender del cliente Prisma regenerado.
+      let mustChangePassword = false;
+      try {
+        const rows = await prisma.$queryRawUnsafe<{ mustChangePassword: boolean }[]>(
+          `SELECT "mustChangePassword" FROM "AdminUser" WHERE "tenantId" = $1 AND username = $2 LIMIT 1`,
+          auth.tenantId,
+          auth.username,
+        );
+        mustChangePassword = rows[0]?.mustChangePassword ?? false;
+      } catch { /* si falla, no bloquear el login */ }
+      const response = NextResponse.json({ ok: true, activated: !wasAlreadyActive, loggedIn: true, mustChangePassword });
       response.cookies.set(SESSION.COOKIE_NAME, sessionToken, makeAccessCookie());
       response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
       // Eliminar cookie temporal

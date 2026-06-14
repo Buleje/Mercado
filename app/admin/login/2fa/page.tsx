@@ -72,6 +72,14 @@ export default function TwoFactorPage() {
         throw new Error(body.error ?? "Código inválido");
       }
 
+      const data = (await res.json().catch(() => ({}))) as { mustChangePassword?: boolean };
+      // ADR-133 follow-up: si el superadmin reseteó la clave, forzar cambio
+      // también tras el 2FA (no solo en el login directo).
+      if (data.mustChangePassword) {
+        router.push("/admin/cambiar-clave");
+        return;
+      }
+
       // Respetar ?from= para redirigir al destino original post-login
       const params = new URLSearchParams(
         typeof window !== "undefined" ? window.location.search : ""

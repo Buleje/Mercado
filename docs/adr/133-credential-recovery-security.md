@@ -40,10 +40,23 @@ superadmin con 2FA opcional, honeypot, timing-safe compare, audit log.
 ## Consecuencias
 - (+) Recuperación de acceso real, segura y auditable; clave temporal de un solo uso.
 - (+) Refuerzos tipo Google sin guardar contraseñas en claro (imposible "verlas").
-- (−) Pendiente (follow-up): enforcement de cambio forzado también en el flujo 2FA
-  (hoy cubre el login directo); "cerrar todas las sesiones" requiere token-epoch.
+- (+) Cambio forzado cubre AMBOS flujos: login directo y 2FA (`totp/verify`
+  devuelve `mustChangePassword` y `/admin/login/2fa` redirige a `/admin/cambiar-clave`).
+- (+) "Cerrar todas las sesiones" (`logout-all`) sin token-epoch ni cambio de
+  minteo: el `jti` ya codifica su hora de emisión, así que un "corte" por admin en
+  `cacheStore` (mismo alcance que la blacklist de jti de logout) revoca todo token
+  —access y refresh— emitido antes del corte. Chequeado en `require-admin` y
+  `/api/auth/refresh`. Fail-open: sin corte o sin timestamp en el jti, no bloquea.
 - Migración: `ALTER TABLE "AdminUser" ADD "mustChangePassword" BOOLEAN DEFAULT false`
   aplicada vía Supabase. RLS-off consistente con el aislamiento app-level.
+
+## Follow-ups implementados (2026-06-14)
+1. **2FA force-change** — `app/api/auth/totp/verify/route.ts` + `app/admin/login/2fa/page.tsx`.
+2. **logout-all** — `lib/auth/session-revocation.ts` (helper) cableado en
+   `lib/require-admin.ts`, `app/api/auth/refresh/route.ts`, y acción TOTP-gated en
+   `security/route.ts` + botón "Cerrar todas las sesiones" en el tab Seguridad.
+   Tests: `__tests__/session-revocation.test.ts` (6/6). Limitación: best-effort por
+   instancia (cacheStore) — misma que la revocación de jti ya existente.
 
 ## Referencias
 - `reset-password/route.ts`, `security/route.ts`, `auth/change-password`, `auth/login`

@@ -4,6 +4,7 @@ import { getSessionPayload, SESSION } from "@/lib/session";
 import type { AdminRole, SessionPayload } from "@/lib/session";
 import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
+import { isSessionRevoked } from "@/lib/auth/session-revocation";
 
 /**
  * Verify the admin session from an API request.
@@ -41,6 +42,13 @@ export async function requireAdmin(
   // Protege contra tokens en vuelo usados después de cerrar sesión.
   if (payload.jti && cacheStore.get(`revoked-access:${payload.jti}`)) {
     logger.warn("[AUTH] Revoked token jti", { username: payload.username, jti: payload.jti, method, path, ip });
+    return NextResponse.json({ error: "session revoked" }, { status: 401 });
+  }
+
+  // ADR-133 follow-up: "cerrar todas las sesiones". Rechaza tokens emitidos
+  // antes del corte de revocación masiva del admin (jti codifica su hora).
+  if (isSessionRevoked(payload.jti, payload.tenantId, payload.username)) {
+    logger.warn("[AUTH] Session revoked (logout-all)", { username: payload.username, tenantId: payload.tenantId, method, path, ip });
     return NextResponse.json({ error: "session revoked" }, { status: 401 });
   }
 

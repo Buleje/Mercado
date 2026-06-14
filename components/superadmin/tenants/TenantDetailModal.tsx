@@ -6,7 +6,7 @@ import {
   X, Building2, ExternalLink, Loader2,
   Copy, Globe, RotateCcw, KeyRound, ShoppingBag,
   Eye, EyeOff, AlertTriangle, Pencil, Check, Clock,
-  Activity, StickyNote, Send, MessageSquare, ShieldCheck, Lock,
+  Activity, StickyNote, Send, MessageSquare, ShieldCheck, Lock, LogOut,
 } from "@buleje/design-system/icons";
 import Link from "next/link";
 import type { TenantRow } from "@/lib/superadmin-types";
@@ -71,7 +71,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
       .catch(() => setSecurity({ username: null, twoFactorEnabled: false, lastLoginAt: null, lastLoginDetail: null }));
   }, [tab, security, t.slug]);
 
-  const secAction = async (action: "force-change" | "reset-2fa", confirmMsg: string) => {
+  const secAction = async (action: "force-change" | "reset-2fa" | "logout-all", confirmMsg: string) => {
     if (!window.confirm(confirmMsg)) return;
     const totpCode = window.prompt("Código TOTP (6 dígitos) para confirmar:");
     if (!totpCode || !/^\d{6}$/.test(totpCode)) return;
@@ -84,6 +84,10 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
       });
       if (res.ok) {
         if (action === "reset-2fa") setSecurity((s) => (s ? { ...s, twoFactorEnabled: false } : s));
+        if (action === "logout-all") window.alert("Listo. Se cerraron las sesiones activas de este negocio.");
+      } else {
+        const d = await res.json().catch(() => ({}));
+        window.alert(d.error === "totp_required" || d.error === "invalid_totp" ? "Código TOTP inválido." : "No se pudo completar la acción.");
       }
     } finally { setSecBusy(null); }
   };
@@ -398,6 +402,9 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                   </button>
                   <button onClick={() => secAction("reset-2fa", "¿Resetear el 2FA? El dueño deberá volver a configurarlo.")} disabled={!!secBusy || !security.twoFactorEnabled} className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] h-10 text-sm font-bold hover:bg-[var(--surface-sunken)] disabled:opacity-40">
                     {secBusy === "reset-2fa" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Resetear 2FA
+                  </button>
+                  <button onClick={() => secAction("logout-all", "¿Cerrar TODAS las sesiones activas de este negocio? Tendrán que volver a iniciar sesión. Útil si sospechás un acceso indebido.")} disabled={!!secBusy} className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--data-error-500)] text-[var(--data-error-600,#dc2626)] h-10 text-sm font-bold hover:bg-[var(--data-error-50,#fef2f2)] disabled:opacity-50">
+                    {secBusy === "logout-all" ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />} Cerrar todas las sesiones
                   </button>
                 </div>
                 <p className="text-[10px] text-[var(--text-tertiary)]">Estas acciones requieren tu código TOTP y quedan en el audit log.</p>
