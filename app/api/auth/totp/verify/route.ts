@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit, createRateLimiter } from "@/lib/rate-limit";
 import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 import { prisma } from "@/lib/prisma";
+import { alertNewDeviceLogin } from "@/lib/auth/security-alerts";
 import { verifyTotpCode } from "@/lib/auth/totp";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -210,6 +211,17 @@ export async function POST(req: NextRequest) {
       response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
       // Eliminar cookie temporal
       response.cookies.set(PENDING_TOTP_COOKIE, "", { maxAge: 0, path: "/" });
+
+      // ADR-133: aviso de dispositivo nuevo también en el flujo 2FA (el login
+      // con 2FA completa acá, no en /api/auth/login). Fire-and-forget.
+      const ipRaw = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? null;
+      alertNewDeviceLogin({
+        tenantId: auth.tenantId,
+        username: auth.username,
+        role: authOriginalRole,
+        ip: ipRaw ? ipRaw.slice(0, 45) : null,
+        userAgent: req.headers.get("user-agent"),
+      }).catch((err) => logger.error("[totp/verify] alertNewDeviceLogin failed", { error: String(err) }));
       return response;
     }
 

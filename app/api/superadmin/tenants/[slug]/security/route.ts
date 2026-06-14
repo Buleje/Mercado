@@ -8,6 +8,7 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { revokeSessionsBefore } from "@/lib/auth/session-revocation";
+import { notifyTenantOwnerSecurity } from "@/lib/auth/security-alerts";
 import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
@@ -95,6 +96,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       const now = Date.now();
       for (const a of admins) revokeSessionsBefore(tenant.id, a.username, now);
     }
+    // ADR-133: avisar al dueño que soporte tocó su cuenta (cierra el loop —
+    // si no lo pidió, se entera). Fire-and-forget.
+    const alertBody =
+      parsed.data.action === "force-change"
+        ? "Soporte de Buleje forzó un cambio de contraseña en tu cuenta. La próxima vez tendrás que elegir una clave nueva."
+        : parsed.data.action === "reset-2fa"
+        ? "Soporte de Buleje reseteó tu verificación en dos pasos (2FA). Deberás configurarla de nuevo."
+        : "Soporte de Buleje cerró todas las sesiones activas de tu negocio. Tendrás que volver a iniciar sesión.";
+    notifyTenantOwnerSecurity(tenant.id, {
+      title: "🔐 Cambio de seguridad en tu cuenta Buleje",
+      body: `${alertBody}\n\nSi NO solicitaste esto, contáctanos de inmediato.`,
+      url: "/admin",
+    }).catch((err) => logger.error("[security] owner alert failed", { error: String(err) }));
+
     const auditAction =
       parsed.data.action === "force-change" ? "force_password_change"
         : parsed.data.action === "reset-2fa" ? "reset_2fa"

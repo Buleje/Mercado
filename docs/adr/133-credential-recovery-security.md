@@ -58,6 +58,20 @@ superadmin con 2FA opcional, honeypot, timing-safe compare, audit log.
    Tests: `__tests__/session-revocation.test.ts` (6/6). Limitación: best-effort por
    instancia (cacheStore) — misma que la revocación de jti ya existente.
 
+## Avisos de seguridad al dueño (2026-06-14, "como Google")
+`lib/auth/security-alerts.ts` notifica al `Tenant.ownerPhone` (WhatsApp + push,
+fire-and-forget) en dos casos:
+1. **Ingreso desde dispositivo nuevo** — tabla `AdminLoginDevice` guarda huellas
+   `sha256(ip|familiaUA)` por admin. Cableado en `login` y `totp/verify`. Solo
+   roles de gestión (owner/admin) y NO en el alta inicial (1er dispositivo
+   silencioso) → evita spam de cajeros en POS compartidos. La familia de UA
+   (no la versión) hace estable la huella ante bumps menores del navegador.
+2. **Acción de soporte** — al resetear clave, resetear 2FA o cerrar sesiones, el
+   dueño recibe "soporte tocó tu cuenta; si no lo pediste, contáctanos".
+Migración `AdminLoginDevice` aplicada vía Supabase; acceso por raw SQL (sin
+regen del cliente Prisma). Tests: `__tests__/security-alerts-device.test.ts` (5/5)
++ detección verificada E2E contra la DB (upsert dedupe + alerta en device nuevo).
+
 ## Referencias
 - `reset-password/route.ts`, `security/route.ts`, `auth/change-password`, `auth/login`
 - `lib/auth/password-schema.ts`, `app/admin/cambiar-clave/page.tsx`

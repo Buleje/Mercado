@@ -1262,6 +1262,25 @@ model AdminUser {
   @@index([totpEnabledAt])
 }
 
+// ── AdminLoginDevice — dispositivos/IP conocidos por admin (ADR-133) ──
+// Para alertar al dueño cuando hay un ingreso desde un dispositivo nuevo
+// ("como Google"). El fingerprint = sha256(ip|familiaUA) para que cambios de
+// versión menor del navegador NO cuenten como dispositivo nuevo. Se accede vía
+// raw SQL (campo/tabla nueva, evita depender del cliente Prisma regenerado).
+model AdminLoginDevice {
+  id          String   @id @default(cuid())
+  tenantId    String
+  username    String
+  fingerprint String
+  ip          String?
+  userAgent   String?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([tenantId, username, fingerprint])
+  @@index([tenantId, username])
+}
+
 // ── SuperadminUser — platform-level users (ADR-043) ──────────
 // La auth de superadmin usaba solo ADMIN_PASSWORD env + session cookie.
 // Ahora persistimos el user con TOTP obligatorio para platform access.

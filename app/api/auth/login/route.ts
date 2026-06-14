@@ -11,6 +11,7 @@ import path from "path";
 import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
 import { AdminTotpDB } from "@/lib/db/admin-totp.db";
+import { alertNewDeviceLogin } from "@/lib/auth/security-alerts";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
@@ -284,6 +285,16 @@ export async function POST(req: Request) {
       ).catch((err: unknown) => {
         logger.error("[auth/login] logActivity failed", { err: err instanceof Error ? err.message : String(err) });
       });
+
+      // ADR-133: aviso al dueño si el ingreso viene de un dispositivo nuevo
+      // ("como Google"). Fire-and-forget — nunca bloquea el login.
+      alertNewDeviceLogin({
+        tenantId: matchedTenantId,
+        username: u.username,
+        role: u.role,
+        ip,
+        userAgent: req.headers.get("user-agent"),
+      }).catch((err) => logger.error("[auth/login] alertNewDeviceLogin failed", { error: String(err) }));
     } catch { /* logger not available in edge */ }
 
     return response;

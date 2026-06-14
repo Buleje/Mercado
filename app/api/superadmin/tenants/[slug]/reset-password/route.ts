@@ -8,6 +8,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
+import { notifyTenantOwnerSecurity } from "@/lib/auth/security-alerts";
 import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
@@ -86,6 +87,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       { tenantSlug: slug, tenantName: tenant.name, username: admin.username },
       session.username,
     ).catch((err) => logger.warn("[SuperAdmin] reset-password audit failed", { error: String(err) }));
+
+    // ADR-133: avisar al dueño que su acceso fue reseteado por soporte (sin la
+    // clave — esa va por el canal seguro que elija el superadmin). Fire-and-forget.
+    notifyTenantOwnerSecurity(tenant.id, {
+      title: "🔐 Tu acceso a Buleje fue reseteado",
+      body:
+        "Soporte de Buleje reseteó la contraseña de tu cuenta a una temporal. " +
+        "Recibirás la clave por el canal acordado y deberás cambiarla al entrar.\n\n" +
+        "Si NO solicitaste esto, contáctanos de inmediato.",
+      url: "/admin",
+    }).catch((err) => logger.error("[reset-password] owner alert failed", { error: String(err) }));
 
     return NextResponse.json({
       ok: true,
