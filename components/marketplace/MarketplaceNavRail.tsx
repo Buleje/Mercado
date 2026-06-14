@@ -17,7 +17,6 @@ import { usePathname } from "next/navigation";
 import {
   Home as HomeIcon,
   Store,
-  Sparkles,
   ChefHat,
   Tag,
   Rocket,
@@ -43,7 +42,7 @@ const RAIL_LINKS: readonly RailLink[] = [
   { href: "/chat", label: "Chat", Icon: MessageCircle, matchPrefix: "/chat" },
   { href: "/marketplace/ofertas", label: "Ofertas", Icon: Tag, matchPrefix: "/marketplace/ofertas" },
   { href: "/recetas", label: "Recetas", Icon: ChefHat, matchPrefix: "/recetas" },
-  { href: "/marketplace/para-vos", label: "Descubre", Icon: Sparkles, matchPrefix: "/marketplace/para-vos" },
+  // "Descubre" (/marketplace/para-vos) removido del rail — Brandon 2026-06-14.
   { href: "/abrir-tienda", label: "Abre tu Tienda", Icon: Rocket, matchPrefix: "/abrir-tienda" },
 ];
 

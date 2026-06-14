@@ -670,12 +670,27 @@ export function AdminSidebar({
   const effectiveCompact = focusMode || isCompact || isNarrow;
 
   // Track which multi-tab categories are expanded (shows sub-tabs).
-  // Desktop: NO auto-expand vertical — los sub-tabs emergen exclusivamente
-  // via flyout lateral on hover. Mobile: accordion on-click del usuario.
-  // Brandon 2026-05-29: arrancar con TODO colapsado en cada carga/recarga
-  // (antes "inicio" se auto-abría). Sidebar limpio; el usuario abre lo que
-  // necesita y solo 1 categoría queda abierta a la vez (acordeón estricto).
+  // Acordeón ESTRICTO (single-open): solo 1 categoría abierta a la vez.
+  // Brandon 2026-06-14: el acordeón sigue al tab activo — al elegir un sub-tab
+  // (ej. Ventas → Pedidos) su categoría padre se despliega sola y las demás se
+  // minimizan; el toggle manual por click se mantiene. (ver effect abajo).
   const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(() => new Set());
+
+  // ── Auto-despliegue de la categoría del tab activo (Brandon 2026-06-14) ──
+  // Cuando cambia el tab activo, abrimos SU categoría (si es multi-tab) y
+  // cerramos el resto. Las categorías de 1 solo enlace (single-tab/directas)
+  // no participan: son links directos sin panel. Guard de igualdad evita
+  // renders extra cuando ya está la correcta abierta.
+  React.useEffect(() => {
+    const activeCat = navCategories.find(
+      (c) => c.tabs.length > 1 && (c.tabs as readonly string[]).includes(tab as string),
+    );
+    if (activeCat) {
+      setExpandedCategories((prev) =>
+        prev.size === 1 && prev.has(activeCat.id) ? prev : new Set([activeCat.id]),
+      );
+    }
+  }, [tab, navCategories]);
 
   // ── Flyout state for expanded sidebar hover ──
   const [hoveredCategory, setHoveredCategory] = React.useState<string | null>(null);
@@ -955,9 +970,11 @@ export function AdminSidebar({
 
             if (catTabs.length === 0 && catComingSoonItems.length === 0) return null;
             const CategoryIcon = category.icon;
-            // alwaysGroup fuerza render como grupo desplegable aunque tenga 1 tab
-            // (especializaciones: "Agricultura" muestra header aunque solo sea Cacao).
-            const isSingleTab = catTabs.length === 1 && !category.alwaysGroup;
+            // Brandon 2026-06-14: TODA categoría con 1 solo enlace visible es un
+            // LINK DIRECTO (sin chevron, sin acordeón) — incluido "Agricultura"
+            // (antes forzada a grupo por alwaysGroup). Las branded (alwaysGroup)
+            // conservan su label/icono de sección aunque sean link directo.
+            const isSingleTab = catTabs.length === 1;
             const sectionLabel = SECTION_BEFORE[category.id];
             const iconColor = ICON_COLORS[category.id] ?? "text-[var(--text-tertiary)]";
             const isSectionCollapsed = collapsedSections.has(sectionLabel ?? "");
@@ -968,13 +985,16 @@ export function AdminSidebar({
               : (catTabs as string[]).includes(tab as string);
             const totalAlerts = catTabs.reduce((sum, t) => sum + (alerts[t] || 0), 0);
 
-            // Resolve display info — aplica label custom de la plantilla
-            const displayLabel = isSingleTab
-              ? resolveLabel(catTabs[0], allTabs.find(t => t.id === catTabs[0])?.label ?? category.label)
-              : resolveLabel(category.id, category.label);
-            const DisplayIcon = isSingleTab
-              ? (allTabs.find(t => t.id === catTabs[0])?.icon ?? CategoryIcon)
-              : CategoryIcon;
+            // Resolve display info — aplica label custom de la plantilla.
+            // Branded (alwaysGroup, ej. Agricultura): aunque sea link directo
+            // conserva el label/icono de la SECCIÓN, no el del tab interno.
+            const useCategoryIdentity = !isSingleTab || category.alwaysGroup;
+            const displayLabel = useCategoryIdentity
+              ? resolveLabel(category.id, category.label)
+              : resolveLabel(catTabs[0], allTabs.find(t => t.id === catTabs[0])?.label ?? category.label);
+            const DisplayIcon = useCategoryIdentity
+              ? CategoryIcon
+              : (allTabs.find(t => t.id === catTabs[0])?.icon ?? CategoryIcon);
 
             return (
               <React.Fragment key={category.id}>
