@@ -54,6 +54,7 @@ import {
   Inbox,
   Bell,
   Zap,
+  Webhook,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -180,6 +181,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Operaciones",
     icon: <BarChart3 className="w-4 h-4 shrink-0" />,
     items: [
+      { label: "Automatizaciones", icon: <Webhook       className="w-5 h-5 shrink-0" />, href: "/superadmin/automations" },
       { label: "Analytics",     icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics" },
       { label: "Salud sistema", icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"    },
       { label: "SLO & budgets", icon: <TrendingUp      className="w-5 h-5 shrink-0" />, href: "/superadmin/slo"       },
