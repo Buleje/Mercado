@@ -140,6 +140,7 @@ export function ProductGalleryDS({ images, productName, category, badge }: Produ
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 45vw"
+                  quality={90}
                   priority={activeIndex === 0}
                 />
               </motion.div>

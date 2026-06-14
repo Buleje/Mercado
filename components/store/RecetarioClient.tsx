@@ -5,12 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Clock, Users, ChefHat, ShoppingCart, Flame,
+  Search, SearchX, Clock, Users, ChefHat, ShoppingCart, Flame,
   X, Sparkles, ArrowRight, Star, Eye, LayoutGrid, List,
   Send, Utensils, Salad, Soup, Cake, GlassWater, Zap,
   Trophy, MapPin, CheckCircle2, AlertTriangle,
   type LucideIcon,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
+import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
@@ -309,7 +310,7 @@ function CategoriaCard({
   return (
     <button
       onClick={onClick}
-      className="shrink-0 w-40 sm:w-48 rounded-xl overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-gray-900 dark:hover:border-gray-500 transition-all duration-[var(--dur-base)] group active:scale-[0.98] text-left"
+      className="shrink-0 w-40 sm:w-48 rounded-2xl overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] transition-all duration-[var(--dur-base)] group active:scale-[0.98] text-left"
     >
       <div className="h-28 flex items-center justify-center bg-[var(--surface-canvas)] border-b border-[var(--rule-base)] text-[var(--text-secondary)]">
         <Icon
@@ -469,7 +470,7 @@ export default function RecetarioClient() {
       <PromoBannerCarousel slot="recetas" />
 
       {/* ═══════════════════ HERO INTRO ═══════════════════ */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6">
+      <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6">
         <div className="flex items-start gap-4 flex-wrap">
           <div className="hidden sm:inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
             <ChefHat className="h-7 w-7" strokeWidth={1.75} aria-hidden />
@@ -491,8 +492,8 @@ export default function RecetarioClient() {
       </div>
 
       {/* ═══════════════════════ FILTER BAR ═══════════════════════ */}
-      <div className="sticky top-0 z-30 bg-[var(--surface-raised)]/95 dark:bg-gray-900/95 backdrop-blur-md border-y border-[var(--rule-base)] shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 space-y-3">
+      <div className="sticky top-0 z-30 bg-[var(--surface-raised)]/95 backdrop-blur-md border-y border-[var(--rule-base)] shadow-sm">
+        <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 py-3 space-y-3">
           {/* Row 1: Search + view toggle + count */}
           <div className="flex items-center gap-3">
             <div className="relative flex-1 max-w-md">
@@ -618,7 +619,7 @@ export default function RecetarioClient() {
       </div>
 
       {/* ═══════════════════════ RECIPE GALLERY ═══════════════════════ */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {loading ? (
           <div className="columns-1 sm:columns-2 lg:columns-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -633,7 +634,12 @@ export default function RecetarioClient() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-20"
           >
-            <div className="text-6xl mb-4">{"\u26A0\uFE0F"}</div>
+            <span
+              aria-hidden
+              className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] dark:bg-amber-950/40 dark:text-amber-300"
+            >
+              <AlertTriangle className="h-8 w-8" strokeWidth={1.75} />
+            </span>
             <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
               Error cargando recetas
             </h3>
@@ -642,7 +648,7 @@ export default function RecetarioClient() {
             </p>
             <button
               onClick={handleRetry}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:bg-[var(--accent)]/90 transition-colors shadow-lg"
             >
               <Sparkles className="h-4 w-4" />
               Reintentar
@@ -654,7 +660,12 @@ export default function RecetarioClient() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-20"
           >
-            <div className="text-7xl mb-4">{"\uD83D\uDD0D"}</div>
+            <span
+              aria-hidden
+              className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+            >
+              <SearchX className="h-8 w-8" strokeWidth={1.75} />
+            </span>
             <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
               No hay recetas de {catFilter !== "todas" ? `"${CATEGORIAS.find(c => c.id === catFilter)?.label}"` : "esta busqueda"}
             </h3>
@@ -663,7 +674,7 @@ export default function RecetarioClient() {
             </p>
             <button
               onClick={() => { setSearch(""); setCatFilter("todas"); }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:bg-[var(--accent)]/90 transition-colors shadow-lg"
             >
               <Sparkles className="h-4 w-4" />
               Ver todas las recetas
@@ -710,15 +721,12 @@ export default function RecetarioClient() {
       {/* ═══════════════════════ CATEGORIES SECTION ═══════════════════════ */}
       {!loading && recetas.length > 0 && (
         <section className="border-t border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-            <div className="mb-6">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Explorá
-              </p>
-              <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                Categorías destacadas
-              </h2>
-            </div>
+          <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 py-12">
+            <SectionHeading
+              eyebrow="Explorá"
+              title="Categorías destacadas"
+              subtitle="Encontrá recetas por tipo de plato y armá tu carrito en un toque."
+            />
             <div className="flex items-stretch gap-4 overflow-x-auto pb-4 scrollbar-hide">
               {Object.entries(categoryCounts).map(([cat, count]) => {
                 const colors = CATEGORIA_GRADIENTS[cat] || { from: "#e5e7eb", to: "#d1d5db" };
@@ -747,7 +755,7 @@ export default function RecetarioClient() {
 
       {/* ═══════════════════════ CTA SUGGESTION ═══════════════════════ */}
       <section className="border-t border-[var(--rule-base)] bg-[var(--surface-canvas)]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 text-center">
+        <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-3">
             No encuentras lo que buscas?
           </h2>
@@ -761,12 +769,12 @@ export default function RecetarioClient() {
               value={suggestion}
               onChange={e => setSuggestion(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSuggestion()}
-              className="flex-1 h-12 px-5 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              className="flex-1 h-12 px-5 rounded-2xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-[var(--text-secondary)] text-base focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/40 transition-all"
             />
             <button
               onClick={handleSuggestion}
               disabled={!suggestion.trim()}
-              className="h-12 px-6 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg shadow-primary/20"
+              className="h-12 px-6 rounded-2xl bg-[var(--accent)] text-white font-bold text-base hover:bg-[var(--accent)]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg"
             >
               <Send className="h-4 w-4" />
               Sugerir
@@ -777,7 +785,7 @@ export default function RecetarioClient() {
 
       {/* ═══════════════════════ FINAL CTA ═══════════════════════ */}
       <section className="border-t border-[var(--rule-base)] bg-[var(--surface-canvas)]/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 text-center">
+        <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 py-12 text-center">
           <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-3">
             Todos los ingredientes en un solo lugar
           </h2>
@@ -786,7 +794,7 @@ export default function RecetarioClient() {
           </p>
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-white font-bold text-lg hover:bg-primary-dark transition-all active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[var(--accent)] text-white font-bold text-lg hover:bg-[var(--accent)]/90 transition-all active:scale-[0.98]"
           >
             Ver tienda <ArrowRight className="h-5 w-5" />
           </Link>
@@ -871,7 +879,7 @@ function RecetaListItem({
               </span>
             )}
             <span>{receta.ingredientes.length} ingredientes</span>
-            <span className="font-bold text-primary dark:text-primary-light">
+            <span className="font-bold text-[var(--accent)]">
               S/ {Number(receta.totalIngredientes).toFixed(2)}
             </span>
           </div>
@@ -881,7 +889,7 @@ function RecetaListItem({
         <div className="shrink-0 flex items-center pr-4">
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddAll(receta); }}
-            className="h-10 w-10 rounded-xl bg-primary hover:bg-primary-dark text-white flex items-center justify-center transition-colors shadow-md"
+            className="h-10 w-10 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white flex items-center justify-center transition-colors shadow-md"
             aria-label={`Comprar ingredientes de ${receta.nombre}`}
           >
             <ShoppingCart className="h-4 w-4" />

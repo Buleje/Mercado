@@ -408,6 +408,14 @@ export {
   WineOff,
   Pill,
 
+  // ── Additional pass 6 (recetario 2026-06-14) ──
+  Utensils,
+  Salad,
+  Soup,
+  Cake,
+  GlassWater,
+  SearchX,
+
   // ── Types ────────────────────────────────────────────────────
   type LucideIcon,
   type LucideProps,

@@ -45,6 +45,18 @@ const HomeHeroBanner = dynamic(
 const StoreLogosMarquee = dynamic(
   () => import("@/components/marketplace/home/StoreLogosMarquee"),
 );
+// Brandon 2026-06-14: secciones de conversión cableadas a la home.
+//  - OfertasDelDiaHero: ofertas del día con countdown (urgencia). Auto-oculta
+//    si no hay destacados. Mismo lenguaje visual que el resto de la home
+//    (SectionHeading + max-w-[1760px], compacto).
+//  - WelcomeStrip: saludo + "repetir última compra" para el cliente logueado.
+//    Auto-oculta si no hay sesión. Contenedor propio (max-w-[1600px]).
+const OfertasDelDiaHero = dynamic(
+  () => import("@/components/marketplace/home/OfertasDelDiaHero"),
+);
+const WelcomeStrip = dynamic(
+  () => import("@/components/marketplace/home/WelcomeStrip"),
+);
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import CatalogSortTabs from "@/components/marketplace/home/CatalogSortTabs";
@@ -1217,6 +1229,12 @@ export default async function Home() {
       {/* 1. Hero = banner rotativo full-width (swipe) */}
       <HomeHero />
 
+      {/* 1.1 Bienvenida personalizada (Brandon 2026-06-14): saludo + "repetir
+          última compra" para el cliente logueado. Self-hide si no hay sesión
+          (null en SSR → sin layout shift). Va en todos los tabs: es una barra
+          fina personalizada, no una sección de descubrimiento. */}
+      <WelcomeStrip />
+
       {/* 1.2 Verticales — SOLO MOBILE (Brandon 2026-06-11): los chips
           Comida/Bodega/Ferretería/Electro/Farmacia los aporta el chrome
           (ConditionalSecondaryNav), apilados sobre la barra de categorías en un
@@ -1259,6 +1277,17 @@ export default async function Home() {
             >
               <HomeDiscoveryTabs />
             </section>
+          </Reveal>
+        </ShowWhenAllVerticals>
+      </Suspense>
+
+      {/* 2.6 Ofertas del día — carrusel de destacados con countdown a medianoche
+          (urgencia comercial, Brandon 2026-06-14). Trae su propio contenedor
+          (MarketplaceSection). Auto-oculta si no hay productos destacados. */}
+      <Suspense fallback={null}>
+        <ShowWhenAllVerticals>
+          <Reveal>
+            <OfertasDelDiaHero />
           </Reveal>
         </ShowWhenAllVerticals>
       </Suspense>

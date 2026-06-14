@@ -128,9 +128,20 @@ function StoreBannerHeader({
     <>
       {/* Banner FULL-BLEED (estilo MercadoLibre) — el mismo banner de la tienda
           (Store.banner). Ocupa todo el ancho, FUERA del cuadro del detalle. */}
-      <div className="relative w-full h-40 sm:h-52 lg:h-60 overflow-hidden bg-[var(--surface-sunken)]">
+      {/* Brandon 2026-06-14: banner más bajo (antes h-40/52/60) + calidad alta
+          (quality 90) para que la imagen de portada se vea nítida sin ocupar
+          tanto alto above-the-fold. */}
+      <div className="relative w-full h-28 sm:h-36 lg:h-44 overflow-hidden bg-[var(--surface-sunken)]">
         {hasBanner ? (
-          <Image src={banner!} alt={`Banner de ${storeName}`} fill sizes="100vw" className="object-cover" priority />
+          <Image
+            src={banner!}
+            alt={`Banner de ${storeName}`}
+            fill
+            sizes="100vw"
+            quality={90}
+            className="object-cover"
+            priority
+          />
         ) : (
           <div
             aria-hidden

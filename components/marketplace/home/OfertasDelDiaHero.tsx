@@ -6,15 +6,15 @@
  *
  * Data REAL desde /api/marketplace/catalog/sections (campo `featured`). Antes
  * mostraba 2 hero-cards mock; Brandon pidió más productos + badge de descuento
- * + countdown. Ahora usa el patrón canónico (MarketplaceSection +
- * HorizontalCarousel + UnifiedProductCard compact), consistente con el resto
- * del home. Si no hay destacados, la sección se oculta sola.
+ * + countdown. Usa SectionHeading + HorizontalCarousel + UnifiedProductCard
+ * compact (mismo contenedor max-w-[1760px] y encabezado que el resto de la
+ * home → compacto y alineado). Si no hay destacados, la sección se oculta sola.
  */
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Clock } from "@buleje/design-system/icons";
-import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
+import SectionHeading from "@/components/marketplace/home/SectionHeading";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 
@@ -112,34 +112,40 @@ export default function OfertasDelDiaHero() {
   if (loading || cards.length === 0) return null;
 
   return (
-    <MarketplaceSection
+    // Mismo contenedor + encabezado que el resto de la home (SectionHeading +
+    // max-w-[1760px]) para que la sección quede alineada y compacta, en vez del
+    // header grande de MarketplaceSection. Brandon 2026-06-14.
+    <section
       id="ofertas-del-dia"
-      kicker="Ofertas del día"
-      title="Productos destacados"
-      subtitle="Aprovechá hoy — los precios del día se renuevan a medianoche."
-      headerExtra={
-        countdown ? (
-          <div className="inline-flex items-center gap-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-1.5">
-            <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
-            <span className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Cierra en
-            </span>
-            <span className="tabular-nums text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)]">
-              {countdown}
-            </span>
-          </div>
-        ) : undefined
-      }
-      actions={
-        <Link
-          href="/marketplace/ofertas"
-          className="inline-flex items-center gap-1 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors shrink-0"
-        >
-          Ver todas
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
-      }
+      aria-label="Ofertas del día"
+      className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
     >
+      <SectionHeading
+        eyebrow="Ofertas del día"
+        title="Productos destacados"
+        action={
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {countdown && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-9">
+                <Clock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+                <span className="hidden sm:inline text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Cierra en
+                </span>
+                <span className="tabular-nums text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)]">
+                  {countdown}
+                </span>
+              </span>
+            )}
+            <Link
+              href="/marketplace/ofertas"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              Ver todas
+              <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+            </Link>
+          </div>
+        }
+      />
       <HorizontalCarousel ariaLabel="Ofertas del día">
         {cards.map((p, i) => (
           <UnifiedProductCard
@@ -151,6 +157,6 @@ export default function OfertasDelDiaHero() {
           />
         ))}
       </HorizontalCarousel>
-    </MarketplaceSection>
+    </section>
   );
 }
