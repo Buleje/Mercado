@@ -42,6 +42,17 @@ export interface TenantRow {
   monthProfit?: number;
   /** Pedidos no entregados ni cancelados (pendiente/preparando/asignado/en_camino). */
   pendingOrders?: number;
+  /** Salud/churn del tenant (merge desde /api/superadmin/churn). Brandon 2026-06-14. */
+  risk?: TenantRisk | null;
+}
+
+/** Health score + riesgo de churn de un tenant (fuente: TenantHealthScore). */
+export interface TenantRisk {
+  score: number;
+  level: "low" | "medium" | "high" | "critical";
+  trialDaysLeft: number | null;
+  daysSinceLastLogin: number | null;
+  signals: number;
 }
 
 export interface CommissionRow {

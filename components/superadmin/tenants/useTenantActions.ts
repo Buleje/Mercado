@@ -51,6 +51,21 @@ export function useTenantActions({
     } finally { setActionLoading(null); }
   }, [setTenants, setActionLoading, showToast]);
 
+  // Extender (o reducir) el trial. Reusa /extend-trial. Brandon 2026-06-14.
+  const handleExtendTrial = useCallback(async (slug: string, days: number) => {
+    setActionLoading(`${slug}-trial`);
+    try {
+      const res = await fetch(`/api/superadmin/tenants/${slug}/extend-trial`, {
+        method: "POST", credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ days }),
+      });
+      if (!res.ok) { showToast("Error al extender trial", false); return; }
+      showToast(`Trial de ${slug} ${days >= 0 ? "+" : ""}${days} días`);
+      void loadTenants();
+    } finally { setActionLoading(null); }
+  }, [setActionLoading, showToast, loadTenants]);
+
   const handleDeleteTenant = useCallback(async (slug: string, name: string) => {
     // P0 fix 2026-05-24: TOTP step-up obligatorio en server.
     const totpCode = window.prompt(
@@ -207,6 +222,7 @@ export function useTenantActions({
   return {
     handleToggleActive,
     handlePlanChange,
+    handleExtendTrial,
     handleDeleteTenant,
     handleNuclearReset,
     handlePurgeTenant,

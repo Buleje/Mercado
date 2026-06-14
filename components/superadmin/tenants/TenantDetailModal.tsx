@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X, Building2, ExternalLink, Loader2,
   Copy, Globe, RotateCcw, KeyRound, ShoppingBag,
-  Eye, EyeOff, AlertTriangle,
+  Eye, EyeOff, AlertTriangle, Pencil, Check, Clock,
+  Activity, StickyNote, Send, MessageSquare,
 } from "@buleje/design-system/icons";
+import Link from "next/link";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
 import { SunatOficialToggle } from "@/components/superadmin/tenants/SunatOficialToggle";
@@ -14,43 +16,27 @@ import { SunatOficialToggle } from "@/components/superadmin/tenants/SunatOficial
 interface TenantDetailModalProps {
   tenant: TenantRow;
   onClose: () => void;
+  /** Refresca la lista del padre tras un inline edit / extend trial. */
+  onUpdated?: () => void;
 }
+
+type Tab = "resumen" | "uso" | "facturacion" | "actividad" | "notas";
+type ActivityRow = { id: string; action: string; detail?: string | null; user?: string | null; createdAt: string };
+type NoteRow = { id: string; body: string; author: string; createdAt: string };
 
 function fmtD(d: string | null) {
   return d ? new Date(d).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 }
-
-function fmtMoney(n: number) {
-  return `S/${n.toFixed(2)}`;
+function fmtDT(d: string) {
+  return new Date(d).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
+function fmtMoney(n: number) { return `S/${n.toFixed(2)}`; }
+function unlimited(v: number) { return v === -1 ? "∞" : v.toLocaleString("es-PE"); }
+function pct(u: number, m: number) { return m === -1 ? 0 : Math.min(100, Math.round((u / m) * 100)); }
 
-function unlimited(v: number) {
-  return v === -1 ? "∞" : v.toLocaleString("es-PE");
-}
-
-function pct(u: number, m: number) {
-  return m === -1 ? 0 : Math.min(100, Math.round((u / m) * 100));
-}
-
-/**
- * SECURITY 2026-05-16 (P0 fix): eliminado el storage de credenciales en
- * `localStorage["sa-cred-${slug}"]`. Antes este modal guardaba
- * {username, password} como JSON en plaintext — robable por cualquier
- * XSS o extensión maliciosa. El feature "Guardar credenciales" + "Iniciar
- * como X" usaba `?auto=1` en /admin/login para auto-rellenar.
- *
- * Ahora:
- *  - Reset password muestra la contraseña temporal SOLO en `resetResult`
- *    (estado React efímero, vive en memoria del componente).
- *  - El superadmin debe copiarla a su gestor de contraseñas y pegarla
- *    manualmente en la pestaña de admin/login (que ya tiene autocomplete
- *    de browser).
- *  - Eliminados: handleSaveCredentials (prompt → localStorage),
- *    handleLoginWithSaved (auto-login URL), renderSavedCredentials,
- *    useEffect de lectura de localStorage.
- */
-export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
+export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailModalProps) {
   const t = tenant;
+  const [tab, setTab] = useState<Tab>("resumen");
   const [showPass, setShowPass] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
@@ -58,250 +44,333 @@ export function TenantDetailModal({ tenant, onClose }: TenantDetailModalProps) {
   const [tempPasswordCopied, setTempPasswordCopied] = useState(false);
   const storeInfo = t.stores?.[0];
 
-  const handleResetPassword = async () => {
-    // P0 fix 2026-05-24: TOTP step-up obligatorio en server.
-    const totpCode = window.prompt(
-      `Código TOTP (6 dígitos) para resetear contraseña de "${t.name}":`,
-    );
-    if (!totpCode || !/^\d{6}$/.test(totpCode)) {
-      setResetResult("Código TOTP inválido — operación cancelada");
-      return;
-    }
-    setResetLoading(true);
-    setResetResult(null);
+  // ── Inline edit (C3): nombre + email del dueño ──
+  const [editing, setEditing] = useState(false);
+  const [nameInput, setNameInput] = useState(t.name);
+  const [emailInput, setEmailInput] = useState(t.ownerEmail ?? "");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [trialBusy, setTrialBusy] = useState(false);
+
+  // ── Actividad ──
+  const [activity, setActivity] = useState<ActivityRow[] | null>(null);
+  // ── Notas ──
+  const [notes, setNotes] = useState<NoteRow[] | null>(null);
+  const [noteInput, setNoteInput] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "actividad" || activity !== null) return;
+    fetch(`/api/superadmin/activity?tenant=${t.id}&limit=40`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setActivity((d?.logs ?? d?.activity ?? d?.items ?? []) as ActivityRow[]))
+      .catch(() => setActivity([]));
+  }, [tab, activity, t.id]);
+
+  useEffect(() => {
+    if (tab !== "notas" || notes !== null) return;
+    fetch(`/api/superadmin/tenants/${t.slug}/notes`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setNotes((d?.notes ?? []) as NoteRow[]))
+      .catch(() => setNotes([]));
+  }, [tab, notes, t.slug]);
+
+  const handleSaveEdit = async () => {
+    setSavingEdit(true);
     try {
-      const res = await fetch(
-        `/api/superadmin/tenants/${t.slug}/reset-password`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ totpCode }),
-        },
-      );
+      const res = await fetch(`/api/superadmin/tenants/${t.slug}`, {
+        method: "PATCH", credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ name: nameInput.trim(), ownerEmail: emailInput.trim() }),
+      });
+      if (res.ok) { setEditing(false); onUpdated?.(); }
+    } finally { setSavingEdit(false); }
+  };
+
+  const handleExtendTrial = async (days: number) => {
+    setTrialBusy(true);
+    try {
+      const res = await fetch(`/api/superadmin/tenants/${t.slug}/extend-trial`, {
+        method: "POST", credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ days }),
+      });
+      if (res.ok) onUpdated?.();
+    } finally { setTrialBusy(false); }
+  };
+
+  const addNote = useCallback(async () => {
+    if (!noteInput.trim() || savingNote) return;
+    setSavingNote(true);
+    try {
+      const res = await fetch(`/api/superadmin/tenants/${t.slug}/notes`, {
+        method: "POST", credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ body: noteInput.trim() }),
+      });
+      const d = await res.json();
+      if (res.ok && d.note) { setNotes((prev) => [d.note, ...(prev ?? [])]); setNoteInput(""); }
+    } finally { setSavingNote(false); }
+  }, [noteInput, savingNote, t.slug]);
+
+  const handleResetPassword = async () => {
+    const totpCode = window.prompt(`Código TOTP (6 dígitos) para resetear contraseña de "${t.name}":`);
+    if (!totpCode || !/^\d{6}$/.test(totpCode)) { setResetResult("Código TOTP inválido — operación cancelada"); return; }
+    setResetLoading(true); setResetResult(null);
+    try {
+      const res = await fetch(`/api/superadmin/tenants/${t.slug}/reset-password`, {
+        method: "POST", credentials: "include",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ totpCode }),
+      });
       const data = await res.json() as { tempPassword?: string; error?: string };
-      if (res.ok && data.tempPassword) {
-        setResetResult(data.tempPassword);
-      } else {
-        setResetResult(res.ok ? null : `Error: ${data.error ?? "No se pudo resetear"}`);
-      }
+      if (res.ok && data.tempPassword) setResetResult(data.tempPassword);
+      else setResetResult(res.ok ? null : `Error: ${data.error ?? "No se pudo resetear"}`);
     } catch { setResetResult("Error de red."); }
     finally { setResetLoading(false); }
   };
 
   const handleCopyInfo = () => {
     void navigator.clipboard.writeText([`Tenant: ${t.name} (${t.slug})`, `Email: ${t.ownerEmail ?? "—"}`, `Plan: ${t.plan}`].join("\n"));
-    setCredCopied(true);
-    setTimeout(() => setCredCopied(false), 2000);
+    setCredCopied(true); setTimeout(() => setCredCopied(false), 2000);
   };
-
   const handleCopyTempPassword = () => {
     if (!resetResult || resetResult.startsWith("Error")) return;
     void navigator.clipboard.writeText(resetResult);
-    setTempPasswordCopied(true);
-    setTimeout(() => setTempPasswordCopied(false), 2000);
+    setTempPasswordCopied(true); setTimeout(() => setTempPasswordCopied(false), 2000);
   };
 
-  const handleOpenAdminLogin = () => {
-    // Solo precarga el username "admin" (no el password). El superadmin
-    // debe pegar la contraseña manualmente — no se transmite por URL.
-    const loginUrl = `/admin/login?user=admin&tenant=${encodeURIComponent(t.slug)}`;
-    window.open(loginUrl, "_blank", "noopener,noreferrer");
-  };
+  const TABS: { id: Tab; label: string; icon: typeof Activity }[] = [
+    { id: "resumen", label: "Resumen", icon: Building2 },
+    { id: "uso", label: "Uso", icon: KeyRound },
+    { id: "facturacion", label: "Facturación", icon: ShoppingBag },
+    { id: "actividad", label: "Actividad", icon: Activity },
+    { id: "notas", label: "Notas", icon: StickyNote },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={onClose}>
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-teal-800/30 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-6 shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
 
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-[var(--accent)]" /> {t.name}
-            </h2>
-            <p className="text-gray-500 text-xs mt-1 font-mono">{t.slug}</p>
-            {t.ownerEmail && <p className="text-[var(--text-tertiary)] text-xs mt-0.5">{t.ownerEmail}</p>}
+        {/* Header con inline edit */}
+        <div className="flex items-start justify-between p-5 border-b border-[var(--rule-base)]">
+          <div className="min-w-0 flex-1">
+            {editing ? (
+              <div className="space-y-2">
+                <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} className="w-full h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+                <input value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="email del dueño" className="w-full h-8 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]" />
+                <div className="flex gap-2">
+                  <button onClick={handleSaveEdit} disabled={savingEdit} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 h-8 text-xs font-bold text-white disabled:opacity-50">
+                    {savingEdit ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Guardar
+                  </button>
+                  <button onClick={() => { setEditing(false); setNameInput(t.name); setEmailInput(t.ownerEmail ?? ""); }} className="rounded-lg px-3 h-8 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-[var(--accent)] shrink-0" />
+                  <span className="truncate">{t.name}</span>
+                  <button onClick={() => setEditing(true)} title="Editar nombre / email" className="text-[var(--text-tertiary)] hover:text-[var(--accent)] shrink-0"><Pencil className="w-4 h-4" /></button>
+                </h2>
+                <p className="text-gray-500 text-xs mt-1 font-mono">{t.slug}</p>
+                {t.ownerEmail && <p className="text-[var(--text-tertiary)] text-xs mt-0.5 truncate">{t.ownerEmail}</p>}
+              </>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0 ml-2">
             <PlanBadge plan={t.plan} />
             <StatusBadge active={t.active} />
-            <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] text-gray-400 ml-2">
-              <X className="w-4 h-4" />
-            </button>
+            <Link href={`/superadmin/chat?tenant=${t.id}&name=${encodeURIComponent(t.name)}`} title="Chatear con este negocio" className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-[var(--accent-soft)]"><MessageSquare className="w-4 h-4" /></Link>
+            <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] text-gray-400"><X className="w-4 h-4" /></button>
           </div>
         </div>
 
-        {/* Financial KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[
-            { value: t._count.AdminUser, label: "Usuarios", color: "text-[var(--text-primary)]" },
-            { value: t.usage?.products ?? 0, label: "Productos", color: "text-[var(--text-primary)]" },
-            { value: t.monthOrders ?? t.usage?.ordersThisMonth ?? 0, label: "Pedidos/mes", color: "text-[var(--data-success-500)]" },
-            { value: fmtMoney(t.monthRevenue ?? 0), label: "Ventas/mes", color: "text-[var(--data-success-500)]" },
-            { value: fmtMoney(t.monthProfit ?? 0), label: "Ganancia", color: (t.monthProfit ?? 0) >= 0 ? "text-[var(--accent-dark)]" : "text-[var(--data-error-500)]" },
-          ].map(({ value, label, color }) => (
-            <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 text-center">
-              <div className={`text-lg font-bold ${color}`}>{value}</div>
-              <div className="text-gray-500 text-[length:var(--ts-xs)] mt-0.5">{label}</div>
-            </div>
+        {/* Tab bar */}
+        <div className="flex gap-1 px-3 pt-3 border-b border-[var(--rule-base)] overflow-x-auto">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button key={id} onClick={() => setTab(id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-bold rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${tab === id ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+              <Icon className="w-4 h-4" /> {label}
+            </button>
           ))}
         </div>
 
-        {/* Marketplace info */}
-        {storeInfo && (
-          <div className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="w-4 h-4 text-[var(--accent)]" />
-              <span className="text-sm font-semibold text-[var(--text-secondary)]">Marketplace</span>
-              <span className={`px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-gray-500"}`}>
-                {storeInfo.isPublished ? "Publicada" : "No publicada"}
-              </span>
-            </div>
-            {storeInfo.isPublished && (
-              <a href={`/marketplace/tienda/${storeInfo.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--accent)] hover:underline flex items-center gap-1">
-                Ver en marketplace <ExternalLink className="w-3 h-3" />
-              </a>
-            )}
-          </div>
-        )}
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {tab === "resumen" && (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {[
+                  { value: t._count.AdminUser, label: "Usuarios", color: "text-[var(--text-primary)]" },
+                  { value: t.usage?.products ?? 0, label: "Productos", color: "text-[var(--text-primary)]" },
+                  { value: t.monthOrders ?? t.usage?.ordersThisMonth ?? 0, label: "Pedidos/mes", color: "text-[var(--data-success-500)]" },
+                  { value: fmtMoney(t.monthRevenue ?? 0), label: "Ventas/mes", color: "text-[var(--data-success-500)]" },
+                  { value: fmtMoney(t.monthProfit ?? 0), label: "Ganancia", color: (t.monthProfit ?? 0) >= 0 ? "text-[var(--accent-dark)]" : "text-[var(--data-error-500)]" },
+                ].map(({ value, label, color }) => (
+                  <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 text-center">
+                    <div className={`text-lg font-bold ${color}`}>{value}</div>
+                    <div className="text-gray-500 text-[length:var(--ts-xs)] mt-0.5">{label}</div>
+                  </div>
+                ))}
+              </div>
 
-        {/* Credentials section */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-[var(--text-tertiary)] flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-[var(--accent)]" /> Credenciales y Acceso
-          </h3>
-          <div className="bg-[var(--surface-sunken)]/60 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Email</span><p className="text-[var(--text-secondary)] mt-0.5">{t.ownerEmail ?? "—"}</p></div>
-              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Slug</span><p className="text-[var(--text-secondary)] mt-0.5 font-mono">{t.slug}</p></div>
-              <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Teléfono</span><p className="text-[var(--text-secondary)] mt-0.5">{t.ownerPhone ?? "—"}</p></div>
-              <div>
-                <span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Contraseña</span>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-gray-500">{showPass ? "Encriptada — usar reset o guardar manual" : "••••••••"}</p>
-                  <button type="button" onClick={() => setShowPass((v) => !v)} className="text-gray-400 hover:text-[var(--accent)]">
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              {/* Trial + extender (C3) */}
+              <div className="flex items-center justify-between gap-2 bg-[var(--surface-sunken)]/50 rounded-xl px-3 py-2.5">
+                <span className="text-sm text-[var(--text-secondary)]">
+                  Trial: <strong className="text-[var(--text-primary)]">{fmtD(t.trialEndsAt)}</strong>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {[7, 14, 30].map((d) => (
+                    <button key={d} onClick={() => handleExtendTrial(d)} disabled={trialBusy} className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 h-8 text-xs font-bold text-[var(--data-warning-600,#d97706)] hover:bg-[var(--data-warning-50,#fffbeb)] disabled:opacity-50">
+                      {trialBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Clock className="h-3 w-3" />} +{d}d
+                    </button>
+                  ))}
                 </div>
               </div>
-              {t.stripeCustomerId && (
-                <div><span className="text-gray-400 uppercase tracking-wider text-[length:var(--ts-xs)]">Stripe ID</span><p className="text-[var(--text-secondary)] mt-0.5 font-mono truncate">{t.stripeCustomerId}</p></div>
-              )}
-            </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 pt-1">
-              <button type="button" onClick={handleCopyInfo} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold">
-                <Copy className="w-3.5 h-3.5" /> {credCopied ? "¡Copiado!" : "Copiar info"}
-              </button>
-              <button type="button" onClick={() => void handleResetPassword()} disabled={resetLoading} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/40 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-semibold disabled:opacity-50">
-                {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Reset contraseña
-              </button>
-              <button type="button" onClick={handleOpenAdminLogin} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold">
-                <ExternalLink className="w-3.5 h-3.5" /> Abrir login
-              </button>
-            </div>
-            {/*
-              SECURITY 2026-05-16: la contraseña temporal del reset se
-              muestra UNA SOLA VEZ tras ejecutar el reset. NO se persiste
-              en localStorage ni se transmite por URL. El superadmin debe
-              copiarla manualmente (botón "Copiar") y pegarla en el form
-              de admin/login que abre la pestaña.
-            */}
-            {resetResult && (
-              <div className="text-xs bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 border-2 border-[var(--data-warning-500)]/40 rounded-lg px-3 py-2.5 space-y-2">
-                <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-500)] flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  Contraseña temporal (se muestra una sola vez)
-                </p>
-                {resetResult.startsWith("Error") ? (
-                  <p className="font-mono text-[var(--data-error-500)]">{resetResult}</p>
-                ) : (
+              {storeInfo && (
+                <div className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 font-mono text-sm font-extrabold text-[var(--text-primary)] bg-[var(--surface-raised)] px-2 py-1 rounded select-all">
-                      {showPass ? resetResult : "•".repeat(Math.max(6, resetResult.length))}
-                    </code>
-                    <button type="button" onClick={() => setShowPass((v) => !v)} className="text-[var(--text-tertiary)] hover:text-[var(--accent)]" aria-label="Mostrar/ocultar">
-                      {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                    <button type="button" onClick={handleCopyTempPassword} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[var(--data-warning-500)] text-white text-xs font-extrabold">
-                      <Copy className="w-3 h-3" /> {tempPasswordCopied ? "Copiado" : "Copiar"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Plan usage */}
-        {t.usage && t.limits && (
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-[var(--text-tertiary)]">Uso del plan</h3>
-            {(
-              [
-                { label: "Productos", used: t.usage.products, max: t.limits.maxProducts },
-                { label: "Usuarios", used: t.usage.users, max: t.limits.maxUsers },
-                { label: "Pedidos/mes", used: t.usage.ordersThisMonth, max: t.limits.maxOrdersPerMonth },
-              ] as const
-            ).map(({ label, used, max }) => {
-              const p = pct(used, max);
-              const full = max !== -1 && p >= 100;
-              const warn = max !== -1 && p >= 80 && !full;
-              return (
-                <div key={label}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[var(--text-secondary)]">{label}</span>
-                    <span className={full ? "text-[var(--data-error-500)] font-bold" : warn ? "text-[var(--data-warning-500)]" : "text-gray-400"}>
-                      {used.toLocaleString("es-PE")} / {unlimited(max)}
+                    <ShoppingBag className="w-4 h-4 text-[var(--accent)]" />
+                    <span className="text-sm font-semibold text-[var(--text-secondary)]">Marketplace</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-gray-500"}`}>
+                      {storeInfo.isPublished ? "Publicada" : "No publicada"}
                     </span>
                   </div>
-                  <div className="h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                    {max === -1
-                      ? <div className="h-full bg-gray-300 dark:bg-gray-600/30 rounded-full w-full" />
-                      : <div className={`h-full rounded-full ${full ? "bg-[var(--data-error-500)]" : warn ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent)]"}`} style={{ width: `${p}%` }} />
-                    }
-                  </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
 
-        {/* Billing */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-[var(--text-tertiary)]">Facturación</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            {[
-              { label: "Stripe Customer", value: t.stripeCustomerId ?? "—" },
-              { label: "Subscription", value: t.stripeSubscriptionId ?? "—" },
-              { label: "Periodo vence", value: fmtD(t.stripeCurrentPeriodEnd) },
-              { label: "Trial termina", value: fmtD(t.trialEndsAt) },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-lg px-3 py-2">
-                <span className="text-gray-400">{label}</span>
-                <p className="text-[var(--text-secondary)] font-mono truncate">{value}</p>
+              {/* Credenciales */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] flex items-center gap-2"><KeyRound className="w-4 h-4 text-[var(--accent)]" /> Credenciales y Acceso</h3>
+                <div className="bg-[var(--surface-sunken)]/60 border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button type="button" onClick={handleCopyInfo} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold">
+                      <Copy className="w-3.5 h-3.5" /> {credCopied ? "¡Copiado!" : "Copiar info"}
+                    </button>
+                    <button type="button" onClick={() => void handleResetPassword()} disabled={resetLoading} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/40 border border-[var(--data-warning-500)] text-[var(--data-warning-600,#d97706)] text-xs font-semibold disabled:opacity-50">
+                      {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Reset contraseña
+                    </button>
+                  </div>
+                  {resetResult && (
+                    <div className="text-xs bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 border-2 border-[var(--data-warning-500)]/40 rounded-lg px-3 py-2.5 space-y-2">
+                      <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-600,#d97706)] flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Contraseña temporal (una sola vez)</p>
+                      {resetResult.startsWith("Error") ? (
+                        <p className="font-mono text-[var(--data-error-500)]">{resetResult}</p>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 font-mono text-sm font-extrabold text-[var(--text-primary)] bg-[var(--surface-raised)] px-2 py-1 rounded select-all">{showPass ? resetResult : "•".repeat(Math.max(6, resetResult.length))}</code>
+                          <button type="button" onClick={() => setShowPass((v) => !v)} className="text-[var(--text-tertiary)] hover:text-[var(--accent)]">{showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
+                          <button type="button" onClick={handleCopyTempPassword} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[var(--data-warning-500)] text-white text-xs font-extrabold"><Copy className="w-3 h-3" /> {tempPasswordCopied ? "Copiado" : "Copiar"}</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-          {t.cancelAtPeriodEnd && (
-            <div className="flex items-center gap-2 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs bg-[var(--data-warning-50)] dark:bg-orange-950/30 rounded-lg px-3 py-2">
-              <AlertTriangle className="w-4 h-4" /> Esta tienda cancelará al final del periodo.
+            </>
+          )}
+
+          {tab === "uso" && (
+            t.usage && t.limits ? (
+              <div className="space-y-3">
+                {([
+                  { label: "Productos", used: t.usage.products, max: t.limits.maxProducts },
+                  { label: "Usuarios", used: t.usage.users, max: t.limits.maxUsers },
+                  { label: "Pedidos/mes", used: t.usage.ordersThisMonth, max: t.limits.maxOrdersPerMonth },
+                ] as const).map(({ label, used, max }) => {
+                  const p = pct(used, max);
+                  const full = max !== -1 && p >= 100;
+                  const warn = max !== -1 && p >= 80 && !full;
+                  return (
+                    <div key={label}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-[var(--text-secondary)]">{label}</span>
+                        <span className={full ? "text-[var(--data-error-500)] font-bold" : warn ? "text-[var(--data-warning-500)]" : "text-gray-400"}>{used.toLocaleString("es-PE")} / {unlimited(max)}</span>
+                      </div>
+                      <div className="h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                        {max === -1 ? <div className="h-full bg-gray-300 dark:bg-gray-600/30 rounded-full w-full" /> : <div className={`h-full rounded-full ${full ? "bg-[var(--data-error-500)]" : warn ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent)]"}`} style={{ width: `${p}%` }} />}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : <p className="text-sm text-[var(--text-tertiary)]">Sin datos de uso.</p>
+          )}
+
+          {tab === "facturacion" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {[
+                  { label: "Stripe Customer", value: t.stripeCustomerId ?? "—" },
+                  { label: "Subscription", value: t.stripeSubscriptionId ?? "—" },
+                  { label: "Periodo vence", value: fmtD(t.stripeCurrentPeriodEnd) },
+                  { label: "Trial termina", value: fmtD(t.trialEndsAt) },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-lg px-3 py-2">
+                    <span className="text-gray-400">{label}</span>
+                    <p className="text-[var(--text-secondary)] font-mono truncate">{value}</p>
+                  </div>
+                ))}
+              </div>
+              {t.cancelAtPeriodEnd && (
+                <div className="flex items-center gap-2 text-[var(--data-warning-600,#d97706)] text-xs bg-[var(--data-warning-50)] dark:bg-orange-950/30 rounded-lg px-3 py-2"><AlertTriangle className="w-4 h-4" /> Cancelará al final del periodo.</div>
+              )}
+              <SunatOficialToggle slug={t.slug} />
+              {t.customDomain && (
+                <div className="bg-[var(--surface-sunken)]/50 rounded-lg px-3 py-2 text-xs">
+                  <span className="text-gray-400">Dominio personalizado</span>
+                  <p className="text-[var(--data-success-500)] font-semibold flex items-center gap-1.5 mt-0.5"><Globe className="w-4 h-4" /> {t.customDomain}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === "actividad" && (
+            activity === null ? (
+              <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Cargando actividad…</p>
+            ) : activity.length === 0 ? (
+              <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Sin actividad registrada.</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {activity.map((a) => (
+                  <li key={a.id} className="flex gap-3 border-l-2 border-[var(--rule-base)] pl-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{a.action}</p>
+                      {a.detail && <p className="text-xs text-[var(--text-secondary)] truncate">{a.detail}</p>}
+                      <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{fmtDT(a.createdAt)}{a.user ? ` · ${a.user}` : ""}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )
+          )}
+
+          {tab === "notas" && (
+            <div className="space-y-3">
+              <div className="flex items-end gap-2">
+                <textarea value={noteInput} onChange={(e) => setNoteInput(e.target.value)} rows={2} placeholder="Nota interna sobre este negocio (solo superadmin)…" className="flex-1 resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+                <button onClick={addNote} disabled={savingNote || !noteInput.trim()} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white disabled:opacity-40">
+                  {savingNote ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </button>
+              </div>
+              {notes === null ? (
+                <p className="text-sm text-[var(--text-tertiary)] text-center py-6">Cargando notas…</p>
+              ) : notes.length === 0 ? (
+                <p className="text-sm text-[var(--text-tertiary)] text-center py-6">Sin notas todavía.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {notes.map((n) => (
+                    <li key={n.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-3 py-2">
+                      <p className="text-sm text-[var(--text-primary)] whitespace-pre-wrap">{n.body}</p>
+                      <p className="text-[10px] text-[var(--text-tertiary)] mt-1">{n.author} · {fmtDT(n.createdAt)}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </div>
-
-        {/* Modo SUNAT Oficial — toggle controlado por superadmin (ADR-123) */}
-        <SunatOficialToggle slug={t.slug} />
-
-        {/* Custom domain */}
-        {t.customDomain && (
-          <div className="bg-[var(--surface-sunken)]/50 rounded-lg px-3 py-2 text-xs">
-            <span className="text-gray-400">Dominio personalizado</span>
-            <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold flex items-center gap-1.5 mt-0.5">
-              <Globe className="w-4 h-4" /> {t.customDomain}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import {
   Building2, Search, ChevronDown, RefreshCw,
   CheckCircle2, XCircle, LayoutGrid, List, Bomb, Grid3x3,
   DollarSign, Sparkles, Bell,
-  Clock, AlertTriangle, Check, Square, CheckSquare, Download, Mail, X,
+  Clock, AlertTriangle, Check, Square, CheckSquare, Download, Mail, X, MessageSquare,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
@@ -45,6 +45,7 @@ const TenantsGrowthRanking = dynamic(
 import { TenantProductsModal } from "@/components/superadmin/tenants/TenantProductsModal";
 import TenantAddProductModal from "@/components/superadmin/tenants/TenantAddProductModal";
 import { InviteModal } from "@/components/superadmin/tenants/InviteModal";
+import { BulkMessageModal } from "@/components/superadmin/tenants/BulkMessageModal";
 import { TenantDetailModal } from "@/components/superadmin/tenants/TenantDetailModal";
 import { DeleteConfirmModal } from "@/components/superadmin/tenants/DeleteConfirmModal";
 import { NuclearResetModal } from "@/components/superadmin/tenants/NuclearResetModal";
@@ -127,19 +128,42 @@ export default function TenantsPage() {
     try {
       // Pedidos cacheados (60s) en /tenants. Para que el badge de pendientes
       // se actualice en vivo, cruzamos con /pending-counts (no cacheado).
-      const [tenantsRes, countsRes] = await Promise.all([
+      // Churn/health por tenant (Brandon 2026-06-14): score + riesgo para la
+      // columna Salud + filtro por riesgo. Reusa /api/superadmin/churn.
+      const [tenantsRes, countsRes, churnRes] = await Promise.all([
         fetchSuperadmin("/api/superadmin/tenants"),
         fetchSuperadmin("/api/superadmin/tenants/pending-counts"),
+        fetchSuperadmin("/api/superadmin/churn?limit=200"),
       ]);
       if (!tenantsRes.ok) { setError("Error al cargar tenants"); return; }
       const data = await tenantsRes.json() as { tenants: TenantRow[] };
       const counts: Record<string, number> = countsRes.ok
         ? ((await countsRes.json()) as { counts: Record<string, number> }).counts
         : {};
-      // Aplicamos pendingOrders fresh sobre el listado cacheado.
+      // Mapa slug → riesgo (degrada silencioso si churn falla).
+      const riskBySlug = new Map<string, TenantRow["risk"]>();
+      if (churnRes.ok) {
+        try {
+          const cj = (await churnRes.json()) as {
+            tenants: { slug: string; healthScore?: { score: number; riskLevel: string; trialDaysLeft: number | null; daysSinceLastLogin: number | null }; activeSignals?: unknown[] }[];
+          };
+          for (const c of cj.tenants ?? []) {
+            if (!c.healthScore) continue;
+            riskBySlug.set(c.slug, {
+              score: c.healthScore.score,
+              level: (c.healthScore.riskLevel as "low" | "medium" | "high" | "critical") ?? "low",
+              trialDaysLeft: c.healthScore.trialDaysLeft,
+              daysSinceLastLogin: c.healthScore.daysSinceLastLogin,
+              signals: Array.isArray(c.activeSignals) ? c.activeSignals.length : 0,
+            });
+          }
+        } catch { /* churn opcional */ }
+      }
+      // Aplicamos pendingOrders fresh + riesgo sobre el listado cacheado.
       const merged = data.tenants.map((t) => ({
         ...t,
         pendingOrders: (counts[t.id] ?? 0) + (counts[t.slug] ?? 0),
+        risk: riskBySlug.get(t.slug) ?? null,
       }));
       setTenants(merged);
     } catch { setError("Error de red"); }
@@ -179,6 +203,7 @@ export default function TenantsPage() {
   const {
     handleToggleActive,
     handlePlanChange,
+    handleExtendTrial,
     handleDeleteTenant,
     handleNuclearReset,
     handlePurgeTenant,
@@ -228,6 +253,7 @@ export default function TenantsPage() {
     ).length;
     const pendingTotal = tenants.reduce((s, t) => s + (t.pendingOrders ?? 0), 0);
     const tenantsWithPending = tenants.filter((t) => (t.pendingOrders ?? 0) > 0).length;
+    const atRisk = tenants.filter((t) => t.risk && (t.risk.level === "high" || t.risk.level === "critical")).length;
     const mrr = tenants.reduce((s, t) => s + (t.monthRevenue ?? 0), 0);
     const byPlan: Record<PlanId, number> = { free: 0, pro: 0, business: 0, enterprise: 0 };
     for (const t of tenants) {
@@ -240,13 +266,14 @@ export default function TenantsPage() {
       trial: trialCount,
       pendingTotal,
       tenantsWithPending,
+      atRisk,
       mrr,
       byPlan,
     };
   }, [tenants]);
 
   // ── Quick filter chips — atajos comunes ───────────────────────────────
-  type QuickFilter = "all" | "active" | "inactive" | "pro" | "enterprise" | "trial" | "pending" | "trial-expiring" | "overwhelmed" | "stale";
+  type QuickFilter = "all" | "active" | "inactive" | "pro" | "enterprise" | "trial" | "pending" | "trial-expiring" | "overwhelmed" | "stale" | "at-risk";
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
 
   // ── URL state — persistencia de filtros para URLs compartibles ────────
@@ -366,6 +393,7 @@ export default function TenantsPage() {
   // ── Bulk selection — modo selección para acciones masivas ────────────
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMessageOpen, setBulkMessageOpen] = useState(false);
   const toggleSelected = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -397,6 +425,26 @@ export default function TenantsPage() {
     URL.revokeObjectURL(url);
     showToast(`${selected.length} tenant${selected.length === 1 ? "" : "s"} exportado${selected.length === 1 ? "" : "s"}`, true);
   }, [tenants, selectedIds]);
+
+  // ── Acciones masivas (bundle D2) — loop sobre los handlers existentes ──────
+  const bulkExtendTrial = useCallback(async () => {
+    const list = tenants.filter((t) => selectedIds.has(t.id));
+    for (const t of list) await handleExtendTrial(t.slug, 14);
+    showToast(`Trial +14d en ${list.length} tienda(s)`, true);
+    clearSelection();
+  }, [tenants, selectedIds, handleExtendTrial, showToast, clearSelection]);
+  const bulkSuspend = useCallback(async () => {
+    const active = tenants.filter((t) => selectedIds.has(t.id) && t.active);
+    for (const t of active) await handleToggleActive(t.slug, true);
+    showToast(`${active.length} tienda(s) suspendida(s)`, true);
+    clearSelection();
+  }, [tenants, selectedIds, handleToggleActive, showToast, clearSelection]);
+  const bulkSetPlan = useCallback(async (plan: PlanId) => {
+    const list = tenants.filter((t) => selectedIds.has(t.id));
+    for (const t of list) await handlePlanChange(t.slug, plan);
+    showToast(`Plan → ${plan} en ${list.length} tienda(s)`, true);
+    clearSelection();
+  }, [tenants, selectedIds, handlePlanChange, showToast, clearSelection]);
   const applyQuickFilter = (qf: QuickFilter) => {
     setQuickFilter(qf);
     // Reset filtros granulares y aplica preset
@@ -432,6 +480,9 @@ export default function TenantsPage() {
     }
     if (quickFilter === "overwhelmed") {
       return sorted.filter((t) => (t.pendingOrders ?? 0) >= 10);
+    }
+    if (quickFilter === "at-risk") {
+      return sorted.filter((t) => t.risk && (t.risk.level === "high" || t.risk.level === "critical"));
     }
     return sorted;
   }, [sorted, quickFilter]);
@@ -749,6 +800,8 @@ export default function TenantsPage() {
               onPurge={(slug, name) => void handlePurgeTenant(slug, name)}
               onDelete={(slug, name) => setDeleteTarget({ slug, name })}
               onPlanChange={(slug, plan) => void handlePlanChange(slug, plan)}
+              onExtendTrial={(slug, days) => void handleExtendTrial(slug, days)}
+              onChat={(t) => router.push(`/superadmin/chat?tenant=${t.id}&name=${encodeURIComponent(t.name)}`)}
               onModules={(t) => setModulesTarget(t)}
               moduleOverrideCounts={moduleOverrideCounts}
             />
@@ -788,7 +841,7 @@ export default function TenantsPage() {
           }}
         />
       )}
-      {detailTarget && <TenantDetailModal tenant={detailTarget} onClose={() => setDetailTarget(null)} />}
+      {detailTarget && <TenantDetailModal tenant={detailTarget} onClose={() => setDetailTarget(null)} onUpdated={() => void loadTenants()} />}
       {productsTarget && (
         <TenantProductsModal
           open={Boolean(productsTarget)}
@@ -849,6 +902,43 @@ export default function TenantsPage() {
           </button>
           <button
             type="button"
+            onClick={() => setBulkMessageOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] hover:brightness-110 transition-all"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            Mensaje
+          </button>
+          {/* Acciones masivas (D2): plan · trial · suspender */}
+          <select
+            aria-label="Cambiar plan de la selección"
+            defaultValue=""
+            onChange={(e) => { const v = e.target.value as PlanId; if (v) { void bulkSetPlan(v); e.currentTarget.value = ""; } }}
+            className="h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
+          >
+            <option value="">Plan…</option>
+            <option value="free">→ Free</option>
+            <option value="pro">→ Pro</option>
+            <option value="business">→ Business</option>
+            <option value="enterprise">→ Enterprise</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => void bulkExtendTrial()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-warning-600,#d97706)] hover:bg-[var(--data-warning-50,#fffbeb)] transition-colors"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            Trial +14d
+          </button>
+          <button
+            type="button"
+            onClick={() => void bulkSuspend()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-error-600,#dc2626)] hover:bg-[var(--data-error-50,#fef2f2)] transition-colors"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Suspender
+          </button>
+          <button
+            type="button"
             onClick={() => {
               const emails = tenants
                 .filter((t) => selectedIds.has(t.id) && t.ownerEmail)
@@ -874,6 +964,15 @@ export default function TenantsPage() {
             <X className="h-4 w-4" />
           </button>
         </div>
+      )}
+
+      {bulkMessageOpen && (
+        <BulkMessageModal
+          tenantIds={[...selectedIds]}
+          count={selectedIds.size}
+          onClose={() => setBulkMessageOpen(false)}
+          onSent={() => { setBulkMessageOpen(false); showToast(`Mensaje enviado a ${selectedIds.size} tienda(s)`, true); clearSelection(); }}
+        />
       )}
     </AdminTabShell>
   );
@@ -964,8 +1063,8 @@ function QuickFilters({
   setFilterActive,
 }: {
   quickFilter: string;
-  applyQuickFilter: (v: "all" | "active" | "inactive" | "pro" | "enterprise" | "trial" | "pending") => void;
-  stats: { total: number; active: number; inactive: number; trial: number; tenantsWithPending: number; byPlan: Record<PlanId, number> };
+  applyQuickFilter: (v: "all" | "active" | "inactive" | "pro" | "enterprise" | "trial" | "pending" | "at-risk") => void;
+  stats: { total: number; active: number; inactive: number; trial: number; tenantsWithPending: number; atRisk: number; byPlan: Record<PlanId, number> };
   filterPlan: "all" | PlanId;
   setFilterPlan: (v: "all" | PlanId) => void;
   filterActive: "all" | "active" | "inactive";
@@ -976,6 +1075,7 @@ function QuickFilters({
     { id: "all" as const,      label: "Todos",          count: stats.total },
     { id: "active" as const,   label: "Activas",        count: stats.active },
     { id: "trial" as const,    label: "En trial",       count: stats.trial },
+    { id: "at-risk" as const,  label: "En riesgo",      count: stats.atRisk },
     { id: "pending" as const,  label: "Con pendientes", count: stats.tenantsWithPending },
   ];
   const isMoreActive =

@@ -28,7 +28,7 @@ export async function PATCH(
 
     const { slug } = await params;
 
-    let body: { plan?: string; active?: boolean };
+    let body: { plan?: string; active?: boolean; name?: string; ownerEmail?: string };
     try { body = await req.json(); } catch { body = {}; }
 
     const updates: Record<string, unknown> = {};
@@ -42,6 +42,22 @@ export async function PATCH(
 
     if (body.active !== undefined) {
       updates.active = Boolean(body.active);
+    }
+
+    // Inline edit del superadmin (bundle C): renombrar + email del dueño.
+    if (body.name !== undefined) {
+      const name = String(body.name).trim();
+      if (name.length < 2 || name.length > 80) {
+        return NextResponse.json({ error: "Nombre inválido (2–80 caracteres)" }, { status: 400 });
+      }
+      updates.name = name;
+    }
+    if (body.ownerEmail !== undefined) {
+      const email = String(body.ownerEmail).trim();
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        return NextResponse.json({ error: "Email inválido" }, { status: 400 });
+      }
+      updates.ownerEmail = email || null;
     }
 
     if (Object.keys(updates).length === 0) {

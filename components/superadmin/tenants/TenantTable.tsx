@@ -2,13 +2,21 @@
 
 import {
   Building2, Loader2, ExternalLink, XCircle, CheckCircle2,
-  Users, Eraser, Layers,
+  Users, Eraser, Layers, Clock, MessageSquare,
 } from "@buleje/design-system/icons";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
 import { MiniUsageBar } from "./MiniUsageBar";
 import { PlanSelect } from "./PlanSelect";
+import { RiskBadge } from "./RiskBadge";
 import type { SortField, SortDir } from "./types";
+
+/** Días restantes de trial (>0 = futuro). null si no hay trial. */
+function trialDaysLeft(trialEndsAt: string | null): number | null {
+  if (!trialEndsAt) return null;
+  const ms = new Date(trialEndsAt).getTime() - Date.now();
+  return Math.ceil(ms / 86_400_000);
+}
 
 interface TenantTableProps {
   tenants: TenantRow[];
@@ -24,6 +32,10 @@ interface TenantTableProps {
   onPurge: (slug: string, name: string) => void;
   onDelete: (slug: string, name: string) => void;
   onPlanChange: (slug: string, plan: PlanId) => void;
+  /** Extiende (o reduce) el trial del tenant en N días. Bundle A. */
+  onExtendTrial: (slug: string, days: number) => void;
+  /** Abre el chat de la plataforma con este tenant. Bundle B. */
+  onChat?: (t: TenantRow) => void;
   /** Abre el editor de módulos a medida del tenant (override de la plantilla). */
   onModules: (t: TenantRow) => void;
   /** tenantId → cantidad de módulos forzados (bulk de /tenants/module-overrides). */
@@ -57,6 +69,8 @@ export function TenantTable({
   onPurge,
   onDelete,
   onPlanChange,
+  onExtendTrial,
+  onChat,
   onModules,
   moduleOverrideCounts,
 }: TenantTableProps) {
@@ -83,6 +97,7 @@ export function TenantTable({
                   Plan <SortIcon field="plan" sortField={sortField} sortDir={sortDir} />
                 </th>
                 <th className="text-left px-4 py-3">Estado</th>
+                <th className="text-left px-4 py-3 hidden md:table-cell">Salud</th>
                 <th className="text-left px-4 py-3">Módulos</th>
                 <th className="text-left px-4 py-3 hidden md:table-cell">Uso</th>
                 <th className="text-right px-4 py-3 hidden lg:table-cell cursor-pointer hover:text-gray-600 dark:hover:text-gray-200 select-none" onClick={() => onSort("ordersThisMonth")}>
@@ -124,17 +139,31 @@ export function TenantTable({
                     </div>
                   </td>
 
-                  {/* Status */}
+                  {/* Status + trial countdown (urgencia por color) */}
                   <td className="px-4 py-3">
                     <StatusBadge active={tenant.active} />
                     {tenant.cancelAtPeriodEnd && (
                       <div className="text-[length:var(--ts-xs)] text-[var(--data-warning-500)] mt-1">Cancela pronto</div>
                     )}
-                    {tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date() && (
-                      <div className="text-[length:var(--ts-xs)] text-[var(--data-success-500)] mt-1">
-                        Trial hasta {fmtDate(tenant.trialEndsAt)}
-                      </div>
-                    )}
+                    {(() => {
+                      const d = trialDaysLeft(tenant.trialEndsAt);
+                      if (d === null || d <= 0) return null;
+                      const cls = d <= 3
+                        ? "text-[var(--data-error-600,#dc2626)]"
+                        : d <= 7
+                          ? "text-[var(--data-warning-600,#d97706)]"
+                          : "text-[var(--data-success-500)]";
+                      return (
+                        <div className={`text-[length:var(--ts-xs)] font-semibold mt-1 ${cls}`} title={`Trial hasta ${fmtDate(tenant.trialEndsAt)}`}>
+                          Trial · vence en {d}d
+                        </div>
+                      );
+                    })()}
+                  </td>
+
+                  {/* Salud / riesgo de churn (bundle A) */}
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    <RiskBadge risk={tenant.risk} />
                   </td>
 
                   {/* Módulos a medida — override per-tenant de la plantilla.
@@ -225,6 +254,33 @@ export function TenantTable({
                         className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors"
                       >
                         <ExternalLink className="w-4 h-4" />
+                      </button>
+
+                      {/* Chatear (bundle B) — abre el Messenger con este tenant */}
+                      {onChat && (
+                        <button
+                          type="button"
+                          onClick={() => onChat(tenant)}
+                          title="Chatear con este negocio"
+                          className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Extender trial +14d (bundle A) */}
+                      <button
+                        type="button"
+                        disabled={actionLoading === `${tenant.slug}-trial`}
+                        onClick={() => onExtendTrial(tenant.slug, 14)}
+                        title="Extender trial +14 días"
+                        className="p-1.5 rounded-lg text-[var(--data-warning-600,#d97706)] hover:bg-[var(--data-warning-50,#fffbeb)] dark:hover:bg-amber-950/30 transition-colors disabled:opacity-40"
+                      >
+                        {actionLoading === `${tenant.slug}-trial` ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Clock className="w-4 h-4" />
+                        )}
                       </button>
 
                       {/* Invite user */}
