@@ -21,6 +21,7 @@ import { DateRangeSelector, type DateRange } from "@/components/superadmin/dashb
 import { TopStoresList } from "@/components/superadmin/dashboard/TopStoresList";
 import { ConversionFunnel } from "@/components/superadmin/dashboard/ConversionFunnel";
 import { LatestActiveTenantsTable } from "@/components/superadmin/dashboard/LatestActiveTenantsTable";
+import { CommandCenterStrip } from "@/components/superadmin/dashboard/CommandCenterStrip";
 import dynamic from "next/dynamic";
 
 // Audit P1 (2026-05-19): lazificación masiva de Recharts. Antes los 8 charts
@@ -290,6 +291,9 @@ export default function DashboardPage() {
         </>
       }
     >
+      {/* ── Centro de comando: KPIs operativos accionables (auto-fetch) ──── */}
+      <CommandCenterStrip />
+
       {/* ── Error ────────────────────────────────────────────────────────── */}
       {error && (
         <ErrorAlert
