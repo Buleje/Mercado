@@ -132,6 +132,13 @@ export interface UnifiedProductCardProduct {
   storeRating?: number;
   /** Logo de la tienda — se muestra como avatar al costado del nombre. */
   storeLogo?: string | null;
+  /** Prueba social de la tienda — alimenta el bloque de confianza del modal. */
+  storeReviewCount?: number;
+  storeCategory?: string | null;
+  /** Tamaño real del catálogo (no unidades vendidas). */
+  storeProductCount?: number;
+  /** ISO de creación de la tienda — antigüedad ("X años en Buleje"). */
+  storeSince?: string | null;
   unit?: string | null;
   category?: string;
   stock?: number;
@@ -923,6 +930,11 @@ export default function UnifiedProductCard({
             storeProductId: product.storeProductId ?? String(product.id),
             storeLogo: product.storeLogo ?? null,
             description: product.description ?? null,
+            storeRating: product.storeRating ?? null,
+            storeReviewCount: product.storeReviewCount ?? null,
+            storeCategory: product.storeCategory ?? null,
+            storeProductCount: product.storeProductCount ?? null,
+            storeSince: product.storeSince ?? null,
           }}
           groups={product.modifierGroups ?? []}
           onConfirm={({ quantity, modifiers, finalUnitPrice }) => {

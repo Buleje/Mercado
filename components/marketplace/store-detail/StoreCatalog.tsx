@@ -44,6 +44,12 @@ interface StoreCatalogProps {
   storeSlug: string;
   storeName: string;
   storeId: string;
+  /** Prueba social de la tienda — para el bloque de confianza del modal. */
+  storeRating?: number;
+  storeReviewCount?: number;
+  storeCategory?: string | null;
+  /** ISO de creación de la tienda (antigüedad en el modal). */
+  storeSince?: string | null;
   products: DbStoreProduct[];
   /** Categoría activa desde StoreCategories (prop-driven, no local state) */
   activeCategory: string | null;
@@ -74,11 +80,21 @@ function ProductListRow({
   storeSlug,
   storeId,
   storeName,
+  storeRating,
+  storeReviewCount,
+  storeCategory,
+  storeSince,
+  storeProductCount,
 }: {
   product: DbStoreProduct;
   storeSlug: string;
   storeId: string;
   storeName: string;
+  storeRating?: number;
+  storeReviewCount?: number;
+  storeCategory?: string | null;
+  storeSince?: string | null;
+  storeProductCount?: number;
 }) {
   const href = `/marketplace/${storeSlug}/producto/${product.productId}`;
   const { addItem, items } = useMarketplaceCart();
@@ -189,6 +205,11 @@ function ProductListRow({
             storeSlug,
             storeProductId: String(product.id),
             description: null,
+            storeRating: storeRating ?? null,
+            storeReviewCount: storeReviewCount ?? null,
+            storeCategory: storeCategory ?? null,
+            storeProductCount: storeProductCount ?? null,
+            storeSince: storeSince ?? null,
           }}
           groups={product.modifierGroups ?? []}
           onConfirm={({ quantity, modifiers, finalUnitPrice }) => {
@@ -221,6 +242,10 @@ export default function StoreCatalog({
   storeSlug,
   storeName,
   storeId,
+  storeRating,
+  storeReviewCount,
+  storeCategory,
+  storeSince,
   products,
   activeCategory,
   externalSearch,
@@ -228,6 +253,16 @@ export default function StoreCatalog({
   externalView,
   onExternalViewChange,
 }: StoreCatalogProps) {
+  // Tamaño real del catálogo — prueba social honesta (no "unidades vendidas").
+  const storeProductCount = products.length;
+  // Prueba social compartida que viaja al modal de añadir (vía card o list row).
+  const storeTrust = {
+    storeRating,
+    storeReviewCount,
+    storeCategory,
+    storeProductCount,
+    storeSince,
+  } as const;
   const [internalSearch, setInternalSearch] = useState("");
   // Si el padre controla la búsqueda (desde el sticky bar), usar esa.
   // Si no, fallback al estado interno (input local del toolbar).
@@ -403,6 +438,7 @@ export default function StoreCatalog({
               storeSlug={storeSlug}
               storeId={storeId}
               storeName={storeName}
+              {...storeTrust}
             />
           ))}
         </div>
@@ -487,6 +523,7 @@ export default function StoreCatalog({
                       storeSlug,
                       storeProductId: p.id,
                       modifierGroups: p.modifierGroups,
+                      ...storeTrust,
                     }}
                   />
                 ))}
@@ -516,6 +553,7 @@ export default function StoreCatalog({
                 storeSlug,
                 storeProductId: p.id,
                 modifierGroups: p.modifierGroups,
+                ...storeTrust,
               }}
             />
           ))}

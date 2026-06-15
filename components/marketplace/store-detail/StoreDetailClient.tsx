@@ -475,7 +475,7 @@ export default function StoreDetailClient({
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
                 placeholder={`Buscar en ${store.name}…`}
-                className="w-full h-12 pl-12 pr-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
+                className="w-full h-12 pl-12 pr-11 rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
                 aria-label="Buscar productos"
                 autoComplete="off"
               />
@@ -492,7 +492,7 @@ export default function StoreDetailClient({
 
               {/* Sugerencias dropdown */}
               {searchFocused && suggestions.length > 0 && (
-                <div className="absolute top-full mt-1.5 left-0 right-0 z-40 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden max-h-[60vh] overflow-y-auto">
+                <div className="absolute top-full mt-1.5 left-0 right-0 z-40 rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden max-h-[60vh] overflow-y-auto">
                   {suggestions.map((s, idx) => (
                     <button
                       key={`${s.type}:${s.value}:${idx}`}
@@ -532,7 +532,7 @@ export default function StoreDetailClient({
             <div
               role="group"
               aria-label="Cambiar entre cuadrícula y lista"
-              className="inline-flex rounded-xl border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)] shrink-0"
+              className="inline-flex rounded-none border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)] shrink-0"
             >
               <button
                 type="button"
@@ -675,7 +675,7 @@ export default function StoreDetailClient({
           {/* Sidebar desktop — sticky, vertical, scroll interno si hay muchas categorias */}
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-[5.5rem]">
-              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 shadow-sm max-h-[calc(100dvh-7rem)] overflow-y-auto">
+              <div className="rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2 max-h-[calc(100dvh-7rem)] overflow-y-auto">
                 <StoreCategoriesSidebar
                   categories={categories}
                   activeCategory={filterCategory}
@@ -693,6 +693,10 @@ export default function StoreDetailClient({
               storeSlug={store.slug}
               storeName={store.name}
               storeId={store.id}
+              storeRating={store.rating}
+              storeReviewCount={store.reviewCount}
+              storeCategory={store.category}
+              storeSince={store.createdAt}
               products={products}
               activeCategory={filterCategory}
               externalSearch={searchTerm}
