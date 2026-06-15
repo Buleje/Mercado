@@ -136,8 +136,12 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // Cada fila tiene precio ABSOLUTO; al guardar se convierte a priceModifier
   // (delta vs precio base) que es lo que persiste el modelo.
   const [addVariants, setAddVariants] = useState<{ name: string; price: string; stock: string }[]>([]);
-  // Reset de variantes cada vez que se abre el modal (alta o duplicar).
-  useEffect(() => { if (showAdd) setAddVariants([]); }, [showAdd]);
+  // Fase 2: grupos de modificadores (ProductModifierGroup[]) — ej "Cremas" → ají,
+  // mayonesa (+precio). priceDelta SIEMPRE ≥ 0 (es un extra). Se guardan vía PUT
+  // /api/products/[id]/modifiers tras crear el producto.
+  const [addModifierGroups, setAddModifierGroups] = useState<{ name: string; required: boolean; multi: boolean; options: { name: string; priceDelta: string }[] }[]>([]);
+  // Reset de extras cada vez que se abre el modal (alta o duplicar).
+  useEffect(() => { if (showAdd) { setAddVariants([]); setAddModifierGroups([]); } }, [showAdd]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
@@ -556,11 +560,15 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         setSaving(false);
         return;
       }
-      // Fase 2: persistir presentaciones/variantes (ProductVariant[]) si las hay.
+      // Fase 2: persistir presentaciones/variantes y modificadores si los hay.
       const created = await res.json().catch((err) => { console.error("[InventoryTab] parse producto creado falló", err); return null; }) as { id?: number } | null;
+      const newId = created?.id;
+      const extras: string[] = [];
+      let extrasFailed = 0;
+
+      // Variantes → POST /api/marketplace/products/[id]/variants (1 por fila).
       const validVariants = addVariants.filter(v => v.name.trim());
-      if (created?.id && validVariants.length > 0) {
-        const newId = created.id;
+      if (newId && validVariants.length > 0) {
         const basePrice = Number(addForm.price) || 0;
         const results = await Promise.allSettled(validVariants.map(v =>
           fetch(`/api/marketplace/products/${newId}/variants`, {
@@ -574,18 +582,51 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); })
         ));
         const failed = results.filter(r => r.status === "rejected").length;
-        if (failed > 0) {
-          console.error("[InventoryTab] addProduct: variantes fallidas", results);
-          toast.error(`Producto creado, pero ${failed} presentación(es) no se guardaron`);
-        } else {
-          toast.success(`Producto creado con ${validVariants.length} presentación(es)`);
-        }
-      } else {
-        toast.success("Producto creado");
+        extrasFailed += failed;
+        if (validVariants.length - failed > 0) extras.push(`${validVariants.length - failed} presentación(es)`);
+        if (failed > 0) console.error("[InventoryTab] addProduct: variantes fallidas", results);
       }
+
+      // Modificadores → PUT /api/products/[id]/modifiers (recrea groups+options).
+      const validGroups = addModifierGroups
+        .map(g => ({ ...g, options: g.options.filter(o => o.name.trim()) }))
+        .filter(g => g.name.trim() && g.options.length > 0);
+      if (newId && validGroups.length > 0) {
+        try {
+          const r = await fetch(`/api/products/${newId}/modifiers`, {
+            method: "PUT",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({
+              groups: validGroups.map((g, gi) => ({
+                name: g.name.trim(),
+                required: g.required,
+                minSelect: g.required ? 1 : 0,
+                maxSelect: g.multi ? Math.max(1, g.options.length) : 1,
+                position: gi,
+                options: g.options.map((o, oi) => ({
+                  name: o.name.trim(),
+                  priceDelta: o.priceDelta !== "" ? Math.max(0, Number(o.priceDelta)) : 0,
+                  position: oi,
+                })),
+              })),
+            }),
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          extras.push(`${validGroups.length} grupo(s) de opciones`);
+        } catch (err) {
+          console.error("[InventoryTab] addProduct: modificadores fallidos", err);
+          extrasFailed += 1;
+        }
+      }
+
+      if (extrasFailed > 0) toast.error(`Producto creado, pero ${extrasFailed} extra(s) no se guardaron`);
+      else if (extras.length > 0) toast.success(`Producto creado · ${extras.join(" · ")}`);
+      else toast.success("Producto creado");
+
       setShowAdd(false);
       setAddForm(EMPTY_ADD);
       setAddVariants([]);
+      setAddModifierGroups([]);
       load();
     } catch (err) {
       console.error("[InventoryTab] addProduct error", err);
@@ -2377,6 +2418,71 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 )}
               </div>
               )}
+
+              {/* Fase 2: Modificadores / opciones (ProductModifierGroup[]) */}
+              <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="h-4 w-4 text-[var(--text-secondary)]" />
+                    <p className="text-sm font-bold text-[var(--text-primary)]">Modificadores / opciones</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAddModifierGroups(g => [...g, { name: "", required: false, multi: true, options: [{ name: "", priceDelta: "" }] }])}
+                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Agregar grupo
+                  </button>
+                </div>
+                {addModifierGroups.length === 0 ? (
+                  <p className="text-xs text-[var(--text-tertiary)]">Ej: &ldquo;Cremas&rdquo; → Ají, Mayonesa (+S/0.50) · &ldquo;Término&rdquo; → Jugoso, Bien cocido. El cliente las elige al pedir.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {addModifierGroups.map((g, gi) => (
+                      <div key={gi} className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={g.name}
+                            onChange={(e) => setAddModifierGroups(arr => arr.map((x, j) => j === gi ? { ...x, name: e.target.value } : x))}
+                            placeholder="Nombre del grupo (ej: Cremas)"
+                            className={cn(FIELD_INPUT, "flex-1")}
+                          />
+                          <button type="button" onClick={() => setAddModifierGroups(arr => arr.filter((_, j) => j !== gi))} title="Quitar grupo" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"><X className="h-4 w-4" /></button>
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-xs">
+                          <label className="flex items-center gap-1.5 cursor-pointer text-[var(--text-secondary)]">
+                            <input type="checkbox" checked={g.required} onChange={(e) => setAddModifierGroups(arr => arr.map((x, j) => j === gi ? { ...x, required: e.target.checked } : x))} className="accent-[var(--accent)]" /> Obligatorio
+                          </label>
+                          <label className="flex items-center gap-1.5 cursor-pointer text-[var(--text-secondary)]">
+                            <input type="checkbox" checked={g.multi} onChange={(e) => setAddModifierGroups(arr => arr.map((x, j) => j === gi ? { ...x, multi: e.target.checked } : x))} className="accent-[var(--accent)]" /> Permite varias
+                          </label>
+                        </div>
+                        <div className="space-y-1.5 pl-1">
+                          {g.options.map((o, oi) => (
+                            <div key={oi} className="grid grid-cols-[minmax(0,1fr)_88px_32px] gap-2 items-center">
+                              <input
+                                value={o.name}
+                                onChange={(e) => setAddModifierGroups(arr => arr.map((x, j) => j === gi ? { ...x, options: x.options.map((y, k) => k === oi ? { ...y, name: e.target.value } : y) } : x))}
+                                placeholder="Opción (ej: Ají)"
+                                className={FIELD_INPUT}
+                              />
+                              <input
+                                type="number" step="0.01" min="0"
+                                value={o.priceDelta}
+                                onChange={(e) => setAddModifierGroups(arr => arr.map((x, j) => j === gi ? { ...x, options: x.options.map((y, k) => k === oi ? { ...y, priceDelta: e.target.value } : y) } : x))}
+                                placeholder="+0.00"
+                                className={FIELD_INPUT}
+                              />
+                              <button type="button" onClick={() => setAddModifierGroups(arr => arr.map((x, j) => j === gi ? { ...x, options: x.options.filter((_, k) => k !== oi) } : x))} title="Quitar opción" className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"><X className="h-3.5 w-3.5" /></button>
+                            </div>
+                          ))}
+                          <button type="button" onClick={() => setAddModifierGroups(arr => arr.map((x, j) => j === gi ? { ...x, options: [...x.options, { name: "", priceDelta: "" }] } : x))} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"><Plus className="h-3 w-3" /> Agregar opción</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div className="sm:col-span-2 space-y-3">
