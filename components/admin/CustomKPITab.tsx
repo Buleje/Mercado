@@ -21,7 +21,7 @@ function Sparkline({ history, trend }: { history: KpiTrendPoint[]; trend: Custom
   const range = max - min || 1;
   const W = 80, H = 28;
   const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - ((v - min) / range) * H}`).join(" ");
-  const color = trend === "up" ? "var(--accent)" : trend === "down" ? "#ef4444" : "#6b7280";
+  const color = trend === "up" ? "var(--accent)" : trend === "down" ? "var(--data-error-500)" : "var(--text-tertiary)";
   return (
     <svg width={W} height={H} className="overflow-visible">
       <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={pts} />
