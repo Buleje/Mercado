@@ -95,7 +95,7 @@ export default function RecetarioAdminTab() {
     fetch("/api/products?limit=500")
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setProducts(d); })
-      .catch(() => {});
+      .catch((err) => console.warn("[RecetarioAdminTab] products fetch failed:", String(err)));
   }, []);
 
   // ── Form helpers ──

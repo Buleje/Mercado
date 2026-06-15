@@ -119,7 +119,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       `${parsed.data.action} en ${slug} (${tenant.name}), usuario ${admin.username}`,
       { tenantSlug: slug, username: admin.username },
       session.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[security] superadmin action audit failed", { error: String(err), action: auditAction, username: admin.username }));
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[security] action error", { err: e instanceof Error ? e.message : String(e) });
