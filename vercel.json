@@ -52,6 +52,10 @@
   ],
   "crons": [
     {
+      "path": "/api/cron/automations",
+      "schedule": "0 8 * * *"
+    },
+    {
       "path": "/api/cron/documentos-vencimiento",
       "schedule": "0 9 * * *"
     },
