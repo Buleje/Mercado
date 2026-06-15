@@ -213,7 +213,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 13. **Onboarding modal**: localStorage key real = `onboarding-completed-${tenantSlug}`. Setear a `"1"` en Playwright antes de screenshots.
 14. **Prisma schema drift** (suppliers `ColumnNotFound`): requiere `prisma migrate deploy` con DIRECT_URL accesible. DNS de Supabase directo puede fallar en algunas redes — correr desde red con acceso o aplicar la migration sobrante manualmente.
 15. **Claude Code 2026** (v2.1.175+): `/goal` = condición de completitud con evaluador externo (usar en corridas autónomas); `/btw` = preguntas laterales sin gastar contexto; `/rewind` antes de experimentos riesgosos; `/clear` entre tareas no relacionadas; tras 2 correcciones fallidas → replantear, no insistir. **Context resets + estado en archivos > compaction** en corridas largas.
-16. **Reglas path-scoped en `.claude/rules/`** — cargan solo al tocar archivos que matchean (db-classes, ui-components, danger-zone, agentic-style). Gotchas nuevos de capa → ahí, NO inflar este archivo.
+16. **Reglas path-scoped en `.claude/rules/`** — cargan solo al tocar archivos que matchean (db-classes, ui-components, danger-zone, agentic-style, **code-quality** = estándar enterprise fijo: tipos/DS/errores/refactor/verificación/commits). Gotchas nuevos de capa → ahí, NO inflar este archivo.
 17. **Workflow `audit-verificado`** — auditorías con verificación adversarial integrada (cada hallazgo pasa por un refutador). Usar para "auditá X" en vez de N agentes sueltos.
 
 ---
