@@ -140,8 +140,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // mayonesa (+precio). priceDelta SIEMPRE ≥ 0 (es un extra). Se guardan vía PUT
   // /api/products/[id]/modifiers tras crear el producto.
   const [addModifierGroups, setAddModifierGroups] = useState<{ name: string; required: boolean; multi: boolean; options: { name: string; priceDelta: string }[] }[]>([]);
+  // Fase 2: SEO del producto (metaTitle/metaDescription/ogImage) — se guarda vía
+  // PUT /api/marketplace/products/[id]/seo tras crear (la página de producto lo lee).
+  const [addSeo, setAddSeo] = useState({ metaTitle: "", metaDescription: "", ogImage: "" });
   // Reset de extras cada vez que se abre el modal (alta o duplicar).
-  useEffect(() => { if (showAdd) { setAddVariants([]); setAddModifierGroups([]); } }, [showAdd]);
+  useEffect(() => { if (showAdd) { setAddVariants([]); setAddModifierGroups([]); setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" }); } }, [showAdd]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
@@ -619,6 +622,26 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         }
       }
 
+      // SEO → PUT /api/marketplace/products/[id]/seo (la página de producto lo lee).
+      const seoBody: Record<string, string> = {};
+      if (addSeo.metaTitle.trim()) seoBody.metaTitle = addSeo.metaTitle.trim();
+      if (addSeo.metaDescription.trim()) seoBody.metaDescription = addSeo.metaDescription.trim();
+      if (addSeo.ogImage.trim()) seoBody.ogImage = addSeo.ogImage.trim();
+      if (newId && Object.keys(seoBody).length > 0) {
+        try {
+          const r = await fetch(`/api/marketplace/products/${newId}/seo`, {
+            method: "PUT",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(seoBody),
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          extras.push("SEO");
+        } catch (err) {
+          console.error("[InventoryTab] addProduct: SEO falló", err);
+          extrasFailed += 1;
+        }
+      }
+
       if (extrasFailed > 0) toast.error(`Producto creado, pero ${extrasFailed} extra(s) no se guardaron`);
       else if (extras.length > 0) toast.success(`Producto creado · ${extras.join(" · ")}`);
       else toast.success("Producto creado");
@@ -627,6 +650,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       setAddForm(EMPTY_ADD);
       setAddVariants([]);
       setAddModifierGroups([]);
+      setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" });
       load();
     } catch (err) {
       console.error("[InventoryTab] addProduct error", err);
@@ -2482,6 +2506,27 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Fase 2: SEO / posicionamiento (opcional) */}
+              <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4 text-[var(--text-secondary)]" />
+                  <p className="text-sm font-bold text-[var(--text-primary)]">SEO / posicionamiento <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></p>
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Título SEO <span className="font-normal text-[var(--text-tertiary)]">({addSeo.metaTitle.length}/70)</span></label>
+                  <input value={addSeo.metaTitle} onChange={(e) => setAddSeo(s => ({ ...s, metaTitle: e.target.value }))} maxLength={70} placeholder="Ej: Arroz Costeño 5kg — barato en Ciudad Constitución" className={FIELD_INPUT} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Descripción SEO <span className="font-normal text-[var(--text-tertiary)]">({addSeo.metaDescription.length}/160)</span></label>
+                  <textarea value={addSeo.metaDescription} onChange={(e) => setAddSeo(s => ({ ...s, metaDescription: e.target.value }))} maxLength={160} rows={2} placeholder="Aparece en Google bajo el título. Resumí el producto en 1-2 líneas." className={cn(FIELD_INPUT, "resize-none")} />
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Imagen para compartir (URL) <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></label>
+                  <input value={addSeo.ogImage} onChange={(e) => setAddSeo(s => ({ ...s, ogImage: e.target.value }))} placeholder="https://… (si vacío, usa la imagen del producto)" className={FIELD_INPUT} />
+                </div>
+                <p className="text-xs text-[var(--text-tertiary)]">Mejora cómo se ve el producto en Google y al compartir el enlace.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
