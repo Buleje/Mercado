@@ -5,6 +5,19 @@ import { Truck, Bike, Car, Footprints, Users } from "@buleje/design-system/icons
  * Extraído (refactor 2026-06-15) — single source, sin cambios de comportamiento.
  */
 
+// ── Tipos compartidos ──
+export interface DeliveryPartner {
+  id: string;
+  name: string;
+  phone: string;
+  zone: string;
+  vehicleType: string;
+  fee: number | string;
+  rating: number | string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
 // ── Loading skeleton ──
 export const TableSkeleton = () => (
   <div className="space-y-3 animate-pulse">
