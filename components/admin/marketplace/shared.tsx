@@ -1,5 +1,6 @@
 import type React from "react";
 import { ChevronDown, ChevronUp, Clock, CheckCircle } from "@buleje/design-system/icons";
+import { cn } from "@/lib/utils";
 
 /**
  * Helpers, tipos y configs compartidos entre las tabs del módulo Marketplace.
@@ -96,3 +97,46 @@ export const TIER_CONFIG: Record<string, { label: string; className: string; min
   plata:  { label: "Plata",  className: "bg-gray-100 text-[var(--text-secondary)]",   minPoints: "500 - 999" },
   oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "1000+" },
 };
+
+// ── Counter chip clickeable para el KPI strip (usado por Órdenes + Productos) ──
+export function CounterChip({
+  label,
+  value,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  tone: "success" | "warning" | "danger" | "neutral";
+  active: boolean;
+  onClick: () => void;
+}) {
+  const toneClasses = {
+    success: { bg: "bg-[var(--data-success-500)]/10", text: "text-[var(--data-success-500)]", border: "border-[var(--data-success-500)]" },
+    warning: { bg: "bg-[var(--data-warning-500)]/10", text: "text-[var(--data-warning-500)]", border: "border-[var(--data-warning-500)]" },
+    danger: { bg: "bg-[var(--data-error-500)]/10", text: "text-[var(--data-error-500)]", border: "border-[var(--data-error-500)]" },
+    neutral: { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)]", border: "border-[var(--text-tertiary)]" },
+  } as const;
+  const t = toneClasses[tone];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "text-left rounded-xl border-2 px-3.5 py-2.5 transition-colors",
+        active
+          ? cn(t.border, t.bg)
+          : cn("border-[var(--rule-base)] bg-[var(--surface-raised)]", `hover:${t.border}`, `hover:${t.bg}`),
+      )}
+    >
+      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
+        {label}
+      </p>
+      <p className={cn("text-2xl font-extrabold tabular-nums leading-none", active ? t.text : "text-[var(--text-primary)]")}>
+        {value}
+      </p>
+    </button>
+  );
+}
