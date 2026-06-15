@@ -56,25 +56,40 @@ export async function POST(req: NextRequest) {
     return res;
   }
 
-  // SECURITY 2026-05-06 (pentest H007): jti blacklist contra replay.
-  // Si el jti ya fue consumido (tras una rotación previa), rechazar.
-  // Refresh tokens viejos sin jti (pre-fix) se aceptan una vez para back-compat.
+  // SECURITY 2026-05-06 (pentest H007) + FIX 2026-06: jti rotation con ventana
+  // de gracia. El blacklist evita REPLAY de un refresh token robado/viejo, pero
+  // el cliente legítimamente dispara refresh CONCURRENTES al cargar (varios
+  // hooks + React StrictMode double-mount). Sin gracia, el 2º request (mismo
+  // jti, enviado antes de que llegue la cookie rotada) caía como "replay" → 401
+  // + logout, rebotando al usuario a /login tras cada deploy/restart.
+  // Fix: dentro de GRACE_MS desde el 1er consumo es un refresh concurrente
+  // benigno → re-rota (re-emite par válido). Pasada la gracia = replay real → 401.
+  // Tokens viejos sin jti (pre-fix) se aceptan una vez para back-compat.
   if (payload.jti) {
     const blacklistKey = `refresh-jti:consumed:${payload.jti}`;
-    const consumed = cacheStore.get<boolean>(blacklistKey);
-    if (consumed) {
-      logger.warn("[auth/refresh] jti replay attempt", {
+    const GRACE_MS = 30_000;
+    const consumedAt = cacheStore.get<number>(blacklistKey);
+    if (typeof consumedAt === "number") {
+      if (Date.now() - consumedAt > GRACE_MS) {
+        logger.warn("[auth/refresh] jti replay attempt (beyond grace)", {
+          username: payload.username,
+          jti: payload.jti,
+        });
+        const res = NextResponse.json({ error: "refresh token already used" }, { status: 401 });
+        res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+        res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+        return res;
+      }
+      // Dentro de la ventana de gracia → refresh concurrente legítimo. NO
+      // limpiar cookies ni bloquear; se re-rota abajo (par nuevo y válido).
+      logger.debug("[auth/refresh] concurrent refresh within grace window", {
         username: payload.username,
         jti: payload.jti,
       });
-      const res = NextResponse.json({ error: "refresh token already used" }, { status: 401 });
-      res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
-      res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
-      return res;
+    } else {
+      // Primer consumo — marcar con timestamp (TTL 7 días, igual al refresh).
+      cacheStore.set(blacklistKey, Date.now(), 7 * 24 * 60 * 60);
     }
-    // Marcar como consumido por TTL = remaining lifetime del refresh actual
-    // (7 días max — Redis lo ignora cuando expire).
-    cacheStore.set(blacklistKey, true, 7 * 24 * 60 * 60);
   }
 
   // F4 — SECURITY 2026-05-07: verificar usuario activo antes de rotar.
