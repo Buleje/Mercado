@@ -143,8 +143,13 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // Fase 2: SEO del producto (metaTitle/metaDescription/ogImage) — se guarda vía
   // PUT /api/marketplace/products/[id]/seo tras crear (la página de producto lo lee).
   const [addSeo, setAddSeo] = useState({ metaTitle: "", metaDescription: "", ogImage: "" });
+  // Fase 2: galería de fotos adicionales (ProductImage[]). La imagen principal
+  // sigue en addForm.image; estas son extra (isPrimary:false). Se suben a
+  // /api/upload y se persisten vía POST /api/marketplace/products/[id]/images.
+  const [addGallery, setAddGallery] = useState<string[]>([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   // Reset de extras cada vez que se abre el modal (alta o duplicar).
-  useEffect(() => { if (showAdd) { setAddVariants([]); setAddModifierGroups([]); setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" }); } }, [showAdd]);
+  useEffect(() => { if (showAdd) { setAddVariants([]); setAddModifierGroups([]); setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" }); setAddGallery([]); } }, [showAdd]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
@@ -188,6 +193,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     }
   }, []);
   const addImgRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
   const editImgRef = useRef<HTMLInputElement>(null);
 
   // National DB search
@@ -622,6 +628,22 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         }
       }
 
+      // Galería → POST /api/marketplace/products/[id]/images (1 por foto, extra).
+      const gallery = addGallery.filter(Boolean);
+      if (newId && gallery.length > 0) {
+        const results = await Promise.allSettled(gallery.map((url, i) =>
+          fetch(`/api/marketplace/products/${newId}/images`, {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ url, position: i + 1, isPrimary: false }),
+          }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); })
+        ));
+        const failed = results.filter(r => r.status === "rejected").length;
+        extrasFailed += failed;
+        if (gallery.length - failed > 0) extras.push(`${gallery.length - failed} foto(s)`);
+        if (failed > 0) console.error("[InventoryTab] addProduct: galería fallida", results);
+      }
+
       // SEO → PUT /api/marketplace/products/[id]/seo (la página de producto lo lee).
       const seoBody: Record<string, string> = {};
       if (addSeo.metaTitle.trim()) seoBody.metaTitle = addSeo.metaTitle.trim();
@@ -651,6 +673,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       setAddVariants([]);
       setAddModifierGroups([]);
       setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" });
+      setAddGallery([]);
       load();
     } catch (err) {
       console.error("[InventoryTab] addProduct error", err);
@@ -2611,6 +2634,64 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Fase 2: Galería de fotos adicionales (ProductImage[]) */}
+              <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Camera className="h-4 w-4 text-[var(--text-secondary)]" />
+                    <p className="text-sm font-bold text-[var(--text-primary)]">Galería <span className="font-normal text-[var(--text-tertiary)]">(fotos adicionales)</span></p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => galleryRef.current?.click()}
+                    disabled={galleryUploading}
+                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+                  >
+                    {galleryUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Agregar foto
+                  </button>
+                </div>
+                <input
+                  ref={galleryRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = [...(e.target.files ?? [])];
+                    e.target.value = "";
+                    if (!files.length) return;
+                    setGalleryUploading(true);
+                    try {
+                      const urls = await Promise.all(files.map(f => uploadImageFile(f)));
+                      setAddGallery(g => [...g, ...urls.filter((u): u is string => !!u)]);
+                    } catch (err) {
+                      console.error("[InventoryTab] galería upload falló", err);
+                    } finally {
+                      setGalleryUploading(false);
+                    }
+                  }}
+                />
+                {addGallery.length === 0 ? (
+                  <p className="text-xs text-[var(--text-tertiary)]">Subí más ángulos del producto. La principal es la de arriba; estas son extra.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {addGallery.map((url, i) => (
+                      <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-alt)]">
+                        <Image src={url} alt={`Foto ${i + 1}`} fill unoptimized={url.startsWith("data:")} className="object-cover" sizes="64px" />
+                        <button
+                          type="button"
+                          onClick={() => setAddGallery(g => g.filter((_, j) => j !== i))}
+                          title="Quitar foto"
+                          className="absolute top-0.5 right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white hover:bg-[var(--data-error-500)] transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
                 </div>
 
