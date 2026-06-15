@@ -1,4 +1,5 @@
 "use client";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCommissions } from "@/components/admin/marketplace/hooks/use-marketplace-commissions";
 import { TableSkeleton, COMMISSION_STATUS_CONFIG } from "@/components/admin/marketplace/shared";
@@ -45,9 +46,9 @@ export function MarketplaceComisionesTab() {
         <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Comisiones marketplace</p>
-            <h3 className="mt-1 text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight tabular-nums">
+            <CardTitle className="mt-1 text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight tabular-nums">
               S/ {total.toFixed(2)}
-            </h3>
+            </CardTitle>
             <p className="text-xs text-[var(--text-secondary)] mt-1">Suma de todos los estados · {filtered.length} {filtered.length === 1 ? "comisión" : "comisiones"} listadas</p>
           </div>
           {summary.liquidado > 0 && (

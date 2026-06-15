@@ -1,4 +1,5 @@
 "use client";
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCoupons } from "@/components/admin/marketplace/hooks/use-marketplace-coupons";
@@ -272,7 +273,7 @@ function NewCouponModal({
             <Ticket className="h-3.5 w-3.5" />
             Nuevo cupón marketplace
           </div>
-          <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Configurá tu descuento</h3>
+          <CardTitle className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Configurá tu descuento</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-1">Aparecerá en el carrito de los clientes que entren al marketplace.</p>
 
           {/* Preview ticket */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import {
   Store,
@@ -256,9 +256,9 @@ function MarketplaceTiendaTab() {
                 </span>
               )}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight truncate">
+            <SectionTitle className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight truncate">
               {store.name || "Tu tienda en el marketplace"}
-            </h2>
+            </SectionTitle>
             <p className="mt-2 text-base text-[var(--text-secondary)] line-clamp-2 max-w-2xl leading-relaxed">
               {store.description || "Sin descripción todavía. Cuéntale a los clientes qué te hace especial."}
             </p>
@@ -307,7 +307,7 @@ function MarketplaceTiendaTab() {
                 <Store className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">Identidad</h3>
+                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Identidad</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Cómo te encuentran los clientes en el marketplace.
                 </p>
@@ -395,7 +395,7 @@ function MarketplaceTiendaTab() {
                 <DollarSign className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">Comisión Buleje</h3>
+                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Comisión Buleje</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Lo que Buleje cobra por cada venta. La fija la plataforma — para revisarla, contáctanos por WhatsApp.
                 </p>
@@ -420,7 +420,7 @@ function MarketplaceTiendaTab() {
                 <Star className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">Imagen de la tienda</h3>
+                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Imagen de la tienda</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Logo cuadrado 200×200 — aparece en la tarjeta de tu tienda en /tiendas y en cada pedido.
                 </p>
@@ -471,7 +471,7 @@ function MarketplaceTiendaTab() {
                 <Eye className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">Vista previa</h3>
+                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Vista previa</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Cómo te ven los clientes en el listado.
                 </p>
@@ -524,7 +524,7 @@ function MarketplaceTiendaTab() {
                 <Zap className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">Estado</h3>
+                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Estado</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Controla la visibilidad de tu tienda.
                 </p>
@@ -1353,9 +1353,9 @@ function BoostModal({
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
               Marketplace · Boost
             </p>
-            <h2 className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">
+            <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">
               {existing ? "Boost activo" : "Destacar producto"}
-            </h2>
+            </SectionTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed truncate">
               {product.name}
             </p>
@@ -2224,7 +2224,7 @@ function MarketplaceOrdenesTab() {
                             <button
                               type="button"
                               onClick={() => handleWhatsApp(o)}
-                              className="h-8 w-8 rounded-lg flex items-center justify-center text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15 transition-colors"
+                              className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--data-success)] hover:bg-[var(--data-success)]/15 transition-colors"
                               title="Escribir por WhatsApp"
                               aria-label="WhatsApp"
                             >
