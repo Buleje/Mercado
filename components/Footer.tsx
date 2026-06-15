@@ -520,6 +520,7 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
             {/* IZQ: marca + tagline amazónico + chips */}
             <div>
               <BulejeWordmark
+                forceDark
                 size={44}
                 strokeWidth={1.75}
                 textSize={26}
