@@ -65,6 +65,9 @@ export const OverviewDB = {
       overdueCreditCount,
       topProducts,
       newCustomersInRange,
+      rangeSales,
+      prevSales,
+      last30dSales,
     ] = await Promise.all([
       // 1. Pedidos entregados en el rango — para revenue, ticket promedio, uniqueCustomers.
       // Brandon mayo 2026 v7: solo `entregado` cuenta como venta real.
@@ -145,6 +148,28 @@ export const OverviewDB = {
       prisma.customer.count({
         where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo } },
       }),
+
+      // 10. Ventas POS (Sale) en el rango. Un tenant POS-only (bodega) no genera
+      // Order pero sí Sale → sin esto el home mostraba "Ventas del mes S/0" aunque
+      // hubiera ventas en caja (bug de auditoría 2026-06). Order y Sale son canales
+      // independientes (Sale no tiene FK a Order) → sumar no duplica.
+      prisma.sale.findMany({
+        where: { tenantId, createdAt: { gte: rangeFrom, lte: rangeTo } },
+        select: { total: true, customerPhone: true, createdAt: true },
+      }),
+
+      // 11. Ventas POS en la ventana previa equivalente — delta vs anterior.
+      prisma.sale.findMany({
+        where: { tenantId, createdAt: { gte: prevFrom, lte: prevTo } },
+        select: { total: true },
+      }),
+
+      // 12. Ventas POS últimos 30 días — para el heatmap hora×día.
+      prisma.sale.findMany({
+        where: { tenantId, createdAt: { gte: startOf30dAgo, lte: rangeTo } },
+        select: { createdAt: true },
+        take: 5000,
+      }),
     ]);
 
     // Brandon 2026-05-17 (audit tsc): Order.total es Decimal en Prisma 7 pero
@@ -152,14 +177,27 @@ export const OverviewDB = {
     // 47 errores de FinanzasModule cascadean (TS infiere {} al consumir).
     // toNumOrZero normaliza Decimal | string | null → number.
     return {
-      rangeOrders: rangeOrders.map((o) => ({
-        total: toNumOrZero(o.total),
-        customerPhone: o.customerPhone,
-        createdAt: o.createdAt,
-      })),
-      prevOrders: prevOrders.map((o) => ({ total: toNumOrZero(o.total) })),
+      // Merge canales: pedidos (Order entregado) + ventas POS (Sale). Así el home
+      // refleja TODO el ingreso — revenue, ticket, sparkline, buckets y clientes
+      // únicos incluyen ambas fuentes.
+      rangeOrders: [
+        ...rangeOrders.map((o) => ({
+          total: toNumOrZero(o.total),
+          customerPhone: o.customerPhone,
+          createdAt: o.createdAt,
+        })),
+        ...rangeSales.map((s) => ({
+          total: toNumOrZero(s.total),
+          customerPhone: s.customerPhone,
+          createdAt: s.createdAt,
+        })),
+      ],
+      prevOrders: [
+        ...prevOrders.map((o) => ({ total: toNumOrZero(o.total) })),
+        ...prevSales.map((s) => ({ total: toNumOrZero(s.total) })),
+      ],
       activeOrders,
-      last30dOrders,
+      last30dOrders: [...last30dOrders, ...last30dSales],
       criticalStockCount,
       expiringCount,
       overdueCreditCount,
