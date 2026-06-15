@@ -132,6 +132,12 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // controla inventario. Al guardar, stock/min/max van como null.
   const EMPTY_ADD = { name: "", category: "", price: "", unit: "und", badge: "", image: "", barcode: "", costPrice: "", trackStock: true, stock: "", stockMin: "", stockMax: "", expiryDate: "", isVariant: false, variantOf: "", variantAttr: "", type: "product", description: "", brand: "", sku: "", taxType: "gravado", weightKg: "", dimensions: "", durationLabel: "", pricingUnit: "fijo", notes: "" };
   const [addForm, setAddForm] = useState(EMPTY_ADD);
+  // Fase 2: presentaciones / variantes (ProductVariant[]) del producto a crear.
+  // Cada fila tiene precio ABSOLUTO; al guardar se convierte a priceModifier
+  // (delta vs precio base) que es lo que persiste el modelo.
+  const [addVariants, setAddVariants] = useState<{ name: string; price: string; stock: string }[]>([]);
+  // Reset de variantes cada vez que se abre el modal (alta o duplicar).
+  useEffect(() => { if (showAdd) setAddVariants([]); }, [showAdd]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
@@ -550,9 +556,36 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         setSaving(false);
         return;
       }
-      toast.success("Producto creado");
+      // Fase 2: persistir presentaciones/variantes (ProductVariant[]) si las hay.
+      const created = await res.json().catch((err) => { console.error("[InventoryTab] parse producto creado falló", err); return null; }) as { id?: number } | null;
+      const validVariants = addVariants.filter(v => v.name.trim());
+      if (created?.id && validVariants.length > 0) {
+        const newId = created.id;
+        const basePrice = Number(addForm.price) || 0;
+        const results = await Promise.allSettled(validVariants.map(v =>
+          fetch(`/api/marketplace/products/${newId}/variants`, {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({
+              name: v.name.trim(),
+              priceModifier: (v.price !== "" ? Number(v.price) : basePrice) - basePrice,
+              stock: v.stock !== "" ? Number(v.stock) : undefined,
+            }),
+          }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); })
+        ));
+        const failed = results.filter(r => r.status === "rejected").length;
+        if (failed > 0) {
+          console.error("[InventoryTab] addProduct: variantes fallidas", results);
+          toast.error(`Producto creado, pero ${failed} presentación(es) no se guardaron`);
+        } else {
+          toast.success(`Producto creado con ${validVariants.length} presentación(es)`);
+        }
+      } else {
+        toast.success("Producto creado");
+      }
       setShowAdd(false);
       setAddForm(EMPTY_ADD);
+      setAddVariants([]);
       load();
     } catch (err) {
       console.error("[InventoryTab] addProduct error", err);
@@ -2284,49 +2317,62 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 )}
               </div>
 
-              {/* IMPROVEMENT 3: Variant Management — solo productos físicos */}
+              {/* Fase 2: Presentaciones / variantes (ProductVariant[]) — solo productos físicos */}
               {addForm.type !== "service" && (
               <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Layers className="h-4 w-4 text-[var(--text-secondary)] dark:text-[var(--text-primary)]" />
-                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gestionar variantes / presentaciones</p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Layers className="h-4 w-4 text-[var(--text-secondary)]" />
+                    <p className="text-sm font-bold text-[var(--text-primary)]">Presentaciones / variantes</p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setAddForm(f => ({ ...f, isVariant: !f.isVariant }))}
-                    className={cn(
-                      "relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
-                      addForm.isVariant ? "bg-[var(--text-primary)]" : "bg-[var(--rule-soft)]"
-                    )}
+                    onClick={() => setAddVariants(v => [...v, { name: "", price: "", stock: "" }])}
+                    className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/5 transition-colors"
                   >
-                    <span className={cn("inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform", addForm.isVariant ? "translate-x-4" : "translate-x-0")} />
+                    <Plus className="h-3.5 w-3.5" /> Agregar
                   </button>
                 </div>
-                {addForm.isVariant && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--rule-base)]">
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Variante de (producto padre)</label>
-                      <select
-                        value={addForm.variantOf}
-                        onChange={(e) => setAddForm(f => ({ ...f, variantOf: e.target.value }))}
-                        className={FIELD_INPUT}
-                      >
-                        <option value="">Ninguno (es producto padre)</option>
-                        {products.filter(p => p.active).map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
+                {addVariants.length === 0 ? (
+                  <p className="text-xs text-[var(--text-tertiary)]">Ej: 1/2 Litro, 1 Litro, Pack x6 — cada presentación con su precio y stock propios.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="hidden sm:grid grid-cols-[minmax(0,1fr)_96px_80px_36px] gap-2 px-1 text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                      <span>Nombre</span><span>Precio (S/)</span><span>Stock</span><span aria-hidden />
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-[var(--text-primary)] mb-1">Atributo de variante</label>
-                      <input
-                        value={addForm.variantAttr}
-                        onChange={(e) => setAddForm(f => ({ ...f, variantAttr: e.target.value }))}
-                        placeholder="Ej: 500ml, 1L, pack 6 unid"
-                        className={FIELD_INPUT}
-                      />
-                    </div>
+                    {addVariants.map((v, i) => (
+                      <div key={i} className="grid grid-cols-[minmax(0,1fr)_96px_80px_36px] gap-2 items-center">
+                        <input
+                          value={v.name}
+                          onChange={(e) => setAddVariants(arr => arr.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                          placeholder="Ej: 1 Litro"
+                          className={FIELD_INPUT}
+                        />
+                        <input
+                          type="number" step="0.01" min="0"
+                          value={v.price}
+                          onChange={(e) => setAddVariants(arr => arr.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
+                          placeholder={addForm.price || "0.00"}
+                          className={FIELD_INPUT}
+                        />
+                        <input
+                          type="number" min="0"
+                          value={v.stock}
+                          onChange={(e) => setAddVariants(arr => arr.map((x, j) => j === i ? { ...x, stock: e.target.value } : x))}
+                          placeholder="—"
+                          className={FIELD_INPUT}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setAddVariants(arr => arr.filter((_, j) => j !== i))}
+                          title="Quitar presentación"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <p className="text-xs text-[var(--text-tertiary)]">Precio vacío = usa el precio base. El stock por presentación es opcional.</p>
                   </div>
                 )}
               </div>
@@ -2468,6 +2514,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           <p className="text-xs text-[var(--text-tertiary)]">
                             {addForm.weightKg ? `${addForm.weightKg} kg` : ""}{addForm.weightKg && addForm.dimensions ? " · " : ""}{addForm.dimensions || ""}
                           </p>
+                        )}
+                        {addVariants.filter(v => v.name.trim()).length > 0 && (
+                          <p className="text-xs font-semibold text-[var(--accent)]">{addVariants.filter(v => v.name.trim()).length} presentación(es)</p>
                         )}
                         <p className="pt-1 text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)] leading-snug">Así se verá en tu tienda mientras lo creás.</p>
                       </div>
