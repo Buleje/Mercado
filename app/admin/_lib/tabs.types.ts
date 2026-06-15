@@ -21,6 +21,7 @@ export type Tab =
   | "recetas"
   | "prestamos"
   | "adelantos"
+  | "por-cobrar"          // Tablero consolidado de cuentas por cobrar
   | "activos"
   // Módulos de documentos
   | "documentos"
@@ -92,6 +93,7 @@ export const VALID_TABS: readonly Tab[] = [
   "turnos",
   "prestamos",
   "adelantos",
+  "por-cobrar",
   "activos",
   "documentos",
   "cotizaciones",

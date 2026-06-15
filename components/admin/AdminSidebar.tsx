@@ -23,6 +23,7 @@ import {
   Clock,
   FlaskConical,
   Landmark,
+  Wallet,
   FileText,
   ClipboardList,
   BarChart3,
@@ -168,6 +169,15 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
       { id: "rentabilidad", label: "Ganancias por producto" },
       { id: "reportes", label: "Reportes" },
       { id: "exportar", label: "Exportar a Excel" },
+    ],
+  },
+  {
+    id: "por-cobrar",
+    label: "Por cobrar",
+    icon: Wallet,
+    group: "finanzas",
+    tabs: [
+      { id: "por-cobrar", label: "Resumen" },
     ],
   },
   {

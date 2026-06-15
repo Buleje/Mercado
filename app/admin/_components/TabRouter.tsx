@@ -51,6 +51,7 @@ const LivesAdminModule         = dynamic(() => import("@/components/admin/unifie
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
 const FiadosModule              = dynamic(() => import("@/components/admin/FiadosModule"),              { loading: TabSpinner });
+const PorCobrarDashboard        = dynamic(() => import("@/components/admin/PorCobrarDashboard"),        { loading: TabSpinner });
 const TurnosModule              = dynamic(() => import("@/components/admin/TurnosModule"),              { loading: TabSpinner });
 const PrestamosModule           = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: TabSpinner });
 const AdelantosModule           = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: TabSpinner });
@@ -235,6 +236,7 @@ export function TabRouter({
 
   // ── Módulos adicionales ──
   if (tab === "fiados")    return <FiadosModule />;
+  if (tab === "por-cobrar") return <PorCobrarDashboard />;
   if (tab === "turnos")    return <TurnosModule />;
   if (tab === "prestamos") return <PrestamosModule />;
   if (tab === "adelantos") return <AdelantosModule />;
