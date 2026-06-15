@@ -2026,7 +2026,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* ── Add product modal ── */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] sm:p-4" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
-          <div className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
                 <h2 className="text-lg font-bold text-[var(--text-primary)] leading-tight">Nuevo producto</h2>
@@ -2037,8 +2037,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               </button>
             </div>
             <form onSubmit={addProduct} className="p-6 space-y-6">
-              {/* Vista previa en vivo — cómo se verá el producto */}
-              <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+              {/* Vista previa compacta — solo mobile (en desktop va la tarjeta sticky de la derecha) */}
+              <div className="lg:hidden flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
                 {addForm.image ? (
                   <Image src={addForm.image} alt="" width={48} height={48} unoptimized={addForm.image.startsWith("data:")} className="h-12 w-12 rounded-lg object-cover border border-[var(--rule-soft)] bg-[var(--surface-alt)]" />
                 ) : (
@@ -2050,6 +2050,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </div>
                 <span className="shrink-0 font-mono text-base font-extrabold text-primary">{addForm.price ? fmt(Number(addForm.price)) : "S/—"}</span>
               </div>
+
+              {/* Layout 2 columnas: formulario (izq) + vista previa sticky (der, desktop) */}
+              <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-6 lg:items-start">
+                <div className="space-y-6 min-w-0">
               {/* Tipo: producto físico vs servicio */}
               <div className="flex gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
                 {([
@@ -2411,6 +2415,67 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   </div>
                 </div>
               </div>
+                </div>
+
+                {/* Columna derecha — vista previa en vivo (desktop, sticky) */}
+                <aside className="hidden lg:block">
+                  <div className="sticky top-4">
+                    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+                      <p className="px-4 pt-3 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Vista previa</p>
+                      <div className="mx-4 mt-2 aspect-square rounded-xl overflow-hidden bg-[var(--surface-sunken)] flex items-center justify-center relative">
+                        {addForm.image ? (
+                          <Image src={addForm.image} alt={addForm.name || "Producto"} fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" sizes="300px" />
+                        ) : (
+                          <PackagePlus className="h-14 w-14 text-[var(--text-tertiary)]" strokeWidth={1.25} />
+                        )}
+                        {addForm.badge && (
+                          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent)] text-white">{addForm.badge}</span>
+                        )}
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <p className="text-xs text-[var(--text-tertiary)]">
+                          {formCategories.find(c => c.id === addForm.category)?.label ?? "Sin categoría"}{addForm.brand ? ` · ${addForm.brand}` : ""}
+                        </p>
+                        <p className="text-sm font-extrabold text-[var(--text-primary)] line-clamp-2 min-h-[2.5em]">{addForm.name.trim() || "Nombre del producto"}</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-mono text-xl font-extrabold text-primary">{addForm.price ? fmt(Number(addForm.price)) : "S/—"}</span>
+                          {addForm.unit && <span className="text-xs text-[var(--text-tertiary)]">/ {addForm.unit}</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(() => {
+                            const price = Number(addForm.price) || 0;
+                            const cost = Number(addForm.costPrice) || 0;
+                            if (cost > 0 && price > 0) {
+                              return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-soft)] text-[var(--accent)]">Margen {((1 - cost / price) * 100).toFixed(0)}%</span>;
+                            }
+                            return null;
+                          })()}
+                          {addForm.type !== "service" && addForm.trackStock && addForm.stock !== "" && (() => {
+                            const s = Number(addForm.stock) || 0;
+                            const min = addForm.stockMin !== "" ? Number(addForm.stockMin) : 0;
+                            const cls = s <= 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" : s <= min ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--data-success-500)]";
+                            const txt = s <= 0 ? "Sin stock" : s <= min ? `Stock bajo · ${s}` : `En stock · ${s}`;
+                            return <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", cls)}>{txt}</span>;
+                          })()}
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                            {addForm.taxType === "exonerado" ? "Exonerado" : addForm.taxType === "inafecto" ? "Inafecto" : "IGV 18%"}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                            {addForm.type === "service" ? "Servicio" : "Producto"}
+                          </span>
+                        </div>
+                        {addForm.type !== "service" && (addForm.weightKg || addForm.dimensions) && (
+                          <p className="text-xs text-[var(--text-tertiary)]">
+                            {addForm.weightKg ? `${addForm.weightKg} kg` : ""}{addForm.weightKg && addForm.dimensions ? " · " : ""}{addForm.dimensions || ""}
+                          </p>
+                        )}
+                        <p className="pt-1 text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)] leading-snug">Así se verá en tu tienda mientras lo creás.</p>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+              </div>
+
               <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center gap-3 border-t-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-4">
                 <button type="button" onClick={() => setShowAdd(false)} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
                 <button
