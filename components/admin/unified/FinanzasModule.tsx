@@ -223,20 +223,21 @@ function FinanzasDashboard() {
       fetch("/api/expenses?limit=2000").then(r => r.ok ? r.json() : []),
       fetch("/api/payables").then(r => r.ok ? r.json() : []),
       fetch("/api/fiados?status=ACTIVO").then(r => r.ok ? r.json() : []),
-      // Consolidación: los ingresos incluyen pedidos (Order), no solo Sale.
-      fetchFinanzas<unknown[]>("/api/orders?limit=5000", []),
-    ]).then(([kR, eR, sR, exR, pR, fR, oR]) => {
+      // Ingresos mensuales agregados SERVER-SIDE (Sale + Order con
+      // INGRESO_ORDER_STATUSES). Antes era /api/orders?limit=5000 crudo
+      // bucketeado en el cliente. Bucketing UTC = idéntico (test cubre).
+      fetchFinanzas<{ month: string; ingresos: number }[]>("/api/finanzas/monthly-summary?months=6", []),
+    ]).then(([kR, eR, sR, exR, pR, fR, msR]) => {
       const kpisData = kR.status === "fulfilled" ? kR.value : null;
       const expSummary = eR.status === "fulfilled" ? eR.value : null;
       const salesRaw = sR.status === "fulfilled" ? sR.value : [];
-      const ordersRaw = oR.status === "fulfilled" ? oR.value : [];
+      const monthlySummary = (msR.status === "fulfilled" && Array.isArray(msR.value) ? msR.value : []) as { month: string; ingresos: number }[];
       const expensesRaw = exR.status === "fulfilled" ? exR.value : [];
       const payablesRaw = pR.status === "fulfilled" ? (Array.isArray(pR.value) ? pR.value : []) : [];
       const fiadosRaw = fR.status === "fulfilled" ? (Array.isArray(fR.value) ? fR.value : []) : [];
 
       const now = new Date();
       const sales = (Array.isArray(salesRaw) ? salesRaw : []) as SaleRaw[];
-      const orders = (Array.isArray(ordersRaw) ? ordersRaw : []) as OrderRaw[];
 
       // ── KPIs ──
       const ingresos = n(kpisData?.ventasMes ?? kpisData?.salesMonth);
@@ -270,23 +271,23 @@ function FinanzasDashboard() {
       const payablesVencidos = n(kpisData?.payablesVencidosMonto);
       setHealthData({ ingresos, gastos: gastosMes, efectivo, gastosMensuales: gastosMes, fiadosVencidos, payablesVencidos });
 
-      // ── Monthly chart (last 6 months) ──
-      const months: Array<{ mes: string; fullMonth: string; ingresos: number; gastos: number; utilidad: number }> = [];
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthKey = d.toISOString().slice(0, 7);
+      // ── Monthly chart (últimos 6 meses) ──
+      // Ingresos vienen del endpoint server-side (monthlySummary, orden cronológico
+      // oldest→newest). Gastos siguen de expSummary.monthly (ya agregado por mes).
+      const months = monthlySummary.map(({ month: monthKey, ingresos: ing }, idx) => {
+        const [yy, mm] = monthKey.split("-").map(Number);
+        const d = new Date(yy, (mm ?? 1) - 1, 1);
         const label = MESES[d.getMonth()];
         const fullLabel = d.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
-        const ing = monthIngresos(monthKey, sales, orders);
         let gas = 0;
         if (expSummary?.monthly && Array.isArray(expSummary.monthly)) {
           const m = (expSummary.monthly as Array<{ month: string; total?: number }>).find((e) => e.month === monthKey);
           gas = n(m?.total);
-        } else if (expSummary?.totalMonth && i === 0) {
+        } else if (expSummary?.totalMonth && idx === monthlySummary.length - 1) {
           gas = n(expSummary.totalMonth);
         }
-        months.push({ mes: label, fullMonth: fullLabel, ingresos: Math.round(ing), gastos: Math.round(gas), utilidad: Math.round(ing - gas) });
-      }
+        return { mes: label, fullMonth: fullLabel, ingresos: Math.round(ing), gastos: Math.round(gas), utilidad: Math.round(ing - gas) };
+      });
       setMonthlyData(months);
 
       // ── Expenses by category (donut) ──
