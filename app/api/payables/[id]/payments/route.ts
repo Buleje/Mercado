@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { exceedsRemaining, remainingBalance } from "@/lib/payables/payment-validation";
 
 
 const AddPaymentSchema = z.object({
@@ -58,6 +59,16 @@ export async function POST(
     const existing = await PayablesDB.getById(auth.tenantId, id);
     if (!existing) {
       return NextResponse.json({ error: "Payable no encontrado" }, { status: 404 });
+    }
+
+    // Anti sobre-pago: el monto no puede exceder el saldo pendiente (backend,
+    // no solo el `max` del input que se puede saltear).
+    if (exceedsRemaining(amount, existing.amount, existing.paidAmount)) {
+      const restante = remainingBalance(existing.amount, existing.paidAmount);
+      return NextResponse.json(
+        { error: `El pago (S/${amount.toFixed(2)}) excede el saldo pendiente (S/${restante.toFixed(2)})` },
+        { status: 400 },
+      );
     }
 
     const paymentId = `pmnt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
