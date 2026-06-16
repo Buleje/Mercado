@@ -37,8 +37,8 @@ import { CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { calculateCreditScore } from "@/lib/credit/scoring-engine";
 import { getAvailableCredit } from "@/lib/credit/installment-manager";
 import { FiadosDB } from "@/lib/db/fiados.db";
+import { MeCreditScoreDB } from "@/lib/db/me-credit-score.db";
 import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
-import { prisma } from "@/lib/prisma";
 import { CreditScoreCard } from "@/components/credit/CreditScoreCard";
 import { CreditTransparencyBanner } from "@/components/credit/CreditTransparencyBanner";
 
@@ -442,19 +442,9 @@ export default async function MiCreditoPage() {
     calculateCreditScore(tenantId, customerPhone).catch(() => null),
     getAvailableCredit(tenantId, customerPhone).catch(() => null),
     FiadosDB.list(tenantId, { customerId: customerPhone }).catch(() => []),
-    prisma.creditScoreHistory
-      .findMany({
-        where: { tenantId, customerId: customerPhone },
-        orderBy: { createdAt: "asc" },
-        take: 12,
-        select: {
-          score: true,
-          riskLevel: true,
-          trigger: true,
-          createdAt: true,
-        },
-      })
-      .catch(() => []),
+    // Acceso canónico vía DB class (regla #1): MeCreditScoreDB cachea + scopea
+    // por tenant. Devuelve DESC; acá el chart/deltas esperan ASC → reverse.
+    MeCreditScoreDB.getHistory(tenantId, customerPhone, 12).then((h) => [...h].reverse()),
   ]);
 
   // Si el scoring engine falla completamente (sin historial en DB aún)
