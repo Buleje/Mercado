@@ -722,6 +722,26 @@ model Settings {
   loyaltyRewardsJson String? // JSON: array de rewards { id, label, costPoints, description, active }
 }
 
+// ─── Declaraciones tributarias (tracker SUNAT) ──────────
+// Estado de cada declaración mensual/anual por tenant: pendiente | presentada |
+// pagada, con monto y fechas. Único por (tenant, periodo, tipo).
+model DeclaracionTributaria {
+  id                String    @id @default(cuid())
+  tenantId          String
+  periodo           String // "YYYY-MM" (o "YYYY" para anual)
+  tipo              String // igv-renta | plame | renta-anual
+  estado            String    @default("pendiente") // pendiente | presentada | pagada
+  montoDeclarado    Decimal?  @db.Decimal(12, 2)
+  fechaPresentacion DateTime?
+  fechaPago         DateTime?
+  notas             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([tenantId, periodo, tipo])
+  @@index([tenantId])
+}
+
 // ─── Suppliers ──────────────────────────────────────────
 model Supplier {
   id      String  @id

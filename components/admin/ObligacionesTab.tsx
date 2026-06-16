@@ -4,7 +4,7 @@ import { LoadingState, PageTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Landmark, Calculator, CalendarDays, Info, CheckCircle, ClipboardCheck,
+  Landmark, Calculator, CalendarDays, Info, ClipboardCheck,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminCard from "./shared/AdminCard";
@@ -33,6 +33,8 @@ export default function ObligacionesTab() {
   // el resumen anual, con una sola carga de datos.
   const [monthlyVentas, setMonthlyVentas] = useState<number[]>(() => Array(12).fill(0));
   const [monthlyCompras, setMonthlyCompras] = useState<number[]>(() => Array(12).fill(0));
+  // Tracker de declaraciones del año (estado persistido por tenant).
+  const [declaraciones, setDeclaraciones] = useState<Array<{ periodo: string; tipo: string; estado: string }>>([]);
 
   // Config REAL del tenant (régimen + RUC viven en Settings, no en localStorage):
   // así se comparten entre los usuarios y dispositivos del negocio.
@@ -56,6 +58,27 @@ export default function ObligacionesTab() {
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(patch),
     }).catch((err) => console.warn("[ObligacionesTab] settings save failed:", String(err)));
+  }, []);
+
+  // Carga el estado real de las declaraciones del año (tracker persistido).
+  useEffect(() => {
+    fetch(`/api/admin/declaraciones?year=${year}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((d) => setDeclaraciones(Array.isArray(d) ? d : []))
+      .catch((err) => console.warn("[ObligacionesTab] declaraciones load failed:", String(err)));
+  }, [year]);
+
+  // Marca/actualiza el estado de una declaración y lo persiste (optimista).
+  const setDeclaracionEstado = useCallback((periodo: string, tipo: string, estado: string, montoDeclarado?: number) => {
+    setDeclaraciones(prev => {
+      const rest = prev.filter(d => !(d.periodo === periodo && d.tipo === tipo));
+      return [...rest, { periodo, tipo, estado }];
+    });
+    fetch("/api/admin/declaraciones", {
+      method: "PATCH",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ periodo, tipo, estado, ...(montoDeclarado != null && { montoDeclarado }) }),
+    }).catch((err) => console.warn("[ObligacionesTab] declaracion save failed:", String(err)));
   }, []);
 
   // Datos REALES del AÑO completo (1 sola carga), buckets por mes. Sin relleno:
@@ -125,6 +148,10 @@ export default function ObligacionesTab() {
   }, [monthlyVentas, monthlyCompras, regimen]);
 
   const venc = ventanaVencimientoReferencial(ruc);
+
+  // Estado persistido de la declaración IGV-Renta del mes seleccionado.
+  const periodoActual = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const estadoIgvRenta = declaraciones.find(d => d.periodo === periodoActual && d.tipo === "igv-renta")?.estado ?? "pendiente";
 
   return (
     <div className="space-y-3 sm:space-y-6">
@@ -264,11 +291,36 @@ export default function ObligacionesTab() {
               <ClipboardCheck className="h-4 w-4 text-[var(--text-tertiary)]" /> Declaraciones de {MONTHS[month]} {year}
             </p>
             <ul className="space-y-2.5 text-sm">
-              <li className="flex items-start gap-2.5">
-                <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] shrink-0 mt-0.5" />
-                <span className="text-[var(--text-primary)]">
-                  <span className="font-semibold">Declaración mensual IGV-Renta</span> — Formulario Virtual 621 (cubre el IGV y el pago a cuenta de Renta de arriba)
-                </span>
+              <li className="flex flex-col gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[var(--text-primary)]">
+                    <span className="font-semibold">Declaración mensual IGV-Renta</span> — Formulario Virtual 621 ({MONTHS[month]} {year}). Cubre el IGV y el pago a cuenta de Renta de arriba.
+                  </span>
+                  <StatusBadge
+                    variant={estadoIgvRenta === "pagada" ? "success" : estadoIgvRenta === "presentada" ? "info" : "warning"}
+                    label={estadoIgvRenta === "pagada" ? "Pagada" : estadoIgvRenta === "presentada" ? "Presentada" : "Pendiente"}
+                    size="sm"
+                    dot
+                  />
+                </div>
+                <div className="inline-flex self-start overflow-hidden rounded-lg border border-[var(--rule-base)]">
+                  {(["pendiente", "presentada", "pagada"] as const).map((est, i) => (
+                    <button
+                      key={est}
+                      type="button"
+                      onClick={() => setDeclaracionEstado(periodoActual, "igv-renta", est, result.total)}
+                      className={cn(
+                        "px-3 py-1.5 text-xs font-semibold capitalize transition-colors",
+                        i > 0 && "border-l border-[var(--rule-base)]",
+                        estadoIgvRenta === est
+                          ? "bg-primary text-white"
+                          : "bg-white dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent",
+                      )}
+                    >
+                      {est}
+                    </button>
+                  ))}
+                </div>
               </li>
               <li className="flex items-start gap-2.5">
                 <Info className="h-4 w-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
