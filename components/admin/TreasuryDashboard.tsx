@@ -10,6 +10,7 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { useFinanceAggregates } from "@/hooks/use-finance-aggregates";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import KPICard from "@/components/admin/shared/KPICard";
 
@@ -164,31 +165,24 @@ export default function TreasuryDashboard() {
     loadData();
   }, [loadData, refreshKey]);
 
-  // ── KPIs ─────────────────────────────────────────────────────────────────────
+  // ── KPIs — fuente ÚNICA (consolidación fase 3, auditoría 2026-06-15) ─────────
+  // Antes cada uno se recalculaba acá con fórmula propia (y con bugs: porPagar
+  // sumaba el monto TOTAL ignorando lo ya pagado; ingresos era solo Sale, no
+  // Order+Sale). Ahora vienen de /api/admin/finance-aggregates (mes actual), la
+  // misma fórmula que el resto del admin. Las filas crudas se mantienen abajo
+  // para los charts y las listas de payables/fiados.
+  const { kpis: agg, refresh: refreshAgg } = useFinanceAggregates();
 
   const kpis = useMemo(() => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const ingresosMes = sales
-      .filter(s => new Date(s.createdAt) >= startOfMonth)
-      .reduce((sum, s) => sum + (s.total ?? 0), 0);
-
-    const gastosMes = expenses?.total ?? 0;
-    const saldoActual = ingresosMes - gastosMes;
-
-    const porCobrar = fiados
-      .filter(f => f.status !== "pagado")
-      .reduce((sum, f) => sum + ((f.amount ?? 0) - (f.paidAmount ?? 0)), 0);
-
-    const porPagar = payables
-      .filter(p => !p.paid)
-      .reduce((sum, p) => sum + (p.amount ?? 0), 0);
-
+    const ingresosMes = agg?.ingresos ?? 0;
+    const gastosMes = agg?.gastos ?? 0;
+    const saldoActual = agg?.utilidadBruta ?? 0;
+    const porCobrar = agg?.deudaFiados ?? 0;
+    const porPagar = agg?.porPagar ?? 0;
     const flujoProyectado = saldoActual + porCobrar - porPagar;
 
     return { saldoActual, porCobrar, porPagar, flujoProyectado, ingresosMes, gastosMes };
-  }, [sales, payables, fiados, expenses]);
+  }, [agg]);
 
   // ── Flow chart data (last 30 days) ────────────────────────────────────────────
 
@@ -263,7 +257,7 @@ export default function TreasuryDashboard() {
         iconColor="var(--accent)"
       >
         <button
-          onClick={() => setRefreshKey(k => k + 1)}
+          onClick={() => { setRefreshKey(k => k + 1); refreshAgg(); }}
           disabled={loading}
           aria-label="Actualizar datos"
           className={cn(
