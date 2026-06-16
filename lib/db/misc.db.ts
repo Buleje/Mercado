@@ -198,6 +198,8 @@ export type DbSettings = {
   currency?: string;
   timezone?: string;
   businessType?: string;
+  /** Régimen tributario SUNAT: nrus | rer | rmt | general. */
+  regimenTributario?: string;
   socialLinks?: { facebook?: string; instagram?: string; tiktok?: string };
 
   // ── Apariencia ──

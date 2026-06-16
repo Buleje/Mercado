@@ -1,7 +1,8 @@
 "use client";
 
 import { LoadingState, PageTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Landmark, Calculator, CalendarDays, Info, CheckCircle, ClipboardCheck,
 } from "@buleje/design-system/icons";
@@ -17,8 +18,7 @@ import {
 } from "@/lib/tax/obligaciones-peru";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const REGIMEN_KEY = "bsm-obligaciones-regimen";
-const RUC_KEY = "bsm-obligaciones-ruc";
+const REGIMENES = ["nrus", "rer", "rmt", "general"] as const;
 
 const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -32,17 +32,29 @@ export default function ObligacionesTab() {
   const [ventasBase, setVentasBase] = useState(0);
   const [comprasBase, setComprasBase] = useState(0);
 
-  // Config local (régimen + RUC) — preferencia del usuario, no dato inventado.
+  // Config REAL del tenant (régimen + RUC viven en Settings, no en localStorage):
+  // así se comparten entre los usuarios y dispositivos del negocio.
   useEffect(() => {
-    try {
-      const r = localStorage.getItem(REGIMEN_KEY) as RegimenTributario | null;
-      if (r && r in REGIMEN_LABELS) setRegimen(r);
-      const ru = localStorage.getItem(RUC_KEY);
-      if (ru) setRuc(ru);
-    } catch { /* ignore */ }
+    fetch("/api/settings")
+      .then(r => r.ok ? r.json() : null)
+      .then((s: { regimenTributario?: string; ruc?: string } | null) => {
+        if (!s) return;
+        if (s.regimenTributario && (REGIMENES as readonly string[]).includes(s.regimenTributario)) {
+          setRegimen(s.regimenTributario as RegimenTributario);
+        }
+        if (s.ruc) setRuc(String(s.ruc));
+      })
+      .catch((err) => console.warn("[ObligacionesTab] settings load failed:", String(err)));
   }, []);
-  useEffect(() => { try { localStorage.setItem(REGIMEN_KEY, regimen); } catch { /* ignore */ } }, [regimen]);
-  useEffect(() => { try { localStorage.setItem(RUC_KEY, ruc); } catch { /* ignore */ } }, [ruc]);
+
+  // Persiste un campo de config al tenant (Settings) vía PATCH con CSRF.
+  const saveSetting = useCallback((patch: Record<string, string>) => {
+    fetch("/api/settings", {
+      method: "PATCH",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(patch),
+    }).catch((err) => console.warn("[ObligacionesTab] settings save failed:", String(err)));
+  }, []);
 
   // Datos REALES del período (mismas fuentes que Impuestos; sin relleno).
   useEffect(() => {
@@ -92,7 +104,7 @@ export default function ObligacionesTab() {
           <p className="text-sm text-[var(--text-secondary)] mt-1">Cuánto debe pagar y declarar tu empresa este mes (IGV, Renta y más)</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={regimen} onChange={e => setRegimen(e.target.value as RegimenTributario)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <select value={regimen} onChange={e => { const v = e.target.value as RegimenTributario; setRegimen(v); saveSetting({ regimenTributario: v }); }} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             {(Object.keys(REGIMEN_LABELS) as RegimenTributario[]).map(r => <option key={r} value={r}>{REGIMEN_LABELS[r]}</option>)}
           </select>
           <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
@@ -139,6 +151,7 @@ export default function ObligacionesTab() {
                   <input
                     value={ruc}
                     onChange={e => setRuc(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                    onBlur={() => { if (ruc.length === 11) saveSetting({ ruc }); }}
                     placeholder="Ingresá tu RUC (11 dígitos)"
                     className="w-full text-sm border border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)]"
                   />

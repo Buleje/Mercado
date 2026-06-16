@@ -614,6 +614,7 @@ model Settings {
   currency        String? @default("PEN")
   timezone        String? @default("America/Lima")
   businessType    String? // bodega | minimarket | tienda | restaurante
+  regimenTributario String? // nrus | rer | rmt | general (SUNAT) — obligaciones tributarias
   socialLinksJson String? // JSON: { facebook?, instagram?, tiktok? }
 
   // ── Apariencia (Mejora M79-M86) — fix: persist colors/slogan ──

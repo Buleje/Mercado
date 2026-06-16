@@ -204,6 +204,7 @@ export async function PUT(req: NextRequest) {
       ...(body.currency !== undefined && { currency: body.currency }),
       ...(body.timezone !== undefined && { timezone: body.timezone }),
       ...(body.businessType !== undefined && { businessType: body.businessType }),
+      ...(body.regimenTributario !== undefined && { regimenTributario: body.regimenTributario }),
       ...(body.socialLinks !== undefined && { socialLinks: body.socialLinks }),
       // SECURITY 2026-05-06 (audit CI #1): validar regex hex. Antes un admin
       // malicioso podía guardar `primaryColor: "red}body{display:none}/*"` y

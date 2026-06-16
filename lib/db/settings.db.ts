@@ -65,6 +65,7 @@ function mapSettings(s: PSettings): DbSettings {
     ...(r.currency != null && { currency: r.currency as string }),
     ...(r.timezone != null && { timezone: r.timezone as string }),
     ...(r.businessType != null && { businessType: r.businessType as string }),
+    ...(r.regimenTributario != null && { regimenTributario: r.regimenTributario as string }),
     ...spreadJson(r.socialLinksJson as string, 'socialLinks'),
 
     // ── Apariencia ──
@@ -239,6 +240,7 @@ export const SettingsDB = {
       ...(s.currency !== undefined && { currency: s.currency }),
       ...(s.timezone !== undefined && { timezone: s.timezone }),
       ...(s.businessType !== undefined && { businessType: s.businessType }),
+      ...(s.regimenTributario !== undefined && { regimenTributario: s.regimenTributario }),
       ...(s.socialLinks !== undefined && { socialLinksJson: JSON.stringify(s.socialLinks) }),
 
       // ── Apariencia ──
