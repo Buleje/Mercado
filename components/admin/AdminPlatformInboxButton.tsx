@@ -17,7 +17,7 @@ export default function AdminPlatformInboxButton() {
     fetch("/api/admin/platform-chat", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (!cancelled && d) setUnread(d.unread ?? 0); })
-      .catch(() => {});
+      .catch((err) => console.warn("[AdminPlatformInboxButton] platform-chat fetch failed:", String(err)));
     return () => { cancelled = true; };
   }, []);
 
@@ -29,7 +29,7 @@ export default function AdminPlatformInboxButton() {
     >
       <ShieldCheck className="h-5 w-5" strokeWidth={2} aria-hidden />
       {unread > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white tabular-nums">
+        <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black text-white tabular-nums">
           {unread > 9 ? "9+" : unread}
         </span>
       )}
