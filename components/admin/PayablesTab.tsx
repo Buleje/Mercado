@@ -30,6 +30,15 @@ function formatDate(iso: string) {
   catch { return iso; }
 }
 
+// Extrae un mensaje legible de una respuesta fallida (evita el fallo silencioso).
+async function readError(res: Response): Promise<string> {
+  try {
+    const j = await res.json();
+    if (typeof j?.error === "string") return j.error;
+  } catch { /* sin cuerpo JSON */ }
+  return `No se pudo completar la operación (${res.status}).`;
+}
+
 export default function PayablesTab() {
   const [payables, setPayables] = useState<DbPayable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +52,7 @@ export default function PayablesTab() {
   // Add form
   const [addForm, setAddForm] = useState({ supplierId: "", description: "", amount: "", dueDate: "" });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Payment form
   const [payForm, setPayForm] = useState({ amount: "", method: "efectivo" as PaymentMethod, reference: "" });
@@ -68,7 +78,8 @@ export default function PayablesTab() {
     if (!addForm.supplierId || !addForm.amount) return;
     const sup = suppliers.find(s => s.id === addForm.supplierId);
     setSaving(true);
-    await fetch("/api/payables", {
+    setError(null);
+    const res = await fetch("/api/payables", {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
@@ -80,6 +91,7 @@ export default function PayablesTab() {
       }),
     });
     setSaving(false);
+    if (!res.ok) { setError(await readError(res)); return; }
     setShowAdd(false);
     setAddForm({ supplierId: "", description: "", amount: "", dueDate: "" });
     load();
@@ -89,7 +101,8 @@ export default function PayablesTab() {
     e.preventDefault();
     if (!payForm.amount || Number(payForm.amount) <= 0) return;
     setSaving(true);
-    await fetch(`/api/payables/${payableId}/payments`, {
+    setError(null);
+    const res = await fetch(`/api/payables/${payableId}/payments`, {
       method: "POST",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
@@ -99,6 +112,7 @@ export default function PayablesTab() {
       }),
     });
     setSaving(false);
+    if (!res.ok) { setError(await readError(res)); return; }
     setShowPayment(null);
     setPayForm({ amount: "", method: "efectivo", reference: "" });
     load();
@@ -106,7 +120,9 @@ export default function PayablesTab() {
 
   const deletePayable = async (id: string) => {
     if (!confirm("¿Eliminar esta cuenta por pagar?")) return;
-    await fetch(`/api/payables/${id}`, { method: "DELETE" });
+    setError(null);
+    const res = await fetch(`/api/payables/${id}`, { method: "DELETE", headers: csrfHeaders() });
+    if (!res.ok) { setError(await readError(res)); return; }
     load();
   };
 
@@ -141,6 +157,16 @@ export default function PayablesTab() {
           <Plus className="h-4 w-4" /> Nueva cuenta
         </button>
       </div>
+
+      {/* Error banner — antes las mutaciones fallaban en silencio */}
+      {error && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3">
+          <p className="text-sm font-semibold text-[var(--data-error-500)]">{error}</p>
+          <button onClick={() => setError(null)} className="shrink-0 text-[var(--data-error-500)] hover:opacity-70" aria-label="Cerrar aviso">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
