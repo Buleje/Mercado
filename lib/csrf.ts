@@ -16,6 +16,7 @@
 
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { constantTimeStringEqual } from "@/lib/constant-time";
 
 const CSRF_COOKIE_NAME = "csrf-token";
 const CSRF_HEADER_NAME = "x-csrf-token";
@@ -157,17 +158,8 @@ export function validateCsrfToken(request: NextRequest): boolean {
     return false;
   }
 
-  // Constant-time comparison to prevent timing attacks
-  if (cookieToken.length !== headerToken.length) {
-    return false;
-  }
-
-  let result = 0;
-  for (let i = 0; i < cookieToken.length; i++) {
-    result |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
-  }
-
-  return result === 0;
+  // Comparación en tiempo constante (Edge-safe) — ver constantTimeStringEqual.
+  return constantTimeStringEqual(cookieToken, headerToken);
 }
 
 /**
@@ -197,13 +189,9 @@ export function validateSuperadminCsrf(request: NextRequest): boolean {
   const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
   const headerToken = request.headers.get(CSRF_HEADER_NAME);
   if (!cookieToken || !headerToken) return false;
-  if (cookieToken.length !== headerToken.length) return false;
 
-  let result = 0;
-  for (let i = 0; i < cookieToken.length; i++) {
-    result |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
-  }
-  return result === 0;
+  // Comparación en tiempo constante (Edge-safe) — ver constantTimeStringEqual.
+  return constantTimeStringEqual(cookieToken, headerToken);
 }
 
 /**
