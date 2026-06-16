@@ -2001,8 +2001,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                       {items.length === 0 ? (
                         <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center py-4">Sin productos</p>
                       ) : items.map(p => (
-                        <div key={p.id} className="bg-[var(--surface-raised)] rounded-lg p-2.5  border border-[var(--rule-soft)] dark:border-border cursor-pointer hover:shadow-[var(--shadow-sm)] transition-shadow"
-                          onClick={() => { setEditModalProduct(p); }}>
+                        <div key={p.id} role="button" tabIndex={0}
+                          aria-label={`Editar ${p.name}`}
+                          className="bg-[var(--surface-raised)] rounded-lg p-2.5  border border-[var(--rule-soft)] dark:border-border cursor-pointer hover:shadow-[var(--shadow-sm)] transition-shadow"
+                          onClick={() => { setEditModalProduct(p); }}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditModalProduct(p); } }}>
                           <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                             {p.type === "service" && <span className="mr-1 rounded bg-[var(--accent-soft)] px-1 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--accent)]">Serv</span>}
                             {p.name}
