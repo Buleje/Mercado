@@ -59,33 +59,6 @@ function deltaIcon(val: number) {
   return <Minus className="h-3.5 w-3.5" />;
 }
 
-// ── Mock data builder (uses real API data where available) ─────────────────────
-
-function buildMockMonths(monthCount = 6): MonthData[] {
-  const now = new Date();
-  const result: MonthData[] = [];
-  for (let i = monthCount - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const base = 12000 + Math.random() * 8000;
-    const revenue = parseFloat(base.toFixed(2));
-    const cogs = parseFloat((revenue * (0.52 + Math.random() * 0.08)).toFixed(2));
-    const grossProfit = revenue - cogs;
-    const expenses = parseFloat((revenue * (0.18 + Math.random() * 0.06)).toFixed(2));
-    const netProfit = grossProfit - expenses;
-    result.push({
-      label: buildMonthLabel(d.getFullYear(), d.getMonth()),
-      revenue,
-      cogs,
-      grossProfit,
-      expenses,
-      netProfit,
-      grossMargin: (grossProfit / revenue) * 100,
-      netMargin: (netProfit / revenue) * 100,
-    });
-  }
-  return result;
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PLTab() {
@@ -98,61 +71,70 @@ export default function PLTab() {
   const [expandExpenses, setExpandExpenses] = useState(false);
   const [tick, setTick] = useState(0);
 
-  // Load data: merge real API calls with computed P&L
+  // Carga datos REALES: una ventana de 6 meses (orders + expenses) y de ahí se
+  // derivan tanto el resumen del mes seleccionado como el trend de 6 meses.
+  // (Antes el trend usaba Math.random — ver buildMockMonths eliminado.)
   useEffect(() => {
     let active = true;
     setLoading(true);
 
-    const from = new Date(year, month, 1).toISOString().slice(0, 10);
-    const to = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+    const TREND_MONTHS = 6;
+    const rangeFrom = new Date(year, month - (TREND_MONTHS - 1), 1).toISOString().slice(0, 10);
+    const rangeTo = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+
+    const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
+    const isIncome = (o: { status?: string }) => o.status === "entregado" || o.status === "confirmado";
+    const ordKey = (o: { createdAt?: string }) => (o.createdAt ?? "").slice(0, 7);
+    const expKey = (e: { date?: string; createdAt?: string }) => (e.date ?? e.createdAt ?? "").slice(0, 7);
 
     Promise.all([
-      fetch(`/api/orders?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`/api/expenses?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`/api/expenses/summary`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/orders?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/expenses?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
     ]).then(([orders, expenses]) => {
       if (!active) return;
+      const ordersArr: { createdAt?: string; status?: string; total?: number }[] = Array.isArray(orders) ? orders : [];
+      const expArr: { date?: string; createdAt?: string; category?: string; amount?: number }[] = Array.isArray(expenses) ? expenses : [];
 
-      // Calculate revenue from delivered/confirmed orders
-      const revenue = Array.isArray(orders)
-        ? orders
-          .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
-          .reduce((sum: number, o: { total: number }) => sum + (o.total ?? 0), 0)
-        : 0;
+      // ── Trend REAL: bucket por mes (COGS estimado 55% del ingreso) ──
+      const realMonths: MonthData[] = [];
+      for (let i = TREND_MONTHS - 1; i >= 0; i--) {
+        const d = new Date(year, month - i, 1);
+        const y = d.getFullYear(), m = d.getMonth();
+        const key = monthKey(y, m);
+        const revenue = ordersArr.filter(o => ordKey(o) === key && isIncome(o)).reduce((s, o) => s + (o.total ?? 0), 0);
+        const cogs = revenue * 0.55;
+        const grossProfit = revenue - cogs;
+        const monthExp = expArr.filter(e => expKey(e) === key).reduce((s, e) => s + (e.amount ?? 0), 0);
+        const netProfit = grossProfit - monthExp;
+        realMonths.push({
+          label: buildMonthLabel(y, m),
+          revenue, cogs, grossProfit, expenses: monthExp, netProfit,
+          grossMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
+          netMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
+        });
+      }
+      setMonths(realMonths);
 
-      // COGS estimate: 55% of revenue (configurable in future)
+      // ── Resumen del mes seleccionado (con desglose de gastos por categoría) ──
+      const selKey = monthKey(year, month);
+      const revenue = ordersArr.filter(o => ordKey(o) === selKey && isIncome(o)).reduce((s, o) => s + (o.total ?? 0), 0);
       const cogs = revenue * 0.55;
       const grossProfit = revenue - cogs;
-
-      // Real expenses from DB
-      const totalExpenses = Array.isArray(expenses)
-        ? expenses.reduce((sum: number, e: { amount: number }) => sum + (e.amount ?? 0), 0)
-        : 0;
-
-      // Group expenses by category
+      const selExpenses = expArr.filter(e => expKey(e) === selKey);
+      const totalExpenses = selExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
       const expMap: Record<string, number> = {};
-      if (Array.isArray(expenses)) {
-        for (const e of expenses as { category: string; amount: number }[]) {
-          expMap[e.category] = (expMap[e.category] ?? 0) + e.amount;
-        }
+      for (const e of selExpenses) {
+        const c = e.category ?? "Otros";
+        expMap[c] = (expMap[c] ?? 0) + (e.amount ?? 0);
       }
-
       const netProfit = grossProfit - totalExpenses;
 
       setSummary({
         period: `${MONTHS[month]} ${year}`,
-        revenue,
-        cogs,
-        grossProfit,
-        expenses: expMap,
-        totalExpenses,
-        netProfit,
+        revenue, cogs, grossProfit, expenses: expMap, totalExpenses, netProfit,
         grossMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
         netMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
       });
-
-      // Build trend data (last 6 months mock enriched)
-      setMonths(buildMockMonths(6));
       setLoading(false);
     });
 

@@ -121,7 +121,7 @@ export default function ImportExportTab() {
   const [view, setView] = useState<"export" | "import" | "history">("export");
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ success: boolean; count: number; errors: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ success: boolean; count: number; errors: number; message?: string } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
 
@@ -149,20 +149,35 @@ export default function ImportExportTab() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file) simulateImport();
+    if (file) importFile(file);
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) simulateImport();
+    if (file) importFile(file);
   };
 
-  const simulateImport = () => {
+  // Importa productos REAL contra /api/products/import (FormData). Antes era una
+  // maqueta (simulateImport) que ignoraba el archivo y mostraba un número random.
+  const importFile = async (file: File) => {
     setImporting(true); setImportResult(null);
-    setTimeout(() => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/products/import", { method: "POST", body: fd, credentials: "include" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImportResult({ success: false, count: 0, errors: 0, message: typeof data?.error === "string" ? data.error : "No se pudo importar el archivo" });
+        return;
+      }
+      const count = Number(data?.created ?? 0);
+      const errs = Array.isArray(data?.errors) ? data.errors.length : Number(data?.errors ?? 0);
+      setImportResult({ success: true, count, errors: errs });
+    } catch {
+      setImportResult({ success: false, count: 0, errors: 0, message: "Error de red al importar. Intenta de nuevo." });
+    } finally {
       setImporting(false);
-      setImportResult({ success: true, count: Math.floor(Math.random() * 100) + 10, errors: Math.floor(Math.random() * 3) });
-    }, 2000);
+    }
   };
 
   return (
@@ -247,9 +262,19 @@ export default function ImportExportTab() {
                 <LoadingState message="Procesando archivo..." />
               ) : importResult ? (
                 <div className="flex flex-col items-center gap-3">
-                  <CheckCircle className="h-8 w-8 text-[var(--data-success-500)]" />
-                  <p className="text-sm font-bold text-[var(--data-success-500)]">{importResult.count} registros importados</p>
-                  {importResult.errors > 0 && <p className="text-xs text-[var(--data-warning-500)]">{importResult.errors} errores encontrados</p>}
+                  {importResult.success ? (
+                    <>
+                      <CheckCircle className="h-8 w-8 text-[var(--data-success-500)]" />
+                      <p className="text-sm font-bold text-[var(--data-success-500)]">{importResult.count} productos importados</p>
+                      {importResult.errors > 0 && <p className="text-xs text-[var(--data-warning-500)]">{importResult.errors} filas con errores</p>}
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
+                      <p className="text-sm font-bold text-[var(--data-error-500)]">No se pudo importar</p>
+                      {importResult.message && <p className="text-xs text-[var(--text-tertiary)]">{importResult.message}</p>}
+                    </>
+                  )}
                   <button onClick={() => setImportResult(null)} className="text-xs text-primary font-bold underline">Importar otro</button>
                 </div>
               ) : (
