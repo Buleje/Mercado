@@ -7,7 +7,7 @@
  * chart de Finanzas no coincidirían tras mover la agregación al server.
  */
 import { describe, it, expect } from "vitest";
-import { utcMonthRange } from "@/lib/finance/monthly-range";
+import { utcMonthRange, utcDayKey } from "@/lib/finance/monthly-range";
 
 describe("utcMonthRange", () => {
   const ref = new Date("2026-06-15T12:00:00Z");
@@ -48,5 +48,20 @@ describe("utcMonthRange", () => {
     expect(utcMonthRange(ref2, 1).monthKey).toBe("2025-12");
     expect(utcMonthRange(ref2, 2).monthKey).toBe("2025-11");
     expect(utcMonthRange(ref2, 13).monthKey).toBe("2024-12");
+  });
+});
+
+describe("utcDayKey", () => {
+  const ref = new Date("2026-06-15T12:00:00Z");
+
+  it("devuelve días UTC consecutivos hacia atrás", () => {
+    expect(utcDayKey(ref, 0)).toBe("2026-06-15");
+    expect(utcDayKey(ref, 1)).toBe("2026-06-14");
+    expect(utcDayKey(ref, 15)).toBe("2026-05-31");  // cruza el mes
+  });
+
+  it("un createdAt UTC se bucketea en el día correcto (= slice(0,10))", () => {
+    const created = new Date("2026-06-14T23:30:00.000Z");
+    expect(created.toISOString().slice(0, 10)).toBe(utcDayKey(ref, 1));
   });
 });

@@ -219,7 +219,9 @@ function FinanzasDashboard() {
     Promise.allSettled([
       fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
       fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
-      fetchFinanzas<unknown[]>("/api/sales?limit=5000", []),
+      // Desglose de ventas agregado SERVER-SIDE (métodos de pago + ingresos
+      // diarios). Antes era /api/sales?limit=5000 crudo bucketeado en el cliente.
+      fetchFinanzas<{ paymentMethods: { name: string; value: number }[]; daily: { day: string; ingresos: number }[] }>("/api/finanzas/sales-breakdown?days=30", { paymentMethods: [], daily: [] }),
       fetch("/api/expenses?limit=2000").then(r => r.ok ? r.json() : []),
       fetch("/api/payables").then(r => r.ok ? r.json() : []),
       fetch("/api/fiados?status=ACTIVO").then(r => r.ok ? r.json() : []),
@@ -227,17 +229,16 @@ function FinanzasDashboard() {
       // INGRESO_ORDER_STATUSES). Antes era /api/orders?limit=5000 crudo
       // bucketeado en el cliente. Bucketing UTC = idéntico (test cubre).
       fetchFinanzas<{ month: string; ingresos: number }[]>("/api/finanzas/monthly-summary?months=6", []),
-    ]).then(([kR, eR, sR, exR, pR, fR, msR]) => {
+    ]).then(([kR, eR, bR, exR, pR, fR, msR]) => {
       const kpisData = kR.status === "fulfilled" ? kR.value : null;
       const expSummary = eR.status === "fulfilled" ? eR.value : null;
-      const salesRaw = sR.status === "fulfilled" ? sR.value : [];
+      const salesBreakdown = (bR.status === "fulfilled" ? bR.value : { paymentMethods: [], daily: [] }) as { paymentMethods: { name: string; value: number }[]; daily: { day: string; ingresos: number }[] };
       const monthlySummary = (msR.status === "fulfilled" && Array.isArray(msR.value) ? msR.value : []) as { month: string; ingresos: number }[];
       const expensesRaw = exR.status === "fulfilled" ? exR.value : [];
       const payablesRaw = pR.status === "fulfilled" ? (Array.isArray(pR.value) ? pR.value : []) : [];
       const fiadosRaw = fR.status === "fulfilled" ? (Array.isArray(fR.value) ? fR.value : []) : [];
 
       const now = new Date();
-      const sales = (Array.isArray(salesRaw) ? salesRaw : []) as SaleRaw[];
 
       // ── KPIs ──
       const ingresos = n(kpisData?.ventasMes ?? kpisData?.salesMonth);
@@ -311,35 +312,19 @@ function FinanzasDashboard() {
           .sort((a, b) => b.value - a.value)
       );
 
-      // ── Payment methods breakdown ──
-      const pmMap = new Map<string, number>();
-      for (const s of sales as SaleRaw[]) {
-        const d = new Date(s.createdAt ?? "");
-        if (d >= startOfMonth) {
-          const rawMethod = s.paymentMethod ?? s.metodoPago ?? "efectivo";
-          const method = rawMethod.charAt(0).toUpperCase() + rawMethod.slice(1).toLowerCase();
-          pmMap.set(method, (pmMap.get(method) ?? 0) + n(s.total));
-        }
-      }
-      setPaymentMethods(
-        Array.from(pmMap.entries())
-          .map(([name, value]) => ({ name, value: Math.round(value) }))
-          .filter(g => g.value > 0)
-          .sort((a, b) => b.value - a.value)
-      );
+      // ── Métodos de pago (del endpoint, agregado por el campo real `payment`) ──
+      // FIX: el cliente leía paymentMethod/metodoPago (inexistentes) → todo "Efectivo".
+      setPaymentMethods(salesBreakdown.paymentMethods);
 
-      // ── Cash flow (last 30 days) ──
-      const flowData: Array<{ dia: string; ingresos: number; gastos: number; balance: number }> = [];
-      for (let i = 29; i >= 0; i--) {
-        const dd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-        const dayKey = dd.toISOString().slice(0, 10);
-        const dayLabel = `${dd.getDate()}/${dd.getMonth() + 1}`;
-        const daySales = (sales as SaleRaw[]).filter((s) => (s.createdAt ?? "").startsWith(dayKey));
-        const dayIngresos = daySales.reduce((sum, s) => sum + n(s.total), 0);
-        const dayExpenses = items.filter((e) => (e.date ?? e.createdAt ?? "").slice(0, 10) === dayKey);
-        const dayGastos = dayExpenses.reduce((sum, e) => sum + n(e.amount), 0);
-        flowData.push({ dia: dayLabel, ingresos: Math.round(dayIngresos), gastos: Math.round(dayGastos), balance: Math.round(dayIngresos - dayGastos) });
-      }
+      // ── Cashflow diario: ingresos del endpoint (UTC), gastos de expenses (items) ──
+      const flowData = salesBreakdown.daily.map(({ day: dayKey, ingresos: dayIngresos }) => {
+        const [, mm, dd2] = dayKey.split("-").map(Number);
+        const dayLabel = `${dd2}/${mm}`;
+        const dayGastos = items
+          .filter((e) => (e.date ?? e.createdAt ?? "").slice(0, 10) === dayKey)
+          .reduce((sum, e) => sum + n(e.amount), 0);
+        return { dia: dayLabel, ingresos: Math.round(dayIngresos), gastos: Math.round(dayGastos), balance: Math.round(dayIngresos - dayGastos) };
+      });
       setCashFlow(flowData);
 
       // ── Top payables (proveedores) ──

@@ -18,3 +18,13 @@ export function utcMonthRange(ref: Date, monthsAgo: number): { monthKey: string;
   const monthKey = start.toISOString().slice(0, 7);
   return { monthKey, start, end };
 }
+
+/**
+ * Día UTC ("YYYY-MM-DD") `daysAgo` días atrás respecto a `ref`. Mismo criterio
+ * que el cliente (createdAt UTC → slice(0,10)) para el cashflow diario.
+ */
+export function utcDayKey(ref: Date, daysAgo: number): string {
+  return new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate() - daysAgo))
+    .toISOString()
+    .slice(0, 10);
+}
