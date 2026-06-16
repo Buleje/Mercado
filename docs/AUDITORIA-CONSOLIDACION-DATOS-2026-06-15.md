@@ -89,3 +89,29 @@ Tesorería/Liquidez, los 28 sumadores de payables, existencia de la infra única
 **NO verificado línea por línea:** las 28 fórmulas de payables y las 20+ de ventas — el muestreo
 confirma el patrón, pero cada migración exige leer la fórmula real antes de unificar (algunas pueden
 tener filtros legítimos que el agregado debe respetar).
+
+## 5. Fase 3 — clasificación verificada (2026-06-16)
+
+Al migrar caso por caso (leyendo cada fórmula) se confirma que **NO todos los 28 sumadores se migran**.
+Clasificación tras revisar los principales:
+
+### ✅ Migrar (muestran ACTUALS del período con fórmula propia/buggy)
+- `TreasuryDashboard` → **HECHO** (commit `5604d5c1`). Corrigió porPagar (sumaba total, ignoraba
+  pagado) e ingresos (era Sale-only).
+- `FinanzasModule` → pendiente. Su "Ingresos del mes" / trend mensual usa **Sale-only**
+  (`monthSales.reduce`) en vez de Order+Sale. Migración mayor (1307 LOC, trend 12 meses → requiere
+  agregado por-mes). Tratar con cuidado.
+
+### 🚫 NO migrar — son cálculos legítimamente distintos
+- **Forecasts / proyecciones** (forward-looking, necesitan filas por fecha, NO actuals del período):
+  `CashFlowProjection`, `LiquidityForecastTab`, `PaymentCalendarView`, `PaymentCalendar`.
+- **"Total compras" (no "por pagar")**: `ReportsTab` (`totalPurchases`), `SuppliersTab` (compras/mes
+  por proveedor), `inicio/ComprasAdvancedCharts`, `inicio/CajaAdvancedCharts` — suman `p.amount`
+  TOTAL **a propósito** (es el monto comprado, no lo que se debe). Cambiarlo sería un bug.
+
+### 🟢 Ya consolidados (consumen `/api/admin/dashboard` o `dashboard-data-context`)
+`ExecutiveDashboardTab`, `SmartDashboardTab`, `DashboardTab`, y los `inicio/*Dashboard`.
+
+**Conclusión:** el grueso del valor de la Fase 3 ya está (infra Fase 1+2 + Treasury con bugs reales
+corregidos). Lo que queda migrable de verdad es acotado (FinanzasModule y algún tab de actuals
+suelto); el resto NO debe tocarse. Cada caso, leer la fórmula primero.
