@@ -451,7 +451,9 @@ export const CONFIG_MODULE: TabCategory = {
   id: "config",
   label: "Configuración",
   icon: SlidersHorizontal,
-  tabs: ["config", "plan"],
+  // auditoria queda también acá (dropdown de Config, vía de acceso en Modo Fácil)
+  // además de en SISTEMA_MODULE (categoría sidebar, Modo Avanzado).
+  tabs: ["config", "plan", "auditoria"],
 };
 
 // ── Módulo Sistema (técnico) — rendimiento + auditoría + colas ───────────────

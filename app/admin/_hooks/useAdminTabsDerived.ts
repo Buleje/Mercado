@@ -11,7 +11,7 @@
  * ver docs/refactor-giant-files-plan.md).
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ALL_TABS } from "../_lib/tab-data";
 import type { Tab } from "../_lib/tabs.types";
 import type { TabCategory } from "../_lib/tab-categories";
@@ -53,6 +53,15 @@ export function useAdminTabsDerived(params: Params) {
   // automáticamente — el sidebar se actualiza sin recargar.
   const { definition: planDefinition } = usePlanTier();
   const planUnlockedTabs = planDefinition.unlockedTabs;
+
+  // Override DEV-ONLY (localStorage admin_mode_dev_unlock="1"): bypasea el plan
+  // gate para que el equipo vea TODOS los módulos al verificar Modo Avanzado.
+  // Nunca afecta a un tenant que no haya puesto la key manualmente. Requiere
+  // reload para cambiar (alineado con useAdminMode).
+  const [devUnlock] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("admin_mode_dev_unlock") === "1"; } catch { return false; }
+  });
 
   // ── Plantilla del superadmin (overlay) ──────────────────────────────────
   // Sobreescribe labels y filtra módulos marcados como no-visibles.
@@ -104,10 +113,11 @@ export function useAdminTabsDerived(params: Params) {
     // aparecerían NUNCA porque no están en ningún unlockedTabs de planes
     // genéricos. El gating real lo hace `enabledSpecModuleIds` abajo.
     return baseTabs.filter((tab) => {
+      if (devUnlock) return true; // override dev-only: bypasea el plan gate
       if (SPEC_GATED_MODULE_IDS.has(tab)) return true;
       return planUnlockedTabs.has(tab);
     });
-  }, [userRole, savedRolePerms, planUnlockedTabs]);
+  }, [userRole, savedRolePerms, planUnlockedTabs, devUnlock]);
 
   // Set base de módulos VISIBLES del negocio (rol + plan + ocultos + plantilla +
   // specs), SIN el narrowing por categoría/búsqueda del sidebar. Es "los módulos

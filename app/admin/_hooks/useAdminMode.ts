@@ -21,40 +21,68 @@ export type AdminMode = "easy" | "advanced";
 export interface UseAdminModeResult {
   mode: AdminMode;
   isEasyMode: boolean;
-  /** Always returns true — los modos avanzados estan deshabilitados por defecto. */
+  /** true salvo que el override dev-only esté activo. */
   isLocked: boolean;
   toggleMode: () => void;
   setMode: (m: AdminMode) => void;
 }
 
-// Política actual: el modo del admin queda forzado a "easy" (modo basico)
-// para todos los tenants en plan free/trial. Los modos avanzados se habilitan
-// solo cuando el superadmin lo permita explicitamente (TODO: surface a flag
-// en Tenant). Hasta entonces, ignoramos el localStorage previo y el endpoint
-// de preferencias devuelve solo lectura.
+// Política actual: el modo del admin queda forzado a "easy" (modo básico) para
+// todos los tenants en plan free/trial. El Modo Avanzado es feature de plan
+// pago; el flag por-tenant (gestionado por superadmin) está pendiente
+// (TODO: surface a flag en Tenant).
+//
+// Override DEV-ONLY: si `localStorage.admin_mode_dev_unlock === "1"`, se
+// restaura el toggle real (default easy, persistido en `admin_mode`). Sirve para
+// que el equipo vea/verifique las categorías avanzadas SIN shipear el unlock a
+// tenants. No afecta a ningún tenant que no haya puesto la key manualmente.
 const FORCED_MODE: AdminMode = "easy";
 const STORAGE_KEY = "admin_mode";
+const DEV_UNLOCK_KEY = "admin_mode_dev_unlock";
+
+function readDevUnlock(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return localStorage.getItem(DEV_UNLOCK_KEY) === "1"; } catch { return false; }
+}
+
+function readStoredMode(): AdminMode {
+  if (typeof window === "undefined") return FORCED_MODE;
+  try { return localStorage.getItem(STORAGE_KEY) === "advanced" ? "advanced" : "easy"; } catch { return FORCED_MODE; }
+}
 
 export function useAdminMode(): UseAdminModeResult {
-  const [mode] = useState<AdminMode>(FORCED_MODE);
+  // SSR-safe: arrancamos forzados a easy y hidratamos en cliente.
+  const [unlocked, setUnlocked] = useState(false);
+  const [mode, setModeState] = useState<AdminMode>(FORCED_MODE);
 
-  // Mantener el localStorage limpio para que el resto del codigo que lee
-  // `admin_mode` directamente (sin pasar por este hook) tambien vea "easy".
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try { localStorage.setItem(STORAGE_KEY, FORCED_MODE); } catch { /* quota */ }
+    const dev = readDevUnlock();
+    setUnlocked(dev);
+    if (dev) {
+      setModeState(readStoredMode());
+    } else {
+      // Sigue lockeado a easy: mantener limpio el localStorage para el código
+      // que lee `admin_mode` directamente (sin pasar por este hook).
+      try { localStorage.setItem(STORAGE_KEY, FORCED_MODE); } catch { /* quota */ }
+    }
   }, []);
 
-  const noop = useCallback(() => {
-    // Modo locked: cualquier intento de toggle se ignora silenciosamente.
+  const setMode = useCallback((m: AdminMode) => {
+    if (!readDevUnlock()) return; // locked salvo override dev-only
+    setModeState(m);
+    try { localStorage.setItem(STORAGE_KEY, m); } catch { /* quota */ }
   }, []);
+
+  const toggleMode = useCallback(() => {
+    setMode(mode === "easy" ? "advanced" : "easy");
+  }, [mode, setMode]);
 
   return {
     mode,
-    isEasyMode: true,
-    isLocked: true,
-    toggleMode: noop,
-    setMode: noop,
+    isEasyMode: mode === "easy",
+    isLocked: !unlocked,
+    toggleMode,
+    setMode,
   };
 }
-
