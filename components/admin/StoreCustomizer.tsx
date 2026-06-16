@@ -25,6 +25,7 @@ const BrandConceptTab = dynamic(() => import("./BrandConceptTab"), { ssr: false 
 const CategoryBannersTab = dynamic(() => import("./CategoryBannersTab"), { ssr: false });
 import type { SectionKey } from "./StorefrontEditor";
 import ImageUpload from "./ImageUpload";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -293,7 +294,7 @@ function ColorPicker({
 }) {
   return (
     <div className="space-y-3">
-      <label className="text-sm font-semibold text-[var(--text-primary)]">{label}</label>
+      <span className="text-sm font-semibold text-[var(--text-primary)]">{label}</span>
       <div className="flex flex-wrap gap-2.5 items-center">
         {COLOR_PRESETS.map((c) => (
           <button
@@ -831,15 +832,16 @@ function HeroTab({
         <div className="space-y-5">
           {/* Texto del CTA */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-[var(--text-primary)]">Texto del botón</label>
-            <input
-              type="text"
-              value={theme.heroCTA}
-              onChange={(e) => update("heroCTA", e.target.value)}
-              placeholder="Ver productos"
-              className={inputClassName}
-              maxLength={30}
-            />
+            <Field label="Texto del botón" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+              <input
+                type="text"
+                value={theme.heroCTA}
+                onChange={(e) => update("heroCTA", e.target.value)}
+                placeholder="Ver productos"
+                className={inputClassName}
+                maxLength={30}
+              />
+            </Field>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted">Verbo en infinitivo — qué hace el cliente cuando hace click.</p>
               <span className="text-xs font-mono text-muted shrink-0">{(theme.heroCTA || "").length}/30</span>
@@ -872,7 +874,7 @@ function HeroTab({
 
           {/* Destino del botón */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-[var(--text-primary)]">Destino del botón</label>
+            <span className="text-sm font-semibold text-[var(--text-primary)]">Destino del botón</span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {([
                 { value: "tienda",     label: "Tienda",     desc: "Lleva al catálogo de productos",  icon: <ShoppingBag className="h-5 w-5" /> },
@@ -1454,7 +1456,7 @@ export default function StoreCustomizer() {
                           />
                         )}
                       </div>
-                      <span className="block text-[11px] text-muted text-center leading-tight">
+                      <span className="block text-xs text-muted text-center leading-tight">
                         cuadrado · 5 MB
                       </span>
                     </div>
@@ -1529,7 +1531,7 @@ export default function StoreCustomizer() {
                 <aside className="space-y-4 lg:sticky lg:top-4">
                   {/* Mockup: cabecera de la tienda */}
                   <div>
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
                       Así se ve en tu tienda
                     </p>
                     <div className="rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)]">
@@ -1538,7 +1540,7 @@ export default function StoreCustomizer() {
                         <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]/60" aria-hidden />
                         <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]/60" aria-hidden />
                         <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]/60" aria-hidden />
-                        <span className="ml-2 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-0.5 text-[10px] text-muted font-mono">
+                        <span className="ml-2 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-0.5 text-[length:var(--ts-2xs)] text-muted font-mono">
                           {typeof window !== "undefined" ? window.location.host : "buleje.com"}/t/{activeTenantSlug}
                         </span>
                       </div>
@@ -1560,7 +1562,7 @@ export default function StoreCustomizer() {
                           </p>
                         </div>
                         <span
-                          className="shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-white"
+                          className="shrink-0 rounded-lg px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white"
                           style={{ background: theme.primaryColor || "#00A0A0" }}
                           aria-hidden
                         >
@@ -1572,7 +1574,7 @@ export default function StoreCustomizer() {
 
                   {/* Mockup: resultado de Google (SERP) */}
                   <div>
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
                       Así se ve en Google
                     </p>
                     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3.5 shadow-[var(--shadow-sm)]">
@@ -1588,7 +1590,7 @@ export default function StoreCustomizer() {
                           <p className="truncate text-xs font-medium text-[var(--text-secondary)]">
                             {theme.storeName || "Mi Bodega"}
                           </p>
-                          <p className="truncate text-[11px] text-[var(--data-success-700,#047857)] dark:text-emerald-400">
+                          <p className="truncate text-xs text-[var(--data-success-700,#047857)] dark:text-emerald-400">
                             buleje.com › t › {activeTenantSlug}
                           </p>
                         </div>
@@ -2011,56 +2013,59 @@ export default function StoreCustomizer() {
                 >
                   <div className="space-y-5">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-[var(--data-success-500)]" />
-                        WhatsApp
-                        <span className="text-xs font-normal text-muted ml-1">recomendado</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={theme.whatsapp}
-                        onChange={(e) => update("whatsapp", e.target.value)}
-                        placeholder="+51 900 000 000"
-                        className={inputCls}
-                      />
+                      <Field
+                        label={<><Phone className="h-4 w-4 text-[var(--data-success-500)]" /> WhatsApp <span className="text-xs font-normal text-muted ml-1">recomendado</span></>}
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2"
+                      >
+                        <input
+                          type="tel"
+                          value={theme.whatsapp}
+                          onChange={(e) => update("whatsapp", e.target.value)}
+                          placeholder="+51 900 000 000"
+                          className={inputCls}
+                        />
+                      </Field>
                       <p className="text-xs text-muted">Con código de país. Aparece en el footer y como botón flotante.</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Email</label>
-                        <input
-                          type="email"
-                          value={theme.email}
-                          onChange={(e) => update("email", e.target.value)}
-                          placeholder="contacto@tibodega.pe"
-                          className={inputCls}
-                        />
+                        <Field label="Email" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                          <input
+                            type="email"
+                            value={theme.email}
+                            onChange={(e) => update("email", e.target.value)}
+                            placeholder="contacto@tibodega.pe"
+                            className={inputCls}
+                          />
+                        </Field>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Teléfono fijo</label>
-                        <input
-                          type="tel"
-                          value={theme.phone}
-                          onChange={(e) => update("phone", e.target.value)}
-                          placeholder="+51 061 000 000"
-                          className={inputCls}
-                        />
+                        <Field label="Teléfono fijo" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                          <input
+                            type="tel"
+                            value={theme.phone}
+                            onChange={(e) => update("phone", e.target.value)}
+                            placeholder="+51 061 000 000"
+                            className={inputCls}
+                          />
+                        </Field>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                        <Map className="h-4 w-4 text-primary" />
-                        Dirección física
-                      </label>
-                      <textarea
-                        value={theme.address}
-                        onChange={(e) => update("address", e.target.value)}
-                        placeholder="Jr. Ucayali 123, Pucallpa, Perú"
-                        className={cn(inputCls, "resize-none min-h-[72px] py-3")}
-                        maxLength={200}
-                      />
+                      <Field
+                        label={<><Map className="h-4 w-4 text-primary" /> Dirección física</>}
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2"
+                      >
+                        <textarea
+                          value={theme.address}
+                          onChange={(e) => update("address", e.target.value)}
+                          placeholder="Jr. Ucayali 123, Pucallpa, Perú"
+                          className={cn(inputCls, "resize-none min-h-[72px] py-3")}
+                          maxLength={200}
+                        />
+                      </Field>
                       <p className="text-xs text-muted">Si tenés local físico — se muestra en el mapa de delivery y JSON-LD para Google Maps.</p>
                     </div>
                   </div>
@@ -2452,15 +2457,16 @@ export default function StoreCustomizer() {
                   <div className="space-y-5">
                     {/* WhatsApp */}
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">Saludo de WhatsApp</label>
-                      <input
-                        type="text"
-                        value={theme.whatsappMessage}
-                        onChange={(e) => update("whatsappMessage", e.target.value)}
-                        placeholder="Hola! Quiero hacer un pedido"
-                        className={inputCls}
-                        maxLength={200}
-                      />
+                      <Field label="Saludo de WhatsApp" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                        <input
+                          type="text"
+                          value={theme.whatsappMessage}
+                          onChange={(e) => update("whatsappMessage", e.target.value)}
+                          placeholder="Hola! Quiero hacer un pedido"
+                          className={inputCls}
+                          maxLength={200}
+                        />
+                      </Field>
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-muted">Pre-llena el chat cuando el cliente toca el botón de WhatsApp.</p>
                         <span className="text-xs font-mono text-muted shrink-0">{(theme.whatsappMessage || "").length}/200</span>
@@ -2469,14 +2475,15 @@ export default function StoreCustomizer() {
 
                     {/* Footer text */}
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">Texto del footer</label>
-                      <textarea
-                        value={theme.footerText}
-                        onChange={(e) => update("footerText", e.target.value)}
-                        placeholder="Tu bodega de confianza desde 2020..."
-                        className={cn(inputCls, "resize-none min-h-[88px] py-3")}
-                        maxLength={300}
-                      />
+                      <Field label="Texto del footer" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                        <textarea
+                          value={theme.footerText}
+                          onChange={(e) => update("footerText", e.target.value)}
+                          placeholder="Tu bodega de confianza desde 2020..."
+                          className={cn(inputCls, "resize-none min-h-[88px] py-3")}
+                          maxLength={300}
+                        />
+                      </Field>
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-muted">Aparece al pie de cada página. Buen lugar para tu historia, valores o años de servicio.</p>
                         <span className="text-xs font-mono text-muted shrink-0">{(theme.footerText || "").length}/300</span>
@@ -2529,37 +2536,40 @@ export default function StoreCustomizer() {
                     {theme.welcomePopupEnabled && (
                       <div className="space-y-3 mt-5 pt-5 border-t-2 border-primary/20">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Título</label>
-                          <input
-                            type="text"
-                            value={theme.welcomePopupTitle}
-                            onChange={(e) => update("welcomePopupTitle", e.target.value)}
-                            placeholder="Bienvenido!"
-                            className={inputCls}
-                            maxLength={50}
-                          />
+                          <Field label="Título" labelClassName="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                            <input
+                              type="text"
+                              value={theme.welcomePopupTitle}
+                              onChange={(e) => update("welcomePopupTitle", e.target.value)}
+                              placeholder="Bienvenido!"
+                              className={inputCls}
+                              maxLength={50}
+                            />
+                          </Field>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Mensaje</label>
-                          <input
-                            type="text"
-                            value={theme.welcomePopupMessage}
-                            onChange={(e) => update("welcomePopupMessage", e.target.value)}
-                            placeholder="Usa este cupón en tu primera compra"
-                            className={inputCls}
-                            maxLength={120}
-                          />
+                          <Field label="Mensaje" labelClassName="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                            <input
+                              type="text"
+                              value={theme.welcomePopupMessage}
+                              onChange={(e) => update("welcomePopupMessage", e.target.value)}
+                              placeholder="Usa este cupón en tu primera compra"
+                              className={inputCls}
+                              maxLength={120}
+                            />
+                          </Field>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Código del cupón</label>
-                          <input
-                            type="text"
-                            value={theme.welcomePopupCoupon}
-                            onChange={(e) => update("welcomePopupCoupon", e.target.value)}
-                            placeholder="BIENVENIDO10"
-                            className={cn(inputCls, "font-mono uppercase tracking-wider")}
-                            maxLength={20}
-                          />
+                          <Field label="Código del cupón" labelClassName="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                            <input
+                              type="text"
+                              value={theme.welcomePopupCoupon}
+                              onChange={(e) => update("welcomePopupCoupon", e.target.value)}
+                              placeholder="BIENVENIDO10"
+                              className={cn(inputCls, "font-mono uppercase tracking-wider")}
+                              maxLength={20}
+                            />
+                          </Field>
                           <p className="text-xs text-muted">Asegurate de que este código exista en la sección de cupones.</p>
                         </div>
                       </div>
@@ -2684,18 +2694,19 @@ export default function StoreCustomizer() {
                   <div className="space-y-6">
                     {/* Border radius slider */}
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Bordes redondeados</label>
-                        <span className="text-base font-bold text-primary bg-primary/10 px-3 py-1 rounded-full tabular-nums">{theme.borderRadius}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={24}
-                        value={theme.borderRadius}
-                        onChange={(e) => update("borderRadius", Number(e.target.value))}
-                        className="w-full accent-teal-600 h-2 rounded-full cursor-pointer"
-                      />
+                      <Field
+                        label={<><span>Bordes redondeados</span><span className="text-base font-bold text-primary bg-primary/10 px-3 py-1 rounded-full tabular-nums ml-auto">{theme.borderRadius}px</span></>}
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between"
+                      >
+                        <input
+                          type="range"
+                          min={0}
+                          max={24}
+                          value={theme.borderRadius}
+                          onChange={(e) => update("borderRadius", Number(e.target.value))}
+                          className="w-full accent-teal-600 h-2 rounded-full cursor-pointer"
+                        />
+                      </Field>
                       {/* Preview multi-elemento: input, badge, card, botón */}
                       <div className="rounded-2xl bg-gray-50 dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-3">Vista previa en vivo</p>
@@ -2729,7 +2740,7 @@ export default function StoreCustomizer() {
 
                     {/* Espaciado — cards con mockup más rico */}
                     <div className="space-y-3">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">Densidad de espaciado</label>
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">Densidad de espaciado</span>
                       <div className="grid grid-cols-3 gap-3">
                         {([
                           { value: "compact",  label: "Compacto",  desc: "Más en menos espacio", pad: "py-1.5", gap: "gap-1" },
@@ -2850,27 +2861,33 @@ export default function StoreCustomizer() {
                   <div className="space-y-5">
                     {/* Google Analytics */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Google Analytics (GA4)</label>
-                        {theme.analyticsId?.trim().startsWith("G-") ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
-                            <Check className="h-3 w-3" /> Configurado
-                          </span>
-                        ) : theme.analyticsId?.trim() ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
-                            ⚠ Formato inválido
-                          </span>
-                        ) : (
-                          <span className="text-xs font-medium text-muted">Sin configurar</span>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        value={theme.analyticsId}
-                        onChange={(e) => update("analyticsId", e.target.value)}
-                        placeholder="G-XXXXXXXXXX"
-                        className={cn(inputCls, "font-mono")}
-                      />
+                      <Field
+                        label={
+                          <>
+                            <span>Google Analytics (GA4)</span>
+                            {theme.analyticsId?.trim().startsWith("G-") ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
+                                <Check className="h-3 w-3" /> Configurado
+                              </span>
+                            ) : theme.analyticsId?.trim() ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
+                                ⚠ Formato inválido
+                              </span>
+                            ) : (
+                              <span className="text-xs font-medium text-muted">Sin configurar</span>
+                            )}
+                          </>
+                        }
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between gap-2"
+                      >
+                        <input
+                          type="text"
+                          value={theme.analyticsId}
+                          onChange={(e) => update("analyticsId", e.target.value)}
+                          placeholder="G-XXXXXXXXXX"
+                          className={cn(inputCls, "font-mono")}
+                        />
+                      </Field>
                       <p className="text-xs text-muted">
                         Empieza con <span className="font-mono">G-</span>. Lo obtenés en{" "}
                         <a href="https://analytics.google.com/analytics/web/#/p/admin/streams" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -2881,27 +2898,33 @@ export default function StoreCustomizer() {
 
                     {/* Meta Pixel */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Meta Pixel (Facebook / Instagram)</label>
-                        {theme.pixelId && /^\d{14,17}$/.test(theme.pixelId.trim()) ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
-                            <Check className="h-3 w-3" /> Configurado
-                          </span>
-                        ) : theme.pixelId?.trim() ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
-                            ⚠ Formato inválido
-                          </span>
-                        ) : (
-                          <span className="text-xs font-medium text-muted">Sin configurar</span>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        value={theme.pixelId}
-                        onChange={(e) => update("pixelId", e.target.value)}
-                        placeholder="1234567890123456"
-                        className={cn(inputCls, "font-mono")}
-                      />
+                      <Field
+                        label={
+                          <>
+                            <span>Meta Pixel (Facebook / Instagram)</span>
+                            {theme.pixelId && /^\d{14,17}$/.test(theme.pixelId.trim()) ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
+                                <Check className="h-3 w-3" /> Configurado
+                              </span>
+                            ) : theme.pixelId?.trim() ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
+                                ⚠ Formato inválido
+                              </span>
+                            ) : (
+                              <span className="text-xs font-medium text-muted">Sin configurar</span>
+                            )}
+                          </>
+                        }
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between gap-2"
+                      >
+                        <input
+                          type="text"
+                          value={theme.pixelId}
+                          onChange={(e) => update("pixelId", e.target.value)}
+                          placeholder="1234567890123456"
+                          className={cn(inputCls, "font-mono")}
+                        />
+                      </Field>
                       <p className="text-xs text-muted">
                         14-17 dígitos. Lo encontrás en{" "}
                         <a href="https://business.facebook.com/events_manager2/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -2939,19 +2962,20 @@ export default function StoreCustomizer() {
 
                     {/* Editor */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Editor CSS</label>
-                        <span className="text-xs font-mono text-muted">{(theme.customCSS || "").length} chars</span>
-                      </div>
-                      <textarea
-                        value={theme.customCSS}
-                        onChange={(e) => update("customCSS", e.target.value)}
-                        placeholder=".product-card { border: 2px solid gold; }
+                      <Field
+                        label={<><span>Editor CSS</span><span className="text-xs font-mono text-muted">{(theme.customCSS || "").length} chars</span></>}
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between gap-2"
+                      >
+                        <textarea
+                          value={theme.customCSS}
+                          onChange={(e) => update("customCSS", e.target.value)}
+                          placeholder=".product-card { border: 2px solid gold; }
 .store-header { backdrop-filter: blur(20px); }"
-                        rows={8}
-                        spellCheck={false}
-                        className={cn(inputCls, "font-mono text-sm resize-y min-h-[180px] py-3")}
-                      />
+                          rows={8}
+                          spellCheck={false}
+                          className={cn(inputCls, "font-mono text-sm resize-y min-h-[180px] py-3")}
+                        />
+                      </Field>
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <p className="text-xs text-muted">
                           Selectores útiles:
