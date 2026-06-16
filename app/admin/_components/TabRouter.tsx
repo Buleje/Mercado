@@ -59,10 +59,10 @@ const LothLibroOperaciones      = dynamic(() => import("@/components/admin/fores
 const CacaoAcopio               = dynamic(() => import("@/components/admin/cacao/CacaoAcopio"), { loading: TabSpinner });
 const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/ScoringCrediticioTab"),      { loading: TabSpinner });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
-const StoreCustomizer           = dynamic(() => import("@/components/admin/StoreCustomizer"),           { loading: TabSpinner });
+// store-customizer + pagina-inicio consolidados en MiTiendaHubModule (2→1)
+const MiTiendaHubModule         = dynamic(() => import("@/components/admin/unified/MiTiendaHubModule"),  { loading: TabSpinner });
 const MiPerfilTab               = dynamic(() => import("@/components/admin/MiPerfilTab"),               { loading: TabSpinner });
 const ColasTab                  = dynamic(() => import("@/components/admin/ColasTab"),                  { loading: TabSpinner });
-const StorePageAdminPage        = dynamic(() => import("@/app/admin/store-page/page"),                  { loading: TabSpinner });
 // forecasting → sub-tab "forecast" de AnalisisHubModule (ver dispatch)
 
 // ── Documentos comerciales & SUNAT consolidados en DocumentosHubModule (6→1) ──
@@ -298,13 +298,13 @@ export function TabRouter({
   if (tab === "rendimiento") return <RendimientoModule />;
 
   // ── Personalización de tienda, colas y perfil ──
-  if (tab === "store-customizer") return <StoreCustomizer />;
+  if (tab === "store-customizer") return <MiTiendaHubModule key="store-customizer" initialTab="identidad" />;
   if (tab === "colas")            return <ColasTab />;
   if (tab === "mi-perfil")        return <MiPerfilTab />;
   if (tab === "support-inbox")    return <MensajesHubModule key="support-inbox" initialTab="soporte" />;
 
   // ── Página individual de la tienda ──
-  if (tab === "pagina-inicio") return <StorePageAdminPage />;
+  if (tab === "pagina-inicio") return <MiTiendaHubModule key="pagina-inicio" initialTab="pagina" />;
 
   // ── Documentación (drive interno) — sub-tab "drive" del hub de Documentos ──
   if (tab === "documentos") return <DocumentosHubModule key="documentos" initialTab="drive" />;
