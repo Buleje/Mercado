@@ -15,7 +15,7 @@ import {
   FileBarChart, Waves, Calculator,
   DollarSign, Wallet,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
-  Sparkles, Landmark, HandCoins, Banknote, Coins, Construction,
+  Sparkles, Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
@@ -74,12 +74,14 @@ const FiadosModule    = dynamic(() => import("@/components/admin/FiadosModule"),
 const PrestamosModule = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: S });
 const AdelantosModule = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: S });
 const ActivosModule   = dynamic(() => import("@/components/admin/activos/ActivosModule"),     { loading: S });
+// Scoring crediticio consolidado como sub-tab (era entrada top-level "scoring")
+const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: S });
 
 const MODULE_ID = "plata";
 
 // Sub-tabs que renderizan un módulo completo con su PROPIO header (no mostramos
 // el header "Mi Plata" cuando uno de estos está activo, para no duplicar).
-const FOLDED_SUBS = new Set(["fiados", "prestamos", "adelantos", "activos"]);
+const FOLDED_SUBS = new Set(["fiados", "prestamos", "adelantos", "activos", "scoring"]);
 
 const TABS = [
   { id: "dashboard" as const,        label: "Dashboard",               icon: BarChart3   },
@@ -96,6 +98,7 @@ const TABS = [
   { id: "prestamos" as const,        label: "Préstamos",                icon: Banknote     },
   { id: "adelantos" as const,        label: "Adelantos",                icon: Coins        },
   { id: "activos" as const,          label: "Activos",                  icon: Construction },
+  { id: "scoring" as const,          label: "Scoring crediticio",       icon: Gauge        },
 ];
 
  
@@ -1329,6 +1332,7 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
       {sub === "prestamos" && <PrestamosModule />}
       {sub === "adelantos" && <AdelantosModule />}
       {sub === "activos" && <ActivosModule />}
+      {sub === "scoring" && <ScoringCrediticioTab />}
       </AdminTabBar>
     </div>
   );

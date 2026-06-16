@@ -32,7 +32,7 @@ const POSCajaModule           = dynamic(() => import("@/components/admin/unified
 const ComprasModule           = dynamic(() => import("@/components/admin/unified/ComprasModule"),           { loading: TabSpinner });
 const FinanzasModule          = dynamic(() => import("@/components/admin/unified/FinanzasModule"),          { loading: TabSpinner });
 const CRMClientesModule       = dynamic(() => import("@/components/admin/unified/CRMClientesModule"),       { loading: TabSpinner });
-const LeadsFunnelModule       = dynamic(() => import("@/components/admin/unified/LeadsFunnelModule"),       { loading: TabSpinner });
+// leads-funnel → sub-tab "Leads" de CRMClientesModule (ver dispatch)
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
 const DocumentosHubModule     = dynamic(() => import("@/components/admin/unified/DocumentosHubModule"),    { loading: TabSpinner });
@@ -58,7 +58,7 @@ const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/fores
 const LothLibroOperaciones      = dynamic(() => import("@/components/admin/forestal/LothLibroOperaciones"), { loading: TabSpinner });
 // ADR-128 — Especialización agrícola: Acopio & Beneficio de Cacao
 const CacaoAcopio               = dynamic(() => import("@/components/admin/cacao/CacaoAcopio"), { loading: TabSpinner });
-const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/ScoringCrediticioTab"),      { loading: TabSpinner });
+// scoring → sub-tab "Scoring crediticio" de FinanzasModule (ver dispatch)
 // devoluciones-proveedor → sub-tab "Devoluciones" de ComprasModule (era duplicado top-level)
 // store-customizer + pagina-inicio consolidados en MiTiendaHubModule (2→1)
 const MiTiendaHubModule         = dynamic(() => import("@/components/admin/unified/MiTiendaHubModule"),  { loading: TabSpinner });
@@ -221,9 +221,9 @@ export function TabRouter({
   if (tab === "plata") return <FinanzasModule key="plata" />;
 
   // ── 7. Mis Clientes ──
-  if (tab === "clientes") return <CRMClientesModule />;
+  if (tab === "clientes") return <CRMClientesModule key="clientes" />;
 
-  if (tab === "leads-funnel") return <LeadsFunnelModule />;
+  if (tab === "leads-funnel") return <CRMClientesModule key="leads-funnel" initialTab="leads" />;
 
   // ── Módulos adicionales ──
   if (tab === "fiados")    return <FinanzasModule key="fiados" initialTab="fiados" />;
@@ -240,7 +240,7 @@ export function TabRouter({
   if (tab === "ctp-libro-operaciones") return <CTPLibroOperaciones />;
   if (tab === "loth-libro-operaciones") return <LothLibroOperaciones />;
   if (tab === "cacao-acopio") return <CacaoAcopio />;
-  if (tab === "scoring")   return <ScoringCrediticioTab />;
+  if (tab === "scoring")   return <FinanzasModule key="scoring" initialTab="scoring" />;
   if (tab === "devoluciones-proveedor") return <ComprasModule key="devoluciones-proveedor" initialTab="devoluciones" />;
 
   // ── Documentos comerciales & SUNAT (hub consolidado — 6 sub-tabs) ──

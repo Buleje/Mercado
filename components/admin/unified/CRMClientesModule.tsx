@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import {
   Users, Star, Layers, MapPin, MessageSquare,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2, UserPlus,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -17,16 +17,22 @@ const NPSTab = dynamic(() => import("@/components/admin/NPSTab"), { loading: S }
 const AutoSegments = dynamic(() => import("@/components/admin/AutoSegments"), { loading: S });
 const CustomerGeoMap = dynamic(() => import("@/components/admin/CustomerGeoMap"), { ssr: false, loading: () => <div className="flex items-center justify-center h-96"><div className="h-6 w-6 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> });
 const MassMessageSender = dynamic(() => import("@/components/admin/MassMessageSender"), { loading: S });
+// Funnel de leads consolidado como sub-tab (era entrada top-level "leads-funnel")
+const LeadsFunnelModule = dynamic(() => import("@/components/admin/unified/LeadsFunnelModule"), { loading: S });
 
 const MODULE_ID = "clientes";
 
 const TABS = [
   { id: "crm" as const, label: "Mis clientes", icon: Users },
+  { id: "leads" as const, label: "Leads", icon: UserPlus },
   { id: "resenas" as const, label: "Opiniones", icon: Star },
   { id: "segmentos" as const, label: "Segmentos", icon: Layers },
   { id: "mapa" as const, label: "Mapa", icon: MapPin },
   { id: "mensajes" as const, label: "Mensajes masivos", icon: MessageSquare },
 ];
+
+// LeadsFunnelModule trae su propio header → ocultamos el de CRM en esa pestaña.
+const FOLDED_SUBS = new Set(["leads"]);
 
 function normalizeClientesTab(savedTab: string | null): typeof TABS[number]["id"] {
   if (savedTab === "dashboard" || savedTab === "rfm") return TABS[0].id;
@@ -58,8 +64,9 @@ function ExpandableMapSection() {
   );
 }
 
-export default function CRMClientesModule() {
+export default function CRMClientesModule({ initialTab }: { initialTab?: string } = {}) {
   const [sub, setSub] = useState(() => {
+    if (initialTab) return initialTab as typeof TABS[number]["id"];
     if (typeof window === "undefined") return TABS[0].id;
     return normalizeClientesTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
   });
@@ -67,12 +74,14 @@ export default function CRMClientesModule() {
 
   return (
     <div className="space-y-6">
+      {!FOLDED_SUBS.has(sub) && (
       <AdminModuleHeader
         eyebrow="Relaciones · CRM"
         title="Mis Clientes"
         description="Gestiona tu base de clientes, segmentación, fidelización y opiniones."
         icon={Users}
       />
+      )}
 
       <AdminTabBar
         tabs={TABS}
@@ -81,6 +90,7 @@ export default function CRMClientesModule() {
         moduleId="crm"
       >
         {sub === "crm" && <CRMTab />}
+        {sub === "leads" && <LeadsFunnelModule />}
         {sub === "resenas" && <NPSTab />}
         {sub === "segmentos" && <AutoSegments />}
         {sub === "mapa" && <ExpandableMapSection />}
