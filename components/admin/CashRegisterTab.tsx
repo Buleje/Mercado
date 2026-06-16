@@ -11,6 +11,7 @@ import {
 import dynamic from "next/dynamic";
 import { CardTitle, EmptyState, LoadingState, WarningAlert } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -1293,46 +1294,49 @@ export default function CashRegisterTab() {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Monto de apertura</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.10"
-                    value={openAmount}
-                    onChange={e => setOpenAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    autoFocus
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {[100, 200, 300, 500].map(amount => {
-                    const active = parseFloat(openAmount || "0") === amount;
-                    return (
-                      <button
-                        key={amount}
-                        type="button"
-                        onClick={() => setOpenAmount(String(amount))}
-                        className={cn(
-                          "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
-                          active
-                            ? "bg-primary text-white border-primary"
-                            : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
-                        )}
-                      >
-                        S/ {amount}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-sm text-[var(--text-tertiary)] mt-2">Dinero con el que abre la caja al empezar el día.</p>
-              </div>
+              <Field label="Monto de apertura" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
+                      <input
+                        id={id}
+                        type="number"
+                        min="0"
+                        step="0.10"
+                        value={openAmount}
+                        onChange={e => setOpenAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {[100, 200, 300, 500].map(amount => {
+                        const active = parseFloat(openAmount || "0") === amount;
+                        return (
+                          <button
+                            key={amount}
+                            type="button"
+                            onClick={() => setOpenAmount(String(amount))}
+                            className={cn(
+                              "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                              active
+                                ? "bg-primary text-white border-primary"
+                                : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
+                            )}
+                          >
+                            S/ {amount}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-sm text-[var(--text-tertiary)] mt-2">Dinero con el que abre la caja al empezar el día.</p>
+                  </>
+                )}
+              </Field>
 
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
+              <Field label={<>Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 <textarea
                   value={openNotes}
                   onChange={e => setOpenNotes(e.target.value)}
@@ -1340,7 +1344,7 @@ export default function CashRegisterTab() {
                   rows={2}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                 />
-              </div>
+              </Field>
             </div>
 
             {/* Footer */}
@@ -1467,10 +1471,10 @@ export default function CashRegisterTab() {
               {/* Denomination Helper */}
               <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
                     <Banknote className="h-4 w-4 text-primary" />
                     Contador de denominaciones
-                  </label>
+                  </span>
                   {Object.keys(denominations).length > 0 && (
                     <button
                       onClick={handleDenomReset}
@@ -1504,32 +1508,35 @@ export default function CashRegisterTab() {
                 )}
               </div>
               
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Monto contado en caja</label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.10"
-                    value={closeAmount}
-                    onChange={e => setCloseAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                    autoFocus
-                  />
-                </div>
-                {closeAmount && (
-                  <div className={cn(
-                    "mt-2 rounded-xl p-2 text-center text-xs font-bold",
-                    Number(closeAmount) - (stats?.expectedCash ?? 0) >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]"
-                  )}>
-                    Diferencia: {Number(closeAmount) - (stats?.expectedCash ?? 0) > 0 ? "+" : ""}{fmt(Number(closeAmount) - (stats?.expectedCash ?? 0))}
-                  </div>
+              <Field label="Monto contado en caja" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <>
+                    <div className="relative mt-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
+                      <input
+                        id={id}
+                        type="number"
+                        min="0"
+                        step="0.10"
+                        value={closeAmount}
+                        onChange={e => setCloseAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        autoFocus
+                      />
+                    </div>
+                    {closeAmount && (
+                      <div className={cn(
+                        "mt-2 rounded-xl p-2 text-center text-xs font-bold",
+                        Number(closeAmount) - (stats?.expectedCash ?? 0) >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]"
+                      )}>
+                        Diferencia: {Number(closeAmount) - (stats?.expectedCash ?? 0) > 0 ? "+" : ""}{fmt(Number(closeAmount) - (stats?.expectedCash ?? 0))}
+                      </div>
+                    )}
+                  </>
                 )}
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Notas (opcional)</label>
+              </Field>
+              <Field label="Notas (opcional)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input
                   type="text"
                   value={closeNotes}
@@ -1537,7 +1544,7 @@ export default function CashRegisterTab() {
                   placeholder="Observaciones"
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                 />
-              </div>
+              </Field>
             </div>
             </div>
 
@@ -1594,62 +1601,63 @@ export default function CashRegisterTab() {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Monto</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.10"
-                    value={mvAmount}
-                    onChange={e => setMvAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                  Motivo {mvType === "egreso" && <span className="text-[var(--data-error-500)]">*</span>}
-                </label>
-                <select
-                  value={mvMotivo}
-                  onChange={e => setMvMotivo(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                >
-                  {/* QA Brandon 2026-06-10 #8: motivos separados por tipo —
-                      antes la lista era única y Egreso ofrecía "Ingreso extra"
-                      (y viceversa), mezclando categorías contables. */}
-                  <option value="">Selecciona un motivo...</option>
-                  {mvType === "egreso" ? (
-                    <>
-                      <option value="Pago a proveedor">Pago a proveedor</option>
-                      <option value="Retiro personal">Retiro personal</option>
-                      <option value="Compra de insumos">Compra de insumos</option>
-                      <option value="Cambio">Cambio</option>
-                      <option value="Otro">Otro</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="Ingreso extra">Ingreso extra</option>
-                      <option value="Cobro pendiente">Cobro pendiente</option>
-                      <option value="Cambio">Cambio</option>
-                      <option value="Otro">Otro</option>
-                    </>
-                  )}
-                </select>
-                {mvType === "egreso" && !mvMotivo && !mvDescription.trim() && (
-                  <p className="text-sm text-[var(--data-error-500)] mt-1.5 font-medium">Motivo obligatorio para egresos</p>
+              <Field label="Monto" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
+                    <input
+                      id={id}
+                      type="number"
+                      min="0.01"
+                      step="0.10"
+                      value={mvAmount}
+                      onChange={e => setMvAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      autoFocus
+                    />
+                  </div>
                 )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                  Descripción <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span>
-                </label>
+              <Field label={<>Motivo {mvType === "egreso" && <span className="text-[var(--data-error-500)]">*</span>}</>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <>
+                    <select
+                      id={id}
+                      value={mvMotivo}
+                      onChange={e => setMvMotivo(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    >
+                      {/* QA Brandon 2026-06-10 #8: motivos separados por tipo —
+                          antes la lista era única y Egreso ofrecía "Ingreso extra"
+                          (y viceversa), mezclando categorías contables. */}
+                      <option value="">Selecciona un motivo...</option>
+                      {mvType === "egreso" ? (
+                        <>
+                          <option value="Pago a proveedor">Pago a proveedor</option>
+                          <option value="Retiro personal">Retiro personal</option>
+                          <option value="Compra de insumos">Compra de insumos</option>
+                          <option value="Cambio">Cambio</option>
+                          <option value="Otro">Otro</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Ingreso extra">Ingreso extra</option>
+                          <option value="Cobro pendiente">Cobro pendiente</option>
+                          <option value="Cambio">Cambio</option>
+                          <option value="Otro">Otro</option>
+                        </>
+                      )}
+                    </select>
+                    {mvType === "egreso" && !mvMotivo && !mvDescription.trim() && (
+                      <p className="text-sm text-[var(--data-error-500)] mt-1.5 font-medium">Motivo obligatorio para egresos</p>
+                    )}
+                  </>
+                )}
+              </Field>
+
+              <Field label={<>Descripción <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 <textarea
                   value={mvDescription}
                   onChange={e => setMvDescription(e.target.value)}
@@ -1657,7 +1665,7 @@ export default function CashRegisterTab() {
                   rows={2}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                 />
-              </div>
+              </Field>
             </div>
 
             {/* Footer */}
@@ -1741,10 +1749,10 @@ export default function CashRegisterTab() {
                 {/* Quick Denomination Counter */}
                 <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
+                    <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
                       <Banknote className="h-4 w-4 text-primary" />
                       Conteo rápido
-                    </label>
+                    </span>
                     {Object.keys(arqueoDenoms).length > 0 && (
                       <button
                         onClick={handleArqueoReset}
@@ -1778,22 +1786,24 @@ export default function CashRegisterTab() {
                   )}
                 </div>
                 
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Monto total verificado</label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.10"
-                      value={arqueoAmount}
-                      onChange={e => setArqueoAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                      autoFocus
-                    />
-                  </div>
-                </div>
+                <Field label="Monto total verificado" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                  {(id) => (
+                    <div className="relative mt-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
+                      <input
+                        id={id}
+                        type="number"
+                        min="0"
+                        step="0.10"
+                        value={arqueoAmount}
+                        onChange={e => setArqueoAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        autoFocus
+                      />
+                    </div>
+                  )}
+                </Field>
                 
                 {/* Difference Badge */}
                 {arqueoAmount && (
@@ -1913,10 +1923,10 @@ export default function CashRegisterTab() {
 
             {/* Billetes section */}
             <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] mb-3">
-              <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
+              <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
                 <Banknote className="h-4 w-4 text-[var(--data-success-500)]" />
                 Billetes
-              </label>
+              </span>
               <div className="space-y-2">
                 {BILLETES.map(b => (
                   <div key={b} className="flex items-center gap-3">
@@ -1943,10 +1953,10 @@ export default function CashRegisterTab() {
 
             {/* Monedas section */}
             <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] mb-3">
-              <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
+              <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
                 <DollarSign className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Monedas
-              </label>
+              </span>
               <div className="space-y-2">
                 {MONEDAS.map(m => (
                   <div key={m} className="flex items-center gap-3">
@@ -1993,37 +2003,46 @@ export default function CashRegisterTab() {
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Usa los conteos de billetes y monedas de arriba para el efectivo.</p>
               )}
               {arqueoTab === "yape" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Total en vouchers Yape</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
-                    <input type="number" min="0" step="0.10" value={arqueoYape} onChange={e => setArqueoYape(e.target.value)} placeholder="0.00"
-                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--text-primary)]" />
-                  </div>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Yape del dia</p>
-                </div>
+                <Field label="Total en vouchers Yape" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
+                  {(id) => (
+                    <>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
+                        <input id={id} type="number" min="0" step="0.10" value={arqueoYape} onChange={e => setArqueoYape(e.target.value)} placeholder="0.00"
+                          className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--text-primary)]" />
+                      </div>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Yape del dia</p>
+                    </>
+                  )}
+                </Field>
               )}
               {arqueoTab === "plin" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--data-info-500)] mb-1 block">Total en vouchers Plin</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
-                    <input type="number" min="0" step="0.10" value={arqueoPlin} onChange={e => setArqueoPlin(e.target.value)} placeholder="0.00"
-                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]" />
-                  </div>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Plin del dia</p>
-                </div>
+                <Field label="Total en vouchers Plin" labelClassName="text-xs font-bold text-[var(--data-info-500)] mb-1 block">
+                  {(id) => (
+                    <>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
+                        <input id={id} type="number" min="0" step="0.10" value={arqueoPlin} onChange={e => setArqueoPlin(e.target.value)} placeholder="0.00"
+                          className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]" />
+                      </div>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Plin del dia</p>
+                    </>
+                  )}
+                </Field>
               )}
               {arqueoTab === "tarjeta" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--data-success-500)] mb-1 block">Total en vouchers tarjeta</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
-                    <input type="number" min="0" step="0.10" value={arqueoTarjeta} onChange={e => setArqueoTarjeta(e.target.value)} placeholder="0.00"
-                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]/30" />
-                  </div>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los vouchers de tarjeta del dia</p>
-                </div>
+                <Field label="Total en vouchers tarjeta" labelClassName="text-xs font-bold text-[var(--data-success-500)] mb-1 block">
+                  {(id) => (
+                    <>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
+                        <input id={id} type="number" min="0" step="0.10" value={arqueoTarjeta} onChange={e => setArqueoTarjeta(e.target.value)} placeholder="0.00"
+                          className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]/30" />
+                      </div>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los vouchers de tarjeta del dia</p>
+                    </>
+                  )}
+                </Field>
               )}
               {/* Comparacion por metodo */}
               {(Number(arqueoYape) > 0 || Number(arqueoPlin) > 0 || Number(arqueoTarjeta) > 0) && (
@@ -2052,10 +2071,10 @@ export default function CashRegisterTab() {
 
             {/* Mejora 10: Foto de evidencia */}
             <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] mb-3">
-              <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
+              <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
                 <Camera className="h-4 w-4 text-[var(--text-secondary)]" />
                 Foto del cajon (opcional, recomendado)
-              </label>
+              </span>
               {arqueoFoto ? (
                 <div className="relative inline-block">
                   <Image src={arqueoFoto} alt="Foto del cajon" width={200} height={120} className="object-cover rounded-lg border border-[var(--rule-base)]" unoptimized />

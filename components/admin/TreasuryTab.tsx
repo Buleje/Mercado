@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 
 import { useState } from "react";
 import {
@@ -181,26 +182,22 @@ export default function TreasuryTab() {
             <button onClick={() => setShowNewAccount(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Nombre</label>
+            <Field label="Nombre" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="text" value={accForm.name} onChange={e => setAccForm(p => ({ ...p, name: e.target.value }))} placeholder="BCP Cuenta Corriente" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Banco</label>
+            </Field>
+            <Field label="Banco" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={accForm.bank} onChange={e => setAccForm(p => ({ ...p, bank: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Número (últimos 4)</label>
+            </Field>
+            <Field label="Número (últimos 4)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="text" value={accForm.accountNumber} onChange={e => setAccForm(p => ({ ...p, accountNumber: e.target.value }))} placeholder="•••• 0000" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Saldo actual (S/)</label>
+            </Field>
+            <Field label="Saldo actual (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="number" value={accForm.balance} onChange={e => setAccForm(p => ({ ...p, balance: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
+            </Field>
             <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Color</label>
+              <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Color</span>
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {COLORS.map(c => (
                   <button key={c} onClick={() => setAccForm(p => ({ ...p, color: c }))} className={cn("w-7 h-7 rounded-full border-2 transition-all", accForm.color === c ? "border-gray-700" : "border-transparent")} style={{ backgroundColor: c }} />
@@ -241,27 +238,23 @@ export default function TreasuryTab() {
         {showNewTxn && (
           <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface/40 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Cuenta</label>
+              <Field label="Cuenta" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <select value={txnForm.accountId} onChange={e => setTxnForm(p => ({ ...p, accountId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Tipo</label>
+              </Field>
+              <Field label="Tipo" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <select value={txnForm.type} onChange={e => setTxnForm(p => ({ ...p, type: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   <option value="credito">Crédito (+)</option>
                   <option value="debito">Débito (−)</option>
                 </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Descripción</label>
+              </Field>
+              <Field label="Descripción" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <input type="text" value={txnForm.description} onChange={e => setTxnForm(p => ({ ...p, description: e.target.value }))} placeholder="Concepto..." className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Monto</label>
+              </Field>
+              <Field label="Monto" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <input type="number" value={txnForm.amount} onChange={e => setTxnForm(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-              </div>
+              </Field>
               <div className="flex flex-wrap items-end gap-2">
                 <button onClick={handleCreateTxn} className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90">Registrar</button>
                 <button onClick={() => setShowNewTxn(false)} className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>

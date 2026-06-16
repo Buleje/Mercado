@@ -21,6 +21,7 @@ const TurnosChart = dynamic(() => import("./TurnosChart"), {
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -908,32 +909,35 @@ export default function TurnosModule() {
               </div>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cajero asignado</label>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedCajero}
-                    onChange={e => setSelectedCajero(e.target.value)}
-                    className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  >
-                    <option value="">Yo mismo (usuario actual)</option>
-                    {cajeros.map(c => (
-                      <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => { setCreateCajeroError(null); setShowCreateCajero(true); }}
-                    title="Crear nueva cajera (sin salir de turnos)"
-                    className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold whitespace-nowrap transition-colors"
-                  >
-                    + Nueva
-                  </button>
-                </div>
-                {cajerosLoading && <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cargando cajeros...</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Efectivo inicial en caja</label>
+              <Field label="Cajero asignado" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <>
+                    <div className="flex gap-2">
+                      <select
+                        id={id}
+                        value={selectedCajero}
+                        onChange={e => setSelectedCajero(e.target.value)}
+                        className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      >
+                        <option value="">Yo mismo (usuario actual)</option>
+                        {cajeros.map(c => (
+                          <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => { setCreateCajeroError(null); setShowCreateCajero(true); }}
+                        title="Crear nueva cajera (sin salir de turnos)"
+                        className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold whitespace-nowrap transition-colors"
+                      >
+                        + Nueva
+                      </button>
+                    </div>
+                    {cajerosLoading && <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cargando cajeros...</p>}
+                  </>
+                )}
+              </Field>
+              <Field label="Efectivo inicial en caja" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 <input
                   type="number"
                   step="0.01"
@@ -944,7 +948,7 @@ export default function TurnosModule() {
                   className="w-full h-11 px-4 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-lg font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                 />
                 <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Dinero que abre en la caja al inicio del turno.</p>
-              </div>
+              </Field>
             </div>
             <div className="mt-5">
               <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Montos rápidos</p>
@@ -1394,8 +1398,7 @@ export default function TurnosModule() {
               </div>
 
               <div className="px-6 py-5 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Nombre completo</label>
+                <Field label="Nombre completo" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroName}
@@ -1404,9 +1407,8 @@ export default function TurnosModule() {
                     autoFocus
                     className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Usuario (para iniciar sesión)</label>
+                </Field>
+                <Field label="Usuario (para iniciar sesión)" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroUsername}
@@ -1416,9 +1418,8 @@ export default function TurnosModule() {
                     className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Solo letras, números, puntos y guión bajo · 3-32 caracteres</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Contraseña temporal</label>
+                </Field>
+                <Field label="Contraseña temporal" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroPassword}
@@ -1428,7 +1429,7 @@ export default function TurnosModule() {
                     className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Compártela con la cajera. Ella podrá cambiarla luego en su perfil.</p>
-                </div>
+                </Field>
 
                 {createCajeroError && (
                   <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
@@ -1517,7 +1518,7 @@ export default function TurnosModule() {
                 {/* Conteo efectivo final — denominación (default) o manual */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-[var(--text-secondary)]">Conteo de efectivo final</label>
+                    <span className="text-sm font-semibold text-[var(--text-secondary)]">Conteo de efectivo final</span>
                     <div className="inline-flex rounded-lg bg-[var(--surface-sunken)] dark:bg-white/5 p-0.5 text-xs font-semibold">
                       <button
                         type="button"
@@ -1676,8 +1677,7 @@ export default function TurnosModule() {
                 })()}
 
                 {/* Notas */}
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
+                <Field label={<>Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <textarea
                     value={cierreNotas}
                     onChange={e => setCierreNotas(e.target.value)}
@@ -1685,7 +1685,7 @@ export default function TurnosModule() {
                     rows={2}
                     className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                   />
-                </div>
+                </Field>
 
                 {closeError && (
                   <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
@@ -1785,10 +1785,7 @@ export default function TurnosModule() {
                       : "Falta dinero en caja. ¿Devolución, propina, error de conteo, o se gastó en algo?"}
                   </p>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                      Causa de la diferencia <span className="text-[var(--data-error-500)]">*</span>
-                    </label>
+                  <Field label={<>Causa de la diferencia <span className="text-[var(--data-error-500)]">*</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                     <textarea
                       value={notaDiffAnormal}
                       onChange={e => { setNotaDiffAnormal(e.target.value); if (closeError) setCloseError(null); }}
@@ -1800,7 +1797,7 @@ export default function TurnosModule() {
                     <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
                       Mínimo 8 caracteres. Queda en el log del turno para auditoría. <span className="opacity-70">(Distinta del campo Notas del cierre.)</span>
                     </p>
-                  </div>
+                  </Field>
 
                   {closeError && (
                     <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">

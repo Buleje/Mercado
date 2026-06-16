@@ -9,6 +9,7 @@ import {
   Eye, EyeOff, Save, BookOpen, Clock, Users, BarChart3,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -404,45 +405,37 @@ export default function RecetarioAdminTab() {
                   {/* A) Info Básica */}
                   {modalTab === "info" && (
                     <div className="space-y-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre *</label>
+                      <Field label="Nombre *" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Ceviche Clasico" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripcion</label>
+                      </Field>
+                      <Field label="Descripcion" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripcion de la receta..." rows={3} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </div>
+                      </Field>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Emoji</label>
+                        <Field label="Emoji" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="🍲" maxLength={2} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tiempo (min)</label>
+                        </Field>
+                        <Field label="Tiempo (min)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input type="number" value={tiempoMinutos} onChange={e => setTiempoMinutos(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Porciones</label>
+                        </Field>
+                        <Field label="Porciones" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input type="number" value={porciones} onChange={e => setPorciones(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Dificultad</label>
+                        </Field>
+                        <Field label="Dificultad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <select value={dificultad} onChange={e => setDificultad(e.target.value as typeof dificultad)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                             {DIFICULTADES.map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
-                        </div>
+                        </Field>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Categoria</label>
+                        <Field label="Categoria" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                             {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">URL Video YouTube (opcional)</label>
+                        </Field>
+                        <Field label="URL Video YouTube (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
+                        </Field>
                       </div>
                     </div>
                   )}
@@ -462,63 +455,68 @@ export default function RecetarioAdminTab() {
                       {ingredientes.map((ing, idx) => (
                         <div key={idx} className="bg-gray-50 rounded-xl p-3 space-y-2">
                           <div className="flex gap-2 items-start">
-                            <div className="flex-1">
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Nombre del ingrediente</label>
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  value={ing.nombre}
-                                  onChange={e => updateIngrediente(idx, "nombre", e.target.value)}
-                                  placeholder="Buscar producto o escribir..."
-                                  className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
-                                  list={`prod-list-${idx}`}
-                                />
-                                <datalist id={`prod-list-${idx}`}>
-                                  {products
-                                    .filter(p => p.name.toLowerCase().includes((ing.nombre || "").toLowerCase()))
-                                    .slice(0, 8)
-                                    .map(p => (
-                                      <option key={p.id} value={p.name} onClick={() => selectProduct(idx, p)} />
-                                    ))}
-                                </datalist>
-                              </div>
-                              {/* Quick product select buttons */}
-                              {ing.nombre && ing.nombre.length >= 2 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {products
-                                    .filter(p => p.name.toLowerCase().includes(ing.nombre.toLowerCase()))
-                                    .slice(0, 3)
-                                    .map(p => (
-                                      <button
-                                        key={p.id}
-                                        onClick={() => selectProduct(idx, p)}
-                                        className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-[var(--accent-soft)] transition-colors"
-                                      >
-                                        {p.name} — S/{Number(p.price).toFixed(2)}
-                                      </button>
-                                    ))}
-                                </div>
+                            <Field
+                              label="Nombre del ingrediente"
+                              labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5"
+                              className="flex-1"
+                            >
+                              {(id) => (
+                                <>
+                                  <div className="relative">
+                                    <input
+                                      id={id}
+                                      type="text"
+                                      value={ing.nombre}
+                                      onChange={e => updateIngrediente(idx, "nombre", e.target.value)}
+                                      placeholder="Buscar producto o escribir..."
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                      list={`prod-list-${idx}`}
+                                    />
+                                    <datalist id={`prod-list-${idx}`}>
+                                      {products
+                                        .filter(p => p.name.toLowerCase().includes((ing.nombre || "").toLowerCase()))
+                                        .slice(0, 8)
+                                        .map(p => (
+                                          <option key={p.id} value={p.name} onClick={() => selectProduct(idx, p)} />
+                                        ))}
+                                    </datalist>
+                                  </div>
+                                  {/* Quick product select buttons */}
+                                  {ing.nombre && ing.nombre.length >= 2 && (
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {products
+                                        .filter(p => p.name.toLowerCase().includes(ing.nombre.toLowerCase()))
+                                        .slice(0, 3)
+                                        .map(p => (
+                                          <button
+                                            key={p.id}
+                                            onClick={() => selectProduct(idx, p)}
+                                            className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-[var(--accent-soft)] transition-colors"
+                                          >
+                                            {p.name} — S/{Number(p.price).toFixed(2)}
+                                          </button>
+                                        ))}
+                                    </div>
+                                  )}
+                                </>
                               )}
-                            </div>
+                            </Field>
                             <button onClick={() => removeIngrediente(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors mt-4 shrink-0">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
                           <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
+                            <Field label="Cantidad" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                               <input type="number" step="0.01" min="0" value={ing.cantidad} onChange={e => updateIngrediente(idx, "cantidad", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                            </div>
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
+                            </Field>
+                            <Field label="Unidad" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                               <select value={ing.unidad} onChange={e => updateIngrediente(idx, "unidad", e.target.value)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30">
                                 {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
                               </select>
-                            </div>
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Precio (S/)</label>
+                            </Field>
+                            <Field label="Precio (S/)" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                               <input type="number" step="0.01" min="0" value={ing.precio} onChange={e => updateIngrediente(idx, "precio", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                            </div>
+                            </Field>
                           </div>
                         </div>
                       ))}

@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 import { useState, useMemo, useEffect, startTransition } from "react";
@@ -64,6 +65,7 @@ const TYPE_LABELS: Record<WarehouseRecord["type"], string> = {
 };
 
 const EMPTY_TRANSFER = { fromId: "", toId: "", productId: "", quantity: "", unit: "unidad", notes: "" };
+const FIELD_LABEL = "text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1";
 
 function ModuleTooltip() {
   const [open, setOpen] = useState(false);
@@ -431,50 +433,54 @@ export default function WarehouseTab() {
             <button onClick={() => setShowTransferForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Origen</label>
+            <Field label="Origen" labelClassName={FIELD_LABEL}>
               <select value={transferForm.fromId} onChange={e => setTransferForm(p => ({ ...p, fromId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {warehouses.filter(w => w.active).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Destino</label>
+            </Field>
+            <Field label="Destino" labelClassName={FIELD_LABEL}>
               <select value={transferForm.toId} onChange={e => setTransferForm(p => ({ ...p, toId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {warehouses.filter(w => w.active && w.id !== transferForm.fromId).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
-            </div>
-            <div className="sm:col-span-1">
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Producto</label>
-              <input
-                type="text"
-                value={productSearch}
-                onChange={e => { setProductSearch(e.target.value); setTransferForm(p => ({ ...p, productId: "" })); }}
-                placeholder="Buscar producto…"
-                className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1"
-              />
-              <select
-                value={transferForm.productId}
-                onChange={e => { setTransferForm(p => ({ ...p, productId: e.target.value })); setProductSearch(""); }}
-                className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-                size={Math.min(filteredOriginProducts.length + 1, 5)}
-              >
-                <option value="">-- Seleccionar --</option>
-                {filteredOriginProducts.map(s => (
-                  <option key={s.productId} value={s.productId}>
-                    {s.productName} ({s.quantity} {s.unit})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
+            </Field>
+            <Field label="Producto" labelClassName={FIELD_LABEL} className="sm:col-span-1">
+              {(id) => (
+                <>
+                  <input
+                    type="text"
+                    value={productSearch}
+                    onChange={e => { setProductSearch(e.target.value); setTransferForm(p => ({ ...p, productId: "" })); }}
+                    placeholder="Buscar producto…"
+                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1"
+                  />
+                  <select
+                    id={id}
+                    value={transferForm.productId}
+                    onChange={e => { setTransferForm(p => ({ ...p, productId: e.target.value })); setProductSearch(""); }}
+                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                    size={Math.min(filteredOriginProducts.length + 1, 5)}
+                  >
+                    <option value="">-- Seleccionar --</option>
+                    {filteredOriginProducts.map(s => (
+                      <option key={s.productId} value={s.productId}>
+                        {s.productName} ({s.quantity} {s.unit})
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+            </Field>
+            <Field
+              label={<>
                 Cantidad
                 {transferForm.productId && (() => {
                   const sel = originProducts.find(s => String(s.productId) === String(transferForm.productId));
                   return sel ? <span className="ml-2 text-[var(--text-tertiary)] dark:text-muted font-normal">disponible: {sel.quantity} {sel.unit}</span> : null;
                 })()}
-              </label>
-              {(() => {
+              </>}
+              labelClassName={FIELD_LABEL}
+            >
+              {(id) => {
                 const sel = originProducts.find(s => String(s.productId) === String(transferForm.productId));
                 const maxQty = sel?.quantity ?? undefined;
                 const qty = Number(transferForm.quantity);
@@ -482,6 +488,7 @@ export default function WarehouseTab() {
                 return (
                   <>
                     <input
+                      id={id}
                       type="number"
                       value={transferForm.quantity}
                       onChange={e => setTransferForm(p => ({ ...p, quantity: e.target.value }))}
@@ -494,18 +501,16 @@ export default function WarehouseTab() {
                     )}
                   </>
                 );
-              })()}
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Unidad</label>
+              }}
+            </Field>
+            <Field label="Unidad" labelClassName={FIELD_LABEL}>
               <select value={transferForm.unit} onChange={e => setTransferForm(p => ({ ...p, unit: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {["unidad", "kg", "litro", "caja", "bolsa", "saco", "lata", "botella"].map(u => <option key={u} value={u}>{u}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Notas</label>
+            </Field>
+            <Field label="Notas" labelClassName={FIELD_LABEL}>
               <input type="text" value={transferForm.notes} onChange={e => setTransferForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones..." className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowTransferForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
@@ -525,32 +530,26 @@ export default function WarehouseTab() {
             <button onClick={() => setShowNewWhForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Nombre</label>
+            <Field label="Nombre" labelClassName={FIELD_LABEL} className="sm:col-span-2">
               <input type="text" value={newWhForm.name} onChange={e => setNewWhForm(p => ({ ...p, name: e.target.value }))} placeholder="Depósito Norte" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Código</label>
+            </Field>
+            <Field label="Código" labelClassName={FIELD_LABEL}>
               <input type="text" value={newWhForm.code} onChange={e => setNewWhForm(p => ({ ...p, code: e.target.value.toUpperCase() }))} placeholder="ALM-002" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Tipo</label>
+            </Field>
+            <Field label="Tipo" labelClassName={FIELD_LABEL}>
               <select value={newWhForm.type} onChange={e => setNewWhForm(p => ({ ...p, type: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Dirección / Ubicación</label>
+            </Field>
+            <Field label="Dirección / Ubicación" labelClassName={FIELD_LABEL} className="sm:col-span-2">
               <input type="text" value={newWhForm.location} onChange={e => setNewWhForm(p => ({ ...p, location: e.target.value }))} placeholder="Av. Principal 123" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Responsable</label>
+            </Field>
+            <Field label="Responsable" labelClassName={FIELD_LABEL}>
               <input type="text" value={newWhForm.manager} onChange={e => setNewWhForm(p => ({ ...p, manager: e.target.value }))} placeholder="Nombre del encargado" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Capacidad (u.)</label>
+            </Field>
+            <Field label="Capacidad (u.)" labelClassName={FIELD_LABEL}>
               <input type="number" value={newWhForm.capacity} onChange={e => setNewWhForm(p => ({ ...p, capacity: e.target.value }))} placeholder="10000" min="1" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowNewWhForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>

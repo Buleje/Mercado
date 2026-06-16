@@ -13,6 +13,7 @@ import {
   Beaker, Plus, ChevronRight, Sun, Maximize2, Minimize2, LayoutDashboard } from "@buleje/design-system/icons";
 import { CardTitle, ErrorAlert, SectionTitle, WarningAlert } from "@buleje/design-system";
 import { PeriodFilter } from "@buleje/design-system/dashboard";
+import { Field } from "@/components/admin/shared/Field";
 import type { DateRange, Period as DSPeriod } from "@buleje/design-system/dashboard";
 import { cn, exportToCSV, startOfLimaDay, startOfLimaDayDaysAgo } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -2199,10 +2200,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${escapeHtml(String(o.notes))}</p>` :
                 <div className="px-3 sm:px-6 py-5 space-y-4">
                   <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Define tus objetivos para {new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" })}</p>
                   <div className="grid gap-2 sm:gap-4">
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
-                        <DollarSign className="h-3.5 w-3.5" /> Ingresos mensuales (S/)
-                      </label>
+                    <Field label={<><DollarSign className="h-3.5 w-3.5" /> Ingresos mensuales (S/)</>} labelClassName="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
                       <input
                         type="number"
                         min={0}
@@ -2212,11 +2210,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${escapeHtml(String(o.notes))}</p>` :
                         placeholder="5000"
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
                       />
-                    </div>
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
-                        <ShoppingCart className="h-3.5 w-3.5" /> Pedidos del mes
-                      </label>
+                    </Field>
+                    <Field label={<><ShoppingCart className="h-3.5 w-3.5" /> Pedidos del mes</>} labelClassName="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
                       <input
                         type="number"
                         min={0}
@@ -2226,11 +2221,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${escapeHtml(String(o.notes))}</p>` :
                         placeholder="100"
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
                       />
-                    </div>
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
-                        <Users className="h-3.5 w-3.5" /> Clientes atendidos
-                      </label>
+                    </Field>
+                    <Field label={<><Users className="h-3.5 w-3.5" /> Clientes atendidos</>} labelClassName="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
                       <input
                         type="number"
                         min={0}
@@ -2240,11 +2232,8 @@ ${o.notes ? `<hr><p style="font-size:11px">${escapeHtml(String(o.notes))}</p>` :
                         placeholder="50"
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
                       />
-                    </div>
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
-                        <Receipt className="h-3.5 w-3.5" /> Ticket promedio (S/)
-                      </label>
+                    </Field>
+                    <Field label={<><Receipt className="h-3.5 w-3.5" /> Ticket promedio (S/)</>} labelClassName="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
                       <input
                         type="number"
                         min={0}
@@ -2254,7 +2243,7 @@ ${o.notes ? `<hr><p style="font-size:11px">${escapeHtml(String(o.notes))}</p>` :
                         placeholder="50"
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm"
                       />
-                    </div>
+                    </Field>
                   </div>
                   <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                     <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"><strong>Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
@@ -2777,33 +2766,28 @@ ${o.notes ? `<hr><p style="font-size:11px">${escapeHtml(String(o.notes))}</p>` :
                   <button onClick={() => setShowABTestModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
                 <div className="px-3 sm:px-6 py-5 space-y-4">
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nombre del test</label>
+                  <Field label="Nombre del test" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                     <input type="text" value={abTestForm.name} onChange={e => setAbTestForm(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Ej: Banner promocional vs. Sin banner"
                       className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Hipótesis</label>
+                  </Field>
+                  <Field label="Hipótesis" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                     <textarea value={abTestForm.hypothesis} onChange={e => setAbTestForm(prev => ({ ...prev, hypothesis: e.target.value }))}
                       placeholder="Ej: Agregar un banner con descuento aumentará la conversión en 15%"
                       rows={2}
                       className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm resize-none" />
-                  </div>
+                  </Field>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Variante A (Control)</label>
+                    <Field label="Variante A (Control)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                       <input type="text" value={abTestForm.variantA} onChange={e => setAbTestForm(prev => ({ ...prev, variantA: e.target.value }))}
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Variante B</label>
+                    </Field>
+                    <Field label="Variante B" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                       <input type="text" value={abTestForm.variantB} onChange={e => setAbTestForm(prev => ({ ...prev, variantB: e.target.value }))}
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
-                    </div>
+                    </Field>
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Métrica a medir</label>
+                  <Field label="Métrica a medir" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                     <select value={abTestForm.metric} onChange={e => setAbTestForm(prev => ({ ...prev, metric: e.target.value as "revenue"|"conversion"|"aov"|"retention" }))}
                       className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm">
                       <option value="conversion">Tasa de conversión</option>
@@ -2811,18 +2795,16 @@ ${o.notes ? `<hr><p style="font-size:11px">${escapeHtml(String(o.notes))}</p>` :
                       <option value="aov">Valor promedio de orden</option>
                       <option value="retention">Retención</option>
                     </select>
-                  </div>
+                  </Field>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Fecha inicio</label>
+                    <Field label="Fecha inicio" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                       <input type="date" value={abTestForm.startDate} onChange={e => setAbTestForm(prev => ({ ...prev, startDate: e.target.value }))}
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Fecha fin</label>
+                    </Field>
+                    <Field label="Fecha fin" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                       <input type="date" value={abTestForm.endDate} onChange={e => setAbTestForm(prev => ({ ...prev, endDate: e.target.value }))}
                         className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--text-primary)] outline-none text-sm" />
-                    </div>
+                    </Field>
                   </div>
                   <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                     <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"><strong>Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>

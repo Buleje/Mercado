@@ -11,6 +11,7 @@ import {
   BookOpen, BarChart3, ChefHat,
 } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import { Field } from "@/components/admin/shared/Field";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import type { RecetaCostBreakdown } from "@/lib/types/recetas";
@@ -973,8 +974,7 @@ export default function RecetasModule() {
                 {/* Step 1: Nombre */}
                 {step === 1 && (
                   <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre de la receta</label>
+                    <Field label="Nombre de la receta" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="text"
                         value={newName}
@@ -982,9 +982,8 @@ export default function RecetasModule() {
                         placeholder="Ej: Pan de yuca"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripción (opcional)</label>
+                    </Field>
+                    <Field label="Descripción (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <textarea
                         value={newDesc}
                         onChange={e => setNewDesc(e.target.value)}
@@ -992,9 +991,8 @@ export default function RecetasModule() {
                         rows={2}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">ID Producto final (opcional)</label>
+                    </Field>
+                    <Field label="ID Producto final (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="number"
                         value={newProductoId}
@@ -1002,7 +1000,7 @@ export default function RecetasModule() {
                         placeholder="ID del producto resultante"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
-                    </div>
+                    </Field>
                   </div>
                 )}
 
@@ -1023,8 +1021,7 @@ export default function RecetasModule() {
                     )}
                     {newIngredientes.map((ing, i) => (
                       <div key={i} className="flex gap-2 items-end bg-gray-50 rounded-xl p-3">
-                        <div className="flex-1">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">ID Producto</label>
+                        <Field className="flex-1" label="ID Producto" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="number"
                             value={ing.productoId}
@@ -1032,9 +1029,8 @@ export default function RecetasModule() {
                             placeholder="ID"
                             className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
+                        </Field>
+                        <Field className="w-20" label="Cantidad" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="number"
                             step="0.01"
@@ -1043,9 +1039,8 @@ export default function RecetasModule() {
                             placeholder="0"
                             className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
+                        </Field>
+                        <Field className="w-20" label="Unidad" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="text"
                             value={ing.unidad}
@@ -1053,7 +1048,7 @@ export default function RecetasModule() {
                             placeholder="kg"
                             className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
-                        </div>
+                        </Field>
                         <button
                           onClick={() => removeIngrediente(i)}
                           className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
@@ -1148,8 +1143,7 @@ export default function RecetasModule() {
                 </p>
 
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cantidad a producir</label>
+                  <Field label="Cantidad a producir" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="number"
                       min="1"
@@ -1158,7 +1152,7 @@ export default function RecetasModule() {
                       placeholder="Ej: 10"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
-                  </div>
+                  </Field>
 
                   {/* Cost estimate card */}
                   {(() => {
@@ -1242,8 +1236,7 @@ export default function RecetasModule() {
                     );
                   })()}
 
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+                  <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="text"
                       value={producirNotas}
@@ -1251,7 +1244,7 @@ export default function RecetasModule() {
                       placeholder="Observaciones..."
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
-                  </div>
+                  </Field>
                 </div>
 
                 {producirError && (
