@@ -563,6 +563,9 @@ void ComprasDashboard;
 
 // ── Componente principal ────────────────────────────────────────────────────
 
+// DevolucionesProveedorModule trae su propio header → ocultamos el de Compras.
+const FOLDED_SUBS = new Set(["devoluciones"]);
+
 export default function ComprasModule({ initialTab }: { initialTab?: string } = {}) {
   const [sub, setSub] = useState(() => {
     if (initialTab) return initialTab;
@@ -606,6 +609,7 @@ export default function ComprasModule({ initialTab }: { initialTab?: string } = 
 
   return (
     <div className="space-y-4">
+      {!FOLDED_SUBS.has(sub) && (
       <AdminModuleHeader
         title="Compras"
         description="Pedidos a proveedores, recepción y cuentas por pagar"
@@ -613,6 +617,7 @@ export default function ComprasModule({ initialTab }: { initialTab?: string } = 
         bgTint="bg-amber-50"
         iconColorClass="text-[var(--data-warning-600)]"
       />
+      )}
 
 
 
