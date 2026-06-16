@@ -499,7 +499,7 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex items-start gap-3 cursor-pointer">
+    <span className="flex items-start gap-3 cursor-pointer">
       <button
         type="button"
         role="switch"
@@ -521,6 +521,6 @@ function ToggleRow({
         <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight">{label}</p>
         <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">{description}</p>
       </div>
-    </label>
+    </span>
   );
 }

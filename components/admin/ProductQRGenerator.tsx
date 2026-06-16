@@ -1,6 +1,6 @@
 "use client";
 import { SectionTitle } from "@buleje/design-system";
- 
+import { Field } from "@/components/admin/shared/Field";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
@@ -228,49 +228,49 @@ export default function ProductQRGenerator() {
         {/* Left: Controls */}
         <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {/* Search */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
-              Buscar producto
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Escribe el nombre del producto..."
-                className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-            {search && (
-              <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
-                {loading ? (
-                  <p className="p-3 text-sm text-[var(--text-secondary)]">Cargando...</p>
-                ) : filtered.length === 0 ? (
-                  <p className="p-3 text-sm text-[var(--text-secondary)]">Sin resultados</p>
-                ) : (
-                  filtered.slice(0, 8).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => {
-                        setSelected(p);
-                        setSearch(p.name);
-                      }}
-                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-[var(--surface-sunken)]"
-                    >
-                      <span className="text-[var(--text-primary)]">{p.name}</span>
-                      <span className="font-medium text-primary">S/ {p.price?.toFixed(2)}</span>
-                    </button>
-                  ))
-                )}
+          <Field label="Buscar producto" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
+            {(id) => (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                <input
+                  id={id}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Escribe el nombre del producto..."
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+                />
               </div>
             )}
-          </div>
+          </Field>
+          {search && (
+            <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900">
+              {loading ? (
+                <p className="p-3 text-sm text-[var(--text-secondary)]">Cargando...</p>
+              ) : filtered.length === 0 ? (
+                <p className="p-3 text-sm text-[var(--text-secondary)]">Sin resultados</p>
+              ) : (
+                filtered.slice(0, 8).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setSelected(p);
+                      setSearch(p.name);
+                    }}
+                    className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-[var(--surface-sunken)]"
+                  >
+                    <span className="text-[var(--text-primary)]">{p.name}</span>
+                    <span className="font-medium text-primary">S/ {p.price?.toFixed(2)}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
 
           {/* Size selector */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+            <span className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
               Tamano del QR
-            </label>
+            </span>
             <div className="flex gap-2">
               {(["small", "medium", "large"] as QRSize[]).map((s) => (
                 <button

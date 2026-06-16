@@ -140,7 +140,7 @@ export default function BundlesTab() {
 
             {/* Product picker */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Productos del combo</label>
+              <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Productos del combo</span>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                 <input value={prodSearch} onChange={e => setProdSearch(e.target.value)} placeholder="Buscar producto para agregar..." className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />

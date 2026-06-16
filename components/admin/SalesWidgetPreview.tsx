@@ -14,6 +14,7 @@ import {
   Battery,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -252,10 +253,7 @@ export default function SalesWidgetPreview() {
           <PhoneMockup stats={{ ...stats, dailyGoal: goalInput }} />
 
           {/* Goal configurator */}
-          <div className="w-full max-w-56">
-            <label className="mb-1 block text-xs font-medium text-[var(--text-tertiary)]">
-              Meta diaria (S/)
-            </label>
+          <Field label="Meta diaria (S/)" labelClassName="mb-1 block text-xs font-medium text-[var(--text-tertiary)]" className="w-full max-w-56">
             <input
               type="number"
               min={100}
@@ -272,7 +270,7 @@ export default function SalesWidgetPreview() {
                 "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               )}
             />
-          </div>
+          </Field>
         </div>
 
         {/* Instructions */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from '@/components/admin/shared/Field';
 import { LoadingState } from "@buleje/design-system";
 import {
   Zap, Banknote, Smartphone, CreditCard, CheckCircle,
@@ -199,21 +200,25 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
 
         {/* Amount input */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block">Monto a cobrar</label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-[var(--text-tertiary)] select-none">S/</span>
-            <input
-              ref={inputRef}
-              type="number"
-              min="0.01"
-              step="0.10"
-              value={amount}
-              onChange={(e) => { setAmount(e.target.value); setError(""); }}
-              onKeyDown={handleKeyDown}
-              placeholder="0.00"
-              className="w-full pl-12 pr-4 py-4 text-3xl font-extrabold rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary transition-colors text-center"
-            />
-          </div>
+          <Field label="Monto a cobrar" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block">
+            {(id) => (
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-[var(--text-tertiary)] select-none">S/</span>
+                <input
+                  id={id}
+                  ref={inputRef}
+                  type="number"
+                  min="0.01"
+                  step="0.10"
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); setError(""); }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="0.00"
+                  className="w-full pl-12 pr-4 py-4 text-3xl font-extrabold rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary transition-colors text-center"
+                />
+              </div>
+            )}
+          </Field>
 
           {/* Quick amount chips */}
           <div className="flex flex-wrap gap-1.5">
@@ -236,8 +241,7 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
         </div>
 
         {/* Optional note */}
-        <div>
-          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Descripcion (opcional)</label>
+        <Field label="Descripcion (opcional)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
           <input
             type="text"
             value={note}
@@ -247,11 +251,11 @@ export default function QuickChargeMode({ className }: QuickChargeModeProps) {
             maxLength={80}
             className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary"
           />
-        </div>
+        </Field>
 
         {/* Payment method */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block">Metodo de pago</label>
+          <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block">Metodo de pago</span>
           <div className="grid grid-cols-4 gap-1.5">
             {PAYMENT_OPTIONS.map(({ key, label, icon: Icon }) => (
               <button

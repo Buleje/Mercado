@@ -3,6 +3,7 @@
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { Field } from "@/components/admin/shared/Field";
 import {
   Save, Eye, Loader2, Check, GripVertical,
   Megaphone, Layout, Grid3x3, ShoppingBag, Tag,
@@ -556,7 +557,7 @@ function SectionEditorModal({
           <div className="overflow-y-auto p-6 space-y-5 border-b lg:border-b-0 lg:border-r-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
             {/* Título con sugerencias */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-[var(--text-primary)]">Título de la sección</label>
+              <Field label="Título de la sección" labelClassName="text-sm font-bold text-[var(--text-primary)]">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -564,6 +565,7 @@ function SectionEditorModal({
                 maxLength={50}
                 className="w-full px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
+              </Field>
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted">Aparece arriba de la sección en tu tienda.</p>
                 <span className="text-xs font-mono text-muted shrink-0">{(title || "").length}/50</span>
@@ -686,7 +688,7 @@ function SectionEditorModal({
             {/* Search bar grande */}
             <div className="p-6 pb-4 space-y-3 shrink-0 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
-                <label className="text-sm font-bold text-[var(--text-primary)]">Catálogo de productos</label>
+                <span className="text-sm font-bold text-[var(--text-primary)]">Catálogo de productos</span>
                 <p className="text-xs text-muted mt-0.5">Click en un producto para agregarlo a la sección.</p>
               </div>
               <div className="relative">

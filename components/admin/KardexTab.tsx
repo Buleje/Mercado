@@ -297,7 +297,7 @@ export default function KardexTab() {
       </div>
 
       <div className="rounded-xl border border-[var(--rule-base)] bg-white p-4 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
-        <label className="mb-2 block text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar producto</label>
+        <span className="mb-2 block text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar producto</span>
 
         {/* Selected product display */}
         {product && !dropdownOpen && (

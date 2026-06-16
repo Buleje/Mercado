@@ -2,6 +2,7 @@
 
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from '@/components/admin/shared/Field';
 import { useState, useEffect, useCallback } from "react";
 import {
   Users,
@@ -287,8 +288,7 @@ export default function TeamTab() {
         <div className="p-5 space-y-4">
             {/* Username (only on create) */}
             {!editingId && (
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted uppercase">Usuario</label>
+              <Field label="Usuario" labelClassName="text-xs font-semibold text-muted uppercase" className="space-y-1">
                 <input
                   type="text"
                   value={form.username}
@@ -296,12 +296,11 @@ export default function TeamTab() {
                   placeholder="ej: cajero1"
                   className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
                 />
-              </div>
+              </Field>
             )}
 
             {/* Name */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">Nombre completo</label>
+            <Field label="Nombre completo" labelClassName="text-xs font-semibold text-muted uppercase" className="space-y-1">
               <input
                 type="text"
                 value={form.name}
@@ -309,11 +308,10 @@ export default function TeamTab() {
                 placeholder="ej: María García"
                 className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
               />
-            </div>
+            </Field>
 
             {/* Role */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">Rol</label>
+            <Field label="Rol" labelClassName="text-xs font-semibold text-muted uppercase" className="space-y-1">
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
@@ -323,30 +321,34 @@ export default function TeamTab() {
                 <option value="cajero">Cajero — POS + pedidos</option>
                 <option value="almacenero">Almacenero — inventario + compras</option>
               </select>
-            </div>
+            </Field>
 
             {/* Password */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted uppercase">
-                Contraseña {editingId && <span className="font-normal">(deja vacío para no cambiar)</span>}
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder={editingId ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
-                  className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface) pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
+            <Field
+              label={<>Contraseña {editingId && <span className="font-normal">(deja vacío para no cambiar)</span>}</>}
+              labelClassName="text-xs font-semibold text-muted uppercase"
+              className="space-y-1"
+            >
+              {(id) => (
+                <div className="relative">
+                  <input
+                    id={id}
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder={editingId ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
+                    className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface) pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              )}
+            </Field>
 
             {/* Active toggle (only on edit) */}
             {editingId && (

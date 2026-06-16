@@ -2,6 +2,7 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   DndContext,
   closestCenter,
@@ -114,8 +115,7 @@ function BannerModal({
           { key: "imageUrl", label: "URL imagen", placeholder: "https://..." },
           { key: "linkUrl", label: "URL destino", placeholder: "https://..." },
         ].map(({ key, label, placeholder }) => (
-          <div key={key}>
-            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">{label}</label>
+          <Field key={key} label={label} labelClassName="text-sm font-medium text-[var(--text-secondary)] block mb-1">
             <input
               type="text"
               value={form[key as keyof BannerFormData] as string}
@@ -123,28 +123,26 @@ function BannerModal({
               placeholder={placeholder}
               className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
             />
-          </div>
+          </Field>
         ))}
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Inicio</label>
+          <Field label="Inicio" labelClassName="text-sm font-medium text-[var(--text-secondary)] block mb-1">
             <input
               type="date"
               value={form.startDate}
               onChange={(e) => set("startDate", e.target.value)}
               className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
             />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1">Fin</label>
+          </Field>
+          <Field label="Fin" labelClassName="text-sm font-medium text-[var(--text-secondary)] block mb-1">
             <input
               type="date"
               value={form.endDate}
               onChange={(e) => set("endDate", e.target.value)}
               className="w-full h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
             />
-          </div>
+          </Field>
         </div>
 
         <div className="flex items-center justify-between">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { MessageCircle, Loader2, Phone, Clock, Eye, EyeOff } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { generateDailyReportText } from "@/lib/daily-report";
@@ -107,29 +108,32 @@ export default function DailyReportWhatsApp({ className }: Props) {
   return (
     <div className={cn("space-y-4", className)}>
       {/* Número de WhatsApp */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1.5">
-          <Phone className="h-3.5 w-3.5" />
-          Número del dueño
-        </label>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted select-none">+51</span>
-          <input
-            type="tel"
-            inputMode="numeric"
-            placeholder="987 654 321"
-            value={phone}
-            onChange={e => handlePhoneChange(e.target.value)}
-            className={cn(
-              "flex-1 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
-              "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]",
-              "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
-              "focus:outline-none focus:ring-2 focus:ring-primary/40",
-            )}
-            maxLength={12}
-          />
-        </div>
-      </div>
+      <Field
+        label={<span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />Número del dueño</span>}
+        labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted"
+        className="space-y-1.5"
+      >
+        {(id) => (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted select-none">+51</span>
+            <input
+              id={id}
+              type="tel"
+              inputMode="numeric"
+              placeholder="987 654 321"
+              value={phone}
+              onChange={e => handlePhoneChange(e.target.value)}
+              className={cn(
+                "flex-1 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
+                "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]",
+                "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+                "focus:outline-none focus:ring-2 focus:ring-primary/40",
+              )}
+              maxLength={12}
+            />
+          </div>
+        )}
+      </Field>
 
       {/* Botones de acción */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -207,10 +211,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
         </button>
 
         {showSchedule && (
-          <div className="mt-3 p-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-2">
-            <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">
-              Hora de recordatorio diario
-            </label>
+          <Field label="Hora de recordatorio diario" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted" className="mt-3 p-4 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-2">
             <input
               type="time"
               value={scheduleHour}
@@ -228,7 +229,7 @@ export default function DailyReportWhatsApp({ className }: Props) {
                 La app no envia automaticamente — abre el modulo IA a esa hora para hacerlo.
               </p>
             )}
-          </div>
+          </Field>
         )}
       </div>
     </div>

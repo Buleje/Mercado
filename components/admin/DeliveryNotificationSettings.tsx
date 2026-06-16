@@ -104,6 +104,7 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
         {options.map((opt) => (
           <label
             key={opt.key}
+            aria-label={opt.label}
             className="flex items-start gap-3 cursor-pointer group"
           >
             <div className="relative flex-shrink-0 mt-0.5">

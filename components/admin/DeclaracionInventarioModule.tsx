@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, DataTable, LoadingState, PageTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect } from "react";
 import {
   Loader2, AlertTriangle, Calendar, Package, DollarSign,
@@ -299,16 +300,20 @@ export default function DeclaracionInventarioModule() {
       {/* Date selector + Generate */}
       <div className="flex flex-col sm:flex-row gap-3 items-end">
         <div>
-          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha de declaración</label>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input
-              type="date"
-              value={fecha}
-              onChange={e => setFecha(e.target.value)}
-              className="pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
+          <Field label="Fecha de declaración" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+            {(id) => (
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                <input
+                  id={id}
+                  type="date"
+                  value={fecha}
+                  onChange={e => setFecha(e.target.value)}
+                  className="pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            )}
+          </Field>
         </div>
         <button
           onClick={handleGenerar}

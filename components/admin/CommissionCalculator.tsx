@@ -1,6 +1,7 @@
 "use client";
  
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { DollarSign, Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -181,23 +182,23 @@ export default function CommissionCalculator() {
           <p className="text-sm font-medium text-[var(--text-secondary)]">
             Configuracion de comisiones
           </p>
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-[var(--text-secondary)] w-40">
-              Porcentaje por defecto
-            </label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={0.5}
-                value={defaultRate}
-                onChange={(e) => setDefaultRate(Number(e.target.value))}
-                className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <span className="text-sm text-[var(--text-secondary)]">%</span>
-            </div>
-          </div>
+          <Field className="flex items-center gap-3" label="Porcentaje por defecto" labelClassName="text-sm text-[var(--text-secondary)] w-40">
+            {(id) => (
+              <div className="flex items-center gap-1.5">
+                <input
+                  id={id}
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={defaultRate}
+                  onChange={(e) => setDefaultRate(Number(e.target.value))}
+                  className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <span className="text-sm text-[var(--text-secondary)]">%</span>
+              </div>
+            )}
+          </Field>
 
           {summaries.length > 0 && (
             <div className="space-y-2">

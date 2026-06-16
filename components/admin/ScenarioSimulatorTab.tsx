@@ -3,6 +3,7 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, Play, RotateCcw, Save, Trash2, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
 
 /* ── types ──────────────────────────────────────────────────── */
 type Variable = {
@@ -146,20 +147,23 @@ export default function ScenarioSimulatorTab() {
             return (
               <div key={v.id} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className={cn("text-sm font-semibold", isModified ? "text-primary" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{v.label}</label>
+                  <span className={cn("text-sm font-semibold", isModified ? "text-primary" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>{v.label}</span>
                   <span className={cn("text-sm font-bold tabular-nums", isModified ? "text-primary" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                     {v.unit === "S/" ? fmt(current) : v.unit === "%" ? `${current}%` : v.unit === "days" ? `${current} días` : current}
                   </span>
                 </div>
-                <input
-                  type="range"
-                  min={v.min}
-                  max={v.max}
-                  step={v.step}
-                  value={current}
-                  onChange={e => handleChange(v.id, parseFloat(e.target.value))}
-                  className="w-full accent-primary"
-                />
+                <Field label={v.label} labelClassName="sr-only">{(id) => (
+                  <input
+                    id={id}
+                    type="range"
+                    min={v.min}
+                    max={v.max}
+                    step={v.step}
+                    value={current}
+                    onChange={e => handleChange(v.id, parseFloat(e.target.value))}
+                    className="w-full accent-primary"
+                  />
+                )}</Field>
                 <div className="flex justify-between text-xs text-[var(--text-tertiary)] dark:text-muted">
                   <span>{v.min}{v.unit === "%" ? "%" : ""}</span>
                   <span className="text-[var(--text-secondary)] dark:text-muted font-semibold">Base: {v.baseValue}{v.unit === "%" ? "%" : ""}</span>
@@ -267,8 +271,7 @@ export default function ScenarioSimulatorTab() {
               <button onClick={() => setShowSaveModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Nombre del escenario</label>
+              <Field label="Nombre del escenario" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <input
                   type="text"
                   value={saveName}
@@ -277,7 +280,7 @@ export default function ScenarioSimulatorTab() {
                   className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
                   autoFocus
                 />
-              </div>
+              </Field>
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{Object.keys(overrides).length} variables modificadas</p>
               <div className="flex flex-wrap justify-end gap-3">
                 <button onClick={() => setShowSaveModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>

@@ -161,9 +161,9 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
             <>
               {/* Customer search */}
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                <span className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                   Cliente
-                </label>
+                </span>
                 {selectedCustomer ? (
                   <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-xl">
                     <User className="h-4 w-4 text-primary shrink-0" />
@@ -231,9 +231,9 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
 
               {/* Items selection */}
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                <span className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                   Productos ({selectedItems.size} de {cartItems.length} seleccionados)
-                </label>
+                </span>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {cartItems.map((item) => {
                     const checked = selectedItems.has(item.product.id);

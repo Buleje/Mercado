@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect } from "react";
 import { Heart, Gift, Star, Trophy, ArrowUp, Users, Download, Loader2, AlertTriangle, Settings, ChevronDown, ChevronUp } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -263,23 +264,29 @@ export default function PointsProgramTab() {
           <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2"><Settings className="h-5 w-5 text-primary" />Configuración del Programa</CardTitle>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">Puntos por S/1 gastado</label>
-              <div className="flex items-center gap-2">
-                <input type="number" min={1} max={10} value={pointsPerSol} onChange={e => setPointsPerSol(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-bold" />
-                <span className="text-sm text-[var(--text-secondary)] dark:text-muted">pts / S/1</span>
-              </div>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">Actualmente: S/1 = {pointsPerSol} punto{pointsPerSol !== 1 ? "s" : ""}</p>
-            </div>
+            <Field label="Puntos por S/1 gastado" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">
+              {(id) => (
+                <>
+                  <div className="flex items-center gap-2">
+                    <input id={id} type="number" min={1} max={10} value={pointsPerSol} onChange={e => setPointsPerSol(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-bold" />
+                    <span className="text-sm text-[var(--text-secondary)] dark:text-muted">pts / S/1</span>
+                  </div>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Actualmente: S/1 = {pointsPerSol} punto{pointsPerSol !== 1 ? "s" : ""}</p>
+                </>
+              )}
+            </Field>
 
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">Puntos para S/1 de descuento</label>
-              <div className="flex items-center gap-2">
-                <input type="number" min={10} max={1000} step={10} value={redeemRate} onChange={e => setRedeemRate(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-bold" />
-                <span className="text-sm text-[var(--text-secondary)] dark:text-muted">pts = S/1</span>
-              </div>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">100 puntos = S/{(100 / redeemRate).toFixed(2)} descuento</p>
-            </div>
+            <Field label="Puntos para S/1 de descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">
+              {(id) => (
+                <>
+                  <div className="flex items-center gap-2">
+                    <input id={id} type="number" min={10} max={1000} step={10} value={redeemRate} onChange={e => setRedeemRate(Number(e.target.value))} className="w-24 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-bold" />
+                    <span className="text-sm text-[var(--text-secondary)] dark:text-muted">pts = S/1</span>
+                  </div>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1">100 puntos = S/{(100 / redeemRate).toFixed(2)} descuento</p>
+                </>
+              )}
+            </Field>
           </div>
 
           <div>

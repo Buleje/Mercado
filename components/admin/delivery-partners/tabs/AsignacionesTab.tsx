@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle, ChevronDown, ClipboardList, Clock, DollarSign
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
+import { Field } from "@/components/admin/shared/Field";
 
 interface DeliveryAssignment {
   id: string;
@@ -388,10 +389,7 @@ export function AsignacionesTab() {
               </button>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                ID de orden (opcional)
-              </label>
+            <Field className="space-y-2" label="ID de orden (opcional)" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               <input
                 type="text"
                 value={assignModal.orderId ?? ""}
@@ -399,34 +397,36 @@ export function AsignacionesTab() {
                 placeholder="Ej: ORD-12345"
                 className="w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-2">
-              <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Repartidor *
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedPartner}
-                  onChange={(e) => setSelectedPartner(e.target.value)}
-                  className="w-full px-4 h-12 pr-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                >
-                  <option value="">Seleccionar repartidor...</option>
-                  {partners.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} — {p.zone} — S/{toNum(p.fee).toFixed(2)}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
-              </div>
-              {partners.length === 0 && (
-                <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
-                  <AlertCircle className="h-4 w-4" />
-                  No hay repartidores activos. Activá uno desde la pestaña Repartidores.
-                </p>
+            <Field className="space-y-2" label="Repartidor *" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              {(id) => (
+                <>
+                  <div className="relative">
+                    <select
+                      id={id}
+                      value={selectedPartner}
+                      onChange={(e) => setSelectedPartner(e.target.value)}
+                      className="w-full px-4 h-12 pr-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                    >
+                      <option value="">Seleccionar repartidor...</option>
+                      {partners.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} — {p.zone} — S/{toNum(p.fee).toFixed(2)}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
+                  </div>
+                  {partners.length === 0 && (
+                    <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
+                      <AlertCircle className="h-4 w-4" />
+                      No hay repartidores activos. Activá uno desde la pestaña Repartidores.
+                    </p>
+                  )}
+                </>
               )}
-            </div>
+            </Field>
 
             <div className="flex gap-3 pt-2">
               <button

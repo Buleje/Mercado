@@ -2,6 +2,7 @@
 
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Field } from '@/components/admin/shared/Field';
 import Image from "next/image";
 import { RotateCcw, Plus, Loader2, Check, X, Package, Camera, CreditCard, Image as ImageIcon } from "@buleje/design-system/icons";
 import type { Sale } from "@/types/erp";
@@ -127,20 +128,22 @@ export default function ReturnsTab() {
                   </div>
                 ))}
               </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Motivo *</label>
+              <Field label="Motivo *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2} placeholder="Producto dañado, vencido, etc." className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-              </div>
+              </Field>
 
               {/* Photo evidence */}
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
-                  <Camera className="h-3.5 w-3.5" /> Foto del producto (opcional)
-                </label>
-                <input ref={photoInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
-                <button type="button" onClick={() => photoInputRef.current?.click()} className="mt-1 flex flex-wrap items-center gap-2 px-3 py-2 border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-sm text-[var(--text-secondary)] dark:text-muted hover:border-primary hover:text-primary transition w-full justify-center">
-                  <ImageIcon className="h-4 w-4" />{photoDataUrl ? "Cambiar foto" : "Seleccionar / tomar foto"}
-                </button>
+                <Field label={<><Camera className="h-3.5 w-3.5" /> Foto del producto (opcional)</>} labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
+                  {(id) => (
+                    <>
+                      <input id={id} ref={photoInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
+                      <button type="button" onClick={() => photoInputRef.current?.click()} className="mt-1 flex flex-wrap items-center gap-2 px-3 py-2 border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-sm text-[var(--text-secondary)] dark:text-muted hover:border-primary hover:text-primary transition w-full justify-center">
+                        <ImageIcon className="h-4 w-4" />{photoDataUrl ? "Cambiar foto" : "Seleccionar / tomar foto"}
+                      </button>
+                    </>
+                  )}
+                </Field>
                 {photoDataUrl && (
                   <div className="mt-2 relative inline-block">
                     <Image src={photoDataUrl} alt="Evidencia" width={96} height={96} className="object-cover rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]" unoptimized />
@@ -151,10 +154,9 @@ export default function ReturnsTab() {
 
               {/* Customer credit */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
-                  <CreditCard className="h-3.5 w-3.5" /> Crédito al cliente (opcional)
-                </label>
-                <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Teléfono del cliente" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
+                <Field label={<><CreditCard className="h-3.5 w-3.5" /> Crédito al cliente (opcional)</>} labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted flex items-center gap-1">
+                  <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Teléfono del cliente" className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
+                </Field>
                 {customerPhone.trim() && (
                   <label className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)] dark:text-muted cursor-pointer">
                     <input type="checkbox" checked={applyCredit} onChange={e => setApplyCredit(e.target.checked)} className="rounded" />

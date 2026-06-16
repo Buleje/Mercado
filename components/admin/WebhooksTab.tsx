@@ -3,6 +3,7 @@
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 
 import { useState } from "react";
+import { Field } from '@/components/admin/shared/Field';
 import { Link, Plus, Check, Pencil, Trash2, Send, Eye } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -124,10 +125,10 @@ export default function WebhooksTab() {
           <div className="bg-[var(--surface-raised)] rounded-xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)] max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editWebhook ? "Editar webhook" : "Nuevo webhook"}</CardTitle>
             <div className="space-y-3">
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">URL</label><input value={formUrl} onChange={e => setFormUrl(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono" placeholder="https://..." /></div>
+              <Field label="Nombre" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></Field>
+              <Field label="URL" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"><input value={formUrl} onChange={e => setFormUrl(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono" placeholder="https://..." /></Field>
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Eventos</label>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Eventos</span>
                 <div className="flex flex-wrap gap-1.5">
                   {EVENTS.map(ev => (
                     <button key={ev} onClick={() => toggleEvent(ev)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", formEvents.includes(ev) ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>{ev}</button>

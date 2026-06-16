@@ -3,6 +3,7 @@
 import { SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useCallback, useMemo } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   FileText, RefreshCw, CheckSquare, Square, Download,
   AlertTriangle, CheckCircle2, XCircle, Loader2, FileDown,
@@ -194,26 +195,24 @@ export default function BulkInvoiceGenerator() {
       {/* Filters */}
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex flex-col gap-1">
-            <label className="text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Desde</label>
+          <Field label="Desde" labelClassName="text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]" className="flex flex-col gap-1">
             <input
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
               className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
             />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Hasta</label>
+          </Field>
+          <Field label="Hasta" labelClassName="text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]" className="flex flex-col gap-1">
             <input
               type="date"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}
               className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
             />
-          </div>
+          </Field>
           <div className="flex flex-col gap-1">
-            <label className="text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Tipo</label>
+            <span className="text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Tipo</span>
             <div className="flex bg-[var(--surface-sunken)] dark:bg-white/5 rounded-xl p-0.5 gap-0.5">
               {(["boleta", "factura"] as InvoiceType[]).map(t => (
                 <button

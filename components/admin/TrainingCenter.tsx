@@ -1,6 +1,6 @@
 "use client";
 import { SectionTitle } from "@buleje/design-system";
- 
+import { Field } from "@/components/admin/shared/Field";
 
 import { useState, useEffect } from "react";
 import { CheckCircle, Circle, ChevronDown, ChevronRight, Award } from "@buleje/design-system/icons";
@@ -150,17 +150,14 @@ export default function TrainingCenter() {
             Tutoriales paso a paso para el personal de la bodega
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-[var(--text-tertiary)]">
-            Usuario:
-          </label>
+        <Field label="Usuario:" labelClassName="text-sm text-[var(--text-tertiary)]" className="flex items-center gap-2">
           <input
             value={user}
             onChange={(e) => setUser(e.target.value.trim() || "empleado")}
             className="rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-1.5 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             placeholder="Tu nombre"
           />
-        </div>
+        </Field>
       </div>
 
       {/* Progress */}

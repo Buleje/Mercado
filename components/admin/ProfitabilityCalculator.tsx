@@ -11,6 +11,7 @@ import {
   Star,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,12 +184,10 @@ export default function ProfitabilityCalculator() {
           </div>
 
           {/* Product selector */}
-          <div className="mb-4">
-            <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
-              Producto
-            </label>
+          <Field label="Producto" labelClassName="mb-1 block text-xs font-medium text-[var(--text-secondary)]" className="mb-4">{(id) => (
             <div className="relative">
               <select
+                id={id}
                 value={selectedId}
                 onChange={(e) => setSelectedId(Number(e.target.value))}
                 disabled={loadingProds}
@@ -209,7 +208,7 @@ export default function ProfitabilityCalculator() {
                 <Loader2 className="absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[var(--text-tertiary)]" />
               )}
             </div>
-          </div>
+          )}</Field>
 
           {/* Numeric inputs */}
           <div className="grid grid-cols-2 gap-3">
@@ -218,10 +217,7 @@ export default function ProfitabilityCalculator() {
               { label: "Costo unitario (S/)", value: cost, setter: setCost, min: 0.01 },
               { label: "Ventas mensuales (und)", value: monthlySales, setter: setMonthlySales, min: 1 },
             ].map(({ label, value, setter, min }) => (
-              <div key={label}>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
-                  {label}
-                </label>
+              <Field key={label} label={label} labelClassName="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
                 <input
                   type="number"
                   min={min}
@@ -234,14 +230,11 @@ export default function ProfitabilityCalculator() {
                     ""
                   )}
                 />
-              </div>
+              </Field>
             ))}
 
             {/* Elasticity slider */}
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
-                Si bajo S/1, ventas suben: {elasticity}%
-              </label>
+            <Field label={`Si bajo S/1, ventas suben: ${elasticity}%`} labelClassName="mb-1 block text-xs font-medium text-[var(--text-secondary)]" className="col-span-2">
               <input
                 type="range"
                 min={5}
@@ -251,10 +244,10 @@ export default function ProfitabilityCalculator() {
                 onChange={(e) => setElasticity(Number(e.target.value))}
                 className="w-full accent-primary"
               />
-              <div className="mt-0.5 flex justify-between text-xs text-[var(--text-tertiary)]">
-                <span>Poca demanda</span>
-                <span>Alta demanda</span>
-              </div>
+            </Field>
+            <div className="col-span-2 mt-0.5 flex justify-between text-xs text-[var(--text-tertiary)]">
+              <span>Poca demanda</span>
+              <span>Alta demanda</span>
             </div>
           </div>
 

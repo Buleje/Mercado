@@ -7,6 +7,7 @@ import { Loader2, Plus, X, AlertTriangle, Pencil, Wallet } from "@buleje/design-
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -317,8 +318,7 @@ export default function PresupuestoMensualTab() {
           <div className="space-y-2">
             {draft.map((d, i) => (
               <div key={i} className="flex gap-2 items-end bg-gray-50 dark:bg-white/5 rounded-xl p-3">
-                <div className="flex-1">
-                  <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Categoria</label>
+                <Field className="flex-1" label="Categoria" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                   <input
                     type="text"
                     value={d.nombre}
@@ -326,9 +326,8 @@ export default function PresupuestoMensualTab() {
                     placeholder="Ej: Mercaderia"
                     className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
-                </div>
-                <div className="w-28">
-                  <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Limite (S/)</label>
+                </Field>
+                <Field className="w-28" label="Limite (S/)" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                   <input
                     type="number"
                     step="0.01"
@@ -338,7 +337,7 @@ export default function PresupuestoMensualTab() {
                     placeholder="0.00"
                     className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
-                </div>
+                </Field>
                 <button
                   onClick={() => removeDraftCat(i)}
                   className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] dark:hover:bg-[var(--data-error-500)]/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"

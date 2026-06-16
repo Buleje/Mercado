@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useCallback } from "react";
 import { Shield, Download, Upload, Clock, CheckCircle, AlertTriangle, HardDrive, Database, RefreshCw, Trash2, Play } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -249,12 +250,14 @@ export default function BackupRestoreTab() {
             ))}
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Retención de backups diarios (días)</label>
+          <Field
+            label="Retención de backups diarios (días)"
+            labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"
+            hint="Backups más antiguos se eliminarán automáticamente"
+          >
             <input type="number" value={retentionDays} onChange={e => setRetentionDays(Number(e.target.value))} min={7} max={365}
               className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">Backups más antiguos se eliminarán automáticamente</p>
-          </div>
+          </Field>
 
           <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30 rounded-xl p-3">
             <p className="text-xs font-bold text-[var(--data-success)] dark:text-[var(--data-success)] mb-1">Almacenamiento del backup</p>

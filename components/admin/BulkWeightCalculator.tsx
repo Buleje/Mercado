@@ -2,6 +2,7 @@
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { Plus, Trash2, Scale, Clock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -141,38 +142,32 @@ export default function BulkWeightCalculator() {
       {/* Calculator */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
-              Producto
-            </label>
+          <Field label="Producto" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
             <input
               value={product}
               onChange={(e) => setProduct(e.target.value)}
               placeholder="Nombre del producto"
               className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
-              Peso (kg)
-            </label>
-            <div className="relative">
-              <Scale className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-              <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="0.000"
-                step="0.001"
-                min="0"
-                className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
-              Precio por kg (S/)
-            </label>
+          </Field>
+          <Field label="Peso (kg)" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
+            {(id) => (
+              <div className="relative">
+                <Scale className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                <input
+                  id={id}
+                  type="number"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  placeholder="0.000"
+                  step="0.001"
+                  min="0"
+                  className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+            )}
+          </Field>
+          <Field label="Precio por kg (S/)" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
             <input
               type="number"
               value={pricePerKg}
@@ -182,7 +177,7 @@ export default function BulkWeightCalculator() {
               min="0"
               className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
             />
-          </div>
+          </Field>
         </div>
 
         {/* Result */}

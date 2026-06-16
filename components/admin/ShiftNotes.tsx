@@ -1,10 +1,11 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
- 
+
 
 import { useState, useEffect } from "react";
 import { Send, CheckCheck, Clock, Trash2, Bell } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -132,17 +133,14 @@ export default function ShiftNotes() {
         </CardTitle>
 
         {/* Author */}
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-medium text-[var(--text-tertiary)]">
-            Tu nombre
-          </label>
+        <Field label="Tu nombre" labelClassName="mb-1 block text-xs font-medium text-[var(--text-tertiary)]" className="mb-3">
           <input
             value={author}
             onChange={(e) => saveUser(e.target.value)}
             placeholder="Ej: Maria, Juan cajero turno manana..."
             className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
           />
-        </div>
+        </Field>
 
         {/* Text */}
         <textarea

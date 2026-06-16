@@ -1,9 +1,10 @@
 "use client";
 import { SectionTitle } from "@buleje/design-system";
- 
+
 import { useState, useEffect, useMemo } from "react";
 import { ClipboardList, Clock, History, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
 
 /* ── Helpers ── */
 const fmt = (n: number) =>
@@ -236,10 +237,7 @@ export default function ShiftHandover() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-[var(--text-secondary)]">
-              Tu nombre (cajero)
-            </label>
+          <Field className="space-y-1.5" label="Tu nombre (cajero)" labelClassName="text-sm font-medium text-[var(--text-secondary)]">
             <input
               type="text"
               value={cashierName}
@@ -247,12 +245,9 @@ export default function ShiftHandover() {
               placeholder="Ej: Maria Lopez"
               className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-[var(--text-secondary)]">
-              Notas para el siguiente turno
-            </label>
+          <Field className="space-y-1.5" label="Notas para el siguiente turno" labelClassName="text-sm font-medium text-[var(--text-secondary)]">
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -260,7 +255,7 @@ export default function ShiftHandover() {
               placeholder="Ej: Queda poco azucar, hay un pedido pendiente de Juan, la impresora falla..."
               className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             />
-          </div>
+          </Field>
 
           <button
             onClick={handleClose}

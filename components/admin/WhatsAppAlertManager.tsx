@@ -1,12 +1,13 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
- 
- 
+
+
 
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { MessageCircle, Bell, BellOff, Eye, Clock, Save } from "@buleje/design-system/icons";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -204,10 +205,7 @@ export default function WhatsAppAlertManager() {
 
       <div className="p-4 space-y-4">
         {/* Phone */}
-        <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-            Número WhatsApp del dueno
-          </label>
+        <Field label="Número WhatsApp del dueno" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
           <input
             type="tel"
             value={config.phone}
@@ -215,13 +213,10 @@ export default function WhatsAppAlertManager() {
             placeholder="51999999999"
             className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
-        </div>
+        </Field>
 
         {/* Big sale threshold */}
-        <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-            Monto mínimo para alerta de venta grande (S/)
-          </label>
+        <Field label="Monto mínimo para alerta de venta grande (S/)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
           <input
             type="number"
             min={10}
@@ -231,7 +226,7 @@ export default function WhatsAppAlertManager() {
             }
             className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
-        </div>
+        </Field>
 
         {/* Toggles */}
         <div className="space-y-2">

@@ -65,6 +65,7 @@ import POSCartDetail from "@/components/admin/pos/POSCartDetail";
 import POSVoiceInput from "@/components/admin/pos/POSVoiceInput";
 import POSReturnModal from "@/components/admin/pos/POSReturnModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const YapeQRPayment = dynamic(() => import("@/components/admin/YapeQRPayment"), { ssr: false });
@@ -2180,17 +2181,18 @@ export default function POSView() {
                     </div>
                     {editingDiscount === item.product.id && (
                       <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap items-center gap-2">
-                        <label className="text-xs text-[var(--text-secondary)] dark:text-muted font-medium">Descuento:</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={item.discount || 0}
-                          onChange={e => updateDiscount(item.product.id, Number(e.target.value))}
-                          className="flex-1 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
-                          placeholder="0"
-                        />
+                        <Field label="Descuento:" labelClassName="text-xs text-[var(--text-secondary)] dark:text-muted font-medium">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={item.discount || 0}
+                            onChange={e => updateDiscount(item.product.id, Number(e.target.value))}
+                            className="flex-1 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                            placeholder="0"
+                          />
+                        </Field>
                         <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">%</span>
                       </div>
                     )}
@@ -2507,8 +2509,7 @@ export default function POSView() {
             </div>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-3">El cliente intercambia productos por su compra (comun en zonas rurales de selva).</p>
             <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">Que recibe a cambio?</label>
+              <Field label="Que recibe a cambio?" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <textarea
                   value={truequeDesc}
                   onChange={e => setTruequeDesc(e.target.value)}
@@ -2516,9 +2517,8 @@ export default function POSView() {
                   rows={2}
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">Valor estimado (S/)</label>
+              </Field>
+              <Field label="Valor estimado (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <input
                   type="number"
                   min={0}
@@ -2528,7 +2528,7 @@ export default function POSView() {
                   placeholder="0.00"
                   className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
-              </div>
+              </Field>
               {Number(truequeValor) > 0 && cartTotal > 0 && (
                 <div className={cn("rounded-lg p-3 text-sm font-bold", Number(truequeValor) >= cartTotal ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)]")}>
                   {Number(truequeValor) >= cartTotal ? (

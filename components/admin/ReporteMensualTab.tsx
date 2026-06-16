@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState } from "react";
 import {
   FileText,
@@ -170,10 +171,7 @@ export default function ReporteMensualTab() {
 
       {/* Selector de período + botón */}
       <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-[var(--surface-sunken)]/50 border border-[var(--rule-base)]">
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Mes
-          </label>
+        <Field label="Mes" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
@@ -185,12 +183,9 @@ export default function ReporteMensualTab() {
               </option>
             ))}
           </select>
-        </div>
+        </Field>
 
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Año
-          </label>
+        <Field label="Año" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
           <input
             type="number"
             min={2023}
@@ -199,7 +194,7 @@ export default function ReporteMensualTab() {
             onChange={(e) => setYear(Number(e.target.value))}
             className="w-24 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
           />
-        </div>
+        </Field>
 
         <button
           onClick={handleGenerate}

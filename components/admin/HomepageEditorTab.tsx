@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   Loader2, Save, Check, RotateCcw, Eye,
   Layout, Sparkles, BarChart3, ShoppingBag,
@@ -69,7 +70,7 @@ function SectionEditor({
             if (field.type === "toggle") {
               return (
                 <div key={field.key} className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{field.label}</label>
+                  <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{field.label}</span>
                   <button
                     type="button"
                     onClick={() => onChange(field.key, !value)}
@@ -84,8 +85,7 @@ function SectionEditor({
               );
             }
             return (
-              <div key={field.key}>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">{field.label}</label>
+              <Field key={field.key} label={field.label} labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5">
                 {field.type === "textarea" ? (
                   <textarea
                     value={String(value)}
@@ -103,7 +103,7 @@ function SectionEditor({
                     className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 )}
-              </div>
+              </Field>
             );
           })}
         </div>
@@ -440,10 +440,11 @@ export default function HomepageEditorTab() {
                   </div>
                   <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
                   <div className="flex flex-wrap items-center gap-2">
-                    <label className="text-xs text-muted">Rating:</label>
-                    <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-2 py-1 text-sm">
-                      {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} {r === 1 ? "estrella" : "estrellas"}</option>)}
-                    </select>
+                    <Field label="Rating:" labelClassName="text-xs text-muted">
+                      <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-background px-2 py-1 text-sm">
+                        {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} {r === 1 ? "estrella" : "estrellas"}</option>)}
+                      </select>
+                    </Field>
                     <button onClick={() => handleListRemove("testimonialItems", i)} className="ml-auto text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Eliminar</button>
                   </div>
                 </div>

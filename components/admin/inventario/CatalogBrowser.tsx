@@ -2,6 +2,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from '@/components/admin/shared/Field';
 import { useState, useMemo, useCallback } from "react";
 import {
   Search, Grid3x3, List, Plus, Trash2, ShoppingCart,
@@ -157,33 +158,36 @@ function CartItemRow({
 
       {/* Inputs con labels claros */}
       <div className="grid grid-cols-3 gap-2">
-        <div>
-          <label className="text-xs font-semibold text-muted block mb-1">Stock inicial</label>
-          <input
-            type="number"
-            min={0}
-            value={item.stock}
-            onChange={(e) => onUpdate(item.product.catalogId, "stock", Math.max(0, Number(e.target.value)))}
-            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-center font-bold focus:ring-2 focus:ring-primary/40 focus:outline-none"
-          />
-          {/* Quick stock buttons */}
-          <div className="flex gap-0.5 mt-1">
-            {QUICK_STOCK.slice(0, 3).map((n) => (
-              <button
-                key={n}
-                onClick={() => onUpdate(item.product.catalogId, "stock", n)}
-                className={cn(
-                  "flex-1 py-0.5 rounded text-xs font-bold transition-all",
-                  item.stock === n ? "bg-primary text-white" : "bg-gray-200 dark:bg-gray-700 text-muted hover:bg-primary/20"
-                )}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-muted block mb-1">Precio venta</label>
+        <Field label="Stock inicial" labelClassName="text-xs font-semibold text-muted block mb-1">
+          {(id) => (
+            <>
+              <input
+                id={id}
+                type="number"
+                min={0}
+                value={item.stock}
+                onChange={(e) => onUpdate(item.product.catalogId, "stock", Math.max(0, Number(e.target.value)))}
+                className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-center font-bold focus:ring-2 focus:ring-primary/40 focus:outline-none"
+              />
+              {/* Quick stock buttons */}
+              <div className="flex gap-0.5 mt-1">
+                {QUICK_STOCK.slice(0, 3).map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => onUpdate(item.product.catalogId, "stock", n)}
+                    className={cn(
+                      "flex-1 py-0.5 rounded text-xs font-bold transition-all",
+                      item.stock === n ? "bg-primary text-white" : "bg-gray-200 dark:bg-gray-700 text-muted hover:bg-primary/20"
+                    )}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </Field>
+        <Field label="Precio venta" labelClassName="text-xs font-semibold text-muted block mb-1">
           <input
             type="number"
             min={0}
@@ -192,9 +196,8 @@ function CartItemRow({
             onChange={(e) => onUpdate(item.product.catalogId, "price", Math.max(0, Number(e.target.value)))}
             className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-center font-bold text-primary focus:ring-2 focus:ring-primary/40 focus:outline-none"
           />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-muted block mb-1">Precio costo</label>
+        </Field>
+        <Field label="Precio costo" labelClassName="text-xs font-semibold text-muted block mb-1">
           <input
             type="number"
             min={0}
@@ -203,7 +206,7 @@ function CartItemRow({
             onChange={(e) => onUpdate(item.product.catalogId, "costPrice", Math.max(0, Number(e.target.value)))}
             className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-center focus:ring-2 focus:ring-primary/40 focus:outline-none"
           />
-        </div>
+        </Field>
       </div>
 
       {/* Subtotales */}

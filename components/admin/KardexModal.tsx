@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useCallback } from "react";
 import {
   X, BookOpen, Download, Loader2, ArrowUpCircle, ArrowDownCircle, Calendar,
@@ -124,25 +125,28 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-[var(--rule-base)] shrink-0">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Desde</label>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Hasta</label>
+          <Field label="Desde" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted" className="flex items-center gap-1.5">
+            {(id) => (
+              <>
+                <Calendar className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                <input
+                  id={id}
+                  type="date"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </>
+            )}
+          </Field>
+          <Field label="Hasta" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted" className="flex items-center gap-1.5">
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
               className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
-          </div>
+          </Field>
           <button
             onClick={handleExport}
             disabled={!data || data.movimientos.length === 0}

@@ -10,6 +10,7 @@ import { Calendar, User, Gift, Copy, CheckCircle } from "@buleje/design-system/i
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 export interface GiftCardDetails {
   id: string;
@@ -197,13 +198,14 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
           {/* Extend form */}
           {extending && (
             <div className="space-y-2 p-3 bg-[var(--data-info-50)] border border-[var(--data-info-500)] rounded-xl">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Nueva fecha de vencimiento</label>
-              <input
-                type="date"
-                value={newExpiry}
-                onChange={(e) => setNewExpiry(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
-              />
+              <Field label="Nueva fecha de vencimiento" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="date"
+                  value={newExpiry}
+                  onChange={(e) => setNewExpiry(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+                />
+              </Field>
               <div className="flex gap-2">
                 <button
                   onClick={() => setExtending(false)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Field } from '@/components/admin/shared/Field';
 import { MessageCircleQuestion, X, Send, ChevronDown, Loader2, CheckCircle, Circle, MessageSquare } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -188,8 +189,7 @@ export default function SupportWidget() {
           {/* Vista: Formulario */}
           {view === "form" && (
             <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Asunto</label>
+              <Field label="Asunto" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 <input
                   type="text"
                   value={subject}
@@ -199,9 +199,8 @@ export default function SupportWidget() {
                   required
                   className="w-full text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Mensaje</label>
+              </Field>
+              <Field label="Mensaje" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -211,9 +210,9 @@ export default function SupportWidget() {
                   required
                   className="w-full text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
-              </div>
+              </Field>
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Prioridad</label>
+                <span className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Prioridad</span>
                 <div className="flex gap-2">
                   {(["low", "medium", "high"] as Priority[]).map((p) => (
                     <button

@@ -2,6 +2,7 @@
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useCallback } from "react";
 import {
   AlertOctagon,
@@ -542,10 +543,11 @@ export default function ExpiredBatchesWidget() {
               </div>
 
               {/* Motivo */}
-              <div className="px-5 py-3">
-                <label className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted block mb-1.5">
-                  Motivo
-                </label>
+              <Field
+                label="Motivo"
+                labelClassName="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted block mb-1.5"
+                className="px-5 py-3"
+              >
                 <select
                   value={modal.reason}
                   onChange={(e) => setModal((prev) => ({ ...prev, reason: e.target.value as MermaReason }))}
@@ -556,7 +558,7 @@ export default function ExpiredBatchesWidget() {
                   <option value="deterioro">Deterioro / Daño</option>
                   <option value="rotura">Rotura</option>
                 </select>
-              </div>
+              </Field>
 
               {/* Toast inline (errores mientras el modal está abierto) */}
               <AnimatePresence>

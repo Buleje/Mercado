@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Droplets, Plus, Search, RefreshCw, Download, AlertCircle, AlertTriangle, Beaker, Sun, Scale, TrendingUp, Clock, ArrowRight, CheckCircle2,
 } from "@buleje/design-system/icons";
+import { Field } from "@/components/admin/shared/Field";
 import { StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -247,7 +248,7 @@ export default function CacaoBeneficio() {
 
               {aSecado ? (
                 <div className="mt-4">
-                  <label className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Método de secado <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></label>
+                  <span className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Método de secado <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></span>
                   <div className="inline-flex w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
                     {METODOS.map((m) => <button key={m.v} type="button" onClick={() => setAdvMetodo(advMetodo === m.v ? "" : m.v)} className={`flex-1 rounded-xl px-3 py-2 text-sm font-bold transition ${advMetodo === m.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{m.label}</button>)}
                   </div>
@@ -255,14 +256,12 @@ export default function CacaoBeneficio() {
               ) : (
                 <div className="mt-4 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Peso seco final (kg) <span className="text-[var(--data-error-600)]">*</span></label>
+                    <Field label={<>Peso seco final (kg) <span className="text-[var(--data-error-600)]">*</span></>} labelClassName="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">
                       <input autoFocus type="number" inputMode="decimal" step="0.01" min="0" value={advPesoSeco} onChange={(e) => setAdvPesoSeco(e.target.value)} placeholder={pesoHum != null ? `≤ ${pesoHum}` : "0.00"} className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">Humedad final (%) <span className="font-normal text-[var(--text-tertiary)]">opc.</span></label>
+                    </Field>
+                    <Field label={<>Humedad final (%) <span className="font-normal text-[var(--text-tertiary)]">opc.</span></>} labelClassName="mb-1.5 block text-xs font-bold text-[var(--text-secondary)]">
                       <input type="number" inputMode="decimal" step="0.1" min="0" max="100" value={advHumedad} onChange={(e) => setAdvHumedad(e.target.value)} placeholder="≤ 7" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
-                    </div>
+                    </Field>
                   </div>
                   {pesoHum != null && <p className="text-xs text-[var(--text-tertiary)]">Húmedo registrado: <strong className="text-[var(--text-secondary)]">{n2(pesoHum)} kg</strong></p>}
                   {(mermaPrev != null || rendPrev != null) && (

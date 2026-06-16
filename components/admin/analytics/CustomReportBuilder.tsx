@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Metric = "ventas" | "margen" | "stock" | "clientes" | "pedidos";
@@ -401,24 +402,22 @@ export default function CustomReportBuilder({
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold text-[var(--text-primary)]">Periodo:</p>
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs text-[var(--text-secondary)]">Desde</label>
+            <Field label="Desde" labelClassName="text-xs text-[var(--text-secondary)]">
               <input
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
                 className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
               />
-            </div>
-            <div>
-              <label className="text-xs text-[var(--text-secondary)]">Hasta</label>
+            </Field>
+            <Field label="Hasta" labelClassName="text-xs text-[var(--text-secondary)]">
               <input
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
                 className="mt-0.5 w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
               />
-            </div>
+            </Field>
           </div>
 
           <p className="text-xs font-semibold text-[var(--text-primary)] mt-1">Agrupar por:</p>

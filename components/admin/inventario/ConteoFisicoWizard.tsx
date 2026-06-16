@@ -3,6 +3,7 @@
 import { CardTitle } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback } from 'react';
+import { Field } from '@/components/admin/shared/Field';
 import Image from "next/image";
 import dynamic from 'next/dynamic';
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -209,7 +210,7 @@ export default function ConteoFisicoWizard() {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">Tipo de conteo</label>
+                <span className="block text-sm font-medium text-[var(--text-primary)] mb-2">Tipo de conteo</span>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setTipo('completo')}
@@ -235,8 +236,7 @@ export default function ConteoFisicoWizard() {
               </div>
 
               {tipo === 'categoria' && (
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Categoria</label>
+                <Field label="Categoria" labelClassName="block text-sm font-medium text-[var(--text-primary)] mb-1">
                   <input
                     type="text"
                     value={categoria}
@@ -244,7 +244,7 @@ export default function ConteoFisicoWizard() {
                     placeholder="Ej: Abarrotes, Bebidas..."
                     className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm"
                   />
-                </div>
+                </Field>
               )}
 
               <button
@@ -381,8 +381,7 @@ export default function ConteoFisicoWizard() {
                     <span className="text-2xl font-bold text-[var(--text-primary)] ml-2">{selected.stockSistema}</span>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Contado:</label>
+                  <Field label="Contado:" labelClassName="block text-sm font-medium text-[var(--text-primary)] mb-1">
                     <input
                       type="number"
                       value={inputValue}
@@ -393,7 +392,7 @@ export default function ConteoFisicoWizard() {
                       className="w-full px-4 py-3 border-2 border-[var(--rule-base)] rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-2xl text-center font-bold focus:border-primary focus:outline-none"
                       autoFocus
                     />
-                  </div>
+                  </Field>
 
                   {/* Preview difference */}
                   {inputValue && !isNaN(parseInt(inputValue)) && (

@@ -2,6 +2,7 @@
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useMemo } from "react";
 import {
   RefreshCw, Loader2, CheckCircle2, ShoppingCart, ArrowRight,
@@ -410,22 +411,22 @@ export default function AutoReorderTab() {
               <button onClick={() => setEditThresholds(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                  Stock mínimo <span className="font-normal text-[var(--text-tertiary)]">(dispara alerta)</span>
-                </label>
+              <Field
+                label={<>Stock mínimo <span className="font-normal text-[var(--text-tertiary)]">(dispara alerta)</span></>}
+                labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"
+              >
                 <input type="number" min="0" value={thresholdForm.stockMin}
                   onChange={e => setThresholdForm(f => ({ ...f, stockMin: +e.target.value }))}
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                  Stock máximo <span className="font-normal text-[var(--text-tertiary)]">(cantidad objetivo en reorden)</span>
-                </label>
+              </Field>
+              <Field
+                label={<>Stock máximo <span className="font-normal text-[var(--text-tertiary)]">(cantidad objetivo en reorden)</span></>}
+                labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"
+              >
                 <input type="number" min="0" value={thresholdForm.stockMax}
                   onChange={e => setThresholdForm(f => ({ ...f, stockMax: +e.target.value }))}
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
+              </Field>
               <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl px-3 py-2 text-xs text-[var(--text-secondary)] dark:text-muted">
                 Cantidad sugerida de reorden: <strong className="text-primary">{Math.max(0, thresholdForm.stockMax - editThresholds.stock)} {editThresholds.unit}</strong>
               </div>

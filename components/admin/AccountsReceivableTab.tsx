@@ -3,6 +3,7 @@
 import { CardTitle, PageTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   CreditCard, Plus, X, RefreshCw, Download, AlertTriangle,
   CheckCircle, Clock, Search } from "@buleje/design-system/icons";
@@ -315,10 +316,9 @@ export default function AccountsReceivableTab() {
               { key: "dueDate", label: "Fecha de vencimiento", type: "date", placeholder: "" },
               { key: "notes", label: "Notas", type: "text", placeholder: "Opcional..." },
             ].map(({ key, label, type, placeholder }) => (
-              <div key={key}>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">{label}</label>
+              <Field key={key} label={label} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <input type={type} value={(form as Record<string, string>)[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
+              </Field>
             ))}
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
@@ -414,21 +414,18 @@ export default function AccountsReceivableTab() {
                   <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4 space-y-3">
                     <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Registrar pago</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">Monto</label>
+                      <Field label="Monto" labelClassName="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">
                         <input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">Fecha</label>
+                      </Field>
+                      <Field label="Fecha" labelClassName="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">
                         <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-                      </div>
+                      </Field>
                     </div>
-                    <div>
-                      <label className="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">Método</label>
+                    <Field label="Método" labelClassName="text-xs text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <select value={payMethod} onChange={e => setPayMethod(e.target.value as PaymentRecord["method"])} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                         {["efectivo","transferencia","yape","plin","otro"].map(m => <option key={m} value={m} className="capitalize">{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
                       </select>
-                    </div>
+                    </Field>
                     <button onClick={handleRegisterPayment} className="w-full py-2.5 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors">Registrar pago</button>
                   </div>
                 )}

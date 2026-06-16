@@ -156,7 +156,7 @@ function BannerForm({
 
       {/* Mejora 17: Color de fondo */}
       <div className="space-y-1">
-        <label className="text-xs font-medium text-[var(--text-tertiary)]">Color de fondo (si no hay imagen)</label>
+        <span className="text-xs font-medium text-[var(--text-tertiary)]">Color de fondo (si no hay imagen)</span>
         <div className="flex items-center gap-2 flex-wrap">
           {PRESET_COLORS.map(c => (
             <button

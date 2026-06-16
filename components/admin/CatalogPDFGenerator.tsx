@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect } from "react";
 import { Download, MessageCircle, Loader2, Eye, Package } from "@buleje/design-system/icons";
 import * as Sentry from "@sentry/nextjs";
@@ -179,17 +180,15 @@ export default function CatalogPDFGenerator() {
       {/* Controls */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
-              Categoria
-            </label>
-            {loading ? (
+          <Field label="Categoria" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-secondary)]">
+            {(id) => loading ? (
               <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Cargando categorias...
               </div>
             ) : (
               <select
+                id={id}
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
@@ -202,7 +201,7 @@ export default function CatalogPDFGenerator() {
                 ))}
               </select>
             )}
-          </div>
+          </Field>
 
           <div className="flex items-end gap-2">
             <button

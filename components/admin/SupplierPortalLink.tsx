@@ -5,6 +5,7 @@ import { SectionTitle } from "@buleje/design-system";
  
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import { Link, Copy, MessageCircle, Eye, RefreshCw, Package, CheckCircle2 } from "@buleje/design-system/icons";
 
@@ -148,34 +149,34 @@ export default function SupplierPortalLink() {
 
       <div className="p-5 space-y-5">
         {/* Generator */}
-        <div className="space-y-3">
-          <label className="block text-sm font-semibold text-[var(--text-primary)]">
-            Nombre del proveedor
-          </label>
-          <div className="flex gap-2">
-            <input
-              value={supplierName}
-              onChange={(e) => setSupplierName(e.target.value)}
-              placeholder="Ej: Distribuidora Hernandez SAC"
-              className="flex-1 rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") generateLink();
-              }}
-            />
-            <button
-              onClick={generateLink}
-              disabled={!supplierName.trim() || generating}
-              className="px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
-            >
-              {generating ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Link className="w-4 h-4" />
-              )}
-              Generar link
-            </button>
-          </div>
-        </div>
+        <Field label="Nombre del proveedor" labelClassName="block text-sm font-semibold text-[var(--text-primary)]">
+          {(id) => (
+            <div className="flex gap-2">
+              <input
+                id={id}
+                value={supplierName}
+                onChange={(e) => setSupplierName(e.target.value)}
+                placeholder="Ej: Distribuidora Hernandez SAC"
+                className="flex-1 rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") generateLink();
+                }}
+              />
+              <button
+                onClick={generateLink}
+                disabled={!supplierName.trim() || generating}
+                className="px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+              >
+                {generating ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Link className="w-4 h-4" />
+                )}
+                Generar link
+              </button>
+            </div>
+          )}
+        </Field>
 
         {/* Preview toggle */}
         <button

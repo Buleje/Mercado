@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Target, Download, Loader2, AlertTriangle, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -564,8 +565,7 @@ export default function BreakEvenTab() {
               Simular Precio/Costo — {productAnalysis.product.name}
             </CardTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Precio Venta (S/)</label>
+              <Field label="Precio Venta (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
                 <input
                   type="number"
                   step="0.10"
@@ -573,9 +573,8 @@ export default function BreakEvenTab() {
                   onChange={(e) => setCustomPrice(e.target.value)}
                   className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold outline-none focus:border-primary"
                 />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)]">Costo Unitario (S/)</label>
+              </Field>
+              <Field label="Costo Unitario (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
                 <input
                   type="number"
                   step="0.10"
@@ -583,7 +582,7 @@ export default function BreakEvenTab() {
                   onChange={(e) => setCustomCost(e.target.value)}
                   className="w-full mt-1 px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold outline-none focus:border-primary"
                 />
-              </div>
+              </Field>
             </div>
           </div>
 

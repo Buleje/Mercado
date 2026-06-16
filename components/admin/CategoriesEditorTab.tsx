@@ -3,6 +3,7 @@
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   Loader2, Save, Check, GripVertical, Eye, EyeOff,
   ArrowUp, ArrowDown, Layers, Search, Globe, Tag, FileText, Link2, Sparkles,
@@ -527,19 +528,23 @@ export default function CategoriesEditorTab() {
                   </div>
 
                   {/* Meta Title */}
-                  <div>
-                    <label className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        Meta Title
+                  <Field
+                    label={
+                      <span className="flex items-center justify-between w-full text-xs font-semibold text-[var(--text-secondary)]">
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          Meta Title
+                        </span>
+                        <span className={cn(
+                          "font-mono",
+                          (cat.seo?.metaTitle?.length || 0) > 60 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
+                        )}>
+                          {cat.seo?.metaTitle?.length || 0}/60
+                        </span>
                       </span>
-                      <span className={cn(
-                        "font-mono",
-                        (cat.seo?.metaTitle?.length || 0) > 60 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
-                      )}>
-                        {cat.seo?.metaTitle?.length || 0}/60
-                      </span>
-                    </label>
+                    }
+                    labelClassName="block mb-1"
+                  >
                     <input
                       value={cat.seo?.metaTitle || ""}
                       onChange={(e) => updateSeoField(i, "metaTitle", e.target.value)}
@@ -547,22 +552,26 @@ export default function CategoriesEditorTab() {
                       className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                       maxLength={70}
                     />
-                  </div>
+                  </Field>
 
                   {/* Meta Description */}
-                  <div>
-                    <label className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        Meta Description
+                  <Field
+                    label={
+                      <span className="flex items-center justify-between w-full text-xs font-semibold text-[var(--text-secondary)]">
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          Meta Description
+                        </span>
+                        <span className={cn(
+                          "font-mono",
+                          (cat.seo?.metaDescription?.length || 0) > 160 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
+                        )}>
+                          {cat.seo?.metaDescription?.length || 0}/160
+                        </span>
                       </span>
-                      <span className={cn(
-                        "font-mono",
-                        (cat.seo?.metaDescription?.length || 0) > 160 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]"
-                      )}>
-                        {cat.seo?.metaDescription?.length || 0}/160
-                      </span>
-                    </label>
+                    }
+                    labelClassName="block mb-1"
+                  >
                     <textarea
                       value={cat.seo?.metaDescription || ""}
                       onChange={(e) => updateSeoField(i, "metaDescription", e.target.value)}
@@ -571,19 +580,23 @@ export default function CategoriesEditorTab() {
                       rows={3}
                       maxLength={170}
                     />
-                  </div>
+                  </Field>
 
                   {/* Keywords */}
-                  <div>
-                    <label className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                      <span className="flex items-center gap-1">
-                        <Tag className="h-3 w-3" />
-                        Keywords (separadas por coma, máx 10)
+                  <Field
+                    label={
+                      <span className="flex items-center justify-between w-full text-xs font-semibold text-[var(--text-secondary)]">
+                        <span className="flex items-center gap-1">
+                          <Tag className="h-3 w-3" />
+                          Keywords (separadas por coma, máx 10)
+                        </span>
+                        <span className="font-mono text-[var(--text-tertiary)]">
+                          {cat.seo?.keywords?.length || 0}/10
+                        </span>
                       </span>
-                      <span className="font-mono text-[var(--text-tertiary)]">
-                        {cat.seo?.keywords?.length || 0}/10
-                      </span>
-                    </label>
+                    }
+                    labelClassName="block mb-1"
+                  >
                     <input
                       value={cat.seo?.keywords?.join(", ") || ""}
                       onChange={(e) => {
@@ -593,51 +606,48 @@ export default function CategoriesEditorTab() {
                       placeholder="delivery, san martín, compra online..."
                       className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                     />
-                  </div>
+                  </Field>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Slug */}
-                    <div>
-                      <label className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                        <Link2 className="h-3 w-3" />
-                        Slug
-                      </label>
+                    <Field
+                      label={<span className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)]"><Link2 className="h-3 w-3" />Slug</span>}
+                      labelClassName="block mb-1"
+                    >
                       <input
                         value={cat.seo?.slug || cat.id}
                         onChange={(e) => updateSeoField(i, "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
                         placeholder={cat.id}
                         className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-mono"
                       />
-                    </div>
+                    </Field>
 
                     {/* OG Image */}
-                    <div>
-                      <label className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                        <FileText className="h-3 w-3" />
-                        OG Image URL (opcional)
-                      </label>
+                    <Field
+                      label={<span className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)]"><FileText className="h-3 w-3" />OG Image URL (opcional)</span>}
+                      labelClassName="block mb-1"
+                    >
                       <input
                         value={cat.seo?.ogImage || ""}
                         onChange={(e) => updateSeoField(i, "ogImage", e.target.value)}
                         placeholder="https://..."
                         className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                       />
-                    </div>
+                    </Field>
                   </div>
 
                   {/* Canonical URL */}
-                  <div>
-                    <label className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                      <Link2 className="h-3 w-3" />
-                      Canonical URL (opcional)
-                    </label>
+                  <Field
+                    label={<span className="flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)]"><Link2 className="h-3 w-3" />Canonical URL (opcional)</span>}
+                    labelClassName="block mb-1"
+                  >
                     <input
                       value={cat.seo?.canonical || ""}
                       onChange={(e) => updateSeoField(i, "canonical", e.target.value)}
                       placeholder="https://buleje.pe/categoria/..."
                       className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                     />
-                  </div>
+                  </Field>
 
                   {/* SEO Preview Card */}
                   <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">

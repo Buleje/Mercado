@@ -6,6 +6,7 @@ import { Star, Loader2, Plus, Check, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Supplier } from "@/types/erp";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 type Evaluation = { id: string; supplierId: string; purchaseId?: string; punctuality: number; quality: number; price: number; notes?: string; createdAt: string };
 type EvalAverages = { evaluations: Evaluation[]; averages: { punctuality: number; quality: number; price: number; overall: number } | null };
@@ -97,10 +98,9 @@ export default function SupplierEvaluationsTab() {
                   <StarRating value={form[f.key]} onChange={v => setForm(prev => ({ ...prev, [f.key]: v }))} />
                 </div>
               ))}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Notas</label>
+              <Field label="Notas" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-              </div>
+              </Field>
               <div className="flex flex-wrap gap-2">
                 <button onClick={handleCreate} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold"><Check className="h-4 w-4" />Guardar</button>
                 <button onClick={() => setShowForm(false)} className="flex flex-wrap items-center gap-2 bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold"><X className="h-4 w-4" />Cancelar</button>

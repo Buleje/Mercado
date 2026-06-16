@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   TrendingDown, TrendingUp, AlertTriangle, CheckCircle,
@@ -458,10 +459,7 @@ export default function BudgetVsRealTab() {
           </CardTitle>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
-              Meta de ventas del mes (S/)
-            </label>
+          <Field label="Meta de ventas del mes (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
             <input
               type="number"
               min="0"
@@ -470,11 +468,8 @@ export default function BudgetVsRealTab() {
               placeholder="Ej: 15000"
               className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
-              Máximo de gastos del mes (S/)
-            </label>
+          </Field>
+          <Field label="Máximo de gastos del mes (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
             <input
               type="number"
               min="0"
@@ -483,7 +478,7 @@ export default function BudgetVsRealTab() {
               placeholder="Ej: 8000"
               className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
-          </div>
+          </Field>
         </div>
         <button
           onClick={handleSaveConfig}

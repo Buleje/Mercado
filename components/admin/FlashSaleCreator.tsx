@@ -317,9 +317,9 @@ export function FlashSaleCreator({ className }: { className?: string }) {
         {selected && (
           <div className="mb-4 grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+              <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
                 Precio original
-              </label>
+              </span>
               <div className="flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] dark:border-[var(--rule-base)] dark:bg-gray-800 px-3 py-2">
                 <Tag className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
                 <span className="text-sm font-medium text-[var(--text-tertiary)] line-through">
