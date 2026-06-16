@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, type FormEvent } from 'react';
 import { Zap, ClipboardList, ChevronDown, ChevronUp, Loader2, Search } from "@buleje/design-system/icons";
 import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/shared/AdminModal';
+import { Field } from '@/components/admin/shared/Field';
 import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
@@ -395,7 +396,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
             <>
               {/* Tipo persona toggle */}
               <div>
-                <label className={labelCls}>Tipo persona</label>
+                <span className={labelCls}>Tipo persona</span>
                 <div className="flex gap-2">
                   {(['natural', 'juridica'] as const).map(t => (
                     <button
@@ -416,55 +417,58 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
               </div>
 
               {/* Nombre / Razon Social */}
-              <div>
-                <label className={labelCls}>
-                  {form.tipoPersona === 'juridica' ? 'Razon Social *' : 'Nombre completo *'}
-                </label>
+              <Field
+                label={form.tipoPersona === 'juridica' ? 'Razon Social *' : 'Nombre completo *'}
+                labelClassName={labelCls}
+              >
                 <input
                   value={form.tipoPersona === 'juridica' ? form.razonSocial : form.name}
                   onChange={e => form.tipoPersona === 'juridica' ? set('razonSocial', e.target.value) : set('name', e.target.value)}
                   placeholder={form.tipoPersona === 'juridica' ? 'Distribuidora Lima S.A.C.' : 'Juan Pérez'}
                   className={inputCls}
                 />
-              </div>
+              </Field>
 
               {/* DNI/RUC + Teléfono */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>{form.tipoPersona === 'juridica' ? 'RUC' : 'DNI'}</label>
-                  <div className="flex gap-1.5">
-                    <input
-                      value={form.documento}
-                      onChange={e => { set('documento', e.target.value); setDniMsg(''); }}
-                      placeholder={form.tipoPersona === 'juridica' ? '20xxxxxxxxx' : '12345678'}
-                      maxLength={form.tipoPersona === 'juridica' ? 11 : 8}
-                      className={cn(inputCls, "font-mono flex-1")}
-                    />
-                    {form.tipoPersona === 'natural' && form.tipoDocumento !== 'RUC' && (
-                      <button
-                        type="button"
-                        onClick={() => buscarDni(form.documento)}
-                        disabled={dniLoading}
-                        title="Buscar nombre en RENIEC"
-                        className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
-                      >
-                        {dniLoading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-secondary)] dark:text-muted" />
-                        ) : (
-                          <Search className="h-3.5 w-3.5 text-primary" />
+                <Field label={form.tipoPersona === 'juridica' ? 'RUC' : 'DNI'} labelClassName={labelCls}>
+                  {(id) => (
+                    <>
+                      <div className="flex gap-1.5">
+                        <input
+                          id={id}
+                          value={form.documento}
+                          onChange={e => { set('documento', e.target.value); setDniMsg(''); }}
+                          placeholder={form.tipoPersona === 'juridica' ? '20xxxxxxxxx' : '12345678'}
+                          maxLength={form.tipoPersona === 'juridica' ? 11 : 8}
+                          className={cn(inputCls, "font-mono flex-1")}
+                        />
+                        {form.tipoPersona === 'natural' && form.tipoDocumento !== 'RUC' && (
+                          <button
+                            type="button"
+                            onClick={() => buscarDni(form.documento)}
+                            disabled={dniLoading}
+                            title="Buscar nombre en RENIEC"
+                            className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
+                          >
+                            {dniLoading ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-secondary)] dark:text-muted" />
+                            ) : (
+                              <Search className="h-3.5 w-3.5 text-primary" />
+                            )}
+                          </button>
                         )}
-                      </button>
-                    )}
-                  </div>
-                  {dniMsg && (
-                    <p className={cn(
-                      "text-xs mt-1",
-                      dniMsg.includes('completado') ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                    )}>{dniMsg}</p>
+                      </div>
+                      {dniMsg && (
+                        <p className={cn(
+                          "text-xs mt-1",
+                          dniMsg.includes('completado') ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                        )}>{dniMsg}</p>
+                      )}
+                    </>
                   )}
-                </div>
-                <div>
-                  <label className={labelCls}>Teléfono *</label>
+                </Field>
+                <Field label="Teléfono *" labelClassName={labelCls}>
                   <input
                     value={form.phone}
                     onChange={e => set('phone', e.target.value)}
@@ -472,12 +476,11 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                     className={inputCls}
                     disabled={isEdit}
                   />
-                </div>
+                </Field>
               </div>
 
               {/* Direccion */}
-              <div>
-                <label className={labelCls}>Dirección</label>
+              <Field label="Dirección" labelClassName={labelCls}>
                 <textarea
                   value={form.direccion}
                   onChange={e => set('direccion', e.target.value)}
@@ -485,7 +488,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   rows={2}
                   className={cn(inputCls, "resize-none")}
                 />
-              </div>
+              </Field>
             </>
           )}
 
@@ -495,7 +498,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
               {/* Seccion 1: Identificacion */}
               <Section title="1. Identificacion" defaultOpen={true}>
                 <div>
-                  <label className={labelCls}>Tipo persona</label>
+                  <span className={labelCls}>Tipo persona</span>
                   <div className="flex gap-2">
                     {(['natural', 'juridica'] as const).map(t => (
                       <button
@@ -515,96 +518,93 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}>Tipo documento</label>
+                  <Field label="Tipo documento" labelClassName={labelCls}>
                     <select value={form.tipoDocumento} onChange={e => set('tipoDocumento', e.target.value)} className={selectCls}>
                       <option value="DNI">DNI</option>
                       <option value="RUC">RUC</option>
                       <option value="CE">CE</option>
                       <option value="PASAPORTE">Pasaporte</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Número documento</label>
-                    <div className="flex gap-1.5">
-                      <input
-                        value={form.documento}
-                        onChange={e => { set('documento', e.target.value); setDniMsg(''); }}
-                        placeholder="12345678"
-                        className={cn(inputCls, "font-mono flex-1")}
-                      />
-                      {form.tipoDocumento === 'DNI' && (
-                        <button
-                          type="button"
-                          onClick={() => buscarDni(form.documento)}
-                          disabled={dniLoading}
-                          title="Buscar nombre en RENIEC"
-                          className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
-                        >
-                          {dniLoading ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-secondary)] dark:text-muted" />
-                          ) : (
-                            <Search className="h-3.5 w-3.5 text-primary" />
+                  </Field>
+                  <Field label="Número documento" labelClassName={labelCls}>
+                    {(id) => (
+                      <>
+                        <div className="flex gap-1.5">
+                          <input
+                            id={id}
+                            value={form.documento}
+                            onChange={e => { set('documento', e.target.value); setDniMsg(''); }}
+                            placeholder="12345678"
+                            className={cn(inputCls, "font-mono flex-1")}
+                          />
+                          {form.tipoDocumento === 'DNI' && (
+                            <button
+                              type="button"
+                              onClick={() => buscarDni(form.documento)}
+                              disabled={dniLoading}
+                              title="Buscar nombre en RENIEC"
+                              className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
+                            >
+                              {dniLoading ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-secondary)] dark:text-muted" />
+                              ) : (
+                                <Search className="h-3.5 w-3.5 text-primary" />
+                              )}
+                            </button>
                           )}
-                        </button>
-                      )}
-                    </div>
-                    {dniMsg && (
-                      <p className={cn(
-                        "text-xs mt-1",
-                        dniMsg.includes('completado') ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                      )}>{dniMsg}</p>
+                        </div>
+                        {dniMsg && (
+                          <p className={cn(
+                            "text-xs mt-1",
+                            dniMsg.includes('completado') ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                          )}>{dniMsg}</p>
+                        )}
+                      </>
                     )}
-                  </div>
+                  </Field>
                 </div>
-                <div>
-                  <label className={labelCls}>
-                    {form.tipoPersona === 'juridica' ? 'Razon Social *' : 'Nombre completo *'}
-                  </label>
+                <Field
+                  label={form.tipoPersona === 'juridica' ? 'Razon Social *' : 'Nombre completo *'}
+                  labelClassName={labelCls}
+                >
                   <input
                     value={form.tipoPersona === 'juridica' ? form.razonSocial : form.name}
                     onChange={e => form.tipoPersona === 'juridica' ? set('razonSocial', e.target.value) : set('name', e.target.value)}
                     placeholder={form.tipoPersona === 'juridica' ? 'Distribuidora Lima S.A.C.' : 'Juan Pérez'}
                     className={inputCls}
                   />
-                </div>
+                </Field>
                 {form.tipoPersona === 'juridica' && (
-                  <div>
-                    <label className={labelCls}>Nombre de contacto</label>
+                  <Field label="Nombre de contacto" labelClassName={labelCls}>
                     <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Nombre del representante" className={inputCls} />
-                  </div>
+                  </Field>
                 )}
-                <div>
-                  <label className={labelCls}>Estado</label>
+                <Field label="Estado" labelClassName={labelCls}>
                   <select value={form.estado} onChange={e => set('estado', e.target.value)} className={selectCls}>
                     <option value="activo">Activo</option>
                     <option value="inactivo">Inactivo</option>
                     <option value="bloqueado">Bloqueado</option>
                   </select>
-                </div>
+                </Field>
               </Section>
 
               {/* Seccion 2: Contacto */}
               <Section title="2. Contacto" defaultOpen={true}>
-                <div>
-                  <label className={labelCls}>WhatsApp principal * (teléfono)</label>
+                <Field label="WhatsApp principal * (teléfono)" labelClassName={labelCls}>
                   <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="987 654 321" className={inputCls} disabled={isEdit} />
-                </div>
-                <div>
-                  <label className={labelCls}>WhatsApp secundario</label>
+                </Field>
+                <Field label="WhatsApp secundario" labelClassName={labelCls}>
                   <input value={form.whatsappSecundario} onChange={e => set('whatsappSecundario', e.target.value)} placeholder="Otro número" className={inputCls} />
-                </div>
-                <div>
-                  <label className={labelCls}>Email</label>
+                </Field>
+                <Field label="Email" labelClassName={labelCls}>
                   <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="cliente@email.com" className={inputCls} />
-                </div>
+                </Field>
               </Section>
 
               {/* Seccion 3: Ubicacion */}
               <Section title="3. Ubicacion">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className={labelCls}>Departamento</label>
+                  <Field label="Departamento" labelClassName={labelCls}>
                     <select
                       value={form.departamento}
                       onChange={e => {
@@ -620,9 +620,8 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                       <option value="">Seleccionar</option>
                       {DEPARTAMENTOS.map(d => <option key={d} value={d}>{d.replace('_', ' de ')}</option>)}
                     </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Provincia</label>
+                  </Field>
+                  <Field label="Provincia" labelClassName={labelCls}>
                     <select
                       value={form.provincia}
                       onChange={e => {
@@ -635,17 +634,15 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                       <option value="">Seleccionar</option>
                       {getProvincias(form.departamento).map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Distrito</label>
+                  </Field>
+                  <Field label="Distrito" labelClassName={labelCls}>
                     <select value={form.distrito} onChange={e => set('distrito', e.target.value)} className={selectCls}>
                       <option value="">Seleccionar</option>
                       {getDistritos(form.departamento, form.provincia).map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
-                  </div>
+                  </Field>
                 </div>
-                <div>
-                  <label className={labelCls}>Dirección</label>
+                <Field label="Dirección" labelClassName={labelCls}>
                   <textarea
                     value={form.direccion}
                     onChange={e => set('direccion', e.target.value)}
@@ -653,14 +650,13 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                     rows={2}
                     className={cn(inputCls, "resize-none")}
                   />
-                </div>
+                </Field>
               </Section>
 
               {/* Seccion 4: Comercial */}
               <Section title="4. Comercial">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}>Categoria</label>
+                  <Field label="Categoria" labelClassName={labelCls}>
                     <select value={form.categoria} onChange={e => set('categoria', e.target.value)} className={selectCls}>
                       <option value="">Sin asignar</option>
                       <option value="mayorista">Mayorista</option>
@@ -669,35 +665,32 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                       <option value="tienda">Tienda</option>
                       <option value="otro">Otro</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Canal</label>
+                  </Field>
+                  <Field label="Canal" labelClassName={labelCls}>
                     <select value={form.canal} onChange={e => set('canal', e.target.value)} className={selectCls}>
                       <option value="presencial">Presencial</option>
                       <option value="delivery">Delivery</option>
                       <option value="whatsapp">WhatsApp</option>
                       <option value="web">Web</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Lista de precios</label>
+                  </Field>
+                  <Field label="Lista de precios" labelClassName={labelCls}>
                     <select value={form.listaPrecio} onChange={e => set('listaPrecio', e.target.value)} className={selectCls}>
                       <option value="general">General</option>
                       <option value="mayorista">Mayorista</option>
                       <option value="especial">Especial</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Vendedor asignado</label>
+                  </Field>
+                  <Field label="Vendedor asignado" labelClassName={labelCls}>
                     <input value={form.vendedorAsignado} onChange={e => set('vendedorAsignado', e.target.value)} placeholder="Nombre del vendedor" className={inputCls} />
-                  </div>
+                  </Field>
                 </div>
               </Section>
 
               {/* Seccion 5: Fiado Digital */}
               <Section title="5. Fiado Digital">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Activar credito</label>
+                  <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Activar credito</span>
                   <button
                     type="button"
                     onClick={() => set('creditoActivo', !form.creditoActivo)}
@@ -714,8 +707,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                 </div>
                 {form.creditoActivo && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className={labelCls}>Limite de credito (S/)</label>
+                    <Field label="Limite de credito (S/)" labelClassName={labelCls}>
                       <input
                         type="number"
                         min={0}
@@ -724,9 +716,8 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         onChange={e => set('creditLimit', parseFloat(e.target.value) || 0)}
                         className={inputCls}
                       />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Dias de credito</label>
+                    </Field>
+                    <Field label="Dias de credito" labelClassName={labelCls}>
                       <input
                         type="number"
                         min={0}
@@ -734,9 +725,9 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         onChange={e => set('diasCredito', parseInt(e.target.value) || 0)}
                         className={inputCls}
                       />
-                    </div>
+                    </Field>
                     <div className="col-span-2 flex items-center justify-between">
-                      <label className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Alertas WhatsApp (recordatorios)</label>
+                      <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Alertas WhatsApp (recordatorios)</span>
                       <button
                         type="button"
                         onClick={() => set('alertasWhatsapp', !form.alertasWhatsapp)}
@@ -758,21 +749,18 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
               {/* Seccion 6: Adicionales */}
               <Section title="6. Adicionales">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}>Fecha de nacimiento</label>
+                  <Field label="Fecha de nacimiento" labelClassName={labelCls}>
                     <input type="date" value={form.fechaNacimiento} onChange={e => set('fechaNacimiento', e.target.value)} className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Genero</label>
+                  </Field>
+                  <Field label="Genero" labelClassName={labelCls}>
                     <select value={form.genero} onChange={e => set('genero', e.target.value)} className={selectCls}>
                       <option value="">No especificar</option>
                       <option value="M">Masculino</option>
                       <option value="F">Femenino</option>
                       <option value="otro">Otro</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Como llego?</label>
+                  </Field>
+                  <Field label="Como llego?" labelClassName={labelCls}>
                     <select value={form.comoLlego} onChange={e => set('comoLlego', e.target.value)} className={selectCls}>
                       <option value="">No especificar</option>
                       <option value="referido">Referido</option>
@@ -780,10 +768,9 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                       <option value="local">Paso por el local</option>
                       <option value="otro">Otro</option>
                     </select>
-                  </div>
+                  </Field>
                 </div>
-                <div>
-                  <label className={labelCls}>Observaciones</label>
+                <Field label="Observaciones" labelClassName={labelCls}>
                   <textarea
                     value={form.observaciones}
                     onChange={e => set('observaciones', e.target.value)}
@@ -791,7 +778,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                     rows={3}
                     className={cn(inputCls, "resize-none")}
                   />
-                </div>
+                </Field>
               </Section>
             </div>
           )}
