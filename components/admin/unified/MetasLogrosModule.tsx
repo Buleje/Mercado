@@ -223,7 +223,14 @@ function SemaMesTab() {
     const ctrl = new AbortController();
     fetchAbortRef.current = ctrl;
     try {
-      const res = await fetch("/api/sales?limit=1000", {
+      // Las stats solo usan ventas del mes actual + mes anterior. Acotamos el
+      // fetch a "desde el 1° del mes anterior" (server-side, hora Lima) en vez
+      // de limit=1000 all-time: trae solo la ventana necesaria y, en bodegas de
+      // alto volumen, NO se pierde data (limit=1000 capaba las más recientes).
+      const _now = new Date();
+      const _lm = new Date(_now.getFullYear(), _now.getMonth() - 1, 1);
+      const _from = `${_lm.getFullYear()}-${String(_lm.getMonth() + 1).padStart(2, "0")}-01`;
+      const res = await fetch(`/api/sales?from=${_from}&all=1`, {
         credentials: "include",
         cache: "no-store",
         signal: ctrl.signal,
