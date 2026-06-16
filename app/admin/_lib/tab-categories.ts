@@ -382,7 +382,8 @@ export const BASIC_MODULES: TabCategory[] = [
   },
 
   // ── 07 · GRÁFICOS ────────────────────────────────
-  // Visión estratégica: analytics, forecast, rendimiento técnico.
+  // Visión estratégica: analytics + forecast (ambos abren AnalisisHubModule).
+  // (rendimiento técnico movido a la categoría Sistema.)
   {
     id: "graficos",
     label: "Análisis",
@@ -390,7 +391,6 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "analytics-pro",
       "forecasting",
-      "rendimiento",
     ],
   },
 
@@ -451,7 +451,18 @@ export const CONFIG_MODULE: TabCategory = {
   id: "config",
   label: "Configuración",
   icon: SlidersHorizontal,
-  tabs: ["config", "plan", "auditoria"],
+  tabs: ["config", "plan"],
+};
+
+// ── Módulo Sistema (técnico) — rendimiento + auditoría + colas ───────────────
+// Las 3 entradas abren SistemaHubModule (cada una en su sub-tab). Antes vivían
+// dispersas: rendimiento en Análisis, auditoría en Config, colas sin sidebar.
+export const SISTEMA_MODULE: TabCategory = {
+  id: "sistema",
+  label: "Sistema",
+  icon: Gauge,
+  alwaysGroup: true,
+  tabs: ["rendimiento", "auditoria", "colas"],
 };
 
 // ── TAB_CATEGORIES: composición final del sidebar ────────────────────────────
@@ -469,6 +480,7 @@ export const TAB_CATEGORIES: TabCategory[] = [
   ...BASIC_MODULES,
   FORESTAL_MODULE,
   AGRICULTURA_MODULE,
+  SISTEMA_MODULE,
   TIENDA_MODULE,
 ];
 
