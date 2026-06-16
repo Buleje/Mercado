@@ -7,15 +7,16 @@ import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
-const InvoicingTab = dynamic(() => import("@/components/admin/InvoicingTab"), { loading: S });
 const EInvoiceTab = dynamic(() => import("@/components/admin/EInvoiceTab"), { loading: S });
 const TaxTab = dynamic(() => import("@/components/admin/TaxTab"), { loading: S });
 const PayablesTab = dynamic(() => import("@/components/admin/PayablesTab"), { loading: S });
 
 const MODULE_ID = "facturacion";
 
+// Brandon 2026-06-15: la sub-pestaña "Facturación" (InvoicingTab) se removió —
+// era una maqueta sin persistencia (los comprobantes se perdían al refrescar) y
+// redundante con "Factura Electrónica", que es la vía real de emisión a SUNAT.
 const TABS = [
-  { id: "facturacion", label: "Facturación", icon: Receipt },
   { id: "e-factura", label: "Factura Electrónica", icon: FileCheck },
   { id: "impuestos", label: "Impuestos", icon: Calculator },
   { id: "cxp", label: "Cuentas x Pagar", icon: CreditCard },
@@ -37,7 +38,6 @@ export default function FacturacionModule() {
         onTabChange={setSub}
         moduleId={MODULE_ID}
       >
-        {sub === "facturacion" && <InvoicingTab />}
         {sub === "e-factura" && <EInvoiceTab />}
         {sub === "impuestos" && <TaxTab />}
         {sub === "cxp" && <PayablesTab />}
