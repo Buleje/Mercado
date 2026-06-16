@@ -311,7 +311,9 @@ export const BASIC_MODULES: TabCategory[] = [
   },
 
   // ── 02 · VENTAS ──────────────────────────────────
-  // Todo lo que entra plata: POS, pedidos, facturación SUNAT, documentos.
+  // POS + pedidos + el hub de Documentos. "documentos" abre DocumentosHubModule,
+  // que ya contiene Facturación SUNAT / Cotizaciones / Guías / Notas / Contratos
+  // / Drive como sub-tabs (compresión 2026-06-16: 1 entrada en vez de 6).
   {
     id: "ventas",
     label: "Ventas",
@@ -319,23 +321,18 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "ventas-caja",
       "pedidos",
-      "facturacion",
       "documentos",
-      "cotizaciones",
-      "guias-remision",
-      "notas-credito",
     ],
   },
 
   // ── 03 · COMPRAS ─────────────────────────────────
-  // Pedidos a proveedor + contratos (lo que sale de la caja hacia arriba).
+  // Pedidos a proveedor. (contratos → hub de Documentos en Ventas.)
   {
     id: "compras",
     label: "Compras",
     icon: PackagePlus,
     tabs: [
       "compras",
-      "contratos",
     ],
   },
 
@@ -352,7 +349,8 @@ export const BASIC_MODULES: TabCategory[] = [
   },
 
   // ── 05 · CLIENTES ────────────────────────────────
-  // CRM + comunicación + leads. (Créditos/préstamos movidos a Finanzas.)
+  // CRM (con Leads dentro) + Mensajes. "marketplace-chat" abre MensajesHubModule
+  // (chat + soporte). leads → sub-tab de CRM. (Créditos/préstamos en Finanzas.)
   {
     id: "clientes",
     label: "Clientes",
@@ -360,14 +358,14 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "clientes",
       "marketplace-chat",
-      "support-inbox",
-      "leads-funnel",
     ],
   },
 
   // ── 06 · FINANZAS ────────────────────────────────
-  // Todo el dinero del negocio: caja/saldos, créditos a clientes (fiados),
-  // préstamos, y adelantos a personas por servicios. Inicia la sección "Gestión".
+  // "plata" abre FinanzasModule (P&L, gastos, flujo, tesorería + Fiados,
+  // Préstamos, Adelantos, Activos, Por cobrar, Scoring como sub-tabs).
+  // fiados/prestamos quedan como acceso directo (uso diario del bodeguero);
+  // adelantos/activos viven dentro del hub.
   {
     id: "finanzas",
     label: "Finanzas",
@@ -376,8 +374,6 @@ export const BASIC_MODULES: TabCategory[] = [
       "plata",
       "fiados",
       "prestamos",
-      "adelantos",
-      "activos",
     ],
   },
 
@@ -388,14 +384,15 @@ export const BASIC_MODULES: TabCategory[] = [
     id: "graficos",
     label: "Análisis",
     icon: BarChart3,
+    // "analytics-pro" abre AnalisisHubModule (Analytics Pro + Predicción + Inteligencia).
     tabs: [
       "analytics-pro",
-      "forecasting",
     ],
   },
 
   // ── 07 · MARKETPLACE ─────────────────────────────
-  // Toda la operación del marketplace público + delivery + lives.
+  // "marketplace" abre MarketplaceModule (tienda + comisiones + cupones +
+  // Suscripciones/Gift Cards/Socio/Lives como sub-tabs). Delivery aparte.
   {
     id: "marketplace-ops",
     label: "Marketplace",
@@ -404,10 +401,6 @@ export const BASIC_MODULES: TabCategory[] = [
       "marketplace",
       "delivery-partners",
       "delivery-live",
-      "subscriptions",
-      "gift-cards-admin",
-      "socio-members",
-      "lives-admin",
     ],
   },
 ];
