@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Radio, Save, AlertCircle, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 export interface ScheduledLiveData {
   title: string;
@@ -107,8 +108,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
           </div>
         )}
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-secondary)]">Título *</label>
+        <Field label="Título *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
           <input
             type="text"
             value={title}
@@ -117,10 +117,9 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             autoFocus
           />
-        </div>
+        </Field>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-secondary)]">Descripción</label>
+        <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -128,32 +127,31 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
             placeholder="Describe qué verán los espectadores"
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
           />
-        </div>
+        </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Fecha *</label>
+          <Field label="Fecha *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Hora *</label>
+          </Field>
+          <Field label="Hora *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-[var(--text-secondary)]">Productos destacados ({selectedIds.size} seleccionados)</label>
+        <Field label={`Productos destacados (${selectedIds.size} seleccionados)`} labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-2">
+          {(id) => (<>
           <input
+            id={id}
             type="search"
             placeholder="Buscar producto..."
             value={search}
@@ -190,7 +188,8 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
               );
             })}
           </div>
-        </div>
+          </>)}
+        </Field>
 
         <div className="flex gap-3 pt-2">
           <button

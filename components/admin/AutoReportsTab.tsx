@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from '@/components/admin/shared/Field';
 
 import { useState } from "react";
 import { FileBarChart, Plus, Check, Clock, Send, Calendar, Mail, Trash2, Pencil, Play, Pause } from "@buleje/design-system/icons";
@@ -108,13 +109,13 @@ export default function AutoReportsTab() {
           <div className="bg-[var(--surface-raised)] rounded-xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)]" onClick={e => e.stopPropagation()}>
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editReport ? "Editar reporte" : "Nuevo reporte"}</CardTitle>
             <div className="space-y-3">
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label><input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></div>
+              <Field label="Nombre" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></Field>
+              <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"><input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" /></Field>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Formato</label><select value={formFormat} onChange={e => setFormFormat(e.target.value as Report["format"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"><option>PDF</option><option>Excel</option><option>CSV</option></select></div>
-                <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Frecuencia</label><select value={formSchedule} onChange={e => setFormSchedule(e.target.value as Report["schedule"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"><option value="diario">Diario</option><option value="semanal">Semanal</option><option value="mensual">Mensual</option><option value="manual">Manual</option></select></div>
+                <Field label="Formato" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"><select value={formFormat} onChange={e => setFormFormat(e.target.value as Report["format"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"><option>PDF</option><option>Excel</option><option>CSV</option></select></Field>
+                <Field label="Frecuencia" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"><select value={formSchedule} onChange={e => setFormSchedule(e.target.value as Report["schedule"])} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm"><option value="diario">Diario</option><option value="semanal">Semanal</option><option value="mensual">Mensual</option><option value="manual">Manual</option></select></Field>
               </div>
-              <div><label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Destinatarios (separados por coma)</label><input value={formRecipients} onChange={e => setFormRecipients(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="email1@example.com, email2@example.com" /></div>
+              <Field label="Destinatarios (separados por coma)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"><input value={formRecipients} onChange={e => setFormRecipients(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="email1@example.com, email2@example.com" /></Field>
             </div>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>

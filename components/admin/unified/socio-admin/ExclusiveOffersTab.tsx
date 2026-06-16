@@ -18,6 +18,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 interface ExclusiveOffer {
   id: string;
@@ -125,8 +126,7 @@ function OfferModal({
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Producto *</label>
+          <Field label="Producto *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="text"
               value={form.productName}
@@ -135,11 +135,10 @@ function OfferModal({
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               autoFocus
             />
-          </div>
+          </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Precio regular (S/)</label>
+            <Field label="Precio regular (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
               <input
                 type="number"
                 min={0}
@@ -148,9 +147,8 @@ function OfferModal({
                 onChange={(e) => setForm((p) => ({ ...p, regularPrice: parseFloat(e.target.value) || 0 }))}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Precio Socio (S/)</label>
+            </Field>
+            <Field label="Precio Socio (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
               <input
                 type="number"
                 min={0}
@@ -159,7 +157,7 @@ function OfferModal({
                 onChange={(e) => setForm((p) => ({ ...p, socioPrice: parseFloat(e.target.value) || 0 }))}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
-            </div>
+            </Field>
           </div>
 
           <div className="flex items-center justify-between p-3 bg-[var(--data-success-50)] rounded-xl border border-[var(--data-success-500)]">

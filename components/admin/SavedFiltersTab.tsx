@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect } from "react";
 import { Filter, Save, Trash2, Play, Plus, X, Copy, Check, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -264,23 +265,20 @@ export default function SavedFiltersTab() {
               <button onClick={() => setShowNew(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Nombre</label>
+              <Field label="Nombre" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ej: Stock bajo en bebidas" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary" autoFocus />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Descripción</label>
+              </Field>
+              <Field label="Descripción" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <input type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Breve descripción..." className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Módulo</label>
+              </Field>
+              <Field label="Módulo" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <select value={newModule} onChange={e => setNewModule(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
                   {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
-              </div>
+              </Field>
 
               <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2">Condiciones</label>
+                <span className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2">Condiciones</span>
                 <div className="space-y-2">
                   {newConditions.map((cond, i) => (
                     <div key={i} className="flex flex-wrap items-center gap-2">

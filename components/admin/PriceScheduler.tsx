@@ -4,6 +4,7 @@ import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Plus, Trash2, Search, Clock, Check, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { Field } from '@/components/admin/shared/Field';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -213,36 +214,44 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
       <p className="text-sm font-semibold text-[var(--text-secondary)]">Nuevo cambio programado</p>
 
       {/* Product search */}
-      <div className="space-y-1">
-        <label className="text-xs font-medium text-[var(--text-tertiary)]">Producto</label>
-        <ProductSearchInput onSelect={p => { setForm(f => ({ ...f, product: p })); }} />
-        {errors.product && <p className="text-xs text-[var(--data-error-500)]">{errors.product}</p>}
-      </div>
+      <Field label="Producto" labelClassName="text-xs font-medium text-[var(--text-tertiary)]" className="space-y-1">
+        {() => (
+          <>
+            <ProductSearchInput onSelect={p => { setForm(f => ({ ...f, product: p })); }} />
+            {errors.product && <p className="text-xs text-[var(--data-error-500)]">{errors.product}</p>}
+          </>
+        )}
+      </Field>
 
       {/* Current vs new price */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[var(--text-tertiary)]">Precio actual</label>
-          <div className="px-3 py-2 rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 bg-[var(--surface-canvas)]/50 text-sm text-[var(--text-tertiary)]">
-            {form.product ? fmt(form.product.price) : "—"}
-          </div>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[var(--text-tertiary)]">Precio nuevo (S/)</label>
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={form.newPrice}
-            onChange={e => setForm(f => ({ ...f, newPrice: e.target.value }))}
-            placeholder="0.00"
-            className={cn(
-              "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-              errors.newPrice ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
-            )}
-          />
-          {errors.newPrice && <p className="text-xs text-[var(--data-error-500)]">{errors.newPrice}</p>}
-        </div>
+        <Field label="Precio actual" labelClassName="text-xs font-medium text-[var(--text-tertiary)]" className="space-y-1">
+          {() => (
+            <div className="px-3 py-2 rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50 bg-[var(--surface-canvas)]/50 text-sm text-[var(--text-tertiary)]">
+              {form.product ? fmt(form.product.price) : "—"}
+            </div>
+          )}
+        </Field>
+        <Field label="Precio nuevo (S/)" labelClassName="text-xs font-medium text-[var(--text-tertiary)]" className="space-y-1">
+          {(id) => (
+            <>
+              <input
+                id={id}
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={form.newPrice}
+                onChange={e => setForm(f => ({ ...f, newPrice: e.target.value }))}
+                placeholder="0.00"
+                className={cn(
+                  "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
+                  errors.newPrice ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                )}
+              />
+              {errors.newPrice && <p className="text-xs text-[var(--data-error-500)]">{errors.newPrice}</p>}
+            </>
+          )}
+        </Field>
       </div>
 
       {/* Price diff indicator */}
@@ -259,32 +268,40 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
 
       {/* Dates */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[var(--text-tertiary)]">Fecha de inicio</label>
-          <input
-            type="datetime-local"
-            value={form.startDate}
-            onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-            className={cn(
-              "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-              errors.startDate ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
-            )}
-          />
-          {errors.startDate && <p className="text-xs text-[var(--data-error-500)]">{errors.startDate}</p>}
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[var(--text-tertiary)]">Fecha de fin (opcional)</label>
-          <input
-            type="datetime-local"
-            value={form.endDate}
-            onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-            className={cn(
-              "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
-              errors.endDate ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
-            )}
-          />
-          {errors.endDate && <p className="text-xs text-[var(--data-error-500)]">{errors.endDate}</p>}
-        </div>
+        <Field label="Fecha de inicio" labelClassName="text-xs font-medium text-[var(--text-tertiary)]" className="space-y-1">
+          {(id) => (
+            <>
+              <input
+                id={id}
+                type="datetime-local"
+                value={form.startDate}
+                onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                className={cn(
+                  "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
+                  errors.startDate ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                )}
+              />
+              {errors.startDate && <p className="text-xs text-[var(--data-error-500)]">{errors.startDate}</p>}
+            </>
+          )}
+        </Field>
+        <Field label="Fecha de fin (opcional)" labelClassName="text-xs font-medium text-[var(--text-tertiary)]" className="space-y-1">
+          {(id) => (
+            <>
+              <input
+                id={id}
+                type="datetime-local"
+                value={form.endDate}
+                onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                className={cn(
+                  "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40",
+                  errors.endDate ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                )}
+              />
+              {errors.endDate && <p className="text-xs text-[var(--data-error-500)]">{errors.endDate}</p>}
+            </>
+          )}
+        </Field>
       </div>
 
       <div className="flex justify-end gap-2 pt-1">

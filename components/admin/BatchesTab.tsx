@@ -2,6 +2,7 @@
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field as FieldWrapper } from "@/components/admin/shared/Field";
 
 import { useState, useMemo, useEffect } from "react";
 import {
@@ -347,45 +348,44 @@ export default function BatchesTab() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Field label="Nº Lote *" value={form.lote} onChange={v => setForm(p => ({ ...p, lote: v }))} placeholder="L2026-XXX" />
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Producto *</label>
-              {products.length > 0 ? (
-                <select
-                  value={form.productId}
-                  onChange={e => {
-                    const sel = products.find(p => String(p.id) === e.target.value);
-                    setForm(p => ({ ...p, productId: e.target.value, productName: sel?.name ?? p.productName, productCategory: sel?.category ?? p.productCategory }));
-                  }}
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-                >
-                  <option value="">Seleccionar producto...</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-              ) : (
-                <input type="text" value={form.productName} onChange={e => setForm(p => ({ ...p, productName: e.target.value }))} placeholder="Nombre del producto" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+            <FieldWrapper label="Producto *" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
+              {(id) => (
+                products.length > 0 ? (
+                  <select
+                    id={id}
+                    value={form.productId}
+                    onChange={e => {
+                      const sel = products.find(p => String(p.id) === e.target.value);
+                      setForm(p => ({ ...p, productId: e.target.value, productName: sel?.name ?? p.productName, productCategory: sel?.category ?? p.productCategory }));
+                    }}
+                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  >
+                    <option value="">Seleccionar producto...</option>
+                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                ) : (
+                  <input id={id} type="text" value={form.productName} onChange={e => setForm(p => ({ ...p, productName: e.target.value }))} placeholder="Nombre del producto" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                )
               )}
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
+            </FieldWrapper>
+            <FieldWrapper label="Categoría" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={form.productCategory} onChange={e => setForm(p => ({ ...p, productCategory: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-            </div>
+            </FieldWrapper>
             <Field label="Proveedor" value={form.supplierName} onChange={v => setForm(p => ({ ...p, supplierName: v }))} placeholder="Nombre proveedor" />
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Almacén</label>
+            <FieldWrapper label="Almacén" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={form.warehouseId} onChange={e => setForm(p => ({ ...p, warehouseId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 <option value="">Sin almacén asignado</option>
                 {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
-            </div>
+            </FieldWrapper>
             <Field label="Cantidad" value={form.quantity} onChange={v => setForm(p => ({ ...p, quantity: v }))} type="number" placeholder="0" />
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Unidad</label>
+            <FieldWrapper label="Unidad" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={form.unit} onChange={e => setForm(p => ({ ...p, unit: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {["unidad", "kg", "litro", "caja", "bolsa", "saco", "lata", "botella", "pack"].map(u => <option key={u} value={u}>{u}</option>)}
               </select>
-            </div>
+            </FieldWrapper>
             <Field label="Fecha ingreso" value={form.entryDate} onChange={v => setForm(p => ({ ...p, entryDate: v }))} type="date" />
             <Field label="Fecha vencimiento *" value={form.expiryDate} onChange={v => setForm(p => ({ ...p, expiryDate: v }))} type="date" />
             <Field label="Costo unitario (S/)" value={form.costUnit} onChange={v => setForm(p => ({ ...p, costUnit: v }))} type="number" placeholder="0.00" />

@@ -2,6 +2,7 @@
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from '@/components/admin/shared/Field';
 import { useState, useEffect, useMemo } from "react";
 import {
   Truck, Wrench, Fuel, AlertTriangle, ChevronDown, ChevronUp,
@@ -352,8 +353,7 @@ export default function FleetManagementTab() {
               <button onClick={() => setShowMaintModal(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Vehículo</label>
+              <Field label="Vehículo" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select
                   value={maintForm.vehicleId}
                   onChange={e => {
@@ -365,29 +365,25 @@ export default function FleetManagementTab() {
                   <option value="">Seleccionar vehículo...</option>
                   {vehicles.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo de trabajo</label>
+              </Field>
+              <Field label="Tipo de trabajo" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={maintForm.type} onChange={e => setMaintForm(f => ({ ...f, type: e.target.value }))}
                   placeholder="Ej: Cambio de aceite, frenos..." className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
+              </Field>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</label>
+                <Field label="Fecha" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="date" value={maintForm.date} onChange={e => setMaintForm(f => ({ ...f, date: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Costo (S/)</label>
+                </Field>
+                <Field label="Costo (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" min="0" step="0.5" value={maintForm.cost} onChange={e => setMaintForm(f => ({ ...f, cost: +e.target.value }))}
                     className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-                </div>
+                </Field>
               </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Notas</label>
+              <Field label="Notas" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={maintForm.notes} onChange={e => setMaintForm(f => ({ ...f, notes: e.target.value }))} rows={2}
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm resize-none" />
-              </div>
+              </Field>
             </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">Cancelar</button>

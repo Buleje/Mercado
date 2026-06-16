@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   AlertTriangle, CheckCircle, Clock, Download, Loader2,
   Package, Search, ShieldCheck, Plus, X, Trash2, TrendingDown,
@@ -270,7 +271,7 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
         </div>
         <div className="space-y-4 p-6">
           <div>
-            <label className={LABEL}>Producto</label>
+            <span className={LABEL}>Producto</span>
             {selected ? (
               <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3.5 py-2.5 text-left">
                 <span className="text-sm font-bold text-[var(--text-primary)]">{selected.name}</span>
@@ -286,11 +287,11 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
             </>)}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className={LABEL}>N° de lote</label><input value={lote} onChange={e => setLote(e.target.value)} placeholder="auto" className={FIELD} /></div>
-            <div><label className={LABEL}>Cantidad</label><input type="number" min="0" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" className={FIELD} /></div>
-            <div><label className={LABEL}>Vence el *</label><input type="date" value={expiry} onChange={e => setExpiry(e.target.value)} className={FIELD} /></div>
-            <div><label className={LABEL}>Costo unitario (S/)</label><input type="number" min="0" step="0.01" value={cost} onChange={e => setCost(e.target.value)} placeholder="0.00" className={FIELD} /></div>
-            <div className="col-span-2"><label className={LABEL}>Proveedor (opcional)</label><input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder="Distribuidora…" className={FIELD} /></div>
+            <Field label="N° de lote" labelClassName={LABEL}><input value={lote} onChange={e => setLote(e.target.value)} placeholder="auto" className={FIELD} /></Field>
+            <Field label="Cantidad" labelClassName={LABEL}><input type="number" min="0" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" className={FIELD} /></Field>
+            <Field label="Vence el *" labelClassName={LABEL}><input type="date" value={expiry} onChange={e => setExpiry(e.target.value)} className={FIELD} /></Field>
+            <Field label="Costo unitario (S/)" labelClassName={LABEL}><input type="number" min="0" step="0.01" value={cost} onChange={e => setCost(e.target.value)} placeholder="0.00" className={FIELD} /></Field>
+            <Field label="Proveedor (opcional)" labelClassName={LABEL} className="col-span-2"><input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder="Distribuidora…" className={FIELD} /></Field>
           </div>
           <div className="flex items-center gap-3 pt-1">
             <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>

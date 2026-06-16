@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import ImageUpload from "./ImageUpload";
 import type { StoreTheme } from "./StoreCustomizer";
+import { Field } from "@/components/admin/shared/Field";
 
 type Category = {
   id: string;
@@ -192,8 +193,7 @@ export default function CategoryBannersTab({
 
                   {/* TEXTOS */}
                   <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted">Título</label>
+                    <Field label="Título" labelClassName="text-xs font-bold uppercase tracking-wider text-muted" className="space-y-1.5">
                       <input
                         type="text"
                         value={banner.title ?? ""}
@@ -202,9 +202,8 @@ export default function CategoryBannersTab({
                         className={inputCls}
                         maxLength={60}
                       />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted">Subtítulo</label>
+                    </Field>
+                    <Field label="Subtítulo" labelClassName="text-xs font-bold uppercase tracking-wider text-muted" className="space-y-1.5">
                       <input
                         type="text"
                         value={banner.subtitle ?? ""}
@@ -213,9 +212,8 @@ export default function CategoryBannersTab({
                         className={inputCls}
                         maxLength={120}
                       />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted">Texto del botón</label>
+                    </Field>
+                    <Field label="Texto del botón" labelClassName="text-xs font-bold uppercase tracking-wider text-muted" className="space-y-1.5">
                       <input
                         type="text"
                         value={banner.ctaText ?? ""}
@@ -224,30 +222,36 @@ export default function CategoryBannersTab({
                         className={inputCls}
                         maxLength={30}
                       />
-                    </div>
+                    </Field>
 
                     {/* Vincular a producto específico (opcional) */}
-                    <div className="space-y-1.5 pt-1">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                        Vincular a producto <span className="text-[length:var(--ts-2xs)] font-normal text-muted normal-case tracking-normal">(opcional)</span>
-                      </label>
-                      <select
-                        value={banner.productSlug ?? ""}
-                        onChange={(e) => updateBanner(cat.id, { productSlug: e.target.value || undefined })}
-                        className={cn(inputCls, "appearance-none")}
-                      >
-                        <option value="">Filtrar por categoría completa</option>
-                        {catProducts.map((p) => (
-                          <option key={p.id} value={p.slug ?? String(p.id)}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-[length:var(--ts-xs)] text-muted leading-snug">
-                        Si elegís un producto, el botón lleva directo al detalle de ese producto.
-                        Sin elegir, filtra toda la categoría.
-                      </p>
-                    </div>
+                    <Field
+                      label={<>Vincular a producto <span className="text-[length:var(--ts-2xs)] font-normal text-muted normal-case tracking-normal">(opcional)</span></>}
+                      labelClassName="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5"
+                      className="space-y-1.5 pt-1"
+                    >
+                      {(id) => (
+                        <>
+                          <select
+                            id={id}
+                            value={banner.productSlug ?? ""}
+                            onChange={(e) => updateBanner(cat.id, { productSlug: e.target.value || undefined })}
+                            className={cn(inputCls, "appearance-none")}
+                          >
+                            <option value="">Filtrar por categoría completa</option>
+                            {catProducts.map((p) => (
+                              <option key={p.id} value={p.slug ?? String(p.id)}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-[length:var(--ts-xs)] text-muted leading-snug">
+                            Si elegís un producto, el botón lleva directo al detalle de ese producto.
+                            Sin elegir, filtra toda la categoría.
+                          </p>
+                        </>
+                      )}
+                    </Field>
 
                     {/* Acciones */}
                     {hasImage && (

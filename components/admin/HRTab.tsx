@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { Field } from '@/components/admin/shared/Field';
 
 import { useState, useMemo } from "react";
 import {
@@ -214,55 +215,56 @@ export default function HRTab() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <EField label="Nombre completo *" value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Apellidos Nombres" span={2} />
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">DNI *</label>
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={form.dni}
-                  onChange={e => { setForm(p => ({ ...p, dni: e.target.value.replace(/\D/g, "").slice(0, 8) })); setDniMsg(null); }}
-                  placeholder="00000000"
-                  maxLength={8}
-                  className="flex-1 min-w-0 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                {form.dni.length === 8 && (
-                  <button
-                    type="button"
-                    onClick={() => handleVerifyDni(form.dni)}
-                    disabled={verifyingDni}
-                    className="px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-40 flex items-center gap-1.5 shrink-0 hover:bg-primary/90 transition-colors"
-                  >
-                    {verifyingDni ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
-                    Verificar
-                  </button>
-                )}
-              </div>
-              {dniMsg && (
-                <p className={`mt-1 text-xs font-medium ${dniMsg.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
-                  {dniMsg.text}
-                </p>
+            <Field label="DNI *" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
+              {(id) => (
+                <>
+                  <div className="flex gap-1.5">
+                    <input
+                      id={id}
+                      type="text"
+                      value={form.dni}
+                      onChange={e => { setForm(p => ({ ...p, dni: e.target.value.replace(/\D/g, "").slice(0, 8) })); setDniMsg(null); }}
+                      placeholder="00000000"
+                      maxLength={8}
+                      className="flex-1 min-w-0 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                    {form.dni.length === 8 && (
+                      <button
+                        type="button"
+                        onClick={() => handleVerifyDni(form.dni)}
+                        disabled={verifyingDni}
+                        className="px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-40 flex items-center gap-1.5 shrink-0 hover:bg-primary/90 transition-colors"
+                      >
+                        {verifyingDni ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                        Verificar
+                      </button>
+                    )}
+                  </div>
+                  {dniMsg && (
+                    <p className={`mt-1 text-xs font-medium ${dniMsg.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
+                      {dniMsg.text}
+                    </p>
+                  )}
+                </>
               )}
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Estado</label>
+            </Field>
+            <Field label="Estado" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value as EmployeeStatus }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {(Object.keys(STATUS_EMP) as EmployeeStatus[]).map(s => <option key={s} value={s}>{STATUS_EMP[s].label}</option>)}
               </select>
-            </div>
+            </Field>
             <EField label="Cargo *" value={form.role} onChange={v => setForm(p => ({ ...p, role: v }))} placeholder="Ej: Cajero, Almacenero..." />
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Departamento</label>
+            <Field label="Departamento" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {["Ventas", "Logística", "Operaciones", "Administración", "TI"].map(d => <option key={d} value={d}>{d}</option>)}
               </select>
-            </div>
+            </Field>
             <EField label="Teléfono" value={form.phone} onChange={v => setForm(p => ({ ...p, phone: v }))} placeholder="9XXXXXXXX" />
             <EField label="Email" value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} placeholder="email@bodega.com" />
             <EField label="Fecha ingreso" value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} type="date" />
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Salario base (S/)</label>
+            <Field label="Salario base (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="number" value={form.baseSalary} onChange={e => setForm(p => ({ ...p, baseSalary: parseFloat(e.target.value) || 0 }))} min="1025" step="25" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => { setShowForm(false); setDniMsg(null); }} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
@@ -329,10 +331,9 @@ export default function HRTab() {
       {/* Attendance view */}
       {view === "asistencia" && (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha:</label>
+          <Field label="Fecha:" labelClassName="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]" className="flex items-center gap-3">
             <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-          </div>
+          </Field>
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead className="bg-[var(--surface-alt)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
@@ -390,9 +391,12 @@ export default function HRTab() {
 
 function EField({ label, value, onChange, type = "text", placeholder, span }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; span?: number }) {
   return (
-    <div className={span ? `col-span-${span}` : ""}>
-      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">{label}</label>
+    <Field
+      label={label}
+      labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1"
+      className={span ? `col-span-${span}` : undefined}
+    >
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-    </div>
+    </Field>
   );
 }

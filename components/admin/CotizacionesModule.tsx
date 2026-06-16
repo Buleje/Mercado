@@ -17,6 +17,7 @@ const CotizacionesChart = dynamic(() => import("./CotizacionesChart"), {
 });
 import { CardTitle, ErrorAlert, LoadingState } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
@@ -943,33 +944,37 @@ export default function CotizacionesModule() {
           {/* Step 1: Cliente */}
           {step === 1 && (
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre del cliente</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                  <input
-                    type="text"
-                    value={clienteNombre}
-                    onChange={e => setClienteNombre(e.target.value)}
-                    placeholder="Nombre o razón social"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC (opcional)</label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                  <input
-                    type="text"
-                    value={clienteRuc}
-                    onChange={e => setClienteRuc(e.target.value)}
-                    placeholder="20XXXXXXXXX"
-                    maxLength={20}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
+              <Field label="Nombre del cliente" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                {(id) => (
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <input
+                      id={id}
+                      type="text"
+                      value={clienteNombre}
+                      onChange={e => setClienteNombre(e.target.value)}
+                      placeholder="Nombre o razón social"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                )}
+              </Field>
+              <Field label="RUC (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                {(id) => (
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <input
+                      id={id}
+                      type="text"
+                      value={clienteRuc}
+                      onChange={e => setClienteRuc(e.target.value)}
+                      placeholder="20XXXXXXXXX"
+                      maxLength={20}
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                )}
+              </Field>
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => { if (clienteNombre.trim()) setStep(2); else setCreateError("Nombre del cliente requerido"); }}
@@ -1108,20 +1113,21 @@ export default function CotizacionesModule() {
                 <p className="text-sm"><span className="font-bold text-[var(--text-primary)]">Items:</span> {items.filter(i => i.descripcion.trim()).length}</p>
                 <p className="text-sm"><span className="font-bold text-[var(--text-primary)]">Total:</span> <span className="font-bold text-primary">{formatCurrency(computedTotal)}</span></p>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Válido hasta</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                  <input
-                    type="date"
-                    value={validoHasta}
-                    onChange={e => setValidoHasta(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+              <Field label="Válido hasta" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                {(id) => (
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                    <input
+                      id={id}
+                      type="date"
+                      value={validoHasta}
+                      onChange={e => setValidoHasta(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                )}
+              </Field>
+              <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <textarea
                   value={notas}
                   onChange={e => setNotas(e.target.value)}
@@ -1129,7 +1135,7 @@ export default function CotizacionesModule() {
                   rows={2}
                   className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
-              </div>
+              </Field>
 
               {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 

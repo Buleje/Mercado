@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   Bell,
@@ -199,79 +200,81 @@ export default function PushNotificationManager() {
           {/* Compose form */}
           <div className="flex flex-col gap-4">
             {/* Segment */}
-            <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
-                Destinatarios
-              </label>
-              <div className="relative">
-                <select
-                  value={segment}
-                  onChange={(e) => setSegment(e.target.value as SendSegment)}
-                  className={cn(
-                    "w-full appearance-none rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-3 pr-8 text-sm",
-                    "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
-                    "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                  )}
-                >
-                  {(Object.keys(SEGMENT_LABELS) as SendSegment[]).map((s) => (
-                    <option key={s} value={s}>
-                      {SEGMENT_LABELS[s]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-              </div>
-              <p className="mt-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
-                <Users className="h-3 w-3" />
-                Suscriptores del segmento seleccionado
-              </p>
-            </div>
+            <Field label="Destinatarios" labelClassName="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
+              {(id) => (
+                <>
+                  <div className="relative">
+                    <select
+                      id={id}
+                      value={segment}
+                      onChange={(e) => setSegment(e.target.value as SendSegment)}
+                      className={cn(
+                        "w-full appearance-none rounded-lg border border-[var(--rule-base)] bg-gray-50 py-2 pl-3 pr-8 text-sm",
+                        "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+                        "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                      )}
+                    >
+                      {(Object.keys(SEGMENT_LABELS) as SendSegment[]).map((s) => (
+                        <option key={s} value={s}>
+                          {SEGMENT_LABELS[s]}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                  </div>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-[var(--text-tertiary)]">
+                    <Users className="h-3 w-3" />
+                    Suscriptores del segmento seleccionado
+                  </p>
+                </>
+              )}
+            </Field>
 
             {/* Title */}
-            <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
-                Título
-              </label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={80}
-                placeholder="Ej: Ofertas de fin de semana"
-                className={cn(
-                  "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
-                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
-                  "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-                )}
-              />
-              <p className="mt-0.5 text-right text-xs text-[var(--text-tertiary)]">{title.length}/80</p>
-            </div>
+            <Field label="Título" labelClassName="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
+              {(id) => (
+                <>
+                  <input
+                    id={id}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    maxLength={80}
+                    placeholder="Ej: Ofertas de fin de semana"
+                    className={cn(
+                      "w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
+                      "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+                      "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                    )}
+                  />
+                  <p className="mt-0.5 text-right text-xs text-[var(--text-tertiary)]">{title.length}/80</p>
+                </>
+              )}
+            </Field>
 
             {/* Body */}
-            <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
-                Mensaje
-              </label>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                maxLength={200}
-                rows={3}
-                placeholder="Escribe el cuerpo de la notificación..."
-                className={cn(
-                  "w-full resize-none rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
-                  "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
-                  "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-                )}
-              />
-              <p className="mt-0.5 text-right text-xs text-[var(--text-tertiary)]">{body.length}/200</p>
-            </div>
+            <Field label="Mensaje" labelClassName="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
+              {(id) => (
+                <>
+                  <textarea
+                    id={id}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    maxLength={200}
+                    rows={3}
+                    placeholder="Escribe el cuerpo de la notificación..."
+                    className={cn(
+                      "w-full resize-none rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm",
+                      "text-[var(--text-primary)] placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+                      "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                    )}
+                  />
+                  <p className="mt-0.5 text-right text-xs text-[var(--text-tertiary)]">{body.length}/200</p>
+                </>
+              )}
+            </Field>
 
             {/* URL */}
-            <div>
-              <label className="mb-1 flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)]">
-                <Link className="h-3 w-3" />
-                Enlace al hacer clic (opcional)
-              </label>
+            <Field label={<><Link className="h-3 w-3 inline mr-1" />Enlace al hacer clic (opcional)</>} labelClassName="mb-1 flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)]">
               <input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -282,7 +285,7 @@ export default function PushNotificationManager() {
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
-            </div>
+            </Field>
 
             {/* Send button */}
             {sendError && (

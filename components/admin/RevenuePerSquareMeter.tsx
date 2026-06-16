@@ -1,8 +1,9 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
- 
- 
+import { Field } from "@/components/admin/shared/Field";
+
+
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -83,21 +84,15 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
   return (
     <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2">
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-            Nombre del area
-          </label>
+        <Field label="Nombre del area" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1" className="col-span-2">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Pasillo A - Abarrotes"
             className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-            Metros cuadrados (m2)
-          </label>
+        </Field>
+        <Field label="Metros cuadrados (m2)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
           <input
             type="number"
             min={0.1}
@@ -106,11 +101,8 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             onChange={(e) => setSqm(Number(e.target.value))}
             className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-            Ventas mensuales (S/)
-          </label>
+        </Field>
+        <Field label="Ventas mensuales (S/)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
           <input
             type="number"
             min={0}
@@ -118,11 +110,11 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             onChange={(e) => setRevenue(Number(e.target.value))}
             className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
-        </div>
+        </Field>
         <div className="col-span-2">
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+          <span className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
             Categorias en esta area
-          </label>
+          </span>
           <div className="flex flex-wrap gap-1.5">
             {ALL_CATEGORIES.map((cat) => (
               <button

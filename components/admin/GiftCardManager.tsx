@@ -2,6 +2,7 @@
  
 
 import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { Gift, Plus, Check, Copy, Search, Tag, Clock, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -380,32 +381,30 @@ export default function GiftCardManager() {
             ) : (
               <>
                 <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Monto del vale</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-secondary)]">S/</span>
-                      <input type="number" min="1" step="0.50" value={createAmount} onChange={(e) => setCreateAmount(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full pl-8 pr-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
-                    </div>
-                  </div>
+                  <Field label="Monto del vale" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
+                    {(id) => (
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-secondary)]">S/</span>
+                        <input id={id} type="number" min="1" step="0.50" value={createAmount} onChange={(e) => setCreateAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full pl-8 pr-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
+                      </div>
+                    )}
+                  </Field>
 
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Para quien</label>
+                  <Field label="Para quien" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                     <input type="text" value={createRecipient} onChange={(e) => setCreateRecipient(e.target.value)}
                       placeholder="Nombre del destinatario"
                       className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
-                  </div>
+                  </Field>
 
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Mensaje (opcional)</label>
+                  <Field label="Mensaje (opcional)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                     <input type="text" value={createMessage} onChange={(e) => setCreateMessage(e.target.value)}
                       placeholder="Feliz cumpleanos, con carino..."
                       className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
-                  </div>
+                  </Field>
 
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Valido por</label>
+                  <Field label="Valido por" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                     <select value={createMonths} onChange={(e) => setCreateMonths(e.target.value)}
                       className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary">
                       <option value="1">1 mes</option>
@@ -413,7 +412,7 @@ export default function GiftCardManager() {
                       <option value="6">6 meses</option>
                       <option value="12">1 ano</option>
                     </select>
-                  </div>
+                  </Field>
                 </div>
 
                 <button
@@ -433,23 +432,23 @@ export default function GiftCardManager() {
         {/* ── Canjear ── */}
         {activeTab === "canjear" && (
           <div className="space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Codigo del vale</label>
+            <Field label="Codigo del vale" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <input type="text" value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
                 placeholder="XXXXXXXX"
                 maxLength={8}
                 className="w-full px-3 py-2.5 text-sm font-mono rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary tracking-widest uppercase" />
-            </div>
+            </Field>
 
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Monto a descontar</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-secondary)]">S/</span>
-                <input type="number" min="0.01" step="0.01" value={redeemAmount} onChange={(e) => setRedeemAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full pl-8 pr-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
-              </div>
-            </div>
+            <Field label="Monto a descontar" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
+              {(id) => (
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-secondary)]">S/</span>
+                  <input id={id} type="number" min="0.01" step="0.01" value={redeemAmount} onChange={(e) => setRedeemAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-8 pr-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:border-primary" />
+                </div>
+              )}
+            </Field>
 
             {/* Preview card */}
             {redeemCode.length === 8 && (() => {

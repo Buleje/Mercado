@@ -10,6 +10,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from '@/components/admin/shared/Field';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -293,22 +294,19 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
             <button onClick={() => setShowOpenForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Nombre del cajero</label>
+            <Field label="Nombre del cajero" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="text" value={openForm.userName} onChange={e => setOpenForm(p => ({ ...p, userName: e.target.value }))} placeholder="Nombre completo" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Rol</label>
+            </Field>
+            <Field label="Rol" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={openForm.role} onChange={e => setOpenForm(p => ({ ...p, role: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 <option value="cajero">Cajero</option>
                 <option value="vendedor">Vendedor</option>
                 <option value="administrador">Administrador</option>
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Fondo inicial (S/)</label>
+            </Field>
+            <Field label="Fondo inicial (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="number" value={openForm.openingCash} onChange={e => setOpenForm(p => ({ ...p, openingCash: e.target.value }))} min="0" step="50" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowOpenForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>
@@ -333,8 +331,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
               <div className="flex justify-between"><span className="text-[var(--text-secondary)] dark:text-muted">Efectivo esperado</span><span className="font-extrabold text-[var(--data-success-500)]">{fmt(showCloseForm.expectedCash)}</span></div>
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Efectivo contado en caja (S/)</label>
+              <Field label="Efectivo contado en caja (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <input
                   type="number"
                   value={closeForm.closingCash}
@@ -345,17 +342,16 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   autoFocus
                 />
-              </div>
+              </Field>
               {closeForm.closingCash && (
                 <div className={cn("flex items-center justify-between rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]")}>
                   <span>Diferencia:</span>
                   <span>{parseFloat(closeForm.closingCash) >= showCloseForm.expectedCash ? "+" : ""}{fmt(parseFloat(closeForm.closingCash) - showCloseForm.expectedCash)}</span>
                 </div>
               )}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Observaciones</label>
+              <Field label="Observaciones" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                 <textarea value={closeForm.notes} onChange={e => setCloseForm(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Ej: Faltó billete de S/50..." className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] resize-none" />
-              </div>
+              </Field>
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={() => setShowCloseForm(null)} className="flex-1 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>

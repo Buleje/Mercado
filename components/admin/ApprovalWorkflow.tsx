@@ -2,6 +2,7 @@
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { CheckCircle, XCircle, Clock, Settings, ChevronDown, ChevronUp, User } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -138,10 +139,7 @@ function ResolveModal({
           {decision === "aprobado" ? "Aprobar solicitud" : "Rechazar solicitud"}
         </CardTitle>
         <p className="text-sm text-[var(--text-secondary)]">{item.description}</p>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[var(--text-tertiary)]">
-            Nota (opcional)
-          </label>
+        <Field label="Nota (opcional)" labelClassName="text-xs font-medium text-[var(--text-tertiary)]" className="space-y-1">
           <textarea
             rows={3}
             value={note}
@@ -149,7 +147,7 @@ function ResolveModal({
             placeholder={decision === "aprobado" ? "Todo correcto, proceder..." : "Motivo del rechazo..."}
             className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-        </div>
+        </Field>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
@@ -189,10 +187,7 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
       <p className="text-sm font-semibold text-[var(--text-secondary)]">Que requiere aprobacion</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[var(--text-tertiary)]">
-            Compras mayores a (S/)
-          </label>
+        <Field label="Compras mayores a (S/)" labelClassName="text-xs font-medium text-[var(--text-tertiary)]" className="space-y-1">
           <input
             type="number"
             value={local.purchaseThreshold}
@@ -200,12 +195,9 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             onChange={e => setLocal(c => ({ ...c, purchaseThreshold: Number(e.target.value) }))}
             className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-        </div>
+        </Field>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-[var(--text-tertiary)]">
-            Cambio de precio mayor a (%)
-          </label>
+        <Field label="Cambio de precio mayor a (%)" labelClassName="text-xs font-medium text-[var(--text-tertiary)]" className="space-y-1">
           <input
             type="number"
             value={local.priceChangeThreshold}
@@ -214,12 +206,12 @@ function ConfigPanel({ config, onSave }: { config: ApprovalConfig; onSave: (c: A
             onChange={e => setLocal(c => ({ ...c, priceChangeThreshold: Number(e.target.value) }))}
             className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-        </div>
+        </Field>
 
         <div className="space-y-1">
-          <label className="text-xs font-medium text-[var(--text-tertiary)]">
+          <span className="text-xs font-medium text-[var(--text-tertiary)]">
             Eliminaciones de productos
-          </label>
+          </span>
           <button
             onClick={() => setLocal(c => ({ ...c, requireDeleteApproval: !c.requireDeleteApproval }))}
             className={cn(

@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
+import { Field } from "@/components/admin/shared/Field";
 
 type GoalPeriod = "diario" | "semanal" | "mensual";
 // FIX 2026-05-07 (C): nuevas categorías auto-trackeables.
@@ -857,8 +858,7 @@ export default function GoalsTab() {
       {/* Create/Edit Modal */}
       <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editId ? "Editar meta" : "Nueva meta"} variant="default">
         <div className="p-5 space-y-4">
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Nombre de la meta</label>
+          <Field label="Nombre de la meta" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                 <input
                   type="text"
                   value={form.name}
@@ -866,10 +866,9 @@ export default function GoalsTab() {
                   placeholder="ej. Ventas del mes"
                   className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
-              </div>
+              </Field>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Categoría</label>
+                <Field label="Categoría" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <select
                     value={form.category}
                     onChange={e => setForm(f => ({ ...f, category: e.target.value as GoalCategory }))}
@@ -879,9 +878,8 @@ export default function GoalsTab() {
                       <option key={k} value={k}>{v.label}</option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Período</label>
+                </Field>
+                <Field label="Período" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <select
                     value={form.period}
                     onChange={e => setForm(f => ({ ...f, period: e.target.value as GoalPeriod }))}
@@ -891,11 +889,10 @@ export default function GoalsTab() {
                       <option key={k} value={k}>{v}</option>
                     ))}
                   </select>
-                </div>
+                </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Meta (cantidad)</label>
+                <Field label="Meta (cantidad)" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="number"
                     min={0}
@@ -904,9 +901,8 @@ export default function GoalsTab() {
                     placeholder="5000"
                     className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Unidad</label>
+                </Field>
+                <Field label="Unidad" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="text"
                     value={form.unit}
@@ -914,7 +910,7 @@ export default function GoalsTab() {
                     placeholder="S/ ó pedidos"
                     className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
+                </Field>
               </div>
 
               {suggestedTargets.length > 0 && (
@@ -936,19 +932,17 @@ export default function GoalsTab() {
                 </div>
               )}
 
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Fecha límite (opcional)</label>
+              <Field label="Fecha límite (opcional)" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                 <input
                   type="date"
                   value={form.dueDate}
                   onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
                   className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                 />
-              </div>
+              </Field>
 
               {editId && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Progreso actual</label>
+                <Field label="Progreso actual" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="number"
                     min={0}
@@ -956,7 +950,7 @@ export default function GoalsTab() {
                     onChange={e => setForm(f => ({ ...f, current: e.target.value }))}
                     className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
+                </Field>
               )}
 
           <div className="flex gap-3 pt-1">

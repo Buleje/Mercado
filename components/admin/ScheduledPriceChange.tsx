@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useCallback } from "react";
 import { Calendar, Search, Plus, Trash2, Clock, ChevronDown, ChevronUp, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -151,11 +152,12 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
       <h4 className="text-sm font-semibold text-[var(--text-primary)]">Nuevo cambio programado</h4>
 
       {/* Product search */}
-      <div className="relative">
-        <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Producto</label>
+      <Field label="Producto" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
+        {(id) => (<div className="relative">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
+            id={id}
             value={selected ? selected.name : search}
             onChange={(e) => {
               setSelected(null);
@@ -183,34 +185,43 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             ))}
           </div>
         )}
-      </div>
+        </div>)}
+      </Field>
 
       {/* Price inputs */}
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Precio actual</label>
+        <Field label="Precio actual" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
+          {(id) => (
           <div className="flex items-center gap-1">
             <span className="text-sm text-[var(--text-secondary)]">S/</span>
             <input
+              id={id}
               readOnly
               value={selected ? Number(selected.price).toFixed(2) : ""}
               placeholder="—"
               className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] focus:outline-none"
             />
           </div>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Precio nuevo
-            {priceDiff !== null && (
-              <span className={cn("ml-2 font-semibold", isIncrease ? "text-[var(--data-error-500)]" : "text-primary")}>
-                {isIncrease ? "+" : ""}{priceDiff}%
-              </span>
-            )}
-          </label>
+          )}
+        </Field>
+        <Field
+          label={
+            <>
+              Precio nuevo
+              {priceDiff !== null && (
+                <span className={cn("ml-2 font-semibold", isIncrease ? "text-[var(--data-error-500)]" : "text-primary")}>
+                  {isIncrease ? "+" : ""}{priceDiff}%
+                </span>
+              )}
+            </>
+          }
+          labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1"
+        >
+          {(id) => (
           <div className="flex items-center gap-1">
             <span className="text-sm text-[var(--text-secondary)]">S/</span>
             <input
+              id={id}
               type="number"
               min={0}
               step={0.10}
@@ -220,31 +231,31 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
               className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
-        </div>
+          )}
+        </Field>
       </div>
 
       {/* Date inputs */}
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Inicia</label>
+        <Field label="Inicia" labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1">
           <input
             type="datetime-local"
             value={startAt}
             onChange={(e) => setStartAt(e.target.value)}
             className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-            Termina <span className="text-[var(--text-tertiary)]">(opcional)</span>
-          </label>
+        </Field>
+        <Field
+          label={<>Termina <span className="text-[var(--text-tertiary)]">(opcional)</span></>}
+          labelClassName="block text-xs font-medium text-[var(--text-secondary)] mb-1"
+        >
           <input
             type="datetime-local"
             value={endAt}
             onChange={(e) => setEndAt(e.target.value)}
             className="w-full px-2 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-        </div>
+        </Field>
       </div>
 
       {/* Actions */}

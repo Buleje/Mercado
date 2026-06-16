@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -997,26 +998,22 @@ export default function NotasCreditoModule() {
           {showAdvFilters && (
             <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[var(--surface-alt)] rounded-xl p-3">
-                <div>
-                  <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Desde</label>
+                <Field label="Desde" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                     className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)]" />
-                </div>
-                <div>
-                  <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Hasta</label>
+                </Field>
+                <Field label="Hasta" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
                     className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)]" />
-                </div>
-                <div>
-                  <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Monto min</label>
+                </Field>
+                <Field label="Monto min" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="number" value={minAmount} onChange={e => setMinAmount(e.target.value)} placeholder="0"
                     className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)]" />
-                </div>
-                <div>
-                  <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Monto max</label>
+                </Field>
+                <Field label="Monto max" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="number" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} placeholder={"\u221e"}
                     className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)]" />
-                </div>
+                </Field>
               </div>
             </m.div>
           )}
@@ -1532,7 +1529,7 @@ export default function NotasCreditoModule() {
                       {/* Visual Motivo Picker Cards */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="block text-xs font-bold text-[var(--text-secondary)]">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</label>
+                          <span className="block text-xs font-bold text-[var(--text-secondary)]">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</span>
                           {form.codigoMotivo && (
                             <button onClick={saveTemplate} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:underline">
                               <BookmarkPlus className="h-3 w-3" />Guardar template
@@ -1552,18 +1549,17 @@ export default function NotasCreditoModule() {
                       </div>
 
                       {/* Description */}
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripci{"\u00f3"}n del motivo</label>
+                      <Field label={"Descripci\u00f3n del motivo"} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <textarea value={form.descripcionMotivo} onChange={e => setForm(p => ({ ...p, descripcionMotivo: e.target.value }))} placeholder="Detalle del motivo..." rows={2}
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
-                      </div>
+                      </Field>
 
                       {/* Item Quantity Picker (if linked to a sale) */}
                       {selectedVenta && selectedVenta.items.length > 0 && (
                         <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-2">
+                          <span className="block text-xs font-bold text-[var(--text-secondary)] mb-2">
                             Items a incluir en la NC {"\u2014"} ajusta cantidades para devoluci{"\u00f3"}n parcial
-                          </label>
+                          </span>
                           <div className="border border-[var(--rule-base)] rounded-xl divide-y divide-gray-100 overflow-hidden">
                             {selectedVenta.items.map((item, idx) => (
                               <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-primary/5" : "hover:bg-[var(--surface-alt)]")}>
@@ -1604,14 +1600,15 @@ export default function NotasCreditoModule() {
 
                       {/* Manual amount (if no linked sale or override) */}
                       {!selectedVenta && (
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto a acreditar (S/)</label>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                            <input type="number" step="0.01" min="0.01" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} placeholder="0.00"
-                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                          </div>
-                        </div>
+                        <Field label="Monto a acreditar (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          {(id) => (
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                              <input id={id} type="number" step="0.01" min="0.01" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} placeholder="0.00"
+                                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                            </div>
+                          )}
+                        </Field>
                       )}
 
                       {/* Amount Preview */}
@@ -1620,11 +1617,10 @@ export default function NotasCreditoModule() {
                       )}
 
                       {/* Notes */}
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas internas (opcional)</label>
+                      <Field label="Notas internas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input type="text" value={form.notasText} onChange={e => setForm(p => ({ ...p, notasText: e.target.value }))} placeholder="Observaciones..."
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </div>
+                      </Field>
 
                       {/* Return stock toggle */}
                       {esDevolucion && (

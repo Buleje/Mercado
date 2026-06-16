@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { Field } from '@/components/admin/shared/Field';
 
 import { useState, useMemo } from "react";
 import {
@@ -169,26 +170,21 @@ export default function BudgetTab() {
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Departamento</label>
+            <Field label="Departamento" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">{DEPARTMENTS.map(d => <option key={d}>{d}</option>)}</select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
+            </Field>
+            <Field label="Categoría" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Período</label>
+            </Field>
+            <Field label="Período" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="month" value={form.period} onChange={e => setForm(p => ({ ...p, period: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Monto planificado (S/)</label>
+            </Field>
+            <Field label="Monto planificado (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="number" value={form.planned || ""} onChange={e => setForm(p => ({ ...p, planned: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div className="col-span-2">
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Notas</label>
+            </Field>
+            <Field label="Notas" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1" className="col-span-2">
               <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones opcionales..." className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>

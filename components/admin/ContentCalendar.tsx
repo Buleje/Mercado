@@ -1,6 +1,6 @@
 "use client";
 
-
+import { Field } from "@/components/admin/shared/Field";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -407,21 +407,15 @@ export default function ContentCalendar() {
               </button>
             </div>
             <div className="space-y-4 p-5">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">
-                  Fecha
-                </label>
+              <Field label="Fecha" labelClassName="mb-1 block text-sm font-medium text-[var(--text-primary)]">
                 <input
                   type="date"
                   value={form.date}
                   onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                   className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">
-                  Tipo
-                </label>
+              </Field>
+              <Field label="Tipo" labelClassName="mb-1 block text-sm font-medium text-[var(--text-primary)]">
                 <select
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as EntryType }))}
@@ -431,22 +425,16 @@ export default function ContentCalendar() {
                     <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">
-                  Titulo
-                </label>
+              </Field>
+              <Field label="Titulo" labelClassName="mb-1 block text-sm font-medium text-[var(--text-primary)]">
                 <input
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   placeholder="Ej: Oferta arroz 5kg"
                   className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">
-                  Notas
-                </label>
+              </Field>
+              <Field label="Notas" labelClassName="mb-1 block text-sm font-medium text-[var(--text-primary)]">
                 <textarea
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
@@ -454,7 +442,7 @@ export default function ContentCalendar() {
                   placeholder="Detalles adicionales..."
                   className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
                 />
-              </div>
+              </Field>
             </div>
             <div className="flex gap-3 border-t border-[var(--rule-soft)] p-5">
               <button

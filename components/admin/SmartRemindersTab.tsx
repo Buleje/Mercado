@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useMemo, useEffect } from "react";
 import { Bell, Plus, Check, Trash2, Clock, AlertTriangle, Package, DollarSign, Calendar, X, CheckCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -249,31 +250,26 @@ export default function SmartRemindersTab() {
               <button onClick={() => setShowNew(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Título</label>
+              <Field label="Título" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="¿Qué necesitas recordar?" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary" autoFocus />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Descripción</label>
+              </Field>
+              <Field label="Descripción" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Detalles opcionales..." rows={2} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary resize-none" />
-              </div>
+              </Field>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Tipo</label>
+                <Field label="Tipo" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                   <select value={newType} onChange={e => setNewType(e.target.value as ReminderType)} className="w-full px-2 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs outline-none focus:border-primary">
                     {Object.entries(TYPE_CONFIG).map(([key, cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Prioridad</label>
+                </Field>
+                <Field label="Prioridad" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                   <select value={newPriority} onChange={e => setNewPriority(e.target.value as ReminderPriority)} className="w-full px-2 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs outline-none focus:border-primary">
                     <option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option>
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Fecha límite</label>
+                </Field>
+                <Field label="Fecha límite" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                   <input type="date" value={newDue} onChange={e => setNewDue(e.target.value)} className="w-full px-2 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs outline-none focus:border-primary" />
-                </div>
+                </Field>
               </div>
               <div className="flex flex-wrap justify-end gap-3 pt-2">
                 <button onClick={() => setShowNew(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>

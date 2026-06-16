@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { CardTitle } from "@buleje/design-system";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { MARKETPLACE_ZONES } from "@/lib/marketplace-zones";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Tipos compartidos con el endpoint ─────────────────────────────────────
 
@@ -199,7 +200,7 @@ function CategoryCard({
           {label}
         </p>
         {badge && (
-          <span className="inline-flex items-center mt-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <span className="inline-flex items-center mt-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
             {badge}
           </span>
         )}
@@ -266,10 +267,7 @@ function CustomCategoryEditor({
           </button>
         </header>
         <div className="p-6 space-y-5">
-          <div className="space-y-2">
-            <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-              Nombre de la categoría
-            </label>
+          <Field label="Nombre de la categoría" labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]" className="space-y-2">
             <input
               type="text"
               value={label}
@@ -278,12 +276,12 @@ function CustomCategoryEditor({
               maxLength={60}
               className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
-          </div>
+          </Field>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+            <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
               <ImageIcon className="h-4 w-4" /> Imagen de la categoría
-            </label>
+            </span>
             <ImageUpload
               value={imageUrl}
               onChange={(url) => setImageUrl(url)}
@@ -296,9 +294,9 @@ function CustomCategoryEditor({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+            <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
               Subcategorías (opcional)
-            </label>
+            </span>
             <div className="flex flex-wrap items-center gap-2">
               {subs.map((s) => (
                 <span
@@ -649,7 +647,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
         rightSlot={
           <span className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold tabular-nums">
             {value.coverageZones.length}
-            <span className="text-[10px] uppercase tracking-wider opacity-75">marcadas</span>
+            <span className="text-[length:var(--ts-2xs)] uppercase tracking-wider opacity-75">marcadas</span>
           </span>
         }
       >
@@ -664,7 +662,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
                   {city}
                 </h4>
-                <span className="text-[10px] font-bold text-[var(--text-tertiary)] tabular-nums">
+                <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
                   {countOn}/{zones.length}
                 </span>
                 <button
@@ -680,7 +678,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       onChange({ ...value, coverageZones: Array.from(merged) });
                     }
                   }}
-                  className="ml-auto text-[11px] font-bold text-[var(--accent)] hover:underline shrink-0"
+                  className="ml-auto text-xs font-bold text-[var(--accent)] hover:underline shrink-0"
                 >
                   {allOn ? "Quitar todas" : "Marcar todas"}
                 </button>

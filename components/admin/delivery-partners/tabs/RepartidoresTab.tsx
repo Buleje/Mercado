@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle, ChevronDown, Download, Edit2, MapPin, Message
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, vehicleKind, vehicleLabel, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
+import { Field } from "@/components/admin/shared/Field";
 
 const NetworkToggleCard = dynamic(
   () => import("@/components/admin/delivery/NetworkToggleCard"),
@@ -115,66 +116,77 @@ function PartnerModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre completo *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                placeholder="Juan Pérez"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                autoFocus
-              />
+              <Field label="Nombre completo *" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="Juan Pérez"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  autoFocus
+                />
+              </Field>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Teléfono</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                placeholder="987654321"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-              />
+              <Field label="Teléfono" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                  placeholder="987654321"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+              </Field>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Tarifa base (S/)</label>
-              <input
-                type="number"
-                min={0}
-                step={0.5}
-                value={form.fee}
-                onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-              />
+              <Field label="Tarifa base (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={form.fee}
+                  onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+              </Field>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Zona</label>
-              <div className="relative">
-                <select
-                  value={form.zone}
-                  onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                >
-                  {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-              </div>
+              <Field label="Zona" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                {(id) => (
+                  <div className="relative">
+                    <select
+                      id={id}
+                      value={form.zone}
+                      onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                    >
+                      {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+                  </div>
+                )}
+              </Field>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Vehículo</label>
-              <div className="relative">
-                <select
-                  value={form.vehicleType}
-                  onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                >
-                  {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-              </div>
+              <Field label="Vehículo" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                {(id) => (
+                  <div className="relative">
+                    <select
+                      id={id}
+                      value={form.vehicleType}
+                      onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                    >
+                      {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+                  </div>
+                )}
+              </Field>
             </div>
           </div>
 

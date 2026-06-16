@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -397,25 +398,26 @@ export default function DevolucionesProveedorModule() {
 
           {/* Proveedor */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Proveedor *</label>
-              {loadingProveedores ? (
-                <div className="h-10 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
-              ) : (
-                <select
-                  value={proveedorId}
-                  onChange={e => setProveedorId(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
-                >
-                  <option value="">Seleccionar proveedor...</option>
-                  {proveedores.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+            <Field label="Proveedor *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
+              {(id) => (
+                loadingProveedores ? (
+                  <div className="h-10 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
+                ) : (
+                  <select
+                    id={id}
+                    value={proveedorId}
+                    onChange={e => setProveedorId(e.target.value)}
+                    className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  >
+                    <option value="">Seleccionar proveedor...</option>
+                    {proveedores.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                )
               )}
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Motivo *</label>
+            </Field>
+            <Field label="Motivo *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <select
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
@@ -423,13 +425,13 @@ export default function DevolucionesProveedorModule() {
               >
                 {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
-            </div>
+            </Field>
           </div>
 
           {/* Items */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Items a devolver *</label>
+              <span className="text-xs font-medium text-[var(--text-secondary)]">Items a devolver *</span>
               <button
                 onClick={agregarItem}
                 className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark font-medium"
@@ -477,8 +479,7 @@ export default function DevolucionesProveedorModule() {
           </div>
 
           {/* Notas */}
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-[var(--text-secondary)]">Notas adicionales</label>
+          <Field label="Notas adicionales" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
             <textarea
               value={notas}
               onChange={e => setNotas(e.target.value)}
@@ -486,7 +487,7 @@ export default function DevolucionesProveedorModule() {
               placeholder="Información adicional sobre la devolución..."
               className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
             />
-          </div>
+          </Field>
 
           {/* Botones */}
           <div className="flex justify-end gap-2 pt-1">

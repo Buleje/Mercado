@@ -2,6 +2,7 @@
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { Users, Plus, Pencil, Trash2, Check, X, ToggleLeft, ToggleRight, Loader2, AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { SegmentsResponse, SegmentedCustomer } from "@/app/api/analytics/segments/route";
@@ -301,16 +302,14 @@ export default function AutoSegmentsTab() {
           <div className="bg-[var(--surface-raised)] rounded-xl p-4 sm:p-6 max-w-lg w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editSegment ? "Editar segmento" : "Nuevo segmento"}</CardTitle>
             <div className="space-y-6">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre</label>
+              <Field label="Nombre" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="ej. Clientes inactivos" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
+              </Field>
+              <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={formDesc} onChange={e => setFormDesc(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="ej. Sin comprar en más de 30 días" />
-              </div>
+              </Field>
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1.5">Color</label>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1.5">Color</span>
                 <div className="flex gap-2">
                   {COLORS.map(c => (
                     <button key={c} onClick={() => setFormColor(c)} className={cn("w-7 h-7 rounded-full border-2 transition-all", c, formColor === c ? "border-gray-900 dark:border-white scale-110" : "border-transparent")} />
@@ -318,7 +317,7 @@ export default function AutoSegmentsTab() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Reglas (se aplican todas)</label>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Reglas (se aplican todas)</span>
                 {formRules.map((r, i) => (
                   <div key={i} className="flex gap-2 mb-2 flex-wrap">
                     <select value={r.field} onChange={e => { const nr = [...formRules]; nr[i] = { ...nr[i], field: e.target.value }; setFormRules(nr); }} className="flex-1 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-xs min-w-[120px]">

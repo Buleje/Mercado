@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 
 import { useState, useMemo } from "react";
 import {
@@ -187,30 +188,24 @@ export default function CostCenterTab() {
                 <button onClick={() => setShowFormAlloc(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Centro de costo</label>
+                <Field label="Centro de costo" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                   <select value={formAlloc.centerId} onChange={e => setFormAlloc(p => ({ ...p, centerId: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">{centers.filter(c => c.active).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
+                </Field>
+                <Field label={"Categoría"} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                   <select value={formAlloc.category} onChange={e => setFormAlloc(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">{EXPENSE_CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Fecha</label>
+                </Field>
+                <Field label="Fecha" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                   <input type="date" value={formAlloc.date} onChange={e => setFormAlloc(p => ({ ...p, date: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Monto (S/)</label>
+                </Field>
+                <Field label="Monto (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                   <input type="number" value={formAlloc.amount || ""} onChange={e => setFormAlloc(p => ({ ...p, amount: parseFloat(e.target.value) || 0 }))} min="0" step="10" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Concepto *</label>
+                </Field>
+                <Field label="Concepto *" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1" className="col-span-2">
                   <input type="text" value={formAlloc.concept} onChange={e => setFormAlloc(p => ({ ...p, concept: e.target.value }))} placeholder="Descripción del gasto..." className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Referencia</label>
+                </Field>
+                <Field label="Referencia" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                   <input type="text" value={formAlloc.reference} onChange={e => setFormAlloc(p => ({ ...p, reference: e.target.value }))} placeholder="OC-2026-XXX" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-                </div>
+                </Field>
               </div>
               <div className="flex flex-wrap gap-2 justify-end">
                 <button onClick={() => setShowFormAlloc(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted">Cancelar</button>

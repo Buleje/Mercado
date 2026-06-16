@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { BusinessData, Product } from "../ai-center.types";
+import { Field } from "@/components/admin/shared/Field";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -246,10 +247,7 @@ function SimuladorTab({
     <div className="space-y-4">
       {/* Inputs row */}
       <div className="flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
-            Producto
-          </label>
+        <Field label="Producto" labelClassName="block text-xs text-[var(--text-tertiary)] mb-1" className="flex-1 min-w-[160px]">
           <select
             value={selectedId}
             onChange={(e) => {
@@ -264,14 +262,13 @@ function SimuladorTab({
               </option>
             ))}
           </select>
-        </div>
+        </Field>
 
-        <div className="w-32">
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
-            Cambio de precio
-          </label>
+        <Field label="Cambio de precio" labelClassName="block text-xs text-[var(--text-tertiary)] mb-1" className="w-32">
+          {(id) => (
           <div className="relative">
             <input
+              id={id}
               type="number"
               value={pctChange}
               onChange={(e) => {
@@ -285,7 +282,8 @@ function SimuladorTab({
               %
             </span>
           </div>
-        </div>
+          )}
+        </Field>
 
         <button
           onClick={handleSimulate}
@@ -394,10 +392,7 @@ function CalculadoraTab() {
           Calculadora de margen
         </p>
 
-        <div>
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
-            Costo (S/)
-          </label>
+        <Field label="Costo (S/)" labelClassName="block text-xs text-[var(--text-tertiary)] mb-1">
           <input
             type="number"
             min="0"
@@ -407,12 +402,13 @@ function CalculadoraTab() {
             placeholder="0.00"
             className="w-full border border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">
-            Margen deseado (%)
-          </label>
+        <Field
+          label="Margen deseado (%)"
+          labelClassName="block text-xs text-[var(--text-tertiary)] mb-1"
+          error={showWarning ? "El margen debe estar entre 1% y 99%" : undefined}
+        >
           <input
             type="number"
             min="1"
@@ -427,12 +423,7 @@ function CalculadoraTab() {
                 : "border-[var(--rule-base)]",
             )}
           />
-          {showWarning && (
-            <p className="mt-1 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-              El margen debe estar entre 1% y 99%
-            </p>
-          )}
-        </div>
+        </Field>
 
         <div className="border-t border-[var(--rule-base)] pt-3 space-y-2">
           {calc ? (

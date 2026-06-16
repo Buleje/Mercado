@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -305,8 +306,8 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
           </div>
 
           {/* Producto */}
-          <div>
-            <label className={LABEL}>Producto</label>
+          <Field label="Producto" labelClassName={LABEL}>
+            {(id) => (<>
             {selected ? (
               <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3.5 py-2.5 text-left">
                 <span className="text-sm font-bold text-[var(--text-primary)]">{selected.name}</span>
@@ -315,7 +316,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
             ) : (<>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                <input value={psearch} onChange={e => setPsearch(e.target.value)} placeholder="Buscar producto…" className={cn(FIELD, "pl-9")} autoFocus />
+                <input id={id} value={psearch} onChange={e => setPsearch(e.target.value)} placeholder="Buscar producto…" className={cn(FIELD, "pl-9")} autoFocus />
               </div>
               {matches.length > 0 && (
                 <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-[var(--rule-base)]">
@@ -328,14 +329,15 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
                 </div>
               )}
             </>)}
-          </div>
+            </>)}
+          </Field>
 
           {/* Motivo + cantidad */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div><label className={LABEL}>Motivo</label><select value={type} onChange={e => setType(e.target.value)} className={FIELD}>{types.map(t => <option key={t.v} value={t.v}>{t.label}</option>)}</select></div>
-            <div><label className={LABEL}>Cantidad</label><input type="number" min="0" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" className={FIELD} /></div>
+            <Field label="Motivo" labelClassName={LABEL}><select value={type} onChange={e => setType(e.target.value)} className={FIELD}>{types.map(t => <option key={t.v} value={t.v}>{t.label}</option>)}</select></Field>
+            <Field label="Cantidad" labelClassName={LABEL}><input type="number" min="0" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" className={FIELD} /></Field>
           </div>
-          <div><label className={LABEL}>Referencia / motivo (opcional)</label><input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° factura, proveedor, observación…" className={FIELD} /></div>
+          <Field label="Referencia / motivo (opcional)" labelClassName={LABEL}><input value={reference} onChange={e => setReference(e.target.value)} placeholder="N° factura, proveedor, observación…" className={FIELD} /></Field>
 
           {/* Preview */}
           {selected && qn > 0 && (

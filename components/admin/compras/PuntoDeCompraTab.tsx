@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import dynamic from "next/dynamic";
+import { Field } from "@/components/admin/shared/Field";
 
 const BarcodeScanner = dynamic(() => import("../BarcodeScanner"), { ssr: false });
 
@@ -799,13 +800,13 @@ export default function PuntoDeCompraTab() {
 
           {/* Supplier Selector */}
           <div className="relative">
-            <label className="text-xs font-semibold text-[var(--text-secondary)] mb-1 block">
-              Proveedor
-            </label>
+            <Field label="Proveedor" labelClassName="text-xs font-semibold text-[var(--text-secondary)] mb-1 block">
+              {(id) => (
             <div className="flex gap-1.5">
               <div className="relative flex-1">
                 <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 <input
+                  id={id}
                   ref={supplierInputRef}
                   type="text"
                   placeholder="Buscar proveedor..."
@@ -889,6 +890,8 @@ export default function PuntoDeCompraTab() {
                 <Plus className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>
+              )}
+            </Field>
 
             {/* Supplier info chip */}
             {selectedSupplier && (
@@ -1280,10 +1283,7 @@ export default function PuntoDeCompraTab() {
               </div>
 
               <form onSubmit={handleCreateSupplier} className="space-y-3">
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">
-                    Nombre / Razón Social *
-                  </label>
+                <Field label="Nombre / Razón Social *" labelClassName="text-xs font-semibold text-[var(--text-secondary)] uppercase">
                   <input
                     type="text"
                     required
@@ -1292,10 +1292,9 @@ export default function PuntoDeCompraTab() {
                     className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="Distribuidora Lima SAC"
                   />
-                </div>
+                </Field>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">RUC</label>
+                  <Field label="RUC" labelClassName="text-xs font-semibold text-[var(--text-secondary)] uppercase">
                     <input
                       type="text"
                       value={newSupRuc}
@@ -1304,9 +1303,8 @@ export default function PuntoDeCompraTab() {
                       placeholder="20123456789"
                       maxLength={11}
                     />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Teléfono</label>
+                  </Field>
+                  <Field label="Teléfono" labelClassName="text-xs font-semibold text-[var(--text-secondary)] uppercase">
                     <input
                       type="tel"
                       value={newSupPhone}
@@ -1314,10 +1312,9 @@ export default function PuntoDeCompraTab() {
                       className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       placeholder="961234567"
                     />
-                  </div>
+                  </Field>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Email</label>
+                <Field label="Email" labelClassName="text-xs font-semibold text-[var(--text-secondary)] uppercase">
                   <input
                     type="email"
                     value={newSupEmail}
@@ -1325,9 +1322,8 @@ export default function PuntoDeCompraTab() {
                     className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="ventas@proveedor.com"
                   />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Dirección</label>
+                </Field>
+                <Field label="Dirección" labelClassName="text-xs font-semibold text-[var(--text-secondary)] uppercase">
                   <input
                     type="text"
                     value={newSupAddress}
@@ -1335,9 +1331,8 @@ export default function PuntoDeCompraTab() {
                     className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-lg bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/30"
                     placeholder="Av. Industrial 456, Lima"
                   />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Categoría</label>
+                </Field>
+                <Field label="Categoría" labelClassName="text-xs font-semibold text-[var(--text-secondary)] uppercase">
                   <select
                     value={newSupCategoria}
                     onChange={(e) => setNewSupCategoria(e.target.value)}
@@ -1348,7 +1343,7 @@ export default function PuntoDeCompraTab() {
                     <option value="distribuidor">Distribuidor</option>
                     <option value="importador">Importador</option>
                   </select>
-                </div>
+                </Field>
                 <button
                   type="submit"
                   disabled={creatingSup || !newSupName.trim()}

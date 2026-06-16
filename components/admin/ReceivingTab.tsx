@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   PackageCheck, Download, Search, Eye, X,
@@ -495,29 +496,25 @@ export default function ReceivingTab() {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</label>
+              <Field label="Proveedor" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
                   placeholder="Distribuidora ABC"
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nro. Orden de Compra</label>
+              </Field>
+              <Field label="Nro. Orden de Compra" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
                   placeholder="OC-001"
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha programada</label>
+              </Field>
+              <Field label="Fecha programada" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm(f => ({ ...f, scheduledDate: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Inspector</label>
+              </Field>
+              <Field label="Inspector" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.inspector} onChange={e => setNewForm(f => ({ ...f, inspector: e.target.value }))}
                   placeholder="Nombre del responsable"
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
+              </Field>
             </div>
 
             {/* Checklist */}

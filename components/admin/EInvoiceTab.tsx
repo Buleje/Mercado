@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
@@ -467,8 +468,7 @@ export default function EInvoiceTab() {
 
             <div className="space-y-3">
               {/* Tipo de comprobante */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Tipo de comprobante</label>
+              <Field label="Tipo de comprobante" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <select
                   value={emitForm.tipoDoc}
                   onChange={e => setEmitForm(f => f && { ...f, tipoDoc: e.target.value as "01" | "03" })}
@@ -477,34 +477,31 @@ export default function EInvoiceTab() {
                   <option value="03">Boleta (B001)</option>
                   <option value="01">Factura (F001)</option>
                 </select>
-              </div>
+              </Field>
 
               {/* ID del pedido */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">ID del pedido</label>
+              <Field label="ID del pedido" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.orderId}
                   onChange={e => setEmitForm(f => f && { ...f, orderId: e.target.value })}
                   placeholder="ej. cm3abc123..."
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
 
               {/* Nombre del cliente */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Nombre del cliente</label>
+              <Field label="Nombre del cliente" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.clienteNombre}
                   onChange={e => setEmitForm(f => f && { ...f, clienteNombre: e.target.value })}
                   placeholder="Nombre o razón social"
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
 
               {/* DNI o RUC según tipo */}
               {emitForm.tipoDoc === "03" ? (
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">DNI <span className="font-normal">(opcional)</span></label>
+                <Field label={<>DNI <span className="font-normal">(opcional)</span></>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                   <input
                     value={emitForm.clienteDni}
                     onChange={e => setEmitForm(f => f && { ...f, clienteDni: e.target.value })}
@@ -512,10 +509,9 @@ export default function EInvoiceTab() {
                     maxLength={8}
                     className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   />
-                </div>
+                </Field>
               ) : (
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">RUC</label>
+                <Field label="RUC" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                   <input
                     value={emitForm.clienteRuc}
                     onChange={e => setEmitForm(f => f && { ...f, clienteRuc: e.target.value })}
@@ -523,19 +519,18 @@ export default function EInvoiceTab() {
                     maxLength={11}
                     className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   />
-                </div>
+                </Field>
               )}
 
               {/* Dirección */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Dirección <span className="font-normal">(opcional)</span></label>
+              <Field label={<>Dirección <span className="font-normal">(opcional)</span></>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.clienteDireccion}
                   onChange={e => setEmitForm(f => f && { ...f, clienteDireccion: e.target.value })}
                   placeholder="Av. Centenario 123, Pucallpa"
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
             </div>
 
             {emitError && (

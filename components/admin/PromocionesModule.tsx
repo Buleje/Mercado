@@ -8,6 +8,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -379,8 +380,7 @@ export default function PromocionesModule() {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Nombre *</label>
+            <Field label="Nombre *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <input
                 type="text"
                 value={form.nombre}
@@ -388,10 +388,9 @@ export default function PromocionesModule() {
                 placeholder="Ej: Descuento fin de semana"
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Tipo *</label>
+            <Field label="Tipo *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <select
                 value={form.tipo}
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value as PromoType }))}
@@ -401,13 +400,10 @@ export default function PromocionesModule() {
                   <option key={t} value={t}>{TIPO_LABELS[t]}</option>
                 ))}
               </select>
-            </div>
+            </Field>
 
             {(form.tipo === "porcentaje" || form.tipo === "monto_fijo" || form.tipo === "combo") && (
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-[var(--text-secondary)]">
-                  {form.tipo === "porcentaje" ? "Porcentaje (%)" : "Monto (S/)"}
-                </label>
+              <Field label={form.tipo === "porcentaje" ? "Porcentaje (%)" : "Monto (S/)"} labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
                 <input
                   type="number"
                   min="0"
@@ -417,11 +413,10 @@ export default function PromocionesModule() {
                   placeholder={form.tipo === "porcentaje" ? "20" : "5.00"}
                   className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 />
-              </div>
+              </Field>
             )}
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Categorías (separadas por coma)</label>
+            <Field label="Categorías (separadas por coma)" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <input
                 type="text"
                 value={form.categorias}
@@ -429,32 +424,27 @@ export default function PromocionesModule() {
                 placeholder="Lácteos, Bebidas"
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Inicio *</label>
+            <Field label="Inicio *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <input
                 type="date"
                 value={form.fechaInicio}
                 onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Fin *</label>
+            <Field label="Fin *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <input
                 type="date"
                 value={form.fechaFin}
                 onChange={e => setForm(f => ({ ...f, fechaFin: e.target.value }))}
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">
-                Condición (opcional)
-              </label>
+            <Field label="Condición (opcional)" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1 sm:col-span-2">
               <input
                 type="text"
                 value={form.condicion}
@@ -462,7 +452,7 @@ export default function PromocionesModule() {
                 placeholder='Ej: "min_cantidad:3" o "min_monto:50"'
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
           </div>
 
           {/* Preview badge */}

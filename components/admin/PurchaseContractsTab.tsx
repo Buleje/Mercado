@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 
 import { useState, useMemo } from "react";
 import {
@@ -173,27 +174,23 @@ export default function PurchaseContractsTab() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <CF label="Proveedor *" value={form.supplierName} onChange={v => setForm(p => ({ ...p, supplierName: v }))} placeholder="Nombre del proveedor" span={2} />
             <CF label="RUC" value={form.supplierRuc} onChange={v => setForm(p => ({ ...p, supplierRuc: v }))} placeholder="20XXXXXXXXX" />
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
+            <Field label="Categoría" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-            </div>
+            </Field>
             <CF label="Descripción" value={form.description} onChange={v => setForm(p => ({ ...p, description: v }))} placeholder="Productos incluidos..." span={2} />
             <CF label="Fecha inicio *" value={form.startDate} onChange={v => setForm(p => ({ ...p, startDate: v }))} type="date" />
             <CF label="Fecha fin *" value={form.endDate} onChange={v => setForm(p => ({ ...p, endDate: v }))} type="date" />
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Crédito (días)</label>
+            <Field label="Crédito (días)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="number" value={form.creditDays} onChange={e => setForm(p => ({ ...p, creditDays: parseInt(e.target.value) || 0 }))} min="0" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Pedido mínimo (S/)</label>
+            </Field>
+            <Field label="Pedido mínimo (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="number" value={form.minOrderAmount} onChange={e => setForm(p => ({ ...p, minOrderAmount: parseFloat(e.target.value) || 0 }))} min="0" step="100" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Descuento acordado (%)</label>
+            </Field>
+            <Field label="Descuento acordado (%)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
               <input type="number" value={form.agreedDiscount} onChange={e => setForm(p => ({ ...p, agreedDiscount: parseFloat(e.target.value) || 0 }))} min="0" max="100" step="0.5" className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-            </div>
+            </Field>
             <div className="flex items-end pb-2">
               <label className="flex flex-wrap items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.autoRenew} onChange={e => setForm(p => ({ ...p, autoRenew: e.target.checked }))} className="w-4 h-4 rounded accent-primary" />
@@ -322,9 +319,8 @@ export default function PurchaseContractsTab() {
 
 function CF({ label, value, onChange, type = "text", placeholder, span }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; span?: number }) {
   return (
-    <div className={span ? `col-span-${span}` : ""}>
-      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">{label}</label>
+    <Field label={label} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1" className={span ? `col-span-${span}` : ""}>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-    </div>
+    </Field>
   );
 }

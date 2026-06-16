@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -333,41 +334,41 @@ export default function ShippingCostsTab() {
               </button>
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Zona / Barrio</label>
+              <Field label="Zona / Barrio" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input
                   value={form.zone}
                   onChange={e => setForm({ ...form, zone: e.target.value })}
                   placeholder="Ej: Yarinacocha, Callería..."
                   className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
-              </div>
+              </Field>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tarifa (S/)</label>
+                <Field label="Tarifa (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" step="0.5" min="0" value={form.fee} onChange={e => setForm({ ...form, fee: +e.target.value })}
                     className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Pedido mínimo (S/)</label>
+                </Field>
+                <Field label="Pedido mínimo (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" min="0" value={form.minOrder} onChange={e => setForm({ ...form, minOrder: +e.target.value })}
                     className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-                </div>
+                </Field>
               </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Gratis desde (S/) <span className="font-normal text-[var(--text-tertiary)]">— 0 = no aplica</span></label>
+              <Field
+                label={<>Gratis desde (S/) <span className="font-normal text-[var(--text-tertiary)]">— 0 = no aplica</span></>}
+                labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted"
+              >
                 <input type="number" min="0" value={form.freeAbove} onChange={e => setForm({ ...form, freeAbove: +e.target.value })}
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tiempo estimado (minutos)</label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  <input type="number" min="0" value={form.estimatedMin} onChange={e => setForm({ ...form, estimatedMin: +e.target.value })}
-                    placeholder="Mín" className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-                  <input type="number" min="0" value={form.estimatedMax} onChange={e => setForm({ ...form, estimatedMax: +e.target.value })}
-                    placeholder="Máx" className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-                </div>
-              </div>
+              </Field>
+              <Field label="Tiempo estimado (minutos)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {() => (
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <input type="number" min="0" value={form.estimatedMin} onChange={e => setForm({ ...form, estimatedMin: +e.target.value })}
+                      placeholder="Mín" className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
+                    <input type="number" min="0" value={form.estimatedMax} onChange={e => setForm({ ...form, estimatedMax: +e.target.value })}
+                      placeholder="Máx" className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
+                  </div>
+                )}
+              </Field>
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>

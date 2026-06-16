@@ -1,6 +1,6 @@
 "use client";
 
-
+import { Field } from "@/components/admin/shared/Field";
 import { CardTitle, PageTitle } from "@buleje/design-system";
 import { useState, useMemo } from "react";
 import { Calculator, TrendingDown, Download } from "@buleje/design-system/icons";
@@ -113,10 +113,7 @@ export default function LoanCalculator() {
       {/* Inputs */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
-              Monto (S/)
-            </label>
+          <Field label="Monto (S/)" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
             <input
               type="number"
               value={principal}
@@ -125,11 +122,8 @@ export default function LoanCalculator() {
               step="100"
               className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
-              Tasa anual (%)
-            </label>
+          </Field>
+          <Field label="Tasa anual (%)" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
             <input
               type="number"
               value={annualRate}
@@ -139,11 +133,8 @@ export default function LoanCalculator() {
               step="0.5"
               className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
-              Plazo (meses)
-            </label>
+          </Field>
+          <Field label="Plazo (meses)" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
             <input
               type="number"
               value={months}
@@ -152,11 +143,8 @@ export default function LoanCalculator() {
               max="360"
               className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
-              Ventas promedio/mes (S/)
-            </label>
+          </Field>
+          <Field label="Ventas promedio/mes (S/)" labelClassName="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
             <input
               type="number"
               value={avgMonthlySales}
@@ -165,7 +153,7 @@ export default function LoanCalculator() {
               min="0"
               className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
-          </div>
+          </Field>
         </div>
       </div>
 

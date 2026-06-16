@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCoupons } from "@/components/admin/marketplace/hooks/use-marketplace-coupons";
@@ -307,27 +308,29 @@ function NewCouponModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Código del cupón</label>
-                <input
-                  type="text"
-                  placeholder="BIENVENIDO10"
-                  value={form.code}
-                  onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
-                  maxLength={20}
-                />
+                <Field label="Código del cupón" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="text"
+                    placeholder="BIENVENIDO10"
+                    value={form.code}
+                    onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
+                    maxLength={20}
+                  />
+                </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Mayúsculas, sin espacios. Ej: BIENVENIDO10</p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Descripción interna</label>
-                <input
-                  type="text"
-                  placeholder="Descuento de bienvenida"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                <Field label="Descripción interna" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="text"
+                    placeholder="Descuento de bienvenida"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </Field>
               </div>
             </div>
           </section>
@@ -375,37 +378,43 @@ function NewCouponModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
-                  Valor {isPercent ? "(%)" : "(S/)"}
-                </label>
-                <div className="flex items-stretch rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
-                  <input
-                    type="number"
-                    placeholder={isPercent ? "10" : "5.00"}
-                    value={form.discountValue}
-                    onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
-                    min={0}
-                    max={isPercent ? 100 : undefined}
-                    step={isPercent ? 1 : 0.5}
-                    className="flex-1 min-w-0 px-4 py-3 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
-                  />
-                  <span className="inline-flex items-center px-4 text-sm font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
-                    {isPercent ? "%" : "S/"}
-                  </span>
-                </div>
+                <Field
+                  label={`Valor ${isPercent ? "(%)" : "(S/)"}`}
+                  labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]"
+                >
+                  {(id) => (
+                    <div className="flex items-stretch rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+                      <input
+                        id={id}
+                        type="number"
+                        placeholder={isPercent ? "10" : "5.00"}
+                        value={form.discountValue}
+                        onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+                        min={0}
+                        max={isPercent ? 100 : undefined}
+                        step={isPercent ? 1 : 0.5}
+                        className="flex-1 min-w-0 px-4 py-3 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
+                      />
+                      <span className="inline-flex items-center px-4 text-sm font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
+                        {isPercent ? "%" : "S/"}
+                      </span>
+                    </div>
+                  )}
+                </Field>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Compra mínima (S/)</label>
-                <input
-                  type="number"
-                  placeholder="Sin mínimo"
-                  value={form.minPurchase}
-                  onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
-                  min={0}
-                  step={0.5}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
-                />
+                <Field label="Compra mínima (S/)" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="number"
+                    placeholder="Sin mínimo"
+                    value={form.minPurchase}
+                    onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
+                    min={0}
+                    step={0.5}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                  />
+                </Field>
               </div>
             </div>
           </section>
@@ -419,26 +428,28 @@ function NewCouponModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Usos máximos</label>
-                <input
-                  type="number"
-                  placeholder="Ilimitado"
-                  value={form.maxUses}
-                  onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
-                  min={1}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
-                />
+                <Field label="Usos máximos" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="number"
+                    placeholder="Ilimitado"
+                    value={form.maxUses}
+                    onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
+                    min={1}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                  />
+                </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin tope de canjes</p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">Vence el</label>
-                <input
-                  type="datetime-local"
-                  value={form.expiresAt ? form.expiresAt.slice(0, 16) : ""}
-                  onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                <Field label="Vence el" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                  <input
+                    type="datetime-local"
+                    value={form.expiresAt ? form.expiresAt.slice(0, 16) : ""}
+                    onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin vencimiento</p>
               </div>
             </div>

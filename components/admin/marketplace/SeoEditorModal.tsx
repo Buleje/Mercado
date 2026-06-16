@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Loader2, Search, CheckCircle, XCircle, X } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -184,13 +185,18 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
         ) : (
           <>
             {/* Meta Title */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-[var(--text-secondary)]">Meta título</label>
-                <span className={cn("text-xs", form.metaTitle.length > 70 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
-                  {form.metaTitle.length}/70
-                </span>
-              </div>
+            <Field
+              label={
+                <div className="flex items-center justify-between w-full">
+                  <span>Meta título</span>
+                  <span className={cn("text-xs font-normal", form.metaTitle.length > 70 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+                    {form.metaTitle.length}/70
+                  </span>
+                </div>
+              }
+              labelClassName="text-sm font-medium text-[var(--text-secondary)] flex mb-1.5"
+              error={errors.metaTitle}
+            >
               <input
                 type="text"
                 value={form.metaTitle}
@@ -201,17 +207,21 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                 )}
                 placeholder="Título optimizado para Google"
               />
-              {errors.metaTitle && <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaTitle}</p>}
-            </div>
+            </Field>
 
             {/* Meta Description */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-[var(--text-secondary)]">Meta descripción</label>
-                <span className={cn("text-xs", form.metaDescription.length > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
-                  {form.metaDescription.length}/160
-                </span>
-              </div>
+            <Field
+              label={
+                <div className="flex items-center justify-between w-full">
+                  <span>Meta descripción</span>
+                  <span className={cn("text-xs font-normal", form.metaDescription.length > 160 ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]")}>
+                    {form.metaDescription.length}/160
+                  </span>
+                </div>
+              }
+              labelClassName="text-sm font-medium text-[var(--text-secondary)] flex mb-1.5"
+              error={errors.metaDescription}
+            >
               <textarea
                 rows={3}
                 value={form.metaDescription}
@@ -222,22 +232,26 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                 )}
                 placeholder="Descripción que aparecerá en los resultados de búsqueda"
               />
-              {errors.metaDescription && <p className="text-xs text-[var(--data-error)] mt-1">{errors.metaDescription}</p>}
-            </div>
+            </Field>
 
             {/* Keywords */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-[var(--text-secondary)]">Palabras clave</label>
-                <span className="text-xs text-[var(--text-tertiary)]">{form.keywords.length}/10</span>
-              </div>
-              <TagInput tags={form.keywords} onChange={(tags) => setForm((f) => ({ ...f, keywords: tags }))} max={10} />
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">Presiona Enter para agregar cada keyword</p>
-            </div>
+            <Field
+              label={
+                <div className="flex items-center justify-between w-full">
+                  <span>Palabras clave</span>
+                  <span className="text-xs font-normal text-[var(--text-tertiary)]">{form.keywords.length}/10</span>
+                </div>
+              }
+              labelClassName="text-sm font-medium text-[var(--text-secondary)] flex mb-1.5"
+              hint="Presiona Enter para agregar cada keyword"
+            >
+              {(id) => (
+                <TagInput tags={form.keywords} onChange={(tags) => setForm((f) => ({ ...f, keywords: tags }))} max={10} />
+              )}
+            </Field>
 
             {/* OG Image */}
-            <div>
-              <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">Imagen OG (URL)</label>
+            <Field label="Imagen OG (URL)" labelClassName="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">
               <input
                 type="text"
                 value={form.ogImage}
@@ -245,7 +259,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
                 className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:outline-none focus:ring-2 focus:ring-[#00A0A0]"
                 placeholder="https://..."
               />
-            </div>
+            </Field>
 
             {/* Preview SERP */}
             <SerpPreview title={form.metaTitle} description={form.metaDescription} />

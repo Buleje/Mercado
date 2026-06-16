@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import React from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -132,8 +133,7 @@ export default function FiadoModals({
                 </p>
 
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto del pago (S/)</label>
+                  <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="number"
                       step="0.01"
@@ -144,9 +144,8 @@ export default function FiadoModals({
                       placeholder="0.00"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+                  </Field>
+                  <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="text"
                       value={pagoNotas}
@@ -154,7 +153,7 @@ export default function FiadoModals({
                       placeholder="Ej: Pagó con Yape"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                  </div>
+                  </Field>
                 </div>
 
                 {pagoError && (
@@ -257,8 +256,7 @@ export default function FiadoModals({
                 </div>
 
                 {/* Amount input */}
-                <div>
-                  <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto a abonar (S/)</label>
+                <Field label="Monto a abonar (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                   <input
                     type="number"
                     step="0.01"
@@ -268,7 +266,7 @@ export default function FiadoModals({
                     placeholder="0.00"
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
-                </div>
+                </Field>
 
                 {/* Distribution preview */}
                 {cobroMonto && parseFloat(cobroMonto) > 0 && (
@@ -452,8 +450,7 @@ export default function FiadoModals({
 
                 {/* Form fields (hidden in print) */}
                 <div className="space-y-3 print:hidden">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto a pagar (S/)</label>
+                  <Field label="Monto a pagar (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="number"
                       step="0.01"
@@ -461,18 +458,17 @@ export default function FiadoModals({
                       onChange={e => setCompromisoMonto(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha prometida</label>
+                  </Field>
+                  <Field label="Fecha prometida" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="date"
                       value={compromisoFecha}
                       onChange={e => setCompromisoFecha(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                  </div>
+                  </Field>
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Firma del cliente</label>
+                    <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Firma del cliente</span>
                     <canvas
                       ref={firmaCanvasRef}
                       width={300}

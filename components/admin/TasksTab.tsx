@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 type Priority = "baja" | "media" | "alta" | "urgente";
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "cancelada";
@@ -217,29 +218,25 @@ export default function TasksTab() {
           <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título de la tarea" className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
           <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Prioridad</label>
+            <Field label="Prioridad" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all">
                 {Object.entries(PRIORITY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Módulo</label>
+            </Field>
+            <Field label="Módulo" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <select value={form.module} onChange={e => setForm(f => ({ ...f, module: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all">
                 <option value="">Sin módulo</option>
                 {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
-            </div>
+            </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Asignado a</label>
+            <Field label="Asignado a" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <input type="text" value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} placeholder="Nombre del encargado" className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Fecha límite</label>
+            </Field>
+            <Field label="Fecha límite" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all" />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap gap-3 pt-1">
             <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>

@@ -1,6 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
- 
+import { Field } from "@/components/admin/shared/Field";
 
 import { useState, useEffect, useCallback } from "react";
 import { Search, Copy, Check, Trash2, Clock, Hash, Eye } from "@buleje/design-system/icons";
@@ -189,9 +189,9 @@ export default function SocialPostGenerator() {
         <div className="space-y-4 rounded-xl border border-[var(--rule-base)] bg-white p-5 dark:border-[var(--rule-base)] dark:bg-gray-900">
           {/* Post type */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+            <span className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
               Tipo de post
-            </label>
+            </span>
             <div className="grid grid-cols-2 gap-2">
               {POST_TYPES.map((t) => (
                 <button
@@ -212,13 +212,12 @@ export default function SocialPostGenerator() {
 
           {/* Product search */}
           {postType !== "motivacional" && (
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
-                Producto
-              </label>
+            <Field label="Producto" labelClassName="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+              {(id) => (<>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                 <input
+                  id={id}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar producto..."
@@ -258,15 +257,13 @@ export default function SocialPostGenerator() {
                   {Number(selectedProduct.price).toFixed(2)}
                 </p>
               )}
-            </div>
+              </>)}
+            </Field>
           )}
 
           {/* Prev price (oferta only) */}
           {postType === "oferta" && (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
-                Precio anterior (opcional)
-              </label>
+            <Field label="Precio anterior (opcional)" labelClassName="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
               <input
                 type="number"
                 value={prevPrice}
@@ -274,15 +271,12 @@ export default function SocialPostGenerator() {
                 placeholder="Ej: 5.50"
                 className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
-            </div>
+            </Field>
           )}
 
           {/* Custom note */}
           {(postType === "receta" || postType === "motivacional") && (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
-                Nota adicional
-              </label>
+            <Field label="Nota adicional" labelClassName="mb-1 block text-sm font-medium text-[var(--text-secondary)]">
               <textarea
                 value={customNote}
                 onChange={(e) => setCustomNote(e.target.value)}
@@ -290,7 +284,7 @@ export default function SocialPostGenerator() {
                 placeholder="Agrega un detalle personal..."
                 className="w-full rounded-lg border border-[var(--rule-base)] bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none dark:border-[var(--rule-base)] dark:bg-gray-800 dark:text-white"
               />
-            </div>
+            </Field>
           )}
 
           <button

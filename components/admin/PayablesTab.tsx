@@ -15,6 +15,7 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import AdminCard from "./shared/AdminCard";
 import StatusBadge from "./shared/StatusBadge";
+import { Field } from "@/components/admin/shared/Field";
 const PAY_STATUS_LABELS = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado" } as const;
 const PAY_STATUS_VARIANT: Record<"pendiente" | "parcial" | "pagado", "warning" | "info" | "success"> = {
   pendiente: "warning",
@@ -262,17 +263,15 @@ export default function PayablesTab() {
                 {/* Payment form */}
                 {showPayment === p.id && (
                   <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--accent-soft)] flex flex-wrap items-end gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Monto (S/)</label>
+                    <Field label="Monto (S/)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                       <input
                         required type="number" step="0.01" min="0.01" max={remaining}
                         value={payForm.amount}
                         onChange={(e) => setPayForm(f => ({ ...f, amount: e.target.value }))}
                         className="w-28 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Método</label>
+                    </Field>
+                    <Field label="Método" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                       <select
                         value={payForm.method}
                         onChange={(e) => setPayForm(f => ({ ...f, method: e.target.value as PaymentMethod }))}
@@ -282,16 +281,15 @@ export default function PayablesTab() {
                           <option key={m} value={m}>{METHOD_LABELS[m]}</option>
                         ))}
                       </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Referencia</label>
+                    </Field>
+                    <Field label="Referencia" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                       <input
                         value={payForm.reference}
                         onChange={(e) => setPayForm(f => ({ ...f, reference: e.target.value }))}
                         placeholder="Nº operación…"
                         className="w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                       />
-                    </div>
+                    </Field>
                     <button type="submit" disabled={saving} className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1 disabled:opacity-60">
                       <Check className="h-3.5 w-3.5" /> Registrar pago
                     </button>
@@ -339,25 +337,21 @@ export default function PayablesTab() {
           </div>
           <form onSubmit={addPayable} className="p-5 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Proveedor *</label>
+              <Field label="Proveedor *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                 <select required value={addForm.supplierId} onChange={(e) => setAddForm(f => ({ ...f, supplierId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
                   <option value="">Seleccionar proveedor</option>
                   {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Monto (S/) *</label>
+              </Field>
+              <Field label="Monto (S/) *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                 <input required type="number" step="0.01" min="0.01" value={addForm.amount} onChange={(e) => setAddForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Descripción</label>
+              </Field>
+              <Field label="Descripción" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                 <input value={addForm.description} onChange={(e) => setAddForm(f => ({ ...f, description: e.target.value }))} placeholder="Factura #001…" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Fecha de vencimiento</label>
+              </Field>
+              <Field label="Fecha de vencimiento" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                 <input type="date" value={addForm.dueDate} onChange={(e) => setAddForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </div>
+              </Field>
             </div>
             <div className="flex flex-wrap gap-3">
               <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>

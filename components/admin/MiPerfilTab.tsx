@@ -6,6 +6,7 @@ import { UserCircle, Mail, Phone, Shield, Key, Save, Loader2, CheckCircle } from
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 interface UserProfile {
   username: string;
@@ -167,50 +168,58 @@ export default function MiPerfilTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Username */}
               <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nombre</label>
                 {editMode ? (
-                  <input
-                    type="text"
-                    value={profile.username}
-                    onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                  />
+                  <Field label="Nombre" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
+                    <input
+                      type="text"
+                      value={profile.username}
+                      onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
+                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                  </Field>
                 ) : (
-                  <p className="text-sm font-medium text-[var(--text-primary)] capitalize px-3 py-2.5">{profile.username || "—"}</p>
+                  <>
+                    <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nombre</span>
+                    <p className="text-sm font-medium text-[var(--text-primary)] capitalize px-3 py-2.5">{profile.username || "—"}</p>
+                  </>
                 )}
               </div>
 
               {/* Email (read-only) */}
               <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
                   <Mail className="h-3 w-3" /> Correo electrónico
-                </label>
+                </span>
                 <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5">{profile.email || "—"}</p>
               </div>
 
               {/* Phone */}
               <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
-                  <Phone className="h-3 w-3" /> Teléfono
-                </label>
                 {editMode ? (
-                  <input
-                    type="tel"
-                    value={profile.phone}
-                    onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
-                    placeholder="+51 999 999 999"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                  />
+                  <Field label={<><Phone className="h-3 w-3 inline mr-1.5" />Teléfono</>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                    <input
+                      type="tel"
+                      value={profile.phone}
+                      onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
+                      placeholder="+51 999 999 999"
+                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                  </Field>
                 ) : (
-                  <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5">{profile.phone || "No registrado"}</p>
+                  <>
+                    <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                      <Phone className="h-3 w-3" /> Teléfono
+                    </span>
+                    <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5">{profile.phone || "No registrado"}</p>
+                  </>
                 )}
               </div>
 
               {/* Role (read-only) */}
               <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
                   <Shield className="h-3 w-3" /> Rol
-                </label>
+                </span>
                 <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5 capitalize">{profile.role}</p>
               </div>
             </div>
@@ -269,33 +278,30 @@ export default function MiPerfilTab() {
           </button>
         ) : (
           <div className="space-y-3 max-w-sm">
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Contraseña actual</label>
+            <Field label="Contraseña actual" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
                 className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nueva contraseña</label>
+            </Field>
+            <Field label="Nueva contraseña" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Confirmar contraseña</label>
+            </Field>
+            <Field label="Confirmar contraseña" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
-            </div>
+            </Field>
             {passwordError && (
               <p className="text-xs text-[var(--data-error-500)] font-medium">{passwordError}</p>
             )}

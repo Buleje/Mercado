@@ -8,6 +8,7 @@ import {
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
@@ -71,23 +72,28 @@ export default function FiadoFormModal({
       <div className="flex flex-col">
         {/* Body */}
         <div className="px-6 py-5 space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cliente <span className="text-[var(--text-tertiary)] font-normal">(número de celular)</span></label>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
-                      <input
-                        type="text"
-                        value={newForm.customerId}
-                        onChange={e => {
-                          setNewForm((p: FiadoNewForm) => ({ ...p, customerId: e.target.value }));
-                          // Fix #10: limpiar error de submit previo al modificar el campo
-                          setCreateError(null);
-                        }}
-                        placeholder="Ej: 987654321"
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      />
-                    </div>
-                  </div>
+                  <Field
+                    label={<>Cliente <span className="text-[var(--text-tertiary)] font-normal">(número de celular)</span></>}
+                    labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2"
+                  >
+                    {(id) => (
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
+                        <input
+                          id={id}
+                          type="text"
+                          value={newForm.customerId}
+                          onChange={e => {
+                            setNewForm((p: FiadoNewForm) => ({ ...p, customerId: e.target.value }));
+                            // Fix #10: limpiar error de submit previo al modificar el campo
+                            setCreateError(null);
+                          }}
+                          placeholder="Ej: 987654321"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        />
+                      </div>
+                    )}
+                  </Field>
 
                   {/* Mejora M1: Resumen visual del cliente */}
                   {newForm.customerId.trim().length >= 6 && (
@@ -149,56 +155,68 @@ export default function FiadoFormModal({
                     ) : null
                   )}
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Monto total</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={newForm.total}
-                        onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, total: e.target.value }))}
-                        placeholder="0.00"
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      />
-                    </div>
-                  </div>
+                  <Field label="Monto total" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                    {(id) => (
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
+                        <input
+                          id={id}
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          value={newForm.total}
+                          onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, total: e.target.value }))}
+                          placeholder="0.00"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        />
+                      </div>
+                    )}
+                  </Field>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Descripción <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
-                    <div className="relative">
-                      <FileText className="absolute left-4 top-3.5 h-5 w-5 text-[var(--text-tertiary)]" />
-                      <textarea
-                        value={newForm.descripcion}
-                        onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, descripcion: e.target.value }))}
-                        placeholder="Detalle de lo que se llevó..."
-                        rows={2}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
-                      />
-                    </div>
-                  </div>
+                  <Field
+                    label={<>Descripción <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>}
+                    labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2"
+                  >
+                    {(id) => (
+                      <div className="relative">
+                        <FileText className="absolute left-4 top-3.5 h-5 w-5 text-[var(--text-tertiary)]" />
+                        <textarea
+                          id={id}
+                          value={newForm.descripcion}
+                          onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, descripcion: e.target.value }))}
+                          placeholder="Detalle de lo que se llevó..."
+                          rows={2}
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
+                        />
+                      </div>
+                    )}
+                  </Field>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Fecha de vencimiento <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
-                    <div className="relative">
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
-                      <input
-                        type="date"
-                        value={newForm.fechaVence}
-                        onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, fechaVence: e.target.value }))}
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      />
-                    </div>
-                  </div>
+                  <Field
+                    label={<>Fecha de vencimiento <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>}
+                    labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2"
+                  >
+                    {(id) => (
+                      <div className="relative">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]" />
+                        <input
+                          id={id}
+                          type="date"
+                          value={newForm.fechaVence}
+                          onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, fechaVence: e.target.value }))}
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        />
+                      </div>
+                    )}
+                  </Field>
 
                   {/* Mejora 17: Foto del DNI (si monto > 100) */}
                   {parseFloat(newForm.total) > 100 && (
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <Camera className="inline h-3.5 w-3.5 mr-1" />
                         Foto del DNI (opcional, recomendado para montos mayores)
-                      </label>
+                      </span>
                       {dniPhoto ? (
                         <div className="relative inline-block">
                           <Image

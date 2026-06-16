@@ -1,6 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 
  
 
@@ -118,64 +119,59 @@ function RuleForm({ initial, onSave, onCancel }: RuleFormProps) {
     <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-            Nombre del producto
-          </label>
-          <input
-            value={form.productName}
-            onChange={(e) => set("productName", e.target.value)}
-            placeholder="Ej: Arroz Costeño 5kg"
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-          />
+          <Field label="Nombre del producto" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+            <input
+              value={form.productName}
+              onChange={(e) => set("productName", e.target.value)}
+              placeholder="Ej: Arroz Costeño 5kg"
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            />
+          </Field>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-            Precio normal (S/)
-          </label>
-          <input
-            type="number"
-            min={0}
-            step={0.5}
-            value={form.basePrice}
-            onChange={(e) => set("basePrice", Number(e.target.value))}
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-          />
+          <Field label="Precio normal (S/)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+            <input
+              type="number"
+              min={0}
+              step={0.5}
+              value={form.basePrice}
+              onChange={(e) => set("basePrice", Number(e.target.value))}
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            />
+          </Field>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-            Unidad
-          </label>
-          <input
-            value={form.unit}
-            onChange={(e) => set("unit", e.target.value)}
-            placeholder="bolsa, caja, unidad..."
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-          />
+          <Field label="Unidad" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+            <input
+              value={form.unit}
+              onChange={(e) => set("unit", e.target.value)}
+              placeholder="bolsa, caja, unidad..."
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            />
+          </Field>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-            A partir de (cantidad)
-          </label>
-          <input
-            type="number"
-            min={2}
-            value={form.discountQty}
-            onChange={(e) => set("discountQty", Number(e.target.value))}
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-          />
+          <Field label="A partir de (cantidad)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+            <input
+              type="number"
+              min={2}
+              value={form.discountQty}
+              onChange={(e) => set("discountQty", Number(e.target.value))}
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            />
+          </Field>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-            Precio con descuento (S/)
-          </label>
-          <input
-            type="number"
-            min={0}
-            step={0.5}
-            value={form.discountPrice}
-            onChange={(e) => set("discountPrice", Number(e.target.value))}
-            className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
-          />
+          <Field label="Precio con descuento (S/)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+            <input
+              type="number"
+              min={0}
+              step={0.5}
+              value={form.discountPrice}
+              onChange={(e) => set("discountPrice", Number(e.target.value))}
+              className="w-full rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            />
+          </Field>
         </div>
       </div>
       {valid && (

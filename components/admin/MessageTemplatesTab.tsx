@@ -5,6 +5,7 @@ import { MessageSquare, Plus, Copy, Check, Trash2, X, Search, Star, StarOff } fr
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from '@/components/admin/shared/Field';
 
 /* ── types ──────────────────────────────────────────────────── */
 type TemplateChannel = "whatsapp" | "email" | "sms";
@@ -288,35 +289,34 @@ export default function MessageTemplatesTab() {
               <button onClick={() => setShowNew(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Nombre</label>
+              <Field label="Nombre" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ej: Confirmación de pedido" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary" autoFocus />
-              </div>
+              </Field>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Canal</label>
+                <Field label="Canal" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                   <select value={newChannel} onChange={e => setNewChannel(e.target.value as TemplateChannel)} className="w-full px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
                     {Object.entries(CHANNEL_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Categoría</label>
+                </Field>
+                <Field label="Categoría" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                   <select value={newCategory} onChange={e => setNewCategory(e.target.value as TemplateCategory)} className="w-full px-3 py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary">
                     {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                </div>
+                </Field>
               </div>
               {newChannel === "email" && (
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Asunto</label>
+                <Field label="Asunto" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                   <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Asunto del email..." className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:border-primary" />
-                </div>
+                </Field>
               )}
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Mensaje</label>
-                <textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder={"Usa {{variable}} para campos dinámicos...\nEj: Hola {{cliente}}, tu pedido..."} rows={6} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary resize-none font-mono" />
-                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables detectadas: {[...newBody.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]).join(", ") || "ninguna"}</p>
-              </div>
+              <Field label="Mensaje" labelClassName="block text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
+                {(id) => (
+                  <>
+                    <textarea id={id} value={newBody} onChange={e => setNewBody(e.target.value)} placeholder={"Usa {{variable}} para campos dinámicos...\nEj: Hola {{cliente}}, tu pedido..."} rows={6} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:border-primary resize-none font-mono" />
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables detectadas: {[...newBody.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]).join(", ") || "ninguna"}</p>
+                  </>
+                )}
+              </Field>
               <div className="flex flex-wrap justify-end gap-3 pt-2">
                 <button onClick={() => setShowNew(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
                 <button onClick={handleAdd} disabled={!newName.trim() || !newBody.trim()} className="px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50">Crear plantilla</button>

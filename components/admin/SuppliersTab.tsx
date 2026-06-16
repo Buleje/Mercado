@@ -7,6 +7,7 @@ import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clo
 import type { DbSupplier } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
@@ -629,30 +630,24 @@ export default function SuppliersTab() {
             </div>
             <form onSubmit={addSupplier} className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Nombre / Razon social *</label>
+                <Field label="Nombre / Razon social *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                   <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">RUC</label>
+                </Field>
+                <Field label="RUC" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                   <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Teléfono</label>
+                </Field>
+                <Field label="Teléfono" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                   <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Email</label>
+                </Field>
+                <Field label="Email" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                   <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Direccion</label>
+                </Field>
+                <Field label="Direccion" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1" className="sm:col-span-2">
                   <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</label>
+                </Field>
+                <Field label="Notas" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1" className="sm:col-span-2">
                   <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm resize-none" />
-                </div>
+                </Field>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
