@@ -563,8 +563,9 @@ void ComprasDashboard;
 
 // ── Componente principal ────────────────────────────────────────────────────
 
-export default function ComprasModule() {
+export default function ComprasModule({ initialTab }: { initialTab?: string } = {}) {
   const [sub, setSub] = useState(() => {
+    if (initialTab) return initialTab;
     if (typeof window === "undefined") return TABS[0].id;
     return normalizeComprasTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
   });

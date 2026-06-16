@@ -19,7 +19,8 @@ import type { AdminMode } from "@/app/admin/_hooks/useAdminMode";
 const AnalisisHubModule = dynamic(() => import("@/components/admin/unified/AnalisisHubModule"), { loading: TabSpinner });
 const InventoryTab = dynamic(() => import("@/components/admin/tabs/InventoryTab"), { loading: TabSpinner });
 const SettingsTab  = dynamic(() => import("@/components/admin/tabs/SettingsTab"),  { loading: TabSpinner });
-const AuditTab     = dynamic(() => import("@/components/admin/tabs/AuditTab"),     { loading: TabSpinner });
+// rendimiento + auditoria + colas consolidados en SistemaHubModule (3→1)
+const SistemaHubModule = dynamic(() => import("@/components/admin/unified/SistemaHubModule"), { loading: TabSpinner });
 // marketplace-chat + support-inbox consolidados en MensajesHubModule (2→1)
 const MensajesHubModule = dynamic(() => import("@/components/admin/unified/MensajesHubModule"), { loading: TabSpinner });
 
@@ -38,7 +39,7 @@ const DocumentosHubModule     = dynamic(() => import("@/components/admin/unified
 const DeliveryPartnersModule  = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"),  { loading: TabSpinner });
 // delivery-live consolidado como sub-tab "Pedidos en vivo" de DeliveryPartnersModule (2→1)
 // marketplace-chat → sub-tab "chat" de MensajesHubModule (ver dispatch)
-const RendimientoModule       = dynamic(() => import("@/components/admin/unified/RendimientoModule"),       { loading: TabSpinner });
+// rendimiento → sub-tab de SistemaHubModule (ver dispatch)
 const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"),    { loading: TabSpinner });
 
 // ── ENRICH-5 bridges — programas de crecimiento consolidados en MarketplaceModule (4→1) ──
@@ -47,7 +48,7 @@ const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
 const PorCobrarDashboard        = dynamic(() => import("@/components/admin/PorCobrarDashboard"),        { loading: TabSpinner });
-const TurnosModule              = dynamic(() => import("@/components/admin/TurnosModule"),              { loading: TabSpinner });
+// turnos → sub-tab "Turnos" de POSCajaModule (era duplicado top-level)
 // Fiados/Préstamos/Adelantos/Activos consolidados como sub-tabs de FinanzasModule
 // (ver TabRouter dispatch más abajo — todos renderean <FinanzasModule initialTab=...>).
 const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
@@ -58,11 +59,11 @@ const LothLibroOperaciones      = dynamic(() => import("@/components/admin/fores
 // ADR-128 — Especialización agrícola: Acopio & Beneficio de Cacao
 const CacaoAcopio               = dynamic(() => import("@/components/admin/cacao/CacaoAcopio"), { loading: TabSpinner });
 const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/ScoringCrediticioTab"),      { loading: TabSpinner });
-const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
+// devoluciones-proveedor → sub-tab "Devoluciones" de ComprasModule (era duplicado top-level)
 // store-customizer + pagina-inicio consolidados en MiTiendaHubModule (2→1)
 const MiTiendaHubModule         = dynamic(() => import("@/components/admin/unified/MiTiendaHubModule"),  { loading: TabSpinner });
 const MiPerfilTab               = dynamic(() => import("@/components/admin/MiPerfilTab"),               { loading: TabSpinner });
-const ColasTab                  = dynamic(() => import("@/components/admin/ColasTab"),                  { loading: TabSpinner });
+// colas → sub-tab de SistemaHubModule (ver dispatch)
 // forecasting → sub-tab "forecast" de AnalisisHubModule (ver dispatch)
 
 // ── Documentos comerciales & SUNAT consolidados en DocumentosHubModule (6→1) ──
@@ -205,7 +206,7 @@ export function TabRouter({
   // ── 1. Chat IA (standalone) ──
   if (tab === "asistente-ia") return <AsistenteIAHubModule key="asistente-ia" initialTab="chat" />;
 
-  if (tab === "ventas-caja") return <POSCajaModule />;
+  if (tab === "ventas-caja") return <POSCajaModule key="ventas-caja" />;
 
   // ── 3. Inventario ──
   if (tab === "inventario") return <InventoryTab />;
@@ -214,7 +215,7 @@ export function TabRouter({
   if (tab === "productos") return <CatalogoTiendaModule />;
 
   // ── 5. Compras ──
-  if (tab === "compras") return <ComprasModule />;
+  if (tab === "compras") return <ComprasModule key="compras" />;
 
   // ── 6. Mi Plata (hub financiero — incluye fiados/préstamos/adelantos/activos) ──
   if (tab === "plata") return <FinanzasModule key="plata" />;
@@ -227,7 +228,7 @@ export function TabRouter({
   // ── Módulos adicionales ──
   if (tab === "fiados")    return <FinanzasModule key="fiados" initialTab="fiados" />;
   if (tab === "por-cobrar") return <PorCobrarDashboard />;
-  if (tab === "turnos")    return <TurnosModule />;
+  if (tab === "turnos")    return <POSCajaModule key="turnos" initialTab="turnos" />;
   if (tab === "prestamos") return <FinanzasModule key="prestamos" initialTab="prestamos" />;
   if (tab === "adelantos") return <FinanzasModule key="adelantos" initialTab="adelantos" />;
   if (tab === "activos") return <FinanzasModule key="activos" initialTab="activos" />;
@@ -240,7 +241,7 @@ export function TabRouter({
   if (tab === "loth-libro-operaciones") return <LothLibroOperaciones />;
   if (tab === "cacao-acopio") return <CacaoAcopio />;
   if (tab === "scoring")   return <ScoringCrediticioTab />;
-  if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;
+  if (tab === "devoluciones-proveedor") return <ComprasModule key="devoluciones-proveedor" initialTab="devoluciones" />;
 
   // ── Documentos comerciales & SUNAT (hub consolidado — 6 sub-tabs) ──
   if (tab === "cotizaciones")   return <DocumentosHubModule key="cotizaciones" initialTab="cotizaciones" />;
@@ -250,7 +251,7 @@ export function TabRouter({
   if (tab === "facturacion")    return <DocumentosHubModule key="facturacion" initialTab="facturacion" />;
 
   // ── Módulos nuevos ──
-  if (tab === "auditoria")              return <AuditTab />;
+  if (tab === "auditoria")              return <SistemaHubModule key="auditoria" initialTab="auditoria" />;
   // (Declaración Inventario movido dentro del módulo Inventario — tab "Declaración")
 
   // ── 8. Configuración ──
@@ -295,11 +296,11 @@ export function TabRouter({
   if (tab === "lives-admin")       return <MarketplaceModule key="lives" initialTab="lives" />;
 
   // ── Rendimiento técnico ──
-  if (tab === "rendimiento") return <RendimientoModule />;
+  if (tab === "rendimiento") return <SistemaHubModule key="rendimiento" initialTab="rendimiento" />;
 
   // ── Personalización de tienda, colas y perfil ──
   if (tab === "store-customizer") return <MiTiendaHubModule key="store-customizer" initialTab="identidad" />;
-  if (tab === "colas")            return <ColasTab />;
+  if (tab === "colas")            return <SistemaHubModule key="colas" initialTab="colas" />;
   if (tab === "mi-perfil")        return <MiPerfilTab />;
   if (tab === "support-inbox")    return <MensajesHubModule key="support-inbox" initialTab="soporte" />;
 

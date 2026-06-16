@@ -242,8 +242,9 @@ function ShiftCloseModal({
 
 // ── Main Module ─────────────────────────────────────────────────────────────
 
-export default function POSCajaModule() {
+export default function POSCajaModule({ initialTab }: { initialTab?: string } = {}) {
   const [sub, setSub] = useState<TabId>(() => {
+    if (initialTab) return initialTab as TabId;
     if (typeof window === "undefined") return TABS[0].id;
     return normalizeVentasCajaTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
   });
