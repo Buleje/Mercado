@@ -15,7 +15,7 @@ import {
   FileBarChart, Waves, Calculator,
   DollarSign, Wallet,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
-  Sparkles, Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
+  Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
@@ -60,10 +60,7 @@ const WeeklyCashFlowTable = dynamic(() => import("@/components/admin/WeeklyCashF
 const HistorialCierresTab = dynamic(() => import("@/components/admin/HistorialCierresTab"), { loading: S });
 const PresupuestoMensualTab = dynamic(() => import("@/components/admin/finanzas/PresupuestoMensualTab"), { loading: S });
 const ReporteMensualTab     = dynamic(() => import("@/components/admin/ReporteMensualTab"),              { loading: S });
-const ComparativeReportsTab = dynamic(() => import("@/components/admin/ComparativeReportsTab"),           { ssr: false, loading: S });
-const BusinessIntelligenceTab = dynamic(() => import("@/components/admin/BusinessIntelligenceTab"), { loading: S });
-const CustomKPITab = dynamic(() => import("@/components/admin/CustomKPITab"), { loading: S });
-const CompetitorPriceTracker = dynamic(() => import("@/components/admin/CompetitorPriceTracker"), { loading: S });
+// Inteligencia (BI operacional) movida a AnalisisHubModule → components/admin/analisis/InteligenciaTab.tsx
 // DocumentosEmitidosTab → movido a categoría Documentos (no es finanzas)
 const TreasuryDashboard = dynamic(() => import("@/components/admin/TreasuryDashboard"), { loading: S });
 
@@ -91,7 +88,6 @@ const TABS = [
   { id: "presupuesto" as const,      label: "Presupuesto",              icon: Target       },
   { id: "flujo-caja" as const,       label: "Flujo de Caja",            icon: Waves        },
   { id: "reportes" as const,         label: "Reportes",                 icon: FileBarChart },
-  { id: "inteligencia" as const,     label: "Inteligencia",             icon: Sparkles     },
   { id: "tesoreria" as const,        label: "Tesorería",                icon: Landmark     },
   // ── Crédito y capital (consolidados desde módulos top-level) ──
   { id: "fiados" as const,           label: "Fiados",                   icon: HandCoins    },
@@ -1154,44 +1150,6 @@ function FinanzasDashboard() {
   );
 }
 
-// ── IntelligenceKPIStrip — quick KPIs for Inteligencia tab ───────────────────
-function IntelligenceKPIStrip() {
-  const [kpis, setKpis] = useState<Record<string, number> | null>(null);
-
-  useEffect(() => {
-    fetch("/api/analytics/kpis-v2", { credentials: "include" })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d) setKpis({
-          margen: d.margenPromedio ?? d.margin ?? 0,
-          ventasMes: d.ventasMes ?? d.salesMonth ?? 0,
-          ticketPromedio: d.ticketPromedio ?? d.avgTicket ?? 0,
-          productos: d.productosActivos ?? d.activeProducts ?? 0,
-        });
-      })
-      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }));
-  }, []);
-
-  if (!kpis) return null;
-
-  const cards = [
-    { label: "Margen", value: `${Number(kpis.margen).toFixed(1)}%`, color: "text-primary" },
-    { label: "Ventas/mes", value: formatCurrency(kpis.ventasMes, { decimals: 0 }), color: "text-primary" },
-    { label: "Ticket prom.", value: formatCurrency(kpis.ticketPromedio, { decimals: 0 }), color: "text-secondary" },
-    { label: "Productos", value: String(kpis.productos), color: "text-[var(--text-primary)]" },
-  ];
-
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {cards.map(c => (
-        <div key={c.label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3  text-center">
-          <p className="text-xs text-[var(--text-secondary)] font-semibold">{c.label}</p>
-          <p className={cn("text-lg font-extrabold mt-0.5", c.color)}>{c.value}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -1302,26 +1260,6 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
             <HistorialCierresTab />
           </div>
         </div>
-      )}
-      {sub === "inteligencia" && (
-        <Suspense fallback={<S />}>
-          <div className="space-y-6">
-            <ComparativeReportsTab />
-            <IntelligenceKPIStrip />
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Análisis de Negocio</CardTitle>
-              <BusinessIntelligenceTab />
-            </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">KPIs Personalizados</CardTitle>
-              <CustomKPITab />
-            </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Precios del Mercado</CardTitle>
-              <CompetitorPriceTracker />
-            </div>
-          </div>
-        </Suspense>
       )}
       {sub === "tesoreria" && (
         <Suspense fallback={<S />}>

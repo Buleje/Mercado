@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { BarChart3, TrendingUp } from "@buleje/design-system/icons";
+import { BarChart3, TrendingUp, Sparkles } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -12,12 +12,15 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 // header (evita doble). Rendimiento técnico queda aparte (no es análisis de negocio).
 const AnalyticsProModule  = dynamic(() => import("@/components/admin/unified/AnalyticsProModule"),        { loading: S, ssr: false });
 const ForecastingDashboard = dynamic(() => import("@/components/admin/forecasting/ForecastingDashboard"), { loading: S });
+// Inteligencia de negocio — movida desde FinanzasModule (BI operacional, no financiero)
+const InteligenciaTab = dynamic(() => import("@/components/admin/analisis/InteligenciaTab"), { loading: S });
 
 const MODULE_ID = "analisis-hub";
 
 const TABS = [
-  { id: "analytics", label: "Analytics Pro",      icon: BarChart3 },
-  { id: "forecast",  label: "Predicción Demanda", icon: TrendingUp },
+  { id: "analytics",    label: "Analytics Pro",      icon: BarChart3 },
+  { id: "forecast",     label: "Predicción Demanda", icon: TrendingUp },
+  { id: "inteligencia", label: "Inteligencia",       icon: Sparkles },
 ];
 
 export default function AnalisisHubModule({ initialTab }: { initialTab?: string } = {}) {
@@ -33,6 +36,7 @@ export default function AnalisisHubModule({ initialTab }: { initialTab?: string 
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "analytics" && <AnalyticsProModule />}
         {sub === "forecast" && <ForecastingDashboard />}
+        {sub === "inteligencia" && <InteligenciaTab />}
       </AdminTabBar>
     </div>
   );
