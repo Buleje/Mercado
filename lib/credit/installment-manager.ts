@@ -149,11 +149,14 @@ export async function createInstallmentPlan(
  * Si el plan queda completamente pagado, libera el crédito.
  */
 export async function processPayment(
+  tenantId: string,
   installmentId: string,
   amount: number,
 ): Promise<PaymentResult> {
-  const plan = await prisma.creditInstallment.findUnique({
-    where: { id: installmentId },
+  // Aislamiento multi-tenant (regla #3): el plan se resuelve scopeado por
+  // tenantId, así la función es segura aun si un caller no validó ownership.
+  const plan = await prisma.creditInstallment.findFirst({
+    where: { id: installmentId, tenantId },
     include: { creditProfile: true },
   });
 

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await processPayment(installmentId, amount);
+    const result = await processPayment(auth.tenantId, installmentId, amount);
 
     // Si el pago cierra el plan, recalcular el score del cliente
     if (result.isFullyPaid) {
