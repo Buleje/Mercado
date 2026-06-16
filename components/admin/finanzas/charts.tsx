@@ -88,38 +88,27 @@ export function ComparativoMensual() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Brandon 2026-05-16 (audit P1): dedupe + cache 30s.
+    // Ingresos mensuales agregados SERVER-SIDE (Sale + Order, INGRESO_ORDER_STATUSES).
+    // Antes: /api/sales?limit=5000 crudo bucketeado acá (y sumaba SOLO Sale →
+    // inconsistente con el trend de P&L). Reusa /api/finanzas/monthly-summary.
     Promise.all([
       fetchFinanzas<{ totalMonth?: number; monthly?: Array<{ month: string; total: number }> } | null>("/api/expenses/summary", null),
-      fetchFinanzas<Array<{ createdAt?: string; total: number }>>("/api/sales?limit=5000", []),
+      fetchFinanzas<Array<{ month: string; ingresos: number }>>("/api/finanzas/monthly-summary?months=6", []),
     ])
-      .then(([expenses, sales]) => {
-        const now = new Date();
-        const months: Array<{ mes: string; ingresos: number; gastos: number; utilidad: number }> = [];
-
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          const monthKey = d.toISOString().slice(0, 7);
-          const label = MESES[d.getMonth()];
-
-          // Ingresos: sum sales in this month
-          const monthSales = Array.isArray(sales)
-            ? sales.filter((s: { createdAt?: string; total: number }) => (s.createdAt ?? "").startsWith(monthKey))
-            : [];
-          const ingresos = monthSales.reduce((sum: number, s: { total: number }) => sum + (s.total ?? 0), 0);
-
-          // Gastos: from monthly breakdown or estimate
+      .then(([expenses, monthly]) => {
+        const series = Array.isArray(monthly) ? monthly : [];
+        const months = series.map(({ month: monthKey, ingresos }) => {
+          const mm = Number(monthKey.split("-")[1]);
+          const label = MESES[(mm || 1) - 1];
           let gastos = 0;
           if (expenses?.monthly && Array.isArray(expenses.monthly)) {
             const m = expenses.monthly.find((e: { month: string; total: number }) => e.month === monthKey);
             gastos = m?.total ?? 0;
-          } else if (expenses?.totalMonth && i === 0) {
+          } else if (expenses?.totalMonth && monthKey === series[series.length - 1]?.month) {
             gastos = expenses.totalMonth;
           }
-
-          months.push({ mes: label, ingresos: Math.round(ingresos), gastos: Math.round(gastos), utilidad: Math.round(ingresos - gastos) });
-        }
-
+          return { mes: label, ingresos: Math.round(ingresos), gastos: Math.round(gastos), utilidad: Math.round(ingresos - gastos) };
+        });
         setChartData(months);
       })
       .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
