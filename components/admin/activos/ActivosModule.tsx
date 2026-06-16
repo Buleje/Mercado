@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
 
 interface AssetStats {
@@ -396,30 +397,29 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
         </div>
 
         <FormSection title="Identificación">
-          <div className="sm:col-span-2"><label className={LABEL}>Nombre *</label><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} autoFocus /></div>
-          <div className="sm:col-span-2">
-            <label className={LABEL}>Categoría</label>
-            <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={FIELD}>
+          <Field label="Nombre *" labelClassName={LABEL} className="sm:col-span-2"><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} autoFocus /></Field>
+          <Field label="Categoría" labelClassName={LABEL} className="sm:col-span-2">{(id) => (<>
+            <select id={id} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={FIELD}>
               {knownTypes.map(v => <option key={v} value={v}>{typeLabel(v)}</option>)}
               <option value="__new__">+ Nueva categoría…</option>
             </select>
             {form.type === "__new__" && <input value={form.newType} onChange={e => setForm(f => ({ ...f, newType: e.target.value }))} placeholder="Nombre de la categoría (ej. Motoniveladora)" className={cn(FIELD, "mt-2")} autoFocus />}
-          </div>
-          <div><label className={LABEL}>Placa / serie</label><input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} placeholder="ABC-123" className={FIELD} /></div>
-          <div><label className={LABEL}>Estado</label><select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={FIELD}>{Object.entries(STATUS_META).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}</select></div>
+          </>)}</Field>
+          <Field label="Placa / serie" labelClassName={LABEL}><input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} placeholder="ABC-123" className={FIELD} /></Field>
+          <Field label="Estado" labelClassName={LABEL}><select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={FIELD}>{Object.entries(STATUS_META).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}</select></Field>
         </FormSection>
 
         <FormSection title="Tarifa de alquiler">
-          <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="180" className={FIELD} /></div>
-          <div><label className={LABEL}>Cobro por</label><select value={form.rateUnit} onChange={e => setForm(f => ({ ...f, rateUnit: e.target.value }))} className={FIELD}>{RATE_UNITS.map(u => <option key={u.v} value={u.v}>{u.label}</option>)}</select></div>
-          <div><label className={LABEL} title="Horas/unidades disponibles por día — base de la utilización">Capacidad por día</label><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></div>
-          <div><label className={LABEL}>Valor de compra (S/)</label><input type="number" min="0" value={form.purchaseValue} onChange={e => setForm(f => ({ ...f, purchaseValue: e.target.value }))} placeholder="250000" className={FIELD} /></div>
+          <Field label="Tarifa (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="180" className={FIELD} /></Field>
+          <Field label="Cobro por" labelClassName={LABEL}><select value={form.rateUnit} onChange={e => setForm(f => ({ ...f, rateUnit: e.target.value }))} className={FIELD}>{RATE_UNITS.map(u => <option key={u.v} value={u.v}>{u.label}</option>)}</select></Field>
+          <Field label={<span title="Horas/unidades disponibles por día — base de la utilización">Capacidad por día</span>} labelClassName={LABEL}><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></Field>
+          <Field label="Valor de compra (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.purchaseValue} onChange={e => setForm(f => ({ ...f, purchaseValue: e.target.value }))} placeholder="250000" className={FIELD} /></Field>
         </FormSection>
 
         <FormSection title="Control del equipo">
-          <div><label className={LABEL} title="Lectura actual del horómetro (horas de motor)">Horómetro actual</label><input type="number" min="0" value={form.currentHours} onChange={e => setForm(f => ({ ...f, currentHours: e.target.value }))} placeholder="0" className={FIELD} /></div>
-          <div><label className={LABEL} title="Galones esperados por unidad — si consume más, salta la alerta">Meta combustible (gal/{unitNoun(form.rateUnit).replace(/s$/, "")})</label><input type="number" min="0" step="0.01" value={form.fuelTargetPerUnit} onChange={e => setForm(f => ({ ...f, fuelTargetPerUnit: e.target.value }))} placeholder="ej. 3.5" className={FIELD} /></div>
-          <div className="sm:col-span-2"><label className={LABEL}>Notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Año, marca, observaciones…" /></div>
+          <Field label={<span title="Lectura actual del horómetro (horas de motor)">Horómetro actual</span>} labelClassName={LABEL}><input type="number" min="0" value={form.currentHours} onChange={e => setForm(f => ({ ...f, currentHours: e.target.value }))} placeholder="0" className={FIELD} /></Field>
+          <Field label={<span title="Galones esperados por unidad — si consume más, salta la alerta">Meta combustible (gal/{unitNoun(form.rateUnit).replace(/s$/, "")})</span>} labelClassName={LABEL}><input type="number" min="0" step="0.01" value={form.fuelTargetPerUnit} onChange={e => setForm(f => ({ ...f, fuelTargetPerUnit: e.target.value }))} placeholder="ej. 3.5" className={FIELD} /></Field>
+          <Field label="Notas" labelClassName={LABEL} className="sm:col-span-2"><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Año, marca, observaciones…" /></Field>
         </FormSection>
 
         {/* Tienda — publicar como servicio de alquiler (solo al editar una máquina ya guardada) */}
@@ -489,24 +489,23 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
     <ModalShell title={isIncome ? `Alquiler — ${asset.name}` : `Gasto — ${asset.name}`} subtitle={isIncome ? "Renta generada por la máquina" : "Combustible, mantenimiento u otro costo"} onClose={onClose} icon={isIncome ? TrendingUp : Fuel}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {isIncome ? (<>
-          <div className="sm:col-span-2"><label className={LABEL}>Cliente</label><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur" className={FIELD} /></div>
-          <div><label className={LABEL}>Inicio (periodo)</label><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></div>
-          <div><label className={LABEL}>Fin (periodo)</label><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></div>
-          <div><label className={LABEL}>Horómetro inicio</label><input type="number" min="0" value={form.hourStart} onChange={e => setForm(f => ({ ...f, hourStart: e.target.value }))} placeholder={asset.currentHours != null ? String(asset.currentHours) : "0"} className={FIELD} /></div>
-          <div><label className={LABEL}>Horómetro fin</label><input type="number" min="0" value={form.hourEnd} onChange={e => setForm(f => ({ ...f, hourEnd: e.target.value }))} placeholder="—" className={FIELD} /></div>
-          <div><label className={LABEL}>Cantidad ({unitNoun(form.unit)}) {hoursQty > 0 && form.quantity === "" && <span className="text-[var(--accent)] normal-case">· auto {hoursQty}</span>}</label><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder={hoursQty > 0 ? String(hoursQty) : "8"} className={FIELD} /></div>
-          <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></div>
+          <Field label="Cliente" labelClassName={LABEL} className="sm:col-span-2"><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur" className={FIELD} /></Field>
+          <Field label="Inicio (periodo)" labelClassName={LABEL}><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></Field>
+          <Field label="Fin (periodo)" labelClassName={LABEL}><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></Field>
+          <Field label="Horómetro inicio" labelClassName={LABEL}><input type="number" min="0" value={form.hourStart} onChange={e => setForm(f => ({ ...f, hourStart: e.target.value }))} placeholder={asset.currentHours != null ? String(asset.currentHours) : "0"} className={FIELD} /></Field>
+          <Field label="Horómetro fin" labelClassName={LABEL}><input type="number" min="0" value={form.hourEnd} onChange={e => setForm(f => ({ ...f, hourEnd: e.target.value }))} placeholder="—" className={FIELD} /></Field>
+          <Field label={<>Cantidad ({unitNoun(form.unit)}) {hoursQty > 0 && form.quantity === "" && <span className="text-[var(--accent)] normal-case">· auto {hoursQty}</span>}</>} labelClassName={LABEL}><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder={hoursQty > 0 ? String(hoursQty) : "8"} className={FIELD} /></Field>
+          <Field label="Tarifa (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></Field>
         </>) : (<>
-          <div><label className={LABEL}>Categoría</label><select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={FIELD}>{EXPENSE_CATS.map(c => <option key={c.v} value={c.v}>{c.label}</option>)}</select></div>
+          <Field label="Categoría" labelClassName={LABEL}><select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={FIELD}>{EXPENSE_CATS.map(c => <option key={c.v} value={c.v}>{c.label}</option>)}</select></Field>
           {form.category === "combustible" && (<>
-            <div><label className={LABEL}>Galones</label><input type="number" min="0" value={form.gallons} onChange={e => setForm(f => ({ ...f, gallons: e.target.value }))} placeholder="20" className={FIELD} /></div>
-            <div><label className={LABEL}>Precio / galón (S/)</label><input type="number" min="0" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="16.50" className={FIELD} /></div>
+            <Field label="Galones" labelClassName={LABEL}><input type="number" min="0" value={form.gallons} onChange={e => setForm(f => ({ ...f, gallons: e.target.value }))} placeholder="20" className={FIELD} /></Field>
+            <Field label="Precio / galón (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="16.50" className={FIELD} /></Field>
           </>)}
         </>)}
-        <div className="sm:col-span-2">
-          <label className={LABEL}>Monto total (S/) {autoAmount > 0 && form.amount === "" && <span className="text-[var(--accent)] normal-case">· auto {fmt(autoAmount)}</span>}</label>
+        <Field label={<>Monto total (S/) {autoAmount > 0 && form.amount === "" && <span className="text-[var(--accent)] normal-case">· auto {fmt(autoAmount)}</span>}</>} labelClassName={LABEL} className="sm:col-span-2">
           <input type="number" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder={autoAmount > 0 ? String(autoAmount) : "0.00"} className={cn(FIELD, "text-lg font-black")} />
-        </div>
+        </Field>
         {isIncome && (
           <div className="sm:col-span-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="flex gap-1 rounded-lg bg-[var(--surface-raised)] p-1">
@@ -514,10 +513,10 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
                 <button key={String(v)} type="button" onClick={() => setForm(f => ({ ...f, paid: v }))} className={cn("flex-1 rounded-md px-3 py-2 text-sm font-bold transition-colors", form.paid === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>
               ))}
             </div>
-            {!form.paid && <div className="mt-2"><label className={LABEL}>Vence el</label><input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={FIELD} /></div>}
+            {!form.paid && <div className="mt-2"><Field label="Vence el" labelClassName={LABEL}><input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={FIELD} /></Field></div>}
           </div>
         )}
-        <div className="sm:col-span-2"><label className={LABEL}>Notas</label><input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={FIELD} /></div>
+        <Field label="Notas" labelClassName={LABEL} className="sm:col-span-2"><input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={FIELD} /></Field>
       </div>
       <div className={cn("mt-3 flex items-center justify-between rounded-xl px-4 py-3", isIncome ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-100)] dark:bg-amber-950/20")}>
         <span className="text-sm font-bold text-[var(--text-secondary)]">{isIncome ? (form.paid ? "Ingreso a registrar" : "Por cobrar a registrar") : "Gasto a registrar"}</span>
@@ -843,10 +842,11 @@ function ImportModal({ knownTypes, onClose, onDone }: { knownTypes: string[]; on
           Columnas (en este orden, separadas por coma): <span className="font-bold text-[var(--text-secondary)]">Nombre, Categoría, Placa, Tarifa, Cobro (hora/día/m³/viaje), Capacidad/día</span>. Una máquina por línea.
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
-            <FileText className="h-4 w-4" /> Subir archivo
-            <input type="file" accept=".csv,.tsv,.txt,text/csv" className="hidden" onChange={e => onFile(e.target.files?.[0])} />
-          </label>
+          <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+            <FileText className="h-4 w-4" />
+            <label htmlFor="activos-import-file" className="cursor-pointer">Subir archivo</label>
+            <input id="activos-import-file" type="file" accept=".csv,.tsv,.txt,text/csv" className="hidden" onChange={e => onFile(e.target.files?.[0])} />
+          </span>
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">o pega abajo ↓</span>
         </div>
         <textarea value={text} onChange={e => { setText(e.target.value); parse(e.target.value); }} rows={6} className={cn(FIELD, "mt-2 font-mono")} placeholder={"Oruga D6, oruga, PUC-123, 180, hora, 8\nCamión Volquete, camion, ABC-456, 90, viaje, 6"} />
@@ -891,12 +891,12 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
         <div className="sm:col-span-2 flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
           {([["contrato", "Contrato"], ["cotizacion", "Cotización"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-bold transition-colors", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
         </div>
-        <div className="sm:col-span-2"><label className={LABEL}>Cliente *</label><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur S.A.C." className={FIELD} /></div>
-        <div><label className={LABEL}>Inicio</label><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></div>
-        <div><label className={LABEL}>Fin</label><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></div>
-        <div><label className={LABEL}>Cantidad ({unitNoun(asset.rateUnit)})</label><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder="8" className={FIELD} /></div>
-        <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></div>
-        <div className="sm:col-span-2"><label className={LABEL}>Condiciones / notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Incluye operador. Combustible por cuenta del cliente." /></div>
+        <Field label="Cliente *" labelClassName={LABEL} className="sm:col-span-2"><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur S.A.C." className={FIELD} /></Field>
+        <Field label="Inicio" labelClassName={LABEL}><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></Field>
+        <Field label="Fin" labelClassName={LABEL}><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></Field>
+        <Field label={`Cantidad (${unitNoun(asset.rateUnit)})`} labelClassName={LABEL}><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder="8" className={FIELD} /></Field>
+        <Field label="Tarifa (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></Field>
+        <Field label="Condiciones / notas" labelClassName={LABEL} className="sm:col-span-2"><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Incluye operador. Combustible por cuenta del cliente." /></Field>
       </div>
       <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--accent-soft)] px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-primary">{fmt(amount)}</span></div>
       <div className="mt-6 flex items-center gap-3">
@@ -930,8 +930,8 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
         {([["salida", "Salida (entrega)"], ["retorno", "Retorno (recibo)"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setKind(v)} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-bold transition-colors", kind === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <div><label className={LABEL}>Cliente</label><input value={client} onChange={e => setClient(e.target.value)} className={FIELD} /></div>
-        <div><label className={LABEL}>Horómetro</label><input type="number" min="0" value={hours} onChange={e => setHours(e.target.value)} className={FIELD} /></div>
+        <Field label="Cliente" labelClassName={LABEL}><input value={client} onChange={e => setClient(e.target.value)} className={FIELD} /></Field>
+        <Field label="Horómetro" labelClassName={LABEL}><input type="number" min="0" value={hours} onChange={e => setHours(e.target.value)} className={FIELD} /></Field>
       </div>
       <div className="mt-3 space-y-1.5">
         {CHECKLIST_DEFAULT.map(l => (
@@ -942,7 +942,7 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
           </button>
         ))}
       </div>
-      <div className="mt-3"><label className={LABEL}>Observaciones</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={cn(FIELD, "resize-none")} placeholder="Rayón en la puerta, falta 1/4 de combustible…" /></div>
+      <div className="mt-3"><Field label="Observaciones" labelClassName={LABEL}><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={cn(FIELD, "resize-none")} placeholder="Rayón en la puerta, falta 1/4 de combustible…" /></Field></div>
       <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel="Guardar checklist" />
     </ModalShell>
   );

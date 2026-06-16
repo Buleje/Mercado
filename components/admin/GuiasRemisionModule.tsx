@@ -12,6 +12,7 @@ import {
   Truck, User, Calendar, Printer, MapPin, Package,
   FileText, CheckCircle, XCircle, Filter, Copy, ChevronDown, ChevronUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { Field } from "@/components/admin/shared/Field";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type GuiaStatus = "BORRADOR" | "EMITIDA" | "EN_TRANSITO" | "ENTREGADA" | "ANULADA";
@@ -1199,107 +1200,97 @@ export default function GuiasRemisionModule() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Order ID optional */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Vincular pedido (opcional)</label>
+                  <Field label="Vincular pedido (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.orderIds} onChange={e => setForm(p => ({ ...p, orderIds: e.target.value }))} placeholder="N° de orden"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                  </Field>
                   {/* Motivo */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Motivo de traslado</label>
+                  <Field label="Motivo de traslado" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <select value={form.motivoTraslado} onChange={e => setForm(p => ({ ...p, motivoTraslado: e.target.value }))}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                       {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
-                  </div>
+                  </Field>
                   {/* Destinatario */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Destinatario</label>
+                  <Field label="Destinatario" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.destinatarioNombre} onChange={e => setForm(p => ({ ...p, destinatarioNombre: e.target.value }))} placeholder="Nombre"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC destinatario</label>
+                  </Field>
+                  <Field label="RUC destinatario" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.destinatarioRuc} onChange={e => setForm(p => ({ ...p, destinatarioRuc: e.target.value }))} placeholder="20XXXXXXXXX"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Dirección destinatario</label>
+                  </Field>
+                  <Field label="Dirección destinatario" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1" className="sm:col-span-2">
                     <input type="text" value={form.destinatarioDireccion} onChange={e => setForm(p => ({ ...p, destinatarioDireccion: e.target.value }))} placeholder="Dirección"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                  </Field>
                   {/* Transportista */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Transportista</label>
+                  <Field label="Transportista" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.transportistaNombre} onChange={e => setForm(p => ({ ...p, transportistaNombre: e.target.value }))} placeholder="Nombre"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                  </Field>
                   <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">RUC transp.</label>
+                    <Field label="RUC transp." labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input type="text" value={form.transportistaRuc} onChange={e => setForm(p => ({ ...p, transportistaRuc: e.target.value }))} placeholder="RUC"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Placa</label>
+                    </Field>
+                    <Field label="Placa" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input type="text" value={form.vehiculoPlaca} onChange={e => setForm(p => ({ ...p, vehiculoPlaca: e.target.value }))} placeholder="ABC-123"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
+                    </Field>
                   </div>
                   {/* Partida / Llegada */}
                   {/* Conductor */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Conductor</label>
+                  <Field label="Conductor" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.conductorNombre} onChange={e => setForm(p => ({ ...p, conductorNombre: e.target.value }))} placeholder="Nombre del conductor"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">DNI Conductor</label>
+                  </Field>
+                  <Field label="DNI Conductor" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.conductorDni} onChange={e => setForm(p => ({ ...p, conductorDni: e.target.value.replace(/\D/g, "").slice(0, 8) }))} placeholder="12345678" maxLength={8}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                  </Field>
                   {/* Bultos / Doc Referencia / Peso Bruto */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° Bultos</label>
+                  <Field label="N° Bultos" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="number" min="0" value={form.bultos} onChange={e => setForm(p => ({ ...p, bultos: e.target.value }))} placeholder="0"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Doc. Referencia</label>
+                  </Field>
+                  <Field label="Doc. Referencia" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="text" value={form.documentoRef} onChange={e => setForm(p => ({ ...p, documentoRef: e.target.value }))} placeholder="Factura, boleta u orden"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Peso Bruto (kg)</label>
+                  </Field>
+                  <Field label="Peso Bruto (kg)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input type="number" min="0" step="0.001" value={form.pesoBruto} onChange={e => setForm(p => ({ ...p, pesoBruto: e.target.value }))} placeholder="0.000"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                  </div>
+                  </Field>
                   {/* Ruta */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Punto de partida</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                      <input type="text" value={form.puntoPartida} onChange={e => setForm(p => ({ ...p, puntoPartida: e.target.value }))} placeholder="Dirección origen"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Punto de llegada</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                      <input type="text" value={form.puntoLlegada} onChange={e => setForm(p => ({ ...p, puntoLlegada: e.target.value }))} placeholder="Dirección destino"
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                  </div>
+                  <Field label="Punto de partida" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                    {(id) => (
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                        <input id={id} type="text" value={form.puntoPartida} onChange={e => setForm(p => ({ ...p, puntoPartida: e.target.value }))} placeholder="Dirección origen"
+                          className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
+                    )}
+                  </Field>
+                  <Field label="Punto de llegada" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                    {(id) => (
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                        <input id={id} type="text" value={form.puntoLlegada} onChange={e => setForm(p => ({ ...p, puntoLlegada: e.target.value }))} placeholder="Dirección destino"
+                          className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
+                    )}
+                  </Field>
                   {/* Fecha */}
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha y hora de traslado</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                      <input type="datetime-local" value={form.fechaTraslado} onChange={e => setForm(p => ({ ...p, fechaTraslado: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    </div>
-                  </div>
+                  <Field label="Fecha y hora de traslado" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                    {(id) => (
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                        <input id={id} type="datetime-local" value={form.fechaTraslado} onChange={e => setForm(p => ({ ...p, fechaTraslado: e.target.value }))}
+                          className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </div>
+                    )}
+                  </Field>
                 </div>
 
                 {/* Items */}
