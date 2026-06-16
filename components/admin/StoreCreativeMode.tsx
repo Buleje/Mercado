@@ -30,6 +30,7 @@ import {
   Columns2,
   Clock,
 } from "@buleje/design-system/icons";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import { EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
 import type { StoreTheme } from "./StoreCustomizer";
@@ -174,11 +175,14 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   const safe = /^#[0-9A-Fa-f]{6}$/.test(value) ? value : "var(--color-primary)";
   return (
     <div className="space-y-2">
-      <label className={LABEL_CLASS}>{label}</label>
-      <div className="flex items-center gap-2">
-        <input type="color" value={safe} onChange={(e) => onChange(e.target.value)} className="h-9 w-10 rounded-lg border border-white/10 bg-white/[0.04] p-0.5 cursor-pointer" />
-        <input value={value} onChange={(e) => onChange(e.target.value)} maxLength={7} className={INPUT_CLASS} />
-      </div>
+      <Field label={label} labelClassName={LABEL_CLASS}>
+        {(id) => (
+          <div className="flex items-center gap-2">
+            <input type="color" value={safe} onChange={(e) => onChange(e.target.value)} className="h-9 w-10 rounded-lg border border-white/10 bg-white/[0.04] p-0.5 cursor-pointer" aria-label={`Color picker ${label}`} />
+            <input id={id} value={value} onChange={(e) => onChange(e.target.value)} maxLength={7} className={INPUT_CLASS} />
+          </div>
+        )}
+      </Field>
       <div className="flex flex-wrap gap-1.5">
         {COLOR_PRESETS.map((color) => (
           <button
@@ -762,51 +766,41 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "identidad" && (
               <>
-                <div>
-                  <label className={LABEL_CLASS}>Nombre de tienda</label>
+                <Field label="Nombre de tienda" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.storeName} onChange={(e) => patch("storeName", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Slogan</label>
+                </Field>
+                <Field label="Slogan" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.slogan} onChange={(e) => patch("slogan", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Descripcion</label>
+                </Field>
+                <Field label="Descripcion" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none")} rows={3} value={draft.description} onChange={(e) => patch("description", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Logo URL</label>
+                </Field>
+                <Field label="Logo URL" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.logo} onChange={(e) => patch("logo", e.target.value)} placeholder="https://..." />
-                </div>
+                </Field>
               </>
             )}
 
             {panel === "hero" && (
               <>
-                <div>
-                  <label className={LABEL_CLASS}>Titulo hero</label>
+                <Field label="Titulo hero" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.heroTitle} onChange={(e) => patch("heroTitle", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Subtitulo hero</label>
+                </Field>
+                <Field label="Subtitulo hero" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none")} rows={2} value={draft.heroSubtitle} onChange={(e) => patch("heroSubtitle", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Texto CTA</label>
+                </Field>
+                <Field label="Texto CTA" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.heroCTA} onChange={(e) => patch("heroCTA", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>URL CTA</label>
+                </Field>
+                <Field label="URL CTA" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.heroLink} onChange={(e) => patch("heroLink", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Badge hero</label>
+                </Field>
+                <Field label="Badge hero" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.heroBadge} onChange={(e) => patch("heroBadge", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Imagen hero URL</label>
+                </Field>
+                <Field label="Imagen hero URL" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.heroImage} onChange={(e) => patch("heroImage", e.target.value)} placeholder="https://..." />
-                </div>
+                </Field>
               </>
             )}
 
@@ -829,10 +823,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   {SECTION_ITEMS.map((section) => {
                     const enabled = draft.sections.includes(section.key);
                     return (
-                      <label key={section.key} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2 cursor-pointer">
+                      <span key={section.key} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2 cursor-pointer">
                         <span className="text-xs text-gray-200">{section.label}</span>
                         <Toggle checked={enabled} onChange={() => toggleSection(section.key)} />
-                      </label>
+                      </span>
                     );
                   })}
                 </div>
@@ -877,118 +871,110 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "tipografia" && (
               <>
-                <div>
-                  <label className={LABEL_CLASS}>Fuente</label>
+                <Field label="Fuente" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.fontFamily} onChange={(e) => patch("fontFamily", e.target.value as StoreTheme["fontFamily"])}>
                     {FONT_OPTIONS.map((f) => (
                       <option key={f.value} value={f.value}>{f.label}</option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className={LABEL_CLASS}>Redondez</label>
-                    <span className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold">{draft.borderRadius}px</span>
-                  </div>
-                  <input type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-[var(--data-success)]" />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Espaciado general</label>
+                </Field>
+                <Field
+                  label={
+                    <div className="flex items-center justify-between mb-1 w-full">
+                      <span>Redondez</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold">{draft.borderRadius}px</span>
+                    </div>
+                  }
+                  labelClassName={LABEL_CLASS}
+                >
+                  {(id) => (
+                    <input id={id} type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-[var(--data-success)]" />
+                  )}
+                </Field>
+                <Field label="Espaciado general" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.spacing} onChange={(e) => patch("spacing", e.target.value as StoreTheme["spacing"])}>
                     <option value="compact">Compacto</option>
                     <option value="normal">Normal</option>
                     <option value="spacious">Espacioso</option>
                   </select>
-                </div>
+                </Field>
               </>
             )}
 
             {panel === "estilos" && (
               <>
-                <div>
-                  <label className={LABEL_CLASS}>Estilo de cards</label>
+                <Field label="Estilo de cards" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.cardStyle} onChange={(e) => patch("cardStyle", e.target.value as StoreTheme["cardStyle"])}>
                     <option value="minimal">Minimal</option>
                     <option value="shadow">Shadow</option>
                     <option value="border">Border</option>
                     <option value="glass">Glass</option>
                   </select>
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Estilo de carrito</label>
+                </Field>
+                <Field label="Estilo de carrito" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.cartStyle} onChange={(e) => patch("cartStyle", e.target.value as StoreTheme["cartStyle"])}>
                     <option value="sidebar">Sidebar</option>
                     <option value="modal">Modal</option>
                     <option value="drawer">Drawer</option>
                   </select>
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Botones</label>
+                </Field>
+                <Field label="Botones" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.buttonStyle} onChange={(e) => patch("buttonStyle", e.target.value as StoreTheme["buttonStyle"])}>
                     <option value="rounded">Rounded</option>
                     <option value="square">Square</option>
                     <option value="pill">Pill</option>
                   </select>
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Navbar</label>
+                </Field>
+                <Field label="Navbar" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.navbarStyle} onChange={(e) => patch("navbarStyle", e.target.value as StoreTheme["navbarStyle"])}>
                     <option value="solid">Solid</option>
                     <option value="transparent">Transparent</option>
                     <option value="blur">Blur</option>
                     <option value="minimal">Minimal</option>
                   </select>
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Sombras</label>
+                </Field>
+                <Field label="Sombras" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.shadowLevel} onChange={(e) => patch("shadowLevel", e.target.value as StoreTheme["shadowLevel"])}>
                     <option value="none">Sin sombra</option>
                     <option value="soft">Suave</option>
                     <option value="deep">Profunda</option>
                   </select>
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Animaciones</label>
+                </Field>
+                <Field label="Animaciones" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.animations} onChange={(e) => patch("animations", e.target.value as StoreTheme["animations"])}>
                     <option value="none">Ninguna</option>
                     <option value="subtle">Sutil</option>
                     <option value="dynamic">Dinamica</option>
                   </select>
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Fondo</label>
+                </Field>
+                <Field label="Fondo" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.backgroundPattern} onChange={(e) => patch("backgroundPattern", e.target.value as StoreTheme["backgroundPattern"])}>
                     <option value="none">Plano</option>
                     <option value="dots">Dots</option>
                     <option value="waves">Waves</option>
                     <option value="gradient">Gradient</option>
                   </select>
-                </div>
+                </Field>
               </>
             )}
 
             {panel === "contacto" && (
               <>
-                <div>
-                  <label className={LABEL_CLASS}>WhatsApp</label>
+                <Field label="WhatsApp" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.whatsapp} onChange={(e) => patch("whatsapp", e.target.value)} placeholder="+51 999 999 999" />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Mensaje WhatsApp</label>
+                </Field>
+                <Field label="Mensaje WhatsApp" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none")} rows={2} value={draft.whatsappMessage} onChange={(e) => patch("whatsappMessage", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Email</label>
+                </Field>
+                <Field label="Email" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.email} onChange={(e) => patch("email", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Teléfono</label>
+                </Field>
+                <Field label="Teléfono" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.phone} onChange={(e) => patch("phone", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Direccion</label>
+                </Field>
+                <Field label="Direccion" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.address} onChange={(e) => patch("address", e.target.value)} />
-                </div>
+                </Field>
                 <div className="space-y-2">
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Horario</p>
                   {DAYS.map((day) => (
@@ -1008,43 +994,35 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <span className="text-xs font-semibold text-[var(--text-tertiary)]">Popup bienvenida</span>
                   <Toggle checked={draft.welcomePopupEnabled} onChange={(v) => patch("welcomePopupEnabled", v)} />
                 </div>
-                <div>
-                  <label className={LABEL_CLASS}>Titulo popup</label>
+                <Field label="Titulo popup" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.welcomePopupTitle} onChange={(e) => patch("welcomePopupTitle", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Mensaje popup</label>
+                </Field>
+                <Field label="Mensaje popup" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none")} rows={3} value={draft.welcomePopupMessage} onChange={(e) => patch("welcomePopupMessage", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Cupon popup</label>
+                </Field>
+                <Field label="Cupon popup" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.welcomePopupCoupon} onChange={(e) => patch("welcomePopupCoupon", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Texto footer</label>
+                </Field>
+                <Field label="Texto footer" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.footerText} onChange={(e) => patch("footerText", e.target.value)} />
-                </div>
+                </Field>
               </>
             )}
 
             {panel === "avanzado" && (
               <>
-                <div>
-                  <label className={LABEL_CLASS}>Google Analytics ID</label>
+                <Field label="Google Analytics ID" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.analyticsId} onChange={(e) => patch("analyticsId", e.target.value)} placeholder="G-XXXXXXXXXX" />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Facebook Pixel ID</label>
+                </Field>
+                <Field label="Facebook Pixel ID" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.pixelId} onChange={(e) => patch("pixelId", e.target.value)} />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Favicon URL</label>
+                </Field>
+                <Field label="Favicon URL" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.favicon} onChange={(e) => patch("favicon", e.target.value)} placeholder="https://..." />
-                </div>
-                <div>
-                  <label className={LABEL_CLASS}>Custom CSS</label>
+                </Field>
+                <Field label="Custom CSS" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none font-mono text-xs")} rows={6} value={draft.customCSS} onChange={(e) => patch("customCSS", e.target.value)} />
-                </div>
+                </Field>
               </>
             )}
 

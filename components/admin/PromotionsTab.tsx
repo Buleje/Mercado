@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 import { CardTitle, LoadingState, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import { useSettingsSafe } from "@/contexts/settings-context";
+import { Field } from "@/components/admin/shared/Field";
 
 function formatDate(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -721,51 +722,49 @@ export default function PromotionsTab() {
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre *</label>
+              <Field label="Nombre *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Ej: 2x1 en arroz" />
-              </div>
+              </Field>
               {/* Description */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
+              <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none" placeholder="Detalles de la promoción…" />
-              </div>
+              </Field>
               {/* Discount + Min purchase */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descuento %</label>
+                <Field label="Descuento %" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" min={0} max={100} value={form.discountPercent} onChange={e => setForm(f => ({ ...f, discountPercent: Number(e.target.value) }))}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Compra mín. (S/)</label>
+                </Field>
+                <Field label="Compra mín. (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" min={0} step={0.01} value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Opcional" />
-                </div>
+                </Field>
               </div>
               {/* Image URL */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">URL de imagen</label>
-                <input type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="https://..." />
-                {form.imageUrl && (
-                  <div className="relative mt-2 w-32 h-32 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden">
-                    <Image src={form.imageUrl} alt="preview" fill className="object-cover" sizes="128px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                  </div>
+              <Field label="URL de imagen" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <>
+                    <input id={id} type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
+                      className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="https://..." />
+                    {form.imageUrl && (
+                      <div className="relative mt-2 w-32 h-32 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden">
+                        <Image src={form.imageUrl} alt="preview" fill className="object-cover" sizes="128px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      </div>
+                    )}
+                  </>
                 )}
-              </div>
+              </Field>
               {/* WhatsApp message */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mensaje WhatsApp</label>
+              <Field label="Mensaje WhatsApp" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none"
                   placeholder="🎉 *Promoción especial*&#10;&#10;Aprovecha el descuento…" />
-              </div>
+              </Field>
               {/* Target type */}
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Público objetivo</label>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Público objetivo</span>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {[
                     { v: "all", l: "Todos", icon: Users },
@@ -785,7 +784,7 @@ export default function PromotionsTab() {
               {/* Customer selection for group/individual */}
               {form.targetType !== "all" && (
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar clientes</label>
+                  <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Seleccionar clientes</span>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
                     <input type="text" placeholder="Buscar cliente…" value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
@@ -814,11 +813,10 @@ export default function PromotionsTab() {
                 </div>
               )}
               {/* Expiry */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha de expiración</label>
+              <Field label="Fecha de expiración" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
-              </div>
+              </Field>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
@@ -1088,20 +1086,17 @@ export default function PromotionsTab() {
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre de campaña *</label>
+              <Field label="Nombre de campaña *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="text" value={campaignForm.name} onChange={e => setCampaignForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
-              </div>
+              </Field>
               {/* Description */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
+              <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={campaignForm.description} onChange={e => setCampaignForm(f => ({ ...f, description: e.target.value }))} rows={2}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
-              </div>
+              </Field>
               {/* Target Segment */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Segmento objetivo *</label>
+              <Field label="Segmento objetivo *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={campaignForm.targetSegment} onChange={e => setCampaignForm(f => ({ ...f, targetSegment: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface">
                   <option value="all">Todos</option>
@@ -1112,34 +1107,34 @@ export default function PromotionsTab() {
                   <option value="new">New</option>
                   <option value="promising">Promising</option>
                 </select>
-              </div>
+              </Field>
               {/* Dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha/hora inicio *</label>
+                <Field label="Fecha/hora inicio *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="datetime-local" value={campaignForm.startDate ? campaignForm.startDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, startDate: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha/hora fin</label>
+                </Field>
+                <Field label="Fecha/hora fin" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="datetime-local" value={campaignForm.endDate ? campaignForm.endDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, endDate: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
-                </div>
+                </Field>
               </div>
               {/* Message Template */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mensaje con placeholders</label>
-                <textarea value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none font-mono"
-                  placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
-                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
-              </div>
+              <Field label="Mensaje con placeholders" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <>
+                    <textarea id={id} value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
+                      className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none font-mono"
+                      placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
+                  </>
+                )}
+              </Field>
               {/* Discount Code */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Código de descuento</label>
+              <Field label="Código de descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="text" value={campaignForm.discountCode} onChange={e => setCampaignForm(f => ({ ...f, discountCode: e.target.value.toUpperCase() }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="VERANO20" />
-              </div>
+              </Field>
               {/* Auto-send toggle */}
               <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
                 <input type="checkbox" id="autoSend" checked={campaignForm.autoSend} onChange={e => setCampaignForm(f => ({ ...f, autoSend: e.target.checked }))}

@@ -15,6 +15,7 @@ import {
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
 import { CardTitle, LoadingState, PageTitle, SectionTitle, WarningAlert } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
@@ -1157,13 +1158,13 @@ export default function PrestamosModule() {
               <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                 <div className="bg-gray-50 rounded-xl border border-[var(--rule-base)] p-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Desde</label><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Hasta</label><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Monto mín.</label><input type="number" value={filterMontoMin} onChange={e => { setFilterMontoMin(e.target.value); setPage(1); }} placeholder="0" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Monto máx.</label><input type="number" value={filterMontoMax} onChange={e => { setFilterMontoMax(e.target.value); setPage(1); }} placeholder="∞" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Tipo</label><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Dirección</label><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Sistema amort.</label><select value={filterSistema} onChange={e => { setFilterSistema(e.target.value as ""|SistemaAmortizacion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></div>
+                    <Field label="Desde" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Hasta" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Monto mín." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="number" value={filterMontoMin} onChange={e => { setFilterMontoMin(e.target.value); setPage(1); }} placeholder="0" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Monto máx." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="number" value={filterMontoMax} onChange={e => { setFilterMontoMax(e.target.value); setPage(1); }} placeholder="∞" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Tipo" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
+                    <Field label="Dirección" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
+                    <Field label="Sistema amort." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterSistema} onChange={e => { setFilterSistema(e.target.value as ""|SistemaAmortizacion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
                     <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-gray-100 hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
                   </div>
                 </div>
@@ -1482,8 +1483,7 @@ export default function PrestamosModule() {
         <div className="space-y-6">
           <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6  space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto (S/)</label>
+              <Field label="Monto (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number"
                   step="0.01"
@@ -1493,9 +1493,8 @@ export default function PrestamosModule() {
                   placeholder="1000"
                   className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tasa de interés (%)</label>
+              </Field>
+              <Field label="Tasa de interés (%)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number"
                   step="0.1"
@@ -1506,18 +1505,16 @@ export default function PrestamosModule() {
                   placeholder="12"
                   className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label>
+              </Field>
+              <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
-              </div>
+              </Field>
               {/* Mejora 19: Sistema selector */}
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Sistema amortización</label>
+              <Field label="Sistema amortización" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
                   {Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
-              </div>
+              </Field>
             </div>
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
@@ -2233,10 +2230,10 @@ ${cuotas.map(c => { const row = `<tr>
                   <button onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-[var(--text-secondary)]" /></button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Sistema</label><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+                  <Field label="Nuevo monto (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="Nueva tasa (%)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="Sistema" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
                 </div>
                 {refinanciarError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{refinanciarError}</p>}
                 <div className="flex gap-2">
@@ -2300,8 +2297,7 @@ ${cuotas.map(c => { const row = `<tr>
             >
               <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Pagar Cuota</CardTitle>
-                <div>
-                  <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto del pago (S/)</label>
+                <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                   <input
                     type="number"
                     step="0.01"
@@ -2310,7 +2306,7 @@ ${cuotas.map(c => { const row = `<tr>
                     onChange={e => setPagoMonto(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                   />
-                </div>
+                </Field>
                 {pagoError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{pagoError}</p>}
                 <div className="flex gap-2">
                   <button onClick={() => setShowPago(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -2376,7 +2372,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <div className="space-y-6">
                     {/* Dirección: DADO / RECIBIDO */}
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">¿Prestas o te prestan?</label>
+                      <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">¿Prestas o te prestan?</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(["DADO", "RECIBIDO"] as const).map(dir => {
                           const meta = DIRECCION_META[dir];
@@ -2399,7 +2395,7 @@ ${cuotas.map(c => { const row = `<tr>
 
                     {/* Tipo de préstamo */}
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Tipo de préstamo</label>
+                      <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Tipo de préstamo</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(["PERSONAL", "BANCARIO", "TERCERO", "PROVEEDOR"] as const).map(tipo => {
                           const meta = TIPO_META[tipo];
@@ -2428,7 +2424,7 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Bancos rápidos — solo si tipo BANCARIO */}
                     {createTipo === "BANCARIO" && (
                       <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Seleccionar banco (tasa referencial)</label>
+                        <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Seleccionar banco (tasa referencial)</span>
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                           {BANK_PRESETS.map(preset => {
                             const active = createEntidadNombre === preset.nombre;
@@ -2450,8 +2446,7 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Entidad (para no-personal) */}
                     {createTipo !== "PERSONAL" && (
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre de entidad</label>
+                        <Field label="Nombre de entidad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input
                             type="text"
                             value={createEntidadNombre}
@@ -2459,9 +2454,8 @@ ${cuotas.map(c => { const row = `<tr>
                             placeholder={createTipo === "BANCARIO" ? "Ej: BCP" : createTipo === "PROVEEDOR" ? "Ej: Distribuidora Lima" : "Ej: Juan Pérez"}
                             className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                           />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tipo de entidad</label>
+                        </Field>
+                        <Field label="Tipo de entidad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <select
                             value={createEntidadTipo}
                             onChange={e => setCreateEntidadTipo(e.target.value as PrestamoEntidadTipo)}
@@ -2472,37 +2466,40 @@ ${cuotas.map(c => { const row = `<tr>
                               <option key={k} value={k}>{v}</option>
                             ))}
                           </select>
-                        </div>
+                        </Field>
                       </div>
                     )}
 
                     {/* Cliente — solo si DADO */}
                     {createDireccion === "DADO" && (
                       <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">¿A quién le prestas? (teléfono del cliente)</label>
-                        <div className="flex gap-1">
-                          <input
-                            type="text"
-                            value={createCustomerId}
-                            onChange={e => setCreateCustomerId(e.target.value)}
-                            placeholder="Ej: 987654321"
-                            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowQuickClient(true)}
-                            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-[var(--text-secondary)] transition-colors"
-                            title="Crear cliente rápido"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
+                        <Field label="¿A quién le prestas? (teléfono del cliente)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          {(id) => (
+                            <div className="flex gap-1">
+                              <input
+                                id={id}
+                                type="text"
+                                value={createCustomerId}
+                                onChange={e => setCreateCustomerId(e.target.value)}
+                                placeholder="Ej: 987654321"
+                                className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowQuickClient(true)}
+                                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-[var(--text-secondary)] transition-colors"
+                                title="Crear cliente rápido"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </Field>
                       </div>
                     )}
 
                     {/* Nro Operación */}
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° de operación (opcional)</label>
+                    <Field label="N° de operación (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="text"
                         value={createNroOperacion}
@@ -2510,7 +2507,7 @@ ${cuotas.map(c => { const row = `<tr>
                         placeholder="Ej: OP-2025-001234"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                       />
-                    </div>
+                    </Field>
 
                     {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
@@ -2545,8 +2542,7 @@ ${cuotas.map(c => { const row = `<tr>
 
                     {/* Moneda + Monto */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Moneda</label>
+                      <Field label="Moneda" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <select
                           value={createMoneda}
                           onChange={e => setCreateMoneda(e.target.value)}
@@ -2555,9 +2551,8 @@ ${cuotas.map(c => { const row = `<tr>
                           <option value="PEN">S/ Soles</option>
                           <option value="USD">$ Dólares</option>
                         </select>
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto total</label>
+                      </Field>
+                      <Field label="Monto total" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1" className="col-span-2">
                         <input
                           type="number"
                           step="0.01"
@@ -2567,13 +2562,12 @@ ${cuotas.map(c => { const row = `<tr>
                           placeholder="10000"
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Tasa mensual + TEA + Mora */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tasa mensual %</label>
+                      <Field label="Tasa mensual %" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           step="0.01"
@@ -2584,9 +2578,8 @@ ${cuotas.map(c => { const row = `<tr>
                           placeholder="1.5"
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">TEA % <span className="font-normal opacity-60">(anual)</span></label>
+                      </Field>
+                      <Field label={<>TEA % <span className="font-normal opacity-60">(anual)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           step="0.01"
@@ -2597,9 +2590,8 @@ ${cuotas.map(c => { const row = `<tr>
                           placeholder="19.56"
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Mora % <span className="font-normal opacity-60">(penalidad)</span></label>
+                      </Field>
+                      <Field label={<>Mora % <span className="font-normal opacity-60">(penalidad)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           step="0.1"
@@ -2610,13 +2602,12 @@ ${cuotas.map(c => { const row = `<tr>
                           placeholder="15"
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Cuotas + Sistema + Periodo gracia */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label>
+                      <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           min="1"
@@ -2626,9 +2617,8 @@ ${cuotas.map(c => { const row = `<tr>
                           placeholder="12"
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Amortización</label>
+                      </Field>
+                      <Field label="Amortización" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <select
                           value={calcSistema}
                           onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)}
@@ -2638,9 +2628,8 @@ ${cuotas.map(c => { const row = `<tr>
                             <option key={k} value={k}>{v}</option>
                           ))}
                         </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Gracia <span className="font-normal opacity-60">(meses)</span></label>
+                      </Field>
+                      <Field label={<>Gracia <span className="font-normal opacity-60">(meses)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           min="0"
@@ -2650,22 +2639,20 @@ ${cuotas.map(c => { const row = `<tr>
                           placeholder="0"
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Fecha desembolso + Garantía */}
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha de desembolso</label>
+                      <Field label="Fecha de desembolso" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="date"
                           value={createFechaDesembolso}
                           onChange={e => setCreateFechaDesembolso(e.target.value)}
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Garantía <span className="font-normal opacity-60">(opcional)</span></label>
+                      </Field>
+                      <Field label={<>Garantía <span className="font-normal opacity-60">(opcional)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="text"
                           value={createGarantia}
@@ -2673,12 +2660,11 @@ ${cuotas.map(c => { const row = `<tr>
                           placeholder="Ej: Título de propiedad"
                           className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Notas */}
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+                    <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="text"
                         value={createNotas}
@@ -2686,7 +2672,7 @@ ${cuotas.map(c => { const row = `<tr>
                         placeholder="Motivo del préstamo, condiciones especiales..."
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                       />
-                    </div>
+                    </Field>
 
                     {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 

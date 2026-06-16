@@ -14,6 +14,7 @@ import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/l
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import { Field } from "@/components/admin/shared/Field";
 import OCPDFExport from "./compras/OCPDFExport";
 import SupplierPriceComparison, { QuotationComparator } from "./compras/SupplierPriceComparison";
 
@@ -694,7 +695,7 @@ export default function PurchaseOrdersTab() {
               OC para {suppliers.find(s => s.id === showRecurringModal.supplierId)?.name} · {showRecurringModal.items.length} productos
             </p>
             <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1.5 block">Repetir cada</label>
+              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1.5 block">Repetir cada</span>
               <div className="flex gap-2">
                 {[7, 15, 30].map(d => (
                   <button
@@ -711,13 +712,12 @@ export default function PurchaseOrdersTab() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Próximo pedido</label>
+              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Próximo pedido</span>
               <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {nextRecurringDateLabel}
               </p>
             </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Notificarme</label>
+            <Field label="Notificarme" labelClassName="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">
               <select
                 value={recurringNotifyDays}
                 onChange={e => setRecurringNotifyDays(Number(e.target.value))}
@@ -728,7 +728,7 @@ export default function PurchaseOrdersTab() {
                 <option value={3}>3 dias antes</option>
                 <option value={5}>5 dias antes</option>
               </select>
-            </div>
+            </Field>
             <div className="flex gap-2 pt-2">
               <button onClick={() => setShowRecurringModal(null)} className="flex-1 py-2.5 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface text-sm font-bold text-[var(--text-secondary)]">
                 Cancelar
@@ -906,8 +906,7 @@ export default function PurchaseOrdersTab() {
                     Proveedor
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">Proveedor *</label>
+                    <Field label="Proveedor *" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1" className="sm:col-span-2">
                       <select
                         required
                         value={supplierId}
@@ -917,19 +916,15 @@ export default function PurchaseOrdersTab() {
                         <option value="">— Seleccionar proveedor —</option>
                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (RUC ${s.ruc})` : ""}</option>)}
                       </select>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
-                        <StickyNote className="inline h-3 w-3 mr-1" />
-                        Notas (opcional)
-                      </label>
+                    </Field>
+                    <Field label={<><StickyNote className="inline h-3 w-3 mr-1" />Notas (opcional)</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1" className="sm:col-span-2">
                       <input
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Ej. Entrega antes del 25, pagar a 30 días, traer factura..."
                         className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
-                    </div>
+                    </Field>
                   </div>
                 </section>
 
@@ -1030,26 +1025,36 @@ export default function PurchaseOrdersTab() {
                             </div>
                             <div className="flex items-center gap-2 ml-9 flex-wrap">
                               <div className="flex items-center gap-1">
-                                <label className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Cant</label>
-                                <input
-                                  type="number" min="1" step="1"
-                                  value={item.quantity}
-                                  onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
-                                  className="w-20 h-10 px-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
-                                />
-                                <span className="text-xs font-bold text-[var(--text-tertiary)] ml-1">{item.unit}</span>
+                                <Field label="Cant" labelClassName="text-xs font-bold text-[var(--text-tertiary)] uppercase">
+                                  {(id) => (
+                                    <>
+                                      <input
+                                        id={id}
+                                        type="number" min="1" step="1"
+                                        value={item.quantity}
+                                        onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
+                                        className="w-20 h-10 px-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                      />
+                                      <span className="text-xs font-bold text-[var(--text-tertiary)] ml-1">{item.unit}</span>
+                                    </>
+                                  )}
+                                </Field>
                               </div>
                               <div className="flex items-center gap-1">
-                                <label className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Costo</label>
-                                <div className="relative">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)]">S/</span>
-                                  <input
-                                    type="number" min="0" step="0.01"
-                                    value={item.unitCost}
-                                    onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
-                                    className="w-24 h-10 pl-7 pr-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
-                                  />
-                                </div>
+                                <Field label="Costo" labelClassName="text-xs font-bold text-[var(--text-tertiary)] uppercase">
+                                  {(id) => (
+                                    <div className="relative">
+                                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)]">S/</span>
+                                      <input
+                                        id={id}
+                                        type="number" min="0" step="0.01"
+                                        value={item.unitCost}
+                                        onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
+                                        className="w-24 h-10 pl-7 pr-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                      />
+                                    </div>
+                                  )}
+                                </Field>
                               </div>
                               <div className="ml-auto inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-primary/10 text-primary">
                                 <span className="text-xs font-bold uppercase">Total</span>
@@ -1410,22 +1415,20 @@ export default function PurchaseOrdersTab() {
                     <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{addItemSel.name}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Cantidad</label>
+                        <Field label="Cantidad" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                           <input
                             type="number" min="1" step="1" value={addItemQty}
                             onChange={(e) => setAddItemQty(Number(e.target.value))}
                             className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Costo unitario (S/)</label>
+                        </Field>
+                        <Field label="Costo unitario (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                           <input
                             type="number" min="0" step="0.01" value={addItemCost}
                             onChange={(e) => setAddItemCost(Number(e.target.value))}
                             className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
-                        </div>
+                        </Field>
                       </div>
                       <button
                         onClick={() => {
@@ -1461,17 +1464,15 @@ export default function PurchaseOrdersTab() {
                   setSavingNewProd(false);
                 }} className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Nombre *</label>
+                    <Field label="Nombre *" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1" className="sm:col-span-2">
                       <input
                         required value={newProdForm.name}
                         onChange={(e) => setNewProdForm(p => ({ ...p, name: e.target.value }))}
                         placeholder="Nombre del producto"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
+                    </Field>
+                    <Field label="Categoría" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <select value={newProdForm.category} onChange={(e) => setNewProdForm(p => ({ ...p, category: e.target.value }))}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none">
                         <option value="abarrotes">Abarrotes</option>
@@ -1483,42 +1484,37 @@ export default function PurchaseOrdersTab() {
                         <option value="higiene">Higiene</option>
                         <option value="otros">Otros</option>
                       </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Unidad</label>
+                    </Field>
+                    <Field label="Unidad" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input value={newProdForm.unit} onChange={(e) => setNewProdForm(p => ({ ...p, unit: e.target.value }))}
                         placeholder="und, kg, L…"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Precio venta (S/)</label>
+                    </Field>
+                    <Field label="Precio venta (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="0.01" value={newProdForm.price}
                         onChange={(e) => setNewProdForm(p => ({ ...p, price: Number(e.target.value) }))}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Costo compra (S/)</label>
+                    </Field>
+                    <Field label="Costo compra (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="0.01" value={newProdForm.costPrice}
                         onChange={(e) => setNewProdForm(p => ({ ...p, costPrice: Number(e.target.value) }))}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Cantidad inicial</label>
+                    </Field>
+                    <Field label="Cantidad inicial" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="1" value={newProdForm.stock}
                         onChange={(e) => setNewProdForm(p => ({ ...p, stock: Number(e.target.value) }))}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Código de barras</label>
+                    </Field>
+                    <Field label="Código de barras" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input value={newProdForm.barcode} onChange={(e) => setNewProdForm(p => ({ ...p, barcode: e.target.value }))}
                         placeholder="Opcional"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
+                    </Field>
                   </div>
                   <button
                     type="submit" disabled={savingNewProd || !newProdForm.name}

@@ -32,6 +32,7 @@ import KardexModal from "./KardexModal";
 import PriceSparkline from "./inventario/PriceSparkline";
 import ImageWarningBadge from "./inventario/ImageWarningBadge";
 import ImageUploadHints from "./inventario/ImageUploadHints";
+import { Field } from "@/components/admin/shared/Field";
 import { validateImageUrl } from "@/lib/image-validators";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { categories } from "@/data/products";
@@ -2247,43 +2248,39 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div>
-                  <label className={FIELD_LABEL}>Nombre *</label>
+                <Field label="Nombre *" labelClassName={FIELD_LABEL}>
                   <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Arroz costeño 1kg" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Categoría *</label>
-                  <select value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
-                    {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </select>
-                  {/* Sugerencia automática: si el nombre del producto contiene
-                      una palabra clave que mapea a otra categoría distinta a
-                      la elegida, mostramos un chip con botón "Aplicar". */}
-                  <CategorySuggestionInline
-                    name={addForm.name}
-                    currentCategory={addForm.category}
-                    onApply={(id) => setAddForm(f => ({ ...f, category: id }))}
-                  />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Precio de venta (S/) *</label>
+                </Field>
+                <Field label="Categoría *" labelClassName={FIELD_LABEL}>
+                  {(id) => (<>
+                    <select id={id} value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
+                      {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    </select>
+                    {/* Sugerencia automática: si el nombre del producto contiene
+                        una palabra clave que mapea a otra categoría distinta a
+                        la elegida, mostramos un chip con botón "Aplicar". */}
+                    <CategorySuggestionInline
+                      name={addForm.name}
+                      currentCategory={addForm.category}
+                      onApply={(id) => setAddForm(f => ({ ...f, category: id }))}
+                    />
+                  </>)}
+                </Field>
+                <Field label="Precio de venta (S/) *" labelClassName={FIELD_LABEL}>
                   <input required type="number" step="0.01" min="0" value={addForm.price} onChange={(e) => setAddForm(f => ({ ...f, price: e.target.value }))} placeholder="5.50" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Precio de costo (S/)</label>
+                </Field>
+                <Field label="Precio de costo (S/)" labelClassName={FIELD_LABEL}>
                   <input type="number" step="0.01" min="0" value={addForm.costPrice} onChange={(e) => setAddForm(f => ({ ...f, costPrice: e.target.value }))} placeholder="3.50" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Unidad</label>
+                </Field>
+                <Field label="Unidad" labelClassName={FIELD_LABEL}>
                   <input value={addForm.unit} onChange={(e) => setAddForm(f => ({ ...f, unit: e.target.value }))} placeholder="kg, und, bolsa…" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Badge</label>
+                </Field>
+                <Field label="Badge" labelClassName={FIELD_LABEL}>
                   <select value={addForm.badge} onChange={(e) => setAddForm(f => ({ ...f, badge: e.target.value }))} className={FIELD_INPUT}>
                     <option value="">Sin badge</option>
                     {["Oferta", "Popular", "Fresco", "Premium"].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
-                </div>
+                </Field>
                 {/* Stock / vencimiento / código de barras — solo productos físicos */}
                 {addForm.type !== "service" && (<>
                 <div className="sm:col-span-2 mt-1 flex items-center gap-2">
@@ -2300,18 +2297,15 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   />
                 </div>
                 {addForm.trackStock && (<>
-                <div>
-                  <label className={FIELD_LABEL}>Stock actual</label>
+                <Field label="Stock actual" labelClassName={FIELD_LABEL}>
                   <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL} title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
+                </Field>
+                <Field label={<span title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</span>} labelClassName={FIELD_LABEL}>
                   <input type="number" min="0" value={addForm.stockMin} onChange={(e) => setAddForm(f => ({ ...f, stockMin: e.target.value }))} placeholder="5" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Stock máximo</label>
+                </Field>
+                <Field label="Stock máximo" labelClassName={FIELD_LABEL}>
                   <input type="number" min="0" value={addForm.stockMax} onChange={(e) => setAddForm(f => ({ ...f, stockMax: e.target.value }))} placeholder="100" className={FIELD_INPUT} />
-                </div>
+                </Field>
                 {/* Preview en vivo del nivel de stock (Brandon 2026-06-06) */}
                 {addForm.stock !== "" && (
                   <div className="sm:col-span-2">
@@ -2325,40 +2319,36 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   </div>
                 )}
                 </>)}
-                <div>
-                  <label className={FIELD_LABEL}>Fecha de vencimiento</label>
+                <Field label="Fecha de vencimiento" labelClassName={FIELD_LABEL}>
                   <input type="date" value={addForm.expiryDate} onChange={(e) => setAddForm(f => ({ ...f, expiryDate: e.target.value }))} className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Código de barras</label>
-                  <div className="flex flex-wrap gap-2">
-                    <input value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className={cn(FIELD_INPUT, "flex-1 font-mono")} />
-                    <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors">
-                      <ScanBarcode className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                </Field>
+                <Field label="Código de barras" labelClassName={FIELD_LABEL}>
+                  {(id) => (
+                    <div className="flex flex-wrap gap-2">
+                      <input id={id} value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className={cn(FIELD_INPUT, "flex-1 font-mono")} />
+                      <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors">
+                        <ScanBarcode className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </Field>
                 {/* Producto completo */}
                 <div className="sm:col-span-2 mt-1 flex items-center gap-2">
                   <span className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Detalles del producto</span>
                   <span aria-hidden className="h-px flex-1 bg-[var(--rule-soft)]" />
                 </div>
-                <div>
-                  <label className={FIELD_LABEL}>Marca / fabricante</label>
+                <Field label="Marca / fabricante" labelClassName={FIELD_LABEL}>
                   <input value={addForm.brand} onChange={(e) => setAddForm(f => ({ ...f, brand: e.target.value }))} placeholder="Ej: Costeño, Gloria" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL} title="Código interno del negocio, distinto del código de barras">SKU / código interno</label>
+                </Field>
+                <Field label={<span title="Código interno del negocio, distinto del código de barras">SKU / código interno</span>} labelClassName={FIELD_LABEL}>
                   <input value={addForm.sku} onChange={(e) => setAddForm(f => ({ ...f, sku: e.target.value }))} placeholder="Ej: ABR-001" className={cn(FIELD_INPUT, "font-mono")} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Peso (kg)</label>
+                </Field>
+                <Field label="Peso (kg)" labelClassName={FIELD_LABEL}>
                   <input type="number" step="0.001" min="0" value={addForm.weightKg} onChange={(e) => setAddForm(f => ({ ...f, weightKg: e.target.value }))} placeholder="0.5" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Medidas</label>
+                </Field>
+                <Field label="Medidas" labelClassName={FIELD_LABEL}>
                   <input value={addForm.dimensions} onChange={(e) => setAddForm(f => ({ ...f, dimensions: e.target.value }))} placeholder="30x20x10 cm o 2 m³" className={FIELD_INPUT} />
-                </div>
+                </Field>
                 </>)}
 
                 {/* Servicio — campos propios */}
@@ -2367,12 +2357,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <span className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Detalles del servicio</span>
                   <span aria-hidden className="h-px flex-1 bg-[var(--rule-soft)]" />
                 </div>
-                <div>
-                  <label className={FIELD_LABEL}>Duración estimada</label>
+                <Field label="Duración estimada" labelClassName={FIELD_LABEL}>
                   <input value={addForm.durationLabel} onChange={(e) => setAddForm(f => ({ ...f, durationLabel: e.target.value }))} placeholder="Ej: 2 horas, 1 día, 3 días" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Cobro por</label>
+                </Field>
+                <Field label="Cobro por" labelClassName={FIELD_LABEL}>
                   <select value={addForm.pricingUnit} onChange={(e) => setAddForm(f => ({ ...f, pricingUnit: e.target.value }))} className={FIELD_INPUT}>
                     <option value="fijo">Precio fijo</option>
                     <option value="hora">Por hora</option>
@@ -2380,31 +2368,28 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     <option value="unidad">Por unidad</option>
                     <option value="dia">Por día</option>
                   </select>
-                </div>
+                </Field>
                 </>)}
 
                 {/* Afecto a IGV — productos y servicios */}
-                <div>
-                  <label className={FIELD_LABEL} title="Determina el IGV en la boleta/factura">Afecto a IGV</label>
+                <Field label={<span title="Determina el IGV en la boleta/factura">Afecto a IGV</span>} labelClassName={FIELD_LABEL}>
                   <select value={addForm.taxType} onChange={(e) => setAddForm(f => ({ ...f, taxType: e.target.value }))} className={FIELD_INPUT}>
                     <option value="gravado">Gravado (IGV 18%)</option>
                     <option value="exonerado">Exonerado</option>
                     <option value="inafecto">Inafecto</option>
                   </select>
-                </div>
+                </Field>
 
                 {/* Descripción — ambos */}
-                <div className="sm:col-span-2">
-                  <label className={FIELD_LABEL}>Descripción</label>
+                <Field label="Descripción" labelClassName={FIELD_LABEL} className="sm:col-span-2">
                   <textarea value={addForm.description} onChange={(e) => setAddForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder={addForm.type === "service" ? "Qué incluye el servicio…" : "Detalle del producto…"} className={cn(FIELD_INPUT, "resize-none")} />
-                </div>
+                </Field>
 
                 {/* Notas / requisitos — solo servicios */}
                 {addForm.type === "service" && (
-                <div className="sm:col-span-2">
-                  <label className={FIELD_LABEL}>Notas / requisitos para el cliente</label>
+                <Field label="Notas / requisitos para el cliente" labelClassName={FIELD_LABEL} className="sm:col-span-2">
                   <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Ej: el cliente debe traer la madera; trabajamos de lunes a sábado…" className={cn(FIELD_INPUT, "resize-none")} />
-                </div>
+                </Field>
                 )}
               </div>
 
@@ -2540,24 +2525,21 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <Search className="h-4 w-4 text-[var(--text-secondary)]" />
                   <p className="text-sm font-bold text-[var(--text-primary)]">SEO / posicionamiento <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></p>
                 </div>
-                <div>
-                  <label className={FIELD_LABEL}>Título SEO <span className="font-normal text-[var(--text-tertiary)]">({addSeo.metaTitle.length}/70)</span></label>
+                <Field label={<>Título SEO <span className="font-normal text-[var(--text-tertiary)]">({addSeo.metaTitle.length}/70)</span></>} labelClassName={FIELD_LABEL}>
                   <input value={addSeo.metaTitle} onChange={(e) => setAddSeo(s => ({ ...s, metaTitle: e.target.value }))} maxLength={70} placeholder="Ej: Arroz Costeño 5kg — barato en Ciudad Constitución" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Descripción SEO <span className="font-normal text-[var(--text-tertiary)]">({addSeo.metaDescription.length}/160)</span></label>
+                </Field>
+                <Field label={<>Descripción SEO <span className="font-normal text-[var(--text-tertiary)]">({addSeo.metaDescription.length}/160)</span></>} labelClassName={FIELD_LABEL}>
                   <textarea value={addSeo.metaDescription} onChange={(e) => setAddSeo(s => ({ ...s, metaDescription: e.target.value }))} maxLength={160} rows={2} placeholder="Aparece en Google bajo el título. Resumí el producto en 1-2 líneas." className={cn(FIELD_INPUT, "resize-none")} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Imagen para compartir (URL) <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></label>
+                </Field>
+                <Field label={<>Imagen para compartir (URL) <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span></>} labelClassName={FIELD_LABEL}>
                   <input value={addSeo.ogImage} onChange={(e) => setAddSeo(s => ({ ...s, ogImage: e.target.value }))} placeholder="https://… (si vacío, usa la imagen del producto)" className={FIELD_INPUT} />
-                </div>
+                </Field>
                 <p className="text-xs text-[var(--text-tertiary)]">Mejora cómo se ve el producto en Google y al compartir el enlace.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div className="sm:col-span-2 space-y-3">
-                  <label className={FIELD_LABEL}>Imagen del producto</label>
+                <Field label="Imagen del producto" labelClassName={FIELD_LABEL} className="sm:col-span-2 space-y-3">
+                  {(imgFieldId) => (<>
                   <ImageUploadHints />
                   {(() => {
                     const validation = validateImageUrl(addForm.image);
@@ -2589,6 +2571,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         {imgUploading ? "Procesando…" : "Subir foto"}
                       </button>
                       <input
+                        id={imgFieldId}
                         value={addForm.image}
                         onChange={(e) => setAddForm(f => ({ ...f, image: e.target.value }))}
                         placeholder="o pegar URL de imagen (PNG con fondo transparente)"
@@ -2636,7 +2619,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                       )}
                     </div>
                   </div>
-                </div>
+                  </>)}
+                </Field>
               </div>
 
               {/* Fase 2: Galería de fotos adicionales (ProductImage[]) */}
@@ -2826,42 +2810,38 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 ))}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div>
-                  <label className={FIELD_LABEL}>Nombre *</label>
+                <Field label="Nombre *" labelClassName={FIELD_LABEL}>
                   <input required value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Categoría</label>
-                  <select value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
-                    {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </select>
-                  {/* Sugerencia heurística para edición — mismo flujo que en
-                      el form de creación. */}
-                  <CategorySuggestionInline
-                    name={editForm.name ?? ""}
-                    currentCategory={editForm.category ?? ""}
-                    onApply={(id) => setEditForm(f => ({ ...f, category: id }))}
-                  />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Precio de venta (S/)</label>
+                </Field>
+                <Field label="Categoría" labelClassName={FIELD_LABEL}>
+                  {(id) => (<>
+                    <select id={id} value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
+                      {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    </select>
+                    {/* Sugerencia heurística para edición — mismo flujo que en
+                        el form de creación. */}
+                    <CategorySuggestionInline
+                      name={editForm.name ?? ""}
+                      currentCategory={editForm.category ?? ""}
+                      onApply={(id) => setEditForm(f => ({ ...f, category: id }))}
+                    />
+                  </>)}
+                </Field>
+                <Field label="Precio de venta (S/)" labelClassName={FIELD_LABEL}>
                   <input type="number" step="0.01" min="0" value={editForm.price ?? ""} onChange={(e) => setEditForm(f => ({ ...f, price: Number(e.target.value) }))} className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Precio de costo (S/)</label>
+                </Field>
+                <Field label="Precio de costo (S/)" labelClassName={FIELD_LABEL}>
                   <input type="number" step="0.01" min="0" value={editForm.costPrice ?? ""} onChange={(e) => setEditForm(f => ({ ...f, costPrice: Number(e.target.value) || undefined }))} className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Unidad</label>
+                </Field>
+                <Field label="Unidad" labelClassName={FIELD_LABEL}>
                   <input value={editForm.unit ?? ""} onChange={(e) => setEditForm(f => ({ ...f, unit: e.target.value }))} className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Badge</label>
+                </Field>
+                <Field label="Badge" labelClassName={FIELD_LABEL}>
                   <select value={editForm.badge ?? ""} onChange={(e) => setEditForm(f => ({ ...f, badge: e.target.value || undefined }))} className={FIELD_INPUT}>
                     <option value="">Sin badge</option>
                     {["Oferta", "Popular", "Fresco", "Premium"].map((b) => <option key={b} value={b}>{b}</option>)}
                   </select>
-                </div>
+                </Field>
                 {editForm.type !== "service" && (<>
                 {/* Toggle controlar stock vs ilimitado (Brandon 2026-06-06) */}
                 <div className="sm:col-span-2">
@@ -2871,18 +2851,15 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   />
                 </div>
                 {(editForm as { trackStock?: boolean }).trackStock !== false && (<>
-                <div>
-                  <label className={FIELD_LABEL}>Stock actual</label>
+                <Field label="Stock actual" labelClassName={FIELD_LABEL}>
                   <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL} title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
+                </Field>
+                <Field label={<span title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</span>} labelClassName={FIELD_LABEL}>
                   <input type="number" min="0" value={editForm.stockMin ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMin: e.target.value !== "" ? Number(e.target.value) : undefined }))} className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Stock máximo</label>
+                </Field>
+                <Field label="Stock máximo" labelClassName={FIELD_LABEL}>
                   <input type="number" min="0" value={editForm.stockMax ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMax: e.target.value !== "" ? Number(e.target.value) : undefined }))} className={FIELD_INPUT} />
-                </div>
+                </Field>
                 {/* Preview en vivo del nivel de stock (Brandon 2026-06-06) */}
                 {editForm.stock !== undefined && editForm.stock !== null && (
                   <div className="sm:col-span-2">
@@ -2896,38 +2873,30 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   </div>
                 )}
                 </>)}
-                <div>
-                  <label className={FIELD_LABEL}>Fecha de vencimiento</label>
+                <Field label="Fecha de vencimiento" labelClassName={FIELD_LABEL}>
                   <input type="date" value={editForm.expiryDate ?? ""} onChange={(e) => setEditForm(f => ({ ...f, expiryDate: e.target.value || undefined }))} className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Código de barras</label>
+                </Field>
+                <Field label="Código de barras" labelClassName={FIELD_LABEL}>
                   <input value={editForm.barcode ?? ""} onChange={(e) => setEditForm(f => ({ ...f, barcode: e.target.value || undefined }))} className={cn(FIELD_INPUT, "font-mono")} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Marca / fabricante</label>
+                </Field>
+                <Field label="Marca / fabricante" labelClassName={FIELD_LABEL}>
                   <input value={editForm.brand ?? ""} onChange={(e) => setEditForm(f => ({ ...f, brand: e.target.value }))} placeholder="Ej: Costeño, Gloria" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>SKU / código interno</label>
+                </Field>
+                <Field label="SKU / código interno" labelClassName={FIELD_LABEL}>
                   <input value={editForm.sku ?? ""} onChange={(e) => setEditForm(f => ({ ...f, sku: e.target.value }))} placeholder="Ej: ABR-001" className={cn(FIELD_INPUT, "font-mono")} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Peso (kg)</label>
+                </Field>
+                <Field label="Peso (kg)" labelClassName={FIELD_LABEL}>
                   <input type="number" step="0.001" min="0" value={editForm.weightKg ?? ""} onChange={(e) => setEditForm(f => ({ ...f, weightKg: e.target.value !== "" ? Number(e.target.value) : undefined }))} placeholder="0.5" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Medidas</label>
+                </Field>
+                <Field label="Medidas" labelClassName={FIELD_LABEL}>
                   <input value={editForm.dimensions ?? ""} onChange={(e) => setEditForm(f => ({ ...f, dimensions: e.target.value }))} placeholder="30x20x10 cm o 2 m³" className={FIELD_INPUT} />
-                </div>
+                </Field>
                 </>)}
                 {editForm.type === "service" && (<>
-                <div>
-                  <label className={FIELD_LABEL}>Duración estimada</label>
+                <Field label="Duración estimada" labelClassName={FIELD_LABEL}>
                   <input value={editForm.durationLabel ?? ""} onChange={(e) => setEditForm(f => ({ ...f, durationLabel: e.target.value }))} placeholder="Ej: 2 horas, 1 día" className={FIELD_INPUT} />
-                </div>
-                <div>
-                  <label className={FIELD_LABEL}>Cobro por</label>
+                </Field>
+                <Field label="Cobro por" labelClassName={FIELD_LABEL}>
                   <select value={editForm.pricingUnit ?? "fijo"} onChange={(e) => setEditForm(f => ({ ...f, pricingUnit: e.target.value }))} className={FIELD_INPUT}>
                     <option value="fijo">Precio fijo</option>
                     <option value="hora">Por hora</option>
@@ -2935,23 +2904,21 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     <option value="unidad">Por unidad</option>
                     <option value="dia">Por día</option>
                   </select>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={FIELD_LABEL}>Notas / requisitos para el cliente</label>
+                </Field>
+                <Field label="Notas / requisitos para el cliente" labelClassName={FIELD_LABEL} className="sm:col-span-2">
                   <textarea value={editForm.notes ?? ""} onChange={(e) => setEditForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD_INPUT, "resize-none")} />
-                </div>
+                </Field>
                 </>)}
-                <div>
-                  <label className={FIELD_LABEL}>Afecto a IGV</label>
+                <Field label="Afecto a IGV" labelClassName={FIELD_LABEL}>
                   <select value={editForm.taxType ?? "gravado"} onChange={(e) => setEditForm(f => ({ ...f, taxType: e.target.value }))} className={FIELD_INPUT}>
                     <option value="gravado">Gravado (IGV 18%)</option>
                     <option value="exonerado">Exonerado</option>
                     <option value="inafecto">Inafecto</option>
                   </select>
-                </div>
+                </Field>
                 <div className="sm:col-span-2">
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Descripción del producto</label>
+                    <span className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted">Descripción del producto</span>
                     <button
                       type="button"
                       onClick={() => generateDescriptionAI(editForm, setEditForm)}
@@ -3024,8 +2991,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div className="sm:col-span-2">
-                  <label className={FIELD_LABEL}>Imagen del producto</label>
+                <Field label="Imagen del producto" labelClassName={FIELD_LABEL} className="sm:col-span-2">
+                  {(editImgFieldId) => (<>
                   {/* Drag-and-drop zone — arrastrá o click para subir */}
                   <div
                     onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("ring-2", "ring-primary", "bg-primary/5"); }}
@@ -3091,6 +3058,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         o arrastrá una imagen aquí — cualquier formato (JPG, PNG, WebP, AVIF…)
                       </p>
                       <input
+                        id={editImgFieldId}
                         value={editForm.image ?? ""}
                         onChange={(e) => setEditForm(f => ({ ...f, image: e.target.value }))}
                         placeholder="o pegar URL de imagen"
@@ -3143,7 +3111,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                       )}
                     </div>
                   </div>
-                </div>
+                  </>)}
+                </Field>
               </div>
               <div className="flex items-center justify-between p-4 bg-[var(--surface-alt)] dark:bg-surface rounded-xl">
                 <div>
@@ -3378,8 +3347,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <button onClick={() => setBulkModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Campo a modificar</label>
+              <Field label="Campo a modificar" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={bulkField} onChange={e => { const v = e.target.value as typeof bulkField; setBulkField(v); setBulkValue(v === "active" ? "true" : ""); }}
                   className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm">
                   <optgroup label="General">
@@ -3398,11 +3366,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     <option value="stockMax">Stock máximo</option>
                   </optgroup>
                 </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nuevo valor</label>
+              </Field>
+              <Field label="Nuevo valor" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(bulkValId) => (<>
                 {bulkField === "active" ? (
-                  <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
+                  <select id={bulkValId} value={bulkValue} onChange={e => setBulkValue(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm">
                     <option value="true">Activo</option>
                     <option value="false">Inactivo</option>
@@ -3463,7 +3431,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Cantidad"
                     className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
                 )}
-              </div>
+                </>)}
+              </Field>
             </div>
             <div className="px-3 sm:px-6 py-4 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3">
               <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
@@ -3603,22 +3572,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <X className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Reordenar cuando stock sea menor o igual a:</label>
+              <Field label="Reordenar cuando stock sea menor o igual a:" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number" min="1" value={arThreshold} onChange={e => setArThreshold(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="5"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cantidad a pedir:</label>
+              </Field>
+              <Field label="Cantidad a pedir:" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number" min="1" value={arQty} onChange={e => setArQty(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="10"
                 />
-              </div>
+              </Field>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Cancelar

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 type Coupon = {
   id: string; code: string; description: string;
@@ -267,7 +268,7 @@ export default function CouponsTab() {
                     >
                       <Settings className="h-4 w-4" />
                     </button>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label aria-label={`${config.label}: ${rule.enabled ? "activa" : "inactiva"}`} className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" checked={rule.enabled} onChange={() => toggleRule(rule.id)} className="sr-only peer" />
                       <div className="w-11 h-6 bg-[var(--rule-soft)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-[var(--color-card)] after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
@@ -319,7 +320,7 @@ export default function CouponsTab() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 space-y-4">
           {/* Scope toggle: Tienda vs Plataforma */}
           <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Alcance del cupon</label>
+            <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Alcance del cupon</span>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -355,38 +356,31 @@ export default function CouponsTab() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Código *</label>
+            <Field label="Código *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
               <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="DESCUENTO10" className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
+            </Field>
+            <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
               <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="10% de descuento" className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo</label>
+            </Field>
+            <Field label="Tipo" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
               <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" | "giftcard" }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm">
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
                 <option value="giftcard">Gift Card (saldo)</option>
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{form.discountType === "giftcard" ? "Saldo inicial (S/) *" : "Valor *"}</label>
+            </Field>
+            <Field label={form.discountType === "giftcard" ? "Saldo inicial (S/) *" : "Valor *"} labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
               <input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Compra mínima (S/)</label>
+            </Field>
+            <Field label="Compra mínima (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
               <input type="number" value={form.minPurchase} onChange={e => setForm(f => ({ ...f, minPurchase: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Usos máximos (0 = ilimitado)</label>
+            </Field>
+            <Field label="Usos máximos (0 = ilimitado)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
               <input type="number" value={form.maxUses} onChange={e => setForm(f => ({ ...f, maxUses: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha expiración</label>
+            </Field>
+            <Field label="Fecha expiración" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
               <input type="date" value={form.expiresAt ? form.expiresAt.slice(0, 10) : ""} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" }))} className="w-full mt-1 px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap gap-2 pt-2">
             <button onClick={handleCreate} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition"><Check className="h-4 w-4" />Crear</button>
@@ -456,39 +450,34 @@ export default function CouponsTab() {
               </button>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Tipo de descuento</label>
+              <Field label="Tipo de descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={editingRule.config.discountType} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountType: e.target.value as "percent" | "fixed" } })}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface">
                   <option value="percent">Porcentaje (%)</option>
                   <option value="fixed">Monto fijo (S/)</option>
                 </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Valor del descuento</label>
+              </Field>
+              <Field label="Valor del descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="number" value={editingRule.config.discountValue} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountValue: Number(e.target.value) } })}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-              </div>
+              </Field>
               {editingRule.type !== "min-spend" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Días de validez</label>
+                <Field label="Días de validez" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.validityDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, validityDays: Number(e.target.value) } })}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-                </div>
+                </Field>
               )}
               {editingRule.type === "inactive" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Días de inactividad antes de activar</label>
+                <Field label="Días de inactividad antes de activar" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.inactiveDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, inactiveDays: Number(e.target.value) } })}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-                </div>
+                </Field>
               )}
               {editingRule.type === "min-spend" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Gasto mínimo acumulado (S/)</label>
+                <Field label="Gasto mínimo acumulado (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.minSpend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, minSpend: Number(e.target.value) } })}
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
-                </div>
+                </Field>
               )}
               <div className="flex flex-wrap items-center gap-3 p-3 bg-[var(--surface-alt)] dark:bg-surface rounded-xl">
                 <input type="checkbox" id="ruleAutoSend" checked={editingRule.config.autoSend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, autoSend: e.target.checked } })}
@@ -525,25 +514,27 @@ export default function CouponsTab() {
                 <p className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-line">{buildWhatsappMsg(whatsappCoupon)}</p>
               </div>
               {/* Enviar a un cliente */}
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Enviar a un cliente</label>
-                <div className="flex gap-2 mt-1">
-                  <input
-                    type="tel"
-                    value={whatsappPhone}
-                    onChange={e => setWhatsappPhone(e.target.value)}
-                    placeholder="Ej: 929340532"
-                    className="flex-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface"
-                  />
-                  <button
-                    onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
-                    disabled={!whatsappPhone.trim()}
-                    className="px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-bold hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors inline-flex items-center gap-1"
-                  >
-                    <MessageCircle className="h-4 w-4" /> Enviar
-                  </button>
-                </div>
-              </div>
+              <Field label="Enviar a un cliente" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      id={id}
+                      type="tel"
+                      value={whatsappPhone}
+                      onChange={e => setWhatsappPhone(e.target.value)}
+                      placeholder="Ej: 929340532"
+                      className="flex-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface"
+                    />
+                    <button
+                      onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
+                      disabled={!whatsappPhone.trim()}
+                      className="px-4 py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-bold hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors inline-flex items-center gap-1"
+                    >
+                      <MessageCircle className="h-4 w-4" /> Enviar
+                    </button>
+                  </div>
+                )}
+              </Field>
               {/* Copiar mensaje */}
               <button
                 onClick={() => { copyWhatsappMsg(whatsappCoupon); }}
@@ -573,14 +564,17 @@ export default function CouponsTab() {
               </button>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Patrón</label>
-                <input type="text" value={templatePattern} onChange={e => setTemplatePattern(e.target.value.toUpperCase())}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
-                <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">
-                  Variables: <span className="font-mono">{"{MMDD}"}</span> (mes/día), <span className="font-mono">{"{RND3}"}</span> (3 dígitos random)
-                </p>
-              </div>
+              <Field label="Patrón" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <>
+                    <input id={id} type="text" value={templatePattern} onChange={e => setTemplatePattern(e.target.value.toUpperCase())}
+                      className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
+                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">
+                      Variables: <span className="font-mono">{"{MMDD}"}</span> (mes/día), <span className="font-mono">{"{RND3}"}</span> (3 dígitos random)
+                    </p>
+                  </>
+                )}
+              </Field>
               <div className="bg-[var(--surface-alt)] dark:bg-surface p-4 rounded-xl">
                 <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2">Plantillas sugeridas:</p>
                 <div className="space-y-1">
