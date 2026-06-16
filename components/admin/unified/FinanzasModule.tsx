@@ -210,10 +210,8 @@ function FinanzasDashboard() {
   // Mejora 3: Auto-refresh
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [minAgo, setMinAgo] = useState(0);
-  // Mock KPI deltas — lazy-init so Math.random runs once per mount (React Compiler purity rule)
-  const [kpiMockChanges] = useState<number[]>(() =>
-    Array.from({ length: KPI_DEFS.length }, () => Math.round((Math.random() - 0.3) * 30))
-  );
+  // (Deltas de KPI: ahora se calculan reales desde monthlyData en el render —
+  // antes eran Math.random. Ver bloque del KPI grid.)
   // Mejora 5: Favoritos
   const finFavs = useFavoriteCharts("finanzas");
 
@@ -508,8 +506,16 @@ function FinanzasDashboard() {
           let display: string;
           let subtexto = "";
           let valColor = "text-[var(--text-primary)]";
-          // Mejora 7: Comparativo mock (lazy-initialized for React Compiler purity)
-          const change = kpiMockChanges[kpiIdx] ?? 0;
+          // Delta REAL mes vs mes anterior desde monthlyData (antes Math.random).
+          // Solo ingresos/gastos/utilidad tienen histórico fiable; el resto no muestra delta.
+          const _lastM = monthlyData[monthlyData.length - 1];
+          const _prevM = monthlyData[monthlyData.length - 2];
+          let change: number | null = null;
+          if (_lastM && _prevM) {
+            const cur = def.key === "ingresos" ? _lastM.ingresos : def.key === "gastos" ? _lastM.gastos : def.key === "utilidad" ? _lastM.utilidad : null;
+            const prv = def.key === "ingresos" ? _prevM.ingresos : def.key === "gastos" ? _prevM.gastos : def.key === "utilidad" ? _prevM.utilidad : null;
+            if (cur !== null && prv !== null && prv !== 0) change = Math.round(((cur - prv) / Math.abs(prv)) * 100);
+          }
 
           if (def.key === "margen") {
             display = `${val}%`;
@@ -532,8 +538,11 @@ function FinanzasDashboard() {
           // Zero-value gray styling
           if (val === 0 && def.key !== "margen") valColor = "text-[var(--text-tertiary)]";
 
-          // Mejora 8: Sparkline data for first 3 KPIs (Ingresos, Gastos, Utilidad)
-          const sparkData = kpiIdx < 3 ? [{ v: val * 0.7 }, { v: val * 0.85 }, { v: val * 0.75 }, { v: val * 0.9 }, { v: val * 0.82 }, { v: val * 0.95 }, { v: val }] : null;
+          // Sparkline REAL desde la serie mensual (antes era val*0.7..0.95 fabricado).
+          // Solo para Ingresos/Gastos/Utilidad, que existen en monthlyData.
+          const sparkData = (monthlyData.length >= 2 && (def.key === "ingresos" || def.key === "gastos" || def.key === "utilidad"))
+            ? monthlyData.map(m => ({ v: m[def.key as "ingresos" | "gastos" | "utilidad"] }))
+            : null;
 
           return (
             <div key={def.key} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4  hover:shadow-sm transition-shadow">
@@ -545,9 +554,11 @@ function FinanzasDashboard() {
                   <p className="text-xs font-bold text-[var(--text-secondary)] truncate">{def.label}</p>
                   <div className="flex items-center gap-2">
                     <p className={`text-xl sm:text-2xl font-mono font-extrabold truncate ${valColor}`}>{display}</p>
-                    <span className={`text-xs ${change >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
-                      {change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%
-                    </span>
+                    {change !== null && (
+                      <span className={`text-xs ${change >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
+                        {change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%
+                      </span>
+                    )}
                   </div>
                   {subtexto && (
                     <p className="text-xs text-[var(--text-tertiary)] font-medium">{subtexto}</p>
