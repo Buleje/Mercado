@@ -71,6 +71,8 @@ const FiadosModule    = dynamic(() => import("@/components/admin/FiadosModule"),
 const PrestamosModule = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: S });
 const AdelantosModule = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: S });
 const ActivosModule   = dynamic(() => import("@/components/admin/activos/ActivosModule"),     { loading: S });
+// Por cobrar (roll-up de todo lo que te deben) consolidado como sub-tab
+const PorCobrarDashboard = dynamic(() => import("@/components/admin/PorCobrarDashboard"),     { loading: S });
 // Scoring crediticio consolidado como sub-tab (era entrada top-level "scoring")
 const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: S });
 
@@ -78,7 +80,7 @@ const MODULE_ID = "plata";
 
 // Sub-tabs que renderizan un módulo completo con su PROPIO header (no mostramos
 // el header "Mi Plata" cuando uno de estos está activo, para no duplicar).
-const FOLDED_SUBS = new Set(["fiados", "prestamos", "adelantos", "activos", "scoring"]);
+const FOLDED_SUBS = new Set(["por-cobrar", "fiados", "prestamos", "adelantos", "activos", "scoring"]);
 
 const TABS = [
   { id: "dashboard" as const,        label: "Dashboard",               icon: BarChart3   },
@@ -90,6 +92,7 @@ const TABS = [
   { id: "reportes" as const,         label: "Reportes",                 icon: FileBarChart },
   { id: "tesoreria" as const,        label: "Tesorería",                icon: Landmark     },
   // ── Crédito y capital (consolidados desde módulos top-level) ──
+  { id: "por-cobrar" as const,       label: "Por cobrar",               icon: CreditCard   },
   { id: "fiados" as const,           label: "Fiados",                   icon: HandCoins    },
   { id: "prestamos" as const,        label: "Préstamos",                icon: Banknote     },
   { id: "adelantos" as const,        label: "Adelantos",                icon: Coins        },
@@ -1270,6 +1273,7 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
       {sub === "prestamos" && <PrestamosModule />}
       {sub === "adelantos" && <AdelantosModule />}
       {sub === "activos" && <ActivosModule />}
+      {sub === "por-cobrar" && <PorCobrarDashboard />}
       {sub === "scoring" && <ScoringCrediticioTab />}
       </AdminTabBar>
     </div>

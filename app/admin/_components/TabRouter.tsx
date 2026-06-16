@@ -47,7 +47,7 @@ const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified
 // sub-tabs del marketplace. Ver dispatch más abajo (<MarketplaceModule initialTab=…>).
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
-const PorCobrarDashboard        = dynamic(() => import("@/components/admin/PorCobrarDashboard"),        { loading: TabSpinner });
+// por-cobrar → sub-tab "Por cobrar" de FinanzasModule (ver dispatch)
 // turnos → sub-tab "Turnos" de POSCajaModule (era duplicado top-level)
 // Fiados/Préstamos/Adelantos/Activos consolidados como sub-tabs de FinanzasModule
 // (ver TabRouter dispatch más abajo — todos renderean <FinanzasModule initialTab=...>).
@@ -227,7 +227,7 @@ export function TabRouter({
 
   // ── Módulos adicionales ──
   if (tab === "fiados")    return <FinanzasModule key="fiados" initialTab="fiados" />;
-  if (tab === "por-cobrar") return <PorCobrarDashboard />;
+  if (tab === "por-cobrar") return <FinanzasModule key="por-cobrar" initialTab="por-cobrar" />;
   if (tab === "turnos")    return <POSCajaModule key="turnos" initialTab="turnos" />;
   if (tab === "prestamos") return <FinanzasModule key="prestamos" initialTab="prestamos" />;
   if (tab === "adelantos") return <FinanzasModule key="adelantos" initialTab="adelantos" />;
