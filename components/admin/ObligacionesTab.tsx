@@ -29,8 +29,10 @@ export default function ObligacionesTab() {
   const [regimen, setRegimen] = useState<RegimenTributario>("rmt");
   const [ruc, setRuc] = useState("");
   const [loading, setLoading] = useState(true);
-  const [ventasBase, setVentasBase] = useState(0);
-  const [comprasBase, setComprasBase] = useState(0);
+  // Base imponible por mes (0..11) del año seleccionado — para el mes actual y
+  // el resumen anual, con una sola carga de datos.
+  const [monthlyVentas, setMonthlyVentas] = useState<number[]>(() => Array(12).fill(0));
+  const [monthlyCompras, setMonthlyCompras] = useState<number[]>(() => Array(12).fill(0));
 
   // Config REAL del tenant (régimen + RUC viven en Settings, no en localStorage):
   // así se comparten entre los usuarios y dispositivos del negocio.
@@ -56,39 +58,72 @@ export default function ObligacionesTab() {
     }).catch((err) => console.warn("[ObligacionesTab] settings save failed:", String(err)));
   }, []);
 
-  // Datos REALES del período (mismas fuentes que Impuestos; sin relleno).
+  // Datos REALES del AÑO completo (1 sola carga), buckets por mes. Sin relleno:
+  // un mes sin actividad queda en 0. Ventas ← órdenes; compras ← payables.
   useEffect(() => {
     let active = true;
     setLoading(true);
-    const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-    const inPeriod = (iso: string) => { const d = iso.slice(0, 10); return d >= from && d <= to; };
+    // Mes (0..11) del año seleccionado a partir de un ISO "YYYY-MM-DD…"; -1 si no.
+    const bucketMonth = (iso: string): number => {
+      const s = iso.slice(0, 10);
+      if (s.slice(0, 4) !== String(year)) return -1;
+      return Number(s.slice(5, 7)) - 1;
+    };
 
     Promise.all([
-      fetch(`/api/orders?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/orders?from=${year}-01-01&to=${year}-12-31`).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`/api/payables`).then(r => r.ok ? r.json() : []).catch(() => []),
     ]).then(([orders, payables]) => {
       if (!active) return;
-      const ventasTotal = (Array.isArray(orders) ? orders : [])
-        .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
-        .reduce((s: number, o: { total: number }) => s + (Number(o.total) || 0), 0);
-      const comprasTotal = (Array.isArray(payables) ? payables : [])
-        .filter((p: { createdAt?: string }) => !!p.createdAt && inPeriod(p.createdAt))
-        .reduce((s: number, p: { amount: number }) => s + (Number(p.amount) || 0), 0);
-      // total incluye IGV → la base imponible es total / (1 + IGV).
-      setVentasBase(ventasTotal / (1 + IGV_RATE));
-      setComprasBase(comprasTotal / (1 + IGV_RATE));
+      const ventas = Array(12).fill(0);
+      const compras = Array(12).fill(0);
+      for (const o of (Array.isArray(orders) ? orders : []) as Array<{ status: string; createdAt?: string; total: number }>) {
+        if (o.status !== "entregado" && o.status !== "confirmado") continue;
+        const m = o.createdAt ? bucketMonth(o.createdAt) : -1;
+        if (m >= 0) ventas[m] += (Number(o.total) || 0) / (1 + IGV_RATE);
+      }
+      for (const p of (Array.isArray(payables) ? payables : []) as Array<{ createdAt?: string; amount: number }>) {
+        const m = p.createdAt ? bucketMonth(p.createdAt) : -1;
+        if (m >= 0) compras[m] += (Number(p.amount) || 0) / (1 + IGV_RATE);
+      }
+      setMonthlyVentas(ventas);
+      setMonthlyCompras(compras);
       setLoading(false);
     });
 
     return () => { active = false; };
-  }, [year, month]);
+  }, [year]);
 
-  const result = useMemo(
-    () => computeObligacionesMensuales({ regimen, ventasBase, comprasBase }),
-    [regimen, ventasBase, comprasBase],
+  // Mes seleccionado — ingreso acumulado hasta ese mes (umbral RMT 300 UIT).
+  const ventasBase = monthlyVentas[month] ?? 0;
+  const comprasBase = monthlyCompras[month] ?? 0;
+  const accHastaMes = useMemo(
+    () => monthlyVentas.slice(0, month + 1).reduce((s, v) => s + v, 0),
+    [monthlyVentas, month],
   );
+  const result = useMemo(
+    () => computeObligacionesMensuales({ regimen, ventasBase, comprasBase, ingresosNetosAnualAcum: accHastaMes }),
+    [regimen, ventasBase, comprasBase, accHastaMes],
+  );
+
+  // Resumen anual — obligaciones de cada mes con ingreso acumulado correcto.
+  const anual = useMemo(() => {
+    let acc = 0;
+    const rows = monthlyVentas.map((v, i) => {
+      acc += v;
+      const r = computeObligacionesMensuales({ regimen, ventasBase: v, comprasBase: monthlyCompras[i], ingresosNetosAnualAcum: acc });
+      const igv = r.obligaciones.find(o => o.key === "igv")?.monto ?? 0;
+      const renta = r.obligaciones.find(o => o.key === "renta")?.monto ?? 0;
+      return { igv, renta, total: r.total };
+    });
+    return {
+      rows,
+      totalIgv: rows.reduce((s, r) => s + r.igv, 0),
+      totalRenta: rows.reduce((s, r) => s + r.renta, 0),
+      total: rows.reduce((s, r) => s + r.total, 0),
+    };
+  }, [monthlyVentas, monthlyCompras, regimen]);
+
   const venc = ventanaVencimientoReferencial(ruc);
 
   return (
@@ -179,6 +214,49 @@ export default function ObligacionesTab() {
               </AdminCard>
             ))}
           </div>
+
+          {/* Resumen anual — 12 meses de pagos a cuenta (IGV + Renta) */}
+          <AdminCard padding="lg">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-[var(--text-tertiary)]" /> Resumen anual {year}
+              </p>
+              <StatusBadge variant="neutral" label="estimado" size="sm" />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[460px] text-sm">
+                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Mes</th>
+                    <th className="text-right px-3 py-2 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">IGV</th>
+                    <th className="text-right px-3 py-2 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Renta</th>
+                    <th className="text-right px-3 py-2 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                  {anual.rows.map((r, i) => (
+                    <tr key={i} className={cn("transition-colors hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50", i === month && "bg-[var(--accent-soft)]/40")}>
+                      <td className="px-3 py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{MONTHS[i]}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-[var(--data-warning-500)]">{fmt(r.igv)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)] dark:text-muted">{fmt(r.renta)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(r.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-[var(--rule-base)] font-bold">
+                    <td className="px-3 py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total {year}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--data-warning-500)]">{fmt(anual.totalIgv)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)] dark:text-muted">{fmt(anual.totalRenta)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(anual.total)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-[var(--text-secondary)] leading-relaxed">
+              Suma de los pagos a cuenta del año. La <span className="font-semibold text-[var(--text-primary)]">Renta anual definitiva</span> se determina sobre la renta neta (ingresos − gastos del ejercicio), que requiere tu estado de resultados completo — no se estima acá.
+            </p>
+          </AdminCard>
 
           {/* Declaraciones del mes — checklist informativo */}
           <AdminCard padding="lg">
