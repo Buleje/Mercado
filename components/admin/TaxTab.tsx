@@ -3,7 +3,7 @@
 import { LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
-  Receipt, Loader2, RefreshCw, AlertTriangle,
+  Receipt, RefreshCw, AlertTriangle,
   CheckCircle, BookOpen,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -45,35 +45,10 @@ function fmtDate(iso: string) {
   catch { return iso; }
 }
 
-// Build mock tax lines
-function buildMockLines(year: number, month: number): TaxLine[] {
-  const prefix = `${year}-${String(month + 1).padStart(2, "0")}`;
-  const days = [2, 5, 7, 10, 12, 14, 17, 19, 22, 25, 28];
-  const entities = ["Restaurante El Sol SAC", "Bodega Don Pepe", "María García", "Carlos López", "Proveedo Alimentos SA", "Distribuidora Lima"];
-  const result: TaxLine[] = [];
-
-  for (let i = 0; i < days.length; i++) {
-    const date = `${prefix}-${String(days[i]).padStart(2, "0")}`;
-    const isVenta = i % 3 !== 0;
-    const base = parseFloat((200 + Math.random() * 1500).toFixed(2));
-    const igv = parseFloat((base * 0.18).toFixed(2));
-    result.push({
-      id: `tx-${i}`,
-      date,
-      type: isVenta ? "venta" : "compra",
-      docType: isVenta ? (i % 2 === 0 ? "Boleta" : "Factura") : "Factura",
-      serie: isVenta ? (i % 2 === 0 ? "B001" : "F001") : "FC01",
-      number: String(i + 1).padStart(8, "0"),
-      entity: entities[i % entities.length],
-      entityDoc: isVenta ? `${10000000 + i * 1234567}` : `20${513000000 + i * 123456}`,
-      base,
-      igv,
-      total: parseFloat((base + igv).toFixed(2)),
-      status: i < 6 ? "declarado" : "pendiente",
-    });
-  }
-  return result.sort((a, b) => a.date.localeCompare(b.date));
-}
+// IGV de Perú = 18%. Asumimos que `total`/`amount` lo incluyen (lo estándar en
+// boletas/facturas peruanas) → la base se obtiene revirtiendo el IGV.
+const IGV_RATE = 0.18;
+const round2 = (n: number) => parseFloat(n.toFixed(2));
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -93,34 +68,59 @@ export default function TaxTab() {
     const lastDay = new Date(year, month + 1, 0).getDate();
     const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
+    // Datos REALES del período (sin relleno: si no hay nada, el período va vacío).
+    //   - Ventas  ← órdenes entregadas/confirmadas (/api/orders)
+    //   - Compras ← cuentas por pagar registradas en el período (/api/payables),
+    //               proxy de las facturas de proveedor para el crédito fiscal.
+    const inPeriod = (iso: string) => {
+      const day = iso.slice(0, 10);
+      return day >= from && day <= to;
+    };
+
     Promise.all([
       fetch(`/api/orders?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([orders]) => {
+      fetch(`/api/payables`).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([orders, payables]) => {
       if (!active) return;
-      // If real orders exist, generate tax lines from them; else use mock
-      if (Array.isArray(orders) && orders.length > 0) {
-        const realLines: TaxLine[] = orders
-          .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
-          .map((o: { id: string; createdAt: string; total: number; customer: { name: string; phone: string } }, i: number) => {
-            const base = parseFloat((o.total / 1.18).toFixed(2));
-            const igv = parseFloat((o.total - base).toFixed(2));
-            return {
-              id: `ord-${o.id}`,
-              date: o.createdAt.slice(0, 10),
-              type: "venta" as const,
-              docType: "Boleta",
-              serie: "B001",
-              number: String(i + 1).padStart(8, "0"),
-              entity: o.customer?.name ?? "Cliente",
-              entityDoc: o.customer?.phone ?? "—",
-              base, igv, total: o.total,
-              status: "pendiente" as const,
-            };
-          });
-        setLines(realLines.length > 0 ? realLines : buildMockLines(year, month));
-      } else {
-        setLines(buildMockLines(year, month));
-      }
+
+      const ventas: TaxLine[] = (Array.isArray(orders) ? orders : [])
+        .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
+        .map((o: { id: string; createdAt: string; total: number; customer?: { name?: string; phone?: string } }, i: number) => {
+          const base = round2(o.total / (1 + IGV_RATE));
+          return {
+            id: `ord-${o.id}`,
+            date: o.createdAt.slice(0, 10),
+            type: "venta" as const,
+            docType: "Boleta",
+            serie: "B001",
+            number: String(i + 1).padStart(8, "0"),
+            entity: o.customer?.name ?? "Cliente",
+            entityDoc: o.customer?.phone ?? "—",
+            base, igv: round2(o.total - base), total: o.total,
+            status: "pendiente" as const,
+          };
+        });
+
+      const compras: TaxLine[] = (Array.isArray(payables) ? payables : [])
+        .filter((p: { createdAt?: string }) => !!p.createdAt && inPeriod(p.createdAt))
+        .map((p: { id: string; createdAt: string; amount: number; supplierName?: string }, i: number) => {
+          const total = Number(p.amount) || 0;
+          const base = round2(total / (1 + IGV_RATE));
+          return {
+            id: `pay-${p.id}`,
+            date: p.createdAt.slice(0, 10),
+            type: "compra" as const,
+            docType: "Factura",
+            serie: "FC",
+            number: String(i + 1).padStart(8, "0"),
+            entity: p.supplierName ?? "Proveedor",
+            entityDoc: "—",
+            base, igv: round2(total - base), total,
+            status: "pendiente" as const,
+          };
+        });
+
+      setLines([...ventas, ...compras].sort((a, b) => a.date.localeCompare(b.date)));
       setLoading(false);
     });
 
