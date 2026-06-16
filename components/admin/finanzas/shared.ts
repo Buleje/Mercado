@@ -11,6 +11,8 @@
  *  - TTL 30s mantiene la respuesta caliente al cambiar de tab dentro de Finanzas.
  *  - invalidateFinanzasCache() expone limpieza manual ("Actualizar").
  */
+import { INGRESO_ORDER_STATUSES } from "@/lib/finance/finance-kpis";
+
 type CacheEntry<T> = { value: T; expiresAt: number };
 const finanzasCache = new Map<string, CacheEntry<unknown>>();
 const finanzasInFlight = new Map<string, Promise<unknown>>();
@@ -66,6 +68,7 @@ export type PayableRaw = {
   description?: string;
 };
 export type FiadoRaw = { total?: number; amount?: number };
+export type OrderRaw = { createdAt?: string; total?: number; status?: string };
 
 export const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 export const n = (v: unknown): number => {
@@ -73,6 +76,22 @@ export const n = (v: unknown): number => {
   const parsed = Number(v);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+
+/**
+ * Ingresos de un mes (monthKey "YYYY-MM") = ventas POS (Sale) + pedidos
+ * concretados (Order). Usa la MISMA definición de "venta concretada" que la
+ * fuente única de KPIs (INGRESO_ORDER_STATUSES) → consistente con el resto del
+ * admin. Antes Finanzas sumaba SOLO Sale (desigual con Inicio = Order+Sale).
+ */
+export function monthIngresos(monthKey: string, sales: SaleRaw[], orders: OrderRaw[]): number {
+  const fromSales = sales
+    .filter((s) => (s.createdAt ?? "").startsWith(monthKey))
+    .reduce((sum, s) => sum + n(s.total), 0);
+  const fromOrders = orders
+    .filter((o) => (o.createdAt ?? "").startsWith(monthKey) && (INGRESO_ORDER_STATUSES as readonly string[]).includes(o.status ?? ""))
+    .reduce((sum, o) => sum + n(o.total), 0);
+  return fromSales + fromOrders;
+}
 
 // ── Salud financiera (semáforo) ──────────────────────────────────────────────
 export type HealthData = {

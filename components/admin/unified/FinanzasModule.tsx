@@ -35,8 +35,8 @@ import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 import { ComparativoMensual, GaugeChart, StaggerItem } from "@/components/admin/finanzas/charts";
 import {
-  fetchFinanzas, n, calcHealthScore, MESES,
-  type SaleRaw, type ExpenseRaw, type PayableRaw, type FiadoRaw, type HealthData,
+  fetchFinanzas, n, calcHealthScore, MESES, monthIngresos,
+  type SaleRaw, type ExpenseRaw, type PayableRaw, type FiadoRaw, type HealthData, type OrderRaw,
 } from "@/components/admin/finanzas/shared";
 
 const PLTab = dynamic(() => import("@/components/admin/PLTab"), { loading: S });
@@ -87,18 +87,19 @@ function generarReporteBancario() {
     fetchFinanzas<Record<string, unknown> | null>("/api/expenses/summary", null),
     fetchFinanzas<unknown[]>("/api/sales?limit=5000", []),
     fetchFinanzas<Record<string, unknown> | null>("/api/analytics/kpis-v2", null),
+    fetchFinanzas<unknown[]>("/api/orders?limit=5000", []),
   ])
-    .then(([expenses, sales, kpis]) => {
+    .then(([expenses, sales, kpis, orders]) => {
       const now = new Date();
-      const allSales = Array.isArray(sales) ? sales : [];
+      const allSales = (Array.isArray(sales) ? sales : []) as SaleRaw[];
+      const allOrders = (Array.isArray(orders) ? orders : []) as OrderRaw[];
       const meses: Array<{ mes: string; ingresos: number; gastos: number; utilidad: number }> = [];
 
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthKey = d.toISOString().slice(0, 7);
         const label = d.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
-        const monthSales = (allSales as SaleRaw[]).filter((s) => (s.createdAt ?? "").startsWith(monthKey));
-        const ingresos = monthSales.reduce((sum, s) => sum + n(s.total), 0);
+        const ingresos = monthIngresos(monthKey, allSales, allOrders);
         let gastos = 0;
         if (expenses?.monthly && Array.isArray(expenses.monthly)) {
           const m = (expenses.monthly as Array<{ month: string; total?: number }>).find((e) => e.month === monthKey);
@@ -205,16 +206,20 @@ function FinanzasDashboard() {
       fetch("/api/expenses?limit=2000").then(r => r.ok ? r.json() : []),
       fetch("/api/payables").then(r => r.ok ? r.json() : []),
       fetch("/api/fiados?status=ACTIVO").then(r => r.ok ? r.json() : []),
-    ]).then(([kR, eR, sR, exR, pR, fR]) => {
+      // Consolidación: los ingresos incluyen pedidos (Order), no solo Sale.
+      fetchFinanzas<unknown[]>("/api/orders?limit=5000", []),
+    ]).then(([kR, eR, sR, exR, pR, fR, oR]) => {
       const kpisData = kR.status === "fulfilled" ? kR.value : null;
       const expSummary = eR.status === "fulfilled" ? eR.value : null;
       const salesRaw = sR.status === "fulfilled" ? sR.value : [];
+      const ordersRaw = oR.status === "fulfilled" ? oR.value : [];
       const expensesRaw = exR.status === "fulfilled" ? exR.value : [];
       const payablesRaw = pR.status === "fulfilled" ? (Array.isArray(pR.value) ? pR.value : []) : [];
       const fiadosRaw = fR.status === "fulfilled" ? (Array.isArray(fR.value) ? fR.value : []) : [];
 
       const now = new Date();
-      const sales = Array.isArray(salesRaw) ? salesRaw : [];
+      const sales = (Array.isArray(salesRaw) ? salesRaw : []) as SaleRaw[];
+      const orders = (Array.isArray(ordersRaw) ? ordersRaw : []) as OrderRaw[];
 
       // ── KPIs ──
       const ingresos = n(kpisData?.ventasMes ?? kpisData?.salesMonth);
@@ -255,8 +260,7 @@ function FinanzasDashboard() {
         const monthKey = d.toISOString().slice(0, 7);
         const label = MESES[d.getMonth()];
         const fullLabel = d.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
-        const monthSales = (sales as SaleRaw[]).filter((s) => (s.createdAt ?? "").startsWith(monthKey));
-        const ing = monthSales.reduce((sum, s) => sum + n(s.total), 0);
+        const ing = monthIngresos(monthKey, sales, orders);
         let gas = 0;
         if (expSummary?.monthly && Array.isArray(expSummary.monthly)) {
           const m = (expSummary.monthly as Array<{ month: string; total?: number }>).find((e) => e.month === monthKey);
