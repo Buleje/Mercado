@@ -15,47 +15,41 @@ import type { AdminMode } from "@/app/admin/_hooks/useAdminMode";
 // heavier unified/* counterparts with a shared TabSkeleton loader. Routing
 // through them keeps the admin route bundle lean and guarantees a single
 // chunk split per tab.
-const ReportsTab   = dynamic(() => import("@/components/admin/tabs/ReportsTab"),   { loading: TabSpinner });
+// analytics-pro + forecasting consolidados en AnalisisHubModule (2→1)
+const AnalisisHubModule = dynamic(() => import("@/components/admin/unified/AnalisisHubModule"), { loading: TabSpinner });
 const InventoryTab = dynamic(() => import("@/components/admin/tabs/InventoryTab"), { loading: TabSpinner });
 const SettingsTab  = dynamic(() => import("@/components/admin/tabs/SettingsTab"),  { loading: TabSpinner });
 const AuditTab     = dynamic(() => import("@/components/admin/tabs/AuditTab"),     { loading: TabSpinner });
-const SupportInboxTab = dynamic(
-  () => import("@/components/admin/support/UnifiedSupportInbox").then((module) => ({ default: module.UnifiedSupportInbox })),
-  { loading: TabSpinner },
-);
+// marketplace-chat + support-inbox consolidados en MensajesHubModule (2→1)
+const MensajesHubModule = dynamic(() => import("@/components/admin/unified/MensajesHubModule"), { loading: TabSpinner });
 
 // ── Unified Module Imports (módulos consolidados) ──────────────────────────────
 const VendorDashboardModule   = dynamic(() => import("@/components/admin/unified/VendorDashboardModule"),   { loading: TabSpinner });
-const ChatIAModule            = dynamic(() => import("@/components/admin/unified/ChatIAModule"),            { ssr: false, loading: TabSpinner });
+// Chat IA / Comandos IA / Sugerencias IA consolidados en AsistenteIAHubModule (3→1)
+const AsistenteIAHubModule    = dynamic(() => import("@/components/admin/unified/AsistenteIAHubModule"),    { loading: TabSpinner });
 const POSCajaModule           = dynamic(() => import("@/components/admin/unified/POSCajaModule"),           { loading: TabSpinner });
 const ComprasModule           = dynamic(() => import("@/components/admin/unified/ComprasModule"),           { loading: TabSpinner });
 const FinanzasModule          = dynamic(() => import("@/components/admin/unified/FinanzasModule"),          { loading: TabSpinner });
 const CRMClientesModule       = dynamic(() => import("@/components/admin/unified/CRMClientesModule"),       { loading: TabSpinner });
 const LeadsFunnelModule       = dynamic(() => import("@/components/admin/unified/LeadsFunnelModule"),       { loading: TabSpinner });
-const AICommandModule         = dynamic(() => import("@/components/admin/unified/AICommandModule"),         { loading: TabSpinner });
-const SugerenciasIAModule     = dynamic(() => import("@/components/admin/unified/SugerenciasIAModule"),     { loading: TabSpinner });
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
-const DocumentosModule        = dynamic(() => import("@/components/admin/documentos/DocumentosModule"),    { loading: TabSpinner, ssr: false });
+const DocumentosHubModule     = dynamic(() => import("@/components/admin/unified/DocumentosHubModule"),    { loading: TabSpinner });
 const DeliveryPartnersModule  = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"),  { loading: TabSpinner });
-const DeliveryLiveTab         = dynamic(() => import("@/components/admin/DeliveryTab"),                     { loading: TabSpinner, ssr: false });
-const MarketplaceChatTab      = dynamic(() => import("@/components/admin/ChatTab"),                         { loading: TabSpinner });
+// delivery-live consolidado como sub-tab "Pedidos en vivo" de DeliveryPartnersModule (2→1)
+// marketplace-chat → sub-tab "chat" de MensajesHubModule (ver dispatch)
 const RendimientoModule       = dynamic(() => import("@/components/admin/unified/RendimientoModule"),       { loading: TabSpinner });
 const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"),    { loading: TabSpinner });
 
-// ── ENRICH-5 bridges ──────────────────────────────────────────────────────
-const SubscriptionsModule      = dynamic(() => import("@/components/admin/unified/SubscriptionsModule"),     { loading: TabSpinner });
-const GiftCardsAdminModule     = dynamic(() => import("@/components/admin/unified/GiftCardsAdminModule"),    { loading: TabSpinner });
-const SocioMembersAdminModule  = dynamic(() => import("@/components/admin/unified/SocioMembersAdminModule"), { loading: TabSpinner });
-const LivesAdminModule         = dynamic(() => import("@/components/admin/unified/LivesAdminModule"),        { loading: TabSpinner });
+// ── ENRICH-5 bridges — programas de crecimiento consolidados en MarketplaceModule (4→1) ──
+// subscriptions · gift-cards-admin · socio-members · lives-admin son ahora
+// sub-tabs del marketplace. Ver dispatch más abajo (<MarketplaceModule initialTab=…>).
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
-const FiadosModule              = dynamic(() => import("@/components/admin/FiadosModule"),              { loading: TabSpinner });
 const PorCobrarDashboard        = dynamic(() => import("@/components/admin/PorCobrarDashboard"),        { loading: TabSpinner });
 const TurnosModule              = dynamic(() => import("@/components/admin/TurnosModule"),              { loading: TabSpinner });
-const PrestamosModule           = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: TabSpinner });
-const AdelantosModule           = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: TabSpinner });
-const ActivosModule             = dynamic(() => import("@/components/admin/activos/ActivosModule"), { loading: TabSpinner });
+// Fiados/Préstamos/Adelantos/Activos consolidados como sub-tabs de FinanzasModule
+// (ver TabRouter dispatch más abajo — todos renderean <FinanzasModule initialTab=...>).
 const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
 // ADR-124 — Especialización forestal CTP
 const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/forestal/CTPLibroOperaciones"), { loading: TabSpinner });
@@ -69,16 +63,12 @@ const StoreCustomizer           = dynamic(() => import("@/components/admin/Store
 const MiPerfilTab               = dynamic(() => import("@/components/admin/MiPerfilTab"),               { loading: TabSpinner });
 const ColasTab                  = dynamic(() => import("@/components/admin/ColasTab"),                  { loading: TabSpinner });
 const StorePageAdminPage        = dynamic(() => import("@/app/admin/store-page/page"),                  { loading: TabSpinner });
-const ForecastingDashboard      = dynamic(() => import("@/components/admin/forecasting/ForecastingDashboard"), { loading: TabSpinner });
+// forecasting → sub-tab "forecast" de AnalisisHubModule (ver dispatch)
 
-// ── Módulos de documentos ──────────────────────────────────────────────────────
-const CotizacionesModule   = dynamic(() => import("@/components/admin/CotizacionesModule"),   { loading: TabSpinner });
-const GuiasRemisionModule  = dynamic(() => import("@/components/admin/GuiasRemisionModule"),  { loading: TabSpinner });
-const NotasCreditoModule   = dynamic(() => import("@/components/admin/NotasCreditoModule"),   { loading: TabSpinner });
-const ContratosModule      = dynamic(() => import("@/components/admin/ContratosModule"),      { loading: TabSpinner });
-
-// ── Facturación electrónica SUNAT ──────────────────────────────────────────────
-const FacturacionModule    = dynamic(() => import("@/components/admin/unified/FacturacionModule"), { loading: TabSpinner });
+// ── Documentos comerciales & SUNAT consolidados en DocumentosHubModule (6→1) ──
+// facturacion · cotizaciones · guias-remision · notas-credito · contratos · documentos
+// son ahora sub-tabs del hub (cada uno conserva su módulo y header propios).
+// Ver dispatch más abajo — todos renderean <DocumentosHubModule initialTab=…>.
 
 // ── Módulos especiales ─────────────────────────────────────────────────────────
 const OrdersTab      = dynamic(() => import("@/components/admin/OrdersTab"),      { loading: TabSpinner });
@@ -213,7 +203,7 @@ export function TabRouter({
   if (tab === "vendor-dashboard") return <VendorDashboardModule />;
 
   // ── 1. Chat IA (standalone) ──
-  if (tab === "asistente-ia") return <ChatIAModule />;
+  if (tab === "asistente-ia") return <AsistenteIAHubModule key="asistente-ia" initialTab="chat" />;
 
   if (tab === "ventas-caja") return <POSCajaModule />;
 
@@ -226,8 +216,8 @@ export function TabRouter({
   // ── 5. Compras ──
   if (tab === "compras") return <ComprasModule />;
 
-  // ── 6. Mi Plata ──
-  if (tab === "plata") return <FinanzasModule />;
+  // ── 6. Mi Plata (hub financiero — incluye fiados/préstamos/adelantos/activos) ──
+  if (tab === "plata") return <FinanzasModule key="plata" />;
 
   // ── 7. Mis Clientes ──
   if (tab === "clientes") return <CRMClientesModule />;
@@ -235,12 +225,12 @@ export function TabRouter({
   if (tab === "leads-funnel") return <LeadsFunnelModule />;
 
   // ── Módulos adicionales ──
-  if (tab === "fiados")    return <FiadosModule />;
+  if (tab === "fiados")    return <FinanzasModule key="fiados" initialTab="fiados" />;
   if (tab === "por-cobrar") return <PorCobrarDashboard />;
   if (tab === "turnos")    return <TurnosModule />;
-  if (tab === "prestamos") return <PrestamosModule />;
-  if (tab === "adelantos") return <AdelantosModule />;
-  if (tab === "activos") return <ActivosModule />;
+  if (tab === "prestamos") return <FinanzasModule key="prestamos" initialTab="prestamos" />;
+  if (tab === "adelantos") return <FinanzasModule key="adelantos" initialTab="adelantos" />;
+  if (tab === "activos") return <FinanzasModule key="activos" initialTab="activos" />;
   if (tab === "recetas")   return <RecetasModule />;
   // ADR-124 — Especializaciones por tenant. El endpoint /api/admin/forestal/*
   // protege el acceso (ensureSpecializationOrDeny → 403 si no habilitada).
@@ -252,14 +242,12 @@ export function TabRouter({
   if (tab === "scoring")   return <ScoringCrediticioTab />;
   if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;
 
-  // ── Documentos ──
-  if (tab === "cotizaciones")  return <CotizacionesModule />;
-  if (tab === "guias-remision") return <GuiasRemisionModule />;
-  if (tab === "notas-credito") return <NotasCreditoModule />;
-  if (tab === "contratos")     return <ContratosModule />;
-
-  // ── Facturación SUNAT ──
-  if (tab === "facturacion") return <FacturacionModule />;
+  // ── Documentos comerciales & SUNAT (hub consolidado — 6 sub-tabs) ──
+  if (tab === "cotizaciones")   return <DocumentosHubModule key="cotizaciones" initialTab="cotizaciones" />;
+  if (tab === "guias-remision") return <DocumentosHubModule key="guias" initialTab="guias" />;
+  if (tab === "notas-credito")  return <DocumentosHubModule key="notas" initialTab="notas" />;
+  if (tab === "contratos")      return <DocumentosHubModule key="contratos" initialTab="contratos" />;
+  if (tab === "facturacion")    return <DocumentosHubModule key="facturacion" initialTab="facturacion" />;
 
   // ── Módulos nuevos ──
   if (tab === "auditoria")              return <AuditTab />;
@@ -288,23 +276,23 @@ export function TabRouter({
   if (tab === "plan")    return <PlanTab />;
 
   // ── Módulos avanzados ──
-  if (tab === "analytics-pro")  return <ReportsTab />;
-  if (tab === "forecasting")    return <ForecastingDashboard />;
-  if (tab === "ai-command")     return <AICommandModule />;
-  if (tab === "sugerencias-ia") return <SugerenciasIAModule />;
+  if (tab === "analytics-pro")  return <AnalisisHubModule key="analytics-pro" initialTab="analytics" />;
+  if (tab === "forecasting")    return <AnalisisHubModule key="forecasting" initialTab="forecast" />;
+  if (tab === "ai-command")     return <AsistenteIAHubModule key="ai-command" initialTab="comandos" />;
+  if (tab === "sugerencias-ia") return <AsistenteIAHubModule key="sugerencias-ia" initialTab="sugerencias" />;
   if (tab === "metas-logros")   return <MetasLogrosModule />;
 
   // ── Marketplace & Delivery ──
-  if (tab === "marketplace")       return <MarketplaceModule />;
-  if (tab === "delivery-partners") return <DeliveryPartnersModule />;
-  if (tab === "delivery-live")     return <DeliveryLiveTab />;
-  if (tab === "marketplace-chat")  return <MarketplaceChatTab />;
+  if (tab === "marketplace")       return <MarketplaceModule key="marketplace" />;
+  if (tab === "delivery-partners") return <DeliveryPartnersModule key="delivery-partners" />;
+  if (tab === "delivery-live")     return <DeliveryPartnersModule key="delivery-live" initialTab="pedidos-vivo" />;
+  if (tab === "marketplace-chat")  return <MensajesHubModule key="marketplace-chat" initialTab="chat" />;
 
-  // ── ENRICH-5 bridges (marketplace admin surfaces) ──
-  if (tab === "subscriptions")     return <SubscriptionsModule />;
-  if (tab === "gift-cards-admin")  return <GiftCardsAdminModule />;
-  if (tab === "socio-members")     return <SocioMembersAdminModule />;
-  if (tab === "lives-admin")       return <LivesAdminModule />;
+  // ── ENRICH-5 (programas de crecimiento — sub-tabs del Marketplace) ──
+  if (tab === "subscriptions")     return <MarketplaceModule key="subscriptions" initialTab="subscriptions" />;
+  if (tab === "gift-cards-admin")  return <MarketplaceModule key="gift-cards" initialTab="gift-cards" />;
+  if (tab === "socio-members")     return <MarketplaceModule key="socio" initialTab="socio" />;
+  if (tab === "lives-admin")       return <MarketplaceModule key="lives" initialTab="lives" />;
 
   // ── Rendimiento técnico ──
   if (tab === "rendimiento") return <RendimientoModule />;
@@ -313,13 +301,13 @@ export function TabRouter({
   if (tab === "store-customizer") return <StoreCustomizer />;
   if (tab === "colas")            return <ColasTab />;
   if (tab === "mi-perfil")        return <MiPerfilTab />;
-  if (tab === "support-inbox")    return <SupportInboxTab />;
+  if (tab === "support-inbox")    return <MensajesHubModule key="support-inbox" initialTab="soporte" />;
 
   // ── Página individual de la tienda ──
   if (tab === "pagina-inicio") return <StorePageAdminPage />;
 
-  // ── Documentación (drive interno con drag&drop, preview, organización) ──
-  if (tab === "documentos") return <DocumentosModule />;
+  // ── Documentación (drive interno) — sub-tab "drive" del hub de Documentos ──
+  if (tab === "documentos") return <DocumentosHubModule key="documentos" initialTab="drive" />;
 
   return null;
 }

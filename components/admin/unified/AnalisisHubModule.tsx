@@ -1,0 +1,39 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { BarChart3, TrendingUp } from "@buleje/design-system/icons";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+
+// ── Hub de Análisis (consolidación 2→1) ──────────────────────────────────────
+// Antes: 2 entradas top-level (analytics-pro, forecasting). Ahora 1 centro de
+// análisis con 2 sub-tabs. Cada módulo trae su PROPIO header → el hub NO pone
+// header (evita doble). Rendimiento técnico queda aparte (no es análisis de negocio).
+const AnalyticsProModule  = dynamic(() => import("@/components/admin/unified/AnalyticsProModule"),        { loading: S, ssr: false });
+const ForecastingDashboard = dynamic(() => import("@/components/admin/forecasting/ForecastingDashboard"), { loading: S });
+
+const MODULE_ID = "analisis-hub";
+
+const TABS = [
+  { id: "analytics", label: "Analytics Pro",      icon: BarChart3 },
+  { id: "forecast",  label: "Predicción Demanda", icon: TrendingUp },
+];
+
+export default function AnalisisHubModule({ initialTab }: { initialTab?: string } = {}) {
+  const [sub, setSub] = useState(() => {
+    if (initialTab) return initialTab;
+    if (typeof window === "undefined") return TABS[0].id;
+    return localStorage.getItem(`admin-last-tab-${MODULE_ID}`) || TABS[0].id;
+  });
+  useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+
+  return (
+    <div className="space-y-4">
+      <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+        {sub === "analytics" && <AnalyticsProModule />}
+        {sub === "forecast" && <ForecastingDashboard />}
+      </AdminTabBar>
+    </div>
+  );
+}

@@ -15,7 +15,7 @@ import {
   FileBarChart, Waves, Calculator,
   DollarSign, Wallet,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
-  Sparkles, Landmark,
+  Sparkles, Landmark, HandCoins, Banknote, Coins, Construction,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
@@ -67,7 +67,19 @@ const CompetitorPriceTracker = dynamic(() => import("@/components/admin/Competit
 // DocumentosEmitidosTab → movido a categoría Documentos (no es finanzas)
 const TreasuryDashboard = dynamic(() => import("@/components/admin/TreasuryDashboard"), { loading: S });
 
+// ── Módulos de crédito/capital foldeados como sub-tabs (consolidación Finanzas 5→1) ──
+// Antes eran 4 entradas top-level separadas (fiados, prestamos, adelantos, activos).
+// Ahora viven como sub-tabs de este módulo: 1 hub financiero con más funciones.
+const FiadosModule    = dynamic(() => import("@/components/admin/FiadosModule"),              { loading: S });
+const PrestamosModule = dynamic(() => import("@/components/admin/PrestamosModule"),           { loading: S });
+const AdelantosModule = dynamic(() => import("@/components/admin/adelantos/AdelantosModule"), { loading: S });
+const ActivosModule   = dynamic(() => import("@/components/admin/activos/ActivosModule"),     { loading: S });
+
 const MODULE_ID = "plata";
+
+// Sub-tabs que renderizan un módulo completo con su PROPIO header (no mostramos
+// el header "Mi Plata" cuando uno de estos está activo, para no duplicar).
+const FOLDED_SUBS = new Set(["fiados", "prestamos", "adelantos", "activos"]);
 
 const TABS = [
   { id: "dashboard" as const,        label: "Dashboard",               icon: BarChart3   },
@@ -79,6 +91,11 @@ const TABS = [
   { id: "reportes" as const,         label: "Reportes",                 icon: FileBarChart },
   { id: "inteligencia" as const,     label: "Inteligencia",             icon: Sparkles     },
   { id: "tesoreria" as const,        label: "Tesorería",                icon: Landmark     },
+  // ── Crédito y capital (consolidados desde módulos top-level) ──
+  { id: "fiados" as const,           label: "Fiados",                   icon: HandCoins    },
+  { id: "prestamos" as const,        label: "Préstamos",                icon: Banknote     },
+  { id: "adelantos" as const,        label: "Adelantos",                icon: Coins        },
+  { id: "activos" as const,          label: "Activos",                  icon: Construction },
 ];
 
  
@@ -1175,8 +1192,9 @@ function IntelligenceKPIStrip() {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function FinanzasModule() {
+export default function FinanzasModule({ initialTab }: { initialTab?: string } = {}) {
   const [sub, setSub] = useState(() => {
+    if (initialTab) return initialTab as typeof TABS[number]["id"];
     if (typeof window === "undefined") return TABS[0].id;
     return (localStorage.getItem(`admin-last-tab-${MODULE_ID}`) as typeof TABS[number]["id"]) || TABS[0].id;
   });
@@ -1192,6 +1210,7 @@ export default function FinanzasModule() {
 
   return (
     <div className="space-y-6">
+      {!FOLDED_SUBS.has(sub) && (
       <AdminModuleHeader
         eyebrow="Finanzas · Reportes"
         title="Mi Plata"
@@ -1214,6 +1233,7 @@ export default function FinanzasModule() {
           Reporte Bancario
         </button>
       </AdminModuleHeader>
+      )}
 
       <AdminTabBar
         tabs={TABS}
@@ -1305,6 +1325,10 @@ export default function FinanzasModule() {
           <TreasuryDashboard />
         </Suspense>
       )}
+      {sub === "fiados" && <FiadosModule />}
+      {sub === "prestamos" && <PrestamosModule />}
+      {sub === "adelantos" && <AdelantosModule />}
+      {sub === "activos" && <ActivosModule />}
       </AdminTabBar>
     </div>
   );
