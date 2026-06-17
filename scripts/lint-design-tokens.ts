@@ -279,6 +279,11 @@ const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
     file: /admin[\\/]unified[\\/](LivesAdminModule|SocioMembersAdminModule)\.tsx$|admin[\\/]unified[\\/](gift-cards-admin|socio-admin)[\\/]|superadmin[\\/](SidebarConfigPanel|vendor-applications[\\/]ApplicationDetailsDrawer)\.tsx$|superadmin[\\/]_shared[\\/]ImageUploader\.tsx$|superadmin[\\/]dashboard[\\/]TenantsGrowthRanking\.tsx$/,
     allowedRules: ["no-decorative-gradient", "no-legacy-gradient-prefix"],
   },
+  // POSPaymentModal usa el morado de marca de Yape (text-purple-*) como
+  // identificador del metodo de pago — NO es decorativo, es la convencion de
+  // marca que el cajero reconoce de un vistazo (Yape=morado, Plin=cyan). Mismo
+  // criterio que AdminSidebar con colores categoriales.
+  { file: /admin[\\/]pos[\\/]POSPaymentModal\.tsx$/, allowedRules: ["no-decorative-text-color"] },
 ];
 
 function isAdminPath(file: string): boolean {
