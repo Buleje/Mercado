@@ -308,7 +308,12 @@ export function TenantCard({
               <ProductBadge intent="premium">Admin</ProductBadge>
             )}
             {!health.ok && (
-              <ProductBadge intent="offer">
+              /* Brandon 2026-06-17: "problema" es alerta (rojo), no "oferta" (ámbar).
+                 intent="new" (neutro) + override rojo de la familia --data-error. */
+              <ProductBadge
+                intent="new"
+                className="!bg-[var(--data-error-50,#fef2f2)] !text-[var(--data-error-600,#dc2626)] !border-transparent dark:!bg-red-950/30 dark:!text-red-400"
+              >
                 {health.issues.length} problema{health.issues.length !== 1 ? "s" : ""}
               </ProductBadge>
             )}
