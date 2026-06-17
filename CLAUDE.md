@@ -1,6 +1,6 @@
 # CLAUDE.md — Buleje (Bodega San Martín)
 
-> **Última verificación:** 2026-06-12 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
+> **Última verificación:** 2026-06-17 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
 
 **Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa.
 
@@ -58,46 +58,12 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 
 ---
 
-## 3. Mapa de módulos
+## 3. Mapa de módulos (resumen — el detalle se infiere del código)
 
-### `app/` (38 segmentos)
-| Segmento | Propósito |
-|---|---|
-| `(store)/` | Tienda pública: home, `tienda`, `cuenta`, `mis-pedidos`, `buscar` |
-| `(marketing)/`, `(onboarding)/` | Landing y onboarding tenants |
-| `admin/` | Panel ERP (133 tabs en `page.tsx` con `next/dynamic`) |
-| `marketplace/` | Cross-store catálogo, vendors, comisiones |
-| `superadmin/` | Plataforma SaaS (gestión tenants) |
-| `panel/`, `cms/` | Editor visual + page-builder |
-| `delivery/`, `delivery-app/` | Repartidor (+ Capacitor) |
-| `supplier/` | Portal proveedores |
-| `t/[tenantSlug]/` | Storefront por tenant (white-label) |
-| `api/` | **~924 endpoints** REST |
-| `checkout/`, `pedido/`, `tracking/`, `venta/` | Flujos de compra y POS |
-| `pricing/`, `vender/`, `tiendas/` | Marketing SaaS |
-| `playground/`, `design-system/`, `api-docs/` | Internos / dev |
-
-### `lib/` (~222 archivos)
-- **`lib/db/`** (≈203 clases `*.db.ts`) — única vía de acceso a Prisma. Cada clase: `tenantId` 1er param, cache + audit + invalidate.
-- **`lib/auth/`** — sesiones, RBAC `role-permissions.ts` (26 recursos × 6 roles).
-- **`lib/middleware/`, `proxy.ts`** — auth, CSP, rate limit, multi-tenant guard.
-- **`lib/ai/`, `lib/agents/`, `claude-router.ts`** — features IA (chef, asistente, recomendaciones).
-- **`lib/cache.ts`, `lib/circuit-breaker.ts`, `lib/cron/`, `lib/queue/`** — infra.
-- **`lib/billing/`, `lib/commissions.ts`, `lib/credit/`, `lib/coupons/`** — dinero.
-- **`lib/audit/`, `lib/compliance/`, `lib/cms/`, `lib/analytics/`** — gestión.
-- **`lib/env.ts`** — valida secrets en startup.
-
-### `components/` (30 subdirs)
-`admin/` (133 tabs) · `store/` · `checkout/` · `marketplace/` · `customer/` · `delivery/` · `supplier/` · `superadmin/` · `socio-buleje/` · `loyalty/` · `landing/` · `marketing/` · `cms` (`blocks/`) · `ui/` + `ui-system/` (primitivos del DS) · `auth/` · `notifications/` · `onboarding/` · `accessibility/` · `tracking/` · `seo/` · `charts/` · `providers/`.
-
-### `contexts/` (19)
-`cart` · `customer` · `theme` · `settings` · `tenant` · `favorites` · `wishlist` · `compare` · `currency` · `locale` · `vocabulary` · `subscription` · `socio-buleje` · `promotions` · `quick-add` · `reviews` · `module-tabs` · `dashboard-data` · `assistant` · `toast`.
-
-### `prisma/schema.prisma` — **189 modelos**
-Tenant · Product (+ Image/Variant/Modifier) · Customer · Order/OrderItem · Sale/SaleItem · Supplier · PurchaseOrder · Promotion · Coupon · CashRegister · Batch · Review · AdminUser/SuperadminUser · Notification · WhatsAppConversation · StripeWebhookQueue · CMS (Page/PageBlock/Media) · Treasury · Fiado · Turno · Receta · Cotizacion · GuiaRemision · NotaCredito · etc.
-
-### `docs/adr/` (ADRs vivos)
-057 hub-spoke · 058 whatsapp-ai-first · 059 marketplace-retention · 069–075 design-system governance · 076 bodega-al-mes · 077 gift-cards · 078 socio-buleje · 079 vendor-approval.
+- **`app/`** (38 segmentos): `(store)` tienda pública · `admin/` (133 tabs, `next/dynamic`) · `marketplace/` · `superadmin/` · `t/[tenantSlug]/` white-label · `api/` **~924 endpoints** · `checkout/`,`pedido/`,`tracking/`,`venta/` · `delivery/`,`supplier/`,`cms/`.
+- **`lib/db/`** ≈203 clases `*.db.ts` = **única vía a Prisma** (cache+audit+`tenantId`). `lib/auth/` RBAC (26 recursos × 6 roles) · `proxy.ts`+`lib/middleware/` = auth/CSP/rate-limit/multi-tenant guard · `claude-router.ts` IA · `lib/{billing,commissions,credit,coupons}` dinero · `lib/env.ts` valida secrets.
+- **`prisma/schema.prisma`** = **189 modelos** (Tenant/Product/Order/Sale/Supplier/Promotion/CashRegister/Fiado/Turno/SUNAT/CMS…). `contexts/` (19) · `components/` (30 subdirs, incl. `ui-system/` primitivos DS).
+- **ADRs vivos** en `docs/adr/`: 057 hub-spoke · 058 whatsapp-ai-first · 059 marketplace · 069-075 design-system · 076-079.
 
 ---
 
@@ -228,49 +194,23 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 | `README.md` | Quick start, deployment Vercel, API endpoints |
 | `docs/adr/` | Decisiones de arquitectura vivas |
 | `SESSION_HANDOFF.md` | Estado de sesión anterior (si existe) |
-| `.claude/hooks/` | ~31 hooks (danger zone, lint, tsc, rubric-check, ADR injector, deploy gates) + utilidades CLI (hub-gate, agent-evolve) |
-| `.claude/rules/` | Reglas path-scoped 2026 — cargan SOLO al tocar archivos que matchean (db, ui, danger-zone, agentic-style) |
+| `.claude/hooks/` | Hooks (wiring real en `settings.json`): mem-guard, danger-zone, pre-bash-guard (Pre); lint/tsc/rubric/typography async (Post); deploy-gates solo en Skill(deploy) |
+| `.claude/rules/` | Reglas path-scoped 2026 — cargan SOLO al tocar archivos que matchean (db, ui, danger-zone, agentic-style, code-quality) |
 | `.claude/workflows/` | Workflows guardados — `audit-verificado` (auditoría + refutación adversarial) |
 | `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — usa `outcome-evaluator` |
-| `.claude/skills/` | 62 skills (skill v2: frontmatter `allowed-tools`+`model`+`argument-hint`) |
+| `.claude/skills/` | Skills v2 (`allowed-tools`+`model`+`argument-hint`); el harness los surface por descripción — niche/dead en `_archive/` |
 
 ---
 
-## 11. Power assets 2026 (cheat-sheet de skills/rubrics/hooks claves)
+## 11. Power assets (auto-descubribles — no re-listar aquí, se desincronizan)
 
-### Skills agentic 2026 (Anthropic Code with Claude 2026)
+> Regla: skills, hooks y rubrics se descubren solos (harness + `settings.json` + `.claude/rubrics/`). Listarlos en este archivo los deja stale. Sólo se documentan aquí los **triggers no obvios**:
 
-| Skill | Trigger | Resultado |
-|---|---|---|
-| `outcome-evaluator` | "evaluá esto", "self-grade", refactor crítico | Generator+Evaluator loop con rubric verificable, max 3 iters |
-| `dreaming` | "consolidá memoria", fin de sprint, MEMORY.md >50 entries | Dedupe + síntesis de patrones en dry-run, apply explícito |
-| `agentic-loops` | tarea >1h o ≥3 capas | 5 patrones canónicos (PGE / parallel worktree / Hub & Spoke / Outcomes / BG+SendMessage) |
-| `turbo-parallel` | "rápido", "turbo", 3+ sub-tareas | Dispatch N agentes en 1 mensaje, run_in_background+isolation |
-| `ultra-impact` | "mega refactor", ≥5 archivos, ≥2 capas | Pipeline systematic con baseline pre/post, atomic commits |
-
-### Rubrics bash-verificables (`.claude/rubrics/`)
-
-| Aplica a | Rubric | Criterios critical |
-|---|---|---|
-| `app/api/**/route.ts` | `api-endpoint.json` | tenantId · safeParse · no prisma directo · no force-dynamic · no SQLi |
-| `lib/db/**/*.db.ts` | `db-class.json` | tenantId 1er param · sin fallback "main" · no raw interpolation · sufijo DB |
-| `prisma/migrations/**/migration.sql` | `prisma-migration.json` | no DROP sin backup · NOT NULL con default · tenantId en tablas nuevas |
-| `components/**/*.tsx` | `ui-component.json` | no hex hardcoded · "use client" primera línea · alt en imágenes |
-
-Hook `post-edit-rubric-check.mjs` ya las corre auto en cada Edit/Write/MultiEdit; alertas no-bloqueantes a stderr.
-
-### Hooks claves (28 activos)
-
-| Hook | Cuándo dispara | Función |
-|---|---|---|
-| `pre-tool-mem-guard` | PreToolUse | Aborta si RAM crítica (evita SIGKILL WSL) |
-| `pre-bash-guard` | PreToolUse | Bloquea `rm -rf`, `--force` peligrosos |
-| `danger-zone` | PreToolUse | Confirma edits en archivos críticos (schema, auth) |
-| `post-edit-rubric-check` | PostToolUse | Auto-rubric por capa, warning si critical falla |
-| `post-tool-tsc` | PostToolUse | tsc focused tras edit (debounce 5s) |
-| `post-edit-typography-lint` | PostToolUse | Alerta texto chico, gray sin dark |
-| `pre-compact-handoff` | PreCompact | Snapshot estado antes de compactar contexto |
-| `session-start-context` | SessionStart | Imprime sesión previa, pending tasks, improvement radar |
-| `session-start-autonomy` | SessionStart | Dev server boot, QA admin, warmup BG |
-| `stop-skill-suggester` | Stop | Detecta patrón repetido → propone skill nuevo |
+| Asset | Cuándo importa |
+|---|---|
+| `outcome-evaluator` | "evaluá/self-grade" → Generator+Evaluator con rubric, max 3 iters |
+| `dreaming` | "consolidá memoria" / MEMORY.md >50 → dedupe en **dry-run**, apply explícito (nunca borra a ciegas) |
+| `agentic-loops` · `turbo-parallel` · `ultra-impact` | tareas >1h, ≥3 capas, o 3+ sub-tareas paralelas |
+| Rubrics (`api-endpoint`/`db-class`/`prisma-migration`/`ui-component`) | corren auto vía `post-edit-rubric-check.mjs` (warning no-bloqueante) |
+| Hooks Pre (mem-guard/danger-zone/pre-bash-guard) | bloquean RAM crítica / archivos críticos / `rm -rf`. Post (lint/tsc/rubric/typography) = async no-bloqueante. Deploy-gates SÓLO en `Skill(deploy)` |
 

@@ -233,15 +233,6 @@
     ]
   },
   "skillOverrides": {
-    "chaos": "user-invocable-only",
-    "dr-drill": "user-invocable-only",
-    "db-restore": "user-invocable-only",
-    "gdpr-export": "user-invocable-only",
-    "audit-search": "user-invocable-only",
-    "screen-stream": "user-invocable-only",
-    "voice": "user-invocable-only",
-    "tmux-bg": "user-invocable-only",
-    "compliance-status": "user-invocable-only",
     "agent-report": "user-invocable-only"
   },
   "permissions": {
