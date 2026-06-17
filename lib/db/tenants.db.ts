@@ -34,4 +34,14 @@ export const TenantsDB = {
       select: { id: true, slug: true, name: true },
     });
   },
+
+  /** Datos básicos de un tenant por id (nombre/slug) — para páginas públicas. */
+  async getBasicById(
+    id: string,
+  ): Promise<{ id: string; slug: string; name: string } | null> {
+    return prisma.tenant.findUnique({
+      where: { id },
+      select: { id: true, slug: true, name: true },
+    });
+  },
 };

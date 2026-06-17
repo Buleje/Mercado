@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Loader2, AlertTriangle, CreditCard,
   Clock, CheckCircle2, XCircle, Ban, MessageCircle, Printer, PenTool, Download,
   ArrowUp, ArrowDown, Maximize2, Minimize2,
-  LayoutList, Columns3, MapPin, Search, RefreshCw, HandCoins } from "@buleje/design-system/icons";
+  LayoutList, Columns3, MapPin, Search, RefreshCw, HandCoins, Share2 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
@@ -1412,6 +1412,31 @@ export default function FiadosModule() {
                           <MessageCircle className="h-4 w-4" />
                           Recordar por WhatsApp
                         </a>
+                        <button
+                          onClick={async () => {
+                            // Genera el link público firmado del estado de cuenta
+                            // consolidado y lo comparte por WhatsApp (Brandon 2026-06-17).
+                            try {
+                              const res = await fetch("/api/fiados/statement-link", {
+                                method: "POST",
+                                headers: csrfHeaders({ "Content-Type": "application/json" }),
+                                body: JSON.stringify({ customerId: selected.customerId }),
+                              });
+                              if (!res.ok) { alert("No se pudo generar el link"); return; }
+                              const { url } = (await res.json()) as { url: string };
+                              const digits = selected.customerId.replace(/\D/g, "");
+                              const wa = digits.startsWith("51") ? digits : "51" + digits;
+                              const msg = `Hola ${selected.customerName || ""}, aquí puedes ver tu estado de cuenta completo: ${url}`;
+                              window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+                            } catch {
+                              alert("Error al generar el link");
+                            }
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
+                        >
+                          <Share2 className="h-4 w-4" />
+                          Compartir estado de cuenta
+                        </button>
                       </>
                     )}
                     <button
