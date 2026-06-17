@@ -95,7 +95,7 @@ export default function AutomationsPage() {
 
               <div className="mt-4 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${r.matchCount > 0 ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-600,#d97706)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${r.matchCount > 0 ? "bg-teal-500/15 text-[#0d9488]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
                     <Zap className="h-3 w-3" /> {r.matchCount} {r.matchCount === 1 ? "tienda" : "tiendas"}
                   </span>
                   {r.lastRunAt && (

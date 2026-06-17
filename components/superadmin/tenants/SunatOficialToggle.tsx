@@ -105,7 +105,7 @@ export function SunatOficialToggle({ slug }: { slug: string }) {
           <ul className="mt-2.5 space-y-1 border-t border-[var(--rule-soft)] pt-2.5">
             {state.bloqueos.map((b) => (
               <li key={b} className="flex items-start gap-1.5 text-xs text-[var(--text-tertiary)]">
-                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--data-warning-600)]" />
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0d9488]" />
                 {SUNAT_BLOCKER_LABEL[b]}
               </li>
             ))}

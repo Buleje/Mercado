@@ -109,12 +109,12 @@ function SloCard({
 }) {
   const colors = {
     ok: "border-[var(--data-success-500)] text-[var(--data-success-500)]",
-    warning: "border-[var(--data-warning-500)] text-[var(--data-warning-500)]",
+    warning: "border-[#0d9488] text-[#0d9488]",
     error: "border-[var(--data-error-500)] text-[var(--data-error-500)]",
   };
   const bg = {
     ok: "bg-[color-mix(in_oklch,var(--data-success)_6%,transparent)]",
-    warning: "bg-[color-mix(in_oklch,var(--data-warning)_6%,transparent)]",
+    warning: "bg-[color-mix(in_oklch,#0d9488_6%,transparent)]",
     error: "bg-[color-mix(in_oklch,var(--data-error)_6%,transparent)]",
   };
 
@@ -145,7 +145,7 @@ function DeployBadge({ state }: { state: string }) {
   const cfg = {
     READY: { label: "Exitoso", cls: "bg-[var(--data-success-100)] text-[var(--data-success-500)]" },
     ERROR: { label: "Fallido", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
-    BUILDING: { label: "En proceso", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
+    BUILDING: { label: "En proceso", cls: "bg-[#0d9488] text-[#0d9488]" },
     CANCELED: { label: "Cancelado", cls: "bg-gray-100 text-gray-500" },
   } as Record<string, { label: string; cls: string }>;
   const { label, cls } = cfg[state] ?? { label: state, cls: "bg-gray-100 text-gray-500" };
@@ -229,10 +229,10 @@ export default function SLODashboardPage() {
     >
       {/* Mock warning banner */}
       {usingMock && (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-[color-mix(in_oklch,var(--data-warning)_8%,transparent)] border border-[var(--data-warning-500)]">
-          <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-[color-mix(in_oklch,#0d9488_8%,transparent)] border border-[#0d9488]">
+          <AlertTriangle className="w-5 h-5 text-[#0d9488] shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-semibold text-[var(--data-warning-500)]">Datos de ejemplo activos</p>
+            <p className="font-semibold text-[#0d9488]">Datos de ejemplo activos</p>
             <p className="text-[var(--text-secondary)] mt-0.5">
               Vercel y Sentry muestran datos mock. CronHealth carga datos reales de produccion.
               Ver TODO comments en este archivo para activar APIs reales.
@@ -321,7 +321,7 @@ export default function SLODashboardPage() {
       {/* Sentry error rate */}
       <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-6">
         <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2 mb-4">
-          <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)]" />
+          <AlertTriangle className="w-5 h-5 text-[#0d9488]" />
           Sentry — Error rate ultimas 24h
           {/* TODO: Conectar con SENTRY_AUTH_TOKEN + org/project en .env — ver TODO header */}
           <span className="text-xs bg-[var(--surface-sunken)] px-2 py-0.5 rounded text-[var(--text-tertiary)] ml-auto">mock</span>
@@ -333,7 +333,7 @@ export default function SLODashboardPage() {
               <div className="flex items-center gap-2">
                 <div className="w-32 h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${e.count === 0 ? "bg-[var(--data-success-500)]" : e.count < 10 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"}`}
+                    className={`h-full rounded-full transition-all ${e.count === 0 ? "bg-[var(--data-success-500)]" : e.count < 10 ? "bg-[#0d9488]" : "bg-[var(--data-error-500)]"}`}
                     style={{ width: `${Math.min(100, (e.count / 50) * 100)}%` }}
                   />
                 </div>
@@ -403,7 +403,7 @@ export default function SLODashboardPage() {
                 <span className="text-sm font-mono text-[var(--text-secondary)] flex-1 truncate">{cron.jobName}</span>
                 <span className="text-xs tabular-nums text-[var(--text-tertiary)] w-16 text-right">{cron.lastDurationMs}ms</span>
                 <div className="w-16 text-right">
-                  <span className={`text-xs font-bold ${cron.successRate24h >= 0.9 ? "text-[var(--data-success-500)]" : cron.successRate24h >= 0.7 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]"}`}>
+                  <span className={`text-xs font-bold ${cron.successRate24h >= 0.9 ? "text-[var(--data-success-500)]" : cron.successRate24h >= 0.7 ? "text-[#0d9488]" : "text-[var(--data-error-500)]"}`}>
                     {Math.round(cron.successRate24h * 100)}%
                   </span>
                 </div>

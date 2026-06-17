@@ -437,7 +437,7 @@ function StatPill({
     tone === "primary"
       ? "border-[var(--accent)]/30 bg-[var(--accent-soft,var(--accent))]/10 text-[var(--accent)]"
       : tone === "warning"
-        ? "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+        ? "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]";
   return (
     <div className={`rounded-xl border px-3.5 py-2 min-w-[88px] ${cls}`}>
@@ -636,13 +636,13 @@ function ToggleCard({
 }) {
   const activeBorder =
     tone === "warning"
-      ? "border-amber-400/50 dark:border-amber-600/50"
+      ? "border-teal-400/50 dark:border-teal-600/50"
       : "border-[var(--accent)]/40";
   const inactiveBorder = "border-[var(--rule-soft)]";
   const iconBg =
     tone === "warning"
       ? active
-        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+        ? "bg-teal-100 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400"
         : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
       : active
         ? "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -650,7 +650,7 @@ function ToggleCard({
   const switchBg =
     tone === "warning"
       ? active
-        ? "bg-amber-500"
+        ? "bg-teal-500"
         : "bg-[var(--surface-sunken)]"
       : active
         ? "bg-[var(--accent)]"
@@ -690,7 +690,7 @@ function ToggleCard({
         </div>
         <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{desc}</p>
         {active && tone === "warning" && (
-          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-teal-700 dark:bg-teal-950/50 dark:text-teal-400">
             <AlertTriangle className="h-3 w-3" aria-hidden />
             Activo · público bloqueado
           </p>

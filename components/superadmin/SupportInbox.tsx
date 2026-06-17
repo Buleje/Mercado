@@ -133,13 +133,13 @@ const MOCK_TICKETS: SupportTicket[] = [
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: typeof Inbox }> = {
   open: { label: "Abierto", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", icon: Mail },
-  in_progress: { label: "En progreso", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]", icon: Clock },
+  in_progress: { label: "En progreso", color: "bg-[#0d9488] text-[#0d9488] dark:bg-[#0d9488]/30 dark:text-[#0d9488]", icon: Clock },
   closed: { label: "Cerrado", color: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]", icon: CheckCircle2 },
 };
 
 const PRIORITY_COLOR: Record<TicketPriority, string> = {
   low: "text-gray-400",
-  medium: "text-[var(--data-warning-500)]",
+  medium: "text-[#0d9488]",
   high: "text-[var(--data-error-500)]",
 };
 
@@ -389,7 +389,7 @@ export default function SupportInbox() {
               )}
               <button
                 onClick={() => handleStatusChange(selected.id, "in_progress")}
-                className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)] hover:opacity-80 flex items-center gap-1"
+                className="text-[length:var(--ts-2xs)] font-semibold px-3 py-1.5 rounded-lg bg-[#0d9488] text-[#0d9488] dark:bg-[#0d9488]/30 dark:text-[#0d9488] hover:opacity-80 flex items-center gap-1"
               >
                 <ArrowUpRight className="w-3 h-3" /> Escalar
               </button>

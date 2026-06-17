@@ -48,13 +48,13 @@ type HealthResponse = {
 
 const OVERALL_STATUS = {
   healthy:  { icon: CheckCircle,    color: "text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)]", border: "border-[var(--data-success-500)]", label: "Sistema Saludable" },
-  warning:  { icon: AlertTriangle,  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)]",   border: "border-[var(--data-warning-500)]",   label: "Advertencias Detectadas" },
+  warning:  { icon: AlertTriangle,  color: "text-[#0d9488]",   bg: "bg-[#0d9488]",   border: "border-[#0d9488]",   label: "Advertencias Detectadas" },
   critical: { icon: XCircle,        color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)]",     border: "border-[var(--data-error-500)]",     label: "Problemas Críticos" },
 };
 
 const TENANT_STATUS = {
   healthy:  { dot: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)]" },
-  warning:  { dot: "bg-[var(--data-warning-500)]",   text: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)]" },
+  warning:  { dot: "bg-[#0d9488]",   text: "text-[#0d9488]",   bg: "bg-[#0d9488]" },
   critical: { dot: "bg-[var(--data-error-500)]",     text: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)]" },
 };
 
@@ -250,7 +250,7 @@ const STAT_COLORS: Record<string, string> = {
   teal: "text-[var(--accent-dark)] bg-teal-50",
   blue: "text-[var(--data-success-500)] bg-[var(--data-success-50)]",
   purple: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
-  orange: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)]",
+  orange: "text-[#0d9488] bg-[#0d9488]",
 };
 
 function StatCard({

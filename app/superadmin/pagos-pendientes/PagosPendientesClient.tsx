@@ -105,8 +105,8 @@ const METHOD_LABEL: Record<string, string> = {
 const STATUS_META = {
   pending: {
     label: "Pendiente",
-    pill: "border-amber-300 bg-amber-100/80 text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
-    dot: "bg-amber-500",
+    pill: "border-teal-300 bg-teal-100/80 text-teal-800 dark:border-teal-700 dark:bg-teal-950/50 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   approved: {
     label: "Aprobado",
@@ -122,7 +122,7 @@ const STATUS_META = {
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
+  warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300",
   bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
 };
 
@@ -881,7 +881,7 @@ function StatPill({
     accent === "success"
       ? "border-emerald-300/50 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-950/30 dark:text-emerald-300"
       : accent === "warning"
-        ? "border-amber-300/60 bg-amber-50/80 text-amber-800 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+        ? "border-teal-300/60 bg-teal-50/80 text-teal-800 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]";
   return (
     <div className={`rounded-xl border-2 px-3.5 py-2 min-w-[100px] ${cls}`}>

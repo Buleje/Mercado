@@ -57,8 +57,8 @@ const ACTION_META: Record<
   },
   login_failed: {
     label: "login_failed",
-    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50 text-teal-700 dark:border-teal-700/40 dark:bg-teal-500/15 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   login_locked: {
     label: "login_locked",
@@ -87,8 +87,8 @@ const ACTION_META: Record<
   },
   sessions_revoked_all: {
     label: "sessions_revoked_all",
-    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50 text-teal-700 dark:border-teal-700/40 dark:bg-teal-500/15 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
 };
 
@@ -671,7 +671,7 @@ function MiniStat({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
     danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];

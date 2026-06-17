@@ -76,8 +76,8 @@ const STATUS_META: Record<
   },
   degraded: {
     label: "Degradado",
-    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   error: {
     label: "Error",
@@ -347,8 +347,8 @@ export default function SystemHealthPage() {
     degraded: {
       icon: AlertTriangle,
       label: "Algunos servicios degradados",
-      bg: "border-amber-300/60 bg-amber-50/40 dark:border-amber-700/40 dark:bg-amber-950/20",
-      iconCls: "text-amber-600 dark:text-amber-400",
+      bg: "border-teal-300/60 bg-teal-50/40 dark:border-teal-700/40 dark:bg-teal-950/20",
+      iconCls: "text-teal-600 dark:text-teal-400",
     },
     error: {
       icon: XCircle,
@@ -383,7 +383,7 @@ export default function SystemHealthPage() {
                 healthScore >= 80
                   ? "text-[var(--data-success-500)]"
                   : healthScore >= 50
-                    ? "text-amber-600 dark:text-amber-400"
+                    ? "text-teal-600 dark:text-teal-400"
                     : "text-[var(--accent)] dark:text-[var(--accent)]"
               }`}
             >
@@ -552,14 +552,14 @@ export default function SystemHealthPage() {
                   m.status === "ok" ? "accent" : m.status === "warning" ? "warning" : "danger";
                 const iconBg = {
                   accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-                  warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+                  warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
                   danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
                 }[tone];
                 const valueTone =
                   m.status === "ok"
                     ? "text-[var(--text-primary)]"
                     : m.status === "warning"
-                      ? "text-amber-700 dark:text-amber-300"
+                      ? "text-teal-700 dark:text-teal-300"
                       : "text-[var(--accent)] dark:text-[var(--accent)]";
                 return (
                   <div
@@ -649,7 +649,7 @@ export default function SystemHealthPage() {
                           check.latency > 1000
                             ? "text-[var(--accent)] dark:text-[var(--accent)]"
                             : check.latency > 500
-                              ? "text-amber-600 dark:text-amber-400"
+                              ? "text-teal-600 dark:text-teal-400"
                               : "text-[var(--text-secondary)]"
                         }`}
                       >

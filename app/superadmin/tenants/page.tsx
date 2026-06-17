@@ -872,7 +872,7 @@ export default function TenantsPage() {
           <button
             type="button"
             onClick={() => void bulkExtendTrial()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-warning-600,#d97706)] hover:bg-[var(--data-warning-50,#fffbeb)] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#0d9488] hover:bg-[#0d9488] transition-colors"
           >
             <Clock className="h-3.5 w-3.5" />
             Trial +14d
@@ -948,7 +948,7 @@ function AlertsBanner({ alerts }: { alerts: AlertItemShape[] }) {
       ? "amber"
       : "sky";
   const toneCls = {
-    amber: "border-amber-500/40 bg-amber-500/8 text-amber-700 dark:text-amber-300",
+    amber: "border-teal-500/40 bg-teal-500/8 text-teal-700 dark:text-teal-300",
     rose: "border-rose-500/40 bg-rose-500/8 text-rose-700 dark:text-rose-300",
     sky: "border-sky-500/40 bg-sky-500/8 text-sky-700 dark:text-sky-300",
   }[worstTone];

@@ -552,7 +552,7 @@ function PlatformConsolePreview() {
             <div className="flex items-center gap-2">
               <span className="flex gap-1.5">
                 <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]/60" />
-                <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]/60" />
+                <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[#0d9488]/60" />
                 <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]/60" />
               </span>
               <p className="ml-2 text-xs font-bold text-[var(--text-tertiary)] tabular-nums">

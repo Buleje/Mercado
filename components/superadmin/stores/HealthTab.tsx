@@ -85,9 +85,9 @@ const CHECK_STATUS_META: Record<
   },
   warning: {
     label: "Con detalle",
-    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-    dot: "bg-amber-500",
-    ring: "ring-amber-500/40",
+    cls: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
+    dot: "bg-teal-500",
+    ring: "ring-teal-500/40",
   },
   missing: {
     label: "Falta",
@@ -115,9 +115,9 @@ function scoreColor(pct: number): {
   if (pct >= 50)
     return {
       stroke: "rgb(245 158 11)",
-      text: "text-amber-600 dark:text-amber-400",
+      text: "text-teal-600 dark:text-teal-400",
       label: "Atención",
-      band: "border-amber-300/60 bg-amber-50/40 dark:border-amber-700/40 dark:bg-amber-950/20",
+      band: "border-teal-300/60 bg-teal-50/40 dark:border-teal-700/40 dark:bg-teal-950/20",
       tone: "warning",
     };
   return {
@@ -283,7 +283,7 @@ export function HealthTab() {
                     title={`${stats.healthy} saludables`}
                   />
                   <div
-                    className="bg-amber-500 transition-all"
+                    className="bg-teal-500 transition-all"
                     style={{ width: `${(stats.warning / stats.total) * 100}%` }}
                     title={`${stats.warning} en atención`}
                   />
@@ -299,7 +299,7 @@ export function HealthTab() {
             )}
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <LegendItem dot="bg-[var(--data-success-500)]" label="Saludables" value={stats?.healthy ?? 0} />
-              <LegendItem dot="bg-amber-500" label="Atención" value={stats?.warning ?? 0} />
+              <LegendItem dot="bg-teal-500" label="Atención" value={stats?.warning ?? 0} />
               <LegendItem dot="bg-rose-500" label="Críticas" value={stats?.critical ?? 0} />
             </div>
           </div>
@@ -575,7 +575,7 @@ export function HealthTab() {
                           </span>
                         )}
                         {item.store && !item.store.isPublished && (
-                          <span className="rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                          <span className="rounded-full border border-teal-300/60 bg-teal-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300">
                             No publicada
                           </span>
                         )}
@@ -601,7 +601,7 @@ export function HealthTab() {
                         {item.warningCount > 0 && (
                           <>
                             <span>·</span>
-                            <span className="font-bold text-amber-600 dark:text-amber-400">
+                            <span className="font-bold text-teal-600 dark:text-teal-400">
                               {item.warningCount} con detalle
                             </span>
                           </>
@@ -867,7 +867,7 @@ function KpiCard({
 }) {
   const iconBg = {
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
     danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
   }[tone];

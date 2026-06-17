@@ -256,7 +256,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                 </span>
                 <div className="flex items-center gap-1.5">
                   {[7, 14, 30].map((d) => (
-                    <button key={d} onClick={() => handleExtendTrial(d)} disabled={trialBusy} className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 h-8 text-xs font-bold text-[var(--data-warning-600,#d97706)] hover:bg-[var(--data-warning-50,#fffbeb)] disabled:opacity-50">
+                    <button key={d} onClick={() => handleExtendTrial(d)} disabled={trialBusy} className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 h-8 text-xs font-bold text-[#0d9488] hover:bg-[#0d9488] disabled:opacity-50">
                       {trialBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Clock className="h-3 w-3" />} +{d}d
                     </button>
                   ))}
@@ -283,20 +283,20 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     <button type="button" onClick={handleCopyInfo} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold">
                       <Copy className="w-3.5 h-3.5" /> {credCopied ? "¡Copiado!" : "Copiar info"}
                     </button>
-                    <button type="button" onClick={() => void handleResetPassword()} disabled={resetLoading} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/40 border border-[var(--data-warning-500)] text-[var(--data-warning-600,#d97706)] text-xs font-semibold disabled:opacity-50">
+                    <button type="button" onClick={() => void handleResetPassword()} disabled={resetLoading} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-teal-50 dark:bg-teal-500/40 border border-teal-500 text-[#0d9488] text-xs font-semibold disabled:opacity-50">
                       {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Reset contraseña
                     </button>
                   </div>
                   {resetResult && (
-                    <div className="text-xs bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 border-2 border-[var(--data-warning-500)]/40 rounded-lg px-3 py-2.5 space-y-2">
-                      <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-600,#d97706)] flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Contraseña temporal (una sola vez)</p>
+                    <div className="text-xs bg-teal-50 dark:bg-teal-500/15 border-2 border-teal-500/40 rounded-lg px-3 py-2.5 space-y-2">
+                      <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[#0d9488] flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Contraseña temporal (una sola vez)</p>
                       {resetResult.startsWith("Error") ? (
                         <p className="font-mono text-[var(--data-error-500)]">{resetResult}</p>
                       ) : (
                         <div className="flex items-center gap-2">
                           <code className="flex-1 font-mono text-sm font-extrabold text-[var(--text-primary)] bg-[var(--surface-raised)] px-2 py-1 rounded select-all">{showPass ? resetResult : "•".repeat(Math.max(6, resetResult.length))}</code>
                           <button type="button" onClick={() => setShowPass((v) => !v)} className="text-[var(--text-tertiary)] hover:text-[var(--accent)]">{showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
-                          <button type="button" onClick={handleCopyTempPassword} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[var(--data-warning-500)] text-white text-xs font-extrabold"><Copy className="w-3 h-3" /> {tempPasswordCopied ? "Copiado" : "Copiar"}</button>
+                          <button type="button" onClick={handleCopyTempPassword} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-teal-500 text-white text-xs font-extrabold"><Copy className="w-3 h-3" /> {tempPasswordCopied ? "Copiado" : "Copiar"}</button>
                         </div>
                       )}
                       {!resetResult.startsWith("Error") && t.ownerPhone && (
@@ -336,10 +336,10 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     <div key={label}>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-[var(--text-secondary)]">{label}</span>
-                        <span className={full ? "text-[var(--data-error-500)] font-bold" : warn ? "text-[var(--data-warning-500)]" : "text-gray-400"}>{used.toLocaleString("es-PE")} / {unlimited(max)}</span>
+                        <span className={full ? "text-[var(--data-error-500)] font-bold" : warn ? "text-teal-500" : "text-gray-400"}>{used.toLocaleString("es-PE")} / {unlimited(max)}</span>
                       </div>
                       <div className="h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                        {max === -1 ? <div className="h-full bg-gray-300 dark:bg-gray-600/30 rounded-full w-full" /> : <div className={`h-full rounded-full ${full ? "bg-[var(--data-error-500)]" : warn ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent)]"}`} style={{ width: `${p}%` }} />}
+                        {max === -1 ? <div className="h-full bg-gray-300 dark:bg-gray-600/30 rounded-full w-full" /> : <div className={`h-full rounded-full ${full ? "bg-[var(--data-error-500)]" : warn ? "bg-teal-500" : "bg-[var(--accent)]"}`} style={{ width: `${p}%` }} />}
                       </div>
                     </div>
                   );
@@ -364,7 +364,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                 ))}
               </div>
               {t.cancelAtPeriodEnd && (
-                <div className="flex items-center gap-2 text-[var(--data-warning-600,#d97706)] text-xs bg-[var(--data-warning-50)] dark:bg-orange-950/30 rounded-lg px-3 py-2"><AlertTriangle className="w-4 h-4" /> Cancelará al final del periodo.</div>
+                <div className="flex items-center gap-2 text-[#0d9488] text-xs bg-teal-50 dark:bg-teal-950/30 rounded-lg px-3 py-2"><AlertTriangle className="w-4 h-4" /> Cancelará al final del periodo.</div>
               )}
               <SunatOficialToggle slug={t.slug} />
               {t.customDomain && (
@@ -384,7 +384,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-xl border border-[var(--rule-base)] p-3">
                     <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Doble factor (2FA)</p>
-                    <p className={`mt-1 text-sm font-bold ${security.twoFactorEnabled ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#d97706)]"}`}>
+                    <p className={`mt-1 text-sm font-bold ${security.twoFactorEnabled ? "text-[var(--data-success-600,#059669)]" : "text-[#0d9488]"}`}>
                       {security.twoFactorEnabled ? "Activo ✓" : "No configurado"}
                     </p>
                   </div>
@@ -397,7 +397,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                   Admin principal: <strong>{security.username ?? "—"}</strong>
                 </div>
                 <div className="space-y-2">
-                  <button onClick={() => secAction("force-change", "¿Forzar a este negocio a cambiar su contraseña en el próximo login?")} disabled={!!secBusy} className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--data-warning-500)] text-[var(--data-warning-600,#d97706)] h-10 text-sm font-bold hover:bg-[var(--data-warning-50,#fffbeb)] disabled:opacity-50">
+                  <button onClick={() => secAction("force-change", "¿Forzar a este negocio a cambiar su contraseña en el próximo login?")} disabled={!!secBusy} className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-teal-500 text-[#0d9488] h-10 text-sm font-bold hover:bg-[#0d9488] disabled:opacity-50">
                     {secBusy === "force-change" ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Forzar cambio de contraseña
                   </button>
                   <button onClick={() => secAction("reset-2fa", "¿Resetear el 2FA? El dueño deberá volver a configurarlo.")} disabled={!!secBusy || !security.twoFactorEnabled} className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] h-10 text-sm font-bold hover:bg-[var(--surface-sunken)] disabled:opacity-40">

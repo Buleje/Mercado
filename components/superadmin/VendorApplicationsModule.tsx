@@ -143,7 +143,7 @@ function initials(name: string): string {
 
 const STATUS_STYLES: Record<VendorApplication["status"], string> = {
   pendiente:
-    "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
+    "bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-200",
   aprobada:
     "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
   rechazada:
@@ -161,7 +161,7 @@ const STATUS_LABELS: Record<VendorApplication["status"], string> = {
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
+  warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300",
   bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
 };
 
@@ -182,7 +182,7 @@ function StatCard({
 }) {
   const iconBg = {
     warning:
-      "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+      "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
     success:
       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
     danger:
@@ -1294,7 +1294,7 @@ export default function VendorApplicationsModule() {
                               <button
                                 onClick={() => handleReopen(a.id)}
                                 aria-label="Reabrir"
-                                className="inline-flex h-9 px-2.5 items-center justify-center rounded-lg text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 dark:text-amber-300 dark:bg-amber-500/15 dark:hover:bg-amber-500/25"
+                                className="inline-flex h-9 px-2.5 items-center justify-center rounded-lg text-xs font-bold text-teal-700 bg-teal-100 hover:bg-teal-200 dark:text-teal-300 dark:bg-teal-500/15 dark:hover:bg-teal-500/25"
                                 title="Reabrir aplicación"
                               >
                                 Reabrir

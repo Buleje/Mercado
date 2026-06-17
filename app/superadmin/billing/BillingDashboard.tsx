@@ -226,7 +226,7 @@ function Kpi({
   const ring = {
     default: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
     success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
     danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
     info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
   }[tone];
@@ -623,7 +623,7 @@ export default function BillingDashboard() {
                 (r.trialDaysLeft ?? 99) <= 3
                   ? "text-rose-700 dark:text-rose-300"
                   : (r.trialDaysLeft ?? 99) <= 7
-                    ? "text-amber-700 dark:text-amber-300"
+                    ? "text-teal-700 dark:text-teal-300"
                     : "text-emerald-700 dark:text-emerald-300",
               )}
             >

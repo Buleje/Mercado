@@ -98,8 +98,8 @@ const STATUS_META: Record<
   partial: {
     label: "Parcial",
     icon: AlertTriangle,
-    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50 text-teal-700 dark:border-teal-700/40 dark:bg-teal-500/15 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   fail: {
     label: "No cumple",
@@ -122,7 +122,7 @@ const SEVERITY_META: Record<Severity, { label: string; cls: string }> = {
   },
   medium: {
     label: "Media",
-    cls: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    cls: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
   },
   low: {
     label: "Baja",
@@ -359,7 +359,7 @@ export function ComplianceTab() {
                 title={`${overall.pass} cumplen`}
               />
               <div
-                className="bg-amber-500 transition-all duration-500"
+                className="bg-teal-500 transition-all duration-500"
                 style={{ width: `${(overall.partial / overall.total) * 100}%` }}
                 title={`${overall.partial} parciales`}
               />
@@ -375,7 +375,7 @@ export function ComplianceTab() {
                 {overall.pass} cumplen
               </span>
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                <span className="h-2.5 w-2.5 rounded-full bg-teal-500" />
                 {overall.partial} parciales
               </span>
               <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
@@ -645,7 +645,7 @@ function NormKpi({
   const displaySub = subtitle ?? `${pass} de ${total}`;
   const iconTone =
     tone === "warning"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+      ? "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300"
       : "bg-[var(--accent)]/10 text-[var(--accent)]";
   return (
     <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">

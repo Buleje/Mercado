@@ -179,7 +179,7 @@ const PLAN_LABELS: Record<PlanId, { label: string; cls: string }> = {
   },
   enterprise: {
     label: "Business",
-    cls: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+    cls: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
   },
 };
 
@@ -525,7 +525,7 @@ export default function AnalyticsPage() {
           <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
             <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
                   <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                 </span>
                 <div>
@@ -537,7 +537,7 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
               </div>
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+              <span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
                 {riskTenants.length}
               </span>
             </header>
@@ -571,7 +571,7 @@ export default function AnalyticsPage() {
                       <div className="flex items-center gap-2 flex-wrap shrink-0">
                         <PlanBadge plan={t.plan} />
                         {t.cancelAtPeriodEnd && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-teal-300/60 bg-teal-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300">
                             <Clock className="h-2.5 w-2.5" />
                             Cancela
                           </span>
@@ -775,7 +775,7 @@ function KpiCard({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
     danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
@@ -820,7 +820,7 @@ function CommissionStat({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
   }[tone];
   return (
     <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
@@ -855,8 +855,8 @@ function CommissionStatusPill({ status }: { status: CommissionRow["status"] }) {
       : status === "pending"
         ? {
             label: "Pendiente",
-            cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-            dot: "bg-amber-500",
+            cls: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
+            dot: "bg-teal-500",
           }
         : {
             label: status,

@@ -112,8 +112,8 @@ const SEVERITY_META: Record<
   medium: {
     icon: AlertTriangle,
     label: "Media",
-    cls: "border-amber-300/60 bg-amber-50 text-amber-700 dark:border-amber-700/40 dark:bg-amber-500/15 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50 text-teal-700 dark:border-teal-700/40 dark:bg-teal-500/15 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   low: {
     icon: Info,
@@ -202,7 +202,7 @@ function HealthRing({ score }: { score: number }) {
     score >= 90
       ? { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" }
       : score >= 70
-        ? { stroke: "stroke-amber-500", text: "text-amber-600 dark:text-amber-400" }
+        ? { stroke: "stroke-teal-500", text: "text-teal-600 dark:text-teal-400" }
         : { stroke: "stroke-rose-500", text: "text-rose-600 dark:text-rose-400" };
   return (
     <div className="relative inline-flex items-center justify-center shrink-0">
@@ -747,7 +747,7 @@ export function OverviewTab() {
               <div
                 className={cn(
                   "h-full rounded-full transition-all",
-                  totpPct === 100 ? "bg-emerald-500" : totpPct >= 50 ? "bg-amber-500" : "bg-rose-500",
+                  totpPct === 100 ? "bg-emerald-500" : totpPct >= 50 ? "bg-teal-500" : "bg-rose-500",
                 )}
                 style={{ width: `${totpPct}%` }}
                 aria-hidden
@@ -758,7 +758,7 @@ export function OverviewTab() {
             </p>
             {missingTotp.length > 0 && (
               <div className="mt-3 pt-3 border-t border-[var(--rule-soft)]">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 mb-1.5">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300 mb-1.5">
                   Falta enrolar
                 </p>
                 <ul className="space-y-1">
@@ -823,16 +823,16 @@ export function OverviewTab() {
 
       {/* ─── IPs sospechosas ────────────────────────────────── */}
       {suspiciousIPs.length > 0 && (
-        <section className="rounded-2xl border-2 border-amber-300/60 bg-amber-50/30 overflow-hidden dark:border-amber-700/40 dark:bg-amber-950/20">
-          <header className="flex items-center gap-3 border-b border-amber-200/60 dark:border-amber-700/40 px-5 py-3.5">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+        <section className="rounded-2xl border-2 border-teal-300/60 bg-teal-50/30 overflow-hidden dark:border-teal-700/40 dark:bg-teal-950/20">
+          <header className="flex items-center gap-3 border-b border-teal-200/60 dark:border-teal-700/40 px-5 py-3.5">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
               <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </span>
             <div>
-              <h3 className="font-display text-base font-extrabold tracking-tight text-amber-800 dark:text-amber-200">
+              <h3 className="font-display text-base font-extrabold tracking-tight text-teal-800 dark:text-teal-200">
                 IPs sospechosas detectadas
               </h3>
-              <p className="text-xs text-amber-700/80 dark:text-amber-400/80">
+              <p className="text-xs text-teal-700/80 dark:text-teal-400/80">
                 {suspiciousIPs.length} IP{suspiciousIPs.length === 1 ? "" : "s"} con ≥3 intentos
                 fallidos en los últimos {timeRange}
               </p>
@@ -842,12 +842,12 @@ export function OverviewTab() {
             {suspiciousIPs.slice(0, 12).map((sip) => (
               <div
                 key={sip.ip}
-                className="flex items-center justify-between gap-3 rounded-xl border border-amber-300/40 bg-[var(--surface-raised)] px-3 py-2 dark:border-amber-700/30"
+                className="flex items-center justify-between gap-3 rounded-xl border border-teal-300/40 bg-[var(--surface-raised)] px-3 py-2 dark:border-teal-700/30"
               >
                 <span className="font-mono text-xs font-bold text-[var(--text-primary)] truncate">
                   {sip.ip}
                 </span>
-                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums text-teal-800 dark:bg-teal-900/50 dark:text-teal-300">
                   <TrendingUp className="h-2.5 w-2.5" />
                   {sip.failedAttempts} fails
                 </span>
@@ -882,7 +882,7 @@ function KpiCard({
 }) {
   const iconBg =
     tone === "warning"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+      ? "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300"
       : tone === "danger"
         ? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
         : tone === "success"
@@ -890,7 +890,7 @@ function KpiCard({
           : "bg-[var(--accent)]/10 text-[var(--accent)]";
   const valueTone =
     tone === "warning"
-      ? "text-amber-700 dark:text-amber-300"
+      ? "text-teal-700 dark:text-teal-300"
       : tone === "danger"
         ? "text-rose-700 dark:text-rose-300"
         : "text-[var(--text-primary)]";
@@ -930,8 +930,8 @@ function PostureCheck({
       txt: "Activo",
     },
     warning: {
-      cls: "text-amber-700 dark:text-amber-300",
-      dot: "bg-amber-500",
+      cls: "text-teal-700 dark:text-teal-300",
+      dot: "bg-teal-500",
       txt: "Revisar",
     },
     error: {

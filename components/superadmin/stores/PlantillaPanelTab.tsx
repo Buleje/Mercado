@@ -59,8 +59,8 @@ const SIDEBAR_STYLE_OPTIONS: SidebarStyleOption[] = [
     id: "ejecutivo",
     label: "Ejecutivo",
     description: "Oscuro elegante con ámbar. Compacto y profesional.",
-    swatch: "linear-gradient(135deg, #18181b 0%, #F59E0B 100%)",
-    accentHex: "#F59E0B",
+    swatch: "linear-gradient(135deg, #18181b 0%, #0d9488 100%)",
+    accentHex: "#0d9488",
   },
   {
     id: "sereno",
@@ -98,7 +98,7 @@ const PLAN_LABEL: Record<AdminPlan, string> = {
 const PLAN_BADGE: Record<AdminPlan, string> = {
   basico: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
   pro: "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]/30",
-  enterprise: "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30",
+  enterprise: "bg-[#0d9488]/10 text-[#0d9488] border border-[#0d9488]/30",
   max: "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] border border-[var(--data-success-500)]/30",
 };
 
@@ -440,7 +440,7 @@ export function PlantillaPanelTab() {
           style={{
             borderColor:
               toast.tone === "success" ? "var(--data-success)" :
-              toast.tone === "warning" ? "var(--data-warning)" :
+              toast.tone === "warning" ? "#0d9488" :
               "var(--accent)",
           }}
           role="status"
@@ -452,11 +452,11 @@ export function PlantillaPanelTab() {
               style={{
                 backgroundColor:
                   toast.tone === "success" ? "rgb(from var(--data-success) r g b / 0.12)" :
-                  toast.tone === "warning" ? "rgb(from var(--data-warning) r g b / 0.12)" :
+                  toast.tone === "warning" ? "rgb(from #0d9488 r g b / 0.12)" :
                   "rgb(from var(--accent) r g b / 0.12)",
                 color:
                   toast.tone === "success" ? "var(--data-success)" :
-                  toast.tone === "warning" ? "var(--data-warning)" :
+                  toast.tone === "warning" ? "#0d9488" :
                   "var(--accent)",
               }}
             >
@@ -540,7 +540,7 @@ export function PlantillaPanelTab() {
               Desktop: column right-aligned como antes. */}
           <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 shrink-0">
             {dirty ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700,var(--data-warning-500))] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-[var(--data-warning-500)]/30">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0d9488]/10 text-[#0d9488] px-3 py-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider border border-[#0d9488]/30">
                 <AlertCircle className="h-3 w-3" strokeWidth={2.5} />
                 Borrador sin guardar
               </span>
@@ -586,7 +586,7 @@ export function PlantillaPanelTab() {
                 <span
                   className={
                     s.accent ? "text-[var(--accent)]" :
-                    s.warning ? "text-[var(--data-warning-700)]" :
+                    s.warning ? "text-[#0d9488]" :
                     (s as { success?: boolean }).success ? "text-[var(--data-success-600,#059669)]" :
                     "text-[var(--text-primary)]"
                   }
@@ -1059,7 +1059,7 @@ export function PlantillaPanelTab() {
                 <span className="truncate">Error: {saveError}</span>
               </span>
             ) : dirty ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700,var(--data-warning-500))] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[var(--data-warning-500)]/30">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#0d9488]/10 text-[#0d9488] px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider border border-[#0d9488]/30">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                 <span className="sm:hidden">Sin guardar</span>
                 <span className="hidden sm:inline">Tenés cambios sin guardar</span>

@@ -50,9 +50,9 @@ const TIER_COLOR: Record<PlanTier, { bg: string; text: string; ring: string; ico
     icon: Rocket,
   },
   max: {
-    bg: "bg-amber-50 dark:bg-[var(--data-warning-500)]/10",
-    text: "text-[var(--data-warning-600)] dark:text-amber-400",
-    ring: "ring-[var(--data-warning-500)]/30",
+    bg: "bg-teal-50 dark:bg-teal-500/10",
+    text: "text-teal-600 dark:text-teal-400",
+    ring: "ring-teal-500/30",
     icon: Crown,
   },
 };

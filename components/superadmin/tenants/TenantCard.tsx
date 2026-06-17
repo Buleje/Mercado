@@ -142,9 +142,9 @@ export function TenantCard({
     if (daysLeft <= 7) {
       return {
         text: `${daysLeft} día${daysLeft === 1 ? "" : "s"} restantes`,
-        bg: "bg-amber-50 dark:bg-amber-950/40",
-        border: "border-amber-300 dark:border-amber-800",
-        fg: "text-[var(--data-warning-700)] dark:text-amber-300",
+        bg: "bg-teal-50 dark:bg-teal-950/40",
+        border: "border-teal-300 dark:border-teal-800",
+        fg: "text-teal-700 dark:text-teal-300",
         Icon: Clock,
       };
     }
@@ -178,7 +178,7 @@ export function TenantCard({
                 healthProp === "healthy"
                   ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30"
                   : healthProp === "warning"
-                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-500/30"
+                    ? "bg-teal-500/15 text-teal-700 dark:text-teal-300 ring-teal-500/30"
                     : "bg-rose-500/15 text-rose-700 dark:text-rose-300 ring-rose-500/30"
               }`}
               title={
@@ -191,7 +191,7 @@ export function TenantCard({
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
-                  healthProp === "healthy" ? "bg-emerald-500 animate-pulse" : healthProp === "warning" ? "bg-amber-500" : "bg-rose-500"
+                  healthProp === "healthy" ? "bg-emerald-500 animate-pulse" : healthProp === "warning" ? "bg-teal-500" : "bg-rose-500"
                 }`}
                 aria-hidden
               />
@@ -368,7 +368,7 @@ export function TenantCard({
                           usagePct >= 100
                             ? "var(--data-error)"
                             : usagePct >= 80
-                              ? "var(--data-warning)"
+                              ? "#0d9488"
                               : "var(--accent)",
                       }}
                     />
@@ -407,7 +407,7 @@ export function TenantCard({
                   totalUsagePct >= 100
                     ? "text-[var(--data-error-500)]"
                     : totalUsagePct >= 80
-                      ? "text-[var(--data-warning-500)]"
+                      ? "text-teal-500"
                       : "text-[var(--text-secondary)]"
                 }
               >
@@ -423,7 +423,7 @@ export function TenantCard({
                     totalUsagePct >= 100
                       ? "var(--data-error)"
                       : totalUsagePct >= 80
-                        ? "var(--data-warning)"
+                        ? "#0d9488"
                         : "var(--accent)",
                 }}
               />

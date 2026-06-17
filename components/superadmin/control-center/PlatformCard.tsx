@@ -51,15 +51,15 @@ const STATUS_META: Record<PlatformHealthStatus, { label: string; dot: string; bg
   },
   degraded: {
     label: "Degradado",
-    dot: "bg-[var(--data-warning-500)]",
-    bg: "bg-[var(--data-warning-500)]/10",
-    text: "text-[var(--data-warning-500)]",
+    dot: "bg-teal-500",
+    bg: "bg-teal-500/10",
+    text: "text-teal-500",
   },
   maintenance: {
     label: "Mantenimiento",
-    dot: "bg-[var(--data-warning-500)]",
-    bg: "bg-[var(--data-warning-500)]/10",
-    text: "text-[var(--data-warning-500)]",
+    dot: "bg-teal-500",
+    bg: "bg-teal-500/10",
+    text: "text-teal-500",
   },
   unknown: {
     label: "Sin datos",
@@ -72,7 +72,7 @@ const STATUS_META: Record<PlatformHealthStatus, { label: string; dot: string; bg
 const TONE_GRADIENT: Record<NonNullable<PlatformCardProps["tone"]>, string> = {
   teal:    "from-teal-500/15 to-cyan-500/5 text-teal-600 dark:text-teal-300 ring-teal-500/30",
   violet:  "from-violet-500/15 to-purple-500/5 text-violet-600 dark:text-violet-300 ring-violet-500/30",
-  amber:   "from-amber-500/15 to-orange-500/5 text-amber-600 dark:text-amber-300 ring-amber-500/30",
+  amber:   "from-teal-500/15 to-teal-500/5 text-teal-600 dark:text-teal-300 ring-teal-500/30",
   sky:     "from-sky-500/15 to-blue-500/5 text-sky-600 dark:text-sky-300 ring-sky-500/30",
   rose:    "from-rose-500/15 to-pink-500/5 text-rose-600 dark:text-rose-300 ring-rose-500/30",
   emerald: "from-emerald-500/15 to-green-500/5 text-emerald-600 dark:text-emerald-300 ring-emerald-500/30",

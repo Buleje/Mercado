@@ -35,8 +35,8 @@ const STATUS_CONFIG: Record<
   },
   warning: {
     label: "Requiere atención",
-    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   critical: {
     label: "Crítico",

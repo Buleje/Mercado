@@ -21,7 +21,7 @@ const PLAN_LABEL: Record<string, string> = { free: "Free", starter: "Starter", p
 
 function barColor(pct: number, near: boolean): string {
   if (near || pct >= 90) return "var(--data-error-500)";
-  if (pct >= 70) return "var(--data-warning-500)";
+  if (pct >= 70) return "#0d9488";
   return "var(--accent)";
 }
 
@@ -59,9 +59,9 @@ export default function TenantsUsagePage() {
     >
       {/* Resumen upsell */}
       {upsell.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50,#fffbeb)] dark:bg-[var(--data-warning-500)]/10 px-4 py-3">
-          <TrendingUp className="h-5 w-5 text-[var(--data-warning-600,#d97706)] shrink-0" />
-          <p className="text-sm font-bold text-[var(--data-warning-700,#b45309)] dark:text-[var(--data-warning-300,#fcd34d)]">
+        <div className="mb-4 flex flex-wrap items-center gap-3 border-2 border-teal-500 bg-[#0d9488] dark:bg-teal-500/10 px-4 py-3">
+          <TrendingUp className="h-5 w-5 text-[#0d9488] shrink-0" />
+          <p className="text-sm font-bold text-[#0d9488] dark:text-[#0d9488]">
             {upsell.length} {upsell.length === 1 ? "tienda cerca" : "tiendas cerca"} del límite de su plan — candidatas a upsell
           </p>
         </div>

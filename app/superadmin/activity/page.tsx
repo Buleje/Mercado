@@ -49,7 +49,7 @@ const ACTION_TONES: Record<string, { bg: string; text: string; ring: string; lab
   delete:           { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-rose-700 dark:text-rose-300",         ring: "ring-rose-500/30",     label: "Eliminación" },
   login_success:    { bg: "bg-emerald-500/12 dark:bg-emerald-500/20",   text: "text-emerald-700 dark:text-emerald-300",   ring: "ring-emerald-500/30",  label: "Login OK" },
   login_failed:     { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-rose-700 dark:text-rose-300",         ring: "ring-rose-500/30",     label: "Login falló" },
-  impersonate:      { bg: "bg-amber-500/15 dark:bg-amber-500/25",       text: "text-amber-700 dark:text-amber-300",       ring: "ring-amber-500/40",    label: "Suplantación" },
+  impersonate:      { bg: "bg-teal-500/15 dark:bg-teal-500/25",       text: "text-teal-700 dark:text-teal-300",       ring: "ring-teal-500/40",    label: "Suplantación" },
   plan_change:      { bg: "bg-violet-500/12 dark:bg-violet-500/20",     text: "text-violet-700 dark:text-violet-300",     ring: "ring-violet-500/30",   label: "Cambio plan" },
   suspend:          { bg: "bg-rose-500/12 dark:bg-rose-500/20",         text: "text-rose-700 dark:text-rose-300",         ring: "ring-rose-500/30",     label: "Suspensión" },
   activate:         { bg: "bg-emerald-500/12 dark:bg-emerald-500/20",   text: "text-emerald-700 dark:text-emerald-300",   ring: "ring-emerald-500/30",  label: "Activación" },
@@ -78,7 +78,7 @@ function getUserMeta(user: string): { icon: typeof Bot; tone: string; bg: string
     return { icon: ShieldCheck, tone: "teal", bg: "bg-teal-500/15", text: "text-teal-600 dark:text-teal-300" };
   if (u.includes("admin"))
     return { icon: UserCog, tone: "sky", bg: "bg-sky-500/15", text: "text-sky-600 dark:text-sky-300" };
-  return { icon: User, tone: "amber", bg: "bg-amber-500/15", text: "text-amber-600 dark:text-amber-300" };
+  return { icon: User, tone: "amber", bg: "bg-teal-500/15", text: "text-teal-600 dark:text-teal-300" };
 }
 
 // ── Tiempo relativo ─────────────────────────────────────────────────────

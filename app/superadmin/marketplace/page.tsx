@@ -216,7 +216,7 @@ export default async function SuperadminMarketplaceHubPage() {
             {m.pendingSuppliers > 0 && (
               <Link
                 href="/superadmin/marketplace/suppliers"
-                className="group inline-flex items-center gap-2.5 rounded-2xl border border-[var(--data-warning-500,#f59e0b)]/30 bg-[var(--data-warning-500,#f59e0b)]/10 px-4 py-2.5 text-sm font-bold text-[var(--data-warning-700,#b45309)] transition hover:border-[var(--data-warning-500,#f59e0b)]/50 hover:bg-[var(--data-warning-500,#f59e0b)]/15 dark:text-[var(--data-warning-300,#fbbf24)]"
+                className="group inline-flex items-center gap-2.5 rounded-2xl border border-[#0d9488]/30 bg-[#0d9488]/10 px-4 py-2.5 text-sm font-bold text-[#0d9488] transition hover:border-[#0d9488]/50 hover:bg-[#0d9488]/15 dark:text-[#0d9488]"
               >
                 <AlertCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
                 <span>
@@ -319,7 +319,7 @@ function KpiTile({
       : tone === "success"
         ? "border-[var(--data-success-500)]/25 bg-[var(--data-success-500)]/[0.05]"
         : tone === "warn"
-          ? "border-[var(--data-warning-500,#f59e0b)]/30 bg-[var(--data-warning-500,#f59e0b)]/[0.06]"
+          ? "border-[#0d9488]/30 bg-[#0d9488]/[0.06]"
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)]";
 
   const valueClass =
@@ -328,7 +328,7 @@ function KpiTile({
       : tone === "success"
         ? "text-[var(--data-success-500)]"
         : tone === "warn"
-          ? "text-[var(--data-warning-700,#b45309)] dark:text-[var(--data-warning-300,#fbbf24)]"
+          ? "text-[#0d9488] dark:text-[#0d9488]"
           : "text-[var(--text-primary)]";
 
   return (
@@ -396,7 +396,7 @@ function LiveCard({
   const hasPulse = metric?.tone === "warn";
   const metricColor =
     metric?.tone === "warn"
-      ? "text-[var(--data-warning-700,#b45309)] dark:text-[var(--data-warning-300,#fbbf24)]"
+      ? "text-[#0d9488] dark:text-[#0d9488]"
       : metric?.tone === "accent"
         ? "text-[var(--accent)]"
         : "text-[var(--text-primary)]";
@@ -422,8 +422,8 @@ function LiveCard({
           <div className="relative text-right">
             {hasPulse && (
               <span aria-hidden className="absolute -right-1 -top-1 inline-flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-warning-500,#f59e0b)]/50" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500,#f59e0b)]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0d9488]/50" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#0d9488]" />
               </span>
             )}
             <p className={`font-display text-2xl font-extrabold tabular-nums leading-none ${metricColor}`}>

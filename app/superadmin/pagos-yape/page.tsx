@@ -67,11 +67,11 @@ export default async function PagosYapePage() {
               </div>
             </div>
             {initialCount > 0 && (
-              <div className="rounded-xl border-2 border-amber-300/60 bg-amber-50/80 px-3.5 py-2 min-w-[100px] dark:border-amber-700/40 dark:bg-amber-950/30">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 leading-none">
+              <div className="rounded-xl border-2 border-teal-300/60 bg-teal-50/80 px-3.5 py-2 min-w-[100px] dark:border-teal-700/40 dark:bg-teal-950/30">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300 leading-none">
                   Pendientes
                 </p>
-                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-amber-700 dark:text-amber-300">
+                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-teal-700 dark:text-teal-300">
                   {initialCount}
                 </p>
               </div>

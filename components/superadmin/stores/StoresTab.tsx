@@ -80,7 +80,7 @@ function buildColumns(
     label: "Rating",
     sortable: true,
     render: (row) => (
-      <span className="inline-flex items-center gap-1 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
+      <span className="inline-flex items-center gap-1 text-sm text-[#0d9488] dark:text-[#0d9488] font-semibold">
         <Star className="w-3.5 h-3.5 fill-current" />
         {Number(row.rating).toFixed(1)}
         <span className="text-[var(--text-tertiary)] font-normal text-xs">({row.reviewCount})</span>
@@ -365,7 +365,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                 {/* Mini-stats 3 cols: rating, productos, comisión */}
                 <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-[var(--rule-soft)]">
                   <div>
-                    <div className="inline-flex items-center gap-1 text-sm font-bold text-[var(--data-warning-500)]">
+                    <div className="inline-flex items-center gap-1 text-sm font-bold text-[#0d9488]">
                       <Star className="w-3 h-3 fill-current" />
                       {Number(row.rating).toFixed(1)}
                     </div>

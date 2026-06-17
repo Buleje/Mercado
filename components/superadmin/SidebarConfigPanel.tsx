@@ -124,7 +124,7 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string }> = [
   { id: "emerald", label: "Verde",   hex: "#10B981" },
   { id: "sky",     label: "Cielo",   hex: "#0EA5E9" },
   { id: "violet",  label: "Violeta", hex: "#8B5CF6" },
-  { id: "amber",   label: "Ámbar",   hex: "#F59E0B" },
+  { id: "amber",   label: "Ámbar",   hex: "#0d9488" },
   { id: "rose",    label: "Rosa",    hex: "#F43F5E" },
 ];
 

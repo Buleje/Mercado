@@ -182,7 +182,7 @@ function exportCSV(rows: PaymentApproval[]) {
 
 const DELTA_CLASS: Record<string, string> = {
   exact: "text-emerald-700 dark:text-emerald-300 font-extrabold",
-  near: "text-amber-700 dark:text-amber-300 font-extrabold",
+  near: "text-teal-700 dark:text-teal-300 font-extrabold",
   far: "text-rose-700 dark:text-rose-300 font-extrabold",
   unknown: "text-[var(--text-tertiary)]",
 };
@@ -196,7 +196,7 @@ const DELTA_ICON: Record<string, React.ReactNode> = {
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
+  warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300",
   bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
 };
 
@@ -877,7 +877,7 @@ export default function PagosYapeClient(_: Props) {
                     </div>
 
                     {a.status === "review_required" && (
-                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
+                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-extrabold text-teal-800 dark:bg-teal-500/15 dark:text-teal-200">
                         <AlertTriangle className="w-3 h-3" />
                         Revisión requerida
                       </div>
@@ -887,7 +887,7 @@ export default function PagosYapeClient(_: Props) {
                       const conf = getConfidence(a.visionResponse);
                       if (conf != null && conf < 0.7) {
                         return (
-                          <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                          <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-teal-700 dark:bg-teal-500/10 dark:text-teal-300">
                             <AlertTriangle className="w-3 h-3" />
                             IA {Math.round(conf * 100)}%
                           </div>
@@ -1291,7 +1291,7 @@ function DetailPanel({
                       conf >= 0.85
                         ? "text-emerald-700 dark:text-emerald-300"
                         : conf >= 0.7
-                          ? "text-amber-700 dark:text-amber-300"
+                          ? "text-teal-700 dark:text-teal-300"
                           : "text-rose-700 dark:text-rose-300",
                     )}
                     data-no-translate
@@ -1315,7 +1315,7 @@ function DetailPanel({
             </span>
           )}
           {approval.rejectionReason && (
-            <span className="text-amber-700 dark:text-amber-300">
+            <span className="text-teal-700 dark:text-teal-300">
               Razón IA: {approval.rejectionReason}
             </span>
           )}

@@ -74,7 +74,7 @@ export default function TenantsOnboardingPage() {
           </div>
           <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Estancadas</p>
-            <p className="mt-1 font-display text-2xl font-extrabold tabular-nums text-[var(--data-warning-600,#d97706)]">{summary.stuck}</p>
+            <p className="mt-1 font-display text-2xl font-extrabold tabular-nums text-[#0d9488]">{summary.stuck}</p>
           </div>
         </div>
       )}
@@ -84,7 +84,7 @@ export default function TenantsOnboardingPage() {
       ) : (
         <div className="border border-[var(--rule-base)] divide-y divide-[var(--rule-base)]">
           {rows.map((r) => (
-            <div key={r.slug} className={`flex flex-wrap items-center gap-4 px-3 py-3 ${r.complete ? "" : "bg-[var(--data-warning-500)]/5"}`}>
+            <div key={r.slug} className={`flex flex-wrap items-center gap-4 px-3 py-3 ${r.complete ? "" : "bg-teal-500/5"}`}>
               <div className="min-w-[160px] flex-1">
                 <p className="text-sm font-bold text-[var(--text-primary)] truncate">{r.name}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">

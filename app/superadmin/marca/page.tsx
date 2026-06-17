@@ -300,7 +300,7 @@ export default function SuperadminMarcaPage() {
                   Secciones
                 </p>
                 {dirtySections.size > 0 && (
-                  <span className="text-[length:var(--ts-2xs)] font-extrabold text-amber-700 dark:text-amber-300">
+                  <span className="text-[length:var(--ts-2xs)] font-extrabold text-teal-700 dark:text-teal-300">
                     {dirtySections.size} editada{dirtySections.size === 1 ? "" : "s"}
                   </span>
                 )}
@@ -357,7 +357,7 @@ export default function SuperadminMarcaPage() {
                             {s.label}
                             {isDirty && (
                               <span
-                                className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"
+                                className="h-1.5 w-1.5 rounded-full bg-teal-500 shrink-0"
                                 aria-label="modificada sin guardar"
                                 title="Modificada sin guardar"
                               />
@@ -406,11 +406,11 @@ export default function SuperadminMarcaPage() {
             <div className="sticky bottom-4 z-10 mt-4">
               <div className={cn(
                 "flex items-center justify-between gap-3 rounded-2xl border bg-[var(--surface-raised)] px-5 py-3.5 shadow-lg",
-                dirty ? "border-[var(--data-warning-500)]/40" : "border-[var(--rule-base)]",
+                dirty ? "border-teal-500/40" : "border-[var(--rule-base)]",
               )}>
                 <div className="flex items-center gap-2 min-w-0">
                   {dirty ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-500)]">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-500">
                       <AlertCircle className="h-4 w-4" /> Cambios sin guardar
                     </span>
                   ) : saved ? (
@@ -510,14 +510,14 @@ function StatPill({ label, value, accent }: { label: string; value: string | num
   return (
     <div className={cn(
       "rounded-xl border px-3.5 py-2 min-w-[88px]",
-      isWarn ? "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10" : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
+      isWarn ? "border-teal-500/40 bg-teal-500/10" : "border-[var(--rule-base)] bg-[var(--surface-canvas)]",
     )}>
       <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
         {label}
       </p>
       <p className={cn(
         "font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none",
-        isWarn ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
+        isWarn ? "text-teal-500" : "text-[var(--text-primary)]",
       )}>
         {value}
       </p>
@@ -779,15 +779,15 @@ function EventSection({ brand, onPatch }: { brand: PlatformBrand; onPatch: (p: P
       title="Modo evento"
       description="Override temporal de logo y colores para campañas (Black Friday, Navidad, aniversario). Cuando esté activo y dentro de la ventana de fechas, todas las páginas usarán estos overrides en lugar de la marca normal."
     >
-      <div className="rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/5 p-4 mb-5 flex items-center gap-3">
+      <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 mb-5 flex items-center gap-3">
         <button
           onClick={() => onPatch({ active: !e.active })}
           aria-pressed={e.active}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition-all",
             e.active
-              ? "bg-[var(--data-warning-500)] text-white shadow-sm"
-              : "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-warning-500)]",
+              ? "bg-teal-500 text-white shadow-sm"
+              : "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-teal-500",
           )}
         >
           {e.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}

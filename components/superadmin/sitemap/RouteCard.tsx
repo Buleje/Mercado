@@ -31,7 +31,7 @@ const STATUS_META: Record<SiteRoute["status"], { label: string; className: strin
   },
   wip: {
     label: "WIP",
-    className: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]",
+    className: "bg-[#0d9488] text-[#0d9488]",
   },
   mock: {
     label: "Mock",

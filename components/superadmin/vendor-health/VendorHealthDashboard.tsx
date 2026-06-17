@@ -88,9 +88,9 @@ const KIND_LABEL: Record<SummaryAlert["kind"], string> = {
 };
 
 const KIND_DOT: Record<SummaryAlert["kind"], string> = {
-  "ruc-changed": "bg-amber-500",
+  "ruc-changed": "bg-teal-500",
   "ruc-not-found": "bg-rose-500",
-  "dni-not-found": "bg-orange-500",
+  "dni-not-found": "bg-teal-500",
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ function HealthRing({ score }: { score: number }) {
     score >= 95
       ? { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" }
       : score >= 80
-        ? { stroke: "stroke-amber-500", text: "text-amber-600 dark:text-amber-400" }
+        ? { stroke: "stroke-teal-500", text: "text-teal-600 dark:text-teal-400" }
         : { stroke: "stroke-rose-500", text: "text-rose-600 dark:text-rose-400" };
   return (
     <div className="relative inline-flex items-center justify-center shrink-0">
@@ -195,7 +195,7 @@ function Kpi({
   const tone = {
     neutral: "text-[var(--text-primary)]",
     success: "text-emerald-600 dark:text-emerald-400",
-    warning: "text-amber-600 dark:text-amber-400",
+    warning: "text-teal-600 dark:text-teal-400",
     error: "text-rose-600 dark:text-rose-400",
     info: "text-sky-600 dark:text-sky-400",
   }[color];
@@ -517,18 +517,18 @@ export function VendorHealthDashboard() {
       {stale && (
         <div
           role="alert"
-          className="flex items-start sm:items-center gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/30 px-4 py-3"
+          className="flex items-start sm:items-center gap-3 rounded-2xl border-2 border-teal-300 bg-teal-50 dark:bg-teal-500/10 dark:border-teal-500/30 px-4 py-3"
         >
           <ShieldAlert
-            className="h-5 w-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5 sm:mt-0"
+            className="h-5 w-5 text-teal-700 dark:text-teal-300 shrink-0 mt-0.5 sm:mt-0"
             aria-hidden
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+            <p className="text-sm font-bold text-teal-900 dark:text-teal-100">
               Último run hace {Math.round(ageMinutes / 60)}h — el cron debería
               correr cada 24h.
             </p>
-            <p className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
+            <p className="text-xs text-teal-800 dark:text-teal-200 mt-0.5">
               Disparalo manualmente o revisá{" "}
               <code className="font-mono">/api/cron/health</code>.
             </p>

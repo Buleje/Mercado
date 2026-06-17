@@ -280,7 +280,7 @@ function StatCard({ label, value, warn, critical }: { label: string; value: numb
         critical
           ? "border-[var(--data-error-500)] bg-[var(--data-error-50,#fef2f2)]/30"
           : warn
-            ? "border-[var(--data-warning-500,#f59e0b)] bg-[var(--data-warning-50,#fef3c7)]/30"
+            ? "border-[#0d9488] bg-[#0d9488]/30"
             : "border-[var(--rule-soft)] bg-[var(--surface-raised)]"
       }`}
     >

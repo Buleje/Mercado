@@ -662,7 +662,7 @@ export function AuthSessionsTab() {
                         "inline-flex h-8 w-8 items-center justify-center rounded-lg",
                         u.totpEnabled
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+                          : "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
                       )}
                     >
                       <Key className="h-4 w-4" strokeWidth={1.75} aria-hidden />
@@ -683,13 +683,13 @@ export function AuthSessionsTab() {
                       "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
                       u.totpEnabled
                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-                        : "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+                        : "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
                     )}
                   >
                     <span
                       className={cn(
                         "h-1.5 w-1.5 rounded-full",
-                        u.totpEnabled ? "bg-emerald-500" : "bg-amber-500",
+                        u.totpEnabled ? "bg-emerald-500" : "bg-teal-500",
                       )}
                     />
                     {u.totpEnabled ? "Habilitado" : "Pendiente"}
@@ -837,7 +837,7 @@ function MiniKpi({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
     danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
@@ -937,7 +937,7 @@ function LoginFailuresChart({
                       d.failed > 5
                         ? "bg-rose-500 group-hover:brightness-110"
                         : d.failed > 0
-                          ? "bg-amber-500 group-hover:brightness-110"
+                          ? "bg-teal-500 group-hover:brightness-110"
                           : "bg-[var(--surface-sunken)]",
                     )}
                     style={{
@@ -961,7 +961,7 @@ function LoginFailuresChart({
           Éxitos
         </span>
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-          <span className="h-3 w-3 rounded bg-amber-500" />
+          <span className="h-3 w-3 rounded bg-teal-500" />
           Fallidos (≤5)
         </span>
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">

@@ -643,7 +643,7 @@ export function ControlCenterClient({
                     <span
                       className={cn(
                         "h-2 w-2 rounded-full shrink-0",
-                        allOk ? "bg-[var(--data-success-500)]" : "bg-[var(--data-warning-500)]",
+                        allOk ? "bg-[var(--data-success-500)]" : "bg-teal-500",
                       )}
                       aria-hidden
                     />
@@ -656,7 +656,7 @@ export function ControlCenterClient({
                       "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
                       allOk
                         ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
-                        : "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
+                        : "bg-teal-500/10 text-teal-500",
                     )}
                   >
                     {okCount}/{inGroup.length} OK

@@ -20,7 +20,7 @@ const KIND_ICON: Record<string, typeof Bell> = {
 };
 const SEV_STYLE: Record<Severity, { dot: string; chip: string }> = {
   critical: { dot: "bg-[var(--data-error-500)]", chip: "text-[var(--data-error-600,#dc2626)]" },
-  warning: { dot: "bg-[var(--data-warning-500)]", chip: "text-[var(--data-warning-600,#d97706)]" },
+  warning: { dot: "bg-teal-500", chip: "text-[#0d9488]" },
   info: { dot: "bg-[var(--accent)]", chip: "text-[var(--accent)]" },
 };
 
@@ -72,7 +72,7 @@ export default function AlertsPage() {
           </div>
           <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Advertencias</p>
-            <p className="mt-1 font-display text-2xl font-extrabold tabular-nums text-[var(--data-warning-600,#d97706)]">{counts.warning}</p>
+            <p className="mt-1 font-display text-2xl font-extrabold tabular-nums text-[#0d9488]">{counts.warning}</p>
           </div>
           <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Informativas</p>

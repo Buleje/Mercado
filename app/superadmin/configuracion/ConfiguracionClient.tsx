@@ -164,8 +164,8 @@ export default function ConfiguracionClient() {
           inline que duplicaba kicker/título con el AdminTabShell del wrapper. */}
       <div className="sticky top-2 z-20 flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-5 py-3.5">
         {dirty ? (
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)]">
-            <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" />
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[#0d9488]">
+            <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[#0d9488]" />
             Cambios sin guardar
           </p>
         ) : (

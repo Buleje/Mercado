@@ -116,11 +116,11 @@ export default function StoresPage() {
             </p>
           </div>
           {stats.unpublished > 0 && (
-            <div className="rounded-xl border border-amber-300/60 bg-amber-50/60 px-3.5 py-2 min-w-[88px] dark:border-amber-700/40 dark:bg-amber-950/30">
+            <div className="rounded-xl border border-teal-300/60 bg-teal-50/60 px-3.5 py-2 min-w-[88px] dark:border-teal-700/40 dark:bg-teal-950/30">
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
                 Borrador
               </p>
-              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-amber-700 dark:text-amber-300">
+              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-teal-700 dark:text-teal-300">
                 {stats.unpublished}
               </p>
             </div>
@@ -176,7 +176,7 @@ export default function StoresPage() {
                       isActive
                         ? "bg-[var(--accent)]/15 text-[var(--accent)]"
                         : t.key === "health"
-                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+                          ? "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                     }`}
                   >

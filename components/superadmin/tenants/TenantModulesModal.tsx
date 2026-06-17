@@ -318,7 +318,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
                               </span>
                             )}
                             {hasOverride && (
-                              <span className="inline-flex items-center rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                              <span className="inline-flex items-center rounded-full bg-teal-500/15 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">
                                 A medida
                               </span>
                             )}

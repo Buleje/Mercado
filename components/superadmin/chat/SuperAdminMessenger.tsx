@@ -351,8 +351,8 @@ export default function SuperAdminMessenger() {
                   const mine = m.senderType === "platform";
                   if (m.isInternalNote) {
                     return (
-                      <div key={m.id} className="mx-auto max-w-[80%] rounded-lg border border-[var(--data-warning-200,#fde68a)] bg-[var(--data-warning-50,#fffbeb)] dark:bg-amber-950/30 px-3 py-2">
-                        <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--data-warning-700,#b45309)] dark:text-amber-300">
+                      <div key={m.id} className="mx-auto max-w-[80%] rounded-lg border border-[#0d9488] bg-[#0d9488] dark:bg-teal-950/30 px-3 py-2">
+                        <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#0d9488] dark:text-teal-300">
                           <StickyNote className="h-3 w-3" /> Nota interna · {m.senderName}
                         </p>
                         <p className="mt-1 text-sm text-[var(--text-primary)] whitespace-pre-wrap">{m.body}</p>
@@ -409,7 +409,7 @@ export default function SuperAdminMessenger() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => setInternalNote((v) => !v)} className={`inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-xs font-bold transition-colors ${internalNote ? "bg-[var(--data-warning-100,#fef3c7)] text-[var(--data-warning-700,#b45309)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+                <button onClick={() => setInternalNote((v) => !v)} className={`inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-xs font-bold transition-colors ${internalNote ? "bg-[#0d9488] text-[#0d9488]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                   <StickyNote className="h-3.5 w-3.5" /> {internalNote ? "Nota interna" : "Mensaje"}
                 </button>
               </div>
@@ -420,7 +420,7 @@ export default function SuperAdminMessenger() {
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                   rows={2}
                   placeholder={internalNote ? "Nota interna (solo la ve el equipo)…" : `Escribile a ${selected.tenantName}…`}
-                  className={`flex-1 resize-none rounded-xl border-2 px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors ${internalNote ? "border-[var(--data-warning-300,#fcd34d)] bg-[var(--data-warning-50,#fffbeb)] dark:bg-amber-950/20" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus:border-[var(--accent)]"}`}
+                  className={`flex-1 resize-none rounded-xl border-2 px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors ${internalNote ? "border-[#0d9488] bg-[#0d9488] dark:bg-teal-950/20" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus:border-[var(--accent)]"}`}
                 />
                 <button onClick={handleSend} disabled={sending || !text.trim()} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-40 transition-opacity">
                   {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}

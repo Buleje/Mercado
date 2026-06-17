@@ -251,7 +251,7 @@ function getSlotMeta(id: Slot): SlotMeta | undefined {
 const COLOR_PRESETS: Array<{ id: string; label: string; from: string; to: string }> = [
   { id: "teal",    label: "Buleje",     from: "#ccfbf1", to: "#5eead4" },
   { id: "sky",     label: "Cielo",      from: "#dbeafe", to: "#bfdbfe" },
-  { id: "amber",   label: "Calidez",    from: "#fef3c7", to: "#fde68a" },
+  { id: "amber",   label: "Calidez",    from: "#0d9488", to: "#0d9488" },
   { id: "rose",    label: "Promo",      from: "#fce7f3", to: "#fbcfe8" },
   { id: "emerald", label: "Frescura",   from: "#d1fae5", to: "#a7f3d0" },
   { id: "violet",  label: "Premium",    from: "#ede9fe", to: "#ddd6fe" },
@@ -567,7 +567,7 @@ function SuperadminBannersPageInner() {
                                 </p>
                                 {isDirty && (
                                   <span
-                                    className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)] shrink-0"
+                                    className="inline-block h-1.5 w-1.5 rounded-full bg-teal-500 shrink-0"
                                     title="Cambios sin guardar"
                                     aria-label="Cambios sin guardar"
                                   />
@@ -584,7 +584,7 @@ function SuperadminBannersPageInner() {
                                   ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                                   : activeCount === count
                                     ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
-                                    : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
+                                    : "bg-teal-500/15 text-teal-500",
                               )}
                             >
                               {activeCount}/{count}
@@ -748,13 +748,13 @@ function SuperadminBannersPageInner() {
                 className={cn(
                   "flex items-center justify-between gap-3 rounded-2xl border bg-[var(--surface-raised)] px-5 py-3.5 shadow-lg",
                   dirtySlots.has(activeSlot)
-                    ? "border-[var(--data-warning-500)]/40"
+                    ? "border-teal-500/40"
                     : "border-[var(--rule-base)]",
                 )}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {dirtySlots.has(activeSlot) ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-500)]">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-500">
                       <AlertCircle className="h-4 w-4" aria-hidden />
                       Cambios sin guardar
                     </span>
@@ -950,7 +950,7 @@ function BannerCard({
             {banner.title || "(sin título)"}
           </button>
           {inactive && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
+            <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/15 text-teal-500 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
               <EyeOff className="h-3 w-3" aria-hidden />
               Oculto
             </span>
@@ -989,7 +989,7 @@ function BannerCard({
               "inline-flex h-7 items-center gap-1 px-2 rounded-md text-xs font-bold transition-colors",
               banner.active
                 ? "text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/10"
-                : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/10",
+                : "text-teal-500 hover:bg-teal-500/10",
             )}
           >
             {banner.active ? (
@@ -1403,7 +1403,7 @@ function PromoEmbedFields({
                   "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-sm font-mono focus:ring-1 outline-none",
                   promo.buyHref.startsWith("/") || promo.buyHref.startsWith("http")
                     ? "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent)]/30"
-                    : "border-[var(--data-warning-500)] focus:border-[var(--data-warning-500)] focus:ring-[var(--data-warning-500)]/30",
+                    : "border-teal-500 focus:border-teal-500 focus:ring-teal-500/30",
                 )}
               />
             </Field>

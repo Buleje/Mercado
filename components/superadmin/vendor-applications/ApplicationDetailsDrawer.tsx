@@ -148,7 +148,7 @@ export function ApplicationDetailsDrawer({
 
   const statusStyles = {
     pendiente:
-      "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
+      "bg-teal-100 text-teal-800 dark:bg-teal-500/15 dark:text-teal-200",
     aprobada:
       "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
     rechazada:
@@ -529,7 +529,7 @@ export function ApplicationDetailsDrawer({
           <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 p-4 sm:p-5">
             <button
               onClick={() => onReopen(application.id)}
-              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-extrabold text-white bg-amber-600 hover:bg-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-extrabold text-white bg-teal-600 hover:bg-teal-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500/40"
             >
               <RotateCcw className="h-5 w-5" />
               Reabrir aplicación

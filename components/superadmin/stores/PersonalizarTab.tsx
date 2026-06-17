@@ -127,12 +127,12 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                     <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
                       {store.name}
                     </span>
-                    {i === 0 && <Crown className="w-3.5 h-3.5 text-[var(--data-warning-500)]" />}
+                    {i === 0 && <Crown className="w-3.5 h-3.5 text-[#0d9488]" />}
                     <PlanBadge plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-xs text-gray-400 capitalize">{store.category}</span>
-                    <span className="text-xs text-[var(--data-warning-500)] flex items-center gap-0.5">
+                    <span className="text-xs text-[#0d9488] flex items-center gap-0.5">
                       <Star className="w-3 h-3 fill-current" /> {Number(store.rating).toFixed(1)}
                     </span>
                     <span className="text-xs text-gray-400">{store._count.products} productos</span>
@@ -318,7 +318,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
           </div>
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
-              <Crown className="w-4 h-4 text-[var(--data-warning-500)]" />
+              <Crown className="w-4 h-4 text-[#0d9488]" />
               <span className="text-xs font-semibold text-[var(--text-secondary)]">
                 Tiendas Destacadas
               </span>
@@ -338,7 +338,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
             <p className="text-xs text-gray-400">
               Haz clic en el porcentaje de cada tienda para editar su comisión por venta
             </p>
-            <p className="text-[length:var(--ts-xs)] text-[var(--data-warning-500)] mt-2 font-medium">
+            <p className="text-[length:var(--ts-xs)] text-[#0d9488] mt-2 font-medium">
               Promedio actual: {avgCommission}%
             </p>
           </div>

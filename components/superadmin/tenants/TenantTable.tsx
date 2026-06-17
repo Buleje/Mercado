@@ -143,7 +143,7 @@ export function TenantTable({
                   <td className="px-4 py-3">
                     <StatusBadge active={tenant.active} />
                     {tenant.cancelAtPeriodEnd && (
-                      <div className="text-[length:var(--ts-xs)] text-[var(--data-warning-500)] mt-1">Cancela pronto</div>
+                      <div className="text-[length:var(--ts-xs)] text-teal-500 mt-1">Cancela pronto</div>
                     )}
                     {(() => {
                       const d = trialDaysLeft(tenant.trialEndsAt);
@@ -151,7 +151,7 @@ export function TenantTable({
                       const cls = d <= 3
                         ? "text-[var(--data-error-600,#dc2626)]"
                         : d <= 7
-                          ? "text-[var(--data-warning-600,#d97706)]"
+                          ? "text-[#0d9488]"
                           : "text-[var(--data-success-500)]";
                       return (
                         <div className={`text-[length:var(--ts-xs)] font-semibold mt-1 ${cls}`} title={`Trial hasta ${fmtDate(tenant.trialEndsAt)}`}>
@@ -184,7 +184,7 @@ export function TenantTable({
                           }
                           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold transition-colors ${
                             custom
-                              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
+                              ? "border-teal-500/40 bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20"
                               : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
                           }`}
                         >
@@ -274,7 +274,7 @@ export function TenantTable({
                         disabled={actionLoading === `${tenant.slug}-trial`}
                         onClick={() => onExtendTrial(tenant.slug, 14)}
                         title="Extender trial +14 días"
-                        className="p-1.5 rounded-lg text-[var(--data-warning-600,#d97706)] hover:bg-[var(--data-warning-50,#fffbeb)] dark:hover:bg-amber-950/30 transition-colors disabled:opacity-40"
+                        className="p-1.5 rounded-lg text-[#0d9488] hover:bg-[#0d9488] dark:hover:bg-teal-950/30 transition-colors disabled:opacity-40"
                       >
                         {actionLoading === `${tenant.slug}-trial` ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -299,7 +299,7 @@ export function TenantTable({
                         disabled={actionLoading === `${tenant.slug}-purge`}
                         onClick={() => onPurge(tenant.slug, tenant.name)}
                         title="Limpiar datos de esta tienda"
-                        className="p-1.5 rounded-lg text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-colors disabled:opacity-40"
+                        className="p-1.5 rounded-lg text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors disabled:opacity-40"
                       >
                         {actionLoading === `${tenant.slug}-purge` ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

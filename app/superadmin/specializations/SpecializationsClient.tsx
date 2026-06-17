@@ -190,7 +190,7 @@ export default function SpecializationsClient({
                       spec.status === "available"
                         ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
                         : spec.status === "beta"
-                          ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+                          ? "bg-[#0d9488] text-[#0d9488]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                     }`}
                   >

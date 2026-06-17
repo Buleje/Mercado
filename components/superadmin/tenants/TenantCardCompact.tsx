@@ -26,7 +26,7 @@ const PLAN_LABEL: Record<string, string> = {
 
 const HEALTH_DOT: Record<Health, string> = {
   healthy: "bg-[var(--data-success-500)]",
-  warning: "bg-[var(--data-warning-500)]",
+  warning: "bg-teal-500",
   critical: "bg-[var(--data-error-500)]",
 };
 
@@ -146,7 +146,7 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
               daysLeft <= 0
                 ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-red-950/40 dark:text-red-300"
                 : daysLeft <= 7
-                  ? "bg-amber-50 text-[var(--data-warning-700)] dark:bg-amber-950/40 dark:text-amber-300"
+                  ? "bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
                   : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
             }`}
             title={daysLeft <= 0 ? "Trial expirado" : `${daysLeft} días de prueba restantes`}
