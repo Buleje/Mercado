@@ -6,6 +6,7 @@ import Link from "next/link";
 import CommandPalette from "./CommandPalette";
 import { NotificationsBell } from "./_shared/NotificationsBell";
 import SuperAdminChatPopover from "./chat/SuperAdminChatPopover";
+import SidebarConfigPanel from "./SidebarConfigPanel";
 import {
   LayoutDashboard,
   Building2,
@@ -55,6 +56,7 @@ import {
   Bell,
   Zap,
   Webhook,
+  Globe,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -392,6 +394,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // label/href cuando el query >= 2 chars. Si no hay match, muestra empty
   // state. Sin query → grupos normales.
   const [navSearch, setNavSearch] = useState("");
+  // Slide-over "Configurar barra lateral" (1:1 con el footer del admin de negocio).
+  const [configOpen, setConfigOpen] = useState(false);
 
   // 2026-05-28 — Filtra los NAV_GROUPS por query (label/href). Si query
   // está vacío o tiene menos de 2 chars, retorna grupos completos. Si hay
@@ -577,6 +581,14 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     };
   }, []);
 
+  // Escape cierra el slide-over de configuración (click-fuera ya lo cierra).
+  useEffect(() => {
+    if (!configOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setConfigOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [configOpen]);
+
   const clearImpersonation = () => {
     localStorage.removeItem("impersonating-tenant");
     setImpersonating(null);
@@ -752,23 +764,56 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           )}
         </nav>
 
-        {/* Collapse toggle (desktop) */}
-        <div className="shrink-0 px-2 pb-4 hidden md:block">
+        {/* ── Footer: links + configurar + compactar (1:1 con el admin de negocio) ── */}
+        <div className={["shrink-0 px-2 py-3 border-t space-y-0.5 hidden md:block", logoBorderClass].join(" ")}>
+          {/* Ver tiendas (lista pública, nueva pestaña) */}
+          <Link
+            href="/tiendas"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Abre la lista de tiendas en una pestaña nueva"
+            className={[
+              "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
+              navItemIdleClass,
+              collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
+            ].join(" ")}
+          >
+            <Globe className="h-[18px] w-[18px] shrink-0" />
+            {!collapsed && <span className="truncate">Ver tiendas ↗</span>}
+          </Link>
+
+          {/* Configurar barra lateral — abre el panel (presets/tema/orden/visibilidad) */}
+          <button
+            type="button"
+            onClick={() => setConfigOpen(true)}
+            title="Configurar barra lateral"
+            className={[
+              "flex items-center gap-3 w-full rounded-lg text-sm font-medium transition-colors",
+              navItemIdleClass,
+              collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
+            ].join(" ")}
+          >
+            <Sliders className="h-[18px] w-[18px] shrink-0" />
+            {!collapsed && <span className="truncate">Configurar barra lateral</span>}
+          </button>
+
+          {/* Compactar / Expandir */}
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
+            title={collapsed ? "Expandir barra lateral" : "Compactar barra lateral"}
             className={[
-              "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs transition-colors",
+              "flex items-center gap-3 w-full rounded-lg text-sm font-medium transition-colors",
               collapseBtnClass,
-              collapsed ? "justify-center" : "",
+              collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
             ].join(" ")}
           >
             {collapsed ? (
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-[18px] h-[18px] shrink-0" />
             ) : (
               <>
-                <ChevronLeft className="w-4 h-4" />
-                <span>Colapsar</span>
+                <ChevronLeft className="w-[18px] h-[18px] shrink-0" />
+                <span className="truncate">Compactar</span>
               </>
             )}
           </button>
@@ -973,6 +1018,42 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         {/* Page content */}
         <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </div>
+
+      {/* Slide-over "Configurar barra lateral" — monta el panel completo
+          (presets Buleje/Ejecutivo/Sereno/Vibrante, tema, accent, densidad,
+          iconos, orden y visibilidad). 1:1 con el openConfig del admin. */}
+      {configOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-[60] bg-black/50"
+            onClick={() => setConfigOpen(false)}
+            aria-hidden
+          />
+          <aside
+            role="dialog"
+            aria-label="Configurar barra lateral"
+            className="fixed top-0 right-0 h-full w-full max-w-md z-[61] bg-[var(--surface-raised)] border-l border-[var(--rule-base)] shadow-[var(--shadow-xl)] flex flex-col"
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-[var(--text-primary)] truncate">Configurar barra lateral</h2>
+                <p className="text-xs text-[var(--text-tertiary)] truncate">Tema, presets, orden y visibilidad</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfigOpen(false)}
+                aria-label="Cerrar"
+                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <SidebarConfigPanel items={NAV_ITEMS} />
+            </div>
+          </aside>
+        </>
+      )}
 
       {/* Session Expired Modal */}
       {sessionExpired && (
