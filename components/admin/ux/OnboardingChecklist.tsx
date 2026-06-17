@@ -90,7 +90,9 @@ export function OnboardingChecklist({
       <header
         className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--surface-sunken)] transition-colors"
         onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(!expanded); } }}
         role="button"
+        tabIndex={0}
         aria-expanded={expanded}
       >
         <div className="flex items-center gap-3 min-w-0">

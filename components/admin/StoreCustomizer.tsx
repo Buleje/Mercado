@@ -1872,14 +1872,12 @@ export default function StoreCustomizer() {
 
                       {/* Link + badge inline */}
                       <div className="flex items-center gap-3 text-xs">
-                        <a
-                          href="#"
-                          onClick={(e) => e.preventDefault()}
+                        <span
                           className="font-bold underline-offset-2 hover:underline"
                           style={{ color: theme.primaryColor }}
                         >
                           Link primary
-                        </a>
+                        </span>
                         <span
                           className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
                           style={{ backgroundColor: theme.secondaryColor }}
