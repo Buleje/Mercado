@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { MessageCircle, Inbox, FileText } from "@buleje/design-system/icons";
+import { MessageCircle, Inbox, FileText, Settings } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -19,6 +19,9 @@ const UnifiedSupportInbox = dynamic(
 // Brandon 2026-06-17: WhatsAppTemplates estaba huérfano (0 imports). Montado como
 // 3er sub-tab — plantillas de WhatsApp con variables para el operador.
 const WhatsAppTemplates = dynamic(() => import("@/components/admin/WhatsAppTemplates"), { loading: S });
+// Brandon 2026-06-17: config del bot WhatsApp (TenantWhatsAppConfig) — antes solo
+// se poblaba por DB. Self-serve para activar el bot que toma pedidos por tenant.
+const WhatsAppBotConfig = dynamic(() => import("@/components/admin/whatsapp/WhatsAppBotConfig"), { loading: S });
 
 const MODULE_ID = "mensajes-hub";
 
@@ -26,6 +29,7 @@ const TABS = [
   { id: "chat",    label: "Chat con clientes", icon: MessageCircle },
   { id: "soporte", label: "Soporte",           icon: Inbox },
   { id: "plantillas", label: "Plantillas WhatsApp", icon: FileText },
+  { id: "bot", label: "Bot WhatsApp", icon: Settings },
 ];
 
 export default function MensajesHubModule({ initialTab }: { initialTab?: string } = {}) {
@@ -47,6 +51,7 @@ export default function MensajesHubModule({ initialTab }: { initialTab?: string 
         {sub === "chat" && <ChatTab />}
         {sub === "soporte" && <UnifiedSupportInbox />}
         {sub === "plantillas" && <WhatsAppTemplates />}
+        {sub === "bot" && <WhatsAppBotConfig />}
       </AdminTabBar>
     </div>
   );

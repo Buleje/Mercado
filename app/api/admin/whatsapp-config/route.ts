@@ -19,7 +19,8 @@ const WhatsAppConfigSchema = z.object({
   whatsappToken: z
     .string()
     .min(10, "Token demasiado corto")
-    .max(500),
+    .max(500)
+    .optional(),
   webhookVerifyToken: z
     .string()
     .min(6, "Verify token debe tener al menos 6 caracteres")
@@ -121,6 +122,20 @@ export async function PUT(req: NextRequest) {
   const data = parsed.data;
 
   try {
+    // Token: requerido para la config inicial; OPCIONAL al actualizar — si viene
+    // vacío se mantiene el existente. El GET lo devuelve enmascarado (...XXXXXX),
+    // así que el form no tiene el token completo para reenviarlo. Brandon 2026-06-17.
+    const current = await prisma.tenantWhatsAppConfig.findUnique({
+      where: { tenantId: auth.tenantId },
+    });
+    if (!current && !data.whatsappToken) {
+      return NextResponse.json(
+        { error: "El token de WhatsApp es requerido para la configuración inicial" },
+        { status: 400 },
+      );
+    }
+    const whatsappToken = data.whatsappToken ?? current!.whatsappToken;
+
     // Verificar que el phoneNumberId no esté en uso por otro tenant
     const existing = await prisma.tenantWhatsAppConfig.findFirst({
       where: {
@@ -148,7 +163,7 @@ export async function PUT(req: NextRequest) {
       create: {
         tenantId: auth.tenantId,
         phoneNumberId: data.phoneNumberId,
-        whatsappToken: data.whatsappToken,
+        whatsappToken,
         webhookVerifyToken: data.webhookVerifyToken,
         businessName: data.businessName ?? null,
         yapeNumber: data.yapeNumber ?? null,
@@ -156,7 +171,7 @@ export async function PUT(req: NextRequest) {
       },
       update: {
         phoneNumberId: data.phoneNumberId,
-        whatsappToken: data.whatsappToken,
+        whatsappToken,
         webhookVerifyToken: data.webhookVerifyToken,
         businessName: data.businessName ?? null,
         yapeNumber: data.yapeNumber ?? null,
