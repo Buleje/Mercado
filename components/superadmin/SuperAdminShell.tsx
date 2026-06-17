@@ -278,11 +278,14 @@ const ACCENT_HEX: Record<SidebarVisualPrefs["accent"], string> = {
   rose: "#F43F5E",
 };
 
+// Default = preset "Ejecutivo" del panel admin de negocio (oscuro elegante,
+// ambar, monocromo, compacto). Brandon 2026-06-16: el superadmin debe verse
+// "tipo ejecutivo" como el admin en sidebar + header.
 const DEFAULT_VISUAL: SidebarVisualPrefs = {
-  theme: "cristal",
-  accent: "teal",
-  density: "normal",
-  iconStyle: "colored",
+  theme: "dark",
+  accent: "amber",
+  density: "compact",
+  iconStyle: "monochrome",
 };
 
 function loadNavConfig(): { hidden: Set<string>; order: string[]; visual: SidebarVisualPrefs } {
@@ -485,6 +488,38 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const iconClassName =
     visual.iconStyle === "monochrome" ? "opacity-70 grayscale" : "";
 
+  // ── Header ejecutivo ──────────────────────────────────────────────────────
+  // El header oscurece junto con el sidebar cuando el tema es integral-oscuro
+  // (buleje/cristal/shaded → slate; "dark" → zinc ejecutivo), igual que el
+  // AdminTopHeader del panel de negocio (isAutoDarkTheme). Antes el header del
+  // superadmin quedaba claro aunque el sidebar fuera oscuro (inconsistente).
+  // Los elementos internos reusan los patrones dark del propio sidebar.
+  const isEjecutivo = visual.theme === "dark";
+  const headerDark = isBuleje || isEjecutivo;
+  const headerClass = headerDark
+    ? isBuleje
+      ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/80"
+      : "bg-[linear-gradient(180deg,#09090b_0%,#18181b_100%)] border-[color-mix(in_oklab,var(--accent)_25%,transparent)] text-zinc-300"
+    : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-primary)]";
+  const headerSectionClass = headerDark ? "text-white/45" : "text-[var(--text-tertiary)]";
+  const headerTitleClass = headerDark ? "text-white" : "text-[var(--text-primary)]";
+  const headerPillClass = headerDark
+    ? "border-white/15 bg-white/[0.06] hover:border-[color-mix(in_oklab,var(--accent)_45%,transparent)] hover:bg-white/[0.1]"
+    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[color-mix(in_oklab,var(--accent)_40%,transparent)] hover:bg-[var(--surface-raised)]";
+  const headerPillTextClass = headerDark
+    ? "text-white/55 group-hover:text-white/80"
+    : "text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]";
+  const headerKbdClass = headerDark
+    ? "border-white/15 text-white/55 bg-white/[0.06]"
+    : "border-[var(--rule-base)] text-[var(--text-tertiary)] bg-[var(--surface-raised)]";
+  const headerIconBtnClass = headerDark
+    ? "text-white/55 hover:text-white hover:bg-white/[0.1]"
+    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]";
+  const headerChipClass = headerDark
+    ? "bg-white/[0.06] border-white/10 text-white/80"
+    : "bg-[var(--surface-sunken)] border-[var(--rule-soft)] text-[var(--text-secondary)]";
+  const headerDividerClass = headerDark ? "bg-white/10" : "bg-[var(--rule-soft)]";
+
   // Rotate session cookie if the layout detected it's past halfway
   useEffect(() => {
     if (freshToken) {
@@ -615,10 +650,10 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <div className={["text-[15px] font-extrabold leading-none", logoLabelClass].join(" ")}>
+              <div className={["text-base font-extrabold leading-none", logoLabelClass].join(" ")}>
                 Buleje
               </div>
-              <div className={["text-[11px] font-semibold leading-none mt-1.5", logoSubLabelClass].join(" ")}>
+              <div className={["text-xs font-semibold leading-none mt-1.5", logoSubLabelClass].join(" ")}>
                 Platform admin
               </div>
             </div>
@@ -846,7 +881,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             nuevo containing block para position:fixed en descendientes — eso
             atrapaba el drawer de notificaciones dentro del header. Usamos
             fondo opaco con sombra inferior para separar visualmente del main. */}
-        <header className="sticky top-0 z-20 bg-[var(--surface-canvas)] border-b border-[var(--rule-base)] shrink-0 shadow-[0_1px_0_var(--rule-soft)]">
+        <header className={`sticky top-0 z-20 border-b shrink-0 shadow-sm transition-colors duration-[var(--dur-base)] ${headerClass}`}>
           <div className="flex items-center justify-between px-4 sm:px-6 h-16 gap-3">
             {/* Izquierda — hamburger mobile + breadcrumb ejecutivo.
                 flex-1 + min-w-0 para que el title pueda crecer todo lo posible
@@ -855,16 +890,16 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="md:hidden p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+                className={`md:hidden p-1.5 rounded-lg transition-colors ${headerIconBtnClass}`}
                 aria-label="Abrir menú"
               >
                 <Menu className="w-5 h-5" />
               </button>
               <div className="flex flex-col min-w-0 leading-tight shrink-0">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)] truncate">
+                <span className={`text-xs font-semibold uppercase tracking-[var(--tracking-eyebrow)] truncate ${headerSectionClass}`}>
                   {pageMeta.section}
                 </span>
-                <h1 className="text-base sm:text-lg font-bold text-[var(--text-primary)] truncate -mt-0.5">
+                <h1 className={`text-base sm:text-lg font-bold truncate -mt-0.5 ${headerTitleClass}`}>
                   {pageMeta.title}
                 </h1>
               </div>
@@ -880,13 +915,13 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   )
                 }
                 aria-label="Buscar (atajo Ctrl+K)"
-                className="group hidden sm:flex items-center gap-2.5 h-10 flex-1 max-w-md px-3.5 ml-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] cursor-pointer transition-colors hover:border-[color-mix(in_oklab,var(--accent)_40%,transparent)] hover:bg-[var(--surface-raised)]"
+                className={`group hidden sm:flex items-center gap-2.5 h-10 flex-1 max-w-md px-3.5 ml-2 rounded-xl border cursor-pointer transition-colors ${headerPillClass}`}
               >
-                <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-colors group-hover:text-[var(--accent)]" />
-                <span className="flex-1 text-left text-sm font-medium text-[var(--text-tertiary)] truncate transition-colors group-hover:text-[var(--text-secondary)]">
+                <Search className={`h-4 w-4 shrink-0 transition-colors group-hover:text-[var(--accent)] ${headerPillTextClass}`} />
+                <span className={`flex-1 text-left text-sm font-medium truncate transition-colors ${headerPillTextClass}`}>
                   Buscar tiendas, módulos…
                 </span>
-                <kbd className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border border-[var(--rule-base)] text-[var(--text-tertiary)] bg-[var(--surface-raised)]">
+                <kbd className={`inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border ${headerKbdClass}`}>
                   <span className="text-base leading-none">⌘</span>K
                 </kbd>
               </button>
@@ -896,7 +931,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 shrink-0 para que no se comprima; gap-1 compacto. */}
             <div className="flex items-center gap-1 shrink-0">
               {/* Chip de usuario — solo desktop, truncate corto */}
-              <div className="hidden lg:inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)]">
+              <div className={`hidden lg:inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border text-xs font-semibold ${headerChipClass}`}>
                 <div className="w-5 h-5 rounded-full bg-[var(--accent)] flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-3 h-3 text-white" />
                 </div>
@@ -904,7 +939,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               </div>
 
               {/* Divider visual — solo lg+ donde aparece el chip */}
-              <div className="hidden lg:block w-px h-6 bg-[var(--rule-soft)] mx-1.5" />
+              <div className={`hidden lg:block w-px h-6 mx-1.5 ${headerDividerClass}`} />
 
               {/* Popover Messenger — chat directo con los negocios (ADR-132) */}
               <SuperAdminChatPopover />
@@ -914,7 +949,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               <button
                 type="button"
                 onClick={toggle}
-                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                className={`p-2 rounded-lg transition-colors ${headerIconBtnClass}`}
                 title={dark ? "Modo claro" : "Modo oscuro"}
                 aria-label="Cambiar tema"
               >
@@ -925,7 +960,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 type="button"
                 onClick={handleLogout}
                 disabled={loggingOut}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 hover:text-[var(--data-error-500)] ${headerDark ? "text-white/70 hover:bg-white/[0.1]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                 title="Cerrar sesión"
               >
                 <LogOut className="h-3.5 w-3.5" />
@@ -1092,7 +1127,7 @@ function NavGroupsFlyout({
                     className={[
                       "flex items-center gap-2.5 rounded-lg transition-colors",
                       headerPad,
-                      "text-[13px] font-medium",
+                      "text-sm font-medium",
                       isActive ? headerActiveClass : headerIdleClass,
                     ].join(" ")}
                   >
@@ -1144,7 +1179,7 @@ function NavGroupsFlyout({
               "group/nav w-full flex items-center gap-2.5 rounded-lg transition-all",
               headerPad,
               sidebarCollapsed ? "justify-center" : "",
-              "text-[13px] font-semibold",
+              "text-sm font-semibold",
               hasActive ? headerActiveClass : (isHovered ? headerActiveClass : headerIdleClass),
             ].join(" ")}
             title={sidebarCollapsed ? group.label : undefined}
@@ -1157,7 +1192,7 @@ function NavGroupsFlyout({
                     cifra tabular, semi-transparente para no competir con label. */}
                 <span
                   className={[
-                    "shrink-0 inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-md text-[10px] font-bold tabular-nums leading-none",
+                    "shrink-0 inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-md text-[length:var(--ts-2xs)] font-bold tabular-nums leading-none",
                     isBuleje
                       ? "bg-white/[0.08] text-white/55 group-hover/nav:text-white/80"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-hover/nav:text-[var(--text-secondary)]",
