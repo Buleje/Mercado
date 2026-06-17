@@ -1,57 +1,46 @@
-# SESSION HANDOFF — 2026-05-29 (Cacao · modo autónomo)
+# SESSION HANDOFF — 2026-06-17
 
-**Branch:** `chore/p0-audit-2026-05-28` · **Working tree:** todo commiteado.
-**Commits de la sesión:** 19 (`ff8e60f1` → `17ae7fdf`). Ronda 2 (continuación): handoff + empty states (e851413e) + **fix global tokens danger en 15 archivos** (7abec9a1) + sub-tabs mobile scroll (17ae7fdf).
-**Gates:** `tsc --noEmit` 0 en cada paso · 30 tests cacao verdes · verificación e2e en navegador (tenant `main`) por feature. NO se corrió `npm run build` completo (recomendado antes de deploy). NO se pusheó.
+> Sesión larga (8 commits). Branch: `audit/storefront-mejoras-verificadas-2026-06-15`.
+> Todo verificado: `tsc --noEmit` EXIT_CODE=0 fresco · rubric DS PASS · curl/screenshots donde aplicó. NO se pusheó.
 
-## Qué se hizo (arsenal de mejoras de Cacao, ADR-128)
+## Commits de la sesión
+| Hash | Qué |
+|---|---|
+| `6d69bb3e` | Poda harness (68→49 skills, CLAUDE.md 276→216, settings limpio) |
+| `1879f1dc` | Naranja→marca en TODO el proyecto (coral/teal vía @theme) + consistencia superadmin |
+| `c0096fd1` | Sprint 1 fiados/whatsapp (aging, cobranza auto, límite real, resumen+fiados, plantillas) |
+| `94ee5840` | #8 Broadcast de campañas por WhatsApp (cron dispatch) |
+| `0a4daefb` | #9 Estado de cuenta público (link firmado HMAC, sin migración) |
+| `301a1469` | #6 Foto del arqueo server-side (upload + URL en notes) |
+| `3abc73aa` | #10 Foto DNI + firma del compromiso (upload + URL, sin migración) |
+| `6542bc69` | Tokens DS --color-whatsapp + canvas firma (rubric no-hex PASS) |
 
-| # | Commit | Mejora |
+## ⚠️ CHECKLIST DE ACTIVACIÓN — lo construido está DORMIDO sin esto
+Mucho de lo nuevo es lógica completa pero **gated por env/config**. Para activarlo:
+
+| Feature construida | Qué la activa | Sin esto |
 |---|---|---|
-| 1 | ff8e60f1 | Fix: tab Cacao no aparecía en sidebar (faltaba en `SPEC_GATED_MODULE_IDS`) |
-| 2 | 60a61b81 | Sidebar: split Especializaciones → **Forestal** + **Agricultura** (flag `alwaysGroup`) + acordeón estricto + arranque colapsado |
-| 3 | 8e1a99ee | Backend: `cacao.db` (producerDetail/loteDetail/inventory/trends + filtros) + views API |
-| 4 | 4b92448d | **Fichas drawer** lote + productor (perfil/historial/editar) + **recibo imprimible** |
-| 5 | 802b8065 | **Inventario** seco + valorización + **dashboard** (tendencias/top/calidad/alertas) + filtros + export CSV |
-| 6 | 3a702000 | **Mercado**: precio ICE en vivo (Yahoo CC=F) + FX→S//kg + noticias (Google News) |
-| 7 | d8cedef9 | **Gráfico de flujo** (recharts, rangos 1S–1A, volatilidad) + **FIX tokens `--data-danger-*`→`--data-error-*`** |
-| 8 | 1d5d0097 | **Asesor híbrido**: señal vender/aguantar (determinística) + narrativa IA grounded + checklist |
-| 9 | 3504a9da | Rediseño modal **Anular** → AdminModal (a11y) |
-| 10 | 7c25d483 | **Tests**: cacao-quality (proyección/rendimiento) + cacao-advisor (30 verdes) |
-| 11 | e90a9870 | Asesor: **tu precio de compra vs. internacional** (`avgBuyPrice`) |
-| 12 | 811af648 | **ADR-128** (faltaba el archivo) |
-| 13 | 279c70d7 | **Reporte de campaña imprimible** (Resumen) |
+| **Cobranza fiados auto-WhatsApp** (`c0096fd1`) | `FIADO_AUTO_WHATSAPP=1` | Solo crea notif para revisar (no auto-envía) |
+| **Envío WhatsApp saliente** (cobranza, broadcast, resumen diario) | `WHATSAPP_API_URL` + `WHATSAPP_API_TOKEN` | Los workers loguean y salen sin enviar (no-op) |
+| **Bot inteligente + insights IA + sugeridas** | `ANTHROPIC_API_KEY` **o** `GROQ_API_KEY` | Degrada a fallback keyword (funciona pero "tonto") |
+| **Bot entrante WhatsApp** (toma pedidos) | `WHATSAPP_APP_SECRET` + filas en `TenantWhatsAppConfig` (DB) | Mensaje entrante se descarta |
+| **Estado de cuenta público** (`0a4daefb`) | `AUTH_SECRET` (ya seteado) · opcional `FIADO_STATEMENT_SECRET` | — (ya funciona) |
+| **Broadcast** (`94ee5840`) | cron corre `:15` cada hora + `WHATSAPP_API_*` | Campañas quedan en "programada" sin despachar |
 
-El módulo de Cacao pasó de 4 sub-vistas a **7**: Acopio · Beneficio · Inventario · Productores · Resumen · Mercado · Asesor.
+> El bot que "toma pedidos" NO es build — es activación (envs + `TenantWhatsAppConfig`). El código está y testeado en `lib/whatsapp/concierge/*`.
 
-## Verificación rápida (Brandon)
-Ctrl+Shift+R en `/t/pizza-pucallpa/admin?tab=cacao-acopio` (o `main`). Recorré: **Mercado** (gráfico+rangos), **Asesor** (señal+IA+tu precio vs mercado), **Inventario**, click en una fila de Acopio (ficha+recibo), **Resumen** (imprimir reporte).
+## Pendiente — roadmap de potenciación POS/Fiados/WhatsApp (plan en `docs/PLAN-potenciar-pos-fiados-whatsapp-2026-06-17.md`)
+| Ítem | Estado | Por qué falta |
+|---|---|---|
+| #7 **Yape QR real** | ⛔ bloqueado externo | Necesita cuenta **Yape Empresas** + spec de su QR dinámico/API. El QR actual (`YapeQRPayment.tsx`) es decorativo (patrón dibujado, no escaneable) + confirmación manual. Money-zone: gate DANGER al construir. |
+| **UI config bot WhatsApp** | listo para build | La API existe (`app/api/admin/whatsapp-config` GET/PUT, token enmascarado); falta el form admin. Self-serve para `TenantWhatsAppConfig` → activa el bot por tenant. ~150 LOC + montar tab. |
+| **POS auto-envío ticket WA** | requiere endpoint nuevo | Hoy `wa.me` manual (`POSView.tsx:492`). No existe `/api/whatsapp/send`; auto-enviar = endpoint + opt-in (Ley 29733). |
+| **Bug cierre de turno** | money-zone | `POSCajaModule.tsx:118-128` POST best-effort traga errores; el resumen re-bucketea pagos en cliente en vez del corte del backend. Sesión dedicada. |
+| **iOS barcode** | quick-win | `BarcodeScanner.tsx` usa `BarcodeDetector` nativo (falla en Safari iOS) → polyfill `@zxing/browser`. |
 
-## Hallazgo importante
-🐛 `--data-danger-*` **no existe** en el design system (toda la familia indefinida). El token de rojo es `--data-error-*` (50/100/500/600/700). Arreglé los 9 componentes de cacao. **Quedan ~15 archivos del repo con el token roto** (rojos sin estilo) — fix global pendiente (1 sed). Ver memoria `reference_ds_token_danger_gotcha`.
-
-## Backlog v4 (estado)
-1. ✅ Empty states con CTA · 5. ✅ Fix global tokens danger · 7. ✅ Mobile sub-tabs.
-2. ✅ **Trazabilidad QR pública** `/verificar-cacao/[code]` + QR en la ficha + WhatsApp al productor (wa.me) — hechos.
-6. ⚠️ **Schema drift** (sin resolver): `CacaoProducer/Lote/Beneficio` vía Supabase MCP, NO en `prisma/migrations` → correr en prod antes de deploy.
-
-## Backlog v5 — elegido por Brandon, PENDIENTE (features pesados)
-- **Registrar ventas (stock real)** — necesita modelo `CacaoVenta` (schema nuevo → drift) + DB + API + UI. Descuenta del inventario, ingresos/margen real.
-- **Venta FOB / USD** — parte de ventas, con tipo de cambio (FX ya disponible en cacao-market).
-- **Recordatorios de beneficio** — cron (`lib/cron/`) que avisa lotes con N días en proceso. Hoy el inventario ya marca 12+ días (parcial).
-- **Documentos del lote** — upload + storage (Supabase Storage). Adjuntar certificados/fotos.
-- **Beneficio: avanzar etapa** (fermentando→secando→terminado desde tabla) — chico; avanzar a terminado necesita capturar peso seco (mini-form).
-- **Mi precio en el tiempo** — chart mensual de mi precio de compra vs intl (mejor con datos multi-mes; hoy `main` solo tiene mayo).
-
-## Notas operativas
-- Mercado: Yahoo Finance (`CC=F`, `PEN=X`, no-oficial) + Google News RSS — gratis, sin key, degradan con gracia. Cache 20min (precio/news) / 2h (narrativa IA).
-- Narrativa IA: `callLLM("cheap")` (Anthropic→Groq→OpenAI). En dev configurada y responde.
-
-## Credenciales (verificadas, carryover)
-- Pizzería: `pizza-pucallpa.localhost:3000/admin` → `pizzaadmin` / `Pizza-2026-Buleje`
-- Bodega main: `localhost:3000/admin` → `qaadmin` / `Qa-admin-1234`
-- Superadmin: `localhost:3000/superadmin/login` → `superadmin` / `Super-2026-Buleje`
-
-## Notas técnicas (carryover)
-- Migraciones Prisma: `migrate dev` NO va (pgBouncer). Editar schema → `prisma generate` → DDL via `migrate diff` → aplicar additivo con Supabase MCP. **Reiniciar dev server tras `prisma generate`** (client viejo → 503).
-- Iconos: solo los exportados por `@buleje/design-system/icons` (barrel runtime); tsc NO detecta faltantes (d.ts más amplio). `Newspaper` se agregó esta sesión.
+## Gotchas confirmados esta sesión (para no re-investigar)
+- **Eliminar un color del proyecto** = remapear paleta Tailwind en `@theme` (globals.css), no codemod 300 archivos.
+- **Tailwind arbitrary values con ESPACIOS no renderizan**: `bg-[rgba(0, 160, 160,...)]` se rompe → sin espacios. (Era el bug del highlight del sidebar superadmin.)
+- **Formato superadmin YA existe** = `ADMIN_TOKENS` + `lib/superadmin-layout.ts`. No crear primitivos que compitan.
+- **Persistir imágenes sin migración**: subir a `/api/upload` → guardar la URL (corta) en un campo de texto existente. El base64 directo lo rechaza el Zod `max(500)`.
+- **Login superadmin local bloqueado**: `SUPERADMIN_PASSWORD` vacío en `.env` → no hay QA visual del superadmin sin setearlo + reiniciar dev.
