@@ -265,7 +265,7 @@ const ACCENT_HEX: Record<SidebarVisualPrefs["accent"], string> = {
   emerald: "#10B981",
   sky: "#0EA5E9",
   violet: "#8B5CF6",
-  amber: "#F59E0B",
+  amber: "#00A0A0", // Brandon 2026-06-17: "sin naranja" — amber legacy renderiza teal de marca
   rose: "#F43F5E",
 };
 
@@ -449,14 +449,14 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
 
   const sidebarBgClass = isBuleje
     ? // Slate-deep editorial gradient + border teal hairline + text-white. Paleta real del proyecto.
-      "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] border-r border-[rgba(0, 160, 160,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0, 160, 160,0.06)]"
+      "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] border-r border-[rgba(0,160,160,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0,160,160,0.06)]"
     : visual.theme === "dark"
       ? "bg-zinc-900 border-r border-zinc-800 text-zinc-100"
       : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
 
   // Override de clases para items cuando es theme buleje — paleta cohesiva, contraste AAA.
   const navItemActiveClass = isBuleje
-    ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
+    ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)]";
   const navItemIdleClass = isBuleje
     ? "text-white/65 hover:bg-white/[0.06] hover:text-white"
@@ -1154,7 +1154,7 @@ function NavGroupsFlyout({
 
   // Estilos coherentes con el theme buleje (slate + teal).
   const headerActiveClass = isBuleje
-    ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
+    ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const headerIdleClass = isBuleje
     ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
@@ -1178,7 +1178,7 @@ function NavGroupsFlyout({
             <div key={group.id} className="space-y-0.5">
               <div
                 className={[
-                  "flex items-center gap-2 px-3 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
+                  "flex items-center gap-2 px-3 pb-1 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]",
                   isBuleje ? "text-white/45" : "text-[var(--text-tertiary)]",
                 ].join(" ")}
               >
@@ -1348,11 +1348,11 @@ function SuperAdminFlyout({
     ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#091621_100%)]"
     : "bg-[var(--surface-raised)]";
   const border = isBuleje
-    ? "border-[rgba(0, 160, 160,0.2)] shadow-[var(--shadow-lg)] ring-1 ring-[rgba(20, 194, 194,0.08)]"
+    ? "border-[rgba(0,160,160,0.2)] shadow-[var(--shadow-lg)] ring-1 ring-[rgba(20,194,194,0.08)]"
     : "border-[var(--rule-base)] shadow-lg";
   const headerLabelClass = isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]";
   const itemActive = isBuleje
-    ? "bg-linear-to-r from-[rgba(20, 194, 194,0.22)] via-[rgba(0, 160, 160,0.14)] to-[rgba(0, 160, 160,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#14C2C2]"
+    ? "bg-linear-to-r from-[rgba(20,194,194,0.22)] via-[rgba(0,160,160,0.14)] to-[rgba(0,160,160,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const itemIdle = isBuleje
     ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
@@ -1375,7 +1375,7 @@ function SuperAdminFlyout({
     >
       {/* Header del flyout — etiqueta del grupo. text-xs uppercase es OK aquí
           porque solo es un label informativo; el peso visual está en los items. */}
-      <div className={["px-4 pt-1.5 pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]", headerLabelClass].join(" ")}>
+      <div className={["px-4 pt-1.5 pb-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]", headerLabelClass].join(" ")}>
         {group.label}
       </div>
       <div className="space-y-0.5 px-1.5">
@@ -1430,30 +1430,21 @@ function NavGroupsAccordion({
   const activeGroupId = groups.find((g) =>
     g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
   )?.id ?? "inicio";
-  // TODAS las secciones abiertas por defecto — igual que el sidebar del admin
-  // de negocio (referencia Brandon 2026-06-16): secciones con título en
-  // mayúscula + items inline visibles, no acordeón single-open. El usuario
-  // puede colapsar/expandir cada sección de forma independiente.
-  const [expanded, setExpanded] = useState<Set<NavGroupId>>(() => new Set(groups.map((g) => g.id)));
+  // Brandon 2026-06-17: acordeón SINGLE-OPEN — solo la sección activa (o la que
+  // el usuario abra) queda expandida; las demás se minimizan. Una a la vez.
+  const [expanded, setExpanded] = useState<Set<NavGroupId>>(() => new Set([activeGroupId]));
   const allGroupIds = useMemo(() => new Set(groups.map((g) => g.id)), [groups]);
   // En modo búsqueda, todos los grupos visibles se expanden automáticamente.
   const effectiveExpanded = forceExpandAll ? allGroupIds : expanded;
 
-  // Al navegar, asegurar que la sección activa quede abierta (sin cerrar las demás).
+  // Al navegar, abrir SOLO la sección activa y cerrar las demás (single-open).
   useEffect(() => {
-    if (activeGroupId) {
-      setExpanded((prev) => (prev.has(activeGroupId) ? prev : new Set(prev).add(activeGroupId)));
-    }
+    if (activeGroupId) setExpanded(new Set([activeGroupId]));
   }, [activeGroupId]);
 
-  // Colapsar/expandir una sección de forma independiente (multi-open).
+  // Single-open: abrir una sección cierra las demás; click en la abierta la cierra.
   const toggle = (id: NavGroupId) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setExpanded((prev) => (prev.has(id) ? new Set<NavGroupId>() : new Set<NavGroupId>([id])));
   };
 
   // ── Flyout lateral on hover (1:1 con el admin de negocio · Brandon 2026-06-17) ──
@@ -1490,7 +1481,7 @@ function NavGroupsAccordion({
 
   // Item activo: pill teal (marca). Idle: texto tenue. Label de sección: mayúscula tenue.
   const itemActive = isBuleje
-    ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
+    ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const itemIdle = isBuleje
     ? "text-white/70 hover:bg-white/[0.06] hover:text-white"
@@ -1522,7 +1513,7 @@ function NavGroupsAccordion({
               aria-controls={panelId}
               aria-haspopup="menu"
               className={[
-                "w-full flex items-center gap-2 px-3 pt-3 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest transition-colors",
+                "w-full flex items-center gap-2 px-3 pt-4 pb-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider transition-colors",
                 labelClass,
               ].join(" ")}
             >

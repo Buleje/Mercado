@@ -83,7 +83,7 @@ export interface VentasData {
 function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 function dateKey(iso: string) { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
-const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#f59e0b" };
+const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#ff6b5b" };
 const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta", transferencia: "Transferencia" };
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -300,7 +300,7 @@ export default function VentasDashboard({ dateRange, onChangeRange }: { dateRang
     const funnelPedidos = [
       { etapa: "Recibidos", cantidad: allPeriodOrders.length, color: "#3b82f6" },
       { etapa: "Confirmados", cantidad: allPeriodOrders.filter(o => ["confirmado", "en_camino", "entregado"].includes(o.status)).length, color: "#06b6d4" },
-      { etapa: "En camino", cantidad: allPeriodOrders.filter(o => ["en_camino", "entregado"].includes(o.status)).length, color: "#f59e0b" },
+      { etapa: "En camino", cantidad: allPeriodOrders.filter(o => ["en_camino", "entregado"].includes(o.status)).length, color: "#ff6b5b" },
       { etapa: "Entregados", cantidad: allPeriodOrders.filter(o => o.status === "entregado").length, color: "var(--accent)" },
     ];
 

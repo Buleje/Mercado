@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
             left: 0,
             right: 0,
             height: 8,
-            background: `linear-gradient(90deg, ${TEAL}, ${TEAL_BRIGHT}, #f97316)`,
+            background: `linear-gradient(90deg, ${TEAL}, ${TEAL_BRIGHT}, #ff6b5b)`,
           }}
         />
 

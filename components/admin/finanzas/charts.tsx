@@ -39,7 +39,7 @@ export function HealthSemaphore() {
     );
   }
 
-  const color = score.total > 70 ? "var(--accent)" : score.total >= 40 ? "#f59e0b" : "#ef4444";
+  const color = score.total > 70 ? "var(--accent)" : score.total >= 40 ? "#ff6b5b" : "#ef4444";
   const label = score.total > 70 ? "Saludable" : score.total >= 40 ? "Precaucion" : "Critico";
   const bgRing = score.total > 70 ? "ring-[var(--data-success-500)]/40" : score.total >= 40 ? "ring-amber-200" : "ring-red-200";
 
@@ -68,7 +68,7 @@ export function HealthSemaphore() {
               <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
-                  style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "var(--accent)" : f.pts >= f.max * 0.6 ? "#f59e0b" : "#ef4444" }}
+                  style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "var(--accent)" : f.pts >= f.max * 0.6 ? "#ff6b5b" : "#ef4444" }}
                 />
               </div>
               <span className="text-xs font-bold text-[var(--text-secondary)] w-10 text-right">{f.detail}</span>
@@ -250,8 +250,8 @@ export function PuntoEquilibrio() {
 const EXPENSE_COLORS: Record<string, string> = {
   "Mercaderia": "var(--color-primary)",
   "mercaderia": "var(--color-primary)",
-  "Alquiler": "#f97316",
-  "alquiler": "#f97316",
+  "Alquiler": "#ff6b5b",
+  "alquiler": "#ff6b5b",
   "Servicios": "#457b9d",
   "servicios": "#457b9d",
   "Personal": "#9b5de5",

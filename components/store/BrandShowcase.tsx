@@ -8,13 +8,13 @@ import { useStoreProducts } from "@/hooks/use-store-products";
 // Marcas peruanas con colores de marca
 const BRAND_META: Record<string, { color: string; bg: string }> = {
   "Gloria":       { color: "#1e40af", bg: "#dbeafe" },
-  "Costeño":      { color: "#92400e", bg: "#fef3c7" },
+  "Costeño":      { color: "#842e25", bg: "#fff1ef" },
   "Primor":       { color: "#15803d", bg: "#dcfce7" },
   "Alacena":      { color: "#dc2626", bg: "#fee2e2" },
   "Don Vittorio": { color: "#7c3aed", bg: "#ede9fe" },
   "Inca Kola":    { color: "#ca8a04", bg: "#fef9c3" },
   "Coca-Cola":    { color: "#dc2626", bg: "#fee2e2" },
-  "Sublime":      { color: "#7c2d12", bg: "#fed7aa" },
+  "Sublime":      { color: "#7c2d12", bg: "#ffe1dd" },
   "Ariel":        { color: "#0369a1", bg: "#e0f2fe" },
   "Sapolio":      { color: "var(--accent)", bg: "#ccfbf1" },
   "Ajinomoto":    { color: "#dc2626", bg: "#fee2e2" },
@@ -22,9 +22,9 @@ const BRAND_META: Record<string, { color: string; bg: string }> = {
   "Molitalia":    { color: "#b91c1c", bg: "#fee2e2" },
   "Laive":        { color: "#16a34a", bg: "#dcfce7" },
   "Backus":       { color: "#1e3a5f", bg: "#dbeafe" },
-  "San Fernando": { color: "#ea580c", bg: "#fed7aa" },
+  "San Fernando": { color: "#f0503f", bg: "#ffe1dd" },
   "Emsal":        { color: "#0891b2", bg: "#cffafe" },
-  "Bell's":       { color: "#b45309", bg: "#fef3c7" },
+  "Bell's":       { color: "#c93b2c", bg: "#fff1ef" },
 };
 
 export default function BrandShowcase() {

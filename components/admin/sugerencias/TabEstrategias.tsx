@@ -50,7 +50,7 @@ const SEASONS_2026: Array<Omit<Season, "daysAway">> = [
     label: "Fiesta de San Juan (Pucallpa)",
     date: "2026-06-24",
     icon: Sun,
-    accent: "#f59e0b",
+    accent: "#ff6b5b",
     topCategories: ["Hojas de bijao", "Arroz", "Bebidas", "Embutidos"],
     tips: [
       "Pico altísimo en hojas de bijao para juane (pedidos 3 días antes)",

@@ -47,7 +47,7 @@ const TABS: AdminTab[] = [
 
 // ── Colores y tooltip compartidos ──────────────────────────────────────────
 
-const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#14C2C2', '#264653', '#6b705c'];
+const CHART_COLORS = ['var(--color-primary)', '#ff6b5b', '#457b9d', '#e63946', '#9b5de5', '#14C2C2', '#264653', '#6b705c'];
 
 type LocalChartTooltipProps = Partial<TooltipContentProps<ValueType, NameType>>;
 
@@ -227,7 +227,7 @@ function ProductsDashboard() {
   const stockGauge = useMemo(() => {
     return [
       { name: "Con stock", value: kpis.conStock - kpis.stockBajo, fill: "var(--color-primary)" },
-      { name: "Stock bajo", value: kpis.stockBajo, fill: "#f97316" },
+      { name: "Stock bajo", value: kpis.stockBajo, fill: "#ff6b5b" },
       { name: "Sin stock", value: kpis.sinStock, fill: "#e63946" },
     ].filter((s) => s.value > 0);
   }, [kpis]);
@@ -240,7 +240,7 @@ function ProductsDashboard() {
     { label: "Con stock", value: kpis.conStock, icon: PackageCheck, color: "#457b9d", alert: false },
     { label: "Sin stock", value: kpis.sinStock, icon: PackageX, color: "#e63946", alert: kpis.sinStock > 0 },
     { label: "Precio prom.", value: `S/ ${Number(kpis.precioAvg).toFixed(1)}`, icon: DollarSign, color: "#9b5de5", alert: false },
-    { label: "Margen prom.", value: `${Number(kpis.margenAvg).toFixed(1)}%`, icon: TrendingUp, color: "#f97316", alert: kpis.margenAvg < 15 },
+    { label: "Margen prom.", value: `${Number(kpis.margenAvg).toFixed(1)}%`, icon: TrendingUp, color: "#ff6b5b", alert: kpis.margenAvg < 15 },
     { label: "Categorias", value: kpis.cats, icon: Layers, color: "#14C2C2", alert: false },
     { label: "Sin imagen", value: kpis.sinImagen, icon: ImageOff, color: "#e63946", alert: kpis.sinImagen > 0 },
     { label: "Sin costo", value: kpis.sinCosto, icon: Calculator, color: "#6b705c", alert: kpis.sinCosto > 0 },
@@ -355,7 +355,7 @@ function ProductsDashboard() {
             <Tooltip content={<ChartTooltip />} />
             <Legend />
             <Bar dataKey="valor" fill="var(--color-primary)" radius={[0, 6, 6, 0]} name="Valor stock (S/)" barSize={16} />
-            <Line dataKey="margen" stroke="#f97316" strokeWidth={2} dot={{ r: 4, fill: "#f97316" }} name="Margen %" />
+            <Line dataKey="margen" stroke="#ff6b5b" strokeWidth={2} dot={{ r: 4, fill: "#ff6b5b" }} name="Margen %" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -370,7 +370,7 @@ function ProductsDashboard() {
             <XAxis dataKey="precio" name="Precio" tick={{ fontSize: 10 }} tickFormatter={(v) => `S/${v}`} className="fill-gray-500" />
             <YAxis dataKey="margen" name="Margen %" tick={{ fontSize: 10 }} tickFormatter={(v) => `${v}%`} className="fill-gray-500" />
             <ZAxis dataKey="stock" range={[30, 300]} name="Stock" />
-            <ReferenceLine y={20} stroke="#f97316" strokeDasharray="6 3" label={{ value: "Objetivo 20%", position: "right", fontSize: 10, fill: "#f97316" }} />
+            <ReferenceLine y={20} stroke="#ff6b5b" strokeDasharray="6 3" label={{ value: "Objetivo 20%", position: "right", fontSize: 10, fill: "#ff6b5b" }} />
             <Tooltip content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const d = payload[0]?.payload as
@@ -392,7 +392,7 @@ function ProductsDashboard() {
               const p = props as { cx?: number; cy?: number; payload?: { margen?: number; stock?: number } };
               const { cx = 0, cy = 0, payload } = p;
               const m = payload?.margen ?? 0;
-              const color = m >= 25 ? "var(--color-primary)" : m >= 10 ? "#f97316" : "#e63946";
+              const color = m >= 25 ? "var(--color-primary)" : m >= 10 ? "#ff6b5b" : "#e63946";
               const r = Math.min(Math.max((payload?.stock || 1) * 0.4, 4), 14);
               return <circle cx={cx} cy={cy} r={r} fill={color} fillOpacity={0.7} stroke={color} strokeWidth={1.5} />;
             }} />

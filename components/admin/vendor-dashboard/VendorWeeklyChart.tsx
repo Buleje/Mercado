@@ -85,7 +85,7 @@ export function VendorWeeklyChart({ data }: Props) {
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={entry.isToday ? "var(--accent)" : entry.isMax ? "#f97316" : "#d1fae5"}
+                fill={entry.isToday ? "var(--accent)" : entry.isMax ? "#ff6b5b" : "#d1fae5"}
               />
             ))}
           </Bar>

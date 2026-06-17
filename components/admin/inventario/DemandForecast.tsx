@@ -139,13 +139,13 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
               />
               <ReferenceLine
                 y={data.dailyAvg}
-                stroke="#f97316"
+                stroke="#ff6b5b"
                 strokeDasharray="4 4"
                 label={{
                   value: `Prom: ${data.dailyAvg}`,
                   position: 'right',
                   fontSize: 10,
-                  fill: '#f97316',
+                  fill: '#ff6b5b',
                 }}
               />
               <Bar dataKey="qty" fill="var(--accent)" radius={[2, 2, 0, 0]} name="Vendidos" />

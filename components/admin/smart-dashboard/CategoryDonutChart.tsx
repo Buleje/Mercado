@@ -12,7 +12,7 @@ import {
 const DONUT_COLORS = [
   "var(--color-primary)",
   "#8b5cf6",
-  "#f97316",
+  "#ff6b5b",
   "#264653",
   "#e76f51",
   "#00BDBD",

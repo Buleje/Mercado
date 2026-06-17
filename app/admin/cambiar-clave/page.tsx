@@ -79,7 +79,7 @@ export default function CambiarClavePage() {
                 {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-            <span className={`mt-1 block text-xs ${next.length === 0 ? "text-[var(--text-tertiary)]" : strong ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#d97706)]"}`}>
+            <span className={`mt-1 block text-xs ${next.length === 0 ? "text-[var(--text-tertiary)]" : strong ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#f0503f)]"}`}>
               {next.length === 0 ? "Mínimo 10 caracteres, con letra y número o símbolo." : strong ? "Contraseña segura ✓" : "Aún débil — sumá largo o un símbolo."}
             </span>
           </label>

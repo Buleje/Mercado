@@ -15,6 +15,7 @@ import {
 } from "@buleje/design-system/icons";
 import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
+import { SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
 
 /**
  * /superadmin/marketplace — Hub multi-vendor.
@@ -172,7 +173,7 @@ export default async function SuperadminMarketplaceHubPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div className={SUPERADMIN_PAGE}>
       {/* ── HERO envolvente con accent strip y KPIs grandes ─────────────── */}
       <header className="relative overflow-hidden border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
         {/* Accent strip superior */}

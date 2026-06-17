@@ -50,7 +50,7 @@ function getTierColor(tier: "high" | "medium" | "low"): string {
     case "high":
       return "var(--accent)";
     case "medium":
-      return "#f97316";
+      return "#ff6b5b";
     case "low":
       return "#6b7280";
   }
@@ -265,7 +265,7 @@ export default function CustomerGeoMap({ className }: Props) {
             0.2: "var(--accent)",
             0.4: "color-mix(in oklab, var(--accent) 70%, white)",
             0.6: "#14C2C2",
-            0.8: "#f97316",
+            0.8: "#ff6b5b",
             1.0: "#e63946",
           },
         }).addTo(map);

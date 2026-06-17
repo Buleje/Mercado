@@ -573,7 +573,7 @@ export default function CheckoutConfirmarPage() {
                         {typeof r.errorAvailable === "number" && r.errorAvailable >= 0 && (
                           <>
                             {" "}— quedan{" "}
-                            <strong className="tabular-nums text-[var(--data-warning-500,#f97316)]">
+                            <strong className="tabular-nums text-[var(--data-warning-500,#ff6b5b)]">
                               {r.errorAvailable}
                             </strong>
                             .

@@ -27,7 +27,7 @@ const PRESETS: Preset[] = [
   {
     id:   "bodega",
     name: "Buleje",
-    colors: { primary: "var(--accent)", secondary: "#f97316", background: "#f9fafb", text: "#111827" },
+    colors: { primary: "var(--accent)", secondary: "#ff6b5b", background: "#f9fafb", text: "#111827" },
   },
   {
     id:   "moderno",
@@ -37,7 +37,7 @@ const PRESETS: Preset[] = [
   {
     id:   "calido",
     name: "Calido",
-    colors: { primary: "#c2410c", secondary: "#f59e0b", background: "#fffbeb", text: "#1c1917" },
+    colors: { primary: "#c2410c", secondary: "#ff6b5b", background: "#fffbeb", text: "#1c1917" },
   },
 ];
 

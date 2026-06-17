@@ -75,7 +75,7 @@ export const ORDER_STATUS_CONFIG: Record<string, { label: string; className: str
   pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]" },
   confirmado:  { label: "Confirmado", className: "bg-[var(--accent-soft)] text-[var(--accent)]" },
   preparando:  { label: "Preparando", className: "bg-[#a78bfa]/15 text-[#7c3aed]" },
-  en_camino:   { label: "En camino",  className: "bg-[#fbbf24]/15 text-[#d97706]" },
+  en_camino:   { label: "En camino",  className: "bg-[#ff8676]/15 text-[#f0503f]" },
   entregado:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]" },
   cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]" },
 };

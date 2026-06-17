@@ -166,7 +166,7 @@ export default function FiadoAnalyticsPanel() {
     // Donut by aging
     const buckets = [
       { rango: "0-7 dias", monto: 0, count: 0, color: "var(--accent)" },
-      { rango: "8-30 dias", monto: 0, count: 0, color: "#f97316" },
+      { rango: "8-30 dias", monto: 0, count: 0, color: "#ff6b5b" },
       { rango: "31-60 dias", monto: 0, count: 0, color: "#f77f00" },
       { rango: "+60 dias", monto: 0, count: 0, color: "#e63946" },
     ];

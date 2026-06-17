@@ -1139,7 +1139,7 @@ export default function FiadosModule() {
                           <div className="flex items-center gap-2">
                             {(() => {
                               const name = f.customerName || f.customerId;
-                              const avatarColors = ['var(--accent)','#f97316','#e63946','#457b9d','#6b705c','#9b5de5'];
+                              const avatarColors = ['var(--accent)','#ff6b5b','#e63946','#457b9d','#6b705c','#9b5de5'];
                               let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
                               const color = avatarColors[Math.abs(h) % avatarColors.length];
                               const initials = name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();

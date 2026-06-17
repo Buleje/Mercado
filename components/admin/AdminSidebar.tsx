@@ -762,7 +762,7 @@ function CategorySection({
               className="overflow-hidden"
             >
               <div className="ml-3.5 mt-0.5 mb-1.5 pl-3 border-l-2 space-y-0.5"
-                style={{ borderColor: `color-mix(in srgb, ${group === 'operaciones' ? '#3b82f6' : group === 'gestion' ? '#f59e0b' : group === 'finanzas' ? '#10b981' : group === 'documentos' ? '#8b5cf6' : group === 'inteligencia' ? '#ec4899' : '#6b7280'} 40%, transparent)` }}>
+                style={{ borderColor: `color-mix(in srgb, ${group === 'operaciones' ? '#3b82f6' : group === 'gestion' ? '#ff6b5b' : group === 'finanzas' ? '#10b981' : group === 'documentos' ? '#8b5cf6' : group === 'inteligencia' ? '#ec4899' : '#6b7280'} 40%, transparent)` }}>
                 {modules.map((module) => {
                   const globalIdx = moduleIndexMap.get(module.id) ?? 0;
                   return (

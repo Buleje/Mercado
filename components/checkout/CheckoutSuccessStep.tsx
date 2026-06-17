@@ -49,7 +49,7 @@ export function CheckoutSuccessStep({
               "var(--color-primary-dark, #009690)",
               "color-mix(in oklch, var(--color-primary, #00A0A0) 60%, white)",
               "color-mix(in oklch, var(--color-primary, #00A0A0) 30%, white)",
-              "var(--data-warning-400, #fbbf24)",
+              "var(--data-warning-400, #ff8676)",
             ];
             const isCircle = i % 3 === 0;
             return (

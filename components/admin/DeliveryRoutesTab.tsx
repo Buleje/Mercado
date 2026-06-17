@@ -24,7 +24,7 @@ export type DeliveryGPSZone = {
 
 const GPS_ZONES: DeliveryGPSZone[] = [
   { name: "Centro",           maxKm: 1.5, fee: 0,  color: "var(--accent)", available: true  },
-  { name: "Zona urbana",      maxKm: 3,   fee: 3,  color: "#f97316", available: true  },
+  { name: "Zona urbana",      maxKm: 3,   fee: 3,  color: "#ff6b5b", available: true  },
   { name: "Zona extendida",   maxKm: 5,   fee: 5,  color: "#ef4444", available: true  },
   { name: "Fuera de cobertura", maxKm: Infinity, fee: 0, color: "#6b7280", available: false },
 ];
@@ -87,7 +87,7 @@ function DeliveryMap({ routes, onStatusChange }: DeliveryMapProps) {
 
       // Marcadores de pedidos
       const markerColors: Record<Route["status"], string> = {
-        "pendiente":  "#f97316",
+        "pendiente":  "#ff6b5b",
         "en-ruta":    "#3b82f6",
         "completada": "#22c55e",
         "cancelada":  "#6b7280",

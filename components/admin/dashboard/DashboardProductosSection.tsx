@@ -13,7 +13,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   if (data.length === 0) return null;
   const max = Math.max(...data, 1); const min = Math.min(...data, 0); const range = max - min || 1;
   const points = data.map((val, i) => { const x = (i / (data.length - 1)) * 80; const y = 24 - ((val - min) / range) * 20; return `${x},${y}`; }).join(" ");
-  const colorMap: Record<string, string> = { "emerald-500":"#10b981","violet-500":"#8b5cf6","red-500":"#ef4444","amber-500":"#f59e0b" };
+  const colorMap: Record<string, string> = { "emerald-500":"#10b981","violet-500":"#8b5cf6","red-500":"#ef4444","amber-500":"#ff6b5b" };
   return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"var(--accent)"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
@@ -129,7 +129,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                           return `${x}%,${y}%`;
                         }).join(" ")}
                         fill="none"
-                        stroke="#f59e0b"
+                        stroke="#ff6b5b"
                         strokeWidth="2"
                         className="opacity-80"
                       />

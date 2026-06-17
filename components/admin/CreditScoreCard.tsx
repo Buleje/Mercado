@@ -148,7 +148,7 @@ function GaugeCircle({ score, color }: { score: number; color: "green" | "yellow
   const circumference = Math.PI * r; // half circle
   const progress = (score / 100) * circumference;
 
-  const strokeColor = color === "green" ? "var(--accent)" : color === "yellow" ? "#f59e0b" : "#ef4444";
+  const strokeColor = color === "green" ? "var(--accent)" : color === "yellow" ? "#ff6b5b" : "#ef4444";
   const textColor = color === "green" ? "text-[var(--data-success-500)]" : color === "yellow" ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]";
 
   return (

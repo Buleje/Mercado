@@ -153,14 +153,14 @@ function RecetaCard({
         "rounded-xl overflow-hidden bg-[var(--surface-raised)] border transition-[border-color,box-shadow,transform] duration-[var(--dur-fast)]",
         cookable
           ? "border-[var(--rule-soft)] hover:border-[var(--accent)]/40 hover:shadow-md"
-          : "border-[var(--data-warning-200,#fde68a)]/60 hover:shadow-md"
+          : "border-[var(--data-warning-200,#ffe1dd)]/60 hover:shadow-md"
       )}>
         {/* Banda superior de cocinabilidad — siempre visible */}
         <div className={cn(
           "px-4 py-2 flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
           cookable
             ? "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] dark:bg-emerald-950/40 dark:text-emerald-300"
-            : "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] dark:bg-amber-950/40 dark:text-amber-300"
+            : "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#c93b2c)] dark:bg-amber-950/40 dark:text-amber-300"
         )}>
           {cookable ? (
             <>
@@ -282,7 +282,7 @@ function RecetaCard({
               </p>
               <p className={cn(
                 "text-base font-bold tabular-nums",
-                cookable ? "text-[var(--text-primary)]" : "text-[var(--data-warning-700,#b45309)]"
+                cookable ? "text-[var(--text-primary)]" : "text-[var(--data-warning-700,#c93b2c)]"
               )}>
                 {availIngs}<span className="text-[var(--text-tertiary)] font-medium">/{totalIngs}</span>
               </p>
@@ -636,7 +636,7 @@ export default function RecetarioClient() {
           >
             <span
               aria-hidden
-              className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] dark:bg-amber-950/40 dark:text-amber-300"
+              className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#c93b2c)] dark:bg-amber-950/40 dark:text-amber-300"
             >
               <AlertTriangle className="h-8 w-8" strokeWidth={1.75} />
             </span>

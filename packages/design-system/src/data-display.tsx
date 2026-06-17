@@ -290,7 +290,7 @@ export function useChartTokens() {
     stroke: "#0F172A",
     fill: "#0F172A",
     success: "#10B981",
-    warning: "#F59E0B",
+    warning: "#ff6b5b",
     error: "#EF4444",
     info: "#3B82F6",
   });
@@ -306,7 +306,7 @@ export function useChartTokens() {
       stroke: read("--text-primary", "#0F172A"),
       fill: read("--text-primary", "#0F172A"),
       success: read("--data-success", "#10B981"),
-      warning: read("--data-warning", "#F59E0B"),
+      warning: read("--data-warning", "#ff6b5b"),
       error: read("--data-error", "#EF4444"),
       info: read("--data-info", "#3B82F6"),
     });

@@ -35,9 +35,9 @@ const TRUST_PILLS = [
 
 const SHELF_PRODUCTS = [
   // Row 1
-  ["#fbbf24", "#f97316", "#ef4444", "#a855f7"],
+  ["#ff8676", "#ff6b5b", "#ef4444", "#a855f7"],
   // Row 2
-  ["#0ea5e9", "#22c55e", "#84cc16", "#f59e0b"],
+  ["#0ea5e9", "#22c55e", "#84cc16", "#ff6b5b"],
   // Row 3 (just 2 + a price tag visual)
   ["#06b6d4", "#84cc16"],
 ];

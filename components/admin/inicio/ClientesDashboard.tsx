@@ -223,7 +223,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     const freqRanges = [
       { label: "1 compra", min: 1, max: 1, color: "#94a3b8" },
       { label: "2-3 compras", min: 2, max: 3, color: "#3b82f6" },
-      { label: "4-7 compras", min: 4, max: 7, color: "#f59e0b" },
+      { label: "4-7 compras", min: 4, max: 7, color: "#ff6b5b" },
       { label: "8+ compras", min: 8, max: Infinity, color: "var(--accent)" },
     ];
     const frecuenciaCompra = freqRanges.map(r => ({

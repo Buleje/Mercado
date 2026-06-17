@@ -126,7 +126,7 @@ export default function MarginWaterfallChart() {
         value: gastos,
         displayValue: gastos,
         base: totalRevenue - totalCost - gastos,
-        fill: "#f97316",
+        fill: "#ff6b5b",
         label: `~10%`,
       },
       {

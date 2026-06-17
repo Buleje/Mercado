@@ -325,8 +325,8 @@ function ensurePinStyles(): void {
       font-weight: 800;
     }
     .buleje-popup__chip--rating {
-      background: #fef3c7;
-      color: #92400e;
+      background: #fff1ef;
+      color: #842e25;
     }
     .buleje-popup__chip--promo {
       background: #fee2e2;

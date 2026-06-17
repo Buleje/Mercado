@@ -215,8 +215,8 @@ export default function ReviewModal() {
                         >
                           <Star
                             className="h-9 w-9 transition-colors"
-                            fill={(hovered || rating) >= n ? "#FBBF24" : "none"}
-                            color={(hovered || rating) >= n ? "#FBBF24" : "#D1D5DB"}
+                            fill={(hovered || rating) >= n ? "#ff8676" : "none"}
+                            color={(hovered || rating) >= n ? "#ff8676" : "#D1D5DB"}
                           />
                         </m.button>
                       ))}
@@ -402,7 +402,7 @@ export default function ReviewModal() {
                       <p className="text-sm text-[var(--text-primary)] leading-relaxed">{activeText.trim()}</p>
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((n) => (
-                          <Star key={n} className="h-3.5 w-3.5" fill={n <= rating ? "#FBBF24" : "none"} color={n <= rating ? "#FBBF24" : "#D1D5DB"} />
+                          <Star key={n} className="h-3.5 w-3.5" fill={n <= rating ? "#ff8676" : "none"} color={n <= rating ? "#ff8676" : "#D1D5DB"} />
                         ))}
                       </div>
                       <p className="text-xs text-muted font-medium">{customerName} · {customerLocation}</p>

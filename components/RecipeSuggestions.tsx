@@ -33,7 +33,7 @@ const RECIPES: Recipe[] = [
     Icon: Beef,
     time: "30 min",
     servings: 4,
-    gradient: "linear-gradient(135deg, #ef4444, #ea580c)",
+    gradient: "linear-gradient(135deg, #ef4444, #f0503f)",
     ingredients: ["carne", "tomate", "cebolla", "arroz", "aceite"],
   },
   {
@@ -49,7 +49,7 @@ const RECIPES: Recipe[] = [
     Icon: Drumstick,
     time: "45 min",
     servings: 6,
-    gradient: "linear-gradient(135deg, #f59e0b, #ca8a04)",
+    gradient: "linear-gradient(135deg, #ff6b5b, #ca8a04)",
     ingredients: ["arroz", "pollo", "arveja", "zanahoria", "cerveza"],
   },
 ];

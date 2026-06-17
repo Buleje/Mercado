@@ -227,7 +227,7 @@ export default function LivesAdminModule() {
           label="Engagement"
           value={`${engagementPromedio}%`}
           icon={DollarSign}
-          color="#F59E0B"
+          color="#ff6b5b"
           subtitle="Promedio viewers activos"
         />
       </div>

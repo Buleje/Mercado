@@ -38,21 +38,21 @@ interface HealthResponse {
 
 const CATEGORY_CONFIG = {
   seguridad: { icon: Shield, color: "#ef4444", label: "Seguridad" },
-  rendimiento: { icon: Zap, color: "#f59e0b", label: "Rendimiento" },
+  rendimiento: { icon: Zap, color: "#ff6b5b", label: "Rendimiento" },
   agentes: { icon: Bot, color: "var(--accent)", label: "Agentes IA" },
   datos: { icon: Database, color: "#8b5cf6", label: "Datos" },
 } as const;
 
 const STATUS_CONFIG = {
   ok: { icon: CheckCircle2, color: "var(--accent)", label: "OK" },
-  warning: { icon: AlertTriangle, color: "#f59e0b", label: "Advertencia" },
+  warning: { icon: AlertTriangle, color: "#ff6b5b", label: "Advertencia" },
   error: { icon: XCircle, color: "#ef4444", label: "Error" },
 } as const;
 
 const OVERALL_CONFIG = {
   healthy: { color: "var(--accent)", label: "Todo funciona perfecto", icon: CheckCircle2 },
-  warning: { color: "#f59e0b", label: "Funciona con advertencias", icon: AlertTriangle },
-  degraded: { color: "#f97316", label: "Algunos sistemas con problemas", icon: Activity },
+  warning: { color: "#ff6b5b", label: "Funciona con advertencias", icon: AlertTriangle },
+  degraded: { color: "#ff6b5b", label: "Algunos sistemas con problemas", icon: Activity },
   critical: { color: "#ef4444", label: "Problemas críticos detectados", icon: XCircle },
 } as const;
 

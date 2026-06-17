@@ -121,7 +121,7 @@ export default function MarketplaceApplyPage() {
   const fireConfetti = async () => {
     const confetti = (await import("canvas-confetti")).default;
     const end = Date.now() + 1500;
-    const colors = ["var(--accent)", "#F59E0B", "#EC4899", "#8B5CF6"];
+    const colors = ["var(--accent)", "#ff6b5b", "#EC4899", "#8B5CF6"];
     (function frame() {
       confetti({
         particleCount: 3,

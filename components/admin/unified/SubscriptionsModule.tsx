@@ -479,7 +479,7 @@ export default function SubscriptionsModule() {
           label="Pausadas / canceladas"
           value={pausadas.length + canceladas.length}
           icon={Calendar}
-          color="#F59E0B"
+          color="#ff6b5b"
           subtitle="Requieren seguimiento"
         />
       </div>

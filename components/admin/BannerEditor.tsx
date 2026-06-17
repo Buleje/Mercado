@@ -51,7 +51,7 @@ function saveBanners(banners: Banner[]) {
 
 // ── Empty form ────────────────────────────────────────────────────────────────
 
-const PRESET_COLORS = ["#2563EB", "#f97316", "#264653", "#e76f51", "#00BDBD", "#e9c46a", "#1d3557", "#457b9d"];
+const PRESET_COLORS = ["#2563EB", "#ff6b5b", "#264653", "#e76f51", "#00BDBD", "#e9c46a", "#1d3557", "#457b9d"];
 
 const emptyForm = (): FormState => ({
   title:    "",

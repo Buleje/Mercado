@@ -80,13 +80,13 @@ const KEYS = {
   iconStyle: "superadmin-nav-icon-style",
 } as const;
 
-// Brandon mayo 2026: default cambiado a preset "Ejecutivo" — dark + amber +
+// Brandon 2026-06-17: default dark + TEAL de marca (sin ámbar/naranja) +
 // density compact. El preset "Buleje" sigue disponible pero ya no es default.
 const DEFAULTS: SidebarPrefs = {
   hidden: [],
   order: [],
   theme: "dark",
-  accent: "amber",
+  accent: "teal",
   density: "compact",
   iconStyle: "monochrome",
 };
@@ -153,9 +153,9 @@ const PRESETS: Array<{ id: string; label: string; description: string; swatch: s
   {
     id: "ejecutivo",
     label: "Ejecutivo",
-    description: "Oscuro · ámbar · compacto",
+    description: "Oscuro · teal · compacto",
     swatch: "linear-gradient(135deg, #18181b 0%, #27272a 100%)",
-    prefs: { theme: "dark", accent: "amber", density: "compact", iconStyle: "monochrome" },
+    prefs: { theme: "dark", accent: "teal", density: "compact", iconStyle: "monochrome" },
   },
   {
     id: "sereno",

@@ -93,7 +93,7 @@ export function LinkedDocumentsSection({ entity, id }: { entity: Entity; id: str
                         "inline-flex items-center gap-1 text-[length:var(--ts-2xs,11px)] font-bold px-1.5 py-0.5 rounded-md",
                         n < 0 ? "bg-[var(--data-error-50,#fef2f2)] text-[var(--data-error-600,#dc2626)]"
                           : n <= 7 ? "bg-[var(--data-error-50,#fef2f2)] text-[var(--data-error-600,#dc2626)]"
-                          : n <= 30 ? "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)]"
+                          : n <= 30 ? "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#c93b2c)]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                       )}>
                         <Clock className="h-3 w-3" />

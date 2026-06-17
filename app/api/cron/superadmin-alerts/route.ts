@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
       items: expiringTrials.map(t => ({
         label: t.name,
         value: `Expira: ${t.trialEndsAt?.toLocaleDateString("es-PE") ?? "—"}`,
-        color: "#fbbf24",
+        color: "#ff8676",
       })),
       actionUrl: `${baseUrl}/superadmin`,
       actionLabel: "Contactar tiendas",

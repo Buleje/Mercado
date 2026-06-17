@@ -30,7 +30,7 @@ const QUADRANT_META: Record<BCGQuadrant, {
   bg: string; text: string; recommendation: string;
 }> = {
   star:     { label: "Estrellas",    icon: "↑↑", color: "var(--accent)", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", recommendation: "Invertir para crecer — alta prioridad" },
-  cow:      { label: "Vacas",        icon: "→↑", color: "#f97316", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", recommendation: "Mantener y cosechar — generan caja" },
+  cow:      { label: "Vacas",        icon: "→↑", color: "#ff6b5b", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]", recommendation: "Mantener y cosechar — generan caja" },
   question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",  recommendation: "Evaluar potencial — requieren inversion" },
   dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",    text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",    recommendation: "Reducir o descontinuar" },
 };

@@ -323,7 +323,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
           {sectionId === "horario-pico" && (
             <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
               <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-4 h-4" style={{ color: "#f97316" }} />
+                <TrendingUp className="w-4 h-4" style={{ color: "#ff6b5b" }} />
                 <span className="text-sm font-semibold text-[var(--text-primary)]">Ventas por hora (hoy)</span>
               </div>
               {loading ? (
@@ -339,7 +339,7 @@ export function VentasSubTab(props: VentasSubTabProps) {
                       <div key={bucket.hour} className="flex items-center gap-2 text-xs">
                         <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-[var(--data-warning-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-zinc-500")}>{bucket.label}</span>
                         <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
-                          {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "var(--color-primary)80" }} />}
+                          {pct > 0 && <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#ff6b5b" : "var(--color-primary)80" }} />}
                           {pct > 10 && <span className="absolute inset-y-0 left-2 flex items-center text-[length:var(--ts-2xs)] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>}
                         </div>
                         {pct === 0 && <span className="text-[var(--text-tertiary)] dark:text-zinc-600 text-[length:var(--ts-2xs)]">--</span>}

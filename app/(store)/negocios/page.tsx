@@ -690,7 +690,7 @@ function FeaturesGrid() {
                       className={cn(
                         "absolute inset-y-0 left-0 rounded-full",
                         p.tone === "ok" && "bg-[var(--data-success-500)]",
-                        p.tone === "warn" && "bg-[var(--data-warning-500,#f59e0b)]",
+                        p.tone === "warn" && "bg-[var(--data-warning-500,#ff6b5b)]",
                         p.tone === "low" && "bg-[var(--data-error-500,#ef4444)]",
                       )}
                       style={{ width: `${p.pct}%` }}
@@ -727,9 +727,9 @@ function FeaturesGrid() {
               </div>
               <div className="mt-3 flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500,#f59e0b)] ring-2 ring-[var(--data-warning-500,#f59e0b)]/30" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500,#ff6b5b)] ring-2 ring-[var(--data-warning-500,#ff6b5b)]/30" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[var(--surface-sunken)]" />
-                <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700,#b45309)]">
+                <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700,#c93b2c)]">
                   Recordar pago
                 </span>
               </div>

@@ -696,7 +696,7 @@ function StorageRing({ usedBytes, quotaBytes }: { usedBytes: number; quotaBytes:
   const r = 18;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
-  const color = pct >= 90 ? "var(--color-danger, #ef4444)" : pct >= 70 ? "var(--color-warning, #f59e0b)" : "var(--color-primary)";
+  const color = pct >= 90 ? "var(--color-danger, #ef4444)" : pct >= 70 ? "var(--color-warning, #ff6b5b)" : "var(--color-primary)";
   return (
     <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-4 flex items-center gap-3">
       <div className="relative h-12 w-12 shrink-0">

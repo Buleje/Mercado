@@ -67,7 +67,7 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
     .info-row strong { color: #111827; }
 
     /* Status badge */
-    .status-pendiente { background:#fef3c7; color:#92400e; }
+    .status-pendiente { background:#fff1ef; color:#842e25; }
     .status-recibido  { background:#d1fae5; color:#065f46; }
     .status-parcial   { background:#dbeafe; color:#1e40af; }
     .status-cancelado { background:#fee2e2; color:#991b1b; }

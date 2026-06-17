@@ -322,7 +322,7 @@ export default function SalesTrendChart() {
             <ReferenceLine
               key={`q-${q}`}
               x={q}
-              stroke="#f97316"
+              stroke="#ff6b5b"
               strokeDasharray="4 4"
               strokeOpacity={0.6}
             />
@@ -333,7 +333,7 @@ export default function SalesTrendChart() {
             <ReferenceLine
               key={`f-${f}`}
               x={f}
-              stroke="#f97316"
+              stroke="#ff6b5b"
               strokeOpacity={0.8}
             />
           ))}
@@ -342,9 +342,9 @@ export default function SalesTrendChart() {
           {todayFecha && (
             <ReferenceLine
               x={todayFecha}
-              stroke="#f97316"
+              stroke="#ff6b5b"
               strokeWidth={2}
-              label={{ value: "Hoy", position: "top", fill: "#f97316", fontSize: 10, fontWeight: "bold" }}
+              label={{ value: "Hoy", position: "top", fill: "#ff6b5b", fontSize: 10, fontWeight: "bold" }}
             />
           )}
 
@@ -390,7 +390,7 @@ export default function SalesTrendChart() {
           <Line
             type="monotone"
             dataKey="movingAvg7d"
-            stroke="#f97316"
+            stroke="#ff6b5b"
             strokeWidth={2.5}
             dot={false}
             isAnimationActive={false}

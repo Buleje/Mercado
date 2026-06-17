@@ -12,7 +12,7 @@ import { useRipple } from "@/hooks/use-ripple";
 const PERKS = [
   { icon: Truck, label: "Delivery gratis +S/50", color: "#4ade80" },
   { icon: Clock, label: "Entrega en ~30 min", color: "#60a5fa" },
-  { icon: CreditCard, label: "Paga con Yape o efectivo", color: "#f97316" },
+  { icon: CreditCard, label: "Paga con Yape o efectivo", color: "#ff6b5b" },
   { icon: ShieldCheck, label: "Calidad garantizada", color: "#86efac" },
 ];
 
@@ -80,7 +80,7 @@ export default function CTABanner() {
             No te quedes{" "}
             <br className="hidden sm:block" />
             <span style={{
-              background: "linear-gradient(130deg, #4ade80 0%, var(--accent) 40%, #f97316 75%, #f97316 100%)",
+              background: "linear-gradient(130deg, #4ade80 0%, var(--accent) 40%, #ff6b5b 75%, #ff6b5b 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               display: "inline-block",
             }}>

@@ -674,7 +674,7 @@ export default function ResumenSection({ data }: Props) {
               Oportunidades detectadas
             </CardTitle>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 [&>*:nth-child(1)]:[--opp-accent:#15803d] [&>*:nth-child(1)]:[--opp-bg:rgb(220_252_231)] [&>*:nth-child(1)]:[--opp-accent-dark:#4ade80] [&>*:nth-child(1)]:[--opp-bg-dark:rgb(20_83_45/0.35)] [&>*:nth-child(2)]:[--opp-accent:#0891b2] [&>*:nth-child(2)]:[--opp-bg:rgb(207_250_254)] [&>*:nth-child(2)]:[--opp-accent-dark:#22d3ee] [&>*:nth-child(2)]:[--opp-bg-dark:rgb(22_78_99/0.35)] [&>*:nth-child(3)]:[--opp-accent:#c2410c] [&>*:nth-child(3)]:[--opp-bg:rgb(255_237_213)] [&>*:nth-child(3)]:[--opp-accent-dark:#fb923c] [&>*:nth-child(3)]:[--opp-bg-dark:rgb(124_45_18/0.35)]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 [&>*:nth-child(1)]:[--opp-accent:#15803d] [&>*:nth-child(1)]:[--opp-bg:rgb(220_252_231)] [&>*:nth-child(1)]:[--opp-accent-dark:#4ade80] [&>*:nth-child(1)]:[--opp-bg-dark:rgb(20_83_45/0.35)] [&>*:nth-child(2)]:[--opp-accent:#0891b2] [&>*:nth-child(2)]:[--opp-bg:rgb(207_250_254)] [&>*:nth-child(2)]:[--opp-accent-dark:#22d3ee] [&>*:nth-child(2)]:[--opp-bg-dark:rgb(22_78_99/0.35)] [&>*:nth-child(3)]:[--opp-accent:#c2410c] [&>*:nth-child(3)]:[--opp-bg:rgb(255_237_213)] [&>*:nth-child(3)]:[--opp-accent-dark:#ff8676] [&>*:nth-child(3)]:[--opp-bg-dark:rgb(124_45_18/0.35)]">
             {opportunities.map((opp, i) => (
               <div
                 key={i}

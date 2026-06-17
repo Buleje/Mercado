@@ -335,9 +335,9 @@ export default function CashFlowChart() {
             yAxisId="line"
             type="monotone"
             dataKey="balance"
-            stroke="#f97316"
+            stroke="#ff6b5b"
             strokeWidth={2.5}
-            dot={{ r: 3, fill: "#f97316", stroke: "#fff", strokeWidth: 1 }}
+            dot={{ r: 3, fill: "#ff6b5b", stroke: "#fff", strokeWidth: 1 }}
             isAnimationActive={false}
             name="Balance"
           />

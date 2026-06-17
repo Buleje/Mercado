@@ -164,7 +164,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: "linear-gradient(135deg, var(--accent) 0%, #3d8b68 40%, #f97316 100%)",
+              background: "linear-gradient(135deg, var(--accent) 0%, #3d8b68 40%, #ff6b5b 100%)",
             }}
           />
 

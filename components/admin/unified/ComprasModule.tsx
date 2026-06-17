@@ -86,7 +86,7 @@ const HistorialGastosTab = dynamic(() => import("@/components/admin/compras/Hist
 
 const MODULE_ID = "compras";
 
-const CHART_COLORS = ['var(--color-primary)', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#14C2C2', '#264653', '#6b705c'];
+const CHART_COLORS = ['var(--color-primary)', '#ff6b5b', '#457b9d', '#e63946', '#9b5de5', '#14C2C2', '#264653', '#6b705c'];
 
 const TABS: AdminTab[] = [
   { id: "punto-compra", label: "Punto de Compra", icon: ShoppingBasket },
@@ -311,10 +311,10 @@ function ComprasDashboard() {
 
   const kpiCards = [
     { label: "OC totales", value: kpis.totalOC, icon: ShoppingCart, color: "#457b9d", change: kpiChanges.oc != null ? Math.round(kpiChanges.oc * 10) / 10 : undefined },
-    { label: "OC pendientes", value: kpis.ocPendientes, icon: Clock, color: "#f97316" },
+    { label: "OC pendientes", value: kpis.ocPendientes, icon: Clock, color: "#ff6b5b" },
     { label: "Total gastado", value: `S/ ${kpis.totalGastado.toLocaleString()}`, icon: DollarSign, color: "var(--color-primary)", change: kpiChanges.gastado != null ? Math.round(kpiChanges.gastado * 10) / 10 : undefined },
     { label: "Proveedores", value: kpis.totalProveedores, icon: Building2, color: "#9b5de5" },
-    { label: "Deuda total", value: `S/ ${kpis.deudaTotal.toLocaleString()}`, icon: CreditCard, color: "#f97316" },
+    { label: "Deuda total", value: `S/ ${kpis.deudaTotal.toLocaleString()}`, icon: CreditCard, color: "#ff6b5b" },
     { label: "Deuda vencida", value: `S/ ${kpis.deudaVencida.toLocaleString()}`, icon: AlertTriangle, color: "#e63946", alert: kpis.deudaVencida > 0 },
   ];
 
@@ -451,7 +451,7 @@ function ComprasDashboard() {
             <YAxis tick={{ fontSize: 11 }} className="fill-gray-500" />
             <Tooltip content={<ChartTooltip />} />
             <Legend iconType="circle" formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
-            <Bar dataKey="Pendiente" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="Pendiente" stackId="a" fill="#ff6b5b" radius={[0, 0, 0, 0]} />
             <Bar dataKey="En proceso" stackId="a" fill="#457b9d" />
             <Bar dataKey="Recibido" stackId="a" fill="var(--color-primary)" />
             <Bar dataKey="Cancelado" stackId="a" fill="#e63946" radius={[4, 4, 0, 0]} />
@@ -474,7 +474,7 @@ function ComprasDashboard() {
                 <Tooltip content={<ChartTooltip />} />
                 <Bar dataKey="total" name="Deuda total" radius={[0, 6, 6, 0]} barSize={14}>
                   {debtBySupplier.map((d, i) => (
-                    <Cell key={i} fill={d.vencida > 0 ? "#e63946" : d.total > 500 ? "#f97316" : "var(--color-primary)"} />
+                    <Cell key={i} fill={d.vencida > 0 ? "#e63946" : d.total > 500 ? "#ff6b5b" : "var(--color-primary)"} />
                   ))}
                 </Bar>
               </BarChart>
@@ -536,7 +536,7 @@ function ComprasDashboard() {
             <Tooltip content={<ChartTooltip />} />
             <Legend iconType="circle" formatter={(value) => <span className="text-xs text-[var(--text-secondary)]">{value}</span>} />
             <Bar dataKey="total" fill="var(--color-primary)" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
-            <Line type="monotone" dataKey="promedio" stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: "#f97316", strokeWidth: 0 }} name="Prom. móvil 3m" />
+            <Line type="monotone" dataKey="promedio" stroke="#ff6b5b" strokeWidth={2.5} dot={{ r: 4, fill: "#ff6b5b", strokeWidth: 0 }} name="Prom. móvil 3m" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

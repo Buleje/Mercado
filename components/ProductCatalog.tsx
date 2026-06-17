@@ -918,7 +918,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   style={{
                     left: `${(priceRange[0] / maxPrice) * 100}%`,
                     right: `${100 - (priceRange[1] / maxPrice) * 100}%`,
-                    background: "linear-gradient(90deg, #f97316, #2563EB)",
+                    background: "linear-gradient(90deg, #ff6b5b, #2563EB)",
                   }}
                 />
                 <input

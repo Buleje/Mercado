@@ -80,7 +80,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
         <Bell className="h-4 w-4" />
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-extrabold text-white px-0.5"
-            style={{ background: urgent > 0 ? "#ef4444" : "#f59e0b" }}>
+            style={{ background: urgent > 0 ? "#ef4444" : "#ff6b5b" }}>
             {unread}
           </span>
         )}

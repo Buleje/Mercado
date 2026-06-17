@@ -164,16 +164,16 @@ function generarReporteBancario() {
 
 // ── Dashboard de Finanzas (Premium) ──────────────────────────────────────────
 
-const DASHBOARD_EXPENSE_COLORS = ["var(--color-primary)", "#457b9d", "#f97316", "#9b5de5", "#06b6d4", "#6b7280"];
+const DASHBOARD_EXPENSE_COLORS = ["var(--color-primary)", "#457b9d", "#ff6b5b", "#9b5de5", "#06b6d4", "#6b7280"];
 const PAYMENT_METHOD_COLORS: Record<string, string> = {
   efectivo: "var(--accent)", EFECTIVO: "var(--accent)", Efectivo: "var(--accent)",
   yape: "#7c3aed", YAPE: "#7c3aed", Yape: "#7c3aed",
   plin: "#06b6d4", PLIN: "#06b6d4", Plin: "#06b6d4",
   tarjeta: "#3b82f6", TARJETA: "#3b82f6", Tarjeta: "#3b82f6",
-  fiado: "#f59e0b", FIADO: "#f59e0b", Fiado: "#f59e0b",
+  fiado: "#ff6b5b", FIADO: "#ff6b5b", Fiado: "#ff6b5b",
   transferencia: "#8b5cf6", TRANSFERENCIA: "#8b5cf6", Transferencia: "#8b5cf6",
 };
-const PM_FALLBACK_COLORS = ["var(--accent)", "#7c3aed", "#06b6d4", "#3b82f6", "#f59e0b", "#8b5cf6", "#e63946"];
+const PM_FALLBACK_COLORS = ["var(--accent)", "#7c3aed", "#06b6d4", "#3b82f6", "#ff6b5b", "#8b5cf6", "#e63946"];
 
 type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: string; bg: string };
 const KPI_DEFS: KpiDef[] = [
@@ -181,8 +181,8 @@ const KPI_DEFS: KpiDef[] = [
   { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: "#ef4444", bg: "bg-[var(--data-error-50)]" },
   { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: "#3b82f6", bg: "bg-[var(--accent-soft)]" },
   { key: "margen", label: "Margen %", icon: Percent, color: "#8b5cf6", bg: "bg-[var(--surface-sunken)]" },
-  { key: "deuda", label: "Deuda proveedores", icon: Truck, color: "#f97316", bg: "bg-[var(--data-warning-50)]" },
-  { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: "#f59e0b", bg: "bg-[var(--data-warning-50)]" },
+  { key: "deuda", label: "Deuda proveedores", icon: Truck, color: "#ff6b5b", bg: "bg-[var(--data-warning-50)]" },
+  { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: "#ff6b5b", bg: "bg-[var(--data-warning-50)]" },
   { key: "igv", label: "IGV a pagar", icon: Calculator, color: "#e63946", bg: "bg-[var(--surface-sunken)]" },
   { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-[var(--accent-soft)]" },
 ];
@@ -603,7 +603,7 @@ function FinanzasDashboard() {
                 wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
               />
               <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="3 3" />
-              <ReferenceLine y={15000} stroke="#f97316" strokeDasharray="5 5" label={{ value: "Meta: S/15,000", position: "right", fill: "#f97316", fontSize: 11 }} />
+              <ReferenceLine y={15000} stroke="#ff6b5b" strokeDasharray="5 5" label={{ value: "Meta: S/15,000", position: "right", fill: "#ff6b5b", fontSize: 11 }} />
               <Bar dataKey="ingresos" fill="url(#gradIngresos)" radius={[6, 6, 0, 0]} barSize={30} />
               <Bar dataKey="gastos" fill="url(#gradGastos)" radius={[6, 6, 0, 0]} barSize={30} />
               <Line type="monotone" dataKey="utilidad" stroke="#3b82f6" strokeWidth={3} dot={{ r: 5, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 7 }} />
@@ -797,7 +797,7 @@ function FinanzasDashboard() {
                 className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
                 style={{
                   width: `${projProgreso}%`,
-                  backgroundColor: projPctTarget > 70 ? "var(--accent)" : projPctTarget >= 40 ? "#f59e0b" : "#ef4444",
+                  backgroundColor: projPctTarget > 70 ? "var(--accent)" : projPctTarget >= 40 ? "#ff6b5b" : "#ef4444",
                 }}
               />
             </div>
@@ -869,12 +869,12 @@ function FinanzasDashboard() {
       {healthScore && (
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
+            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444" }} />
             <p className="text-sm font-bold text-[var(--text-primary)]">
               Indicadores de Salud Financiera
               <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
-                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
+                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "#ff6b5b20" : "#ef444420",
+                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444",
               }}>
                 {healthScore.total}/100 — {healthScore.total > 70 ? "Saludable" : healthScore.total >= 40 ? "Precaucion" : "Critico"}
               </span>
@@ -886,21 +886,21 @@ function FinanzasDashboard() {
               max={100}
               label="Margen de utilidad"
               unit="%"
-              color={healthScore.margen > 25 ? "var(--accent)" : healthScore.margen >= 15 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.margen > 25 ? "var(--accent)" : healthScore.margen >= 15 ? "#ff6b5b" : "#ef4444"}
             />
             <GaugeChart
               value={healthScore.liquidez}
               max={4}
               label="Liquidez"
               unit="x"
-              color={healthScore.liquidez > 2 ? "var(--accent)" : healthScore.liquidez >= 1 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.liquidez > 2 ? "var(--accent)" : healthScore.liquidez >= 1 ? "#ff6b5b" : "#ef4444"}
             />
             <GaugeChart
               value={healthScore.deudaRatio}
               max={100}
               label="Endeudamiento"
               unit="%"
-              color={healthScore.deudaRatio < 10 ? "var(--accent)" : healthScore.deudaRatio <= 30 ? "#f59e0b" : "#ef4444"}
+              color={healthScore.deudaRatio < 10 ? "var(--accent)" : healthScore.deudaRatio <= 30 ? "#ff6b5b" : "#ef4444"}
             />
           </div>
         </div>
@@ -927,7 +927,7 @@ function FinanzasDashboard() {
                 />
                 <Bar dataKey="monto" radius={[0, 6, 6, 0]} barSize={20}>
                   {topPayables.map((entry, index) => (
-                    <Cell key={`pay-${index}`} fill={entry.vencido ? "#ef4444" : "#f97316"} />
+                    <Cell key={`pay-${index}`} fill={entry.vencido ? "#ef4444" : "#ff6b5b"} />
                   ))}
                   <LabelList dataKey="monto" position="right" formatter={(v: unknown) => formatCurrency(Number(v), { decimals: 0 })} style={{ fontSize: 10, fill: "#6b7280", fontWeight: 600 }} />
                 </Bar>
@@ -964,7 +964,7 @@ function FinanzasDashboard() {
                 />
                 <Bar dataKey="monto" radius={[0, 6, 6, 0]} barSize={20}>
                   {topFiados.map((entry, index) => (
-                    <Cell key={`fia-${index}`} fill={entry.vencido ? "#ef4444" : "#f59e0b"} />
+                    <Cell key={`fia-${index}`} fill={entry.vencido ? "#ef4444" : "#ff6b5b"} />
                   ))}
                   <LabelList dataKey="monto" position="right" formatter={(v: unknown) => formatCurrency(Number(v), { decimals: 0 })} style={{ fontSize: 10, fill: "#6b7280", fontWeight: 600 }} />
                 </Bar>
@@ -991,11 +991,11 @@ function FinanzasDashboard() {
         <StaggerItem index={8}>
           <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }} />
+              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444" }} />
               <p className="text-sm font-bold text-[var(--text-primary)]">Salud del Negocio</p>
               <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "#f59e0b20" : "#ef444420",
-                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444",
+                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "#ff6b5b20" : "#ef444420",
+                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444",
               }}>
                 {healthScore.total}/100
               </span>
@@ -1009,13 +1009,13 @@ function FinanzasDashboard() {
                       data={[{ name: "score", value: healthScore.total }, { name: "empty", value: 100 - healthScore.total }]}
                       cx="50%" cy="100%" startAngle={180} endAngle={0} innerRadius={50} outerRadius={70} dataKey="value" stroke="none"
                     >
-                      <Cell fill={healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444"} />
+                      <Cell fill={healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444"} />
                       <Cell fill="#e5e7eb" className="" />
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
-                  <span className="text-2xl font-extrabold" style={{ color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#f59e0b" : "#ef4444" }}>
+                  <span className="text-2xl font-extrabold" style={{ color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? "#ff6b5b" : "#ef4444" }}>
                     {healthScore.total}
                   </span>
                 </div>
@@ -1034,7 +1034,7 @@ function FinanzasDashboard() {
                       <span className="text-xs font-bold text-[var(--text-secondary)]">{f.detail}</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "var(--accent)" : f.pts >= f.max * 0.5 ? "#f59e0b" : "#ef4444" }} />
+                      <div className="h-full rounded-full transition-all duration-[var(--dur-slow)]" style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts >= f.max * 0.8 ? "var(--accent)" : f.pts >= f.max * 0.5 ? "#ff6b5b" : "#ef4444" }} />
                     </div>
                     <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{f.desc}</p>
                   </div>
@@ -1091,7 +1091,7 @@ function FinanzasDashboard() {
                     <Tooltip content={<ChartTooltip />} />
                     <Legend />
                     <Bar dataKey={cmpMonth1} fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey={cmpMonth2} fill="#f97316" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey={cmpMonth2} fill="#ff6b5b" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </>

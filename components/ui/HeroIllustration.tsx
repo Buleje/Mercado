@@ -63,7 +63,7 @@ export default function HeroIllustration({ className = "" }: { className?: strin
           }
           @keyframes signalLight {
             0%,33%  { fill: #ef4444; }
-            34%,66% { fill: #f59e0b; }
+            34%,66% { fill: #ff6b5b; }
             67%,100%{ fill: #22c55e; }
           }
           @keyframes moonGlow {
@@ -129,27 +129,27 @@ export default function HeroIllustration({ className = "" }: { className?: strin
 
       {/* Background buildings (far) */}
       <rect x="30" y="160" width="45" height="140" fill="#1e1b4b" />
-      <rect x="38" y="170" width="8" height="10" fill="#fbbf24" className="win-blink3" opacity="0.5" rx="1" />
+      <rect x="38" y="170" width="8" height="10" fill="#ff8676" className="win-blink3" opacity="0.5" rx="1" />
       <rect x="52" y="170" width="8" height="10" fill="#93c5fd" opacity="0.3" rx="1" />
       <rect x="38" y="188" width="8" height="10" fill="#93c5fd" opacity="0.4" rx="1" />
-      <rect x="52" y="188" width="8" height="10" fill="#fbbf24" className="win-blink" opacity="0.5" rx="1" />
+      <rect x="52" y="188" width="8" height="10" fill="#ff8676" className="win-blink" opacity="0.5" rx="1" />
 
       <rect x="445" y="150" width="55" height="150" fill="#1e1b4b" />
-      <rect x="453" y="162" width="9" height="11" fill="#fbbf24" className="win-blink2" opacity="0.5" rx="1" />
+      <rect x="453" y="162" width="9" height="11" fill="#ff8676" className="win-blink2" opacity="0.5" rx="1" />
       <rect x="468" y="162" width="9" height="11" fill="#93c5fd" opacity="0.3" rx="1" />
       <rect x="480" y="162" width="9" height="11" fill="#93c5fd" opacity="0.35" rx="1" />
 
       {/* Main building — left */}
       <rect x="55" y="120" width="90" height="180" fill="url(#bldg1)" rx="2" />
       <rect x="64" y="130" width="14" height="16" fill="#c7d2fe" className="win-blink" opacity="0.6" rx="1" />
-      <rect x="84" y="130" width="14" height="16" fill="#fbbf24" className="win-blink2" opacity="0.5" rx="1" />
+      <rect x="84" y="130" width="14" height="16" fill="#ff8676" className="win-blink2" opacity="0.5" rx="1" />
       <rect x="104" y="130" width="14" height="16" fill="#c7d2fe" opacity="0.35" rx="1" />
-      <rect x="64" y="154" width="14" height="16" fill="#fbbf24" opacity="0.4" rx="1" />
+      <rect x="64" y="154" width="14" height="16" fill="#ff8676" opacity="0.4" rx="1" />
       <rect x="84" y="154" width="14" height="16" fill="#c7d2fe" className="win-blink3" opacity="0.55" rx="1" />
-      <rect x="104" y="154" width="14" height="16" fill="#fbbf24" className="win-blink" opacity="0.45" rx="1" />
+      <rect x="104" y="154" width="14" height="16" fill="#ff8676" className="win-blink" opacity="0.45" rx="1" />
       {/* Rooftop antenna */}
       <rect x="96" y="108" width="2" height="14" fill="color-mix(in oklab, var(--accent) 70%, white)" />
-      <circle cx="97" cy="107" r="3" fill="#f59e0b" filter="url(#glow)" />
+      <circle cx="97" cy="107" r="3" fill="#ff6b5b" filter="url(#glow)" />
       {/* Sign Bodega */}
       <rect x="64" y="200" width="62" height="20" fill="var(--accent)" rx="4" />
       <text x="95" y="213" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold" fontFamily="sans-serif">BODEGA</text>
@@ -157,24 +157,24 @@ export default function HeroIllustration({ className = "" }: { className?: strin
       {/* Main building — center-right */}
       <rect x="300" y="100" width="110" height="200" fill="url(#bldg2)" rx="2" />
       <rect x="310" y="115" width="16" height="18" fill="#c7d2fe" className="win-blink2" opacity="0.6" rx="1" />
-      <rect x="332" y="115" width="16" height="18" fill="#fbbf24" opacity="0.45" rx="1" />
+      <rect x="332" y="115" width="16" height="18" fill="#ff8676" opacity="0.45" rx="1" />
       <rect x="354" y="115" width="16" height="18" fill="#c7d2fe" className="win-blink3" opacity="0.5" rx="1" />
-      <rect x="376" y="115" width="16" height="18" fill="#fbbf24" className="win-blink" opacity="0.55" rx="1" />
-      <rect x="310" y="142" width="16" height="18" fill="#fbbf24" className="win-blink3" opacity="0.4" rx="1" />
+      <rect x="376" y="115" width="16" height="18" fill="#ff8676" className="win-blink" opacity="0.55" rx="1" />
+      <rect x="310" y="142" width="16" height="18" fill="#ff8676" className="win-blink3" opacity="0.4" rx="1" />
       <rect x="332" y="142" width="16" height="18" fill="#c7d2fe" opacity="0.5" rx="1" />
-      <rect x="354" y="142" width="16" height="18" fill="#fbbf24" className="win-blink2" opacity="0.45" rx="1" />
+      <rect x="354" y="142" width="16" height="18" fill="#ff8676" className="win-blink2" opacity="0.45" rx="1" />
       <rect x="376" y="142" width="16" height="18" fill="#c7d2fe" opacity="0.55" rx="1" />
       <rect x="310" y="168" width="16" height="18" fill="#c7d2fe" className="win-blink" opacity="0.45" rx="1" />
-      <rect x="332" y="168" width="16" height="18" fill="#fbbf24" opacity="0.4" rx="1" />
+      <rect x="332" y="168" width="16" height="18" fill="#ff8676" opacity="0.4" rx="1" />
       {/* Sign Buleje */}
-      <rect x="308" y="220" width="94" height="22" fill="#f59e0b" rx="4" />
+      <rect x="308" y="220" width="94" height="22" fill="#ff6b5b" rx="4" />
       <text x="355" y="234" textAnchor="middle" fill="#1e1b4b" fontSize="7" fontWeight="bold" fontFamily="sans-serif">BULEJE</text>
 
       {/* Smaller building — right */}
       <rect x="420" y="175" width="70" height="125" fill="#312e81" rx="2" />
-      <rect x="430" y="186" width="12" height="14" fill="#fbbf24" className="win-blink2" opacity="0.5" rx="1" />
+      <rect x="430" y="186" width="12" height="14" fill="#ff8676" className="win-blink2" opacity="0.5" rx="1" />
       <rect x="448" y="186" width="12" height="14" fill="#c7d2fe" opacity="0.4" rx="1" />
-      <rect x="466" y="186" width="12" height="14" fill="#fbbf24" className="win-blink3" opacity="0.45" rx="1" />
+      <rect x="466" y="186" width="12" height="14" fill="#ff8676" className="win-blink3" opacity="0.45" rx="1" />
 
       {/* Palm trees */}
       <g className="palm" style={{ transformOrigin: "170px 300px" }}>
@@ -184,7 +184,7 @@ export default function HeroIllustration({ className = "" }: { className?: strin
         <ellipse cx="188" cy="225" rx="18" ry="9" fill="#166534" transform="rotate(35 188 225)" />
       </g>
       <g className="palm" style={{ transformOrigin: "280px 310px", animationDelay: "1.5s" }}>
-        <rect x="278" y="238" width="4" height="72" fill="#92400e" />
+        <rect x="278" y="238" width="4" height="72" fill="#842e25" />
         <ellipse cx="265" cy="230" rx="18" ry="9" fill="#15803d" transform="rotate(-25 265 230)" />
         <ellipse cx="282" cy="224" rx="20" ry="9" fill="#166534" transform="rotate(8 282 224)" />
         <ellipse cx="295" cy="232" rx="16" ry="8" fill="#15803d" transform="rotate(38 295 232)" />
@@ -202,7 +202,7 @@ export default function HeroIllustration({ className = "" }: { className?: strin
       <rect x="240" y="240" width="8" height="60" fill="#374151" />
       <rect x="234" y="240" width="20" height="38" fill="#1f2937" rx="3" />
       <circle cx="244" cy="250" r="5" className="signal" filter="url(#glow)" />
-      <circle cx="244" cy="263" r="5" fill="#f59e0b" opacity="0.3" />
+      <circle cx="244" cy="263" r="5" fill="#ff6b5b" opacity="0.3" />
       <circle cx="244" cy="276" r="5" fill="#22c55e" opacity="0.3" />
 
       {/* Delivery scooter */}
@@ -220,8 +220,8 @@ export default function HeroIllustration({ className = "" }: { className?: strin
           {/* Seat + rider */}
           <rect x="18" y="298" width="12" height="5" fill="color-mix(in oklab, var(--accent) 70%, white)" rx="2" />
           {/* Helmet */}
-          <circle cx="26" cy="295" r="6" fill="#f59e0b" />
-          <rect x="21" y="297" width="10" height="3" fill="#fbbf24" rx="1" />
+          <circle cx="26" cy="295" r="6" fill="#ff6b5b" />
+          <rect x="21" y="297" width="10" height="3" fill="#ff8676" rx="1" />
           {/* Body */}
           <rect x="22" y="300" width="8" height="6" fill="#e0e7ff" rx="1" />
 

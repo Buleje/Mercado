@@ -33,6 +33,7 @@ import { PermissionsTab } from "@/components/superadmin/security/PermissionsTab"
 import { VulnerabilitiesTab } from "@/components/superadmin/security/VulnerabilitiesTab";
 import { ComplianceTab } from "@/components/superadmin/security/ComplianceTab";
 import { AuditLogTab } from "@/components/superadmin/security/AuditLogTab";
+import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 
 type TabKey =
   | "overview"
@@ -90,7 +91,7 @@ export default function SecurityCenterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div className={SUPERADMIN_PAGE}>
       <SecurityHero
         lastScanLabel={fmtRelativeFromMs(lastRefreshMs)}
         status="healthy"
@@ -137,7 +138,7 @@ export default function SecurityCenterPage() {
         role="tabpanel"
         id={`panel-${active}`}
         aria-labelledby={`tab-${active}`}
-        className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+        className={SUPERADMIN_CONTENT}
       >
         {active === "overview" && <OverviewTab />}
         {active === "auth" && <AuthSessionsTab />}

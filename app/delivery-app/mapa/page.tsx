@@ -140,8 +140,8 @@ export default function MapaPage() {
         />
         <Legend
           dot={
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white border-2" style={{ borderColor: "#d97706" }}>
-              <span className="block h-3 w-3 rounded-full bg-[#d97706]" />
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white border-2" style={{ borderColor: "#f0503f" }}>
+              <span className="block h-3 w-3 rounded-full bg-[#f0503f]" />
             </span>
           }
           title="Demanda media"
@@ -158,7 +158,7 @@ export default function MapaPage() {
         />
         <Legend
           dot={
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#fbbf24] text-[10px] font-extrabold text-[#111] border-2 border-white">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#ff8676] text-[10px] font-extrabold text-[#111] border-2 border-white">
               S/
             </span>
           }

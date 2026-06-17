@@ -170,7 +170,7 @@ export default function PuntoCompraBundles({ onAddBundle }: Props) {
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                 "bg-[var(--data-warning-500)] hover:bg-[#e8954f] text-white",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f97316]",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff6b5b]",
               )}
             >
               <Plus className="h-3 w-3" />

@@ -103,7 +103,7 @@ const STATE_META: Record<
     label: "Con oferta",
     color: "text-[var(--data-warning-600)]",
     bg: "bg-[var(--data-warning-50)]",
-    mapColor: "#fbbf24",
+    mapColor: "#ff8676",
   },
   busy: {
     label: "Atendiendo",
@@ -292,7 +292,7 @@ export default function DeliveryPartnersLiveMap() {
               <span>· ${Math.round(accNum * 100)}% aceptaci&#243;n</span>
             </div>
             ${p.currentOrderId ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:700;">Pedido ${escapeHtml(p.currentOrderId.slice(-8))}</div>` : ""}
-            ${p.pendingOffers > 0 ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;">${escapeHtml(String(p.pendingOffers))} oferta pending</div>` : ""}
+            ${p.pendingOffers > 0 ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#fff1ef;color:#842e25;font-size:11px;font-weight:700;">${escapeHtml(String(p.pendingOffers))} oferta pending</div>` : ""}
             ${!p.currentOrderId && p.pendingOffers === 0 && p.isOnline ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;">Libre y disponible</div>` : ""}
           </div>
         `;

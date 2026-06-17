@@ -34,7 +34,7 @@ type BankTransaction = {
 };
 
 const BANKS = ["BCP","BBVA","Interbank","Scotiabank","BanBif","Mibanco","Otro"];
-const COLORS = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#ef4444","#06b6d4","#ec4899"];
+const COLORS = ["#3b82f6","#8b5cf6","#10b981","#ff6b5b","#ef4444","#06b6d4","#ec4899"];
 
 function fmt(n: number) {
   return `S/ ${Math.abs(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

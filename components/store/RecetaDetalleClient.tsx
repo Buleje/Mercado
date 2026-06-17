@@ -46,9 +46,9 @@ type Receta = {
 
 const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
   "Entradas": { from: "#0d9488", to: "#14b8a6" },
-  "Platos de fondo": { from: "#f59e0b", to: "#d97706" },
+  "Platos de fondo": { from: "#ff6b5b", to: "#f0503f" },
   "Postres": { from: "#00A0A0", to: "#0d9488" },
-  "Bebidas": { from: "#fbbf24", to: "#f59e0b" },
+  "Bebidas": { from: "#ff8676", to: "#ff6b5b" },
   "Sopas": { from: "#10b981", to: "#0d9488" },
 };
 

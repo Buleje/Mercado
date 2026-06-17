@@ -121,9 +121,9 @@ function GiftCardDisplay({ card }: { card: GiftCard }) {
 
       {/* Decorative circles */}
       <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-10"
-        style={{ background: "#f97316" }} />
+        style={{ background: "#ff6b5b" }} />
       <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-10"
-        style={{ background: "#f97316" }} />
+        style={{ background: "#ff6b5b" }} />
 
       <div className="relative flex items-start justify-between mb-3">
         <div>

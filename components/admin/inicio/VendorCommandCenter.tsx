@@ -38,7 +38,7 @@ import { BulejeLoader } from "@/components/admin/inicio/_shared";
 // ── Accesos directos a módulos (URL ?tab=X — patrón del admin) ──────────────
 const SHORTCUTS: { label: string; tab: string; icon: LucideIcon; tint: string }[] = [
   { label: "Punto de venta", tab: "ventas-caja", icon: ShoppingCart, tint: "text-[var(--accent)] bg-[var(--accent-soft)]" },
-  { label: "Pedidos", tab: "pedidos", icon: ClipboardCheck, tint: "text-[var(--data-warning-600,#b45309)] bg-[var(--data-warning-50,#fffbeb)]" },
+  { label: "Pedidos", tab: "pedidos", icon: ClipboardCheck, tint: "text-[var(--data-warning-600,#c93b2c)] bg-[var(--data-warning-50,#fffbeb)]" },
   { label: "Compras", tab: "compras", icon: Truck, tint: "text-[var(--data-info-600,#2563eb)] bg-[var(--data-info-50,#eff6ff)]" },
   { label: "Clientes", tab: "clientes", icon: Users, tint: "text-[var(--data-purple-600,#7c3aed)] bg-[var(--data-purple-50,#f5f3ff)]" },
   { label: "Inventario", tab: "inventario", icon: Package, tint: "text-[var(--data-success-600,#16a34a)] bg-[var(--data-success-50,#f0fdf4)]" },
@@ -85,7 +85,7 @@ function MobileTrendChart({ series }: { series: { label: string; ingreso: number
             <span className="h-2.5 w-2.5 rounded-sm bg-[var(--accent)]" /> Entra
           </span>
           <span className="inline-flex items-center gap-1 text-[var(--text-secondary)]">
-            <span className="h-2.5 w-2.5 rounded-sm bg-[var(--data-warning-500,#f59e0b)]" /> Sale
+            <span className="h-2.5 w-2.5 rounded-sm bg-[var(--data-warning-500,#ff6b5b)]" /> Sale
           </span>
         </span>
       </div>
@@ -99,7 +99,7 @@ function MobileTrendChart({ series }: { series: { label: string; ingreso: number
                 title={`Entra: ${formatSoles(d.ingreso)}`}
               />
               <div
-                className="w-1/2 max-w-2.5 rounded-t-sm bg-[var(--data-warning-500,#f59e0b)] transition-all"
+                className="w-1/2 max-w-2.5 rounded-t-sm bg-[var(--data-warning-500,#ff6b5b)] transition-all"
                 style={{ height: `${Math.max(2, (d.gasto / max) * 100)}%` }}
                 title={`Sale: ${formatSoles(d.gasto)}`}
               />
@@ -251,13 +251,13 @@ export default function VendorCommandCenter() {
                 {/* Gastos — con sparkline */}
                 <div className="relative overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
                   <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    <Receipt className="h-3.5 w-3.5 text-[var(--data-warning-600,#b45309)]" strokeWidth={2.25} /> Gastos
+                    <Receipt className="h-3.5 w-3.5 text-[var(--data-warning-600,#c93b2c)]" strokeWidth={2.25} /> Gastos
                   </span>
                   <p className="mt-1 text-xl sm:text-2xl font-extrabold tabular-nums tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                     {formatSoles(stats.gastos)}
                   </p>
                   <div className="mt-2 h-8 hidden sm:block">
-                    <Sparkline values={stats.sparkGastos} color="var(--data-warning-600,#b45309)" className="h-full w-full" />
+                    <Sparkline values={stats.sparkGastos} color="var(--data-warning-600,#c93b2c)" className="h-full w-full" />
                   </div>
                 </div>
 

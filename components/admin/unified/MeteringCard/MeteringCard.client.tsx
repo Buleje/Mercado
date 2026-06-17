@@ -126,7 +126,7 @@ function MetricCell({ event, snapshot }: MetricCellProps) {
 
   const SPARKLINE_COLORS: Record<TrafficLight, string> = {
     green:  "#10b981",
-    yellow: "#f59e0b",
+    yellow: "#ff6b5b",
     red:    "#ef4444",
   };
 

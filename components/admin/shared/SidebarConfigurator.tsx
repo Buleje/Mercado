@@ -80,7 +80,7 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string; ring: 
   { id: "emerald", label: "Verde",   hex: "#10B981", ring: "ring-emerald-400" },
   { id: "sky",     label: "Cielo",   hex: "#0EA5E9", ring: "ring-sky-400" },
   { id: "violet",  label: "Violeta", hex: "#8B5CF6", ring: "ring-violet-400" },
-  { id: "amber",   label: "Ámbar",   hex: "#F59E0B", ring: "ring-amber-400" },
+  { id: "amber",   label: "Ámbar",   hex: "#ff6b5b", ring: "ring-amber-400" },
   { id: "rose",    label: "Rosa",    hex: "#F43F5E", ring: "ring-rose-400" },
 ];
 

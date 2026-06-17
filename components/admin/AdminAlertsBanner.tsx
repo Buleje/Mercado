@@ -208,7 +208,7 @@ export default function AdminAlertsBanner() {
   const toneBg =
     headerTone === "urgent"
       ? "bg-[var(--data-error-50,#fef2f2)] border-[var(--data-error-200,#fecaca)]"
-      : "bg-[var(--data-warning-50)] border-[var(--data-warning-200,#fde68a)]";
+      : "bg-[var(--data-warning-50)] border-[var(--data-warning-200,#ffe1dd)]";
   const ctaCls =
     headerTone === "urgent"
       ? "bg-[var(--data-error-600,#dc2626)] hover:bg-[var(--data-error-700,#b91c1c)] text-white"
@@ -294,7 +294,7 @@ export default function AdminAlertsBanner() {
               "shrink-0 inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider border transition-colors",
               headerTone === "urgent"
                 ? "border-[var(--data-error-300,#fca5a5)] text-[var(--data-error-700,#b91c1c)] hover:bg-[var(--data-error-100,#fee2e2)]"
-                : "border-[var(--data-warning-300,#fcd34d)] text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
+                : "border-[var(--data-warning-300,#ff8676)] text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
             )}
           >
             +{alerts.length - 1}

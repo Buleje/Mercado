@@ -33,7 +33,7 @@ function fmtPct(n: number) {
 
 const QUADRANT_META = {
   star:     { label: "Alto volumen + Alto margen",  color: "var(--accent)", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",  text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
-  cash:     { label: "Alto volumen + Bajo margen",  color: "#f97316", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",  text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+  cash:     { label: "Alto volumen + Bajo margen",  color: "#ff6b5b", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30",  text: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
   question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",    text: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
   dog:      { label: "Bajo volumen + Bajo margen",  color: "#ef4444", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30",      text: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
 };

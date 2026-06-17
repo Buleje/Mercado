@@ -211,7 +211,7 @@ export default function ExpiryAlertWidget() {
                   item.level === "critical"
                     ? "border-l-red-500"
                     : item.level === "warning"
-                      ? "border-l-[#f97316]"
+                      ? "border-l-[#ff6b5b]"
                       : "border-l-[var(--accent)]"
                 )}
               >

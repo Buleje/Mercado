@@ -1,5 +1,6 @@
 import { Images } from "@buleje/design-system/icons";
 import ImageBankClient from "./ImageBankClient";
+import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
 
 /**
  * /superadmin/banco-imagenes
@@ -11,8 +12,8 @@ import ImageBankClient from "./ImageBankClient";
  */
 export default function SuperadminImageBankPage() {
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className={SUPERADMIN_PAGE}>
+      <header className={SUPERADMIN_HERO}>
         <div className="w-full">
           <div className="flex items-start gap-3.5">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">

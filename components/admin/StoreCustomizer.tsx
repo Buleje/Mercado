@@ -162,9 +162,9 @@ const COLOR_PRESETS = [
   { label: "Azul",    value: "#2563eb" },
   { label: "Emerald", value: "#059669" },
   { label: "Rosa",    value: "#e11d48" },
-  { label: "Amber",   value: "#d97706" },
+  { label: "Amber",   value: "#f0503f" },
   { label: "Gris",    value: "#475569" },
-  { label: "Naranja", value: "#ea580c" },
+  { label: "Naranja", value: "#f0503f" },
 ];
 
 const FONT_OPTIONS = [
@@ -219,7 +219,7 @@ const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "clasico",
     name: "Clásico",
     description: "Verde bodega + naranja. El look original.",
-    colors: { primaryColor: "var(--color-primary)", secondaryColor: "#f97316", accentColor: "var(--color-primary)" },
+    colors: { primaryColor: "var(--color-primary)", secondaryColor: "#ff6b5b", accentColor: "var(--color-primary)" },
     fontFamily: "geist",
     darkModeDefault: false,
   },
@@ -235,7 +235,7 @@ const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "elegante",
     name: "Elegante",
     description: "Gris oscuro + dorado. Estilo premium.",
-    colors: { primaryColor: "#1e293b", secondaryColor: "#d97706", accentColor: "#334155" },
+    colors: { primaryColor: "#1e293b", secondaryColor: "#f0503f", accentColor: "#334155" },
     fontFamily: "montserrat",
     darkModeDefault: true,
   },

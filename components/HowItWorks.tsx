@@ -20,7 +20,7 @@ const STEPS = [
     icon: CreditCard,
     title: "Paga fácil",
     desc: "Paga con Yape o en efectivo contra entrega. Sin complicaciones ni tarjetas.",
-    color: "#f59e0b",
+    color: "#ff6b5b",
     shadow: "rgba(245,158,11,0.3)",
   },
   {
@@ -190,7 +190,7 @@ export default function HowItWorks() {
             <defs>
               <linearGradient id="connGrad" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="50%" stopColor="#f59e0b" />
+                <stop offset="50%" stopColor="#ff6b5b" />
                 <stop offset="100%" stopColor="var(--accent)" />
               </linearGradient>
             </defs>
@@ -203,7 +203,7 @@ export default function HowItWorks() {
               opacity="0"
             />
             {/* Arrow heads */}
-            <polygon points="184,8 196,12 184,16" fill="#f59e0b" opacity="0.6" />
+            <polygon points="184,8 196,12 184,16" fill="#ff6b5b" opacity="0.6" />
             <polygon points="384,8 396,12 384,16" fill="var(--accent)" opacity="0.6" />
           </svg>
 

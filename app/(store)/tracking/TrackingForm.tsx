@@ -106,7 +106,7 @@ function TimelineStep({
         <p className={cn("text-sm font-semibold", isDone ? "text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "text-[var(--text-secondary)] dark:text-muted")}>
           {step.label}
           {isActive && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-[#f97316]/20 px-2 py-0.5 text-xs font-medium text-[#f97316]">
+            <span className="ml-2 inline-flex items-center rounded-full bg-[#ff6b5b]/20 px-2 py-0.5 text-xs font-medium text-[#ff6b5b]">
               Ahora
             </span>
           )}

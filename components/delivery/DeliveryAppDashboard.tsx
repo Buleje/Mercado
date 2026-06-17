@@ -67,7 +67,7 @@ const STATUS_CONFIG: Record<
 };
 
 // ── Confetti simple ────────────────────────────────────────────────────────
-const CONFETTI_COLORS = ["color-mix(in oklab, var(--accent) 70%, white)", "#f4a261", "#fbbf24", "#34d399", "#60a5fa"];
+const CONFETTI_COLORS = ["color-mix(in oklab, var(--accent) 70%, white)", "#f4a261", "#ff8676", "#34d399", "#60a5fa"];
 function MiniConfetti() {
   // Lazy-init random particle config once per mount (React Compiler purity rule forbids Math.random during render)
   const [particles] = useState(() =>

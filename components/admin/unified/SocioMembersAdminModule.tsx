@@ -494,7 +494,7 @@ export default function SocioMembersAdminModule() {
               : churnEsteMes
           }
           icon={TrendingDown}
-          color="#F59E0B"
+          color="#ff6b5b"
           subtitle="Bajas del periodo"
           alert={(serverStats?.churnRate30d ?? 0) > 0.08 || churnEsteMes > 3}
         />

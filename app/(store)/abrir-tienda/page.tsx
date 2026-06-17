@@ -621,7 +621,7 @@ function SocialProofSection() {
             <div className="rounded-[1.75rem] border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-7 shadow-[var(--shadow-lg)]">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Cupos del mes</p>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#c93b2c)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
                   <Sparkles className="h-3 w-3" strokeWidth={2.5} /> Quedan pocos
                 </span>
               </div>
@@ -658,7 +658,7 @@ function SocialProofSection() {
                   {[
                     { l: "D", c: "var(--accent)" },
                     { l: "P", c: "#722EAB" },
-                    { l: "L", c: "#f97316" },
+                    { l: "L", c: "#ff6b5b" },
                   ].map(({ l, c }) => (
                     <span key={l} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-white font-extrabold text-sm ring-3 ring-[var(--surface-raised)]" style={{ background: c }}>
                       {l}

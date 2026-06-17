@@ -569,7 +569,7 @@ export default function CobranzaInteligente() {
                           {(() => {
                             const avatarColors = [
                               "var(--accent)",
-                              "#f97316",
+                              "#ff6b5b",
                               "#e63946",
                               "#457b9d",
                               "#6b705c",

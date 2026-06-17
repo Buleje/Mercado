@@ -147,7 +147,7 @@ interface GaugeChartProps {
 
 export function GaugeChart({ value, size = 120, label, color, className }: GaugeChartProps) {
   const clampedValue = Math.max(0, Math.min(100, value));
-  const autoColor = color ?? (clampedValue >= 70 ? "var(--accent)" : clampedValue >= 50 ? "#f97316" : "#dc2626");
+  const autoColor = color ?? (clampedValue >= 70 ? "var(--accent)" : clampedValue >= 50 ? "#ff6b5b" : "#dc2626");
   const rotation = (clampedValue / 100) * 180;
 
   return (

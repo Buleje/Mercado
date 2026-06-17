@@ -5,6 +5,7 @@ import { CheckCircle2 } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { getDeadLetterDashboard } from "@/lib/db/dlq.db";
 import { DLQExport } from "./DLQExport";
+import { SUPERADMIN_PAGE, SUPERADMIN_HERO, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 
 // Next 16 (CLAUDE.md #4): NO usar `force-dynamic`. Dejamos sin "use cache"
 // para que el RSC re-renderice a cada request (panel ops, datos frescos).
@@ -26,33 +27,40 @@ export default async function DLQDashboardPage() {
   await requirePlatformPage();
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
-      <header className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-            Superadmin · Operations
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
-            Dead Letter Queue
-          </h1>
-          <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
-            Eventos, crons y webhooks que fallaron y no se autoreintentaron.
-            Investigá si los contadores crecen sostenidamente.
-          </p>
+    <div className={SUPERADMIN_PAGE}>
+      {/* Hero canónico (lib/superadmin-layout) — barra surface-raised + border-b,
+          igual que marca/billing/marketplace. Antes dlq tenía un header inline
+          plano que rompía la continuidad visual al cambiar de tab. */}
+      <header className={SUPERADMIN_HERO}>
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+              Superadmin · Operations
+            </p>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
+              Dead Letter Queue
+            </h1>
+            <p className="mt-2 max-w-2xl text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
+              Eventos, crons y webhooks que fallaron y no se autoreintentaron.
+              Investigá si los contadores crecen sostenidamente.
+            </p>
+          </div>
+          <Link
+            href="/superadmin"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+          >
+            ← Superadmin
+          </Link>
         </div>
-        <Link
-          href="/superadmin"
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
-        >
-          ← Superadmin
-        </Link>
       </header>
 
       {/* Suspense: el shell + header se pintan al instante; el body (query
           cross-tenant pesada) muestra skeleton mientras carga. */}
-      <Suspense fallback={<DLQSkeleton />}>
-        <DLQBody />
-      </Suspense>
+      <div className={`${SUPERADMIN_CONTENT} space-y-8`}>
+        <Suspense fallback={<DLQSkeleton />}>
+          <DLQBody />
+        </Suspense>
+      </div>
     </div>
   );
 }

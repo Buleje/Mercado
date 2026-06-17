@@ -34,7 +34,7 @@ const EMPTY: Summary = {
 const CARDS = [
   { key: "fiados" as const, tab: "fiados", label: "Fiados", desc: "Ventas al crédito sin pagar", icon: CreditCard, color: "var(--accent)" },
   { key: "prestamos" as const, tab: "prestamos", label: "Préstamos", desc: "Cuotas pendientes de cobro", icon: Landmark, color: "#3b82f6" },
-  { key: "adelantos" as const, tab: "adelantos", label: "Adelantos", desc: "Saldo de adelantos abiertos", icon: DollarSign, color: "#f97316" },
+  { key: "adelantos" as const, tab: "adelantos", label: "Adelantos", desc: "Saldo de adelantos abiertos", icon: DollarSign, color: "#ff6b5b" },
 ];
 
 function goTab(tab: string) {

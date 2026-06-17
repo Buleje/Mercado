@@ -64,7 +64,7 @@ export interface CajaData {
 function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
-const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#f59e0b" };
+const PAY_COLORS: Record<string, string> = { efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4", tarjeta: "#3b82f6", transferencia: "#ff6b5b" };
 const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta", transferencia: "Transferencia" };
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ export default function CajaDashboard({ dateRange, onChangeRange }: CajaDashboar
     const waterfall: CajaData["waterfall"] = [
       { concepto: "Ventas (pedidos)", monto: pOrders.reduce((a, o) => a + o.total, 0), tipo: "ingreso", color: "var(--accent)" },
       { concepto: "Ventas (POS)", monto: pSales.reduce((a, s) => a + s.total, 0), tipo: "ingreso", color: "#06b6d4" },
-      { concepto: "Costo de productos", monto: -costo, tipo: "egreso", color: "#f59e0b" },
+      { concepto: "Costo de productos", monto: -costo, tipo: "egreso", color: "#ff6b5b" },
       { concepto: "Compras", monto: -egresos, tipo: "egreso", color: "#ef4444" },
       { concepto: "Balance Neto", monto: utilidadNeta, tipo: "balance", color: utilidadNeta >= 0 ? "var(--accent)" : "#ef4444" },
     ];

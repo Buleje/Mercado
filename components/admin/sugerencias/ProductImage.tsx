@@ -32,10 +32,10 @@ const PALETTES = [
   { bg: "#1F3A5F", fg: "#DBEAFE" },
   { bg: "#3D2C2E", fg: "#FECACA" },
   { bg: "#243B36", fg: "#A7F3D0" },
-  { bg: "#3B2F1F", fg: "#FED7AA" },
+  { bg: "#3B2F1F", fg: "#ffe1dd" },
   { bg: "#2D1B3D", fg: "#DDD6FE" },
   { bg: "#1F3F3D", fg: "#A5F3FC" },
-  { bg: "#3D2D1F", fg: "#FDE68A" },
+  { bg: "#3D2D1F", fg: "#ffe1dd" },
 ];
 
 function hashString(s: string): number {

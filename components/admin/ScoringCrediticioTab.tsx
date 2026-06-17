@@ -114,13 +114,13 @@ const LEVEL_CONFIG: Record<ScoreLevel, {
   REGULAR: {
     label: "Regular",
     badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
-    bar: "#f97316",
+    bar: "#ff6b5b",
     icon: AlertTriangle,
   },
   RIESGOSO: {
     label: "Riesgoso",
     badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
-    bar: "#ea580c",
+    bar: "#f0503f",
     icon: AlertTriangle,
   },
   BLOQUEADO: {

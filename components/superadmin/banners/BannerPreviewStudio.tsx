@@ -203,7 +203,7 @@ const BANNER_TEMPLATES: BannerTemplate[] = [
       type: "promo",
       title: "Liquidación total",
       subtitle: "Hasta 70% off · Stock limitado",
-      bgFrom: "#fed7aa",
+      bgFrom: "#ffe1dd",
       bgTo: "#0d9488",
       ctaLabel: "Ver stock",
       promo: {

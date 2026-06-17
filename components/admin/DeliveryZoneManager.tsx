@@ -21,7 +21,7 @@ export interface DeliveryZone {
 
 const DEFAULT_ZONES: DeliveryZone[] = [
   { id: "zone-a", name: "Zona A",  radiusKm: 1, fee: 0, color: "var(--accent)", active: true },
-  { id: "zone-b", name: "Zona B",  radiusKm: 3, fee: 3, color: "#f97316", active: true },
+  { id: "zone-b", name: "Zona B",  radiusKm: 3, fee: 3, color: "#ff6b5b", active: true },
   { id: "zone-c", name: "Zona C",  radiusKm: 5, fee: 5, color: "#e63946", active: true },
 ];
 

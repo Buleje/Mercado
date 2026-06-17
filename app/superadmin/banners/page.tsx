@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
 import {
   Save,
   Plus,
@@ -479,9 +480,9 @@ function SuperadminBannersPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div className={SUPERADMIN_PAGE}>
       {/* ── Hero header ────────────────────────────────────────────────── */}
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <header className={SUPERADMIN_HERO}>
         <div className="w-full">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3.5">

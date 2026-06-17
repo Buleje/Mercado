@@ -542,7 +542,7 @@ export default function ReportsTab() {
         }).length;
 
         html += `
-        <style>.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}.green{background:#dcfce7;color:#166534;}.red{background:#fee2e2;color:#991b1b;}.blue{background:#dbeafe;color:#1e40af;}.amber{background:#fef3c7;color:#92400e;}</style>
+        <style>.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}.green{background:#dcfce7;color:#166534;}.red{background:#fee2e2;color:#991b1b;}.blue{background:#dbeafe;color:#1e40af;}.amber{background:#fff1ef;color:#842e25;}</style>
         <h2 style="color:#2563eb;font-size:22px;margin-bottom:5px;">📊 Informe Mensual de Gestión</h2>
         <p style="color:#64748b;font-size:14px;margin-top:0;">${monthLabel} — Buleje</p>
         <hr style="border:none;border-top:2px solid #2563eb;margin:15px 0;" />

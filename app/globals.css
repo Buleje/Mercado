@@ -58,6 +58,37 @@
 }
 
 @theme inline {
+  /* ───────────────────────────────────────────────────────────────────────────
+     Brandon 2026-06-17: "quita TODO el naranja del proyecto". Remapeo la paleta
+     default de Tailwind a colores de marca — afecta TODAS las clases
+     bg/text/border/from/to-amber-* y -orange-* (~300 archivos) SIN tocar
+     componentes (single source, reversible aquí mismo).
+       amber-*  → CORAL #FF6B5B (--brand-secondary) — warnings/alertas cálidas
+       orange-* → TEAL  #00A0A0 (--brand-primary)   — decorativo de marca
+     ─────────────────────────────────────────────────────────────────────────── */
+  --color-amber-50:  #fff1ef;
+  --color-amber-100: #ffe1dd;
+  --color-amber-200: #ffc8c1;
+  --color-amber-300: #ffa89d;
+  --color-amber-400: #ff8676;
+  --color-amber-500: #ff6b5b;
+  --color-amber-600: #f0503f;
+  --color-amber-700: #c93b2c;
+  --color-amber-800: #a23226;
+  --color-amber-900: #842e25;
+  --color-amber-950: #481310;
+  --color-orange-50:  #e6f7f7;
+  --color-orange-100: #c2ebeb;
+  --color-orange-200: #8fdada;
+  --color-orange-300: #4fc5c5;
+  --color-orange-400: #1aafaf;
+  --color-orange-500: #00a0a0;
+  --color-orange-600: #008787;
+  --color-orange-700: #006d6d;
+  --color-orange-800: #005757;
+  --color-orange-900: #004848;
+  --color-orange-950: #00292a;
+
   --color-background: #ffffff;
   --color-foreground: #111827;
   --color-primary: #00A0A0;        /* Turquesa del logo — fills/CTAs (paleta B) */
@@ -68,7 +99,7 @@
   --color-accent: #00D4D4;         /* Bright aqua - Interactive */
   --color-danger: #ef4444;          /* Red 500 - Errors & alerts */
   --color-success: #10b981;         /* Emerald 500 - Confirmations */
-  --color-warning: #f59e0b;         /* Amber 500 - Warnings */
+  --color-warning: #ff6b5b;         /* Coral - Warnings (Brandon 2026-06-17, sin ámbar) */
   --color-surface: #f8fafa;
   --color-muted: #6b7280;
   --color-card: #ffffff;
@@ -223,7 +254,7 @@
   --color-accent: #14C2C2;
   --color-danger: #f87171;
   --color-success: #14C2C2;
-  --color-warning: #fbbf24;
+  --color-warning: #ff8676;
   --color-popover: #1c2230;
   --color-popover-foreground: #f0f3f7;
   --color-border: #2e3645;
@@ -1912,7 +1943,7 @@ button,
   --data-4: #d4d4d4;
   --data-5: #00A0A0;
   --data-6: #0ea5e9;
-  --data-7: #d97706;
+  --data-7: #ff6b5b;
   --data-8: #8b5cf6;
 
   /* ── Data state scale (Sprint C1 — ADR-075 addendum) ─────────────────────
@@ -1927,12 +1958,12 @@ button,
   --data-success-600: #00998d;     /* hover */
   --data-success-700: #007f74;     /* pressed */
 
-  /* Warning (amber) */
-  --data-warning-50: #fef3c7;
-  --data-warning-100: #fde68a;
-  --data-warning-500: #f59e0b;
-  --data-warning-600: #d97706;
-  --data-warning-700: #b45309;
+  /* Warning (coral — Brandon 2026-06-17, sin ámbar) */
+  --data-warning-50: #fff1ef;
+  --data-warning-100: #ffe1dd;
+  --data-warning-500: #ff6b5b;
+  --data-warning-600: #f0503f;
+  --data-warning-700: #c93b2c;
 
   /* Error (red) */
   --data-error-50: #fee2e2;
@@ -1964,8 +1995,8 @@ button,
   --badge-new-text: #1e40af;
   --badge-shipping-bg: #d1fae5;       /* verde suave para "Envío gratis" */
   --badge-shipping-text: #065f46;
-  --badge-urgency-bg: #fef3c7;        /* amarillo suave para "Últimas unidades" */
-  --badge-urgency-text: #92400e;
+  --badge-urgency-bg: #fff1ef;        /* coral suave para "Últimas unidades" (sin ámbar) */
+  --badge-urgency-text: #c93b2c;
   --badge-trending-bg: #fce7f3;       /* rosa suave para "Tendencia" */
   --badge-trending-text: #9d174d;
 
@@ -2128,7 +2159,7 @@ button,
   --data-4: #4c5566;
   --data-5: #14C2C2;
   --data-6: #38bdf8;
-  --data-7: #fbbf24;
+  --data-7: #ff8676;
   --data-8: #c4b5fd;
 
   /* ── Data state scale — dark overrides (Sprint C1) ───────────────────────
@@ -2143,12 +2174,12 @@ button,
   --data-success-600: #0FAFAF;
   --data-success-700: #0C9C9C;
 
-  /* Warning dark (amber-400) */
-  --data-warning-50: rgba(251, 191, 36, 0.12);
-  --data-warning-100: rgba(251, 191, 36, 0.20);
-  --data-warning-500: #fbbf24;
-  --data-warning-600: #f59e0b;
-  --data-warning-700: #d97706;
+  /* Warning dark (coral — Brandon 2026-06-17, sin ámbar) */
+  --data-warning-50: rgba(255, 107, 91, 0.14);
+  --data-warning-100: rgba(255, 107, 91, 0.22);
+  --data-warning-500: #ff8676;
+  --data-warning-600: #ff6b5b;
+  --data-warning-700: #f0503f;
 
   /* Error dark (red-400) */
   --data-error-50: rgba(248, 113, 113, 0.12);
@@ -2177,8 +2208,8 @@ button,
   --badge-new-text: #93c5fd;            /* blue-300 — ~8:1 */
   --badge-shipping-bg: rgba(20, 194, 194, 0.16);
   --badge-shipping-text: #5EE0DB;       /* teal-300 — ~10:1 */
-  --badge-urgency-bg: rgba(251, 191, 36, 0.16);
-  --badge-urgency-text: #fcd34d;        /* amber-300 — ~10:1 */
+  --badge-urgency-bg: rgba(255, 134, 118, 0.16);
+  --badge-urgency-text: #ff8676;        /* coral claro — sin ámbar */
   --badge-trending-bg: rgba(244, 114, 182, 0.16);
   --badge-trending-text: #f9a8d4;       /* pink-300 — ~7.5:1 */
 

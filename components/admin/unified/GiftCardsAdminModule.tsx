@@ -394,7 +394,7 @@ export default function GiftCardsAdminModule() {
           label="Saldo pendiente"
           value={fmt(saldoPendiente)}
           icon={Wallet}
-          color="#F59E0B"
+          color="#ff6b5b"
           subtitle="Pasivo por canjear"
           alert={saldoPendiente > 2000}
         />

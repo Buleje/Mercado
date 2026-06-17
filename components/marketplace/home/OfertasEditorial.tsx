@@ -65,7 +65,7 @@ export default function OfertasEditorial() {
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-[var(--rule-soft)] overflow-hidden bg-[var(--surface-raised)]">
           {/* Banner editorial top */}
-          <div className="relative grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 px-6 sm:px-10 py-8 sm:py-10 bg-linear-to-br from-[#fee2e2] via-[#ffedd5] to-[#fef3c7] border-b border-[var(--rule-soft)]">
+          <div className="relative grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 px-6 sm:px-10 py-8 sm:py-10 bg-linear-to-br from-[#fee2e2] via-[#fff1ef] to-[#fff1ef] border-b border-[var(--rule-soft)]">
             <div>
               <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error-500)] mb-3">
                 <Flame className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />

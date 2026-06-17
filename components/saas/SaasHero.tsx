@@ -98,7 +98,7 @@ const TabDashboard = memo(function TabDashboard() {
     { label: "Ventas hoy", valor: kpi.ventas, color: "#14C2C2", bg: "rgba(0, 160, 160,0.12)", border: "rgba(0, 160, 160,0.3)" },
     { label: "Pedidos", valor: kpi.pedidos, color: "color-mix(in oklab, var(--accent) 60%, white)", bg: "rgba(0, 160, 160,0.08)", border: "rgba(0, 160, 160,0.2)" },
     { label: "Stock bajo", valor: kpi.stock, color: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.2)" },
-    { label: "Margen", valor: kpi.margen, color: "#fb923c", bg: "rgba(251,146,60,0.08)", border: "rgba(251,146,60,0.2)" },
+    { label: "Margen", valor: kpi.margen, color: "#ff8676", bg: "rgba(251,146,60,0.08)", border: "rgba(251,146,60,0.2)" },
   ];
   return (
     <div className="p-4 space-y-3">

@@ -212,10 +212,10 @@ export const CHART_TOKENS = {
   blue: "#0ea5e9",       // --data-6 (info)
   emerald: "#047857",    // --data-success
   violet: "#8b5cf6",     // --data-8
-  amber: "#d97706",      // --data-7
+  amber: "#f0503f",      // --data-7
   red: "#b91c1c",        // --data-error
   cyan: "#06b6d4",
-  orange: "#f97316",
+  orange: "#ff6b5b",
   gray: "#a3a3a3",       // --data-3
   // Aliases semánticos vs neutrales del DS.
   primary:   "#0a0a0a",  // --data-1

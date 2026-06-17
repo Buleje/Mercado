@@ -110,7 +110,7 @@ export function generateOrderConfirmationHTML(order: OrderEmailData, branding?: 
     </div>
 
     <!-- Banner confirmacion -->
-    <div style="background:#f97316;padding:16px 28px;text-align:center;">
+    <div style="background:#ff6b5b;padding:16px 28px;text-align:center;">
       <p style="margin:0;color:#ffffff;font-size:17px;font-weight:700;">Pedido confirmado</p>
       <p style="margin:4px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Orden #${order.id} &bull; ${fmtDate(order.createdAt)}</p>
     </div>
@@ -236,16 +236,16 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData, branding
 
       <!-- CTA encuesta -->
       ${order.surveyUrl ? `
-      <div style="text-align:center;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:20px 16px;margin-bottom:20px;">
-        <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#92400e;">Como fue tu experiencia?</p>
-        <p style="margin:0 0 14px;font-size:13px;color:#78350f;">Tu opinion nos ayuda a mejorar el servicio.</p>
-        <a href="${order.surveyUrl}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:700;">
+      <div style="text-align:center;background:#fffbeb;border:1px solid #ffe1dd;border-radius:10px;padding:20px 16px;margin-bottom:20px;">
+        <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#842e25;">Como fue tu experiencia?</p>
+        <p style="margin:0 0 14px;font-size:13px;color:#481310;">Tu opinion nos ayuda a mejorar el servicio.</p>
+        <a href="${order.surveyUrl}" style="display:inline-block;background:#ff6b5b;color:#ffffff;text-decoration:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:700;">
           Dar mi opinion (30 segundos)
         </a>
       </div>` : `
-      <div style="text-align:center;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:20px 16px;margin-bottom:20px;">
-        <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#92400e;">Como fue tu experiencia?</p>
-        <p style="margin:0 0 0;font-size:13px;color:#78350f;">Respondenos por WhatsApp para mejorar tu próxima compra.</p>
+      <div style="text-align:center;background:#fffbeb;border:1px solid #ffe1dd;border-radius:10px;padding:20px 16px;margin-bottom:20px;">
+        <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#842e25;">Como fue tu experiencia?</p>
+        <p style="margin:0 0 0;font-size:13px;color:#481310;">Respondenos por WhatsApp para mejorar tu próxima compra.</p>
       </div>`}
 
       <!-- Invitacion próxima compra -->
@@ -322,7 +322,7 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
     </div>
 
     <!-- Banner -->
-    <div style="background:linear-gradient(135deg,#f97316,#e8803a);padding:22px 28px;text-align:center;">
+    <div style="background:linear-gradient(135deg,#ff6b5b,#e8803a);padding:22px 28px;text-align:center;">
       <p style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">Ofertas de la semana</p>
       <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:13px;">Valido hasta el ${validStr}</p>
     </div>

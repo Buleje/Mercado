@@ -64,7 +64,7 @@ function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1
 function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
 
 const CAT_LABELS: Record<string, string> = { "frutas-verduras": "Frutas y Verduras", abarrotes: "Abarrotes", carnes: "Carnes", lacteos: "Lácteos", bebidas: "Bebidas", limpieza: "Limpieza" };
-const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#f59e0b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
+const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#ff6b5b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -204,7 +204,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     // Stock distribution
     const ranges = [
       { label: "Sin stock", min: 0, max: 0, color: "#ef4444" },
-      { label: "1-10 uds", min: 1, max: 10, color: "#f59e0b" },
+      { label: "1-10 uds", min: 1, max: 10, color: "#ff6b5b" },
       { label: "11-50 uds", min: 11, max: 50, color: "#3b82f6" },
       { label: "51-100 uds", min: 51, max: 100, color: "#06b6d4" },
       { label: "100+ uds", min: 101, max: Infinity, color: "var(--accent)" },

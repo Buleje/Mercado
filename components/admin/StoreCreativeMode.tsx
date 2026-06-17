@@ -104,8 +104,8 @@ const COLOR_PRESETS = [
   "#0EA5E9",
   "#9333EA",
   "#E11D48",
-  "#EA580C",
-  "#D97706",
+  "#f0503f",
+  "#f0503f",
   "#1F2937",
 ] as const;
 
@@ -146,7 +146,7 @@ const QUICK_TEMPLATES: Array<{
     id: "clasico",
     name: "Clasico Bodega",
     primaryColor: "var(--color-primary)",
-    secondaryColor: "#F97316",
+    secondaryColor: "#ff6b5b",
     accentColor: "var(--color-primary)",
     fontFamily: "geist",
     darkModeDefault: false,
@@ -164,7 +164,7 @@ const QUICK_TEMPLATES: Array<{
     id: "premium",
     name: "Premium Nocturno",
     primaryColor: "#1E293B",
-    secondaryColor: "#D97706",
+    secondaryColor: "#f0503f",
     accentColor: "#334155",
     fontFamily: "montserrat",
     darkModeDefault: true,

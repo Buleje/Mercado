@@ -388,7 +388,7 @@ function Field({ label, children, hint, count, max }: {
           {label}
         </span>
         {max != null && count != null && (
-          <span className={`text-[length:var(--ts-2xs)] font-bold tabular-nums ${over ? "text-[var(--data-warning-600,#d97706)]" : "text-[var(--text-tertiary)]"}`}>
+          <span className={`text-[length:var(--ts-2xs)] font-bold tabular-nums ${over ? "text-[var(--data-warning-600,#f0503f)]" : "text-[var(--text-tertiary)]"}`}>
             {count}/{max}
           </span>
         )}

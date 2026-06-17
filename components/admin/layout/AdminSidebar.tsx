@@ -359,7 +359,7 @@ export function AdminSidebar({
       emerald: "#10B981",
       sky: "#0EA5E9",
       violet: "#8B5CF6",
-      amber: "#F59E0B",
+      amber: "#ff6b5b",
       rose: "#F43F5E",
     };
     const hex = ACCENT_VARS[accent];
@@ -815,7 +815,7 @@ export function AdminSidebar({
     emerald: "#10B981",
     sky:     "#0EA5E9",
     violet:  "#8B5CF6",
-    amber:   "#F59E0B",
+    amber:   "#ff6b5b",
     rose:    "#F43F5E",
   };
   const accentHex = ACCENT_HEX[accent];

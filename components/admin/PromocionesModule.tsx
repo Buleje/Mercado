@@ -111,7 +111,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
   const statusColor = status === "hoy"
     ? "border-l-[var(--accent)]"
     : status === "futura"
-    ? "border-l-[#f97316]"
+    ? "border-l-[#ff6b5b]"
     : "border-l-gray-300 dark:border-l-gray-600";
 
   return (
@@ -313,7 +313,7 @@ export default function PromocionesModule() {
         title="Promociones"
         description="Gestión de descuentos y ofertas activas"
         icon={Tag}
-        iconColor="#f97316"
+        iconColor="#ff6b5b"
       >
         <div className="flex items-center gap-2">
           <button

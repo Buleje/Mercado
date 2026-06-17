@@ -235,7 +235,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
         const destIcon = L.divIcon({
           className: "delivery-dest-marker",
           html: `<div style="
-            background:#f97316;color:white;
+            background:#ff6b5b;color:white;
             width:36px;height:36px;border-radius:50%;
             display:flex;align-items:center;justify-content:center;
             font-size:16px;border:3px solid white;

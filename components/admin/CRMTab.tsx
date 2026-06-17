@@ -445,7 +445,7 @@ export default function CRMTab() {
 
       {/* Mejora 13: Canal de adquisicion pie chart */}
       {(() => {
-        const CHANNEL_COLORS = ["var(--accent)", "#f97316", "#457b9d", "#9b5de5", "#6b7280"];
+        const CHANNEL_COLORS = ["var(--accent)", "#ff6b5b", "#457b9d", "#9b5de5", "#6b7280"];
         const CHANNEL_LABELS: Record<string, string> = { local: "Local", whatsapp: "WhatsApp", web: "Web", referido: "Referido", redes: "Redes" };
         const channelCounts: Record<string, number> = {};
         for (const c of customers) {

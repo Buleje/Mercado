@@ -121,7 +121,7 @@ function CategoryTreemapView() {
   const COLORS: Record<string, string> = {
     abarrotes: "var(--color-primary)", bebidas: "#3B82F6", limpieza: "#14C2C2",
     lacteos: "#457b9d", carnes: "#e63946", "frutas-verduras": "#95d5b2",
-    snacks: "#f97316", otros: "#6b705c", congelados: "#264653",
+    snacks: "#ff6b5b", otros: "#6b705c", congelados: "#264653",
     cuidado_personal: "#9b5de5",
   };
 
@@ -215,7 +215,7 @@ function CategoryTreemapView() {
 
 // ── Analytics Dashboard (tab Análisis) ──────────────────────────────────────
 
-const ANALYTICS_COLORS = ["var(--color-primary)", "#f97316", "#457b9d", "#e63946", "#9b5de5", "#14C2C2", "#6b705c", "#264653"];
+const ANALYTICS_COLORS = ["var(--color-primary)", "#ff6b5b", "#457b9d", "#e63946", "#9b5de5", "#14C2C2", "#6b705c", "#264653"];
 
 
 
@@ -324,7 +324,7 @@ function InventoryAnalyticsDashboard() {
   const kpiCards = [
     { label: "Valor total", value: formatCurrency(kpis.valorTotal, { decimals: 0 }), icon: DollarSign, color: "var(--color-primary)" },
     { label: "Activos", value: kpis.activos.toLocaleString(), icon: Boxes, color: "#3B82F6" },
-    { label: "Criticos", value: kpis.criticos.toLocaleString(), icon: AlertCircle, color: "#F59E0B", alert: kpis.criticos > 0 },
+    { label: "Criticos", value: kpis.criticos.toLocaleString(), icon: AlertCircle, color: "#ff6b5b", alert: kpis.criticos > 0 },
     { label: "Sin stock", value: kpis.sinStock.toLocaleString(), icon: XCircle, color: "#EF4444", alert: kpis.sinStock > 0 },
     { label: "Total SKUs", value: kpis.total.toLocaleString(), icon: Hash, color: "#6B7280" },
     { label: "Rotacion", value: `${kpis.rotacion}%`, icon: RotateCw, color: "#8B5CF6" },
@@ -523,7 +523,7 @@ function InventoryAnalyticsDashboard() {
                 <defs>
                   <linearGradient id="rentGrad" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="var(--color-primary)" />
-                    <stop offset="100%" stopColor="#f97316" />
+                    <stop offset="100%" stopColor="#ff6b5b" />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />

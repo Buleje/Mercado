@@ -296,8 +296,8 @@ export default function CheckoutDatosPage() {
 
           {/* ── Aviso si el perfil esta incompleto — guia al usuario  ─── */}
           {!profileComplete && (
-            <div className="rounded-2xl border-2 border-[var(--data-warn-500,#f59e0b)]/30 bg-[var(--data-warn-500,#f59e0b)]/8 p-4 sm:p-5 flex items-start gap-3">
-              <UserCircle className="h-5 w-5 text-[var(--data-warn-500,#f59e0b)] shrink-0 mt-0.5" strokeWidth={2} aria-hidden />
+            <div className="rounded-2xl border-2 border-[var(--data-warn-500,#ff6b5b)]/30 bg-[var(--data-warn-500,#ff6b5b)]/8 p-4 sm:p-5 flex items-start gap-3">
+              <UserCircle className="h-5 w-5 text-[var(--data-warn-500,#ff6b5b)] shrink-0 mt-0.5" strokeWidth={2} aria-hidden />
               <div className="flex-1 min-w-0">
                 <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                   Falta completar tu perfil
@@ -362,7 +362,7 @@ function DataRow({
         className={cn(
           "inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0",
           isMissing && warningOnMissing
-            ? "bg-[var(--data-warn-50,#fef3c7)] text-[var(--data-warn-600,#b45309)]"
+            ? "bg-[var(--data-warn-50,#fff1ef)] text-[var(--data-warn-600,#c93b2c)]"
             : "bg-[var(--accent-soft)] text-[var(--accent)]",
         )}
       >
@@ -388,7 +388,7 @@ function DataRow({
             className={cn(
               "inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold leading-tight mt-0.5",
               warningOnMissing
-                ? "text-[var(--data-warn-600,#b45309)]"
+                ? "text-[var(--data-warn-600,#c93b2c)]"
                 : "text-[var(--data-error-500)]",
             )}
           >

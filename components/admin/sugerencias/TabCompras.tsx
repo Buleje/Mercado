@@ -63,7 +63,7 @@ const URGENCY = {
     text: "text-[var(--data-warning-500)]",
     bar: "bg-[var(--data-warning-500)]",
     border: "border-[var(--data-warning-500)]",
-    barTrack: "bg-[var(--data-warning-100,#fef3c7)]",
+    barTrack: "bg-[var(--data-warning-100,#fff1ef)]",
   },
   medium: {
     label: "Esta semana",

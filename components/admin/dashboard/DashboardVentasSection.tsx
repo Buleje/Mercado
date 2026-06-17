@@ -121,7 +121,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     Utilidad
                   </span>
                   <span className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="2 2"/></svg>
+                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="#ff6b5b" strokeWidth="1.5" strokeDasharray="2 2"/></svg>
                     Promedio 7d
                   </span>
                   <span className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
@@ -173,7 +173,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     {st.movingAvg7.length >= 2 && (
                       <polyline
                         points={st.movingAvg7.map((v: number, i: number) => `${i*50+25},${140-((Math.max(v,0)/st.maxDaily)*130)}`).join(' ')}
-                        fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="2 2"
+                        fill="none" stroke="#ff6b5b" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="2 2"
                       />
                     )}
                     {/* Trend line (red dashed) */}

@@ -25,7 +25,7 @@ export function useDeliveryDriver({ patchOrder }: UseDeliveryDriverProps) {
   };
 
   const driverColor = (name: string): string => {
-    const colors = ["#ef4444", "#f97316", "#f59e0b", "#65a30d", "#14C2C2", "#0ea5e9", "#3b82f6", "#8b5cf6", "#ec4899"];
+    const colors = ["#ef4444", "#ff6b5b", "#ff6b5b", "#65a30d", "#14C2C2", "#0ea5e9", "#3b82f6", "#8b5cf6", "#ec4899"];
     let h = 0;
     for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
     return colors[Math.abs(h) % colors.length];

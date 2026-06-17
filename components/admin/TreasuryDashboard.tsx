@@ -299,7 +299,7 @@ export default function TreasuryDashboard() {
               label="Por cobrar (fiados)"
               value={fmt(kpis.porCobrar)}
               icon={ArrowUpRight}
-              color="#f97316"
+              color="#ff6b5b"
               subtitle={`${fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length} clientes pendientes`}
             />
             <KPICard
@@ -351,8 +351,8 @@ export default function TreasuryDashboard() {
                   <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#ff6b5b" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#ff6b5b" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(156,163,175,0.2)" />
@@ -372,7 +372,7 @@ export default function TreasuryDashboard() {
               />
               <Tooltip content={<FlowTooltip />} />
               <Area type="monotone" dataKey="ingresos" name="ingresos" stroke="var(--accent)" strokeWidth={2} fill="url(#ingGrad)" dot={false} />
-              <Area type="monotone" dataKey="gastos" name="gastos" stroke="#f97316" strokeWidth={2} fill="url(#gasGrad)" dot={false} />
+              <Area type="monotone" dataKey="gastos" name="gastos" stroke="#ff6b5b" strokeWidth={2} fill="url(#gasGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         )}

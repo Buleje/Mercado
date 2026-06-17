@@ -28,7 +28,7 @@ type OrderSummary = {
   estimatedDelivery: string;
 };
 
-const CONFETTI_COLORS = ["var(--accent)", "#f97316", "#10b981", "#6366f1", "#ec4899"];
+const CONFETTI_COLORS = ["var(--accent)", "#ff6b5b", "#10b981", "#6366f1", "#ec4899"];
 
 function generatePieces() {
   return Array.from({ length: 20 }, (_, i) => ({

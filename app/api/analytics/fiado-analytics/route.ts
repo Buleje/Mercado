@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     // --- Distribución por antigüedad ---
     const distribucion = [
       { rango: "Al día (0-7 días)", monto: 0, count: 0, color: "var(--accent)" },
-      { rango: "Por vencer (8-30 días)", monto: 0, count: 0, color: "#f97316" },
+      { rango: "Por vencer (8-30 días)", monto: 0, count: 0, color: "#ff6b5b" },
       { rango: "Vencido 31-60 días", monto: 0, count: 0, color: "#e76f51" },
       { rango: "Crítico +60 días", monto: 0, count: 0, color: "#d00000" },
     ];

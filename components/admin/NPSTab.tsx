@@ -39,7 +39,7 @@ function NPSGauge({ nps }: { nps: number }) {
   const needleX = cx + r * Math.cos(angle);
   const needleY = cy + r * Math.sin(angle);
 
-  const color = nps >= 50 ? "var(--accent)" : nps >= 0 ? "#f59e0b" : "#ef4444";
+  const color = nps >= 50 ? "var(--accent)" : nps >= 0 ? "#ff6b5b" : "#ef4444";
   const label = nps >= 50 ? "Excelente" : nps >= 20 ? "Bueno" : nps >= 0 ? "Aceptable" : "Necesita mejora";
 
   return (
@@ -48,7 +48,7 @@ function NPSGauge({ nps }: { nps: number }) {
         {/* Arco rojo */}
         <path d="M 30 90 A 70 70 0 0 1 76 27" fill="none" stroke="#fecaca" strokeWidth="14" strokeLinecap="round" />
         {/* Arco amarillo */}
-        <path d="M 76 27 A 70 70 0 0 1 124 27" fill="none" stroke="#fde68a" strokeWidth="14" strokeLinecap="round" />
+        <path d="M 76 27 A 70 70 0 0 1 124 27" fill="none" stroke="#ffe1dd" strokeWidth="14" strokeLinecap="round" />
         {/* Arco verde */}
         <path d="M 124 27 A 70 70 0 0 1 170 90" fill="none" stroke="#a7f3d0" strokeWidth="14" strokeLinecap="round" />
         {/* Aguja */}

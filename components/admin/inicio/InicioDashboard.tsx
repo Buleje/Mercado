@@ -105,7 +105,7 @@ function dayLabel(dk: string) {
 }
 
 const CAT_COLORS: Record<string, string> = {
-  "frutas-verduras": "#10b981", abarrotes: "#f59e0b", carnes: "#ef4444",
+  "frutas-verduras": "#10b981", abarrotes: "#ff6b5b", carnes: "#ef4444",
   lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4",
   otros: "#94a3b8",
 };
@@ -115,10 +115,10 @@ const CAT_LABELS: Record<string, string> = {
 };
 const PAY_COLORS: Record<string, string> = {
   efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4",
-  tarjeta: "#3b82f6", transferencia: "#f59e0b",
+  tarjeta: "#3b82f6", transferencia: "#ff6b5b",
 };
 const TIER_COLORS: Record<string, string> = {
-  gold: "#f59e0b", silver: "#94a3b8", bronze: "#b45309", default: "#6b7280",
+  gold: "#ff6b5b", silver: "#94a3b8", bronze: "#c93b2c", default: "#6b7280",
 };
 
 const PERIOD_LABELS: Record<string, string> = {

@@ -125,7 +125,7 @@ function getInitials(name: string) {
 
 // ── Mejora 9: Avatar color auto-generado ─────────────────────────────────────
 function getAvatarColor(name: string): string {
-  const colors = ["var(--accent)", "#f97316", "#e63946", "#457b9d", "#6b705c", "#9b5de5"];
+  const colors = ["var(--accent)", "#ff6b5b", "#e63946", "#457b9d", "#6b705c", "#9b5de5"];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
@@ -219,7 +219,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
                   style={{
                     width: `${Math.max(8, (p.totalQty / maxQty) * 100)}%`,
-                    backgroundColor: i === 0 ? "var(--accent)" : i === 1 ? "#f97316" : "#457b9d",
+                    backgroundColor: i === 0 ? "var(--accent)" : i === 1 ? "#ff6b5b" : "#457b9d",
                   }}
                 />
               </div>

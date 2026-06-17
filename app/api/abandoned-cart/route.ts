@@ -130,7 +130,7 @@ export const POST = withApiHandler("abandoned-cart", async (req, ctx) => {
         subject: `🛒 Carrito abandonado — S/${total.toFixed(2)} en espera${whatsappSent ? " (WhatsApp enviado)" : ""}`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-            <div style="background:#f59e0b;padding:20px 24px;">
+            <div style="background:#ff6b5b;padding:20px 24px;">
               <h2 style="color:#fff;margin:0;font-size:18px;">🛒 Carrito abandonado</h2>
               <p style="color:#fff;margin:4px 0 0;font-size:13px;opacity:0.85;">Un cliente dejó su carrito sin completar${phone ? ` · Tel: ${phone.slice(-4).padStart(phone.length, "*")}` : ""}</p>
             </div>

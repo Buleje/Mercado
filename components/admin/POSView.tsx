@@ -332,7 +332,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
 // ── Confetti animation for sale complete ──────────────────────────────────────
 
 function SaleConfetti() {
-  const colors = ["var(--accent)", "#f97316", "#14C2C2", "#e63946"];
+  const colors = ["var(--accent)", "#ff6b5b", "#14C2C2", "#e63946"];
   // Pre-compute random values to avoid impure function calls during render
   const pieces = useState(() =>
     Array.from({ length: 20 }).map((_, i) => ({

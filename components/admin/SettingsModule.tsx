@@ -360,7 +360,7 @@ export default function SettingsModule({
 
   // Appearance
   const [primaryColor, setPrimaryColor] = useState("var(--accent)");
-  const [secondaryColor, setSecondaryColor] = useState("#f97316");
+  const [secondaryColor, setSecondaryColor] = useState("#ff6b5b");
   const [slogan, setSlogan] = useState("Productos frescos, precios justos");
 
   // System config

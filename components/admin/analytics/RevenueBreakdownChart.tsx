@@ -31,8 +31,8 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS = [
-  "var(--accent)", "#f97316", "#3b82f6", "#8b5cf6",
-  "#ec4899", "#14C2C2", "#f59e0b", "#6366f1",
+  "var(--accent)", "#ff6b5b", "#3b82f6", "#8b5cf6",
+  "#ec4899", "#14C2C2", "#ff6b5b", "#6366f1",
   "#10b981", "#ef4444",
 ];
 
@@ -40,7 +40,7 @@ const PAYMENT_COLORS: Record<string, string> = {
   efectivo: "var(--accent)",
   yape: "#3b82f6",
   plin: "#8b5cf6",
-  tarjeta: "#f97316",
+  tarjeta: "#ff6b5b",
   transferencia: "#14C2C2",
 };
 

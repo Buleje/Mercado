@@ -287,7 +287,7 @@ export default function HotZonesPanel({
               id="hot-zones-heading"
               className="inline-flex items-center gap-2 text-lg lg:text-xl font-extrabold text-[var(--text-primary)]"
             >
-              <Flame className="h-5 w-5 text-[var(--brand-secondary,#f97316)]" strokeWidth={2.25} aria-hidden />
+              <Flame className="h-5 w-5 text-[var(--brand-secondary,#ff6b5b)]" strokeWidth={2.25} aria-hidden />
               Zonas activas ahora
             </h2>
             <LiveBadge />

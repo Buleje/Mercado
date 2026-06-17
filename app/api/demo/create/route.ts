@@ -118,11 +118,11 @@ async function demoCreateHandler(req: NextRequest, traceId: string): Promise<Nex
           businessPhone: "999888777",
           businessAddress: "Jr. Ucayali 456, Pucallpa",
           primaryColor: "var(--accent)",
-          secondaryColor: "#f97316",
+          secondaryColor: "#ff6b5b",
           slogan: "Tu bodega digital de confianza",
           storeThemeJson: JSON.stringify({
             primaryColor: "var(--accent)",
-            secondaryColor: "#f97316",
+            secondaryColor: "#ff6b5b",
             accentColor: "var(--accent)",
             name: "Bodega Demo Enterprise",
             slogan: "Tu bodega digital de confianza",

@@ -174,7 +174,7 @@ export default function ReferralProgram() {
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Amigos referidos</p>
         </div>
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-3 text-center">
-          <TrendingUp className="h-4 w-4 text-[#f97316] mx-auto mb-1" />
+          <TrendingUp className="h-4 w-4 text-[#ff6b5b] mx-auto mb-1" />
           <p className="text-lg font-extrabold text-[var(--text-primary)]">S/ {Number(data.totalEarned).toFixed(2)}</p>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Ganado</p>
         </div>

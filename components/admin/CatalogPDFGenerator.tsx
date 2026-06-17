@@ -102,7 +102,7 @@ export default function CatalogPDFGenerator() {
       }
 
       // ── Table header ──
-      doc.setFillColor(244, 162, 97); // #f97316
+      doc.setFillColor(244, 162, 97); // #ff6b5b
       doc.rect(margin, y, pageW - margin * 2, 8, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);

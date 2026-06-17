@@ -413,7 +413,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                   <Tooltip formatter={((v: number) => [formatCurrency(Number(v)), "Saldo"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
                   <Bar dataKey="monto" radius={[0, 6, 6, 0]}>
                     {topDeudores.map((_, i) => (
-                      <Cell key={i} fill={i === 0 ? "#ef4444" : i === 1 ? "#f97316" : "#f97316"} />
+                      <Cell key={i} fill={i === 0 ? "#ef4444" : i === 1 ? "#ff6b5b" : "#ff6b5b"} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -1950,7 +1950,7 @@ export default function PrestamosModule() {
   td { padding: 6px 8px; border-bottom: 1px solid #eee; }
   tr:nth-child(even) { background: #f9f9f9; }
   .paid { color: var(--accent); font-weight: bold; }
-  .pending { color: #d97706; }
+  .pending { color: #f0503f; }
   .total-row { background: #f0fdf4 !important; font-weight: bold; }
   .right { text-align: right; }
   .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; display: flex; justify-content: space-between; font-size: 12px; }
@@ -2018,7 +2018,7 @@ ${cuotas.map(c => { const row = `<tr>
   th { background: #f0f0f0; padding: 6px; text-align: left; border: 1px solid #ddd; }
   td { padding: 5px 6px; border: 1px solid #eee; }
   .paid { color: var(--accent); }
-  .pend { color: #d97706; }
+  .pend { color: #f0503f; }
   .right { text-align: right; }
   .firma-section { margin-top: 50px; }
   .firma-line { border-top: 1px solid #333; width: 250px; margin-top: 40px; padding-top: 4px; text-align: center; font-size: 11px; }
