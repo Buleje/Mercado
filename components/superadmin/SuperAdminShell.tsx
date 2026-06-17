@@ -475,9 +475,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // Brandon mayo 2026 v3: logo con mejor contraste — gradient ámbar fuerte
   // sobre dark, ring sutil que separa del fondo, sombra cálida. Labels en
   // blanco con drop-shadow para legibilidad sobre cualquier theme.
-  const logoBoxClass = isBuleje
-    ? "bg-[linear-gradient(135deg,#00A0A0_0%,#0d9488_100%)] text-white shadow-md ring-2 ring-[#14C2C2]/30"
-    : "bg-[linear-gradient(135deg,#fbbf24_0%,#d97706_100%)] text-zinc-900 shadow-md ring-2 ring-amber-300/40";
+  // Logo = círculo BLANCO con la marca Buleje en teal (referencia Brandon
+  // 2026-06-16: "redondo con fondo blanco", igual que el admin). Sin ámbar.
+  const logoBoxClass = "bg-white text-[#00A0A0] shadow-md ring-1 ring-black/[0.06]";
   const logoLabelClass = isBuleje
     ? "text-white"
     : "text-white dark:text-white drop-shadow-sm";
@@ -657,7 +657,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             collapsed ? "justify-center" : "",
           ].join(" ")}
         >
-          <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", logoBoxClass].join(" ")}>
+          <div className={["w-9 h-9 rounded-full flex items-center justify-center shrink-0", logoBoxClass].join(" ")}>
             <BulejeMark size={20} strokeWidth={1.75} />
           </div>
           {!collapsed && (
@@ -836,7 +836,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           {/* Logo */}
           <div className={["flex items-center justify-between px-4 py-5 border-b shrink-0", logoBorderClass].join(" ")}>
             <div className="flex items-center gap-3">
-              <div className={["w-9 h-9 rounded-xl flex items-center justify-center shrink-0", logoBoxClass].join(" ")}>
+              <div className={["w-9 h-9 rounded-full flex items-center justify-center shrink-0", logoBoxClass].join(" ")}>
                 <BulejeMark size={20} strokeWidth={1.75} />
               </div>
               <div>

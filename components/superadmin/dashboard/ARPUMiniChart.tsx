@@ -45,7 +45,7 @@ function ARPUTooltip({
  */
 export function ARPUMiniChart({ data, currentARPU }: Props) {
   const tokens = useChartTokens();
-  const amber = "#f59e0b";
+  const amber = "#00A0A0"; // Brandon 2026-06-16: "sin naranja" → línea ARPU teal de marca.
   const first = data[0]?.arpu ?? currentARPU;
   const last = data[data.length - 1]?.arpu ?? currentARPU;
   const deltaPct = first > 0 ? ((last - first) / first) * 100 : 0;

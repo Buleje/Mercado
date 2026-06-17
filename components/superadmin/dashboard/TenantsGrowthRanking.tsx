@@ -59,7 +59,7 @@ const RANGE_LABELS: Record<Range, string> = {
 
 const PLAN_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   free: { bg: "bg-zinc-100 dark:bg-zinc-800", text: "text-zinc-700 dark:text-zinc-300", label: "Free" },
-  pro: { bg: "bg-amber-100 dark:bg-amber-950/40", text: "text-amber-800 dark:text-amber-300", label: "Pro" },
+  pro: { bg: "bg-teal-100 dark:bg-teal-950/40", text: "text-teal-800 dark:text-teal-300", label: "Pro" },
   business: { bg: "bg-sky-100 dark:bg-sky-950/40", text: "text-sky-800 dark:text-sky-300", label: "Business" },
   enterprise: { bg: "bg-emerald-100 dark:bg-emerald-950/40", text: "text-emerald-800 dark:text-emerald-300", label: "Enterprise" },
 };
