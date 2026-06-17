@@ -590,13 +590,35 @@ export default function FiadoModals({
                   </button>
                   <button
                     onClick={async () => {
-                      // Save promise date in fiado notes
                       try {
+                        // Brandon 2026-06-17: persistir la FIRMA del compromiso. Antes
+                        // el canvas se dibujaba pero NUNCA se exportaba (toDataURL) — la
+                        // firma se perdía. Ahora exporta → sube a /api/upload → guarda
+                        // [FIRMA:url] en descripcion. Best-effort (no bloquea el guardado).
+                        let firmaNote = "";
+                        const canvas = firmaCanvasRef.current;
+                        if (canvas) {
+                          try {
+                            const dataUrl = canvas.toDataURL("image/png");
+                            const blob = await (await fetch(dataUrl)).blob();
+                            const file = new File([blob], `firma-${selected.id}.png`, { type: "image/png" });
+                            const fd = new FormData();
+                            fd.append("file", file);
+                            fd.append("folder", "general");
+                            const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+                            if (upRes.ok) {
+                              const up = (await upRes.json()) as { url?: string };
+                              if (up.url) firmaNote = ` [FIRMA:${up.url}]`;
+                            }
+                          } catch {
+                            /* firma best-effort: el compromiso se guarda sin la imagen */
+                          }
+                        }
                         await fetch(`/api/fiados/${selected.id}`, {
                           method: "PATCH",
                           headers: csrfHeaders({ "Content-Type": "application/json" }),
                           body: JSON.stringify({
-                            descripcion: `${selected.descripcion ?? ""} [COMPROMISO: S/${compromisoMonto} hasta ${compromisoFecha}]`.trim(),
+                            descripcion: `${selected.descripcion ?? ""} [COMPROMISO: S/${compromisoMonto} hasta ${compromisoFecha}]${firmaNote}`.trim(),
                           }),
                         });
                       } catch { /* ignore */ }

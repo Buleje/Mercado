@@ -546,9 +546,28 @@ export default function FiadosModule() {
         customerId: newForm.customerId.trim(),
         total,
       };
-      // Mejora 17: Include DNI photo in description if present
+      // Mejora 17 / Brandon 2026-06-17: subir la foto DNI server-side. Antes se
+      // inyectaba el base64 en descripcion → lo rechazaba el Zod max(500) del API
+      // (la foto nunca se guardaba). Ahora sube a /api/upload (Supabase+Sharp) y
+      // guarda solo la URL (corta) como [FOTO:url]. Best-effort: si falla, el
+      // fiado se crea igual sin la foto (no bloquear la operación).
       let desc = newForm.descripcion.trim();
-      if (dniPhoto) desc = `[IMG:${dniPhoto}] ${desc}`.trim();
+      if (dniPhoto) {
+        try {
+          const blob = await (await fetch(dniPhoto)).blob();
+          const file = new File([blob], "fiado-dni.jpg", { type: blob.type || "image/jpeg" });
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("folder", "general");
+          const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+          if (upRes.ok) {
+            const up = (await upRes.json()) as { url?: string };
+            if (up.url) desc = `[FOTO:${up.url}] ${desc}`.trim();
+          }
+        } catch {
+          /* upload best-effort: se crea el fiado sin la foto si falla */
+        }
+      }
       if (desc) body.descripcion = desc;
       if (newForm.fechaVence) body.fechaVence = new Date(newForm.fechaVence).toISOString();
 
