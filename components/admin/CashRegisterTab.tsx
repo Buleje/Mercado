@@ -488,7 +488,27 @@ export default function CashRegisterTab() {
       const digitalTotal = (Number(arqueoYape) || 0) + (Number(arqueoPlin) || 0) + (Number(arqueoTarjeta) || 0);
       const grandTotal = guiadoTotal + digitalTotal;
       const digitalNote = digitalTotal > 0 ? ` | Yape: S/${(Number(arqueoYape) || 0).toFixed(2)} | Plin: S/${(Number(arqueoPlin) || 0).toFixed(2)} | Tarjeta: S/${(Number(arqueoTarjeta) || 0).toFixed(2)}` : "";
-      const fotoNote = arqueoFoto ? " | Foto: adjunta" : "";
+      // Brandon 2026-06-17: persiste la foto del arqueo SERVER-SIDE (antes solo
+      // quedaba en localStorage + flag de texto "adjunta", se perdía al limpiar).
+      // Sube a /api/upload (Supabase + Sharp) y guarda la URL real en notes.
+      // Best-effort: si el upload falla, conserva el flag para no bloquear el cierre.
+      let fotoNote = "";
+      if (arqueoFoto) {
+        try {
+          const blob = await (await fetch(arqueoFoto)).blob();
+          const file = new File([blob], `arqueo-${currentRegister.id}.jpg`, {
+            type: blob.type || "image/jpeg",
+          });
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("folder", "general");
+          const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+          const up = upRes.ok ? ((await upRes.json()) as { url?: string }) : null;
+          fotoNote = up?.url ? ` | Foto: ${up.url}` : " | Foto: adjunta";
+        } catch {
+          fotoNote = " | Foto: adjunta";
+        }
+      }
 
       await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
