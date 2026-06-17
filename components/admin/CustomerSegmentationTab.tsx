@@ -4,6 +4,7 @@ import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { Users, Loader2, Search, Crown, Star, AlertTriangle, UserPlus, Moon, Send, BarChart3, TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { activateProps } from "@/components/admin/shared/a11y";
 import type { SegmentLabel, SegmentsResponse, SegmentedCustomer } from "@/app/api/analytics/segments/route";
 
 const SEGMENT_CONFIG: Record<SegmentLabel, { label: string; icon: React.ElementType; color: string; bg: string; border: string; barColor: string }> = {
@@ -108,9 +109,9 @@ export default function CustomerSegmentationTab() {
             return (
               <div
                 key={seg}
+                {...activateProps(() => setActiveSegment(activeSegment === seg ? "all" : seg))}
                 className={cn("flex items-center justify-center transition-all cursor-pointer", SEGMENT_CONFIG[seg].barColor, activeSegment === seg ? "opacity-100 ring-2 ring-white" : "opacity-80 hover:opacity-100")}
                 style={{ width: `${pct}%` }}
-                onClick={() => setActiveSegment(activeSegment === seg ? "all" : seg)}
                 title={`${SEGMENT_CONFIG[seg].label}: ${count} (${pct.toFixed(0)}%)`}
               >
                 {pct > 8 && <span className="text-white text-xs font-extrabold">{pct.toFixed(0)}%</span>}

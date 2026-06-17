@@ -10,6 +10,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
+import { activateProps } from "@/components/admin/shared/a11y";
 
 type FiadoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
 
@@ -512,8 +513,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 return (
                   <div
                     key={f.id}
+                    {...activateProps(() => openDetail(f))}
                     className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)] transition-shadow cursor-pointer overflow-hidden"
-                    onClick={() => openDetail(f)}
                   >
                     <div className="flex items-center gap-3 p-3">
                       {/* Avatar circular numerado por riesgo */}

@@ -4,6 +4,7 @@ import { CardTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback } from "react";
 import { Download, Upload, CheckCircle, XCircle, FileJson, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -184,7 +185,7 @@ export default function DataExportImport() {
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
+            {...activateProps(() => fileInputRef.current?.click())}
             className={cn(
               "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
               dragOver

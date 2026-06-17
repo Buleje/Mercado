@@ -16,6 +16,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { Check, X, MapPin, Trash2, Bike, ShoppingBasket, Clock, Package, AlertTriangle, Store, Boxes } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -144,7 +145,7 @@ export function OrdersList({
             >
               <div
                 className="p-4 flex flex-col lg:flex-row lg:items-center gap-4 cursor-pointer"
-                onClick={() => onSelectOrder(o)}
+                {...activateProps(() => onSelectOrder(o))}
               >
                 {/* Bulk checkbox */}
                 <input

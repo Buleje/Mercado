@@ -9,6 +9,7 @@ import { validateProductImage, type ImageValidationResult } from "@/lib/image-va
 import { ImageValidationPanel } from "@/components/admin/shared/ImageValidationPanel";
 import { installDragGuard, uninstallDragGuard, compressIfLarge } from "@/lib/image-upload-utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { activateProps } from "@/components/admin/shared/a11y";
 
 type ImageUploadProps = {
   value?: string;
@@ -226,7 +227,7 @@ export default function ImageUpload({
             setDragOver(false);
           }}
           onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
+          {...activateProps(() => inputRef.current?.click())}
           className={cn(
             "rounded-lg border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-2 p-6",
             ASPECT_MAP[aspectRatio],

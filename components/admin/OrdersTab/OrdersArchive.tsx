@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, MapPin, Trash2 } from "@buleje/design-system/icons";
+import { activateProps } from "@/components/admin/shared/a11y";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
 import type { DbOrder } from "@/lib/jsondb";
@@ -136,7 +137,7 @@ export function OrdersArchive({
                   <div
                     key={o.id}
                     className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-                    onClick={() => { onSelectOrder(o); onClose(); }}
+                    {...activateProps(() => { onSelectOrder(o); onClose(); })}
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">

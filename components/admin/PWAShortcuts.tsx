@@ -3,6 +3,7 @@ import { SectionTitle } from "@buleje/design-system";
  
 import { useState, useEffect } from "react";
 import { Smartphone, Copy, Check, Info } from "@buleje/design-system/icons";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { cn } from "@/lib/utils";
 
 /* ── Types ── */
@@ -188,7 +189,7 @@ export default function PWAShortcuts() {
           {shortcuts.map((s) => (
             <div
               key={s.id}
-              onClick={() => toggleShortcut(s.id)}
+              {...activateProps(() => toggleShortcut(s.id))}
               className={cn(
                 "rounded-lg border p-4 cursor-pointer flex items-center gap-4 transition-all select-none",
                 s.enabled

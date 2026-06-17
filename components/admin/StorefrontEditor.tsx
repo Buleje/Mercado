@@ -2,6 +2,7 @@
 
 import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
+import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
 import { Field } from "@/components/admin/shared/Field";
 import {
@@ -1131,7 +1132,7 @@ function SortableRow({
         {/* Info — clickable to edit */}
         <div
           className={cn("flex-1 min-w-0", onEdit && "cursor-pointer")}
-          onClick={onEdit}
+          {...(onEdit ? activateProps(onEdit) : {})}
         >
           <div className="flex items-center gap-2">
             <p className={cn("text-base font-bold leading-tight", section.enabled ? "text-[var(--text-primary)]" : "text-muted")}>

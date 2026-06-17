@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import { CardTitle, EmptyState, LoadingState, WarningAlert } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { Field } from "@/components/admin/shared/Field";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -866,7 +867,7 @@ export default function CashRegisterTab() {
                           {/* Content — clickable */}
                           <div
                             className="pb-3 flex-1 min-w-0 cursor-pointer hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 rounded-lg px-1.5 -mx-1.5 transition-colors"
-                            onClick={() => setExpandedMovIdx(isExpanded ? null : idx)}
+                            {...activateProps(() => setExpandedMovIdx(isExpanded ? null : idx))}
                           >
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{timeStr}</span>

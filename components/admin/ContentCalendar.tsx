@@ -2,6 +2,7 @@
 
 import { Field } from "@/components/admin/shared/Field";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { useState, useEffect, useRef } from "react";
 import {
   ChevronLeft,
@@ -217,12 +218,12 @@ export default function ContentCalendar() {
         onDragOver={(e) => { e.preventDefault(); setDragOver(ymd); }}
         onDragLeave={() => setDragOver(null)}
         onDrop={() => handleDrop(ymd)}
-        onClick={() => {
+        {...activateProps(() => {
           if (!dragId) {
             setForm((f) => ({ ...f, date: ymd }));
             setShowForm(true);
           }
-        }}
+        })}
       >
         <div
           className={cn(

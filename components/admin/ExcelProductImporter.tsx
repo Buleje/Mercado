@@ -6,6 +6,7 @@ import {
   Upload, AlertTriangle, CheckCircle, Loader2, X, FileText, Download,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { activateProps } from "@/components/admin/shared/a11y";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -367,7 +368,7 @@ export default function ExcelProductImporter() {
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          onClick={() => fileRef.current?.click()}
+          {...activateProps(() => fileRef.current?.click())}
           className={cn(
             "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-12 cursor-pointer transition-colors",
             dragging

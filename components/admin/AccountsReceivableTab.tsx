@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
 import { Field } from "@/components/admin/shared/Field";
@@ -364,7 +365,7 @@ export default function AccountsReceivableTab() {
               return (
                 <div
                   key={ar.id}
-                  onClick={() => setSelected(ar)}
+                  {...activateProps(() => setSelected(ar))}
                   className={cn("bg-[var(--surface-raised)] border rounded-xl p-4 cursor-pointer hover:border-primary/40 transition-all", selected?.id === ar.id ? "border-primary " : "border-[var(--rule-base)] dark:border-[var(--rule-base)]")}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2 mb-2">

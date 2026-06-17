@@ -3,6 +3,7 @@
 import { SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback, useEffect, DragEvent, ChangeEvent } from "react";
 import { Field } from "@/components/admin/shared/Field";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { Upload, Percent, CheckCircle, AlertTriangle, Loader2, X } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -288,7 +289,7 @@ export default function BulkPriceUpdater() {
                   onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
                   onDragLeave={() => setDragging(false)}
                   onDrop={onDrop}
-                  onClick={() => fileRef.current?.click()}
+                  {...activateProps(() => fileRef.current?.click())}
                   className={cn(
                     "flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-10 cursor-pointer transition-colors",
                     dragging

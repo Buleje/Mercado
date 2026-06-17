@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
@@ -635,7 +636,7 @@ export default function PromotionsTab() {
                 <div className="flex-1">
                   <div
                     className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-                    onClick={() => setDetailPromo(p)}
+                    {...activateProps(() => setDetailPromo(p))}
                   >
                     <div className="flex flex-wrap items-start gap-3">
                       {/* Image preview */}

@@ -3,6 +3,7 @@
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -1513,7 +1514,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       return (
                         <div
                           key={c.id}
-                          onClick={() => setSelected(c)}
+                          {...activateProps(() => setSelected(c))}
                           className={cn("bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer border-l-4", borderColor)}
                         >
                           <div className="p-4 space-y-3">
