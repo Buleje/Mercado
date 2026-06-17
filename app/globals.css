@@ -96,6 +96,8 @@
   --color-primary-light: #00BDBD;  /* Lighter turquoise variant */
   --color-secondary: #FF6B5B;      /* Coral - Brand Secondary (ofertas/hot) */
   --color-secondary-dark: #E8503F; /* Coral oscuro - hover */
+  --color-whatsapp: #25D366;       /* Verde WhatsApp (brand externo) - CTAs WA */
+  --color-whatsapp-dark: #1da851;  /* Verde WhatsApp hover */
   --color-accent: #00D4D4;         /* Bright aqua - Interactive */
   --color-danger: #ef4444;          /* Red 500 - Errors & alerts */
   --color-success: #10b981;         /* Emerald 500 - Confirmations */

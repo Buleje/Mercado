@@ -399,7 +399,7 @@ export default function FiadoModals({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-dark)] transition-colors"
                   >
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
@@ -496,7 +496,7 @@ export default function FiadoModals({
                         const rect = canvas.getBoundingClientRect();
                         ctx.lineWidth = 2;
                         ctx.lineCap = "round";
-                        ctx.strokeStyle = "#1a1a1a";
+                        ctx.strokeStyle = getComputedStyle(canvas).getPropertyValue("--text-primary").trim() || "rgb(26,26,26)";
                         ctx.lineTo(
                           (e.clientX - rect.left) * (canvas.width / rect.width),
                           (e.clientY - rect.top) * (canvas.height / rect.height)
@@ -531,7 +531,7 @@ export default function FiadoModals({
                         const touch = e.touches[0];
                         ctx.lineWidth = 2;
                         ctx.lineCap = "round";
-                        ctx.strokeStyle = "#1a1a1a";
+                        ctx.strokeStyle = getComputedStyle(canvas).getPropertyValue("--text-primary").trim() || "rgb(26,26,26)";
                         ctx.lineTo(
                           (touch.clientX - rect.left) * (canvas.width / rect.width),
                           (touch.clientY - rect.top) * (canvas.height / rect.height)
@@ -777,7 +777,7 @@ export default function FiadoModals({
                                         <a
                                           href={`https://wa.me/${cleanPhone.startsWith("51") ? cleanPhone : "51" + cleanPhone}?text=${encodeURIComponent(`Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`)}`}
                                           target="_blank" rel="noopener noreferrer"
-                                          className="p-1.5 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                                          className="p-1.5 rounded-lg bg-[var(--color-whatsapp)]/10 text-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp)]/20 transition-colors"
                                           title="WhatsApp"
                                         >
                                           <Phone className="h-3 w-3" />
