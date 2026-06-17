@@ -1467,6 +1467,38 @@ function NavGroupsAccordion({
     });
   };
 
+  // ── Flyout lateral on hover (1:1 con el admin de negocio · Brandon 2026-06-17) ──
+  // Al pasar el mouse por el header de una sección aparece un panel lateral con
+  // sus items, pegado al borde derecho del sidebar (mismo SuperAdminFlyout del
+  // modo colapsado). Es ADITIVO: los items inline siguen visibles; el flyout da
+  // navegación rápida sin scrollear. Mismos delays que el admin (open 80 / close 120).
+  const [hoveredId, setHoveredId] = useState<NavGroupId | null>(null);
+  const [flyoutTop, setFlyoutTop] = useState<{ top: number } | null>(null);
+  const headerRefs = useRef<Partial<Record<NavGroupId, HTMLButtonElement | null>>>({});
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openFlyout = (id: NavGroupId) => {
+    if (forceExpandAll) return; // en modo búsqueda no interferir con los matches
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setHoveredId(id), 80);
+  };
+  const closeFlyout = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => setHoveredId(null), 120);
+  };
+  const cancelCloseFlyout = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+  };
+  useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
+  useEffect(() => {
+    if (!hoveredId) { setFlyoutTop(null); return; }
+    const el = headerRefs.current[hoveredId];
+    if (!el) return;
+    setFlyoutTop({ top: el.getBoundingClientRect().top });
+  }, [hoveredId]);
+  useEffect(() => { setHoveredId(null); }, [pathname]);
+  const hoveredGroup = hoveredId ? groups.find((g) => g.id === hoveredId) ?? null : null;
+  const hoveredItems = hoveredGroup?.items.filter((it) => visibleHrefs.has(it.href)) ?? [];
+
   // Item activo: pill teal (marca). Idle: texto tenue. Label de sección: mayúscula tenue.
   const itemActive = isBuleje
     ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
@@ -1491,9 +1523,15 @@ function NavGroupsAccordion({
             {/* Sección = título en MAYÚSCULA (estilo admin de negocio), colapsable. */}
             <button
               type="button"
+              ref={(el) => { headerRefs.current[group.id] = el; }}
               onClick={() => toggle(group.id)}
+              onMouseEnter={() => openFlyout(group.id)}
+              onMouseLeave={closeFlyout}
+              onFocus={() => openFlyout(group.id)}
+              onBlur={closeFlyout}
               aria-expanded={isOpen}
               aria-controls={panelId}
+              aria-haspopup="menu"
               className={[
                 "w-full flex items-center gap-2 px-3 pt-3 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest transition-colors",
                 labelClass,
@@ -1533,6 +1571,22 @@ function NavGroupsAccordion({
           </div>
         );
       })}
+
+      {/* Flyout lateral on hover — mismo panel que el modo colapsado, pegado al
+          borde derecho del sidebar expandido (w-60 = 240px). */}
+      {hoveredGroup && flyoutTop && hoveredItems.length > 0 && (
+        <SuperAdminFlyout
+          group={hoveredGroup}
+          items={hoveredItems}
+          position={flyoutTop}
+          left={240}
+          pathname={pathname}
+          isBuleje={isBuleje}
+          onItemClick={() => { cancelCloseFlyout(); setHoveredId(null); onItemClick(); }}
+          onMouseEnter={cancelCloseFlyout}
+          onMouseLeave={closeFlyout}
+        />
+      )}
     </div>
   );
 }
