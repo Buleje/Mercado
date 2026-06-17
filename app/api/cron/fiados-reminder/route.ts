@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { createNotification } from "@/lib/create-notification";
+import { sendWhatsAppQueued } from "@/lib/whatsapp";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 
@@ -173,6 +174,18 @@ export async function GET(req: NextRequest) {
         entityId: fiado.id,
       });
 
+      // Brandon 2026-06-17: auto-envío opt-in. OFF por default (Ley 29733 — el
+      // dueño decide el consentimiento activando el flag). Doble env-gate: sin
+      // FIADO_AUTO_WHATSAPP=1 queda solo la notif para revisar; sin WHATSAPP_API
+      // config sendWhatsAppQueued es no-op. Fire-and-forget con log de error.
+      if (process.env.FIADO_AUTO_WHATSAPP === "1" && cleanPhone) {
+        void sendWhatsAppQueued(phone, mensaje, {
+          tenantId: fiado.tenantId,
+          context: "fiado-reminder",
+          metadata: { fiadoId: fiado.id },
+        }).catch((err) => logger.error("[cron/fiados-reminder] auto-send failed", { error: String(err), fiadoId: fiado.id }));
+      }
+
       remindersCount++;
     }
 
@@ -217,6 +230,18 @@ export async function GET(req: NextRequest) {
         actionLabel: "Enviar WhatsApp",
         entityId: fiado.id,
       });
+
+      // Brandon 2026-06-17: auto-envío opt-in. OFF por default (Ley 29733 — el
+      // dueño decide el consentimiento activando el flag). Doble env-gate: sin
+      // FIADO_AUTO_WHATSAPP=1 queda solo la notif para revisar; sin WHATSAPP_API
+      // config sendWhatsAppQueued es no-op. Fire-and-forget con log de error.
+      if (process.env.FIADO_AUTO_WHATSAPP === "1" && cleanPhone) {
+        void sendWhatsAppQueued(phone, mensaje, {
+          tenantId: fiado.tenantId,
+          context: "fiado-reminder",
+          metadata: { fiadoId: fiado.id },
+        }).catch((err) => logger.error("[cron/fiados-reminder] auto-send failed", { error: String(err), fiadoId: fiado.id }));
+      }
 
       remindersCount++;
     }

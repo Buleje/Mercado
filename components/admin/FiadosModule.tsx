@@ -417,7 +417,18 @@ export default function FiadosModule() {
           const deudaActual = activos.reduce((s, f) => s + f.saldo, 0);
           const pagados = clientFiados.filter(f => f.status === "PAGADO").length;
           const nombre = clientFiados[0]?.customerName || cid;
-          const limite = 500; // Limite default
+          // Brandon 2026-06-17: límite REAL del Customer (antes hardcoded 500).
+          // creditLimit 0 = sin tope configurado → la UI lo muestra como "Sin tope".
+          let limite = 0;
+          try {
+            const cRes = await fetch(`/api/customers/${encodeURIComponent(cid)}`).catch(() => null);
+            if (cRes && cRes.ok) {
+              const cData = await cRes.json();
+              limite = Number(cData?.creditLimit ?? 0) || 0;
+            }
+          } catch {
+            /* fallback limite=0 = sin tope; el lookup es best-effort */
+          }
           // Detectar bloqueo: algun fiado vencido > 60 dias
           const now = new Date();
           now.setHours(0, 0, 0, 0);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { MessageCircle, Inbox } from "@buleje/design-system/icons";
+import { MessageCircle, Inbox, FileText } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -16,12 +16,16 @@ const UnifiedSupportInbox = dynamic(
   () => import("@/components/admin/support/UnifiedSupportInbox").then((m) => ({ default: m.UnifiedSupportInbox })),
   { loading: S },
 );
+// Brandon 2026-06-17: WhatsAppTemplates estaba huérfano (0 imports). Montado como
+// 3er sub-tab — plantillas de WhatsApp con variables para el operador.
+const WhatsAppTemplates = dynamic(() => import("@/components/admin/WhatsAppTemplates"), { loading: S });
 
 const MODULE_ID = "mensajes-hub";
 
 const TABS = [
   { id: "chat",    label: "Chat con clientes", icon: MessageCircle },
   { id: "soporte", label: "Soporte",           icon: Inbox },
+  { id: "plantillas", label: "Plantillas WhatsApp", icon: FileText },
 ];
 
 export default function MensajesHubModule({ initialTab }: { initialTab?: string } = {}) {
@@ -42,6 +46,7 @@ export default function MensajesHubModule({ initialTab }: { initialTab?: string 
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "chat" && <ChatTab />}
         {sub === "soporte" && <UnifiedSupportInbox />}
+        {sub === "plantillas" && <WhatsAppTemplates />}
       </AdminTabBar>
     </div>
   );

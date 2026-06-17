@@ -65,15 +65,20 @@ export async function GET(req: NextRequest) {
 
     for (const fiado of activeList) {
       const saldo = Number(fiado.saldo);
-      const diasDesdeCreacion = Math.floor((now.getTime() - new Date(fiado.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+      // Brandon 2026-06-17: bucketizar por días respecto al VENCIMIENTO, no a la
+      // creación. Antes un fiado viejo con vencimiento lejano caía en "crítico"
+      // falsamente. Sin fechaVence → fallback createdAt. Días negativos (aún no
+      // vence) caen en "al día" (dias <= 7).
+      const ref = fiado.fechaVence ? new Date(fiado.fechaVence) : new Date(fiado.createdAt);
+      const dias = Math.floor((now.getTime() - ref.getTime()) / (1000 * 60 * 60 * 24));
 
-      if (diasDesdeCreacion <= 7) {
+      if (dias <= 7) {
         distribucion[0].monto += saldo;
         distribucion[0].count++;
-      } else if (diasDesdeCreacion <= 30) {
+      } else if (dias <= 30) {
         distribucion[1].monto += saldo;
         distribucion[1].count++;
-      } else if (diasDesdeCreacion <= 60) {
+      } else if (dias <= 60) {
         distribucion[2].monto += saldo;
         distribucion[2].count++;
       } else {

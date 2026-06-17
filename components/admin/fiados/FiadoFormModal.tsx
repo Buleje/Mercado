@@ -128,7 +128,11 @@ export default function FiadoFormModal({
                             Deuda actual: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(clienteResumen.deudaActual)}</span>
                           </p>
                           <p className="text-xs text-[var(--text-secondary)]">
-                            Limite: {formatCurrency(clienteResumen.limite)} · Disponible: <span className="font-bold">{formatCurrency(Math.max(0, clienteResumen.limite - clienteResumen.deudaActual))}</span>
+                            {clienteResumen.limite > 0 ? (
+                              <>Límite: {formatCurrency(clienteResumen.limite)} · Disponible: <span className="font-bold">{formatCurrency(Math.max(0, clienteResumen.limite - clienteResumen.deudaActual))}</span></>
+                            ) : (
+                              <span className="text-[var(--text-tertiary)]">Sin tope de crédito configurado</span>
+                            )}
                           </p>
                           {clienteResumen.promedioDias > 0 && (
                             <p className="text-xs text-[var(--text-secondary)]">
