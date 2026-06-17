@@ -76,6 +76,60 @@ export const CampaignsDB = {
     return 0;
   },
 
+  /**
+   * Brandon 2026-06-17: resuelve la audiencia REAL (clientes con teléfono) de un
+   * segmento, para el cron de dispatch. Mismo criterio que estimateAudience pero
+   * devuelve la lista. CONSENTIMIENTO: solo clientes con `notifPromotions=true`.
+   */
+  async resolveAudience(
+    tenantId: string,
+    segment: string,
+  ): Promise<{ id: string; name: string; phone: string }[]> {
+    const thirty = new Date();
+    thirty.setDate(thirty.getDate() - 30);
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const segWhere =
+      segment === "vip"
+        ? { loyaltyTier: { in: ["oro", "diamante"] } }
+        : segment === "inactivos"
+          ? { sales: { none: { createdAt: { gte: thirty } } } }
+          : segment === "cumpleanos"
+            ? { birthday: { gte: firstOfMonth, lte: lastOfMonth } }
+            : segment === "deudores"
+              ? { creditBalance: { lt: 0 } }
+              : {};
+    const rows = await prisma.customer.findMany({
+      where: { tenantId, notifPromotions: true, ...segWhere },
+      select: { id: true, name: true, phone: true },
+    });
+    return rows
+      .filter((r) => r.phone && r.phone.trim() !== "")
+      .map((r) => ({ id: r.id, name: r.name ?? "", phone: r.phone }));
+  },
+
+  /** Cross-tenant: campañas programadas vencidas con canal WhatsApp (para el cron). */
+  async listDueWhatsApp() {
+    return prisma.campaign.findMany({
+      where: {
+        status: "programada",
+        scheduledAt: { lte: new Date() },
+        channel: { in: ["whatsapp", "ambos"] },
+      },
+      select: { id: true, tenantId: true, name: true, message: true, segment: true },
+    });
+  },
+
+  /** Marca una campaña como despachada (completada + métricas). */
+  async markDispatched(tenantId: string, id: string, audience: number) {
+    await prisma.campaign.update({
+      where: { id },
+      data: { status: "completada", sentAt: new Date(), totalAudience: audience, delivered: audience },
+    });
+    revalidateTag(`tenant:${tenantId}:campaigns`, "max");
+  },
+
   async list(tenantId: string, opts: { status?: string } = {}) {
     "use cache";
     cacheLife({ revalidate: 30, stale: 60 });

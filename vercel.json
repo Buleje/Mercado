@@ -52,6 +52,10 @@
   ],
   "crons": [
     {
+      "path": "/api/cron/campaigns-dispatch",
+      "schedule": "15 * * * *"
+    },
+    {
       "path": "/api/cron/automations",
       "schedule": "0 8 * * *"
     },
