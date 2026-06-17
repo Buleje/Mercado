@@ -280,14 +280,14 @@ const ACCENT_HEX: Record<SidebarVisualPrefs["accent"], string> = {
   rose: "#F43F5E",
 };
 
-// Default = preset "Ejecutivo" del panel admin de negocio (oscuro elegante,
-// ambar, monocromo, compacto). Brandon 2026-06-16: el superadmin debe verse
-// "tipo ejecutivo" como el admin en sidebar + header.
+// Default = look del admin de negocio (referencia de Brandon 2026-06-16):
+// oscuro slate "buleje" + acento teal de marca, densidad normal, iconos a color.
+// (NO el preset Ejecutivo/ambar — la referencia es teal, no ambar.)
 const DEFAULT_VISUAL: SidebarVisualPrefs = {
-  theme: "dark",
-  accent: "amber",
-  density: "compact",
-  iconStyle: "monochrome",
+  theme: "buleje",
+  accent: "teal",
+  density: "normal",
+  iconStyle: "colored",
 };
 
 function loadNavConfig(): { hidden: Set<string>; order: string[]; visual: SidebarVisualPrefs } {
@@ -1441,42 +1441,45 @@ function NavGroupsAccordion({
   const activeGroupId = groups.find((g) =>
     g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
   )?.id ?? "inicio";
-  const [expanded, setExpanded] = useState<Set<NavGroupId>>(() => new Set([activeGroupId]));
+  // TODAS las secciones abiertas por defecto — igual que el sidebar del admin
+  // de negocio (referencia Brandon 2026-06-16): secciones con título en
+  // mayúscula + items inline visibles, no acordeón single-open. El usuario
+  // puede colapsar/expandir cada sección de forma independiente.
+  const [expanded, setExpanded] = useState<Set<NavGroupId>>(() => new Set(groups.map((g) => g.id)));
   const allGroupIds = useMemo(() => new Set(groups.map((g) => g.id)), [groups]);
   // En modo búsqueda, todos los grupos visibles se expanden automáticamente.
   const effectiveExpanded = forceExpandAll ? allGroupIds : expanded;
 
-  // Acordeón ESTRICTO single-open (Brandon 2026-06-14, igual que el admin):
-  // al cambiar de ruta se despliega SOLO la sección activa y se cierran las
-  // demás. Mantiene el guard de igualdad para no re-renderizar de más.
+  // Al navegar, asegurar que la sección activa quede abierta (sin cerrar las demás).
   useEffect(() => {
     if (activeGroupId) {
-      setExpanded((prev) =>
-        prev.size === 1 && prev.has(activeGroupId) ? prev : new Set([activeGroupId]),
-      );
+      setExpanded((prev) => (prev.has(activeGroupId) ? prev : new Set(prev).add(activeGroupId)));
     }
   }, [activeGroupId]);
 
-  // Abrir una sección cierra las demás; re-click la colapsa.
+  // Colapsar/expandir una sección de forma independiente (multi-open).
   const toggle = (id: NavGroupId) => {
-    setExpanded((prev) => (prev.has(id) ? new Set() : new Set([id])));
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
-  const headerActive = isBuleje
-    ? "bg-[rgba(0, 160, 160,0.12)] text-white"
-    : "bg-[var(--surface-sunken)] text-[var(--text-primary)]";
-  const headerIdle = isBuleje
-    ? "text-white/75 hover:bg-white/[0.04] hover:text-white"
-    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  // Item activo: pill teal (marca). Idle: texto tenue. Label de sección: mayúscula tenue.
   const itemActive = isBuleje
-    ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold"
+    ? "bg-[rgba(0, 160, 160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const itemIdle = isBuleje
-    ? "text-white/70 hover:bg-white/[0.04] hover:text-white"
+    ? "text-white/70 hover:bg-white/[0.06] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  const labelClass = isBuleje
+    ? "text-white/45 hover:text-white/75"
+    : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]";
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {groups.map((group) => {
         const items = group.items.filter((it) => visibleHrefs.has(it.href));
         if (items.length === 0) return null;
@@ -1485,27 +1488,27 @@ function NavGroupsAccordion({
 
         return (
           <div key={group.id}>
+            {/* Sección = título en MAYÚSCULA (estilo admin de negocio), colapsable. */}
             <button
               type="button"
               onClick={() => toggle(group.id)}
               aria-expanded={isOpen}
               aria-controls={panelId}
               className={[
-                "w-full flex items-center gap-3 px-3 py-3 rounded-lg text-base font-bold transition-colors",
-                isOpen ? headerActive : headerIdle,
+                "w-full flex items-center gap-2 px-3 pt-3 pb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest transition-colors",
+                labelClass,
               ].join(" ")}
             >
-              <span className="shrink-0">{group.icon}</span>
               <span className="flex-1 text-left">{group.label}</span>
               <ChevronDown
                 className={[
-                  "w-4 h-4 transition-transform duration-200 shrink-0",
+                  "w-3.5 h-3.5 transition-transform duration-200 shrink-0",
                   isOpen ? "rotate-0" : "-rotate-90",
                 ].join(" ")}
               />
             </button>
             {isOpen && (
-              <div id={panelId} className={["mt-1 ml-2 pl-3 border-l space-y-0.5", isBuleje ? "border-white/10" : "border-[var(--rule-base)]"].join(" ")}>
+              <div id={panelId} className="space-y-0.5">
                 {items.map((item) => {
                   const active =
                     pathname === item.href ||
@@ -1516,12 +1519,12 @@ function NavGroupsAccordion({
                       href={item.href}
                       onClick={onItemClick}
                       className={[
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                         active ? itemActive : itemIdle,
                       ].join(" ")}
                     >
                       <span className="shrink-0">{item.icon}</span>
-                      <span className="truncate">{item.label}</span>
+                      <span className="flex-1 truncate">{item.label}</span>
                     </Link>
                   );
                 })}
