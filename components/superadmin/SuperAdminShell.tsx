@@ -472,7 +472,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     : "text-white dark:text-white drop-shadow-sm";
   const logoSubLabelClass = isBuleje
     ? "text-[#5eead4]"
-    : "text-amber-300 dark:text-amber-300";
+    : "text-teal-300 dark:text-teal-300";
   const logoBorderClass = isBuleje ? "border-white/[0.08]" : "border-white/[0.10]";
   const collapseBtnClass = isBuleje
     ? "text-white/45 hover:bg-white/[0.06] hover:text-white/85"

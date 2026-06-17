@@ -68,11 +68,12 @@ const fmtSoles = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN", maximumFractionDigits: 0 }).format(n);
 
 function PodiumIcon({ position }: { position: number }) {
-  // Medallas para top 3
+  // Medallas para top 3 — Brandon 2026-06-17: sin oro/bronce (naranja/amarillo).
+  // Paleta de marca: 1º teal, 2º plata (zinc), 3º cielo. Distintos y sin cálidos.
   const styles = [
-    "bg-linear-to-br from-yellow-300 to-yellow-500 text-yellow-950 ring-2 ring-yellow-200",
+    "bg-linear-to-br from-teal-300 to-teal-500 text-teal-950 ring-2 ring-teal-200",
     "bg-linear-to-br from-zinc-300 to-zinc-400 text-zinc-900 ring-2 ring-zinc-200",
-    "bg-linear-to-br from-orange-300 to-orange-400 text-orange-950 ring-2 ring-orange-200",
+    "bg-linear-to-br from-sky-300 to-sky-400 text-sky-950 ring-2 ring-sky-200",
   ];
   return (
     <div className={`h-9 w-9 rounded-full flex items-center justify-center font-extrabold text-base shrink-0 ${styles[position - 1]}`}>
