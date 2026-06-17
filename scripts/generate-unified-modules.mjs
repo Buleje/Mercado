@@ -8,17 +8,6 @@ fs.mkdirSync(dir, { recursive: true });
 
 const modules = [
   {
-    name: "PanelPrincipalModule",
-    imports: [
-      ["DashboardTab", "@/components/admin/DashboardTab"],
-      ["ExecutiveDashboardTab", "@/components/admin/ExecutiveDashboardTab"],
-    ],
-    tabs: [
-      ["dashboard", "Dashboard"],
-      ["ejecutivo", "Ejecutivo"],
-    ],
-  },
-  {
     name: "POSCajaModule",
     imports: [
       ["POSView", "@/components/admin/POSView"],
@@ -277,7 +266,6 @@ const modules = [
       ["BudgetVsRealTab", "@/components/admin/BudgetVsRealTab"],
       ["BreakEvenTab", "@/components/admin/BreakEvenTab"],
       ["ProfitabilityTab", "@/components/admin/ProfitabilityTab"],
-      ["MarginDashboardTab", "@/components/admin/MarginDashboardTab"],
     ],
     tabs: [
       ["pl", "P&G"],
