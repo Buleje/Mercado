@@ -53,6 +53,7 @@ import {
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
+import { SuperAdminModuleTabs, FINANZAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import {
   SUPERADMIN_PAGE,
   SUPERADMIN_HERO,
@@ -533,6 +534,7 @@ export default function PagosPendientesClient() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={FINANZAS_TABS} />
       {/* ─── Toasts ─────────────────────────────────────────── */}
       <Toasts toasts={toasts} />
 

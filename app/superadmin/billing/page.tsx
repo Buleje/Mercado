@@ -2,6 +2,7 @@ import "server-only";
 import { CreditCard } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import BillingDashboard from "./BillingDashboard";
+import { SuperAdminModuleTabs, FINANZAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import {
   SUPERADMIN_PAGE,
   SUPERADMIN_HERO,
@@ -19,6 +20,7 @@ export default async function SuperadminBillingPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={FINANZAS_TABS} />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start gap-3 min-w-0">

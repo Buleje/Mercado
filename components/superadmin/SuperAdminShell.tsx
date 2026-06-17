@@ -31,7 +31,6 @@ import {
   ImageIcon,
   Sparkles,
   Layers,
-  CreditCard,
   Sliders,
   BookOpen,
   Palette,
@@ -41,7 +40,6 @@ import {
   MessageSquare,
   Store,
   Truck,
-  Receipt,
   TrendingUp,
   ChefHat,
   Map as MapIcon,
@@ -158,10 +156,10 @@ const NAV_GROUPS: NavGroupDef[] = [
     id: "finanzas",
     label: "Finanzas",
     icon: <Wallet className="w-4 h-4 shrink-0" />,
+    // Consolidado 2026-06-17: 1 módulo con tabs internos (Billing · Pagos
+    // pendientes · Pagos Yape). La barra SuperAdminModuleTabs unifica las 3.
     items: [
-      { label: "Pagos pendientes",  icon: <CreditCard className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-pendientes" },
-      { label: "Pagos Yape (IA)",   icon: <Sparkles   className="w-5 h-5 shrink-0" />, href: "/superadmin/pagos-yape"       },
-      { label: "Billing & Stripe",  icon: <Receipt    className="w-5 h-5 shrink-0" />, href: "/superadmin/billing"          },
+      { label: "Finanzas", icon: <Wallet className="w-5 h-5 shrink-0" />, href: "/superadmin/billing" },
     ],
   },
   {

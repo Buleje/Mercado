@@ -4,6 +4,7 @@ import { Smartphone } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import PagosYapeClient from "./PagosYapeClient";
+import { SuperAdminModuleTabs, FINANZAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import {
   SUPERADMIN_PAGE,
   SUPERADMIN_HERO,
@@ -30,6 +31,7 @@ export default async function PagosYapePage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={FINANZAS_TABS} />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
