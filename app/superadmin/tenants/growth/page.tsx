@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { TrendingUp, ArrowLeft } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
+import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import type { GrowthEntry } from "@/components/superadmin/tenants/types";
 
@@ -43,6 +44,8 @@ export default function TenantsGrowthPage() {
   useEffect(() => { void load(); }, [load]);
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
       title="Crecimiento de tiendas"
       kicker="Plataforma · Tiendas"
@@ -62,5 +65,6 @@ export default function TenantsGrowthPage() {
         <TenantGrowthTab growthData={growthData} loading={loading} />
       </div>
     </AdminTabShell>
+    </>
   );
 }

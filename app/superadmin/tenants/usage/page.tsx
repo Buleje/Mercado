@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Gauge, ArrowLeft, TrendingUp, MessageSquare, RefreshCw } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
+import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 
 type UsageRow = {
@@ -41,6 +42,8 @@ export default function TenantsUsagePage() {
   const upsell = rows.filter((r) => r.nearLimit);
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
       title="Uso vs límites"
       kicker="Plataforma · Tiendas"
@@ -117,5 +120,6 @@ export default function TenantsUsagePage() {
         </div>
       )}
     </AdminTabShell>
+    </>
   );
 }

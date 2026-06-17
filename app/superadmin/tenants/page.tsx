@@ -13,6 +13,7 @@ import {
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { AdminTabShell } from "../_components/_shared";
+import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
 
 import { TenantCard } from "@/components/superadmin/tenants/TenantCard";
@@ -447,6 +448,8 @@ export default function TenantsPage() {
   }, [sorted, quickFilter]);
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
       title="Tenants"
       description={`${sortedFinal.length} tienda${sortedFinal.length !== 1 ? "s" : ""}${tenants.length !== sortedFinal.length ? ` de ${tenants.length}` : ""} — gestión de plataforma multi-tenant.`}
@@ -923,6 +926,7 @@ export default function TenantsPage() {
         />
       )}
     </AdminTabShell>
+    </>
   );
 }
 

@@ -42,17 +42,13 @@ import {
   Truck,
   TrendingUp,
   ChefHat,
-  Map as MapIcon,
   ClipboardCheck,
   Boxes,
   AlertOctagon,
-  Rocket,
   FileText,
   Search,
-  TreePine,
   Inbox,
   Bell,
-  Zap,
   Webhook,
   Globe,
 } from "@buleje/design-system/icons";
@@ -126,19 +122,13 @@ const NAV_GROUPS: NavGroupDef[] = [
     id: "tiendas",
     label: "Tiendas",
     icon: <Building2 className="w-4 h-4 shrink-0" />,
+    // Consolidado 2026-06-17 (Tenants 360): Tenants + Crecimiento + Uso +
+    // Activación + Integraciones + Mapa + Especializaciones = 1 módulo con
+    // tabs (SuperAdminModuleTabs). Pedidos y Repartidores quedan separados.
     items: [
-      { label: "Tenants",            icon: <Building2   className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"      },
-      { label: "Crecimiento",        icon: <TrendingUp  className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/growth" },
-      { label: "Uso & límites",      icon: <Gauge       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/usage"  },
-      { label: "Activación",         icon: <Rocket      className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/onboarding" },
-      { label: "Integraciones",      icon: <Zap         className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/integrations" },
-      { label: "Mapa",               icon: <MapIcon     className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants/map" },
-      // ADR-124 — Especializaciones por tenant: matriz de feature flags
-      // que habilita módulos verticales (forestal CTP, salud, textil, etc.)
-      // en el panel admin del negocio seleccionado.
-      { label: "Especializaciones",  icon: <TreePine    className="w-5 h-5 shrink-0" />, href: "/superadmin/specializations" },
-      { label: "Pedidos",            icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/orders"       },
-      { label: "Repartidores",       icon: <Truck       className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores" },
+      { label: "Tenants",      icon: <Building2   className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"      },
+      { label: "Pedidos",      icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/orders"       },
+      { label: "Repartidores", icon: <Truck       className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores" },
     ],
   },
   {

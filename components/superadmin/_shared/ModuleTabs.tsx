@@ -49,7 +49,7 @@ export function SuperAdminModuleTabs({ tabs }: { tabs: ModuleTab[] }) {
               href={href}
               aria-current={active ? "page" : undefined}
               className={[
-                "inline-flex items-center gap-2 px-3.5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition-colors",
+                "inline-flex shrink-0 items-center gap-2 px-3.5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition-colors",
                 active
                   ? "border-[var(--accent)] text-[var(--accent)]"
                   : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)]",

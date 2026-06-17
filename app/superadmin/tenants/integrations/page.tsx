@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Zap, ArrowLeft, RefreshCw, Check, X, MessageSquare } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
+import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 
 type Integ = { whatsapp: boolean; yape: boolean; plin: boolean; sunat: boolean };
@@ -48,6 +49,8 @@ export default function IntegrationsPage() {
   useEffect(() => { void load(); }, [load]);
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
       title="Integraciones"
       kicker="Plataforma · Tiendas"
@@ -108,5 +111,6 @@ export default function IntegrationsPage() {
         </div>
       )}
     </AdminTabShell>
+    </>
   );
 }

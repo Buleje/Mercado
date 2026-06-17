@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Rocket, ArrowLeft, RefreshCw, Check, MessageSquare, Image, Package, ShoppingBag, Banknote } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
+import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 
 type Step = "logo" | "productos" | "pedido" | "venta";
@@ -46,6 +47,8 @@ export default function TenantsOnboardingPage() {
   useEffect(() => { void load(); }, [load]);
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
       title="Activación de tiendas"
       kicker="Plataforma · Tiendas"
@@ -118,5 +121,6 @@ export default function TenantsOnboardingPage() {
         </div>
       )}
     </AdminTabShell>
+    </>
   );
 }

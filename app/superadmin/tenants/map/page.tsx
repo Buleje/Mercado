@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { MapPin, ArrowLeft, RefreshCw, Check, X } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
+import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -63,6 +64,8 @@ export default function TenantsMapPage() {
   const mapTenants = located.map((r) => ({ slug: r.slug, name: r.name, lat: r.lat as number, lng: r.lng as number, active: r.active }));
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
       title="Mapa de tiendas"
       kicker="Plataforma · Tiendas"
@@ -124,5 +127,6 @@ export default function TenantsMapPage() {
         </div>
       )}
     </AdminTabShell>
+    </>
   );
 }
