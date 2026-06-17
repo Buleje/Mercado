@@ -196,9 +196,10 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Sistema",
     icon: <Server className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Seguridad",      icon: <ShieldCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/security"      },
-      { label: "Configuración",  icon: <Sliders     className="w-5 h-5 shrink-0" />, href: "/superadmin/configuracion" },
-      { label: "Settings",       icon: <Settings    className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"      },
+      { label: "Seguridad", icon: <ShieldCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/security" },
+      // Consolidado 2026-06-17: Settings + Configuración = 1 módulo con tabs
+      // (Plataforma · Integraciones & Flags) vía SuperAdminModuleTabs.
+      { label: "Ajustes", icon: <Settings className="w-5 h-5 shrink-0" />, href: "/superadmin/settings" },
       // Brandon 2026-05-21 audit fix #4: "Sitemap" y "Roadmap" eliminados del nav.
       // Ambos hacen redirect("/superadmin/dashboard") (módulos eliminados).
     ],

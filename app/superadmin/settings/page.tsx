@@ -26,6 +26,7 @@ import {
   AdminButton,
 } from "../_components/_shared";
 import SidebarConfigPanel from "@/components/superadmin/SidebarConfigPanel";
+import { SuperAdminModuleTabs, SETTINGS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 // Items canónicos del sidebar — debe matchear lo que renderiza
 // SuperAdminShell.tsx (NAV_ITEMS). Refresh 2026-05-19 — sincronía con los
@@ -219,6 +220,8 @@ export default function SettingsPage() {
   };
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
     <AdminTabShell
       title="Configuración de plataforma"
       kicker="Control global"
@@ -419,6 +422,7 @@ export default function SettingsPage() {
         />
       </div>
     </AdminTabShell>
+    </>
   );
 }
 

@@ -26,6 +26,7 @@ import {
   type PlatformConfig,
 } from "@/lib/platform-config";
 import { AdminTabShell } from "../_components/_shared";
+import { SuperAdminModuleTabs, SETTINGS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 type ImageKind = "logo" | "favicon" | "yapeQr" | "plinQr" | "ogImage";
@@ -153,6 +154,8 @@ export default function ConfiguracionClient() {
   }
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
     <AdminTabShell
       title="Configuración general"
       description="Todo lo que cambia acá se aplica en vivo en landing, registro y panel del negocio — sin redeploy."
@@ -466,6 +469,7 @@ export default function ConfiguracionClient() {
       </div>
     </div>
     </AdminTabShell>
+    </>
   );
 }
 
