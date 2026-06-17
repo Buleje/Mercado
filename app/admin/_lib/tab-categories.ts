@@ -301,11 +301,14 @@ export const BASIC_MODULES: TabCategory[] = [
     id: "inicio",
     label: "Inicio",
     icon: Gauge,
+    // "asistente-ia" abre AsistenteIAHubModule, que YA contiene Chat / Comandos /
+    // Sugerencias como sub-tabs internas (consolidacion 3->1). Antes el sidebar
+    // listaba los 3 ids (asistente-ia/ai-command/sugerencias-ia) → 3 enlaces que
+    // abrian el MISMO hub. Ahora una sola entrada "Asistente IA"; las otras 2
+    // siguen accesibles desde la barra de sub-tabs del hub.
     tabs: [
       "vendor-dashboard",
       "asistente-ia",
-      "ai-command",
-      "sugerencias-ia",
       "metas-logros",
     ],
   },

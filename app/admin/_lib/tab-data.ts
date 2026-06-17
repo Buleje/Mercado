@@ -57,7 +57,7 @@ import type { Tab } from "./tabs.types";
 // ── 8 módulos consolidados + especiales ──────────────────────────────────────
 export const ALL_TABS = [
   { id: "vendor-dashboard" as Tab,    label: "Inicio",              icon: Gauge },
-  { id: "asistente-ia" as Tab,        label: "Chat IA",             icon: BotMessageSquare },
+  { id: "asistente-ia" as Tab,        label: "Asistente IA",        icon: BotMessageSquare },
   { id: "ai-command" as Tab,          label: "Comandos IA",         icon: Wand2 },
   { id: "sugerencias-ia" as Tab,      label: "Sugerencias IA",      icon: Lightbulb },
   { id: "metas-logros" as Tab,        label: "Metas & Logros",      icon: Trophy },
