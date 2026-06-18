@@ -21,7 +21,14 @@ interface Props {
   storeSlug: string;
   storeName: string;
   currentProductId: number;
+  /** Categoría activa (controlado por el padre p/ compartir con la sidebar). */
+  activeCategory?: string;
+  onCategoryChange?: (category: string) => void;
+  /** Reporta las categorías derivadas al padre (para la sidebar de navegación). */
+  onCategoriesLoaded?: (categories: string[]) => void;
 }
+
+export const CATALOG_ALL = "__todos__";
 
 type CatProduct = {
   id: number;
@@ -53,11 +60,21 @@ function norm(raw: Record<string, unknown>): CatProduct {
   };
 }
 
-const ALL = "__todos__";
+const ALL = CATALOG_ALL;
 
-export function ProductCatalogExplorer({ storeSlug, storeName, currentProductId }: Props) {
+export function ProductCatalogExplorer({
+  storeSlug,
+  storeName,
+  currentProductId,
+  activeCategory,
+  onCategoryChange,
+  onCategoriesLoaded,
+}: Props) {
   const [products, setProducts] = useState<CatProduct[] | null>(null);
-  const [active, setActive] = useState<string>(ALL);
+  const [internalActive, setInternalActive] = useState<string>(ALL);
+  // Controlado por el padre si pasa activeCategory/onCategoryChange; si no, local.
+  const active = activeCategory ?? internalActive;
+  const setActive = onCategoryChange ?? setInternalActive;
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +105,11 @@ export function ProductCatalogExplorer({ storeSlug, storeName, currentProductId 
     }
     return [...set.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
   }, [products]);
+
+  // Reporta las categorías al padre para alimentar la sidebar de navegación.
+  useEffect(() => {
+    if (categories.length) onCategoriesLoaded?.(categories);
+  }, [categories, onCategoriesLoaded]);
 
   const filtered = useMemo(() => {
     if (!products) return [];

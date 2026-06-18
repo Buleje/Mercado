@@ -36,7 +36,7 @@ import { ProductSellerInfo } from "./ProductSellerInfo";
 import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
 import FrequentlyBoughtTogether from "./FrequentlyBoughtTogether";
-import { ProductCatalogExplorer } from "./ProductCatalogExplorer";
+import { ProductCatalogExplorer, CATALOG_ALL } from "./ProductCatalogExplorer";
 import { ProductSideNav } from "./ProductSideNav";
 import type { ProductBadgeIntent } from "@buleje/design-system";
 // Trust signals (ronda 4): señales sociales + escasez para aumentar conversion
@@ -309,6 +309,9 @@ export function ProductDetailClient({
   const [reviewSummary, setReviewSummary] = useState<{ avg: number; count: number } | null>(null);
   // UGC: fotos reales de clientes (de las reseñas) para sumar a la galería.
   const [ugcPhotos, setUgcPhotos] = useState<string[]>([]);
+  // Navegación de categorías compartida entre la sidebar y el catálogo de abajo.
+  const [exploreCategory, setExploreCategory] = useState<string>(CATALOG_ALL);
+  const [exploreCategories, setExploreCategories] = useState<string[]>([]);
   useEffect(() => {
     let cancelled = false;
     // Mismos params que ProductReviews (el endpoint exige filter+sort+limit+offset;
@@ -483,6 +486,9 @@ export function ProductDetailClient({
                 storeSlug={store.slug}
                 storeName={store.name}
                 hasRelated={relatedProducts.length > 0}
+                categories={exploreCategories}
+                activeCategory={exploreCategory}
+                onCategoryChange={setExploreCategory}
                 className="hidden lg:block"
               />
               <div className="min-w-0">
@@ -571,6 +577,9 @@ export function ProductDetailClient({
             storeSlug={store.slug}
             storeName={store.name}
             currentProductId={product.id}
+            activeCategory={exploreCategory}
+            onCategoryChange={setExploreCategory}
+            onCategoriesLoaded={setExploreCategories}
           />
         </div>
       </div>
