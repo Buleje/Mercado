@@ -36,6 +36,7 @@ import { ProductSellerInfo } from "./ProductSellerInfo";
 import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
 import FrequentlyBoughtTogether from "./FrequentlyBoughtTogether";
+import { ProductCatalogExplorer } from "./ProductCatalogExplorer";
 import type { ProductBadgeIntent } from "@buleje/design-system";
 // Trust signals (ronda 4): señales sociales + escasez para aumentar conversion
 import LowStockBadge from "@/components/marketplace/trust/LowStockBadge";
@@ -521,6 +522,18 @@ export function ProductDetailClient({
                 storeId={store.id}
                 storeName={store.name}
                 storeSlug={store.slug}
+                anchor={{
+                  productId: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.imageUrl,
+                  storeId: store.id,
+                  storeName: store.name,
+                  storeSlug: store.slug,
+                  storeProductId,
+                  unit: product.unit,
+                  category: product.category,
+                }}
               />
 
               <div id="valoraciones" className="scroll-mt-28">
@@ -536,6 +549,15 @@ export function ProductDetailClient({
             <ProductRelated products={relatedProducts} storeSlug={store.slug} />
           </div>
         )}
+
+        {/* Catálogo navegable por categoría — explorar más de la tienda */}
+        <div id="explorar" className="mt-8 sm:mt-10 scroll-mt-28">
+          <ProductCatalogExplorer
+            storeSlug={store.slug}
+            storeName={store.name}
+            currentProductId={product.id}
+          />
+        </div>
       </div>
 
       {/* Sticky mobile bar */}

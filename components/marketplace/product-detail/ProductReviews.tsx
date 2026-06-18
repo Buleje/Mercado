@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MessageSquare, Filter, ArrowDownUp, Plus, Loader2 } from "lucide-react";
+import { MessageSquare, Filter, ArrowDownUp, Plus, Loader2, Star, PenLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MockReview } from "@/lib/mocks/product-reviews.mock";
 import RatingBreakdown, { type BreakdownData } from "./RatingBreakdown";
@@ -156,6 +156,34 @@ export default function ProductReviews({ productId, productName }: ProductReview
         )}
       </header>
 
+      {/* Invitación directa a opinar — estrellas clickeables abren el formulario */}
+      {!writeOpen && (
+        <div className="flex flex-col gap-3 rounded-sm border border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setWriteOpen(true)}
+              aria-label={`Calificar y opinar sobre ${productName}`}
+              className="flex items-center gap-0.5"
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Star key={n} className="h-6 w-6 text-[var(--text-tertiary)] transition-colors hover:text-amber-400" aria-hidden />
+              ))}
+            </button>
+            <p className="text-sm text-[var(--text-secondary)]">
+              ¿Lo probaste? <span className="font-semibold text-[var(--text-primary)]">Tu opinión ayuda a otros vecinos.</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setWriteOpen(true)}
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-sm bg-[var(--accent)] px-4 h-10 text-sm font-semibold text-white hover:opacity-95"
+          >
+            <PenLine className="h-4 w-4" aria-hidden /> Escribir reseña
+          </button>
+        </div>
+      )}
+
       {/* Formulario INLINE (sin modal, Brandon 2026-06-14) */}
       {writeOpen && (
         <WriteReviewForm
@@ -217,20 +245,39 @@ export default function ProductReviews({ productId, productName }: ProductReview
             <span className="text-sm">Cargando reseñas…</span>
           </div>
         ) : reviews.length === 0 ? (
-          <div className="border border-dashed border-[var(--rule-base)] py-12 text-center">
-            <MessageSquare className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
-              No hay reseñas que coincidan con este filtro.
-            </p>
-            {filter !== "all" && (
+          filter === "all" && total === 0 ? (
+            /* Sin reseñas todavía → invitación fuerte a ser el primero */
+            <div className="border border-dashed border-[var(--rule-base)] py-12 text-center">
+              <MessageSquare className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
+              <p className="mt-3 text-base font-semibold text-[var(--text-primary)]">
+                Sé el primero en opinar
+              </p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                Contale a la comunidad qué tal estuvo {productName}.
+              </p>
+              {!writeOpen && (
+                <button
+                  onClick={() => setWriteOpen(true)}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-sm bg-[var(--accent)] px-5 h-10 text-sm font-semibold text-white hover:opacity-95"
+                >
+                  <PenLine className="h-4 w-4" aria-hidden /> Escribir la primera reseña
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="border border-dashed border-[var(--rule-base)] py-12 text-center">
+              <MessageSquare className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
+              <p className="mt-3 text-sm text-[var(--text-secondary)]">
+                No hay reseñas que coincidan con este filtro.
+              </p>
               <button
                 onClick={() => setFilter("all")}
                 className="mt-2 text-sm font-semibold text-[var(--accent)] hover:underline"
               >
                 Ver todas las reseñas
               </button>
-            )}
-          </div>
+            </div>
+          )
         ) : (
           <div className="space-y-3">
             {reviews.map((r) => (

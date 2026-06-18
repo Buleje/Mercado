@@ -37,6 +37,8 @@ interface Props {
   storeId: string;
   storeName: string;
   storeSlug: string;
+  /** Producto actual del PDP — ancla del combo ("Este producto + …"). */
+  anchor?: RP | null;
 }
 
 const fmt = (n: number) =>
@@ -64,7 +66,7 @@ function norm(raw: Record<string, unknown>): RP {
   };
 }
 
-export default function FrequentlyBoughtTogether({ productId, storeId, storeName, storeSlug }: Props) {
+export default function FrequentlyBoughtTogether({ productId, storeId, storeName, storeSlug, anchor }: Props) {
   const { addItem } = useMarketplaceCart();
   const [items, setItems] = useState<RP[] | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -91,10 +93,12 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
           }
         } catch {/* queda vacío */}
       }
-      const clean = list.filter((p) => p.productId && p.productId !== productId && p.name).slice(0, 4);
+      const clean = list.filter((p) => p.productId && p.productId !== productId && p.name).slice(0, 3);
+      // El producto actual abre el combo como ancla ("Este producto + …").
+      const withAnchor = anchor ? [anchor, ...clean] : clean;
       if (!cancelled) {
-        setItems(clean);
-        setSelected(new Set(clean.map((p) => p.productId)));
+        setItems(withAnchor);
+        setSelected(new Set(withAnchor.map((p) => p.productId)));
       }
     })();
     return () => { cancelled = true; };
@@ -145,7 +149,8 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
       </section>
     );
   }
-  if (items.length === 0) return null;
+  // Sin complementos (solo el ancla) no tiene sentido mostrar el combo.
+  if (items.length <= (anchor ? 1 : 0)) return null;
 
   const chosen = items.filter((p) => selected.has(p.productId));
   const total = chosen.reduce((a, p) => a + p.price, 0);
@@ -157,10 +162,10 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
     >
       <header className="border-b border-[var(--rule-soft)] px-4 py-3">
         <h2 id="fbt-heading" className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">
-          Comprados juntos
+          Compralos juntos
         </h2>
         <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-          Marcá lo que querés y agregalo de un toque
+          Este producto + lo que suele acompañarlo · te llega todo en una sola entrega
         </p>
       </header>
 
@@ -168,6 +173,7 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
       <div className="flex items-stretch gap-2 overflow-x-auto px-4 pt-4 pb-2">
         {items.map((p, idx) => {
           const isSel = selected.has(p.productId);
+          const isAnchor = anchor != null && p.productId === anchor.productId;
           const href = `/marketplace/${p.storeSlug ?? storeSlug}/producto/${p.productId}`;
           return (
             <div key={p.productId} className="flex items-center gap-2 shrink-0">
@@ -178,6 +184,11 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
                   isSel ? "border-[var(--accent)]" : "border-[var(--rule-soft)] opacity-70",
                 )}
               >
+                {isAnchor && (
+                  <span className="absolute top-2 right-2 z-10 rounded-sm bg-[var(--accent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-white">
+                    Este producto
+                  </span>
+                )}
                 {/* Checkbox */}
                 <button
                   type="button"
