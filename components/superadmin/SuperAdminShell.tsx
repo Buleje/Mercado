@@ -172,6 +172,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     icon: <BarChart3 className="w-4 h-4 shrink-0" />,
     items: [
       { label: "Automatizaciones", icon: <Webhook       className="w-5 h-5 shrink-0" />, href: "/superadmin/automations" },
+      { label: "Inteligencia de Barrio", icon: <Activity className="w-5 h-5 shrink-0" />, href: "/superadmin/intelligence" },
       { label: "Analytics",     icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics" },
       { label: "Salud sistema", icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"    },
       { label: "SLO & budgets", icon: <TrendingUp      className="w-5 h-5 shrink-0" />, href: "/superadmin/slo"       },
@@ -233,6 +234,7 @@ const PAGE_META: Record<string, PageMeta> = {
   "/superadmin/variant-catalog":  { title: "Catálogo de variantes",  section: "Diseño" },
   "/superadmin/recetario":        { title: "Recetario",              section: "Diseño" },
 
+  "/superadmin/intelligence": { title: "Inteligencia de Barrio", section: "Operaciones" },
   "/superadmin/analytics":  { title: "Analytics",     section: "Operaciones" },
   "/superadmin/health":     { title: "Salud sistema", section: "Operaciones" },
   "/superadmin/slo":        { title: "SLO & budgets", section: "Operaciones" },
