@@ -11,7 +11,7 @@ vi.mock("@/lib/prisma", () => ({
       findMany: vi.fn(),
     },
     juntaMember: { create: vi.fn(), upsert: vi.fn() },
-    order: { count: vi.fn(), update: vi.fn() },
+    order: { count: vi.fn(), update: vi.fn(), findMany: vi.fn() },
   },
 }));
 vi.mock("@/lib/junta/reward", () => ({ issueJuntaCoupon: vi.fn() }));
@@ -176,6 +176,36 @@ describe("JuntasDB.countOrders", () => {
     const n = await JuntasDB.countOrders(T, "j1");
     expect(n).toBe(3);
     const arg = vi.mocked(prisma.order.count).mock.calls[0][0] as never as {
+      where: Record<string, unknown>;
+    };
+    expect(arg.where).toMatchObject({ tenantId: T, juntaId: "j1", deletedAt: null });
+  });
+});
+
+describe("JuntasDB.listOrdersForJunta", () => {
+  it("devuelve los pedidos de la junta mapeados (location + total numérico)", async () => {
+    vi.mocked(prisma.order.findMany).mockResolvedValue([
+      {
+        id: "o1",
+        customerName: "Ana",
+        customerPhone: "999",
+        customerLocation: "Jr. Lima 123",
+        status: "pendiente",
+        total: 30,
+      },
+    ] as never);
+    const rows = await JuntasDB.listOrdersForJunta(T, "j1");
+    expect(rows).toEqual([
+      {
+        id: "o1",
+        customerName: "Ana",
+        customerPhone: "999",
+        location: "Jr. Lima 123",
+        status: "pendiente",
+        total: 30,
+      },
+    ]);
+    const arg = vi.mocked(prisma.order.findMany).mock.calls[0][0] as never as {
       where: Record<string, unknown>;
     };
     expect(arg.where).toMatchObject({ tenantId: T, juntaId: "j1", deletedAt: null });

@@ -248,4 +248,43 @@ export const JuntasDB = {
       where: { tenantId, juntaId, deletedAt: null },
     });
   },
+
+  /**
+   * Pedidos de una junta para planificar la entrega agrupada (Fase A6).
+   * Una junta = una sola vuelta del repartidor.
+   */
+  async listOrdersForJunta(
+    tenantId: string,
+    juntaId: string,
+  ): Promise<
+    Array<{
+      id: string;
+      customerName: string;
+      customerPhone: string | null;
+      location: string;
+      status: string;
+      total: number;
+    }>
+  > {
+    const orders = await prisma.order.findMany({
+      where: { tenantId, juntaId, deletedAt: null },
+      select: {
+        id: true,
+        customerName: true,
+        customerPhone: true,
+        customerLocation: true,
+        status: true,
+        total: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+    return orders.map((o) => ({
+      id: o.id,
+      customerName: o.customerName,
+      customerPhone: o.customerPhone,
+      location: o.customerLocation,
+      status: o.status,
+      total: Number(o.total),
+    }));
+  },
 };
