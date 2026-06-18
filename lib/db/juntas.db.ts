@@ -17,6 +17,8 @@ export type DbJunta = {
   status: JuntaEffectiveStatus;
   memberCount: number;
   couponCode?: string;
+  /** ISO del último vecino que se sumó (prueba social en vivo). */
+  lastJoinedAt?: string;
   createdAt: string;
 };
 
@@ -32,6 +34,8 @@ function isUniqueViolation(err: unknown): boolean {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapJunta(j: any, now: Date): DbJunta {
   const memberCount: number = j._count?.members ?? j.members?.length ?? 0;
+  // `members` viene ordenado desc por joinedAt (take 1) en getByCode.
+  const lastJoinedAt: Date | undefined = j.members?.[0]?.joinedAt;
   return {
     id: j.id,
     code: j.code,
@@ -44,11 +48,17 @@ function mapJunta(j: any, now: Date): DbJunta {
     status: effectiveStatus(memberCount, j.targetMembers, j.windowEnd, now),
     memberCount,
     ...(j.couponCode != null && { couponCode: j.couponCode }),
+    ...(lastJoinedAt != null && { lastJoinedAt: lastJoinedAt.toISOString() }),
     createdAt: j.createdAt.toISOString(),
   };
 }
 
 const COUNT_INCLUDE = { _count: { select: { members: true } } } as const;
+// Incluye además el último miembro (joinedAt desc) para la prueba social.
+const DETAIL_INCLUDE = {
+  _count: { select: { members: true } },
+  members: { orderBy: { joinedAt: "desc" }, take: 1, select: { joinedAt: true } },
+} as const;
 
 export const JuntasDB = {
   /** Crea una junta y suma al iniciador como primer miembro. tenantId 1er param. */
@@ -92,7 +102,7 @@ export const JuntasDB = {
   async getByCode(tenantId: string, code: string): Promise<DbJunta | null> {
     const junta = await prisma.junta.findUnique({
       where: { tenantId_code: { tenantId, code } },
-      include: COUNT_INCLUDE,
+      include: DETAIL_INCLUDE,
     });
     return junta ? mapJunta(junta, new Date()) : null;
   },

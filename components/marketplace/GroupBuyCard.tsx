@@ -18,11 +18,14 @@ import {
   Gift,
   Share2,
   RotateCcw,
+  Users,
 } from "@buleje/design-system/icons";
 import { JUNTA_COUPON_PERCENT } from "@/lib/junta/constants";
 import { useGroupBuyCard } from "./hooks/useGroupBuyCard";
 import { CountdownTimer } from "./junta/CountdownTimer";
 import { MemberStack } from "./junta/MemberStack";
+import { GuestJoinForm } from "./junta/GuestJoinForm";
+import { JuntaQR } from "./junta/JuntaQR";
 
 type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
@@ -39,6 +42,8 @@ interface Props {
   couponCode?: string;
   /** Pedidos ya hechos dentro de la junta (Fase A4). */
   orderCount?: number;
+  /** ISO del último vecino que se sumó — prueba social en vivo. */
+  lastJoinedAt?: string;
 }
 
 export default function GroupBuyCard({
@@ -51,6 +56,7 @@ export default function GroupBuyCard({
   windowEnd,
   couponCode,
   orderCount = 0,
+  lastJoinedAt,
 }: Props) {
   const {
     count,
@@ -58,6 +64,7 @@ export default function GroupBuyCard({
     progress,
     isComplete,
     isExpired,
+    almostThere,
     countdownLabel,
     countdownTimer,
     bumped,
@@ -66,6 +73,11 @@ export default function GroupBuyCard({
     error,
     copied,
     couponCopied,
+    needsPhone,
+    guestPhone,
+    setGuestPhone,
+    lastJoinedLabel,
+    pageUrl,
     handleShopForJunta,
     handleStartNew,
     handleCopyCoupon,
@@ -80,6 +92,7 @@ export default function GroupBuyCard({
     initialStatus,
     windowEnd,
     couponCode,
+    initialLastJoinedAt: lastJoinedAt,
   });
 
   return (
@@ -139,6 +152,27 @@ export default function GroupBuyCard({
             {orderCount} {orderCount === 1 ? "pedido ya hecho" : "pedidos ya hechos"}{" "}
             en esta junta
           </p>
+        )}
+
+        {/* Prueba social en vivo: el último vecino que se sumó */}
+        {!isExpired && lastJoinedLabel && (
+          <p className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+            <span className="relative flex h-2 w-2" aria-hidden>
+              <span className="absolute inline-flex h-full w-full animate-ping bg-[var(--accent)] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 bg-[var(--accent)]" />
+            </span>
+            Un vecino se sumó {lastJoinedLabel}
+          </p>
+        )}
+
+        {/* Urgencia máxima: solo falta 1 vecino */}
+        {almostThere && (
+          <div className="flex items-center gap-2.5 bg-[var(--accent)] px-4 py-3 text-white">
+            <Users className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+            <p className="text-sm font-bold leading-snug">
+              ¡Solo falta 1 vecino! Comparte y cierra la junta hoy.
+            </p>
+          </div>
         )}
 
         {/* Urgencia: cuenta regresiva en cajas */}
@@ -205,25 +239,33 @@ export default function GroupBuyCard({
                 Comprar para esta junta
               </button>
 
-              {!isComplete && (
-                <button
-                  type="button"
-                  onClick={handleJoin}
-                  disabled={joining || joined}
-                  className="inline-flex w-full items-center justify-center gap-2 border-2 border-[var(--accent)] py-3 text-base font-bold text-[var(--accent)] transition hover:bg-[var(--accent-soft)] disabled:opacity-60 active:scale-[0.99]"
-                >
-                  {joined ? (
-                    <>
-                      <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-                      Ya estás en la junta
-                    </>
-                  ) : joining ? (
-                    "Uniéndote…"
-                  ) : (
-                    "Súmate (sin comprar todavía)"
-                  )}
-                </button>
-              )}
+              {!isComplete &&
+                (needsPhone && !joined ? (
+                  <GuestJoinForm
+                    phone={guestPhone}
+                    onPhoneChange={setGuestPhone}
+                    onSubmit={handleJoin}
+                    joining={joining}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleJoin}
+                    disabled={joining || joined}
+                    className="inline-flex w-full items-center justify-center gap-2 border-2 border-[var(--accent)] py-3 text-base font-bold text-[var(--accent)] transition hover:bg-[var(--accent-soft)] disabled:opacity-60 active:scale-[0.99]"
+                  >
+                    {joined ? (
+                      <>
+                        <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+                        Ya estás en la junta
+                      </>
+                    ) : joining ? (
+                      "Uniéndote…"
+                    ) : (
+                      "Súmate (sin comprar todavía)"
+                    )}
+                  </button>
+                ))}
             </>
           )}
 
@@ -258,6 +300,16 @@ export default function GroupBuyCard({
               )}
             </button>
           </div>
+
+          {/* QR para compartir en persona (pegar en la puerta del edificio) */}
+          {!isExpired && pageUrl && (
+            <JuntaQR
+              code={code}
+              url={pageUrl}
+              posterTitle="Súmate a la junta del barrio"
+              posterSubtitle={`Si juntamos ${target} vecinos, todos llevamos ${JUNTA_COUPON_PERCENT}% off`}
+            />
+          )}
 
           {error && (
             <p

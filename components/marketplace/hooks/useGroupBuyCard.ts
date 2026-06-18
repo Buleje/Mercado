@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import { JUNTA_COUPON_PERCENT } from "@/lib/junta/constants";
 import { setActiveJunta } from "@/lib/junta/active";
 import { formatCountdown, countdownParts } from "@/lib/junta/countdown";
+import { formatRelativeTime } from "@/lib/junta/relative";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
@@ -25,6 +27,7 @@ interface Args {
   initialStatus: JuntaStatus;
   windowEnd?: string;
   couponCode?: string;
+  initialLastJoinedAt?: string;
 }
 
 export function useGroupBuyCard({
@@ -35,6 +38,7 @@ export function useGroupBuyCard({
   initialStatus,
   windowEnd,
   couponCode,
+  initialLastJoinedAt,
 }: Args) {
   const [count, setCount] = useState(initialCount);
   const [status, setStatus] = useState<JuntaStatus>(initialStatus);
@@ -45,6 +49,13 @@ export function useGroupBuyCard({
   const [couponCopied, setCouponCopied] = useState(false);
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const [bumped, setBumped] = useState(false);
+  // Invitado sin sesión: revela el campo de WhatsApp si el server lo pide.
+  const [needsPhone, setNeedsPhone] = useState(false);
+  const [guestPhone, setGuestPhone] = useState("");
+  // Prueba social en vivo: "se sumó un vecino hace X".
+  const [lastJoinedAt, setLastJoinedAt] = useState(initialLastJoinedAt);
+  const [lastJoinedLabel, setLastJoinedLabel] = useState<string | null>(null);
+  const [pageUrl, setPageUrl] = useState("");
   const countRef = useRef(initialCount);
   const router = useRouter();
 
@@ -85,12 +96,31 @@ export function useGroupBuyCard({
           }
           setCount(next);
           if (data.junta.status) setStatus(data.junta.status);
+          if (data.junta.lastJoinedAt) setLastJoinedAt(data.junta.lastJoinedAt);
         })
         .catch((err) => console.warn("[junta] refresh falló", err));
     }
     document.addEventListener("visibilitychange", refresh);
     return () => document.removeEventListener("visibilitychange", refresh);
   }, [code]);
+
+  // URL absoluta para compartir/QR (solo disponible client-side).
+  useEffect(() => {
+    setPageUrl(`${window.location.origin}/junta/${code}`);
+  }, [code]);
+
+  // Refresca la etiqueta "hace X" del último vecino cada 30 s.
+  useEffect(() => {
+    if (!lastJoinedAt) {
+      setLastJoinedLabel(null);
+      return;
+    }
+    const update = () =>
+      setLastJoinedLabel(formatRelativeTime(lastJoinedAt, Date.now()));
+    update();
+    const id = window.setInterval(update, 30_000);
+    return () => window.clearInterval(id);
+  }, [lastJoinedAt]);
 
   const liveCountdown = remainingMs !== null && !isComplete && !isExpired;
   const countdownLabel = liveCountdown ? formatCountdown(remainingMs) : null;
@@ -167,26 +197,47 @@ export function useGroupBuyCard({
     setJoining(true);
     setError("");
     try {
-      const res = await fetch(`/api/juntas/${code}/join`, { method: "POST" });
+      const phone = guestPhone.trim();
+      const hasPhone = phone.length > 0;
+      // El header CSRF es obligatorio en POST (proxy.ts) — sin él el server
+      // responde 403. Mandamos el body solo cuando el invitado escribió su número.
+      const res = await fetch(`/api/juntas/${code}/join`, {
+        method: "POST",
+        headers: hasPhone
+          ? csrfHeaders({ "Content-Type": "application/json" })
+          : csrfHeaders(),
+        ...(hasPhone && { body: JSON.stringify({ phone }) }),
+      });
       const data = await res.json().catch((err) => {
         console.warn("[junta] join: respuesta no-JSON", err);
         return null;
       });
+      // 400 sin teléfono propio → el server pide el WhatsApp del invitado:
+      // revelamos el campo en vez de mostrarlo como error.
+      if (res.status === 400 && !hasPhone) {
+        setNeedsPhone(true);
+        return;
+      }
       if (!res.ok) {
         setError(data?.error ?? "No te pudiste unir");
         return;
       }
       setJoined(true);
+      setNeedsPhone(false);
       if (data?.junta) {
-        setCount(data.junta.memberCount ?? count);
-        setStatus(data.junta.status ?? status);
+        setCount((c) => data.junta.memberCount ?? c);
+        setStatus((s) => data.junta.status ?? s);
+        if (data.junta.lastJoinedAt) setLastJoinedAt(data.junta.lastJoinedAt);
       }
     } catch {
       setError("Error de red al unirte");
     } finally {
       setJoining(false);
     }
-  }, [code, count, status]);
+  }, [code, guestPhone]);
+
+  // "Solo falta 1" — momento de máxima urgencia para empujar el último share.
+  const almostThere = remaining === 1 && !isComplete && !isExpired;
 
   return {
     count,
@@ -194,6 +245,7 @@ export function useGroupBuyCard({
     progress,
     isComplete,
     isExpired,
+    almostThere,
     countdownLabel,
     countdownTimer,
     bumped,
@@ -202,6 +254,11 @@ export function useGroupBuyCard({
     error,
     copied,
     couponCopied,
+    needsPhone,
+    guestPhone,
+    setGuestPhone,
+    lastJoinedLabel,
+    pageUrl,
     handleShopForJunta,
     handleStartNew,
     handleCopy,

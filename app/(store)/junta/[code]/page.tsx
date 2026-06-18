@@ -148,6 +148,7 @@ export default async function JuntaPage({
           windowEnd={junta.windowEnd}
           couponCode={junta.couponCode}
           orderCount={orderCount}
+          lastJoinedAt={junta.lastJoinedAt}
         />
       </div>
     </div>

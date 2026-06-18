@@ -16,6 +16,9 @@ import { customerPhoneFromReq } from "@/lib/junta/customer";
 import { JuntasDB } from "@/lib/db/juntas.db";
 
 const req = {} as unknown as NextRequest;
+/** Req de invitado: trae body JSON (la junta acepta sumarse sin sesión). */
+const guestReq = (body: unknown) =>
+  ({ json: () => Promise.resolve(body) }) as unknown as NextRequest;
 const params = (code: string) => ({ params: Promise.resolve({ code }) });
 
 beforeEach(() => {
@@ -42,10 +45,28 @@ describe("GET /api/juntas/[code]", () => {
 });
 
 describe("POST /api/juntas/[code]/join", () => {
-  it("sin sesión → 401", async () => {
+  it("sin sesión y sin teléfono → 400 (pide su WhatsApp)", async () => {
     vi.mocked(customerPhoneFromReq).mockResolvedValue(null);
-    const res = await JOIN(req, params("BARRIO-AB12"));
-    expect(res.status).toBe(401);
+    const res = await JOIN(guestReq(null), params("BARRIO-AB12"));
+    expect(res.status).toBe(400);
+  });
+
+  it("sin sesión con WhatsApp de invitado válido → 200", async () => {
+    vi.mocked(customerPhoneFromReq).mockResolvedValue(null);
+    vi.mocked(JuntasDB.join).mockResolvedValue({
+      code: "BARRIO-AB12",
+      memberCount: 2,
+      status: "OPEN",
+    } as never);
+    const res = await JOIN(guestReq({ phone: "999888777" }), params("BARRIO-AB12"));
+    expect(res.status).toBe(200);
+    expect(JuntasDB.join).toHaveBeenCalledWith("t1", "BARRIO-AB12", "999888777");
+  });
+
+  it("sin sesión con número inválido → 400", async () => {
+    vi.mocked(customerPhoneFromReq).mockResolvedValue(null);
+    const res = await JOIN(guestReq({ phone: "123" }), params("BARRIO-AB12"));
+    expect(res.status).toBe(400);
   });
 
   it("OK → 200 con progreso actualizado", async () => {

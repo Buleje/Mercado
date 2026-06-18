@@ -36,7 +36,9 @@ export function MemberStack({
     ? "Esta junta ya cerró"
     : isComplete
       ? "¡Junta completa!"
-      : `Faltan ${remaining} vecino${remaining === 1 ? "" : "s"}`;
+      : remaining === 1
+        ? "Falta 1 vecino"
+        : `Faltan ${remaining} vecinos`;
 
   return (
     <div>
