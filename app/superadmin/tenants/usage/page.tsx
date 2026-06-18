@@ -12,11 +12,15 @@ import { AdminTabShell } from "../../_components/_shared";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 
+type UpgradeRec = { recommendedPlan: string; recommendedLabel: string; upsidePEN: number; newOrderLimit: number | null };
 type UsageRow = {
   slug: string; name: string; plan: string; tier: string;
   ordersThisMonth: number; orderLimit: number | null; orderPct: number;
   nearLimit: boolean; products: number; adminUsers: number;
+  recommendation: UpgradeRec | null;
 };
+type UpsellSummary = { count: number; monthlyUpsidePEN: number };
+const fmtPEN = (n: number) => `S/${n.toLocaleString("es-PE")}`;
 
 const PLAN_LABEL: Record<string, string> = { free: "Free", starter: "Starter", pro: "Pro", business: "Business", enterprise: "Enterprise" };
 
@@ -28,13 +32,18 @@ function barColor(pct: number, near: boolean): string {
 
 export default function TenantsUsagePage() {
   const [rows, setRows] = useState<UsageRow[]>([]);
+  const [summary, setSummary] = useState<UpsellSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchSuperadmin("/api/superadmin/tenants/usage");
-      if (res.ok) setRows(((await res.json()) as { rows: UsageRow[] }).rows ?? []);
+      if (res.ok) {
+        const d = (await res.json()) as { rows: UsageRow[]; upsell?: UpsellSummary };
+        setRows(d.rows ?? []);
+        setSummary(d.upsell ?? null);
+      }
     } finally { setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
@@ -62,11 +71,16 @@ export default function TenantsUsagePage() {
     >
       {/* Resumen upsell */}
       {upsell.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 border-2 border-teal-500 bg-[#0d9488] dark:bg-teal-500/10 px-4 py-3">
+        <div className="mb-4 flex flex-wrap items-center gap-3 border-2 border-teal-500 bg-teal-50 dark:bg-teal-500/10 px-4 py-3">
           <TrendingUp className="h-5 w-5 text-[#0d9488] shrink-0" />
-          <p className="text-sm font-bold text-[#0d9488] dark:text-[#0d9488]">
-            {upsell.length} {upsell.length === 1 ? "tienda cerca" : "tiendas cerca"} del límite de su plan — candidatas a upsell
+          <p className="text-sm font-bold text-[#0d9488]">
+            {upsell.length} {upsell.length === 1 ? "tienda cerca" : "tiendas cerca"} del límite — candidatas a upsell
           </p>
+          {summary && summary.monthlyUpsidePEN > 0 && (
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#0d9488] px-3 py-1 text-sm font-extrabold text-white">
+              +{fmtPEN(summary.monthlyUpsidePEN)}/mes de MRR potencial
+            </span>
+          )}
         </div>
       )}
 
@@ -105,7 +119,15 @@ export default function TenantsUsagePage() {
                   <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{r.products}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{r.adminUsers}</td>
                   <td className="px-3 py-2.5 text-right">
-                    {r.nearLimit ? (
+                    {r.nearLimit && r.recommendation ? (
+                      <Link href={`/superadmin/chat?tenant=${r.slug}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline" title={`Subir a ${r.recommendation.recommendedLabel}`}>
+                        <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+                        <span>→ {r.recommendation.recommendedLabel}</span>
+                        {r.recommendation.upsidePEN > 0 && (
+                          <span className="rounded-full bg-[#0d9488]/15 px-1.5 py-0.5 font-extrabold text-[#0d9488] whitespace-nowrap">+{fmtPEN(r.recommendation.upsidePEN)}/mes</span>
+                        )}
+                      </Link>
+                    ) : r.nearLimit ? (
                       <Link href={`/superadmin/chat?tenant=${r.slug}`} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline">
                         <MessageSquare className="h-3.5 w-3.5" /> Ofrecer upgrade
                       </Link>

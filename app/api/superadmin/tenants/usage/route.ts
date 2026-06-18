@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { USAGE_TIERS, type TierName } from "@/lib/billing/wire-up/usage-tiers";
+import { recommendUpgrade } from "@/lib/superadmin/upgrade-recommendation";
 import { logger } from "@/lib/logger";
 
 /**
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest) {
       const alertAt = quota?.alertAt ?? 0.9;
       const ordersThisMonth = orderMap.get(t.id) ?? 0;
       const pct = orderLimit === Infinity || orderLimit === 0 ? 0 : ordersThisMonth / orderLimit;
+      const nearLimit = orderLimit !== Infinity && pct >= alertAt;
       return {
         slug: t.slug,
         name: t.name,
@@ -55,16 +57,24 @@ export async function GET(req: NextRequest) {
         ordersThisMonth,
         orderLimit: orderLimit === Infinity ? null : orderLimit,
         orderPct: Math.round(pct * 100),
-        nearLimit: orderLimit !== Infinity && pct >= alertAt,
+        nearLimit,
         products: productMap.get(t.id) ?? 0,
         adminUsers: adminMap.get(t.id) ?? 0,
+        // Recomendación de upgrade sólo para candidatas a upsell.
+        recommendation: nearLimit ? recommendUpgrade(t.plan, ordersThisMonth) : null,
       };
     });
 
     // Upsell candidates primero (cerca del límite), luego por uso desc.
     rows.sort((a, b) => Number(b.nearLimit) - Number(a.nearLimit) || b.orderPct - a.orderPct);
 
-    return NextResponse.json({ rows, generatedAt: now.toISOString() });
+    // Resumen de expansión: upside mensual total de las candidatas.
+    const upsell = {
+      count: rows.filter((r) => r.nearLimit).length,
+      monthlyUpsidePEN: rows.reduce((sum, r) => sum + (r.recommendation?.upsidePEN ?? 0), 0),
+    };
+
+    return NextResponse.json({ rows, upsell, generatedAt: now.toISOString() });
   } catch (e) {
     logger.error("[tenants/usage] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
