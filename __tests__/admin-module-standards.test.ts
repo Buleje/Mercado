@@ -48,6 +48,13 @@ const CUSTOM_HEADER_MODULES = [
   // Brandon 2026-05-17: LeadsFunnelModule usa wrapper space-y-6 (más spacing
   // por densidad de KPIs + filtros + tabla). Patrón legítimo opt-out.
   "LeadsFunnelModule.tsx",
+  // Hubs de consolidación (24→7, commit 8f9a3e99): son routers de sub-tabs;
+  // cada sub-módulo trae su PROPIO AdminModuleHeader, así que el hub NO pone
+  // header para evitar el doble. Tienen AdminTabBar + MODULE_ID propios.
+  "AnalisisHubModule.tsx",
+  "AsistenteIAHubModule.tsx",
+  "DocumentosHubModule.tsx",
+  "MiTiendaHubModule.tsx",
 ];
 // Módulos que legítimamente usan dark: classes (dark mode habilitado).
 // Round 15 (2026-05-09): expandida tras audit. La regla era restrictiva pero
@@ -135,7 +142,12 @@ describe("Admin Modules — Estándares de estructura", () => {
 
       it(`${file} tiene MODULE_ID definido`, () => {
         const content = readModule(file);
-        expect(content).toMatch(/const _?MODULE_ID\s*=\s*"/);
+        // Acepta declaración local `const MODULE_ID = "..."` o MODULE_ID
+        // importado desde el shared del módulo (patrón tras descomposición,
+        // ej. MarketplaceModule importa MODULE_ID de marketplace/shared).
+        const hasLocal = /const _?MODULE_ID\s*=\s*"/.test(content);
+        const hasImported = /import\s*\{[^}]*\bMODULE_ID\b[^}]*\}/.test(content);
+        expect(hasLocal || hasImported).toBe(true);
       });
     }
   });
