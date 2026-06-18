@@ -48,6 +48,9 @@ function shouldShowRail(pathname: string): boolean {
   // páginas del nav (Inicio·Tiendas·En Vivo·Recetas·Ofertas·Negocios·Abre tu Tienda).
   if (pathname.startsWith("/negocios")) return true;
   if (pathname.startsWith("/abrir-tienda")) return true;
+  // PDP — detalle de producto (/marketplace/<slug>/producto/<id>): lleva el
+  // mismo rail de navegación que el resto de páginas (pedido explícito Brandon).
+  if (/^\/marketplace\/[^/]+\/producto\//.test(pathname)) return true;
   const m = pathname.match(/^\/marketplace\/([^/]+)/);
   if (m) return MARKETPLACE_SECTION_SEGMENTS.has(m[1]);
   return false;
