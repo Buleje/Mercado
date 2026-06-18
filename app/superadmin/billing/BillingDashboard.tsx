@@ -37,6 +37,11 @@ import {
   CheckCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import {
+  DunningPanel,
+  type MrrMovement,
+  type Dunning,
+} from "./DunningPanel";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -62,6 +67,8 @@ interface BillingSummary {
   generatedAt: string;
   mrrPEN: number;
   arrPEN: number;
+  mrrMovement: MrrMovement;
+  dunning: Dunning;
   counts: {
     total: number;
     paid: number;
@@ -551,6 +558,9 @@ export default function BillingDashboard() {
           icon={XCircle}
         />
       </div>
+
+      {/* ── Movimiento de MRR + Cobranza/riesgo (dunning) ─ */}
+      <DunningPanel movement={data.mrrMovement} dunning={data.dunning} />
 
       {/* ── 2-col: Plan breakdown + Próximos cobros ─────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
