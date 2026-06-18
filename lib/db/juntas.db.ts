@@ -1,7 +1,9 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import { makeJuntaCode } from "@/lib/junta/code";
 import { effectiveStatus, type JuntaEffectiveStatus } from "@/lib/junta/status";
+import { issueJuntaCoupon } from "@/lib/junta/reward";
 
 export type DbJunta = {
   id: string;
@@ -14,6 +16,7 @@ export type DbJunta = {
   targetMembers: number;
   status: JuntaEffectiveStatus;
   memberCount: number;
+  couponCode?: string;
   createdAt: string;
 };
 
@@ -40,6 +43,7 @@ function mapJunta(j: any, now: Date): DbJunta {
     targetMembers: j.targetMembers,
     status: effectiveStatus(memberCount, j.targetMembers, j.windowEnd, now),
     memberCount,
+    ...(j.couponCode != null && { couponCode: j.couponCode }),
     createdAt: j.createdAt.toISOString(),
   };
 }
@@ -128,10 +132,38 @@ export const JuntasDB = {
     if (!fresh) throw new Error("Junta no encontrada");
 
     if (fresh.status === "OPEN" && fresh._count.members >= fresh.targetMembers) {
-      await prisma.junta.update({
-        where: { id: fresh.id },
+      // Claim atómico de la transición OPEN→COMPLETE: gana un solo join
+      // concurrente, así el cupón se emite una única vez.
+      const claimed = await prisma.junta.updateMany({
+        // tenantId explícito (regla multi-tenant CRIT-1) además del id PK.
+        where: { id: fresh.id, tenantId, status: "OPEN" },
         data: { status: "COMPLETE" },
       });
+      if (claimed.count === 1) {
+        try {
+          const couponCode = await issueJuntaCoupon(tenantId, {
+            code: fresh.code,
+            targetMembers: fresh.targetMembers,
+          });
+          await prisma.junta.update({
+            where: { id: fresh.id },
+            data: { couponCode },
+          });
+        } catch (err) {
+          // El cupón es best-effort; la junta ya quedó COMPLETE. Se loguea
+          // para reconciliación (mismo criterio que el resto del proyecto).
+          logger.error("[junta] coupon issue failed", {
+            juntaId: fresh.id,
+            tenantId,
+            error: String(err),
+          });
+        }
+      }
+      const final = await prisma.junta.findUnique({
+        where: { id: fresh.id },
+        include: COUNT_INCLUDE,
+      });
+      if (final) return mapJunta(final, now);
     }
     return mapJunta(fresh, now);
   },

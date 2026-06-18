@@ -60,6 +60,7 @@ export default async function JuntaPage({
         count={junta.memberCount}
         target={junta.targetMembers}
         status={junta.status}
+        couponCode={junta.couponCode}
       />
     </div>
   );

@@ -5448,6 +5448,7 @@ model Junta {
   windowEnd     DateTime // cutoff: cuándo deja de aceptar miembros
   targetMembers Int           @default(4)
   status        JuntaStatus   @default(OPEN)
+  couponCode    String? // cupón emitido al completar la junta (Fase A2)
   createdAt     DateTime      @default(now())
   members       JuntaMember[]
 

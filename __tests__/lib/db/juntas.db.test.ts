@@ -2,13 +2,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    junta: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn() },
+    junta: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      findMany: vi.fn(),
+    },
     juntaMember: { create: vi.fn() },
   },
 }));
+vi.mock("@/lib/junta/reward", () => ({ issueJuntaCoupon: vi.fn() }));
 
 import { JuntasDB } from "@/lib/db/juntas.db";
 import { prisma } from "@/lib/prisma";
+import { issueJuntaCoupon } from "@/lib/junta/reward";
 
 const T = "tenant-1";
 const future = new Date(Date.now() + 24 * 3600 * 1000);
@@ -88,17 +96,31 @@ describe("JuntasDB.join", () => {
     expect(prisma.junta.update).not.toHaveBeenCalled();
   });
 
-  it("marca COMPLETE cuando el nuevo miembro alcanza la meta", async () => {
+  it("marca COMPLETE y emite cupón cuando alcanza la meta", async () => {
     vi.mocked(prisma.junta.findUnique)
       .mockResolvedValueOnce(juntaRow({ _count: { members: 3 } }) as never)
-      .mockResolvedValueOnce(juntaRow({ _count: { members: 4 } }) as never);
+      .mockResolvedValueOnce(juntaRow({ _count: { members: 4 } }) as never)
+      .mockResolvedValueOnce(
+        juntaRow({
+          _count: { members: 4 },
+          status: "COMPLETE",
+          couponCode: "BARRIO-AB12",
+        }) as never,
+      );
     vi.mocked(prisma.juntaMember.create).mockResolvedValue({} as never);
+    vi.mocked(prisma.junta.updateMany).mockResolvedValue({ count: 1 } as never);
     vi.mocked(prisma.junta.update).mockResolvedValue({} as never);
+    vi.mocked(issueJuntaCoupon).mockResolvedValue("BARRIO-AB12");
     const r = await JuntasDB.join(T, "BARRIO-AB12", "+51777");
-    expect(prisma.junta.update).toHaveBeenCalledWith({
-      where: { id: "j1" },
+    expect(prisma.junta.updateMany).toHaveBeenCalledWith({
+      where: { id: "j1", tenantId: T, status: "OPEN" },
       data: { status: "COMPLETE" },
     });
+    expect(issueJuntaCoupon).toHaveBeenCalledWith(T, {
+      code: "BARRIO-AB12",
+      targetMembers: 4,
+    });
     expect(r.status).toBe("COMPLETE");
+    expect(r.couponCode).toBe("BARRIO-AB12");
   });
 });

@@ -15,7 +15,9 @@ import {
   Check,
   Copy,
   CalendarClock,
+  Tag,
 } from "@buleje/design-system/icons";
+import { JUNTA_COUPON_PERCENT } from "@/lib/junta/constants";
 
 type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
@@ -26,6 +28,8 @@ interface Props {
   count: number;
   target: number;
   status: JuntaStatus;
+  /** Cupón emitido al completar la junta (Fase A2). */
+  couponCode?: string;
 }
 
 export default function GroupBuyCard({
@@ -35,6 +39,7 @@ export default function GroupBuyCard({
   count: initialCount,
   target,
   status: initialStatus,
+  couponCode,
 }: Props) {
   const [count, setCount] = useState(initialCount);
   const [status, setStatus] = useState<JuntaStatus>(initialStatus);
@@ -42,6 +47,7 @@ export default function GroupBuyCard({
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [couponCopied, setCouponCopied] = useState(false);
 
   const progress = Math.min(100, Math.round((count / target) * 100));
   const remaining = Math.max(0, target - count);
@@ -63,6 +69,17 @@ export default function GroupBuyCard({
     }
   }, [shareUrl]);
 
+  const handleCopyCoupon = useCallback(async () => {
+    if (!couponCode) return;
+    try {
+      await navigator.clipboard.writeText(couponCode);
+      setCouponCopied(true);
+      setTimeout(() => setCouponCopied(false), 2000);
+    } catch {
+      setError("No se pudo copiar el cupón");
+    }
+  }, [couponCode]);
+
   const handleWhatsApp = useCallback(() => {
     const msg = encodeURIComponent(
       `Vecinos, estoy armando una junta en Buleje${productLabel ? ` para ${productLabel}` : ""}. ` +
@@ -77,7 +94,10 @@ export default function GroupBuyCard({
     setError("");
     try {
       const res = await fetch(`/api/juntas/${code}/join`, { method: "POST" });
-      const data = await res.json().catch(() => null);
+      const data = await res.json().catch((err) => {
+        console.warn("[junta] join: respuesta no-JSON", err);
+        return null;
+      });
       if (!res.ok) {
         setError(data?.error ?? "No te pudiste unir");
         return;
@@ -146,6 +166,41 @@ export default function GroupBuyCard({
               : `Faltan ${remaining} vecino${remaining === 1 ? "" : "s"} para completar la junta`}
         </p>
       </div>
+
+      {/* Cupón de recompensa (junta completa) */}
+      {isComplete && couponCode && (
+        <div className="mx-5 sm:mx-6 mt-4 rounded-xl border-2 border-dashed border-[var(--accent)] bg-[var(--accent-soft)] p-4">
+          <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+            <Tag className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            Tu cupón de la junta · {JUNTA_COUPON_PERCENT}% off
+          </p>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <span className="font-mono text-lg font-extrabold tracking-wide text-[var(--text-primary)]">
+              {couponCode}
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyCoupon}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent)] px-3 py-1.5 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition active:scale-95"
+            >
+              {couponCopied ? (
+                <>
+                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                  Copiado
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+                  Copiar
+                </>
+              )}
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-[var(--text-secondary)]">
+            Aplícalo en tu próximo pedido. Cada vecino de la junta puede usarlo.
+          </p>
+        </div>
+      )}
 
       {/* CTAs */}
       <div className="px-5 sm:px-6 pt-4 pb-5 space-y-2">
