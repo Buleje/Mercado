@@ -628,7 +628,15 @@ export const POST = withApiHandler("orders-create", async (req) => {
     // ── Fiado: gate de elegibilidad ANTES de crear la orden (anti-fraude).
     //    El total autoritativo es computedTotal (backend), nunca el del cliente.
     if (body.paymentMethod === "fiado") {
-      const fiadoPhone = body.customer.phone;
+      // El crédito (CreditProfile/Fiado) se llavea por phone NORMALIZADO.
+      // Normalizamos acá para que el gate valide la MISMA clave bajo la que
+      // se crea el Fiado (igual que OrdersDB.add), no el phone crudo del body.
+      const { normalizePhone: normalizeFiadoPhone } = await import(
+        "@/lib/db/misc.db"
+      );
+      const fiadoPhone = body.customer.phone
+        ? normalizeFiadoPhone(body.customer.phone)
+        : "";
       if (!fiadoPhone) {
         return NextResponse.json(
           { error: "El fiado requiere un teléfono de cliente" },
@@ -837,19 +845,32 @@ export const POST = withApiHandler("orders-create", async (req) => {
     //    tx que la Order) = follow-up checkout-squad con createInTransaction.
     if (saved.paymentMethod === "fiado" && saved.customer.phone) {
       try {
-        const { createFiadoForOrder } = await import(
-          "@/lib/credit/checkout-fiado-order"
-        );
+        const [{ createFiadoForOrder }, { normalizePhone: normFiadoPhone }] =
+          await Promise.all([
+            import("@/lib/credit/checkout-fiado-order"),
+            import("@/lib/db/misc.db"),
+          ]);
         await createFiadoForOrder(tenantId, {
           orderId: saved.id,
-          customerId: saved.customer.phone,
+          // Misma clave normalizada que usó el gate y el resto del crédito.
+          customerId: normFiadoPhone(saved.customer.phone),
           total: saved.total,
         });
       } catch (err) {
+        // Phantom-fiado guard: la orden ya está persistida como fiado. Si el
+        // Fiado no se crea es deuda sin row que cobrar → Sentry para
+        // reconciliación manual (mismo patrón que el inventory drift de este
+        // archivo). Atomicidad estricta (Fiado en la tx de la Order) =
+        // follow-up checkout-squad con FiadosDB.createInTransaction.
         logger.error("[orders.POST] fiado creation failed", {
           orderId: saved.id,
           tenantId,
           error: String(err),
+        });
+        Sentry.captureException(err, {
+          level: "error",
+          tags: { area: "orders", phase: "fiado-create", tenant: tenantId },
+          extra: { orderId: saved.id, total: saved.total },
         });
       }
     }
