@@ -5427,3 +5427,42 @@ model AssetInspection {
 
   @@index([tenantId, assetId])
 }
+
+// ─── La Junta del Barrio (compra colaborativa vecinal) ───────────────────────
+// Fase A1: fundación social. Los vecinos de una zona juntan pedidos; al llegar
+// a la meta, en Fase A2 desbloquean envío gratis. El estado EXPIRED se infiere
+// on-read en A1 (sin cron). Ver docs/superpowers/plans/2026-06-18-junta-del-barrio-a1.md
+enum JuntaStatus {
+  OPEN
+  COMPLETE
+  EXPIRED
+}
+
+model Junta {
+  id            String        @id @default(cuid())
+  tenantId      String
+  code          String // slug corto compartible (ej. "BARRIO-7F3X")
+  initiatorId   String // customerId (phone normalizado) que la abrió
+  productLabel  String? // contexto opcional ("Arroz 5kg", etc.)
+  zoneLabel     String // zona de entrega (label, NO FK en A1)
+  windowEnd     DateTime // cutoff: cuándo deja de aceptar miembros
+  targetMembers Int           @default(4)
+  status        JuntaStatus   @default(OPEN)
+  createdAt     DateTime      @default(now())
+  members       JuntaMember[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status, zoneLabel])
+}
+
+model JuntaMember {
+  id         String   @id @default(cuid())
+  juntaId    String
+  customerId String // phone normalizado
+  orderId    String? // se liga en checkout (Fase A2)
+  joinedAt   DateTime @default(now())
+  junta      Junta    @relation(fields: [juntaId], references: [id], onDelete: Cascade)
+
+  @@unique([juntaId, customerId])
+  @@index([juntaId])
+}
