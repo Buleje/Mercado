@@ -124,3 +124,16 @@ describe("JuntasDB.join", () => {
     expect(r.couponCode).toBe("BARRIO-AB12");
   });
 });
+
+describe("JuntasDB.expireStale", () => {
+  it("marca EXPIRED las OPEN vencidas y devuelve el count", async () => {
+    vi.mocked(prisma.junta.updateMany).mockResolvedValue({ count: 2 } as never);
+    const n = await JuntasDB.expireStale(new Date("2026-06-18T00:00:00Z"));
+    expect(n).toBe(2);
+    const arg = vi.mocked(prisma.junta.updateMany).mock.calls[0][0] as never as {
+      where: { status: string; windowEnd: { lte: Date } };
+    };
+    expect(arg.where.status).toBe("OPEN");
+    expect(arg.where.windowEnd.lte).toBeInstanceOf(Date);
+  });
+});

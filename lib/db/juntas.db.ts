@@ -168,7 +168,7 @@ export const JuntasDB = {
     return mapJunta(fresh, now);
   },
 
-  /** Juntas OPEN vigentes en una zona (para el strip del home). */
+  /** Juntas OPEN vigentes en una zona. */
   async listOpenByZone(tenantId: string, zoneLabel: string): Promise<DbJunta[]> {
     const now = new Date();
     const juntas = await prisma.junta.findMany({
@@ -178,5 +178,31 @@ export const JuntasDB = {
       take: 20,
     });
     return juntas.map((j) => mapJunta(j, now));
+  },
+
+  /** Juntas OPEN vigentes del tenant (cualquier zona) — para el strip del home. */
+  async listOpenRecent(tenantId: string, limit = 6): Promise<DbJunta[]> {
+    const now = new Date();
+    const juntas = await prisma.junta.findMany({
+      where: { tenantId, status: "OPEN", windowEnd: { gt: now } },
+      include: COUNT_INCLUDE,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+    return juntas.map((j) => mapJunta(j, now));
+  },
+
+  /**
+   * Cron de plataforma: marca EXPIRED las juntas OPEN cuya ventana venció.
+   * Devuelve cuántas cerró. Barre TODOS los tenants intencionalmente.
+   */
+  async expireStale(now: Date = new Date()): Promise<number> {
+    /* eslint-disable no-restricted-syntax -- cron platform-wide: expira juntas vencidas de TODOS los tenants a propósito (ADR-101) */
+    const res = await prisma.junta.updateMany({
+      where: { status: "OPEN", windowEnd: { lte: now } },
+      data: { status: "EXPIRED" },
+    });
+    /* eslint-enable no-restricted-syntax */
+    return res.count;
   },
 };
