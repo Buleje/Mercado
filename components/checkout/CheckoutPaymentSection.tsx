@@ -19,8 +19,8 @@ import {
 import { cn, formatCurrency } from "@/lib/utils";
 import { YapePaymentPanel } from "./YapePaymentPanel";
 import { CashChangeCalculator } from "./CashChangeCalculator";
-
-type PaymentMethod = "yape" | "efectivo";
+import { FiadoCheckoutOption } from "./FiadoCheckoutOption";
+import type { PaymentMethod } from "./types";
 
 interface Promo {
   id: string;
@@ -52,6 +52,10 @@ export interface CheckoutPaymentSectionProps {
   onPaymentMethodChange: (method: PaymentMethod) => void;
   yapeEnabled: boolean;
   cashEnabled: boolean;
+  /** Fiado ("paga el día de pago") — solo se muestra si el cliente es elegible. */
+  fiadoEligible?: boolean;
+  fiadoAvailableCredit?: number;
+  fiadoDueDateLabel?: string;
   yape: { enabled: boolean; image?: string; name?: string; phone?: string };
   yapeOpNumber: string;
   onYapeOpNumberChange: (v: string) => void;
@@ -145,6 +149,9 @@ export function CheckoutPaymentSection({
   onPaymentMethodChange,
   yapeEnabled,
   cashEnabled,
+  fiadoEligible = false,
+  fiadoAvailableCredit = 0,
+  fiadoDueDateLabel = "",
   yape,
   yapeOpNumber,
   onYapeOpNumberChange,
@@ -334,6 +341,15 @@ export function CheckoutPaymentSection({
             </m.button>
           )}
         </div>
+
+        {fiadoEligible && (
+          <FiadoCheckoutOption
+            selected={paymentMethod === "fiado"}
+            onSelect={() => onPaymentMethodChange("fiado")}
+            availableCredit={fiadoAvailableCredit}
+            dueDateLabel={fiadoDueDateLabel}
+          />
+        )}
 
         {paymentMethod === "yape" && yapeEnabled && (
           <YapePaymentPanel

@@ -10,6 +10,7 @@ import type { CheckoutState } from "../types";
 import type { CheckoutDispatch } from "../hooks/useCheckoutState";
 import type { YapeConfig } from "@/contexts/settings-context";
 import LoyaltyTierProgressBar from "@/components/loyalty/LoyaltyTierProgressBar";
+import { useFiadoOption } from "../hooks/useFiadoOption";
 
 /**
  * StepPago — selector de método de pago + resumen del pedido.
@@ -54,6 +55,8 @@ export function StepPago({
   onSubmit,
   onBackToDatos,
 }: StepPagoProps) {
+  const fiado = useFiadoOption(finalTotal);
+
   return (
     <m.div
       key="pago"
@@ -111,6 +114,9 @@ export function StepPago({
             }}
             yapeEnabled={yape.enabled}
             cashEnabled={cashEnabled}
+            fiadoEligible={fiado.eligible}
+            fiadoAvailableCredit={fiado.availableCredit}
+            fiadoDueDateLabel={fiado.dueDateLabel}
             yape={yape}
             yapeOpNumber={state.payment.yapeOpNumber}
             onYapeOpNumberChange={(yapeOpNumber) =>

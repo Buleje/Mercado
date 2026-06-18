@@ -1,7 +1,7 @@
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer, SavedLocation } from "@/contexts/customer-context";
 import type { DbOrderItem } from "@/lib/jsondb";
-import type { CheckoutState } from "../types";
+import type { CheckoutState, PaymentMethod } from "../types";
 
 /**
  * Helpers puros para el flow de submit del checkout.
@@ -16,7 +16,7 @@ export type EffectiveValues = {
   phone: string;
   location: string;
   reference: string;
-  payment: "yape" | "efectivo";
+  payment: PaymentMethod;
 };
 
 /** Resuelve los valores efectivos del cliente combinando state + cliente cargado. */

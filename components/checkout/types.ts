@@ -9,7 +9,7 @@ import type { Step } from "./StepBar";
 
 export type { Step };
 
-export type PaymentMethod = "yape" | "efectivo";
+export type PaymentMethod = "yape" | "efectivo" | "fiado";
 
 export type DniLookupStatus = "idle" | "loading" | "success" | "error";
 
