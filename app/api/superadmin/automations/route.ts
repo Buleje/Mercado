@@ -16,7 +16,13 @@ export async function GET(req: NextRequest) {
   if ("status" in auth) return auth;
   try {
     const state = await getAutomationState();
-    const counts = await Promise.all(RULES.map((r) => computeMatches(r.key).then((m) => m.length).catch(() => 0)));
+    // Conservamos la lista (no solo el conteo) para el dry-run preview: el
+    // operador ve QUÉ tiendas recibirán el aviso antes de ejecutar.
+    const matchLists = await Promise.all(
+      RULES.map((r) =>
+        computeMatches(r.key).catch(() => [] as Awaited<ReturnType<typeof computeMatches>>),
+      ),
+    );
     const rules = RULES.map((r, i) => ({
       key: r.key,
       title: r.title,
@@ -24,7 +30,8 @@ export async function GET(req: NextRequest) {
       action: r.action,
       enabled: state[r.key]?.enabled ?? false,
       lastRunAt: state[r.key]?.lastRunAt ?? null,
-      matchCount: counts[i],
+      matchCount: matchLists[i].length,
+      matches: matchLists[i].slice(0, 100),
     }));
     return NextResponse.json({ rules });
   } catch (e) {
