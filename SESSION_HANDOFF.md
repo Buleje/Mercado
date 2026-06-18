@@ -1,3 +1,26 @@
+# SESSION HANDOFF — 2026-06-18
+
+> Sesión muy larga (**18 commits**). Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. **NO pusheado.** Árbol limpio.
+> Verificación por feature: `tsc -p tsconfig.build.json --noEmit` EXIT=0 · `npm run lint` 0 errores · vitest · screenshots/curl con data real. Estilo: trust-but-verify (agents incluidos).
+
+## Lo construido (18 commits: `8a2c018d` → `9f5581a7`)
+
+**Superadmin — potenciar módulos.** Patrón confirmado en ~10 auditorías: el panel está ~80-90% construido; los gaps reales eran *data computada-pero-no-mostrada* o *umbral hardcodeado→configurable*.
+1. Salud 360 del tenant (tab que cablea el endpoint churn muerto) · 2. MRR movement + cobranza/dunning (billing) · 3. auto-aprobación Yape limpios (**OFF por default**, env-gated) · 4. score de triage de solicitudes vendor · 5. plantillas+variables en broadcast chat · 6. motor de alertas con umbrales env + escalación · 7. dry-run preview de automatizaciones · cohortes de conversión (analytics) · cooldown+dry-run en el cron de automatizaciones · recomendación de upgrade + upside MRR (uso vs límites).
+
+**Storefront / PDP.** ahorro+Yape+entrega honesta (reemplazó "~25 min" fake)+UGC en galería · catálogo navegable + opiniones más abiertas + combo con ancla "Este producto" · dropdown de login por rol bajo "Ingresar" · barra lateral de nav en PDP (categorías de la tienda que filtran el catálogo) + rail global de páginas habilitado en PDP **y** tienda (`MarketplaceSideRailShell.shouldShowRail`).
+
+**Visionario (flagship).** **Inteligencia de Barrio** = red de detección de demanda (`/superadmin/intelligence`). Motor puro `lib/intelligence/demand-signals.ts` (26 tests) + API sobre data REAL (OrderItem→category 30d-vs-30d, StockoutPrediction, Store.zone) + dashboard. Construido con **3 agents en paralelo** (API/UI/tests), integrado y verificado por mí (copiados de worktree a main; worktrees branchean de base vieja).
+
+## Pendientes / notas
+- `StockoutPrediction` vacío en dev → `unmetDemand`/`stockoutHotspots` salen vacíos (empty state honesto). Con datos se encienden solos.
+- Próximo paso de la visión: **#2 Fiado inteligente** (mismo patrón: motor puro + scoring sobre `lib/credit/scoring-engine` + fiados).
+- **LOC proyecto:** ~1.07M código fuente (TS 365K · TSX 606K · JS 66K · mjs 25K · Prisma 5.5K), sin `node_modules`/`.next`/`.claude`/generados.
+- Worktrees de agents limpiados (`git worktree prune`).
+- ⚠️ Yape auto-approve está OFF: activar con `YAPE_AUTO_APPROVE=1` (+ `YAPE_AUTO_APPROVE_MAX_DELTA_PCT`, etc.) — decisión de riesgo, dinero real.
+
+---
+
 # SESSION HANDOFF — 2026-06-17
 
 > Sesión larga (8 commits). Branch: `audit/storefront-mejoras-verificadas-2026-06-15`.
