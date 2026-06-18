@@ -26,7 +26,7 @@
 | `components/checkout/FiadoCheckoutOption.tsx` | Tarjeta "Paga el día de pago" con crédito disponible + fecha | Crear |
 | `components/checkout/CheckoutPaymentSection.tsx:23` | Ampliar `type PaymentMethod` + render de la opción fiado | Modificar |
 | `components/CheckoutModal.tsx` | Fetch a `/api/checkout/fiado-option`, pasar elegibilidad al section | Modificar |
-| `lib/credit/*.test.ts`, `app/api/checkout/fiado-option/route.test.ts` | Tests | Crear |
+| Tests bajo `__tests__/**` | **CONVENCIÓN (corregida):** vitest SOLO incluye `__tests__/**/*.test.{ts,tsx}` (ver `vitest.config.ts:11`). Los tests NO van colocados junto al source. Mirror: `__tests__/lib/credit/<x>.test.ts`, `__tests__/app/api/checkout/fiado-option/route.test.ts`. Import del source con alias `@/...`, no `./`. | Crear |
 
 ---
 
@@ -881,3 +881,23 @@ Run: skill `deploy-check` (lint + tsc + test + build + SLO). Expected: todo verd
 | Chip "crédito disponible" en home/PDP | **Diferido** — surfacing fuera del core de checkout; se hace en plan aparte (menor prioridad) |
 
 **Decisión de scope:** el chip de home/PDP se difiere a un plan de surfacing posterior para mantener este plan enfocado en el flujo de pago (single, testeable). Queda registrado, no perdido.
+
+---
+
+## Estado de ejecución (2026-06-18)
+
+| Task | Estado | Evidencia |
+|---|---|---|
+| 1 — `nextPayday` | ✅ | 5/5 vitest (`e4ee48f8` + fix `e20a81bd` reubica test a `__tests__/`) |
+| 2 — elegibilidad | ✅ | 5/5 vitest (`c8061682`) |
+| 3 — endpoint | ✅ | 4/4 vitest (`80b09f1b`); en dev responde 403 sin auth (middleware CSRF protege la ruta) |
+| 4 — branch orders (DANGER) | ✅ | 2/2 vitest helper; tsc de todo el proyecto verde; `GET /api/orders` 200 en dev = compila+corre (`f6ff86bd`) |
+| 5 — UI | ✅ | tsc + 67 related tests + design lint verdes (`9540b88f`); `canConfirm` y tipos `PaymentMethod`/`EffectiveValues` ampliados a "fiado" |
+| 6 — e2e + eval | 🟡 parcial | unit 16/16, routing y compile verificados. **Pendiente:** flujo browser del cliente ELEGIBLE (requiere flags PHASE1/2/3 on + `CreditProfile` activo sembrado + sesión cliente) — hacer en staging, NO reiniciar dev local al pepe. Eval zona fiado/checkout: correr con flags on. |
+| 7 — rollout | ✅ doc | Flags `FIADO_DIGITAL_V2_PHASE1/2/3 = "false"` en `.env.local` (OFF por defecto = seguro). Encender en orden 1→2→3. Prod gradual 10%→50%→100% (R5 Ola 2: bug en checkout = compras bloqueadas). Fallback: si la tarjeta fiado no aparece, el cliente paga Yape/efectivo (cero bloqueo). Pre-deploy: skill `deploy-check`. |
+
+**Gotchas descubiertos en ejecución (para el próximo agente):**
+- Vitest SOLO corre `__tests__/**` — no colocar tests junto al source (un agente lo hizo y reportó verde en falso).
+- El tipo de orden `DbOrder.paymentMethod` vive en `lib/db/misc.db.ts` (no en el schema Zod) — ampliarlo al agregar métodos de pago.
+- `EffectiveValues.payment` y `canConfirm` (useCheckoutHandlers) también tipaban/validaban solo yape/efectivo — ampliados.
+- Agentes `backend`/`frontend` se aíslan en worktree de base vieja (sin prisma generate → 200+ errores tsc falsos). Para esta feature se implementó en el working dir principal.
