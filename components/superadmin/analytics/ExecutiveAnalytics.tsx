@@ -403,6 +403,50 @@ export default function ExecutiveAnalytics({
         </SuperadminChartCard>
       </div>
 
+      {/* ─── ROW: Cohortes de conversión (retención por mes de alta) ──────── */}
+      {data.cohorts.length > 0 && (
+        <div className="grid grid-cols-1 gap-6">
+          <SuperadminChartCard
+            kicker="RETENCIÓN · COHORTES"
+            title="Conversión por cohorte de alta"
+            description="De cada grupo de tiendas dadas de alta en un mes, cuántas pagan hoy."
+            actions={(() => {
+              const best = data.cohorts.reduce((a, b) => (b.conversionPct > a.conversionPct ? b : a));
+              return <InsightBadge tone={best.conversionPct >= 30 ? "positive" : "neutral"} text={`Mejor ${best.conversionPct}%`} />;
+            })()}
+          >
+            <ul className="space-y-3">
+              {data.cohorts.map((c) => {
+                const label = (() => {
+                  const d = new Date(`${c.month}-01T00:00:00`);
+                  return isNaN(d.getTime()) ? c.month : d.toLocaleDateString("es-PE", { month: "short", year: "numeric" });
+                })();
+                const bar =
+                  c.conversionPct >= 50
+                    ? "bg-[var(--data-success-500)]"
+                    : c.conversionPct >= 25
+                      ? "bg-[var(--accent)]"
+                      : "bg-[var(--data-warning-500)]";
+                return (
+                  <li key={c.month}>
+                    <div className="mb-1 flex items-center justify-between gap-3">
+                      <span className="text-base font-bold capitalize text-[var(--text-primary)]">{label}</span>
+                      <span className="text-sm text-[var(--text-secondary)] tabular-nums">
+                        {c.payingNow}/{c.signups} pagan ·{" "}
+                        <strong className="text-[var(--text-primary)]">{c.conversionPct}%</strong>
+                      </span>
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                      <div className={`h-full rounded-full transition-all ${bar}`} style={{ width: `${Math.min(100, c.conversionPct)}%` }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </SuperadminChartCard>
+        </div>
+      )}
+
       {/* ─── ROW 3: MRR + AOV ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-6">
         <SuperadminChartCard
