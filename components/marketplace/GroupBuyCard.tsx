@@ -9,6 +9,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Users,
   MessageCircle,
@@ -16,8 +17,10 @@ import {
   Copy,
   CalendarClock,
   Tag,
+  ShoppingBag,
 } from "@buleje/design-system/icons";
 import { JUNTA_COUPON_PERCENT } from "@/lib/junta/constants";
+import { setActiveJunta } from "@/lib/junta/active";
 
 type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
@@ -51,6 +54,12 @@ export default function GroupBuyCard({
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [couponCopied, setCouponCopied] = useState(false);
+  const router = useRouter();
+
+  const handleShopForJunta = useCallback(() => {
+    setActiveJunta(code);
+    router.push("/");
+  }, [code, router]);
 
   const progress = Math.min(100, Math.round((count / target) * 100));
   const remaining = Math.max(0, target - count);
@@ -214,6 +223,16 @@ export default function GroupBuyCard({
 
       {/* CTAs */}
       <div className="px-5 sm:px-6 pt-4 pb-5 space-y-2">
+        {!isExpired && (
+          <button
+            type="button"
+            onClick={handleShopForJunta}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-white py-3 text-sm font-bold hover:opacity-90 transition active:scale-[0.98]"
+          >
+            <ShoppingBag className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Comprar para esta junta
+          </button>
+        )}
         {!isExpired && !isComplete && (
           <button
             type="button"

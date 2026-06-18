@@ -2,6 +2,7 @@ import { useCallback, useRef } from "react";
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer } from "@/contexts/customer-context";
 import { trackPurchase } from "@/lib/analytics";
+import { getActiveJunta, clearActiveJunta } from "@/lib/junta/active";
 import type { CheckoutDispatch } from "./useCheckoutState";
 import type { CheckoutState } from "../types";
 import {
@@ -129,6 +130,7 @@ export function useCheckoutSubmit({
       finalTotal,
       promo,
       discount,
+      juntaCode: getActiveJunta() ?? undefined,
     });
 
     // 5. Retry con backoff — idempotency key garantiza que reintentos
@@ -148,6 +150,8 @@ export function useCheckoutSubmit({
         cartActions.clear();
         cartActions.closeCart();
         cartActions.markOrderPending();
+        // El pedido ya se mandó con su juntaCode; limpiar la junta activa.
+        clearActiveJunta();
         window.dispatchEvent(
           new CustomEvent("buleje:orderCreated", { detail: { orderId: data.id } })
         );

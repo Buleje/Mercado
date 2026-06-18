@@ -75,8 +75,10 @@ export function buildOrderPayload(args: {
   finalTotal: number;
   promo: { id: string } | null;
   discount: number;
+  juntaCode?: string;
 }): string {
-  const { state, effective, orderItems, finalTotal, promo, discount } = args;
+  const { state, effective, orderItems, finalTotal, promo, discount, juntaCode } =
+    args;
   return JSON.stringify({
     customer: {
       name: effective.name,
@@ -105,6 +107,7 @@ export function buildOrderPayload(args: {
         ? state.payment.yapeOpNumber.trim()
         : undefined,
     deuda: effective.payment === "efectivo" ? true : undefined,
+    ...(juntaCode && { juntaCode }),
     ...(promo && { appliedPromoId: promo.id, discountAmount: discount }),
     ...(state.coupon.applied &&
       state.coupon.code.trim() && {

@@ -11,6 +11,7 @@ import type { CheckoutDispatch } from "../hooks/useCheckoutState";
 import type { YapeConfig } from "@/contexts/settings-context";
 import LoyaltyTierProgressBar from "@/components/loyalty/LoyaltyTierProgressBar";
 import { useFiadoOption } from "../hooks/useFiadoOption";
+import { JuntaActiveBanner } from "../JuntaActiveBanner";
 
 /**
  * StepPago — selector de método de pago + resumen del pedido.
@@ -66,6 +67,7 @@ export function StepPago({
       transition={{ duration: 0.2 }}
     >
       <form onSubmit={onSubmit} data-testid="pago-form" className="px-6 py-5">
+        <JuntaActiveBanner />
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_360px] divide-y sm:divide-y-0 sm:divide-x divide-[var(--rule-soft)] gap-0">
           <CheckoutOrderReview
             items={items}
