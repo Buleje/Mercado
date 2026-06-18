@@ -48,14 +48,14 @@ export default async function JuntaPage({
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
-      <header className="mb-6 text-center">
-        <p className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">
+      <header className="mb-5">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--accent)]">
           Compra colaborativa vecinal
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+        <h1 className="mt-1.5 text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
           Junten pedidos, ahorren juntos
         </h1>
-        <p className="mt-2 text-base text-[var(--text-secondary)]">
+        <p className="mt-2 text-base leading-relaxed text-[var(--text-secondary)]">
           Más vecinos en la junta = descuento para todos y una sola entrega.
         </p>
       </header>

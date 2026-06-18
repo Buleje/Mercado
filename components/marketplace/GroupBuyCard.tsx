@@ -3,26 +3,26 @@
 /**
  * GroupBuyCard — La Junta del Barrio (compra colaborativa vecinal).
  *
- * Rediseño 2026-06-18: header de marca, urgencia (cierre), slots de vecinos
- * (prueba social), premio vendido arriba (cupón al completar) y jerarquía de
- * CTAs. Datos reales: progreso persistido, unirse, comprar para la junta,
- * compartir por WhatsApp (tuteo).
+ * Rediseño 2026-06-18 (minimalista + en vivo): sin gradiente; el acento de
+ * marca queda en una barra superior cuadrada. Elementos deliberadamente sin
+ * bordes redondeados (countdown, progreso segmentado, premio, cupón) para un
+ * look sobrio. La lógica (countdown en vivo, refresco al volver a la pestaña,
+ * compartir nativo, unirse) vive en useGroupBuyCard; aquí solo presentación.
  */
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
-  Users,
   MessageCircle,
   Check,
   Copy,
-  CalendarClock,
-  Tag,
+  Clock,
+  MapPin,
   ShoppingBag,
   Gift,
+  Share2,
+  ChevronDown,
 } from "@buleje/design-system/icons";
 import { JUNTA_COUPON_PERCENT } from "@/lib/junta/constants";
-import { setActiveJunta } from "@/lib/junta/active";
+import { useGroupBuyCard } from "./hooks/useGroupBuyCard";
 
 type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
@@ -33,26 +33,12 @@ interface Props {
   count: number;
   target: number;
   status: JuntaStatus;
-  /** ISO de cierre de la junta (Fase A1) — para mostrar urgencia. */
+  /** ISO de cierre de la junta — para la cuenta regresiva en vivo. */
   windowEnd?: string;
   /** Cupón emitido al completar la junta (Fase A2). */
   couponCode?: string;
   /** Pedidos ya hechos dentro de la junta (Fase A4). */
   orderCount?: number;
-}
-
-const BRAND_GRADIENT =
-  "linear-gradient(135deg, var(--color-primary, #00A0A0) 0%, var(--color-primary-dark, #009690) 100%)";
-
-function formatDeadline(windowEnd?: string): string | null {
-  if (!windowEnd) return null;
-  const diff = new Date(windowEnd).getTime() - Date.now();
-  if (!Number.isFinite(diff) || diff <= 0) return null;
-  const hours = Math.floor(diff / 3_600_000);
-  if (hours < 1) return "Cierra en menos de 1 h";
-  if (hours < 24) return `Cierra en ${hours} h`;
-  const days = Math.floor(hours / 24);
-  return `Cierra en ${days} día${days === 1 ? "" : "s"}`;
 }
 
 export default function GroupBuyCard({
@@ -66,126 +52,80 @@ export default function GroupBuyCard({
   couponCode,
   orderCount = 0,
 }: Props) {
-  const [count, setCount] = useState(initialCount);
-  const [status, setStatus] = useState<JuntaStatus>(initialStatus);
-  const [joining, setJoining] = useState(false);
-  const [joined, setJoined] = useState(false);
-  const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [couponCopied, setCouponCopied] = useState(false);
-  const router = useRouter();
+  const {
+    count,
+    remaining,
+    progress,
+    isComplete,
+    isExpired,
+    countdownLabel,
+    bumped,
+    joining,
+    joined,
+    error,
+    copied,
+    couponCopied,
+    handleShopForJunta,
+    handleCopyCoupon,
+    handleWhatsApp,
+    handleNativeShare,
+    handleJoin,
+  } = useGroupBuyCard({
+    code,
+    productLabel,
+    initialCount,
+    target,
+    initialStatus,
+    windowEnd,
+    couponCode,
+  });
 
-  const remaining = Math.max(0, target - count);
-  const progress = Math.min(100, Math.round((count / target) * 100));
-  const isComplete = status === "COMPLETE" || count >= target;
-  const isExpired = status === "EXPIRED";
-  const deadline = isExpired || isComplete ? null : formatDeadline(windowEnd);
-  // Slots visuales (prueba social) — máx 8 para juntas grandes.
-  const slots = Array.from({ length: Math.min(target, 8) }, (_, i) => i < count);
-
-  const shareUrl = useCallback(() => {
-    if (typeof window === "undefined") return `/junta/${code}`;
-    return `${window.location.origin}/junta/${code}`;
-  }, [code]);
-
-  const handleShopForJunta = useCallback(() => {
-    setActiveJunta(code);
-    router.push("/");
-  }, [code, router]);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setError("No se pudo copiar el link");
-    }
-  }, [shareUrl]);
-
-  const handleCopyCoupon = useCallback(async () => {
-    if (!couponCode) return;
-    try {
-      await navigator.clipboard.writeText(couponCode);
-      setCouponCopied(true);
-      setTimeout(() => setCouponCopied(false), 2000);
-    } catch {
-      setError("No se pudo copiar el cupón");
-    }
-  }, [couponCode]);
-
-  const handleWhatsApp = useCallback(() => {
-    const msg = encodeURIComponent(
-      `Vecinos, estoy armando una junta en Buleje${productLabel ? ` para ${productLabel}` : ""}. ` +
-        `Si juntamos ${target} de la cuadra, todos llevamos ${JUNTA_COUPON_PERCENT}% off. ` +
-        `Faltan ${remaining} — súmate acá: ${shareUrl()}`,
-    );
-    window.open(`https://wa.me/?text=${msg}`, "_blank", "noopener,noreferrer");
-  }, [productLabel, target, remaining, shareUrl]);
-
-  const handleJoin = useCallback(async () => {
-    setJoining(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/juntas/${code}/join`, { method: "POST" });
-      const data = await res.json().catch((err) => {
-        console.warn("[junta] join: respuesta no-JSON", err);
-        return null;
-      });
-      if (!res.ok) {
-        setError(data?.error ?? "No te pudiste unir");
-        return;
-      }
-      setJoined(true);
-      if (data?.junta) {
-        setCount(data.junta.memberCount ?? count);
-        setStatus(data.junta.status ?? status);
-      }
-    } catch {
-      setError("Error de red al unirte");
-    } finally {
-      setJoining(false);
-    }
-  }, [code, count, status]);
+  const useSegments = target <= 12;
 
   return (
     <section
       aria-label="La Junta del Barrio"
-      className="overflow-hidden rounded-3xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[0_8px_30px_-12px_rgba(0,0,0,0.12)]"
+      className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
     >
-      {/* ── Header de marca ── */}
-      <div
-        className="relative px-5 py-6 sm:px-6 text-white"
-        style={{ background: BRAND_GRADIENT }}
-      >
-        <div
-          className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full"
-          style={{ background: "rgba(255,255,255,0.10)" }}
-          aria-hidden
-        />
-        <div className="relative flex items-start gap-3">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-            <Users className="h-6 w-6" strokeWidth={2} aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white/85">
-              La Junta del Barrio · {zoneLabel}
+      {/* Acento de marca cuadrado (sin gradiente) */}
+      <div className="h-1 bg-[var(--accent)]" aria-hidden />
+
+      {/* ── Header plano ── */}
+      <div className="border-b border-[var(--rule-soft)] px-5 py-5 sm:px-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--accent)]">
+              La Junta del Barrio
             </p>
-            <h2 className="mt-0.5 text-2xl font-extrabold leading-tight tracking-tight">
+            <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)]">
               {target} vecinos, una sola entrega
             </h2>
+            <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
+              <MapPin className="h-4 w-4" strokeWidth={2} aria-hidden />
+              {zoneLabel}
+            </p>
           </div>
+
+          {countdownLabel && (
+            <div className="shrink-0 text-right">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                Cierra en
+              </p>
+              <span className="mt-1 inline-flex items-center gap-1.5 bg-[var(--surface-sunken)] px-3 py-1.5 font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">
+                <Clock
+                  className="h-4 w-4 text-[var(--accent)]"
+                  strokeWidth={2}
+                  aria-hidden
+                />
+                {countdownLabel}
+              </span>
+            </div>
+          )}
         </div>
-        {deadline && (
-          <span className="relative mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-sm font-bold backdrop-blur-sm">
-            <CalendarClock className="h-4 w-4" strokeWidth={2} aria-hidden />
-            {deadline}
-          </span>
-        )}
       </div>
 
       {/* ── Cuerpo ── */}
-      <div className="px-5 py-5 sm:px-6 space-y-5">
+      <div className="space-y-5 px-5 py-5 sm:px-6">
         {productLabel && (
           <p className="text-base leading-relaxed text-[var(--text-secondary)]">
             Junta a {target - 1} vecinos de tu zona para{" "}
@@ -196,70 +136,88 @@ export default function GroupBuyCard({
           </p>
         )}
 
-        {/* Premio vendido arriba */}
-        <div className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 py-3">
+        {/* Premio (cuadrado, acento a la izquierda) */}
+        <div className="flex items-center gap-3 border-l-4 border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-3">
           <Gift
-            className="h-6 w-6 shrink-0 text-[var(--accent)]"
+            className="h-5 w-5 shrink-0 text-[var(--accent)]"
             strokeWidth={2}
             aria-hidden
           />
           <p className="text-base font-bold text-[var(--text-primary)]">
-            Al completar la junta, todos llevan{" "}
+            Al completar, todos llevan{" "}
             <span className="text-[var(--accent)]">
               {JUNTA_COUPON_PERCENT}% de descuento
             </span>
           </p>
         </div>
 
-        {/* Slots de vecinos (prueba social) */}
+        {/* Progreso segmentado (cuadrado) — cada segmento es un vecino */}
         <div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5" aria-hidden>
-              {slots.map((filled, i) => (
-                <span
-                  key={i}
-                  className={
-                    filled
-                      ? "inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-white"
-                      : "inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]"
-                  }
-                >
-                  <Users className="h-4 w-4" strokeWidth={2} />
+          <div className="mb-2 flex items-center justify-between">
+            <span className="inline-flex items-center gap-2 text-base font-semibold text-[var(--text-secondary)]">
+              {isExpired
+                ? "Esta junta ya cerró"
+                : isComplete
+                  ? "¡Junta completa!"
+                  : `Faltan ${remaining} vecino${remaining === 1 ? "" : "s"}`}
+              {bumped && !isExpired && (
+                <span className="bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-white">
+                  +1 vecino
                 </span>
-              ))}
-            </div>
+              )}
+            </span>
             <span className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
               {count}/{target}
             </span>
           </div>
 
-          <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+          {useSegments ? (
             <div
-              className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-700 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="mt-2 text-base font-semibold text-[var(--text-secondary)]">
-            {isExpired
-              ? "Esta junta ya cerró."
-              : isComplete
-                ? "¡Junta completa! Ya pueden coordinar la entrega."
-                : `Faltan ${remaining} vecino${remaining === 1 ? "" : "s"} para completar`}
-          </p>
+              className="flex gap-1"
+              role="progressbar"
+              aria-valuenow={count}
+              aria-valuemin={0}
+              aria-valuemax={target}
+              aria-label={`${count} de ${target} vecinos`}
+            >
+              {Array.from({ length: target }, (_, i) => (
+                <div
+                  key={i}
+                  className={
+                    i < count
+                      ? "h-3 flex-1 bg-[var(--accent)]"
+                      : "h-3 flex-1 border border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <div
+              className="h-3 w-full bg-[var(--surface-sunken)]"
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full bg-[var(--accent)] transition-[width] duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
+
           {orderCount > 0 && (
-            <p className="mt-1 text-sm font-semibold text-[var(--text-tertiary)]">
-              {orderCount}{" "}
-              {orderCount === 1 ? "pedido ya hecho" : "pedidos ya hechos"} en
-              esta junta
+            <p className="mt-2 text-sm font-semibold text-[var(--text-tertiary)]">
+              {orderCount} {orderCount === 1 ? "pedido ya hecho" : "pedidos ya hechos"}{" "}
+              en esta junta
             </p>
           )}
         </div>
 
-        {/* Cupón (junta completa) */}
+        {/* Cupón (junta completa) — cuadrado */}
         {isComplete && couponCode && (
-          <div className="rounded-2xl border-2 border-dashed border-[var(--accent)] bg-[var(--accent-soft)] p-4">
-            <p className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
-              <Tag className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+          <div className="border-l-4 border-[var(--accent)] bg-[var(--accent-soft)] p-4">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
               Tu cupón de la junta · {JUNTA_COUPON_PERCENT}% off
             </p>
             <div className="mt-2 flex items-center justify-between gap-3">
@@ -269,7 +227,7 @@ export default function GroupBuyCard({
               <button
                 type="button"
                 onClick={handleCopyCoupon}
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--accent)] px-3.5 py-2 text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white active:scale-95"
+                className="inline-flex items-center gap-1.5 border-2 border-[var(--accent)] px-3.5 py-2 text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white active:scale-95"
               >
                 {couponCopied ? (
                   <>
@@ -296,12 +254,7 @@ export default function GroupBuyCard({
             <button
               type="button"
               onClick={handleShopForJunta}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-extrabold text-white transition active:scale-[0.98]"
-              style={{
-                background: BRAND_GRADIENT,
-                boxShadow:
-                  "0 10px 24px -8px color-mix(in oklch, var(--color-primary, #00A0A0) 45%, transparent)",
-              }}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-4 text-base font-extrabold text-white transition hover:opacity-90 active:scale-[0.98]"
             >
               <ShoppingBag className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               Comprar para esta junta
@@ -313,7 +266,7 @@ export default function GroupBuyCard({
               type="button"
               onClick={handleJoin}
               disabled={joining || joined}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[var(--accent)] py-3 text-base font-bold text-[var(--accent)] transition hover:bg-[var(--accent-soft)] disabled:opacity-60 active:scale-[0.98]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--accent)] py-3 text-base font-bold text-[var(--accent)] transition hover:bg-[var(--accent-soft)] disabled:opacity-60 active:scale-[0.98]"
             >
               {joined ? (
                 <>
@@ -332,15 +285,15 @@ export default function GroupBuyCard({
             <button
               type="button"
               onClick={handleWhatsApp}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1ea34d] active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1ea34d] active:scale-[0.98]"
             >
               <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
-              Invitar
+              WhatsApp
             </button>
             <button
               type="button"
-              onClick={handleCopy}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] py-3 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 active:scale-[0.98]"
+              onClick={handleNativeShare}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] py-3 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] active:scale-[0.98]"
             >
               {copied ? (
                 <>
@@ -353,8 +306,8 @@ export default function GroupBuyCard({
                 </>
               ) : (
                 <>
-                  <Copy className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                  Copiar link
+                  <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  Compartir
                 </>
               )}
             </button>
@@ -372,14 +325,14 @@ export default function GroupBuyCard({
       </div>
 
       {/* ── Cómo funciona ── */}
-      <details className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 sm:px-6 hover:bg-[var(--surface-raised)]">
+      <details className="group border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3.5 hover:bg-[var(--surface-raised)] sm:px-6">
           <span className="text-sm font-bold text-[var(--text-secondary)]">
             ¿Cómo funciona la junta?
           </span>
-          <CalendarClock
-            className="h-4 w-4 text-[var(--text-tertiary)]"
-            strokeWidth={1.75}
+          <ChevronDown
+            className="h-4 w-4 text-[var(--text-tertiary)] transition-transform group-open:rotate-180"
+            strokeWidth={2}
             aria-hidden
           />
         </summary>
