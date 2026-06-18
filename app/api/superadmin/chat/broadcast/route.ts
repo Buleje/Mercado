@@ -3,7 +3,18 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { PlatformChatDB } from "@/lib/db/platform-chat.db";
+import {
+  renderBroadcastBody,
+  buildBroadcastVars,
+} from "@/lib/chat/broadcast-templates";
 import { logger } from "@/lib/logger";
+
+interface SegmentTenant {
+  id: string;
+  name: string;
+  plan: string;
+  trialEndsAt: Date | null;
+}
 
 // Segmentación de tenants para el broadcast. El superadmin opera cross-tenant
 // (es plataforma) → prisma.tenant directo, igual que el resto de /superadmin.
@@ -18,9 +29,10 @@ const postSchema = segmentSchema.extend({
   subject: z.string().max(300).optional(),
 });
 
-async function resolveSegment(seg: z.infer<typeof segmentSchema>): Promise<{ id: string; name: string }[]> {
+async function resolveSegment(seg: z.infer<typeof segmentSchema>): Promise<SegmentTenant[]> {
+  const select = { id: true, name: true, plan: true, trialEndsAt: true } as const;
   if (seg.tenantIds && seg.tenantIds.length > 0) {
-    return prisma.tenant.findMany({ where: { id: { in: seg.tenantIds } }, select: { id: true, name: true } });
+    return prisma.tenant.findMany({ where: { id: { in: seg.tenantIds } }, select });
   }
   const where: Record<string, unknown> = {};
   if (seg.plan) where.plan = seg.plan;
@@ -33,7 +45,7 @@ async function resolveSegment(seg: z.infer<typeof segmentSchema>): Promise<{ id:
   } else if (seg.status === "expired_trial") {
     where.trialEndsAt = { lt: now };
   }
-  return prisma.tenant.findMany({ where, select: { id: true, name: true }, take: 500 });
+  return prisma.tenant.findMany({ where, select, take: 500 });
 }
 
 export async function GET(req: NextRequest) {
@@ -70,8 +82,14 @@ export async function POST(req: NextRequest) {
     if (tenants.length === 0) {
       return NextResponse.json({ error: "El segmento no tiene tenants" }, { status: 400 });
     }
+    // Renderiza `{{tienda}}`/`{{plan}}`/`{{dias_trial}}` personalizado por tenant.
+    const now = Date.now();
     const result = await PlatformChatDB.broadcast({
-      tenants: tenants.map((t) => ({ tenantId: t.id, tenantName: t.name })),
+      tenants: tenants.map((t) => ({
+        tenantId: t.id,
+        tenantName: t.name,
+        body: renderBroadcastBody(text, buildBroadcastVars(t, now)),
+      })),
       body: text,
       subject,
       createdBy: auth.username,
