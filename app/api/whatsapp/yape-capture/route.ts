@@ -28,6 +28,12 @@ import { logger } from "@/lib/logger";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import { extractYapePayment } from "@/lib/ai/yape-vision";
 import { applyRateLimit } from "@/lib/rate-limit";
+import {
+  getAutoApproveConfig,
+  decideAutoApprove,
+} from "@/lib/payments/yape-auto-approve";
+import { finalizeYapeApproval } from "@/lib/whatsapp/finalize-yape-approval";
+import { withAuditContext } from "@/lib/audit/audit-context";
 
 // Next 16 cacheComponents-compatible: handler es dinámico por naturaleza.
 
@@ -407,8 +413,8 @@ function processVisionInBackground(
 ): void {
   // Fire-and-forget — nunca bloquea la respuesta HTTP (CLAUDE.md rule #7)
   extractYapePayment(imageBytes)
-    .then((result) =>
-      PaymentApprovalDb.setVisionResult(approvalId, {
+    .then(async (result) => {
+      await PaymentApprovalDb.setVisionResult(approvalId, {
         detectedAmount: result.detectedAmount,
         yapeOpCode: result.yapeOpCode,
         yapeLast4: result.yapeLast4,
@@ -417,14 +423,58 @@ function processVisionInBackground(
           ...result.visionResponse,
           confidence: result.confidence,
         },
-      }),
-    )
+      });
+      await maybeAutoApprove(approvalId, result);
+    })
     .catch((err) =>
       logger.error("[yape-capture] background vision pipeline failed", {
         approvalId,
         error: err instanceof Error ? err.message : String(err),
       }),
     );
+}
+
+/**
+ * Auto-aprobación de comprobantes limpios (config-gated, APAGADA por default).
+ *
+ * Sólo actúa si `setVisionResult` dejó la approval en `pending` — es decir,
+ * monto dentro de ±5% y opCode NO reusado. Encima aplica el bar estricto de
+ * `decideAutoApprove` (match exacto + confianza high + recencia). Cualquier
+ * duda → queda en la cola manual. Side-effects vía el mismo pipeline que la
+ * aprobación manual (finalizeYapeApproval), con actor "auto" en el audit log.
+ */
+async function maybeAutoApprove(
+  approvalId: string,
+  result: Awaited<ReturnType<typeof extractYapePayment>>,
+): Promise<void> {
+  const config = getAutoApproveConfig();
+  if (!config.enabled) return;
+
+  const fresh = await PaymentApprovalDb.getById(approvalId);
+  if (!fresh || fresh.status !== "pending") return; // review_required/dup/finalizado
+
+  const decision = decideAutoApprove(
+    {
+      expectedAmount: fresh.expectedAmount,
+      detectedAmount: result.detectedAmount,
+      yapeOpCode: result.yapeOpCode,
+      yapeDate: result.yapeDate,
+      confidence: result.confidence,
+      now: Date.now(),
+    },
+    config,
+  );
+
+  if (!decision.autoApprove) {
+    logger.info("[yape-capture] auto-approve skip", { approvalId, reason: decision.reason });
+    return;
+  }
+
+  logger.info("[yape-capture] auto-approving", { approvalId, reason: decision.reason });
+  await withAuditContext(
+    { ipAddress: null, userId: "auto:yape", requestId: null },
+    () => finalizeYapeApproval(approvalId, "auto"),
+  );
 }
 
 // ─── POST handler ─────────────────────────────────────────────────────────────
