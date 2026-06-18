@@ -53,7 +53,7 @@ const OrderPostSchema = z.object({
   }),
   items: z.array(OrderItemSchema).min(1),
   total: z.number().min(0), // client hint; server will recompute
-  paymentMethod: z.enum(["yape", "efectivo"]).optional().default("efectivo"),
+  paymentMethod: z.enum(["yape", "efectivo", "fiado"]).optional().default("efectivo"),
   notes: z.string().max(1000).optional(),
   deliverySlot: z.string().max(100).optional(),
   // Discount tracking fields
@@ -625,6 +625,32 @@ export const POST = withApiHandler("orders-create", async (req) => {
     });
     const totalCogs = orderItems.reduce((sum, i) => sum + (i.costPrice ?? i.price * 0.7) * i.quantity, 0);
 
+    // ── Fiado: gate de elegibilidad ANTES de crear la orden (anti-fraude).
+    //    El total autoritativo es computedTotal (backend), nunca el del cliente.
+    if (body.paymentMethod === "fiado") {
+      const fiadoPhone = body.customer.phone;
+      if (!fiadoPhone) {
+        return NextResponse.json(
+          { error: "El fiado requiere un teléfono de cliente" },
+          { status: 400 },
+        );
+      }
+      const { getFiadoCheckoutEligibility } = await import(
+        "@/lib/credit/checkout-fiado"
+      );
+      const elig = await getFiadoCheckoutEligibility(
+        tenantId,
+        fiadoPhone,
+        computedTotal,
+      );
+      if (!elig.eligible) {
+        return NextResponse.json(
+          { error: elig.reason ?? "No elegible para fiado" },
+          { status: 400 },
+        );
+      }
+    }
+
     const order: DbOrder = {
       id: `ord-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       customer: {
@@ -802,6 +828,30 @@ export const POST = withApiHandler("orders-create", async (req) => {
         }
       })().catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       throw addErr;
+    }
+
+    // ── Fiado: crear el Fiado ligado a la orden ("paga el día de pago").
+    //    La elegibilidad ya se validó arriba con computedTotal (anti-fraude).
+    //    Si la creación del Fiado falla, NO rompemos la orden (ya persistida);
+    //    se loguea para reconciliación. Atomicidad estricta (Fiado en la misma
+    //    tx que la Order) = follow-up checkout-squad con createInTransaction.
+    if (saved.paymentMethod === "fiado" && saved.customer.phone) {
+      try {
+        const { createFiadoForOrder } = await import(
+          "@/lib/credit/checkout-fiado-order"
+        );
+        await createFiadoForOrder(tenantId, {
+          orderId: saved.id,
+          customerId: saved.customer.phone,
+          total: saved.total,
+        });
+      } catch (err) {
+        logger.error("[orders.POST] fiado creation failed", {
+          orderId: saved.id,
+          tenantId,
+          error: String(err),
+        });
+      }
     }
 
     // ── FEFO batch decrement (separate from Product.stock — deducts from

@@ -115,7 +115,7 @@ export type DbOrder = {
   totalCogs?: number;
   status: OrderStatus;
   notes?: string;
-  paymentMethod?: "yape" | "plin" | "transfer" | "efectivo";
+  paymentMethod?: "yape" | "plin" | "transfer" | "efectivo" | "fiado";
   yapeOperationNumber?: string;
   /** FK opcional a PaymentApproval — contiene la captura del Yape/Plin/Transferencia. */
   paymentApprovalId?: string | null;
