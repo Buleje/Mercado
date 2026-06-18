@@ -305,6 +305,8 @@ export function ProductDetailClient({
   // que el orquestador no lo pasaba. Real: total del endpoint + promedio de las
   // reseñas devueltas. Sin reseñas → row oculto (correcto).
   const [reviewSummary, setReviewSummary] = useState<{ avg: number; count: number } | null>(null);
+  // UGC: fotos reales de clientes (de las reseñas) para sumar a la galería.
+  const [ugcPhotos, setUgcPhotos] = useState<string[]>([]);
   useEffect(() => {
     let cancelled = false;
     // Mismos params que ProductReviews (el endpoint exige filter+sort+limit+offset;
@@ -314,6 +316,12 @@ export function ProductDetailClient({
       .then((j) => {
         if (cancelled || !j) return;
         const list = Array.isArray(j.data) ? j.data : Array.isArray(j.reviews) ? j.reviews : [];
+        // Fotos de clientes (UGC) — hasta 6 para la galería.
+        const photos = list
+          .flatMap((x: { photos?: unknown }) => (Array.isArray(x?.photos) ? x.photos : []))
+          .filter((u: unknown): u is string => typeof u === "string" && u.length > 0)
+          .slice(0, 6);
+        if (photos.length) setUgcPhotos(photos);
         const count = typeof j.total === "number" ? j.total : list.length;
         if (!count) return;
         // Promedio: usa breakdown.average si viene; si no, promedia los ratings.
@@ -376,10 +384,15 @@ export function ProductDetailClient({
           <div className="p-4 sm:p-5 lg:p-6">
             {/* Layout 3-col: galería | info | buy-box sticky → 2-col lg → stack mobile */}
             <div className="relative grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)_360px] gap-6 lg:gap-8 xl:gap-10 items-start">
-              {/* LEFT — Gallery */}
+              {/* LEFT — Gallery (catálogo + fotos reales de clientes) */}
               <div className="lg:self-start lg:sticky lg:top-6">
                 <ProductGalleryDS
-                  images={images}
+                  images={[
+                    ...images,
+                    ...ugcPhotos
+                      .filter((u) => !images.some((img) => img.url === u))
+                      .map((u) => ({ url: u, alt: `Foto de cliente de ${product.name}`, ugc: true })),
+                  ]}
                   productName={product.name}
                   category={product.category}
                   badge={galleryBadge}
@@ -534,6 +547,7 @@ export function ProductDetailClient({
         storeProductId={storeProductId}
         name={product.name}
         price={product.price}
+        previousPrice={product.previousPrice}
         image={product.imageUrl}
         unit={product.unit}
         stock={product.stock}
@@ -558,6 +572,7 @@ function MobileStickyBar({
   storeProductId,
   name,
   price,
+  previousPrice,
   image,
   unit,
   stock,
@@ -569,6 +584,7 @@ function MobileStickyBar({
   storeProductId: string;
   name: string;
   price: number;
+  previousPrice?: number | null;
   image: string | null;
   unit: string | null;
   stock: number | null;
@@ -592,9 +608,16 @@ function MobileStickyBar({
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <Caption className="text-[var(--text-tertiary)] truncate">{name}</Caption>
-          <p className="text-[length:var(--ts-lg)] font-semibold text-[var(--text-primary)] tabular-nums leading-tight">
-            S/ {price.toFixed(2)}
-          </p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-[length:var(--ts-lg)] font-semibold text-[var(--text-primary)] tabular-nums leading-tight">
+              S/ {price.toFixed(2)}
+            </p>
+            {previousPrice != null && previousPrice > price && (
+              <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-700,#047857)] tabular-nums">
+                Ahorras S/ {(previousPrice - price).toFixed(2)}
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={handleAdd}

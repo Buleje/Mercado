@@ -113,7 +113,7 @@ export function ProductActions({
         <div className="flex flex-col items-center text-center gap-1 px-2 py-3">
           <Truck className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-tight">Delivery</p>
-          <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">25 min</p>
+          <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">A domicilio</p>
         </div>
         <div className="flex flex-col items-center text-center gap-1 px-2 py-3">
           <ShieldCheck className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />

@@ -7,7 +7,7 @@
  */
 
 import Link from "next/link";
-import { Store, Truck } from "@buleje/design-system/icons";
+import { Store, Truck, Tag, Smartphone } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { SocioBadge } from "./SocioBadge";
 import RatingStars from "@/components/ui-system/RatingStars";
@@ -142,8 +142,15 @@ export function ProductInfo({
             </span>
           )}
         </div>
-        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-          Precio antes de impuestos · pago al recibir o por Yape
+        {hasDiscount && (
+          <p className="inline-flex items-center gap-1.5 rounded-sm bg-[var(--data-success-50,#ecfdf5)] dark:bg-[var(--data-success-500)]/10 px-2.5 py-1 text-sm font-semibold text-[var(--data-success-700,#047857)]">
+            <Tag className="h-4 w-4 shrink-0" aria-hidden />
+            Ahorras {fmt(previousPrice! - price)} ({discountPct}%)
+          </p>
+        )}
+        <p className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+          <Smartphone className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden />
+          Paga con <span className="font-semibold text-[var(--text-secondary)]">Yape</span>, Plin o efectivo al recibir
         </p>
         {socioPrice != null && socioPrice < price && (
           <div className="pt-1">
@@ -157,13 +164,17 @@ export function ProductInfo({
 
       <div className="border-t border-[var(--rule-soft)]" />
 
-      {/* Delivery — fila simple, sin caja neón */}
-      <div className="flex items-center gap-2.5 text-sm">
-        <Truck className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" aria-hidden />
-        <p>
-          <span className="font-medium text-[var(--text-primary)]">Llega en ~25 min</span>
-          <span className="text-[var(--text-tertiary)]"> · Entrega en Ciudad Constitución</span>
-        </p>
+      {/* Delivery — honesto: zona real + pago contra entrega (sin ETA inventado) */}
+      <div className="flex items-start gap-2.5 text-sm">
+        <Truck className="h-4 w-4 text-[var(--accent)] shrink-0 mt-0.5" aria-hidden />
+        <div>
+          <p className="font-medium text-[var(--text-primary)]">
+            Entrega a domicilio{storeZone ? <> en <span className="capitalize">{storeZone}</span></> : null}
+          </p>
+          <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+            Pago contra entrega · coordinas la hora al confirmar tu pedido
+          </p>
+        </div>
       </div>
 
       {/* Métodos de pago — chips rectos neutros */}
