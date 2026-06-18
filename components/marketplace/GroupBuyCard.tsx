@@ -3,18 +3,16 @@
 /**
  * GroupBuyCard — La Junta del Barrio (compra colaborativa vecinal).
  *
- * Rediseño 2026-06-18 (minimalista + en vivo): sin gradiente; el acento de
- * marca queda en una barra superior cuadrada. Elementos deliberadamente sin
- * bordes redondeados (countdown, progreso segmentado, premio, cupón) para un
- * look sobrio. La lógica (countdown en vivo, refresco al volver a la pestaña,
- * compartir nativo, unirse) vive en useGroupBuyCard; aquí solo presentación.
+ * Rediseño 2026-06-18 v2 (premium minimalista + en vivo): sin gradiente; el
+ * acento de marca queda en una barra superior cuadrada. Jerarquía narrativa:
+ * premio → vecinos (avatares + progreso) → urgencia (timer en cajas) → acción.
+ * Sub-piezas en ./junta/* y lógica en useGroupBuyCard; aquí solo composición.
  */
 
 import {
   MessageCircle,
   Check,
   Copy,
-  Clock,
   MapPin,
   ShoppingBag,
   Gift,
@@ -23,6 +21,8 @@ import {
 } from "@buleje/design-system/icons";
 import { JUNTA_COUPON_PERCENT } from "@/lib/junta/constants";
 import { useGroupBuyCard } from "./hooks/useGroupBuyCard";
+import { CountdownTimer } from "./junta/CountdownTimer";
+import { MemberStack } from "./junta/MemberStack";
 
 type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
@@ -59,6 +59,7 @@ export default function GroupBuyCard({
     isComplete,
     isExpired,
     countdownLabel,
+    countdownTimer,
     bumped,
     joining,
     joined,
@@ -80,8 +81,6 @@ export default function GroupBuyCard({
     couponCode,
   });
 
-  const useSegments = target <= 12;
-
   return (
     <section
       aria-label="La Junta del Barrio"
@@ -92,36 +91,16 @@ export default function GroupBuyCard({
 
       {/* ── Header plano ── */}
       <div className="border-b border-[var(--rule-soft)] px-5 py-5 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--accent)]">
-              La Junta del Barrio
-            </p>
-            <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)]">
-              {target} vecinos, una sola entrega
-            </h2>
-            <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
-              <MapPin className="h-4 w-4" strokeWidth={2} aria-hidden />
-              {zoneLabel}
-            </p>
-          </div>
-
-          {countdownLabel && (
-            <div className="shrink-0 text-right">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Cierra en
-              </p>
-              <span className="mt-1 inline-flex items-center gap-1.5 bg-[var(--surface-sunken)] px-3 py-1.5 font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">
-                <Clock
-                  className="h-4 w-4 text-[var(--accent)]"
-                  strokeWidth={2}
-                  aria-hidden
-                />
-                {countdownLabel}
-              </span>
-            </div>
-          )}
-        </div>
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--accent)]">
+          La Junta del Barrio
+        </p>
+        <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)]">
+          {target} vecinos, una sola entrega
+        </h2>
+        <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
+          <MapPin className="h-4 w-4" strokeWidth={2} aria-hidden />
+          {zoneLabel}
+        </p>
       </div>
 
       {/* ── Cuerpo ── */}
@@ -151,68 +130,31 @@ export default function GroupBuyCard({
           </p>
         </div>
 
-        {/* Progreso segmentado (cuadrado) — cada segmento es un vecino */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="inline-flex items-center gap-2 text-base font-semibold text-[var(--text-secondary)]">
-              {isExpired
-                ? "Esta junta ya cerró"
-                : isComplete
-                  ? "¡Junta completa!"
-                  : `Faltan ${remaining} vecino${remaining === 1 ? "" : "s"}`}
-              {bumped && !isExpired && (
-                <span className="bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-white">
-                  +1 vecino
-                </span>
-              )}
-            </span>
-            <span className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-              {count}/{target}
-            </span>
-          </div>
+        {/* Vecinos: avatares + progreso */}
+        <MemberStack
+          count={count}
+          target={target}
+          remaining={remaining}
+          progress={progress}
+          isComplete={isComplete}
+          isExpired={isExpired}
+          bumped={bumped}
+        />
 
-          {useSegments ? (
-            <div
-              className="flex gap-1"
-              role="progressbar"
-              aria-valuenow={count}
-              aria-valuemin={0}
-              aria-valuemax={target}
-              aria-label={`${count} de ${target} vecinos`}
-            >
-              {Array.from({ length: target }, (_, i) => (
-                <div
-                  key={i}
-                  className={
-                    i < count
-                      ? "h-3 flex-1 bg-[var(--accent)]"
-                      : "h-3 flex-1 border border-[var(--rule-base)] bg-[var(--surface-sunken)]"
-                  }
-                />
-              ))}
-            </div>
-          ) : (
-            <div
-              className="h-3 w-full bg-[var(--surface-sunken)]"
-              role="progressbar"
-              aria-valuenow={progress}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full bg-[var(--accent)] transition-[width] duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          )}
+        {orderCount > 0 && (
+          <p className="text-sm font-semibold text-[var(--text-tertiary)]">
+            {orderCount} {orderCount === 1 ? "pedido ya hecho" : "pedidos ya hechos"}{" "}
+            en esta junta
+          </p>
+        )}
 
-          {orderCount > 0 && (
-            <p className="mt-2 text-sm font-semibold text-[var(--text-tertiary)]">
-              {orderCount} {orderCount === 1 ? "pedido ya hecho" : "pedidos ya hechos"}{" "}
-              en esta junta
-            </p>
-          )}
-        </div>
+        {/* Urgencia: cuenta regresiva en cajas */}
+        {countdownTimer && (
+          <CountdownTimer
+            parts={countdownTimer}
+            ariaLabel={countdownLabel ?? undefined}
+          />
+        )}
 
         {/* Cupón (junta completa) — cuadrado */}
         {isComplete && couponCode && (
@@ -254,7 +196,7 @@ export default function GroupBuyCard({
             <button
               type="button"
               onClick={handleShopForJunta}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-4 text-base font-extrabold text-white transition hover:opacity-90 active:scale-[0.98]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-4 text-base font-extrabold text-white shadow-[0_4px_14px_rgba(0,160,160,0.35)] transition hover:opacity-90 active:scale-[0.98]"
             >
               <ShoppingBag className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               Comprar para esta junta

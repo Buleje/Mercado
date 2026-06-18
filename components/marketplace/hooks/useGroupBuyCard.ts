@@ -13,7 +13,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { JUNTA_COUPON_PERCENT } from "@/lib/junta/constants";
 import { setActiveJunta } from "@/lib/junta/active";
-import { formatCountdown } from "@/lib/junta/countdown";
+import { formatCountdown, countdownParts } from "@/lib/junta/countdown";
 
 type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
@@ -92,10 +92,9 @@ export function useGroupBuyCard({
     return () => document.removeEventListener("visibilitychange", refresh);
   }, [code]);
 
-  const countdownLabel =
-    remainingMs !== null && !isComplete && !isExpired
-      ? formatCountdown(remainingMs)
-      : null;
+  const liveCountdown = remainingMs !== null && !isComplete && !isExpired;
+  const countdownLabel = liveCountdown ? formatCountdown(remainingMs) : null;
+  const countdownTimer = liveCountdown ? countdownParts(remainingMs) : null;
 
   const shareUrl = useCallback(() => {
     if (typeof window === "undefined") return `/junta/${code}`;
@@ -191,6 +190,7 @@ export function useGroupBuyCard({
     isComplete,
     isExpired,
     countdownLabel,
+    countdownTimer,
     bumped,
     joining,
     joined,

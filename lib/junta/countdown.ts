@@ -1,3 +1,26 @@
+export interface CountdownParts {
+  expired: boolean;
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+/** Descompone el tiempo restante en días/horas/min/seg para el timer en cajas. */
+export function countdownParts(ms: number): CountdownParts {
+  if (ms <= 0) {
+    return { expired: true, days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+  const totalSec = Math.floor(ms / 1000);
+  return {
+    expired: false,
+    days: Math.floor(totalSec / 86_400),
+    hours: Math.floor((totalSec % 86_400) / 3600),
+    minutes: Math.floor((totalSec % 3600) / 60),
+    seconds: totalSec % 60,
+  };
+}
+
 /**
  * Formatea el tiempo restante de una junta para la cuenta regresiva en vivo.
  * - <= 0 ms  → "Cerrada"
