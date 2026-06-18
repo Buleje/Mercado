@@ -32,6 +32,11 @@ import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db"
 const HomeDiscoveryTabs = dynamic(
   () => import("@/components/marketplace/home/HomeDiscoveryTabs"),
 );
+// La Junta del Barrio — rail de compra colaborativa vecinal (self-fetch,
+// se auto-oculta si no hay juntas abiertas). Fase A3.
+const JuntaBarrioStrip = dynamic(
+  () => import("@/components/marketplace/home/JuntaBarrioStrip"),
+);
 // Catálogo de productos completo (fusión /marketplace → /, Brandon 2026-06-08).
 const HomeCatalog = dynamic(
   () => import("@/components/marketplace/home/HomeCatalog"),
@@ -1280,6 +1285,10 @@ export default async function Home() {
           </Reveal>
         </ShowWhenAllVerticals>
       </Suspense>
+
+      {/* 2.55 La Junta del Barrio — rail vecinal (self-fetch, auto-oculta si no
+          hay juntas abiertas). Fase A3. */}
+      <JuntaBarrioStrip />
 
       {/* 2.6 Ofertas del día — carrusel de destacados con countdown a medianoche
           (urgencia comercial, Brandon 2026-06-14). Trae su propio contenedor

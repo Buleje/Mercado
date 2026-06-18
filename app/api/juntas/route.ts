@@ -51,8 +51,11 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const tenantId = await resolveTenantIdForRoute(req);
   const zone = req.nextUrl.searchParams.get("zone")?.trim();
-  if (!zone) return NextResponse.json({ juntas: [] });
 
-  const juntas = await JuntasDB.listOpenByZone(tenantId, zone);
+  // Sin zona → juntas abiertas del tenant (cualquier zona), para el strip del
+  // home. Con zona → solo las de esa zona.
+  const juntas = zone
+    ? await JuntasDB.listOpenByZone(tenantId, zone)
+    : await JuntasDB.listOpenRecent(tenantId);
   return NextResponse.json({ juntas });
 }

@@ -7,7 +7,7 @@ vi.mock("@/lib/resolve-tenant", () => ({
 }));
 vi.mock("@/lib/junta/customer", () => ({ customerPhoneFromReq: vi.fn() }));
 vi.mock("@/lib/db/juntas.db", () => ({
-  JuntasDB: { create: vi.fn(), listOpenByZone: vi.fn() },
+  JuntasDB: { create: vi.fn(), listOpenByZone: vi.fn(), listOpenRecent: vi.fn() },
 }));
 
 import { POST, GET } from "@/app/api/juntas/route";
@@ -57,9 +57,14 @@ describe("POST /api/juntas", () => {
 });
 
 describe("GET /api/juntas", () => {
-  it("sin zona → lista vacía", async () => {
+  it("sin zona → usa listOpenRecent (juntas del tenant)", async () => {
+    vi.mocked(JuntasDB.listOpenRecent).mockResolvedValue([
+      { code: "BARRIO-X" },
+    ] as never);
     const res = await GET(getReq());
-    expect((await res.json()).juntas).toEqual([]);
+    const json = await res.json();
+    expect(json.juntas).toHaveLength(1);
+    expect(JuntasDB.listOpenRecent).toHaveBeenCalledWith("t1");
     expect(JuntasDB.listOpenByZone).not.toHaveBeenCalled();
   });
 
