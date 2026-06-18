@@ -6,12 +6,13 @@ import {
   X, Building2, ExternalLink, Loader2,
   Copy, Globe, RotateCcw, KeyRound, ShoppingBag,
   Eye, EyeOff, AlertTriangle, Pencil, Check, Clock,
-  Activity, StickyNote, Send, MessageSquare, ShieldCheck, Lock, LogOut,
+  Activity, StickyNote, Send, MessageSquare, ShieldCheck, Lock, LogOut, HeartPulse,
 } from "@buleje/design-system/icons";
 import Link from "next/link";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { PlanBadge, StatusBadge } from "@/components/superadmin/_shared";
 import { SunatOficialToggle } from "@/components/superadmin/tenants/SunatOficialToggle";
+import { TenantHealthTab } from "@/components/superadmin/tenants/TenantHealthTab";
 
 interface TenantDetailModalProps {
   tenant: TenantRow;
@@ -20,7 +21,7 @@ interface TenantDetailModalProps {
   onUpdated?: () => void;
 }
 
-type Tab = "resumen" | "uso" | "facturacion" | "seguridad" | "actividad" | "notas";
+type Tab = "resumen" | "salud" | "uso" | "facturacion" | "seguridad" | "actividad" | "notas";
 type ActivityRow = { id: string; action: string; detail?: string | null; user?: string | null; createdAt: string };
 type NoteRow = { id: string; body: string; author: string; createdAt: string };
 type SecurityInfo = { username: string | null; twoFactorEnabled: boolean; lastLoginAt: string | null; lastLoginDetail: string | null };
@@ -175,6 +176,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
 
   const TABS: { id: Tab; label: string; icon: typeof Activity }[] = [
     { id: "resumen", label: "Resumen", icon: Building2 },
+    { id: "salud", label: "Salud", icon: HeartPulse },
     { id: "uso", label: "Uso", icon: KeyRound },
     { id: "facturacion", label: "Facturación", icon: ShoppingBag },
     { id: "seguridad", label: "Seguridad", icon: ShieldCheck },
@@ -320,6 +322,8 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
               </div>
             </>
           )}
+
+          {tab === "salud" && <TenantHealthTab slug={t.slug} />}
 
           {tab === "uso" && (
             t.usage && t.limits ? (
