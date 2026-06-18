@@ -106,6 +106,11 @@ export function useGroupBuyCard({
     router.push("/");
   }, [code, router]);
 
+  // Junta vencida: arrancar una nueva sin atar la compra a la junta cerrada.
+  const handleStartNew = useCallback(() => {
+    router.push("/");
+  }, [router]);
+
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(shareUrl());
@@ -198,6 +203,7 @@ export function useGroupBuyCard({
     copied,
     couponCopied,
     handleShopForJunta,
+    handleStartNew,
     handleCopy,
     handleCopyCoupon,
     handleWhatsApp,
