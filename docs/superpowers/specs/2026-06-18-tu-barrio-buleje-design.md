@@ -144,7 +144,7 @@ enum JuntaStatus { OPEN LOCKED FULFILLED EXPIRED }
 
 ## 7. Secuencia de entrega
 
-1. **Fase 1 — B (fiado en checkout):** menor, construye sobre lo existente. Ship primero detrás de `FIADO_DIGITAL_V2_PHASE1` (canary).
+1. **Fase 1 — B (fiado en checkout):** menor, construye sobre lo existente. Ship primero detrás de `FIADO_DIGITAL_V2_PHASE3` (el flag ya está definido como "integración checkout"; PHASE1 era foundation/transparencia, ya shipeado vía `/mi-credito`). Es la **rebanada MVP de la Fase 3 del plan Fiado Digital Ola 2** (`docs/fiado-digital-ola2-plan.md`, US-F3-08), con pago único (sin cuotas/interés/aval). Rollout canary 10%→50%→100%.
 2. **Fase 2 — A (Junta del Barrio):** greenfield. Migración manual + DB class + API + cron + UI. Detrás de su propio flag.
 
 Cada fase es un spec→plan→implementación independiente con sus gates.
