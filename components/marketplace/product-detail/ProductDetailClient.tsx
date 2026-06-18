@@ -37,6 +37,7 @@ import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
 import FrequentlyBoughtTogether from "./FrequentlyBoughtTogether";
 import { ProductCatalogExplorer } from "./ProductCatalogExplorer";
+import { ProductSideNav } from "./ProductSideNav";
 import type { ProductBadgeIntent } from "@buleje/design-system";
 // Trust signals (ronda 4): señales sociales + escasez para aumentar conversion
 import LowStockBadge from "@/components/marketplace/trust/LowStockBadge";
@@ -476,10 +477,20 @@ export function ProductDetailClient({
               </aside>
             </div>
 
-            {/* Barra de TABS — ancla a cada sección de abajo */}
+            {/* Layout inferior: barra lateral de navegación (desktop) + contenido */}
+            <div className="mt-7 lg:grid lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-8">
+              <ProductSideNav
+                storeSlug={store.slug}
+                storeName={store.name}
+                hasRelated={relatedProducts.length > 0}
+                className="hidden lg:block"
+              />
+              <div className="min-w-0">
+
+            {/* Barra de TABS (mobile) — ancla a cada sección de abajo */}
             <nav
               aria-label="Secciones del producto"
-              className="mt-7 border-b border-[var(--rule-base)] px-1 sm:px-2"
+              className="border-b border-[var(--rule-base)] px-1 sm:px-2 lg:hidden"
             >
               <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto h-11 text-sm font-medium [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {[
@@ -517,27 +528,31 @@ export function ProductDetailClient({
                 />
               </div>
 
-              <FrequentlyBoughtTogether
-                productId={product.id}
-                storeId={store.id}
-                storeName={store.name}
-                storeSlug={store.slug}
-                anchor={{
-                  productId: product.id,
-                  name: product.name,
-                  price: product.price,
-                  image: product.imageUrl,
-                  storeId: store.id,
-                  storeName: store.name,
-                  storeSlug: store.slug,
-                  storeProductId,
-                  unit: product.unit,
-                  category: product.category,
-                }}
-              />
+              <div id="combo" className="scroll-mt-28">
+                <FrequentlyBoughtTogether
+                  productId={product.id}
+                  storeId={store.id}
+                  storeName={store.name}
+                  storeSlug={store.slug}
+                  anchor={{
+                    productId: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.imageUrl,
+                    storeId: store.id,
+                    storeName: store.name,
+                    storeSlug: store.slug,
+                    storeProductId,
+                    unit: product.unit,
+                    category: product.category,
+                  }}
+                />
+              </div>
 
               <div id="valoraciones" className="scroll-mt-28">
                 <ProductReviews productId={product.id} productName={product.name} />
+              </div>
+            </div>
               </div>
             </div>
           </div>

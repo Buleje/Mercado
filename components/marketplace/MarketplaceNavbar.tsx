@@ -85,6 +85,7 @@ const SharedMobileNavDrawer = dynamic(
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
 import DeliveryLocationMenu from "@/components/marketplace/DeliveryLocationMenu";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
+import { LoginRoleMenu } from "@/components/marketplace/navbar/LoginRoleMenu";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import { useHasActiveOffers } from "@/hooks/use-active-offers";
@@ -907,17 +908,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={openAuthModal}
-                  data-tour="user-menu"
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full bg-[var(--text-primary)] px-5 h-10 text-sm font-extrabold text-[var(--surface-raised)]",
-                    "hover:opacity-90 active:scale-[0.98] transition-all duration-200",
-                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-                  )}
-                >
-                  {t("nav.login")}
-                </button>
+                <LoginRoleMenu onClienteLogin={openAuthModal} loginLabel={t("nav.login")} />
               )}
             </div>
 
