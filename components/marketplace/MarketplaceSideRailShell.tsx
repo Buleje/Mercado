@@ -35,6 +35,20 @@ const MARKETPLACE_SECTION_SEGMENTS = new Set([
   "para-vos",
 ]);
 
+// Rutas de FLUJO bajo /marketplace que NO son storefronts ni secciones de
+// navegación (carrito, cuenta, pago, etc.) → sin rail para no distraer.
+const MARKETPLACE_NON_RAIL_SEGMENTS = new Set([
+  "apply",
+  "carrito",
+  "como-pagar",
+  "favoritos",
+  "mi-cuenta",
+  "payment-result",
+  "registrar",
+  "repartidor",
+  "calificar-entrega",
+]);
+
 function shouldShowRail(pathname: string): boolean {
   if (!pathname) return false;
   // Brandon 2026-06-08: la HOME (/) es ahora la superficie de compra (absorbió
@@ -48,11 +62,16 @@ function shouldShowRail(pathname: string): boolean {
   // páginas del nav (Inicio·Tiendas·En Vivo·Recetas·Ofertas·Negocios·Abre tu Tienda).
   if (pathname.startsWith("/negocios")) return true;
   if (pathname.startsWith("/abrir-tienda")) return true;
-  // PDP — detalle de producto (/marketplace/<slug>/producto/<id>): lleva el
-  // mismo rail de navegación que el resto de páginas (pedido explícito Brandon).
-  if (/^\/marketplace\/[^/]+\/producto\//.test(pathname)) return true;
   const m = pathname.match(/^\/marketplace\/([^/]+)/);
-  if (m) return MARKETPLACE_SECTION_SEGMENTS.has(m[1]);
+  if (m) {
+    // Secciones de navegación del marketplace → rail.
+    if (MARKETPLACE_SECTION_SEGMENTS.has(m[1])) return true;
+    // Flujos (carrito, cuenta, pago…) → sin rail.
+    if (MARKETPLACE_NON_RAIL_SEGMENTS.has(m[1])) return false;
+    // El resto = storefront de una tienda (/marketplace/<slug>) y su detalle de
+    // producto → llevan el mismo rail (pedido explícito Brandon).
+    return true;
+  }
   return false;
 }
 
