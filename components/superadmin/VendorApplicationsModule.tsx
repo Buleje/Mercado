@@ -43,6 +43,7 @@ import {
   ApplicationDetailsDrawer,
   type VendorApplication,
 } from "./vendor-applications/ApplicationDetailsDrawer";
+import { ApplicationScoreBadge } from "./vendor-applications/ApplicationScoreBadge";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -1045,14 +1046,17 @@ export default function VendorApplicationsModule() {
                           {a.ownerName}
                         </p>
                       </div>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0",
-                          STATUS_STYLES[a.status],
-                        )}
-                      >
-                        {STATUS_LABELS[a.status]}
-                      </span>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span
+                          className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
+                            STATUS_STYLES[a.status],
+                          )}
+                        >
+                          {STATUS_LABELS[a.status]}
+                        </span>
+                        <ApplicationScoreBadge score={a.score} />
+                      </div>
                     </div>
 
                     <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
@@ -1242,15 +1246,18 @@ export default function VendorApplicationsModule() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-center">
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
-                              STATUS_STYLES[a.status],
-                            )}
-                          >
-                            {STATUS_LABELS[a.status]}
-                          </span>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-col items-center gap-1">
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
+                                STATUS_STYLES[a.status],
+                              )}
+                            >
+                              {STATUS_LABELS[a.status]}
+                            </span>
+                            <ApplicationScoreBadge score={a.score} />
+                          </div>
                         </td>
                         <td className="pr-5 pl-3 py-3 text-right">
                           <div className="flex items-center justify-end gap-0.5">

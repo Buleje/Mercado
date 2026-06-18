@@ -32,6 +32,8 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { VendorIdentityBadge } from "./VendorIdentityBadge";
+import { ApplicationScoreBreakdown } from "./ApplicationScoreBadge";
+import type { ApplicationScore } from "@/lib/marketplace/application-score";
 
 export interface VendorApplication {
   id: string;
@@ -53,6 +55,7 @@ export interface VendorApplication {
   reviewedAt?: string;
   rejectReason?: string;
   requestedInfo?: string;
+  score: ApplicationScore;
 }
 
 function fmtDate(iso: string) {
@@ -219,6 +222,9 @@ export function ApplicationDetailsDrawer({
               {statusLabels[application.status]}
             </span>
           </div>
+
+          {/* Triage de revisión (completitud + riesgo) */}
+          <ApplicationScoreBreakdown score={application.score} />
 
           {/* Info del negocio */}
           <div className="space-y-2">
