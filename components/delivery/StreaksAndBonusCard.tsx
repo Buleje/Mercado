@@ -12,7 +12,7 @@
  * Si la API falla o aún no cargó, cae al MOCK por defecto (UX no se rompe).
  */
 
-import { useState, useId, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Flame,
   Target,
@@ -274,7 +274,7 @@ function BonusChip({ bonus }: { bonus: BonusItem }) {
   // y mini-barra inline (info útil); si no, sólo label + icono.
   return (
     <div
-      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-extrabold ${TONE_CHIP}`}
+      className={`inline-flex items-center gap-2 border px-3.5 py-1.5 text-sm font-extrabold ${TONE_CHIP}`}
       aria-label={`Bonus: ${bonus.label}`}
     >
       <bonus.icon className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
@@ -284,9 +284,9 @@ function BonusChip({ bonus }: { bonus: BonusItem }) {
           <span className="text-xs font-bold tabular-nums opacity-80">
             {bonus.current}/{bonus.target}
           </span>
-          <span className="relative h-1.5 w-10 rounded-full bg-[var(--rule-base)] overflow-hidden">
+          <span className="relative h-1.5 w-10 bg-[var(--rule-base)] overflow-hidden">
             <span
-              className={`absolute inset-y-0 left-0 rounded-full ${TONE_BAR}`}
+              className={`absolute inset-y-0 left-0 ${TONE_BAR}`}
               style={{ width: `${progressPct}%` }}
             />
           </span>
@@ -346,7 +346,7 @@ export default function StreaksAndBonusCard({ isOnline }: Props) {
   return (
     <section
       aria-label="Racha, meta semanal y bonus activos"
-      className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
+      className=" border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
     >
       {/* ── Top: Racha + Meta (grid 1-col mobile / 2-col md+) ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y-2 md:divide-y-0 md:divide-x-2 divide-[var(--rule-base)]">

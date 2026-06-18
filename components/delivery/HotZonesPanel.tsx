@@ -82,7 +82,7 @@ function sortZones(zones: Zone[]): Zone[] {
 
 function LiveBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-500)]/15 px-3 h-7 text-xs font-extrabold uppercase tracking-wider text-[var(--data-error-500)]">
+    <span className="inline-flex items-center gap-1.5 bg-[var(--data-error-500)]/15 px-3 h-7 text-xs font-extrabold uppercase tracking-wider text-[var(--data-error-500)]">
       <span
         className="h-2 w-2 rounded-full bg-[var(--data-error-500)] animate-pulse"
         aria-hidden="true"
@@ -110,7 +110,7 @@ function HeatFlames({ level }: { level: HeatLevel }) {
 
 function BonusBadge({ text }: { text: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--brand-secondary)]/15 px-2.5 h-6 text-xs font-extrabold text-[var(--brand-secondary)] shrink-0">
+    <span className="inline-flex items-center gap-1 bg-[var(--brand-secondary)]/15 px-2.5 h-6 text-xs font-extrabold text-[var(--brand-secondary)] shrink-0">
       <Star className="h-3 w-3" aria-hidden="true" />
       <span data-no-translate>{text}</span>
     </span>
@@ -123,7 +123,7 @@ function ZoneCard({ zone, onNavigate }: { zone: Zone; onNavigate: (id: string) =
   return (
     <article
       className={[
-        "group relative flex flex-col rounded-2xl border-2 border-[var(--rule-base)]",
+        "group relative flex flex-col border-2 border-[var(--rule-base)]",
         "bg-[var(--surface-raised)] p-5 transition-colors duration-150",
         meta.borderHover,
       ].join(" ")}
@@ -145,7 +145,7 @@ function ZoneCard({ zone, onNavigate }: { zone: Zone; onNavigate: (id: string) =
       </div>
 
       {/* Métricas */}
-      <div className={`rounded-xl ${meta.bgAlpha} px-3 py-2.5 mb-3 flex items-center justify-between gap-2`}>
+      <div className={` ${meta.bgAlpha} px-3 py-2.5 mb-3 flex items-center justify-between gap-2`}>
         <div className="text-center">
           <p className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">
             {zone.pendingOrders}
@@ -179,7 +179,7 @@ function ZoneCard({ zone, onNavigate }: { zone: Zone; onNavigate: (id: string) =
           onClick={() => onNavigate(zone.id)}
           className={[
             "w-full inline-flex items-center justify-center gap-2",
-            "h-10 rounded-xl text-sm font-extrabold transition-all",
+            "h-10 text-sm font-extrabold transition-all",
             "bg-[var(--accent-soft)] text-[var(--accent)]",
             "hover:bg-[var(--accent)] hover:text-white",
             "active:scale-[0.97]",
@@ -199,8 +199,8 @@ function ZoneCard({ zone, onNavigate }: { zone: Zone; onNavigate: (id: string) =
 
 function OfflineEmptyState() {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
-      <div className="mx-auto mb-3 h-12 w-12 rounded-2xl bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-tertiary)]">
+    <div className=" border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+      <div className="mx-auto mb-3 h-12 w-12 bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-tertiary)]">
         <Flame className="h-6 w-6" strokeWidth={2} aria-hidden />
       </div>
       <h3 className="text-base font-extrabold text-[var(--text-primary)]">
@@ -215,7 +215,7 @@ function OfflineEmptyState() {
 
 function NoZonesState() {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+    <div className=" border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
       <h3 className="text-base font-extrabold text-[var(--text-primary)]">
         No hay zonas con pedidos pendientes
       </h3>

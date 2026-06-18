@@ -62,7 +62,7 @@ function OfferCardImpl({ offer }: OfferCardProps) {
   return (
     <Link
       href={`/delivery-app/oferta/${offer.id}`}
-      className={`group block rounded-3xl border-2 bg-[var(--surface-raised)] p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg ${
+      className={`group block border-2 bg-[var(--surface-raised)] p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg ${
         urgent ? "border-[var(--brand-danger)]" : "border-[var(--accent)]"
       }`}
     >
@@ -76,7 +76,7 @@ function OfferCardImpl({ offer }: OfferCardProps) {
           </p>
         </div>
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-sm font-extrabold tabular-nums ${
+          className={`inline-flex items-center gap-1.5 px-3 h-9 text-sm font-extrabold tabular-nums ${
             urgent
               ? "bg-[var(--brand-danger)] text-white"
               : "bg-[var(--accent-soft)] text-[var(--accent)]"

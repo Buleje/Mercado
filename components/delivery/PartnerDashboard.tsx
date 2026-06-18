@@ -149,7 +149,7 @@ export default function PartnerDashboard() {
     return (
       <main className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]">
+          <div className="inline-flex h-20 w-20 items-center justify-center bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]">
             <AlertTriangle className="h-10 w-10" strokeWidth={2.25} />
           </div>
           <h1 className="mt-5 text-3xl font-extrabold text-[var(--text-primary)]">Cuenta pendiente</h1>
@@ -182,7 +182,7 @@ export default function PartnerDashboard() {
       </header>
 
       {geoError && (
-        <div role="alert" className="rounded-2xl bg-[var(--brand-secondary)]/10 border-2 border-[var(--brand-secondary)]/30 px-4 py-3 text-base font-bold text-[var(--brand-secondary)] flex items-center gap-2">
+        <div role="alert" className="bg-[var(--brand-secondary)]/10 border-2 border-[var(--brand-secondary)]/30 px-4 py-3 text-base font-bold text-[var(--brand-secondary)] flex items-center gap-2">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           {geoError}
         </div>
@@ -210,7 +210,7 @@ export default function PartnerDashboard() {
       <section className="space-y-4">
         <SectionHeader
           eyebrow="Oportunidades"
-          title="Maximizá tus ganancias"
+          title="Maximiza tus ganancias"
           desc="Bonus activos y zonas con más demanda"
         />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
@@ -234,7 +234,7 @@ export default function PartnerDashboard() {
         <SectionHeader
           eyebrow="Tu progreso"
           title="Score y logros"
-          desc="Subí de nivel completando viajes a tiempo"
+          desc="Sube de nivel completando viajes a tiempo"
         />
         <RiderScoreCard
           rating={me.rating}
@@ -247,10 +247,10 @@ export default function PartnerDashboard() {
       {me.currentOrderId && (
         <Link
           href={`/delivery-app/pedido/${me.currentOrderId}`}
-          className="block group rounded-3xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-5 lg:p-6 transition-colors hover:bg-[var(--accent)]/15"
+          className="block group border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-5 lg:p-6 transition-colors hover:bg-[var(--accent)]/15"
         >
           <div className="flex items-start gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
+            <div className="h-14 w-14 bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
               <PackageIcon className="h-7 w-7" />
             </div>
             <div className="flex-1 min-w-0">
@@ -261,7 +261,7 @@ export default function PartnerDashboard() {
                 #{me.currentOrderId.slice(-8)}
               </p>
               <p className="text-sm font-semibold text-[var(--text-secondary)]">
-                Tocá para continuar la entrega
+                Toca para continuar la entrega
               </p>
             </div>
             <ArrowRight className="h-6 w-6 text-[var(--accent)] mt-2 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
@@ -280,7 +280,7 @@ export default function PartnerDashboard() {
           <button
             type="button"
             onClick={loadOffers}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex items-center gap-1.5 h-9 px-3 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           >
             <RefreshCw className="h-4 w-4" />
             Actualizar
@@ -325,7 +325,7 @@ function EmptyState({
   text: string;
 }) {
   return (
-    <div className="rounded-3xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 lg:p-12 text-center">
+    <div className="border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 lg:p-12 text-center">
       <div
         className={`mx-auto ${
           illustrationTone === "accent"
@@ -359,7 +359,7 @@ function SectionHeader({
     <div className="flex items-end justify-between gap-3 pb-1">
       <div>
         <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-[0.14em] text-[var(--accent)]">
-          <span aria-hidden className="inline-flex h-[2px] w-6 rounded-full bg-[var(--accent)]" />
+          <span aria-hidden className="inline-flex h-[2px] w-6 bg-[var(--accent)]" />
           {eyebrow}
         </p>
         <h2 className="mt-1.5 text-xl lg:text-2xl font-black tracking-tight text-[var(--text-primary)]">
