@@ -30,6 +30,8 @@ interface Props {
   status: JuntaStatus;
   /** Cupón emitido al completar la junta (Fase A2). */
   couponCode?: string;
+  /** Pedidos ya hechos dentro de la junta (Fase A4). */
+  orderCount?: number;
 }
 
 export default function GroupBuyCard({
@@ -40,6 +42,7 @@ export default function GroupBuyCard({
   target,
   status: initialStatus,
   couponCode,
+  orderCount = 0,
 }: Props) {
   const [count, setCount] = useState(initialCount);
   const [status, setStatus] = useState<JuntaStatus>(initialStatus);
@@ -165,6 +168,13 @@ export default function GroupBuyCard({
               ? "¡Junta completa! Ya pueden coordinar la entrega."
               : `Faltan ${remaining} vecino${remaining === 1 ? "" : "s"} para completar la junta`}
         </p>
+        {orderCount > 0 && (
+          <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">
+            {orderCount}{" "}
+            {orderCount === 1 ? "pedido ya hecho" : "pedidos ya hechos"} en esta
+            junta
+          </p>
+        )}
       </div>
 
       {/* Cupón de recompensa (junta completa) */}

@@ -5,11 +5,13 @@ vi.mock("@/lib/prisma", () => ({
     junta: {
       create: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
       findMany: vi.fn(),
     },
-    juntaMember: { create: vi.fn() },
+    juntaMember: { create: vi.fn(), upsert: vi.fn() },
+    order: { count: vi.fn(), update: vi.fn() },
   },
 }));
 vi.mock("@/lib/junta/reward", () => ({ issueJuntaCoupon: vi.fn() }));
@@ -135,5 +137,47 @@ describe("JuntasDB.expireStale", () => {
     };
     expect(arg.where.status).toBe("OPEN");
     expect(arg.where.windowEnd.lte).toBeInstanceOf(Date);
+  });
+});
+
+describe("JuntasDB.linkMemberOrder", () => {
+  it("rechaza si la junta no es del tenant (anti cross-tenant)", async () => {
+    vi.mocked(prisma.junta.findFirst).mockResolvedValue(null as never);
+    await expect(
+      JuntasDB.linkMemberOrder(T, { juntaId: "j1", customerId: "999", orderId: "o1" }),
+    ).rejects.toThrow(/tenant/i);
+    expect(prisma.juntaMember.upsert).not.toHaveBeenCalled();
+  });
+
+  it("upserta la membresía con el orderId (auto-join + link)", async () => {
+    vi.mocked(prisma.junta.findFirst).mockResolvedValue({ id: "j1" } as never);
+    vi.mocked(prisma.juntaMember.upsert).mockResolvedValue({} as never);
+    vi.mocked(prisma.order.update).mockResolvedValue({} as never);
+    await JuntasDB.linkMemberOrder(T, { juntaId: "j1", customerId: "999", orderId: "o1" });
+    const arg = vi.mocked(prisma.juntaMember.upsert).mock.calls[0][0] as never as {
+      where: { juntaId_customerId: { juntaId: string; customerId: string } };
+      update: { orderId: string };
+      create: { orderId: string };
+    };
+    expect(arg.where.juntaId_customerId).toEqual({ juntaId: "j1", customerId: "999" });
+    expect(arg.update.orderId).toBe("o1");
+    expect(arg.create.orderId).toBe("o1");
+    // taggea el pedido con la junta
+    expect(prisma.order.update).toHaveBeenCalledWith({
+      where: { id: "o1" },
+      data: { juntaId: "j1" },
+    });
+  });
+});
+
+describe("JuntasDB.countOrders", () => {
+  it("cuenta pedidos no borrados de la junta (tenant-scoped)", async () => {
+    vi.mocked(prisma.order.count).mockResolvedValue(3 as never);
+    const n = await JuntasDB.countOrders(T, "j1");
+    expect(n).toBe(3);
+    const arg = vi.mocked(prisma.order.count).mock.calls[0][0] as never as {
+      where: Record<string, unknown>;
+    };
+    expect(arg.where).toMatchObject({ tenantId: T, juntaId: "j1", deletedAt: null });
   });
 });

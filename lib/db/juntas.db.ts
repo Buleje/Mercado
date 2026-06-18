@@ -205,4 +205,47 @@ export const JuntasDB = {
     /* eslint-enable no-restricted-syntax */
     return res.count;
   },
+
+  /**
+   * Liga un pedido a una junta (Fase A4): registra el orderId en la membresía
+   * del cliente (auto-join si aún no era miembro). El campo `Order.juntaId` lo
+   * setea el POST de órdenes al crear la orden. tenantId 1er parámetro: valida
+   * que la junta sea del tenant (anti link cross-tenant).
+   */
+  async linkMemberOrder(
+    tenantId: string,
+    args: { juntaId: string; customerId: string; orderId: string },
+  ): Promise<void> {
+    const junta = await prisma.junta.findFirst({
+      where: { id: args.juntaId, tenantId },
+      select: { id: true },
+    });
+    if (!junta) throw new Error("Junta no encontrada para el tenant");
+    await prisma.juntaMember.upsert({
+      where: {
+        juntaId_customerId: {
+          juntaId: args.juntaId,
+          customerId: args.customerId,
+        },
+      },
+      update: { orderId: args.orderId },
+      create: {
+        juntaId: args.juntaId,
+        customerId: args.customerId,
+        orderId: args.orderId,
+      },
+    });
+    // Tag del pedido (id = PK único; ya es del tenant porque se acaba de crear).
+    await prisma.order.update({
+      where: { id: args.orderId },
+      data: { juntaId: args.juntaId },
+    });
+  },
+
+  /** Cuántos pedidos (no borrados) se hicieron dentro de una junta. */
+  async countOrders(tenantId: string, juntaId: string): Promise<number> {
+    return prisma.order.count({
+      where: { tenantId, juntaId, deletedAt: null },
+    });
+  },
 };

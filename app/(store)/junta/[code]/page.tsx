@@ -42,6 +42,10 @@ export default async function JuntaPage({
     );
   }
 
+  const orderCount = await JuntasDB.countOrders(tenantId, junta.id).catch(
+    () => 0,
+  );
+
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
       <header className="mb-5">
@@ -61,6 +65,7 @@ export default async function JuntaPage({
         target={junta.targetMembers}
         status={junta.status}
         couponCode={junta.couponCode}
+        orderCount={orderCount}
       />
     </div>
   );

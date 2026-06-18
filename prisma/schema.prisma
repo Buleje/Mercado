@@ -470,6 +470,9 @@ model Order {
   dropoffLat          Float?
   dropoffLng          Float?
 
+  // Fase A4: pedido hecho dentro de una Junta del Barrio (link lógico a Junta.id).
+  juntaId             String?
+
   items               OrderItem[]
   customer            Customer?            @relation(fields: [customerPhone], references: [phone], onDelete: SetNull)
   statusHistory       OrderStatusHistory[]
@@ -492,6 +495,7 @@ model Order {
   @@index([tenantId, deliveryStatus], name: "Order_deliveryStatus_idx")
   @@index([driverId], name: "Order_driverId_idx")
   @@index([paymentApprovalId], name: "Order_paymentApprovalId_idx")
+  @@index([juntaId], name: "Order_juntaId_idx")
   // Audit #3 (Brandon 2026-05-30): KPIs públicos del marketplace (activity feed,
   // live stats, top hoy, popularity 30d) filtran por source + deletedAt + createdAt.
   @@index([source, deletedAt, createdAt])

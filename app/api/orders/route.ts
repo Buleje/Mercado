@@ -54,6 +54,7 @@ const OrderPostSchema = z.object({
   items: z.array(OrderItemSchema).min(1),
   total: z.number().min(0), // client hint; server will recompute
   paymentMethod: z.enum(["yape", "efectivo", "fiado"]).optional().default("efectivo"),
+  juntaCode: z.string().max(40).optional(), // Fase A4: pedido dentro de una Junta del Barrio
   notes: z.string().max(1000).optional(),
   deliverySlot: z.string().max(100).optional(),
   // Discount tracking fields
@@ -871,6 +872,32 @@ export const POST = withApiHandler("orders-create", async (req) => {
           level: "error",
           tags: { area: "orders", phase: "fiado-create", tenant: tenantId },
           extra: { orderId: saved.id, total: saved.total },
+        });
+      }
+    }
+
+    // ── Junta del Barrio: liga el pedido a la junta (Fase A4). Best-effort:
+    //    si falla, el pedido NO se rompe (ya está persistido); se loguea.
+    if (body.juntaCode && saved.customer.phone) {
+      try {
+        const [{ JuntasDB }, { normalizePhone: normJuntaPhone }] =
+          await Promise.all([
+            import("@/lib/db/juntas.db"),
+            import("@/lib/db/misc.db"),
+          ]);
+        const junta = await JuntasDB.getByCode(tenantId, body.juntaCode);
+        if (junta && junta.status !== "EXPIRED") {
+          await JuntasDB.linkMemberOrder(tenantId, {
+            juntaId: junta.id,
+            customerId: normJuntaPhone(saved.customer.phone),
+            orderId: saved.id,
+          });
+        }
+      } catch (err) {
+        logger.error("[orders.POST] junta link failed", {
+          orderId: saved.id,
+          tenantId,
+          error: String(err),
         });
       }
     }
