@@ -1,96 +1,104 @@
 "use client";
 
 /**
- * GroupBuyCard — Compra grupal vecinal: 4 vecinos → 15% OFF.
+ * GroupBuyCard — La Junta del Barrio (compra colaborativa vecinal).
  *
- * Flow:
- *   1. Usuario selecciona producto que quiere comprar grupal
- *   2. Tap "Invitar 3 vecinos mas" → genera link compartible
- *   3. Cuando 4 familias confirman: 15% OFF automatico a todos
- *   4. Cada quien paga lo suyo, entrega conjunta (ahorra costo delivery)
- *
- * MVP UI-only: el backend de grupos se implementa en siguiente iteracion.
- * Por ahora el componente genera link share + muestra progress visual
- * de 1/4 → 4/4 y explica el mecanismo.
- *
- * Impacto esperado: +80% volumen por agregacion social, viralidad en
- * grupos de WhatsApp de vecinos/condominio.
+ * Fase A1: datos REALES. Muestra el progreso de una junta persistida, permite
+ * unirse (POST /api/juntas/[code]/join) y compartir el link por WhatsApp (tuteo).
+ * El premio de envío gratis al completar llega en Fase A2.
  */
 
 import { useState, useCallback } from "react";
 import {
   Users,
-  Share2,
   MessageCircle,
-  TrendingDown,
   Check,
   Copy,
+  CalendarClock,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+
+type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
 interface Props {
-  productName?: string;
-  unitPrice?: number;
-  /** Descuento al alcanzar el tope del grupo (default 15%) */
-  discountPercent?: number;
-  /** Vecinos necesarios (default 4) */
-  groupSize?: number;
-  /** Cuantos vecinos ya confirmaron (0-groupSize) */
-  currentMembers?: number;
-  /** Link dinamico del grupo — si no se provee, se usa el origen + slug */
-  groupUrl?: string;
+  code: string;
+  zoneLabel: string;
+  productLabel?: string;
+  count: number;
+  target: number;
+  status: JuntaStatus;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
-
 export default function GroupBuyCard({
-  productName = "Arroz Costeño 5 kg",
-  unitPrice = 22.5,
-  discountPercent = 15,
-  groupSize = 4,
-  currentMembers = 1,
-  groupUrl,
+  code,
+  zoneLabel,
+  productLabel,
+  count: initialCount,
+  target,
+  status: initialStatus,
 }: Props) {
+  const [count, setCount] = useState(initialCount);
+  const [status, setStatus] = useState<JuntaStatus>(initialStatus);
+  const [joining, setJoining] = useState(false);
+  const [joined, setJoined] = useState(false);
+  const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const progress = Math.min(100, Math.round((currentMembers / groupSize) * 100));
-  const remainingMembers = Math.max(0, groupSize - currentMembers);
-  const finalPrice = unitPrice * (1 - discountPercent / 100);
-  const saved = unitPrice - finalPrice;
+  const progress = Math.min(100, Math.round((count / target) * 100));
+  const remaining = Math.max(0, target - count);
+  const isComplete = status === "COMPLETE" || count >= target;
+  const isExpired = status === "EXPIRED";
 
-  const computedUrl = useCallback(() => {
-    if (groupUrl) return groupUrl;
-    if (typeof window === "undefined") return "#";
-    return `${window.location.origin}/marketplace/grupo?producto=${encodeURIComponent(productName)}`;
-  }, [groupUrl, productName]);
+  const shareUrl = useCallback(() => {
+    if (typeof window === "undefined") return `/junta/${code}`;
+    return `${window.location.origin}/junta/${code}`;
+  }, [code]);
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(computedUrl());
+      await navigator.clipboard.writeText(shareUrl());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* silent */
+      setError("No se pudo copiar el link");
     }
-  }, [computedUrl]);
+  }, [shareUrl]);
 
   const handleWhatsApp = useCallback(() => {
-    const url = computedUrl();
     const msg = encodeURIComponent(
-      `Vecinos, estoy armando una compra grupal en Buleje: ${productName} a S/ ${finalPrice.toFixed(2)} (${discountPercent}% OFF) si somos ${groupSize}. Faltan ${remainingMembers} — sumate acá: ${url}`,
+      `Vecinos, estoy armando una junta en Buleje${productLabel ? ` para ${productLabel}` : ""}. ` +
+        `Si juntamos ${target} de la cuadra, coordinamos una sola entrega para todos. ` +
+        `Faltan ${remaining} — súmate acá: ${shareUrl()}`,
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank", "noopener,noreferrer");
-  }, [computedUrl, productName, finalPrice, discountPercent, groupSize, remainingMembers]);
+  }, [productLabel, target, remaining, shareUrl]);
 
-  const isComplete = currentMembers >= groupSize;
+  const handleJoin = useCallback(async () => {
+    setJoining(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/juntas/${code}/join`, { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error ?? "No te pudiste unir");
+        return;
+      }
+      setJoined(true);
+      if (data?.junta) {
+        setCount(data.junta.memberCount ?? count);
+        setStatus(data.junta.status ?? status);
+      }
+    } catch {
+      setError("Error de red al unirte");
+    } finally {
+      setJoining(false);
+    }
+  }, [code, count, status]);
 
   return (
     <section
-      aria-label="Compra grupal vecinal"
+      aria-label="La Junta del Barrio"
       className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
     >
-      {/* Header editorial */}
       <div className="px-5 py-5 sm:px-6">
         <div className="flex items-start gap-3">
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
@@ -98,50 +106,27 @@ export default function GroupBuyCard({
           </span>
           <div className="flex-1">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
-              Compra grupal vecinal
+              La Junta del Barrio · {zoneLabel}
             </p>
             <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5">
-              {groupSize} vecinos, {discountPercent}% OFF
+              {target} vecinos, una sola entrega
             </h3>
             <p className="text-sm text-[var(--text-tertiary)] mt-1 leading-relaxed">
-              Armá un grupo con {groupSize - 1} vecinos/as y todos pagan menos.
-              Entrega conjunta ahorra delivery también.
+              Junta a {target - 1} vecinos de tu zona{productLabel ? ` para ${productLabel}` : ""}.
+              Al completar la junta, coordinan la entrega juntos.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Producto + precio con y sin descuento */}
-      <div className="mx-5 sm:mx-6 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-          Producto del grupo
-        </p>
-        <p className="text-sm font-bold text-[var(--text-primary)]">{productName}</p>
-        <div className="mt-3 flex items-baseline gap-3">
-          <p className="text-2xl font-extrabold tabular-nums text-[var(--accent)]">
-            {fmt(finalPrice)}
-          </p>
-          <p className="text-sm font-medium text-[var(--text-tertiary)] line-through tabular-nums">
-            {fmt(unitPrice)}
-          </p>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold">
-            <TrendingDown className="h-3 w-3" strokeWidth={2} aria-hidden />
-            −{discountPercent}%
-          </span>
-        </div>
-        <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-          Ahorrás {fmt(saved)} por unidad
-        </p>
-      </div>
-
-      {/* Progress bar */}
-      <div className="px-5 sm:px-6 mt-5">
+      {/* Progreso */}
+      <div className="px-5 sm:px-6">
         <div className="flex items-baseline justify-between mb-2">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Progreso del grupo
+            Progreso de la junta
           </p>
           <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
-            {currentMembers} / {groupSize}
+            {count} / {target}
           </p>
         </div>
         <div
@@ -154,21 +139,43 @@ export default function GroupBuyCard({
           />
         </div>
         <p className="mt-2 text-xs text-[var(--text-secondary)]">
-          {isComplete
-            ? "¡Grupo completo! Todos tienen el descuento activo"
-            : `Faltan ${remainingMembers} vecino${remainingMembers === 1 ? "" : "s"} para activar ${discountPercent}% OFF`}
+          {isExpired
+            ? "Esta junta ya cerró."
+            : isComplete
+              ? "¡Junta completa! Ya pueden coordinar la entrega."
+              : `Faltan ${remaining} vecino${remaining === 1 ? "" : "s"} para completar la junta`}
         </p>
       </div>
 
-      {/* CTAs share */}
+      {/* CTAs */}
       <div className="px-5 sm:px-6 pt-4 pb-5 space-y-2">
+        {!isExpired && !isComplete && (
+          <button
+            type="button"
+            onClick={handleJoin}
+            disabled={joining || joined}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-white py-3 text-sm font-bold hover:opacity-90 transition disabled:opacity-60 active:scale-[0.98]"
+          >
+            {joined ? (
+              <>
+                <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                Ya estás en la junta
+              </>
+            ) : joining ? (
+              "Uniéndote…"
+            ) : (
+              "Súmate a la junta"
+            )}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={handleWhatsApp}
           className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] text-white py-3 text-sm font-bold hover:bg-[#1ea34d] transition-colors active:scale-[0.98]"
         >
           <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Invitar vecinos por WhatsApp
+          Invita vecinos por WhatsApp
         </button>
         <button
           type="button"
@@ -183,27 +190,30 @@ export default function GroupBuyCard({
           ) : (
             <>
               <Copy className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-              Copiar link del grupo
+              Copia el link de la junta
             </>
           )}
         </button>
+        {error && (
+          <p className="text-sm text-[var(--data-error-600)] font-medium" role="alert">
+            {error}
+          </p>
+        )}
       </div>
 
-      {/* Cómo funciona — edu */}
+      {/* Cómo funciona */}
       <details className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
         <summary className="list-none flex items-center justify-between px-5 sm:px-6 py-3 cursor-pointer hover:bg-[var(--surface-raised)]">
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             ¿Cómo funciona?
           </span>
-          <Share2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
+          <CalendarClock className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
         </summary>
         <ol className="px-5 sm:px-6 pb-4 space-y-1.5 text-xs text-[var(--text-secondary)] leading-relaxed">
-          <li>1. Compartís el link con vecinos de tu barrio o condominio.</li>
-          <li>2. Cada uno confirma su compra en el link.</li>
-          <li>
-            3. Cuando son {groupSize}, se activa el {discountPercent}% OFF para todos.
-          </li>
-          <li>4. Entrega conjunta el mismo día — repartidor pasa una vez.</li>
+          <li>1. Comparte el link con vecinos de tu cuadra o barrio.</li>
+          <li>2. Cada uno se suma a la junta desde el link.</li>
+          <li>3. Cuando son {target}, la junta se completa.</li>
+          <li>4. Coordinan una sola entrega para toda la cuadra.</li>
         </ol>
       </details>
     </section>
