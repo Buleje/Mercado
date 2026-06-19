@@ -13,6 +13,7 @@ import {
   PackageIcon,
   EmptyRoadIllustration,
   LiveSignal,
+  RouteIcon,
 } from "./icons";
 import { OfferCard } from "./OfferCard";
 import type { Offer } from "./OfferCard";
@@ -54,6 +55,8 @@ export default function PartnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
+  // Nº de pedidos activos del repartidor — gate del banner "ruta apilada".
+  const [activeCount, setActiveCount] = useState(0);
   const lastCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   const prevOffersHashRef = useRef<string>("");
   // Captura el momento en que se conectó hoy — para "horas online hoy"
@@ -97,7 +100,25 @@ export default function PartnerDashboard() {
     } catch { /* silent */ }
   }, []);
 
+  // Conteo de pedidos activos → gate del banner "ruta apilada" (solo ≥2).
+  const loadRouteCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/delivery/me/route", { credentials: "include" });
+      if (!res.ok) return;
+      const data: { count: number } = await res.json();
+      setActiveCount(data.count);
+    } catch (err) {
+      // El banner es opcional: si la red falla, simplemente no lo mostramos.
+      void err;
+    }
+  }, []);
+
   useEffect(() => { loadMe(); }, [loadMe]);
+
+  useEffect(() => {
+    if (me?.currentOrderId) loadRouteCount();
+    else setActiveCount(0);
+  }, [me?.currentOrderId, loadRouteCount]);
 
   useEffect(() => {
     if (!me?.isOnline) return;
@@ -119,7 +140,10 @@ export default function PartnerDashboard() {
             credentials: "include",
             headers: { "Content-Type": "application/json", "x-csrf-token": csrf() },
             body: JSON.stringify({ lat: latitude, lng: longitude }),
-          }).catch(() => { /* ping fire-and-forget: si la red falla, el siguiente tick reintenta */ });
+          }).catch((err: unknown) => {
+            // ping best-effort: la red puede fallar; el siguiente tick (30s) reintenta.
+            void err;
+          });
         },
         () => setGeoError("No pudimos leer tu ubicación. Verifica los permisos."),
         { enableHighAccuracy: true, timeout: 10_000, maximumAge: 30_000 },
@@ -269,6 +293,32 @@ export default function PartnerDashboard() {
               </p>
             </div>
             <ArrowRight className="h-6 w-6 text-[var(--accent)] mt-2 group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+          </div>
+        </Link>
+      )}
+
+      {/* ── Ruta apilada (banner) — solo con 2+ pedidos activos ─ */}
+      {activeCount >= 2 && (
+        <Link
+          href="/delivery-app/ruta"
+          className="block group border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-5 transition-colors hover:bg-[var(--accent-soft)]"
+        >
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 bg-[var(--accent)] text-white flex items-center justify-center shrink-0">
+              <RouteIcon className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                Pedidos apilados
+              </p>
+              <p className="mt-0.5 text-lg font-extrabold text-[var(--text-primary)]">
+                Tienes {activeCount} entregas en curso
+              </p>
+              <p className="text-sm font-semibold text-[var(--text-secondary)]">
+                Arma la ruta más corta para entregarlas todas en una sola vuelta
+              </p>
+            </div>
+            <ArrowRight className="h-6 w-6 text-[var(--accent)] group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
           </div>
         </Link>
       )}

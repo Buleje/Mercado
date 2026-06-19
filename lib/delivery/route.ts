@@ -77,6 +77,109 @@ export function straightRoute(from: RoutePoint, to: RoutePoint): RouteResult {
   };
 }
 
+// ─── Apilado de pedidos (batching) ──────────────────────────────────────────
+// "Pedidos apilados" estilo Rappi/Uber: el repartidor lleva varios pedidos a la
+// vez y los entrega en una sola ruta. Ordenamos las paradas por cercanía
+// (vecino-más-cercano) para que el trayecto total sea corto. Es una heurística
+// pura y determinística — no toca red — así el cliente y los tests la comparten.
+
+export interface RouteStop<T> {
+  /** Coordenada de la parada. `null` si el pedido no tiene GPS. */
+  point: RoutePoint | null;
+  /** Carga útil del caller (assignment/order); la devolvemos intacta. */
+  data: T;
+}
+
+export interface SequencedStop<T> {
+  data: T;
+  point: RoutePoint | null;
+  /** Posición en la ruta, 1-based. */
+  sequence: number;
+  /** Distancia desde la parada anterior (o el inicio) en km. */
+  legDistanceKm: number;
+  /** Minutos estimados del tramo anterior. */
+  legDurationMin: number;
+  /** Distancia acumulada desde el inicio hasta esta parada. */
+  cumulativeDistanceKm: number;
+  /** Minutos acumulados desde el inicio hasta esta parada. */
+  cumulativeDurationMin: number;
+}
+
+export interface SequencedRoute<T> {
+  ordered: SequencedStop<T>[];
+  totalDistanceKm: number;
+  totalDurationMin: number;
+}
+
+/**
+ * Ordena las paradas por vecino-más-cercano desde `start` y calcula distancia y
+ * ETA acumuladas por tramo. Pura y determinística (haversine, sin red).
+ *
+ * - Las paradas sin coordenada (`point: null`) van al final, en su orden
+ *   original, con tramo 0 (no podemos ubicarlas para optimizar).
+ * - Ante empates de distancia, gana la de menor índice original (estable).
+ */
+export function sequenceStops<T>(
+  start: RoutePoint,
+  stops: RouteStop<T>[],
+): SequencedRoute<T> {
+  const withGps = stops.filter((s) => s.point !== null);
+  const withoutGps = stops.filter((s) => s.point === null);
+
+  const ordered: SequencedStop<T>[] = [];
+  const remaining = withGps.map((s, i) => ({ stop: s, originalIdx: i }));
+  let current: RoutePoint = start;
+  let cumulativeDistanceKm = 0;
+  let cumulativeDurationMin = 0;
+  let sequence = 1;
+
+  while (remaining.length > 0) {
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < remaining.length; i++) {
+      const p = remaining[i].stop.point!;
+      const d = haversineKm(current.lat, current.lng, p.lat, p.lng);
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    const [{ stop }] = remaining.splice(bestIdx, 1);
+    const legDistanceKm = bestDist;
+    const legDurationMin = estimateDurationMin(legDistanceKm);
+    cumulativeDistanceKm += legDistanceKm;
+    cumulativeDurationMin += legDurationMin;
+    ordered.push({
+      data: stop.data,
+      point: stop.point,
+      sequence: sequence++,
+      legDistanceKm,
+      legDurationMin,
+      cumulativeDistanceKm,
+      cumulativeDurationMin,
+    });
+    current = stop.point!;
+  }
+
+  for (const stop of withoutGps) {
+    ordered.push({
+      data: stop.data,
+      point: null,
+      sequence: sequence++,
+      legDistanceKm: 0,
+      legDurationMin: 0,
+      cumulativeDistanceKm,
+      cumulativeDurationMin,
+    });
+  }
+
+  return {
+    ordered,
+    totalDistanceKm: cumulativeDistanceKm,
+    totalDurationMin: cumulativeDurationMin,
+  };
+}
+
 /**
  * Pide la ruta real por calle a OSRM; si algo falla cae a `straightRoute`.
  * Devuelve SIEMPRE un `RouteResult` usable (nunca lanza).
