@@ -36,30 +36,41 @@ export interface ModuleTab {
 export function SuperAdminModuleTabs({ tabs }: { tabs: ModuleTab[] }) {
   const pathname = usePathname();
   return (
-    <div className="w-full border-b border-[var(--rule-base)] bg-[var(--surface-canvas)]">
-      <nav
-        className="mx-auto max-w-[1400px] px-4 sm:px-6 flex items-center gap-1 overflow-x-auto"
-        aria-label="Secciones del módulo"
-      >
-        {tabs.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={[
-                "inline-flex shrink-0 items-center gap-2 px-3.5 py-3 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition-colors",
-                active
-                  ? "border-[var(--accent)] text-[var(--accent)]"
-                  : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)]",
-              ].join(" ")}
-            >
-              <Icon className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-              {label}
-            </Link>
-          );
-        })}
+    <div className="w-full bg-[var(--surface-canvas)] pt-1 pb-3">
+      <nav className="mx-auto max-w-[1400px] px-4 sm:px-6" aria-label="Secciones del módulo">
+        {/* Control segmentado: contenedor hundido con leve elevación; el tab
+            activo es una pastilla teal sólida. Reemplaza el subrayado plano
+            anterior — "se siente" un control de módulos, no texto suelto. */}
+        <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-1 shadow-sm">
+          {tabs.map(({ label, href, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={[
+                  "group inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-150",
+                  active
+                    ? "bg-[var(--accent)] text-white shadow-sm"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]",
+                ].join(" ")}
+              >
+                <span
+                  className={[
+                    "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-colors",
+                    active
+                      ? "bg-white/20 text-white"
+                      : "bg-[var(--surface-raised)] text-[var(--text-tertiary)] group-hover:text-[var(--accent)]",
+                  ].join(" ")}
+                >
+                  <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                </span>
+                {label}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );
