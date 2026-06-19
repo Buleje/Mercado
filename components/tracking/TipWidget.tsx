@@ -18,11 +18,13 @@ import { csrfHeaders } from "@/lib/csrf-client";
 interface Props {
   orderId: string;
   partnerName: string;
+  /** Token HMAC emitido por /api/delivery/tracking al caller autorizado. */
+  tipToken?: string | null;
 }
 
 const QUICK_AMOUNTS = [2, 5, 10];
 
-export default function TipWidget({ orderId, partnerName }: Props) {
+export default function TipWidget({ orderId, partnerName, tipToken }: Props) {
   const [amount, setAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
@@ -44,6 +46,7 @@ export default function TipWidget({ orderId, partnerName }: Props) {
         body: JSON.stringify({
           amount: finalAmount,
           message: message.trim() || undefined,
+          token: tipToken || undefined,
         }),
       });
       const data = await res.json();

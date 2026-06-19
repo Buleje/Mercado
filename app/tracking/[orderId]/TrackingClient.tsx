@@ -29,6 +29,7 @@ interface Props {
 interface TrackingMeta {
   status: string;
   partnerName: string;
+  tipToken: string | null;
 }
 
 export default function TrackingClient({ orderId }: Props) {
@@ -42,7 +43,11 @@ export default function TrackingClient({ orderId }: Props) {
         if (!res.ok) return;
         const data = await res.json();
         if (!cancelled) {
-          setMeta({ status: data.status, partnerName: data.partnerName });
+          setMeta({
+            status: data.status,
+            partnerName: data.partnerName,
+            tipToken: data.tipToken ?? null,
+          });
         }
       } catch {
         /* poll silencioso */
@@ -61,7 +66,11 @@ export default function TrackingClient({ orderId }: Props) {
       <DeliveryTrackingMap orderId={orderId} />
 
       {meta?.status === "delivered" && (
-        <TipWidget orderId={orderId} partnerName={meta.partnerName} />
+        <TipWidget
+          orderId={orderId}
+          partnerName={meta.partnerName}
+          tipToken={meta.tipToken}
+        />
       )}
 
       {/* Footer informativo */}

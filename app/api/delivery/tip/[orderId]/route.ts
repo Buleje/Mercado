@@ -59,29 +59,35 @@ export async function POST(
   // SECURITY (F3 2026-05-07): validar token HMAC para prevenir propinas
   // arbitrarias desde IDs enumerables.
   // Token puede venir en body o en query param ?token=...
+  //
+  // 2026-06-18: enforcement ON por DEFAULT. El widget de propina
+  // (components/tracking/TipWidget) recibe el token desde
+  // /api/delivery/tracking, que solo lo emite al caller ya autorizado
+  // (admin del tenant o customer cuyo phone matchea) y solo con el pedido
+  // entregado. Como todo flujo legítimo ya manda token, exigirlo cierra el
+  // hueco de enumeración. Escotilla de emergencia: setear
+  // DELIVERY_TIP_REQUIRE_TOKEN="false" en el entorno para volver al modo
+  // legacy sin redeploy (p. ej. si un cliente con página cacheada falla).
   const token = parsed.data.token ?? new URL(req.url).searchParams.get("token") ?? null;
+  const tokenEnforced = process.env.DELIVERY_TIP_REQUIRE_TOKEN !== "false";
   if (token) {
     const result = verifyRatingToken(token, orderId);
     if (!result.valid) {
       return NextResponse.json({ error: "Token inválido o expirado" }, { status: 403 });
     }
-  } else if (process.env.DELIVERY_TIP_REQUIRE_TOKEN === "true") {
-    // Audit 2026-05-17 03-P1-2: flag-driven enforcement. Cuando se setee
-    // DELIVERY_TIP_REQUIRE_TOKEN=true en prod, request sin token → 403.
-    // Hasta entonces (rollout gradual de links WhatsApp con token HMAC)
-    // se mantiene backwards-compat con warning. Activar la flag tras
-    // confirmar que todos los clientes activos reciben link con token.
+  } else if (tokenEnforced) {
     logger.warn("[delivery/tip] rejected — token required", {
       orderId,
       ip: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown",
     });
     return NextResponse.json(
-      { error: "Token requerido", message: "Usa el link enviado por WhatsApp." },
+      { error: "Token requerido", message: "Abre el link de seguimiento de tu pedido." },
       { status: 403 },
     );
   } else {
-    // Backwards-compat: permitir sin token pero log para medir uso legacy.
-    logger.warn("[delivery/tip] legacy unauthenticated request", {
+    // Escotilla activa (DELIVERY_TIP_REQUIRE_TOKEN="false"): permitir sin
+    // token pero log para medir uso legacy.
+    logger.warn("[delivery/tip] token enforcement DISABLED via env — legacy request", {
       orderId,
       ip: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown",
       userAgent: req.headers.get("user-agent")?.slice(0, 100) ?? "unknown",
