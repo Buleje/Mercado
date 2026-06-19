@@ -1,5 +1,6 @@
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { VendorHealthDashboard } from "@/components/superadmin/vendor-health/VendorHealthDashboard";
+import { VendorPipelinePanel } from "@/components/superadmin/vendor-health/VendorPipelinePanel";
 import { HeartPulse } from "@buleje/design-system/icons";
 import {
   SUPERADMIN_PAGE,
@@ -49,6 +50,7 @@ export default async function VendorHealthPage() {
       </header>
 
       <div className={SUPERADMIN_CONTENT}>
+        <VendorPipelinePanel />
         <VendorHealthDashboard />
       </div>
     </div>
