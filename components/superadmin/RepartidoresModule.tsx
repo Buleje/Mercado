@@ -49,6 +49,7 @@ import {
   TrendIcon,
   StarBadge,
 } from "@/components/delivery/icons";
+import RepartidoresOverview from "./RepartidoresOverview";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -370,6 +371,9 @@ export default function RepartidoresModule() {
       </header>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5">
+
+      {/* ── Panorama ejecutivo de la flota (funciones de alto nivel) ── */}
+      <RepartidoresOverview />
 
       {/* ── KPIs ──────────────────────────────────── */}
       <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
