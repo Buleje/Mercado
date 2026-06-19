@@ -147,9 +147,9 @@ export default function SeguimientoClient({
       {!publicView && (
         <Link
           href="/cuenta/pedidos"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-[var(--text-primary)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-[var(--text-primary)] transition-colors"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="h-4 w-4" />
           Volver a mis pedidos
         </Link>
       )}

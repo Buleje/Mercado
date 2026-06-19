@@ -54,7 +54,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
     <section
       aria-labelledby="tracking-hero-heading"
       className={cn(
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8",
+        "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8",
         className,
       )}
     >
@@ -73,7 +73,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
           >
             Pedido cancelado
           </h1>
-          <p className="mt-3 text-sm text-muted max-w-xl leading-relaxed">
+          <p className="mt-3 text-base text-muted max-w-xl leading-relaxed">
             Este pedido fue cancelado. Si fue un error, contacta a la tienda.
           </p>
         </>
@@ -85,7 +85,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
           >
             Entregado
           </h1>
-          <p className="mt-3 text-sm text-muted max-w-xl leading-relaxed">
+          <p className="mt-3 text-base text-muted max-w-xl leading-relaxed">
             Tu pedido fue entregado. Gracias por confiar en {storeName}.
           </p>
         </>
@@ -108,7 +108,7 @@ export function SeguimientoHero({ orderId, status, etaAt, storeName, className }
               </span>
             )}
           </h1>
-          <p className="mt-3 text-sm text-muted max-w-xl leading-relaxed">
+          <p className="mt-3 text-base text-muted max-w-xl leading-relaxed">
             Tu pedido está en camino. Te avisaremos cuando el repartidor esté cerca.
           </p>
         </>
@@ -126,9 +126,9 @@ function ProgressBar({ status }: { status: TrackingStatus }) {
 
   return (
     <div className="mt-6" aria-hidden>
-      <div className="h-2 w-full rounded-full bg-[var(--surface-sunken)] dark:bg-surface overflow-hidden">
+      <div className="h-2.5 w-full bg-[var(--surface-sunken)] dark:bg-surface overflow-hidden">
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-[var(--dur-slower)] ease-out"
+          className="h-full bg-primary transition-[width] duration-[var(--dur-slower)] ease-out"
           style={{ width: `${Math.round(fraction * 100)}%` }}
         />
       </div>

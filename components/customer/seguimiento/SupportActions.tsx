@@ -44,7 +44,7 @@ export function SupportActions({
     <section
       aria-labelledby="tracking-support-heading"
       className={cn(
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
+        "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -63,7 +63,7 @@ export function SupportActions({
       <div className="grid grid-cols-2 gap-2 mb-3">
         <a
           href={`tel:${storePhone.replace(/\s+/g, "")}`}
-          className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 text-sm font-bold text-[var(--text-primary)] transition-colors"
+          className="inline-flex items-center justify-center gap-2 h-11 border-2 border-[var(--rule-base)] hover:border-[var(--accent)] text-sm font-bold text-[var(--text-primary)] transition-colors"
         >
           <Phone className="h-4 w-4" strokeWidth={1.75} />
           Llamar a {storeName}
@@ -72,7 +72,7 @@ export function SupportActions({
           <button
             type="button"
             onClick={onCancelOrder}
-            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-red-200 dark:border-red-900/40 hover:border-red-300 dark:hover:border-red-800/60 text-sm font-bold text-[var(--data-error-600)] dark:text-red-400 transition-colors"
+            className="inline-flex items-center justify-center gap-2 h-11 border-2 border-red-200 dark:border-red-900/40 hover:border-red-300 dark:hover:border-red-800/60 text-sm font-bold text-[var(--data-error-600)] dark:text-red-400 transition-colors"
           >
             <XCircle className="h-4 w-4" strokeWidth={1.75} />
             Cancelar pedido
@@ -80,7 +80,7 @@ export function SupportActions({
         ) : (
           <button
             type="button"
-            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-[var(--rule-base)] opacity-60 text-sm font-bold text-muted cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 h-11 border-2 border-[var(--rule-base)] opacity-60 text-sm font-bold text-muted cursor-not-allowed"
             disabled
             aria-disabled="true"
           >
@@ -103,10 +103,10 @@ export function SupportActions({
                 type="button"
                 onClick={() => handleIssue(it.key)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 h-8 rounded-full border px-3 text-[length:var(--ts-2xs)] font-semibold transition-colors",
+                  "inline-flex items-center gap-1.5 h-8 border px-3 text-[length:var(--ts-2xs)] font-semibold transition-colors",
                   isSent
                     ? "bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 text-[var(--accent-dark)] dark:text-teal-300"
-                    : "border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-[var(--rule-base)]/80 text-[var(--text-primary)]",
+                    : "border-[var(--rule-base)] hover:border-[var(--accent)] text-[var(--text-primary)]",
                 )}
               >
                 {isSent ? (
