@@ -19,6 +19,7 @@
  * con rate-limit + no-store en este commit).
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search,
@@ -232,11 +233,7 @@ export function AuditLogTab() {
   }, [reload]);
 
   // Auto-refresh 60s
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => void reload(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, reload]);
+  useVisiblePolling(() => void reload(true), 60_000, autoRefresh);
 
   // Keyboard shortcuts
   useEffect(() => {

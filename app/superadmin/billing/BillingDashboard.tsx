@@ -14,6 +14,7 @@
  * Atajos: `/` busca · `R` recarga · `Esc` limpia filtros
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import {
   useCallback,
   useEffect,
@@ -419,11 +420,7 @@ export default function BillingDashboard() {
   }, [load]);
 
   // ── Auto refresh ────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => void load(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, load]);
+  useVisiblePolling(() => void load(true), 60_000, autoRefresh);
 
   // ── Keyboard ────────────────────────────────────────────────────────────
   useEffect(() => {

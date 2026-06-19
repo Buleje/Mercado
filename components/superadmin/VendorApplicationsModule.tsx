@@ -18,6 +18,7 @@
  *  - Touch targets ≥44px en mobile, focus rings visibles
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -463,11 +464,7 @@ export default function VendorApplicationsModule() {
   };
 
   // ── Auto refresh ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => reload(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, reload]);
+  useVisiblePolling(() => void reload(true), 60_000, autoRefresh);
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────
   useEffect(() => {

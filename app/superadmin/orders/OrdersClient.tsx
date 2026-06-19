@@ -15,6 +15,7 @@
  *  - Tonos rose-700/dark:rose-300 correctos (sustituye var(--data-error-700))
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ShoppingBag,
@@ -304,11 +305,7 @@ export function OrdersClient() {
   }, [search, load]);
 
   // Auto-refresh OPT-IN cada 30s
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => void load(true), 30_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, load]);
+  useVisiblePolling(() => void load(true), 30_000, autoRefresh);
 
   // Keyboard shortcuts
   useEffect(() => {

@@ -20,6 +20,7 @@
  *  - Atajos: `/` busca · `R` recarga · `Esc` cierra modal/limpia filtros
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import {
   useCallback,
   useEffect,
@@ -323,11 +324,7 @@ export default function PagosPendientesClient() {
   };
 
   // ── Auto refresh ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => load(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, load]);
+  useVisiblePolling(() => void load(true), 60_000, autoRefresh);
 
   // ── Keyboard ─────────────────────────────────────────────────────────
   useEffect(() => {

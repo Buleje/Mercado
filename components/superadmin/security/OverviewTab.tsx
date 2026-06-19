@@ -26,6 +26,7 @@
  *  - GET /api/superadmin/security?days=N
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import {
   useEffect,
   useState,
@@ -382,11 +383,7 @@ export function OverviewTab() {
   }, [reload]);
 
   // Auto-refresh 60s
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => void reload(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, reload]);
+  useVisiblePolling(() => void reload(true), 60_000, autoRefresh);
 
   // Custom event para botón "Actualizar" del Hero
   useEffect(() => {
