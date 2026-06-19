@@ -323,7 +323,7 @@ export default function CheckoutSummary({
             <TrustBlock
               Icon={Truck}
               title="Entrega rápida"
-              lines={["Delivery en ~25 min", "Pago al recibir o por Yape", "Coordinás todo por WhatsApp"]}
+              lines={["Delivery en ~25 min", "Pago al recibir o por Yape", "Coordinas todo por WhatsApp"]}
             />
             <TrustBlock
               Icon={ShieldCheck}
@@ -495,7 +495,7 @@ export default function CheckoutSummary({
           {shipping === 0 && subtotal >= FREE_SHIPPING_THRESHOLD && (
             <p className="text-xs font-bold text-[var(--accent)] -mt-1 inline-flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-              Ya tenés envío gratis
+              Ya tienes envío gratis
             </p>
           )}
         </dl>

@@ -170,25 +170,31 @@ export default function CheckoutDatosPage() {
           backLabel="Volver al carrito"
           title="Tus datos"
           lead="Paso 1 de 3."
-          subtitle="Dejanos tu nombre y WhatsApp para coordinar la entrega."
+          subtitle="Déjanos tu nombre y WhatsApp para coordinar la entrega."
         />
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
           <div className="space-y-4">
-            <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-6 space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleGuestContinue();
+              }}
+              className="rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-6 space-y-4"
+            >
               <div>
                 <label htmlFor="guest-name" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Nombre completo</label>
-                <input id="guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-[length:var(--ts-sm)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
+                <input id="guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
               </div>
               <div>
                 <label htmlFor="guest-phone" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">WhatsApp</label>
-                <input id="guest-phone" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="9XXXXXXXX" className="h-12 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-[length:var(--ts-sm)] font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
-                {guestPhone.length > 0 && !phoneOk && <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">Tu WhatsApp debe tener 9 dígitos y empezar con 9.</p>}
+                <input id="guest-phone" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="9XXXXXXXX" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
+                {guestPhone.length > 0 && !phoneOk && <p className="mt-2 ml-1 text-sm text-[var(--data-error-500)]">Tu WhatsApp debe tener 9 dígitos y empezar con 9.</p>}
               </div>
-              <button type="button" disabled={!guestValid} onClick={handleGuestContinue} className="h-12 w-full rounded-full bg-[var(--accent)] text-base font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 lg:hidden">
+              <button type="submit" disabled={!guestValid} className="h-12 w-full rounded-2xl bg-[var(--accent)] text-base font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 lg:hidden">
                 Continuar a la entrega
               </button>
-              <p className="text-center text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">¿Ya tenés cuenta? <Link href="/checkout/auth?returnTo=%2Fcheckout%2Fdatos" className="font-bold text-[var(--accent)] underline underline-offset-2">Iniciá sesión</Link></p>
-            </div>
+              <p className="text-center text-base text-[var(--text-tertiary)]">¿Ya tienes cuenta? <Link href="/checkout/auth?returnTo=%2Fcheckout%2Fdatos" className="font-bold text-[var(--accent)] underline underline-offset-2">Inicia sesión</Link></p>
+            </form>
           </div>
           <div className="hidden lg:block">
             <CheckoutSummary ctaLabel="Continuar a la entrega" onCtaClick={handleGuestContinue} ctaDisabled={!guestValid} showItems={false} helperText="Pago al recibir o Yape · sin sorpresas" />
@@ -216,7 +222,7 @@ export default function CheckoutDatosPage() {
         backLabel="Volver al carrito"
         title="Tus datos"
         lead="Paso 1 de 3."
-        subtitle="Confirmá con qué cuenta comprás hoy."
+        subtitle="Confirma con qué cuenta compras hoy."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
@@ -304,7 +310,7 @@ export default function CheckoutDatosPage() {
                 </p>
                 <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
                   Sin tu WhatsApp y ubicación no podemos coordinar la entrega. En el siguiente paso
-                  podés ingresarlos rapidito.
+                  puedes ingresarlos rapidito.
                 </p>
               </div>
             </div>
