@@ -23,8 +23,14 @@ type UsageRow = {
   slug: string; name: string; plan: string; tier: string;
   ordersThisMonth: number; orderLimit: number | null; orderPct: number;
   nearLimit: boolean; products: number; adminUsers: number;
+  trialDaysLeft: number | null; ageDays: number;
   recommendation: UpgradeRec | null;
 };
+const isDoubleRisk = (r: UsageRow) => r.nearLimit && r.trialDaysLeft != null && r.trialDaysLeft >= 0 && r.trialDaysLeft <= 7;
+function upgradeMsg(r: UsageRow): string {
+  const to = r.recommendation ? ` a ${r.recommendation.recommendedLabel}` : "";
+  return `Hola, vi que ${r.name} ya está al ${r.orderPct}% de su límite de pedidos del plan ${PLAN_LABEL[r.plan] ?? r.plan}. Te conviene subir${to} para no frenar tus ventas. ¿Lo activamos?`;
+}
 type UpsellSummary = { count: number; monthlyUpsidePEN: number };
 type SortKey = "name" | "usage" | "orders" | "products" | "users";
 
@@ -79,6 +85,7 @@ export default function TenantsUsagePage() {
   const [planFilter, setPlanFilter] = useState("all");
   const [nearOnly, setNearOnly] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "usage", dir: "desc" });
+  const [detail, setDetail] = useState<UsageRow | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -129,6 +136,7 @@ export default function TenantsUsagePage() {
       saturated: rows.filter((r) => r.orderLimit != null && r.orderPct >= 100).length,
       avgUsage,
       upside: summary?.monthlyUpsidePEN ?? 0,
+      doubleRisk: rows.filter(isDoubleRisk).length,
     };
   }, [rows, summary]);
 
@@ -158,12 +166,13 @@ export default function TenantsUsagePage() {
         }
       >
         {/* KPIs ejecutivos */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
           <KpiCard icon={Building2} label="Tiendas" value={String(kpis.total)} sub="con plan asignado" />
           <KpiCard icon={AlertTriangle} label="Cerca del límite" value={String(kpis.near)} sub="candidatas a upsell" tone={kpis.near > 0 ? "warn" : "good"} />
           <KpiCard icon={Gauge} label="Saturadas" value={String(kpis.saturated)} sub="≥100% del límite" tone={kpis.saturated > 0 ? "bad" : "good"} />
           <KpiCard icon={Activity} label="Uso promedio" value={`${kpis.avgUsage}%`} sub="planes con límite" />
           <KpiCard icon={TrendingUp} label="MRR potencial" value={fmtPEN(kpis.upside)} sub="/mes si convertís" tone={kpis.upside > 0 ? "warn" : "default"} />
+          <KpiCard icon={AlertTriangle} label="Doble riesgo" value={String(kpis.doubleRisk)} sub="al límite + trial" tone={kpis.doubleRisk > 0 ? "bad" : "good"} />
         </div>
 
         {/* Resumen upsell */}
@@ -246,7 +255,12 @@ export default function TenantsUsagePage() {
                 <tbody className="divide-y divide-[var(--rule-base)]">
                   {sorted.map((r) => (
                     <tr key={r.slug} className={r.nearLimit ? "bg-[var(--data-error-500)]/5" : ""}>
-                      <td className="px-3 py-2.5 font-bold text-[var(--text-primary)] truncate max-w-[200px]">{r.name}</td>
+                      <td className="px-3 py-2.5 max-w-[220px]">
+                        <button type="button" onClick={() => setDetail(r)} className="flex items-center gap-1.5 max-w-full font-bold text-[var(--text-primary)] hover:text-[var(--accent)]">
+                          <span className="truncate">{r.name}</span>
+                          {isDoubleRisk(r) && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[10px] font-extrabold text-white shrink-0">trial −{r.trialDaysLeft}d</span>}
+                        </button>
+                      </td>
                       <td className="px-3 py-2.5">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">{PLAN_LABEL[r.plan] ?? r.plan}</span>
                       </td>
@@ -264,7 +278,7 @@ export default function TenantsUsagePage() {
                       <td className="px-3 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{r.adminUsers}</td>
                       <td className="px-3 py-2.5 text-right">
                         {r.nearLimit && r.recommendation ? (
-                          <Link href={`/superadmin/chat?tenant=${r.slug}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline" title={`Subir a ${r.recommendation.recommendedLabel}`}>
+                          <Link href={`/superadmin/chat?tenant=${r.slug}&msg=${encodeURIComponent(upgradeMsg(r))}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline" title={upgradeMsg(r)}>
                             <MessageSquare className="h-3.5 w-3.5 shrink-0" />
                             <span>→ {r.recommendation.recommendedLabel}</span>
                             {r.recommendation.upsidePEN > 0 && (
@@ -272,7 +286,7 @@ export default function TenantsUsagePage() {
                             )}
                           </Link>
                         ) : r.nearLimit ? (
-                          <Link href={`/superadmin/chat?tenant=${r.slug}`} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline">
+                          <Link href={`/superadmin/chat?tenant=${r.slug}&msg=${encodeURIComponent(upgradeMsg(r))}`} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline">
                             <MessageSquare className="h-3.5 w-3.5" /> Ofrecer upgrade
                           </Link>
                         ) : (
@@ -287,6 +301,63 @@ export default function TenantsUsagePage() {
           </>
         )}
       </AdminTabShell>
+
+      {/* Drawer de detalle por tienda */}
+      {detail && (
+        <>
+          <div className="fixed inset-0 z-[60] bg-black/50" onClick={() => setDetail(null)} aria-hidden />
+          <aside role="dialog" aria-label={`Uso de ${detail.name}`} className="fixed top-0 right-0 h-full w-full max-w-md z-[61] bg-[var(--surface-raised)] border-l border-[var(--rule-base)] shadow-[var(--shadow-xl)] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-[var(--text-primary)] truncate">{detail.name}</h2>
+                <p className="text-xs text-[var(--text-tertiary)] truncate font-mono">{detail.slug} · {PLAN_LABEL[detail.plan] ?? detail.plan}</p>
+              </div>
+              <button type="button" onClick={() => setDetail(null)} aria-label="Cerrar" className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] shrink-0"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* Uso de pedidos */}
+              <div>
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Pedidos del mes</p>
+                  <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{detail.ordersThisMonth}{detail.orderLimit != null ? ` / ${detail.orderLimit}` : " / ∞"} <span className="text-[var(--text-tertiary)]">({detail.orderPct}%)</span></p>
+                </div>
+                <div className="h-3 rounded bg-[var(--surface-sunken)] overflow-hidden">
+                  <div className="h-full" style={{ width: `${Math.min(100, detail.orderPct)}%`, background: barColor(detail.orderPct, detail.nearLimit) }} />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="border border-[var(--rule-soft)] p-2.5"><p className="text-[length:var(--ts-2xs)] font-extrabold uppercase text-[var(--text-tertiary)]">Productos</p><p className="font-display text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{detail.products}</p></div>
+                <div className="border border-[var(--rule-soft)] p-2.5"><p className="text-[length:var(--ts-2xs)] font-extrabold uppercase text-[var(--text-tertiary)]">Usuarios</p><p className="font-display text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{detail.adminUsers}</p></div>
+                <div className="border border-[var(--rule-soft)] p-2.5"><p className="text-[length:var(--ts-2xs)] font-extrabold uppercase text-[var(--text-tertiary)]">Antigüedad</p><p className="font-display text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{detail.ageDays}d</p></div>
+              </div>
+              {detail.trialDaysLeft != null && (
+                <div className={`flex items-center gap-2 border p-3 text-sm ${isDoubleRisk(detail) ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/5 text-[var(--data-error-600,#dc2626)]" : "border-[var(--rule-soft)] text-[var(--text-secondary)]"}`}>
+                  <Gauge className="h-4 w-4 shrink-0" />
+                  Trial: {detail.trialDaysLeft >= 0 ? `vence en ${detail.trialDaysLeft}d` : `venció hace ${-detail.trialDaysLeft}d`}
+                  {isDoubleRisk(detail) && <span className="ml-auto font-extrabold">DOBLE RIESGO</span>}
+                </div>
+              )}
+              {detail.recommendation && (
+                <div className="border border-[#0d9488]/40 bg-[#0d9488]/5 p-3">
+                  <p className="text-sm font-bold text-[#0d9488]">Recomendación: subir a {detail.recommendation.recommendedLabel}</p>
+                  {detail.recommendation.upsidePEN > 0 && <p className="text-xs text-[var(--text-secondary)] mt-0.5">+{fmtPEN(detail.recommendation.upsidePEN)}/mes de MRR · nuevo límite {detail.recommendation.newOrderLimit ?? "∞"} pedidos</p>}
+                </div>
+              )}
+              {detail.nearLimit && (
+                <div className="border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">Mensaje sugerido</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{upgradeMsg(detail)}</p>
+                </div>
+              )}
+              {detail.nearLimit && (
+                <Link href={`/superadmin/chat?tenant=${detail.slug}&msg=${encodeURIComponent(upgradeMsg(detail))}`} className="inline-flex w-full h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] text-sm font-bold text-white hover:brightness-110">
+                  <MessageSquare className="h-4 w-4" /> Ofrecer upgrade por chat
+                </Link>
+              )}
+            </div>
+          </aside>
+        </>
+      )}
     </>
   );
 }

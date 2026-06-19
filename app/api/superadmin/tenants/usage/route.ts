@@ -30,8 +30,9 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    const nowMs = now.getTime();
     const [tenants, ordersByTenant, productsByTenant, adminsByTenant] = await Promise.all([
-      prisma.tenant.findMany({ select: { id: true, slug: true, name: true, plan: true } }),
+      prisma.tenant.findMany({ select: { id: true, slug: true, name: true, plan: true, trialEndsAt: true, createdAt: true } }),
       prisma.order.groupBy({ by: ["tenantId"], where: { createdAt: { gte: monthStart } }, _count: { _all: true } }),
       prisma.product.groupBy({ by: ["tenantId"], _count: { _all: true } }),
       prisma.adminUser.groupBy({ by: ["tenantId"], where: { active: true }, _count: { _all: true } }),
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest) {
       const ordersThisMonth = orderMap.get(t.id) ?? 0;
       const pct = orderLimit === Infinity || orderLimit === 0 ? 0 : ordersThisMonth / orderLimit;
       const nearLimit = orderLimit !== Infinity && pct >= alertAt;
+      const trialDaysLeft = t.trialEndsAt ? Math.ceil((t.trialEndsAt.getTime() - nowMs) / 86_400_000) : null;
       return {
         slug: t.slug,
         name: t.name,
@@ -60,6 +62,8 @@ export async function GET(req: NextRequest) {
         nearLimit,
         products: productMap.get(t.id) ?? 0,
         adminUsers: adminMap.get(t.id) ?? 0,
+        trialDaysLeft,
+        ageDays: Math.floor((nowMs - t.createdAt.getTime()) / 86_400_000),
         // Recomendación de upgrade sólo para candidatas a upsell.
         recommendation: nearLimit ? recommendUpgrade(t.plan, ordersThisMonth) : null,
       };
