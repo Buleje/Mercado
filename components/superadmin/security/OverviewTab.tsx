@@ -26,6 +26,7 @@
  *  - GET /api/superadmin/security?days=N
  */
 
+import { SAMetricCard } from "@/components/superadmin/_shared/SAMetricCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import {
   useEffect,
@@ -565,36 +566,40 @@ export function OverviewTab() {
 
       {/* ─── KPIs Hero (4 cards) ─────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
+        <SAMetricCard
           icon={ShieldAlert}
           label="Vulnerabilidades"
           value={posture.vulnerabilities.connected ? String(posture.vulnerabilities.count) : "—"}
-          subtitle={
+          sub={
             posture.vulnerabilities.connected
               ? `Escáner: ${posture.vulnerabilities.scannerName}`
               : "Sin escáner conectado"
           }
+          colorValue
           tone={posture.vulnerabilities.count > 0 ? "warning" : "neutral"}
         />
-        <KpiCard
+        <SAMetricCard
           icon={Lock}
           label="Login fallidos 24h"
           value={String(posture.loginsFailed24h)}
-          subtitle="Ventana últimas 24 horas"
+          sub="Ventana últimas 24 horas"
+          colorValue
           tone={posture.loginsFailed24h > 10 ? "warning" : "neutral"}
         />
-        <KpiCard
+        <SAMetricCard
           icon={Ban}
           label="IPs bloqueadas"
           value={String(posture.ipsBlocked)}
-          subtitle="≥5 fails en 24h"
+          sub="≥5 fails en 24h"
+          colorValue
           tone={posture.ipsBlocked > 0 ? "danger" : "neutral"}
         />
-        <KpiCard
+        <SAMetricCard
           icon={Users}
           label="Sesiones activas"
           value={String(posture.activeSessions)}
-          subtitle="Estimadas vía audit log"
+          sub="Estimadas vía audit log"
+          colorValue
           tone="success"
         />
       </div>
@@ -864,50 +869,6 @@ export function OverviewTab() {
 
 /* ───────────────────────── components ───────────────────────── */
 
-function KpiCard({
-  icon: Icon,
-  label,
-  value,
-  subtitle,
-  tone,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  subtitle: string;
-  tone: "neutral" | "warning" | "danger" | "success";
-}) {
-  const iconBg =
-    tone === "warning"
-      ? "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300"
-      : tone === "danger"
-        ? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
-        : tone === "success"
-          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
-          : "bg-[var(--accent)]/10 text-[var(--accent)]";
-  const valueTone =
-    tone === "warning"
-      ? "text-teal-700 dark:text-teal-300"
-      : tone === "danger"
-        ? "text-rose-700 dark:text-rose-300"
-        : "text-[var(--text-primary)]";
-  return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
-          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-        </span>
-      </div>
-      <p className="mt-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {label}
-      </p>
-      <p className={`mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight ${valueTone}`}>
-        {value}
-      </p>
-      <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{subtitle}</p>
-    </div>
-  );
-}
 
 function PostureCheck({
   icon: Icon,
