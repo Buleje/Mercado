@@ -22,12 +22,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const nowMs = Date.now();
-    const [tenants, productsBy, ordersBy, salesBy] = await Promise.all([
+    const [tenants, productsBy, ordersBy, salesBy, contacts] = await Promise.all([
       prisma.tenant.findMany({ select: { id: true, slug: true, name: true, logoUrl: true, createdAt: true, plan: true, trialEndsAt: true } }),
       prisma.product.groupBy({ by: ["tenantId"], _count: { _all: true } }),
       prisma.order.groupBy({ by: ["tenantId"], _count: { _all: true } }),
       prisma.sale.groupBy({ by: ["tenantId"], _count: { _all: true } }),
+      prisma.onboardingContact.findMany({ select: { tenantSlug: true, status: true, snoozedUntil: true } }),
     ]);
+    const contactMap = new Map(contacts.map((c) => [c.tenantSlug, c]));
 
     const has = (arr: { tenantId: string; _count: { _all: number } }[]) => {
       const s = new Set<string>();
@@ -50,6 +52,12 @@ export async function GET(req: NextRequest) {
       const trialDaysLeft = t.trialEndsAt
         ? Math.ceil((t.trialEndsAt.getTime() - nowMs) / 86_400_000)
         : null;
+      // Estado de contacto (#10): el snooze vencido vuelve a "none".
+      const c = contactMap.get(t.slug);
+      const contactStatus =
+        c && c.status === "snoozed" && c.snoozedUntil && c.snoozedUntil.getTime() > nowMs ? "snoozed"
+          : c && c.status === "contacted" ? "contacted"
+            : "none";
       return {
         slug: t.slug,
         name: t.name,
@@ -64,6 +72,8 @@ export async function GET(req: NextRequest) {
         pct: Math.round((done / STEPS.length) * 100),
         stuckAt,
         complete: done === STEPS.length,
+        contactStatus,
+        snoozedUntil: contactStatus === "snoozed" ? c?.snoozedUntil?.toISOString() ?? null : null,
       };
     });
 

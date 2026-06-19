@@ -5494,6 +5494,21 @@ model JuntaMember {
   @@index([juntaId])
 }
 
+// Estado de contacto de activación por tienda (Activación v2 #10 — Brandon
+// 2026-06-19). Persiste "marcar contactada / posponer" para no re-empujar.
+// PK = slug del tenant. Plataforma (no tenant-scoped).
+model OnboardingContact {
+  tenantSlug   String    @id
+  status       String    @default("none") // none | contacted | snoozed
+  snoozedUntil DateTime?
+  note         String?
+  updatedBy    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status])
+}
+
 // Estado por alerta del superadmin (Centro de alertas v2 — Brandon 2026-06-19).
 // Persiste reconocer/posponer/resolver. La PK es el id ESTABLE de la alerta que
 // genera el motor (lib/superadmin/alert-rules): trial-<slug>, sla, churn-<slug>,

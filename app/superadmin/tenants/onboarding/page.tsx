@@ -28,6 +28,7 @@ type Row = {
   trialEndsAt: string | null; trialDaysLeft: number | null; ageDays: number;
   steps: Record<Step, boolean>; done: number; total: number; pct: number;
   stuckAt: Step | null; complete: boolean;
+  contactStatus: "none" | "contacted" | "snoozed"; snoozedUntil: string | null;
 };
 type Summary = { total: number; complete: number; stuck: number };
 type StatusFilter = "all" | "complete" | "stuck" | `stuck:${Step}`;
@@ -92,6 +93,8 @@ export default function TenantsOnboardingPage() {
   const [sort, setSort] = useState<SortKey>("progress");
   const [detail, setDetail] = useState<Row | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [hideContacted, setHideContacted] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -137,10 +140,13 @@ export default function TenantsOnboardingPage() {
       if (statusFilter === "complete" && !r.complete) return false;
       if (statusFilter === "stuck" && r.complete) return false;
       if (statusFilter.startsWith("stuck:") && r.stuckAt !== statusFilter.slice(6)) return false;
+      if (hideContacted && r.contactStatus !== "none") return false;
       if (q && !`${r.name} ${r.slug}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [rows, search, statusFilter]);
+  }, [rows, search, statusFilter, hideContacted]);
+
+  const contactedCount = useMemo(() => rows.filter((r) => r.contactStatus !== "none").length, [rows]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -161,6 +167,20 @@ export default function TenantsOnboardingPage() {
       if (res.ok) window.open(`/t/${encodeURIComponent(slug)}/admin`, "_blank");
     } finally { setImpersonating(null); }
   }, []);
+
+  // #10 — marcar contactada / posponer / reset.
+  const contact = useCallback(async (slug: string, action: "contacted" | "snooze" | "reset", snoozeDays?: number) => {
+    setBusy(slug);
+    try {
+      await fetchSuperadmin("/api/superadmin/tenants/onboarding/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, action, ...(snoozeDays ? { snoozeDays } : {}) }),
+      });
+      await load();
+      setDetail((d) => (d && d.slug === slug ? null : d));
+    } finally { setBusy(null); }
+  }, [load]);
 
   const hasFilters = search !== "" || statusFilter !== "all";
   const maxFunnel = Math.max(1, ...funnel.map((f) => f.count));
@@ -243,6 +263,11 @@ export default function TenantsOnboardingPage() {
             <option value="age">Orden: antigüedad</option>
             <option value="name">Orden: nombre</option>
           </select>
+          {contactedCount > 0 && (
+            <button type="button" onClick={() => setHideContacted((v) => !v)} aria-pressed={hideContacted} className={["inline-flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-bold transition-colors shrink-0", hideContacted ? "bg-[var(--accent)] text-white" : "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"].join(" ")}>
+              <Check className="h-4 w-4" /> Ocultar contactadas <span className="tabular-nums opacity-80">{contactedCount}</span>
+            </button>
+          )}
         </div>
 
         {loading && rows.length === 0 ? (
@@ -266,6 +291,8 @@ export default function TenantsOnboardingPage() {
                         {r.name}
                         {risk && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[10px] font-extrabold text-white">trial −{r.trialDaysLeft}d</span>}
                         {old && !risk && <span className="rounded-full bg-[#0d9488]/15 px-1.5 py-0.5 text-[10px] font-extrabold text-[#0d9488]">{r.ageDays}d</span>}
+                        {r.contactStatus === "contacted" && <span className="rounded-full bg-[var(--data-success-500)]/15 px-1.5 py-0.5 text-[10px] font-extrabold text-[var(--data-success-600,#059669)]">contactada</span>}
+                        {r.contactStatus === "snoozed" && <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[10px] font-extrabold text-[var(--text-tertiary)]">pospuesta</span>}
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)]">{r.complete ? "Activada ✓" : `Estancada en: ${r.stuckAt ? STEP_META[r.stuckAt].label : "—"}`}</p>
                     </button>
@@ -289,6 +316,14 @@ export default function TenantsOnboardingPage() {
                           <MessageSquare className="h-3.5 w-3.5" /> Reactivar
                         </Link>
                       )}
+                      {!r.complete && r.contactStatus === "none" ? (
+                        <>
+                          <button type="button" disabled={busy === r.slug} onClick={() => void contact(r.slug, "contacted")} title="Marcar contactada" aria-label="Marcar contactada" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--data-success-600,#059669)] disabled:opacity-40"><Check className="h-4 w-4" /></button>
+                          <button type="button" disabled={busy === r.slug} onClick={() => void contact(r.slug, "snooze", 7)} title="Posponer 7 días" aria-label="Posponer" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--accent)] disabled:opacity-40"><Clock className="h-4 w-4" /></button>
+                        </>
+                      ) : !r.complete ? (
+                        <button type="button" disabled={busy === r.slug} onClick={() => void contact(r.slug, "reset")} title="Deshacer contacto" aria-label="Deshacer" className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] disabled:opacity-40"><X className="h-4 w-4" /></button>
+                      ) : null}
                     </div>
                   </div>
                 );
