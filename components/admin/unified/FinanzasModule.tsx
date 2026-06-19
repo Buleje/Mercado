@@ -13,7 +13,7 @@ import {
 import {
   TrendingUp, TrendingDown, PieChart as PieChartIcon, Target,
   FileBarChart, Waves, Calculator,
-  DollarSign, Wallet,
+  DollarSign, Wallet, ChevronRight,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
   Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
 } from "@buleje/design-system/icons";
@@ -1196,8 +1196,25 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
       </AdminModuleHeader>
       )}
 
+      {/* Brandon 2026-06-18: en las sub-secciones "folded" (Fiados, Préstamos,
+          Adelantos, Activos, Por cobrar, Scoring) ocultamos el header grande "Mi
+          Plata" para no duplicar el título del módulo hijo — pero igual mostramos
+          un breadcrumb fino "Mi Plata › <sección>" para que SIEMPRE quede claro que
+          estás dentro de Mi Plata, sin importar qué sub-tab presiones. */}
+      {FOLDED_SUBS.has(sub) && (
+        <div className="flex items-center gap-2 border-b border-[var(--rule-base)] pb-3 dark:border-white/10">
+          <Wallet className="h-4 w-4 text-primary" aria-hidden />
+          <span className="text-sm font-bold text-[var(--text-primary)]">Mi Plata</span>
+          <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden />
+          <span className="text-sm font-medium text-[var(--text-secondary)]">
+            {TABS.find((t) => t.id === sub)?.label}
+          </span>
+        </div>
+      )}
+
       <AdminTabBar
         tabs={TABS}
+        wrap
         activeTab={sub}
         onTabChange={(id) => setSub(id as typeof TABS[number]["id"])}
         moduleId="finanzas"

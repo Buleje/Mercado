@@ -23,6 +23,10 @@ interface AdminTabBarProps {
   draggable?: boolean;
   className?: string;
   vertical?: boolean;
+  /** Las tabs envuelven a 2+ filas cuando superan el ancho, en vez de scroll
+      horizontal con chevrons. Útil para módulos con muchas sub-tabs (ej. Finanzas
+      con 14) donde el scroll esconde opciones. Opt-in: default mantiene el scroll. */
+  wrap?: boolean;
   children?: ReactNode;
   onTabHover?: (id: string) => void;
   /** Contenido alineado a la derecha del tab bar (ej. status chip). */
@@ -37,6 +41,7 @@ export default function AdminTabBar({
   draggable = true,
   className,
   vertical = false,
+  wrap = false,
   children,
   onTabHover,
   rightSlot,
@@ -203,7 +208,7 @@ export default function AdminTabBar({
   return (
     <>
     <div className={cn("relative", className)}>
-      {canScrollLeft && (
+      {!wrap && canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
           className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-linear-to-r from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
@@ -215,9 +220,12 @@ export default function AdminTabBar({
 
       <div
         ref={tabsRef}
-        onScroll={checkScroll}
-        className="-mx-1 flex gap-0.5 overflow-x-auto scroll-smooth border-b border-[var(--rule-base)] px-1 scrollbar-none sm:gap-1"
-        style={{ scrollbarWidth: "none" }}
+        onScroll={wrap ? undefined : checkScroll}
+        className={cn(
+          "-mx-1 flex gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
+          wrap ? "flex-wrap gap-y-1" : "overflow-x-auto scroll-smooth scrollbar-none",
+        )}
+        style={wrap ? undefined : { scrollbarWidth: "none" }}
       >
         {orderedTabs.map((tab) => {
           const Icon = tab.icon;
@@ -285,7 +293,7 @@ export default function AdminTabBar({
         )}
       </div>
 
-      {canScrollRight && (
+      {!wrap && canScrollRight && (
         <button
           onClick={() => scrollTabs("right")}
           className="absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-linear-to-l from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
