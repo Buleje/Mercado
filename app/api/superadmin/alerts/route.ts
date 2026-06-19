@@ -109,7 +109,32 @@ export async function GET(req: NextRequest) {
     };
 
     const alerts = buildAlerts(input, config, now);
-    return NextResponse.json({ alerts, counts: alertCounts(alerts) });
+
+    // Estado persistido (#1): reconocer/posponer/resolver. Las resueltas y las
+    // pospuestas con snooze vigente se filtran del feed activo; el snooze vencido
+    // reactiva la alerta sola.
+    const states = await prisma.alertState.findMany({
+      where: { alertId: { in: alerts.map((a) => a.id) } },
+    });
+    const stateMap = new Map(states.map((s) => [s.alertId, s]));
+    const isMuted = (id: string): boolean => {
+      const s = stateMap.get(id);
+      if (!s) return false;
+      if (s.status === "resolved") return true;
+      if (s.status === "snoozed" && s.snoozedUntil && s.snoozedUntil.getTime() > now) return true;
+      return false;
+    };
+    const withState = alerts.map((a) => {
+      const s = stateMap.get(a.id);
+      return { ...a, state: s ? { status: s.status, snoozedUntil: s.snoozedUntil?.toISOString() ?? null } : null };
+    });
+    const active = withState.filter((a) => !isMuted(a.id));
+    const muted = withState.filter((a) => isMuted(a.id));
+
+    if (req.nextUrl.searchParams.get("view") === "muted") {
+      return NextResponse.json({ alerts: muted, counts: alertCounts(muted), mutedCount: muted.length });
+    }
+    return NextResponse.json({ alerts: active, counts: alertCounts(active), mutedCount: muted.length });
   } catch (e) {
     logger.error("[superadmin/alerts] error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

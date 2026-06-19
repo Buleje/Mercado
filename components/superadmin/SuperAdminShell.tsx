@@ -400,6 +400,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const [navSearch, setNavSearch] = useState("");
   // Slide-over "Configurar barra lateral" (1:1 con el footer del admin de negocio).
   const [configOpen, setConfigOpen] = useState(false);
+  // Badge de alertas críticas activas en el nav (#2). Refresca cada 2 min.
+  const [alertCount, setAlertCount] = useState(0);
 
   // 2026-05-28 — Filtra los NAV_GROUPS por query (label/href). Si query
   // está vacío o tiene menos de 2 chars, retorna grupos completos. Si hay
@@ -543,6 +545,34 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   useEffect(() => {
     const slug = localStorage.getItem("impersonating-tenant");
     if (slug) setImpersonating(slug);
+  }, []);
+
+  // Badge de alertas críticas activas (#2): cuenta del Centro de alertas, refresca
+  // al montar + cada 2 min (salvo pestaña en background). Reusa el endpoint que ya
+  // filtra resueltas/pospuestas. Best-effort: si falla, el badge queda en 0.
+  useEffect(() => {
+    let active = true;
+    const fetchCount = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      try {
+        const res = await fetch("/api/superadmin/alerts");
+        if (!res.ok || !active) return;
+        const d = (await res.json()) as { counts?: { critical?: number } };
+        if (active) setAlertCount(d.counts?.critical ?? 0);
+      } catch (err) {
+        // Best-effort: el badge es accesorio; si falla, queda en 0 sin romper nada.
+        console.warn("[superadmin] alert count failed", String(err));
+      }
+    };
+    void fetchCount();
+    const timer = setInterval(fetchCount, 2 * 60 * 1000);
+    const onAlerts = () => void fetchCount();
+    window.addEventListener("superadmin-alerts-changed", onAlerts);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      window.removeEventListener("superadmin-alerts-changed", onAlerts);
+    };
   }, []);
 
   // Verificar sesión periódicamente (cada 2 min) — si expiró, mostrar aviso
@@ -766,6 +796,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               onItemClick={() => setMobileOpen(false)}
               isBuleje={isBuleje}
               forceExpandAll={isSearching}
+              alertCount={alertCount}
             />
           )}
         </nav>
@@ -968,6 +999,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               onItemClick={() => setMobileOpen(false)}
               isBuleje={isBuleje}
               forceExpandAll={isSearching}
+              alertCount={alertCount}
             />
             {isSearching && !hasSearchResults && (
               <div className={["mt-6 px-3 text-center text-sm", isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]"].join(" ")}>
@@ -1494,6 +1526,19 @@ interface NavGroupsAccordionProps {
   isBuleje: boolean;
   /** 2026-05-28 — fuerza todos los grupos expandidos (modo búsqueda) */
   forceExpandAll?: boolean;
+  /** Conteo de alertas críticas activas — badge en el item/grupo de Alertas (#2). */
+  alertCount?: number;
+}
+
+const ALERTS_HREF = "/superadmin/alerts";
+
+/** Badge rojo de conteo (alertas críticas activas) — #2. */
+function AlertCountBadge({ count }: { count: number }) {
+  return (
+    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold tabular-nums shrink-0">
+      {count > 9 ? "9+" : count}
+    </span>
+  );
 }
 
 function NavGroupsAccordion({
@@ -1503,6 +1548,7 @@ function NavGroupsAccordion({
   onItemClick,
   isBuleje,
   forceExpandAll = false,
+  alertCount = 0,
 }: NavGroupsAccordionProps) {
   const activeGroupId = groups.find((g) =>
     g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
@@ -1582,6 +1628,7 @@ function NavGroupsAccordion({
           (it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
         );
         const iconColor = GROUP_ICON_COLOR[group.id];
+        const groupShowsAlertBadge = alertCount > 0 && items.some((it) => it.href === ALERTS_HREF);
 
         // Categoría con UN solo enlace (Brandon 2026-06-19): link directo, sin
         // header colapsable ni chevron — no tiene sentido desplegar 1 destino.
@@ -1631,9 +1678,11 @@ function NavGroupsAccordion({
             >
               <span className={["shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]", iconColor].join(" ")}>{group.icon}</span>
               <span className="flex-1 text-left truncate">{group.label}</span>
-              {groupHasActive && !isOpen && (
+              {!isOpen && groupShowsAlertBadge ? (
+                <AlertCountBadge count={alertCount} />
+              ) : groupHasActive && !isOpen ? (
                 <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
-              )}
+              ) : null}
               <ChevronDown
                 className={[
                   "w-3.5 h-3.5 shrink-0 opacity-60 transition-transform duration-200",
@@ -1663,9 +1712,11 @@ function NavGroupsAccordion({
                     >
                       <span className="shrink-0 opacity-90 [&_svg]:w-4 [&_svg]:h-4">{item.icon}</span>
                       <span className="flex-1 truncate">{item.label}</span>
-                      {active && (
+                      {item.href === ALERTS_HREF && alertCount > 0 ? (
+                        <AlertCountBadge count={alertCount} />
+                      ) : active ? (
                         <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
-                      )}
+                      ) : null}
                     </Link>
                   );
                 })}
