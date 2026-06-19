@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requirePartner } from "@/lib/delivery/partner-session";
 import { DeliveryAssignmentsDB } from "@/lib/db/delivery-assignments.db";
 import { sequenceStops, type RouteStop, type RoutePoint } from "@/lib/delivery/route";
-import { coordsFromLocation } from "@/lib/geo-utils";
+import { coordsFromLocation, parseGpsCoords } from "@/lib/geo-utils";
 import { logger } from "@/lib/logger";
 
 /**
@@ -62,12 +62,14 @@ export async function GET(req: NextRequest) {
 
     const stops: RouteStop<RouteStopData>[] = assignments.map((a) => {
       // Preferimos las coords del pedido; si no hay, parseamos "GPS:" del texto.
+      // parseGpsCoords devuelve null si el texto no trae coords reales (un
+      // "GPS:" mal formado NO debe fingir la ubicación de la bodega).
       let point: RoutePoint | null = null;
       if (a.order.dropoffLat != null && a.order.dropoffLng != null) {
         point = { lat: a.order.dropoffLat, lng: a.order.dropoffLng };
-      } else if (a.order.customerLocation?.includes("GPS:")) {
-        const c = coordsFromLocation(a.order.customerLocation);
-        point = { lat: c.lat, lng: c.lon };
+      } else if (a.order.customerLocation) {
+        const c = parseGpsCoords(a.order.customerLocation);
+        if (c) point = { lat: c.lat, lng: c.lon };
       }
       return {
         point,
@@ -102,6 +104,10 @@ export async function GET(req: NextRequest) {
         legDurationMin: s.legDurationMin,
         cumulativeDistanceKm: s.cumulativeDistanceKm,
         cumulativeDurationMin: s.cumulativeDurationMin,
+        // Coords sobre las que se optimizó la ruta — el cliente arma el deep-link
+        // de Maps con estas (no con el texto de dirección).
+        lat: s.point?.lat ?? null,
+        lng: s.point?.lng ?? null,
         ...s.data,
       })),
     });

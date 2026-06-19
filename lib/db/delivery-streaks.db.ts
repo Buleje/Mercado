@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
+import { limaDateKey, startOfLimaDay } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,30 +33,22 @@ export type StreaksPayload = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// Todo el bucketeo de día/semana es en zona Lima (UTC-5). El server corre en
+// UTC: una entrega a las 20:00 Lima es 01:00 UTC del día siguiente. Sin esto,
+// las entregas de la tarde-noche caían en el día/semana equivocada de la racha.
 
-/** Devuelve el lunes de la semana ISO que contiene `date` (UTC). */
-function isoWeekMonday(date: Date): Date {
-  const d = new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  );
+/**
+ * Devuelve el lunes de la semana ISO de `anchor`, preservando el anclaje a las
+ * 00:00 de Lima (= 05:00 UTC). Como `anchor` ya es 00:00 Lima, sus métodos UTC
+ * reflejan el día de la semana de Lima.
+ */
+function isoWeekMonday(anchor: Date): Date {
+  const d = new Date(anchor); // ya es 00:00 Lima (05:00 UTC)
   // getUTCDay(): 0=dom, 1=lun … 6=sab. ISO: lunes = día 1.
-  const dow = d.getUTCDay(); // 0–6
-  const diff = dow === 0 ? -6 : 1 - dow; // cuántos días restar para llegar al lunes
+  const dow = d.getUTCDay();
+  const diff = dow === 0 ? -6 : 1 - dow; // días a restar para llegar al lunes
   d.setUTCDate(d.getUTCDate() + diff);
   return d;
-}
-
-/** Devuelve el domingo de la semana ISO (= lunes + 6 días), al final del día UTC. */
-function isoWeekSunday(monday: Date): Date {
-  const d = new Date(monday);
-  d.setUTCDate(d.getUTCDate() + 6);
-  d.setUTCHours(23, 59, 59, 999);
-  return d;
-}
-
-/** Representa una fecha UTC solo por "YYYY-MM-DD". */
-function toDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
 }
 
 // ─── DB Class ─────────────────────────────────────────────────────────────────
@@ -76,13 +69,14 @@ export class DeliveryStreaksDb {
 
   private static async _compute(partnerId: string): Promise<StreaksPayload> {
     const now = new Date();
-    const today = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    );
+    // "Hoy" del rider en zona Lima (UTC-5), anclado a 00:00 Lima = 05:00 UTC.
+    const todayMs = startOfLimaDay(now);
+    const today = new Date(todayMs);
+    const todayKey = limaDateKey(now);
 
     // Ventana: 60 días atrás es suficiente para racha + semana actual
-    const since60 = new Date(today);
-    since60.setUTCDate(today.getUTCDate() - 59);
+    const since60 = new Date(todayMs);
+    since60.setUTCDate(since60.getUTCDate() - 59);
 
     const assignments = await prisma.deliveryAssignment.findMany({
       where: {
@@ -94,55 +88,55 @@ export class DeliveryStreaksDb {
       orderBy: { deliveredAt: "asc" },
     });
 
-    // ── Días con entrega (Set de "YYYY-MM-DD") ────────────────────────────────
+    // ── Días con entrega (Set de "YYYY-MM-DD" en zona Lima) ───────────────────
     const deliveredDays = new Set<string>();
     for (const a of assignments) {
-      if (a.deliveredAt) deliveredDays.add(toDateKey(a.deliveredAt));
+      if (a.deliveredAt) deliveredDays.add(limaDateKey(a.deliveredAt));
     }
 
-    // ── Streak: días consecutivos hacia atrás desde hoy ──────────────────────
+    // ── Streak: días Lima consecutivos hacia atrás desde hoy ─────────────────
     let streakDays = 0;
     const cursor = new Date(today);
-    while (deliveredDays.has(toDateKey(cursor))) {
+    while (deliveredDays.has(limaDateKey(cursor))) {
       streakDays++;
       cursor.setUTCDate(cursor.getUTCDate() - 1);
     }
 
-    // ── recentDays: lunes[0]…domingo[6] de la semana ISO actual ──────────────
+    // ── recentDays: lunes[0]…domingo[6] de la semana ISO actual (Lima) ───────
     const monday = isoWeekMonday(today);
     const recentDays: boolean[] = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(monday);
       d.setUTCDate(monday.getUTCDate() + i);
-      return deliveredDays.has(toDateKey(d));
+      return deliveredDays.has(limaDateKey(d));
     });
 
     // ── WeeklyGoal ────────────────────────────────────────────────────────────
-    const sunday = isoWeekSunday(monday);
+    // Fin de semana = 00:00 Lima del lunes siguiente (exclusivo). Así una entrega
+    // del domingo por la noche (Lima) cuenta en su semana, no en la siguiente.
+    const weekEnd = new Date(monday);
+    weekEnd.setUTCDate(monday.getUTCDate() + 7);
     const WEEKLY_TARGET = 600; // S/ 600 hardcoded (fase 1)
 
     let weeklyEarnings = 0;
     for (const a of assignments) {
       if (!a.deliveredAt) continue;
       const at = a.deliveredAt;
-      if (at >= monday && at <= sunday) {
+      if (at >= monday && at < weekEnd) {
         weeklyEarnings += Number(a.fee) + Number(a.tipAmount ?? 0);
       }
     }
 
-    // Días que faltan hasta el domingo 23:59 (incluyendo hoy si hoy < domingo)
-    const todayKey = toDateKey(today);
-    const sundayKey = toDateKey(sunday);
-    let daysRemaining = 0;
-    if (todayKey <= sundayKey) {
-      const diffMs = sunday.getTime() - today.getTime();
-      daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    }
+    // Días que faltan hasta el fin de la semana Lima (incluyendo hoy).
+    const daysRemaining = Math.max(
+      0,
+      Math.round((weekEnd.getTime() - todayMs) / (1000 * 60 * 60 * 24)),
+    );
 
     // ── Bonuses ───────────────────────────────────────────────────────────────
-    // trip5: entregas delivered HOY
+    // trip5: entregas delivered HOY (zona Lima)
     let todayDeliveries = 0;
     for (const a of assignments) {
-      if (a.deliveredAt && toDateKey(a.deliveredAt) === todayKey) {
+      if (a.deliveredAt && limaDateKey(a.deliveredAt) === todayKey) {
         todayDeliveries++;
       }
     }

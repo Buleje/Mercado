@@ -116,9 +116,11 @@ export default function PartnerDashboard() {
   useEffect(() => { loadMe(); }, [loadMe]);
 
   useEffect(() => {
-    if (me?.currentOrderId) loadRouteCount();
+    // Un repartidor en línea puede tener ≥2 pedidos aceptados sin currentOrderId
+    // marcado todavía; ahí también queremos ofrecerle la ruta apilada.
+    if (me?.isOnline || me?.currentOrderId) loadRouteCount();
     else setActiveCount(0);
-  }, [me?.currentOrderId, loadRouteCount]);
+  }, [me?.isOnline, me?.currentOrderId, loadRouteCount]);
 
   useEffect(() => {
     if (!me?.isOnline) return;

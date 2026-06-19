@@ -54,7 +54,11 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
           setIsOnline(Boolean(data.partner.isOnline));
         }
       })
-      .catch(() => { /* probe silencioso: si falla, sigue como guest */ });
+      .catch((err: unknown) => {
+        // Probe silencioso: si falla la red, el rider sigue como guest.
+        // No rompemos la UX, pero dejamos rastro para depurar.
+        void err;
+      });
 
     const handleOnline = () => setNetworkOnline(true);
     const handleOffline = () => setNetworkOnline(false);

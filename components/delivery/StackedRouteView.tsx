@@ -27,6 +27,9 @@ export interface StackedStop {
   customerReference: string | null;
   total: number;
   hasGps: boolean;
+  /** Coords sobre las que se optimizó la ruta (null si la parada no tiene GPS). */
+  lat: number | null;
+  lng: number | null;
   cumulativeDistanceKm: number;
   cumulativeDurationMin: number;
   items: { name: string; quantity: number; unit: string }[];
@@ -46,12 +49,20 @@ const STATUS_LABEL: Record<string, string> = {
   in_transit: "En camino",
 };
 
-/** URL de Google Maps con todas las paradas como waypoints, en orden. */
+/** URL de Google Maps con todas las paradas como waypoints, en orden óptimo. */
 function buildMapsUrl(stops: StackedStop[]): string | null {
+  // Preferimos las coords reales (sobre las que se optimizó la ruta); si una
+  // parada no tiene GPS, caemos a su dirección de texto. Así no se cae del
+  // enlace una parada que sí entró a la ruta por sus coords (sin texto), y los
+  // waypoints coinciden con la lista que ve el repartidor.
   const places = stops
-    .map((s) => s.customerLocation)
-    .filter((loc): loc is string => Boolean(loc))
-    .map((loc) => encodeURIComponent(loc.replace(/GPS:\s*/i, "")));
+    .map((s) => {
+      if (s.lat != null && s.lng != null) return `${s.lat},${s.lng}`;
+      const loc = s.customerLocation?.replace(/GPS:\s*/i, "").trim();
+      return loc ? loc : null;
+    })
+    .filter((p): p is string => Boolean(p))
+    .map((p) => encodeURIComponent(p));
   if (places.length === 0) return null;
   const destination = places[places.length - 1];
   const waypoints = places.slice(0, -1).join("|");

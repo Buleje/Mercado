@@ -26,6 +26,21 @@ const BodySchema = z.object({
   token: z.string().max(200).optional(),
 });
 
+/**
+ * Limpia el mensaje libre del cliente antes de guardarlo y, sobre todo, antes
+ * de interpolarlo en el texto de WhatsApp del repartidor. Evita que saltos de
+ * línea o marcadores de formato (`*_~``) rompan la estructura del mensaje o
+ * inyecten negritas/itálicas falsas. Devuelve "" si no queda contenido útil.
+ */
+function sanitizeTipMessage(raw: string): string {
+  return raw
+    .replace(/[\r\n]+/g, " ") // sin saltos de línea (romperían el layout del WA)
+    .replace(/[*_~`]/g, "") // sin marcadores de formato WhatsApp/markdown
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .slice(0, 200);
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ orderId: string }> },
@@ -98,12 +113,17 @@ export async function POST(
     );
   }
 
-   
+  // Mensaje libre saneado: se usa el mismo valor en la DB y en el WhatsApp.
+  const tipMessage = parsed.data.message
+    ? sanitizeTipMessage(parsed.data.message)
+    : "";
+
+
   await prisma.deliveryAssignment.update({
     where: { id: assignment.id },
     data: {
       tipAmount: parsed.data.amount,
-      tipMessage: parsed.data.message ?? null,
+      tipMessage: tipMessage || null,
     },
   });
 
@@ -113,7 +133,7 @@ export async function POST(
       `🎁 *¡Recibiste una propina!*`,
       ``,
       `S/ ${parsed.data.amount.toFixed(2)} extra por la entrega.`,
-      parsed.data.message ? `\nMensaje: "${parsed.data.message}"` : "",
+      tipMessage ? `\nMensaje: "${tipMessage}"` : "",
       ``,
       `¡Gran trabajo, ${assignment.partner.name}!`,
     ].join("\n");

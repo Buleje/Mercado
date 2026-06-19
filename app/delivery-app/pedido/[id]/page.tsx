@@ -15,7 +15,7 @@ import {
   MotoIcon,
   RouteIcon,
 } from "@/components/delivery/icons";
-import { coordsFromLocation } from "@/lib/geo-utils";
+import { parseGpsCoords } from "@/lib/geo-utils";
 
 // Mapa con ruta + ETA — solo en el cliente (Leaflet no corre en SSR).
 const DeliveryMap = dynamic(() => import("@/components/delivery/DeliveryMap"), {
@@ -201,10 +201,11 @@ export default function PedidoPage() {
     assignment.status === "in_transit" || assignment.status === "picked_up";
   const needsProofToDeliver = action?.nextStatus === "delivered" && !proofUrl;
 
-  // Coordenadas del destino para el mapa con ruta + ETA (solo si hay GPS).
-  const hasGps = assignment.order.customerLocation?.includes("GPS:") ?? false;
-  const destCoords = hasGps && assignment.order.customerLocation
-    ? coordsFromLocation(assignment.order.customerLocation)
+  // Coordenadas del destino para el mapa con ruta + ETA (solo si hay GPS real).
+  // parseGpsCoords devuelve null si el texto no trae coords bien formadas, así
+  // no pintamos un pin falso en la bodega cuando el "GPS:" está mal escrito.
+  const destCoords = assignment.order.customerLocation
+    ? parseGpsCoords(assignment.order.customerLocation)
     : null;
 
   return (
