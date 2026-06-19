@@ -25,7 +25,9 @@ interface AdminTabBarProps {
   vertical?: boolean;
   /** Las tabs envuelven a 2+ filas cuando superan el ancho, en vez de scroll
       horizontal con chevrons. Útil para módulos con muchas sub-tabs (ej. Finanzas
-      con 14) donde el scroll esconde opciones. Opt-in: default mantiene el scroll. */
+      con 14) donde el scroll esconde opciones. Default `true` (Brandon 2026-06-18:
+      coherencia admin — ninguna pestaña queda oculta tras scroll). Pasar
+      `wrap={false}` para forzar scroll horizontal en contextos angostos. */
   wrap?: boolean;
   children?: ReactNode;
   onTabHover?: (id: string) => void;
@@ -41,7 +43,7 @@ export default function AdminTabBar({
   draggable = true,
   className,
   vertical = false,
-  wrap = false,
+  wrap = true,
   children,
   onTabHover,
   rightSlot,

@@ -3005,6 +3005,19 @@ body[data-marketplace-explorar] .tabular-nums {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
+   BORDES RECTOS — ADMIN (Brandon 2026-06-18): misma estética "boxy" que el
+   superadmin, ahora en todo el panel admin. Cuadra cards, botones, inputs,
+   tabs y contenedores con un solo override scopeado a `[data-admin-shell]`
+   (root en app/admin/page.tsx) en vez de tocar cientos de componentes.
+   Mantiene `rounded-full` circular (avatares, dots de estado, badges, toggles).
+   Nota: los modales en portal cuelgan de <body> (fuera del shell) y conservan
+   su radio — la regla aplica al chrome visible de la página, como en superadmin.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-admin-shell] [class*="rounded"]:not([class*="rounded-full"]) {
+  border-radius: 0 !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
    SKELETON shimmer — reemplaza el "bloque gris oscuro" por un gradient sutil.
    Aplica a cualquier bloque dentro de `.animate-pulse` que use superficie.
    ───────────────────────────────────────────────────────────────────────── */
