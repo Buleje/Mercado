@@ -3,6 +3,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { CreditCard } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import BillingDashboard from "./BillingDashboard";
+import { PendingPaymentsCard } from "./PendingPaymentsCard";
 import { SuperAdminModuleTabs, FINANZAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import {
   SUPERADMIN_PAGE,
@@ -59,6 +60,7 @@ export default async function SuperadminBillingPage() {
       </header>
 
       <div className={SUPERADMIN_CONTENT}>
+        <PendingPaymentsCard />
         <BillingDashboard />
       </div>
     </div>
