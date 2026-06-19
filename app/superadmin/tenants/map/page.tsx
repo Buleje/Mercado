@@ -1,115 +1,128 @@
 "use client";
 
 /**
- * /superadmin/tenants/map — Mapa de tiendas (Brandon 2026-06-14). Plotea las
- * tiendas con ubicación; las que no tienen, se ubican con el picker (LeafletMap).
- *
- * v2 (Brandon 2026-06-19): KPIs de cobertura geográfica, filtro (activas / de
- * pago), búsqueda que enfoca el mapa, leyenda. Datos reales del endpoint geo.
+ * /superadmin/tenants/map — Mapa de operaciones EN VIVO (Brandon 2026-06-19):
+ * tiendas (con logo) + repartidores con su posición GPS casi en tiempo real
+ * (polling 15s del heartbeat) + tráfico por zona + KPIs de monitoreo. Conserva
+ * el picker para ubicar las tiendas que faltan. Datos reales del endpoint live.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { MapPin, ArrowLeft, RefreshCw, Check, X, Search } from "@buleje/design-system/icons";
+import {
+  MapPin, ArrowLeft, RefreshCw, Check, X, Store, Truck, Activity, Gauge,
+} from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { csrfHeaders } from "@/lib/csrf-client";
 
-type Row = { slug: string; name: string; lat: number | null; lng: number | null; active: boolean; plan: string };
-type Filter = "all" | "active" | "paid";
+type MapStore = { slug: string; name: string; lat: number; lng: number; active: boolean; logoUrl: string | null };
+type MapRider = { id: string; name: string; lat: number; lng: number; isOnline: boolean; vehicleType: string; zone: string; lastPingAt: string | null; onDelivery: boolean };
+type MapZone = { zone: string; count: number; online: number; lat: number; lng: number };
+type Kpis = { storesLocated: number; storesTotal: number; ridersLocated: number; ridersOnline: number; onDelivery: number; activeDeliveries: number; zones: number };
+type Live = { stores: MapStore[]; unlocated: { slug: string; name: string }[]; riders: MapRider[]; zones: MapZone[]; kpis: Kpis };
 
-const TenantsMap = dynamic(() => import("@/components/superadmin/TenantsMap"), {
+const LiveOpsMap = dynamic(() => import("@/components/superadmin/LiveOpsMap"), {
   ssr: false,
-  loading: () => <div className="h-[480px] animate-pulse bg-[var(--surface-sunken)] border border-[var(--rule-base)]" />,
+  loading: () => <div className="h-[520px] animate-pulse bg-[var(--surface-sunken)] border border-[var(--rule-base)]" />,
 });
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), {
   ssr: false,
   loading: () => <div className="h-[260px] animate-pulse bg-[var(--surface-sunken)] border border-[var(--rule-base)]" />,
 });
 
-function Kpi({ label, value, sub, tone = "default" }: { label: string; value: string; sub?: string; tone?: "default" | "good" | "warn" }) {
+function pingAgo(iso: string | null): string {
+  if (!iso) return "sin ping";
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (m < 1) return "hace segundos";
+  if (m < 60) return `hace ${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `hace ${h}h`;
+  return `hace ${Math.floor(h / 24)}d`;
+}
+
+function Kpi({ icon: Icon, label, value, sub, tone = "default" }: { icon: typeof Store; label: string; value: string; sub?: string; tone?: "default" | "good" | "warn" }) {
   const c = tone === "good" ? "text-[var(--data-success-600,#059669)]" : tone === "warn" ? "text-[#0d9488]" : "text-[var(--text-primary)]";
   return (
     <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-      <p className={`mt-1 font-display text-2xl font-extrabold tabular-nums ${c}`}>{value}</p>
+      <div className="flex items-center gap-1.5 mb-1 text-[var(--text-tertiary)]"><Icon className="h-3.5 w-3.5" /><span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">{label}</span></div>
+      <p className={`font-display text-2xl font-extrabold tabular-nums ${c}`}>{value}</p>
       {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
     </div>
   );
 }
 
+function Toggle({ on, onClick, icon: Icon, label }: { on: boolean; onClick: () => void; icon: typeof Store; label: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={on} className={["inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition-colors", on ? "bg-[var(--accent)] text-white" : "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"].join(" ")}>
+      <Icon className="h-4 w-4" /> {label}
+    </button>
+  );
+}
+
 export default function TenantsMapPage() {
-  const [rows, setRows] = useState<Row[]>([]);
+  const [data, setData] = useState<Live | null>(null);
   const [loading, setLoading] = useState(true);
-  const [locating, setLocating] = useState<Row | null>(null);
+  const [lastAt, setLastAt] = useState<string | null>(null);
+  const [showStores, setShowStores] = useState(true);
+  const [showRiders, setShowRiders] = useState(true);
+  const [showZones, setShowZones] = useState(true);
+  // Picker
+  const [locating, setLocating] = useState<{ slug: string; name: string } | null>(null);
   const [pending, setPending] = useState<{ lat: number; lng: number } | null>(null);
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const res = await fetchSuperadmin("/api/superadmin/tenants/geo");
-      if (res.ok) setRows(((await res.json()) as { rows: Row[] }).rows ?? []);
-    } finally { setLoading(false); }
+      const res = await fetchSuperadmin("/api/superadmin/map/live");
+      if (res.ok) { setData((await res.json()) as Live); setLastAt(new Date().toISOString()); }
+    } finally { if (!silent) setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  // Polling en vivo cada 15s (pausa en background).
+  useEffect(() => {
+    const id = setInterval(() => { if (!(typeof document !== "undefined" && document.hidden)) void load(true); }, 15_000);
+    return () => clearInterval(id);
+  }, [load]);
 
   const save = useCallback(async () => {
     if (!locating || !pending) return;
     setSaving(true);
     try {
       const res = await fetch("/api/superadmin/tenants/geo", {
-        method: "POST",
-        credentials: "include",
+        method: "POST", credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ slug: locating.slug, lat: pending.lat, lng: pending.lng }),
       });
-      if (res.ok) {
-        setLocating(null); setPending(null);
-        await load();
-      }
+      if (res.ok) { setLocating(null); setPending(null); await load(); }
     } finally { setSaving(false); }
   }, [locating, pending, load]);
 
-  const located = useMemo(() => rows.filter((r) => r.lat != null && r.lng != null), [rows]);
-  const unlocated = useMemo(() => rows.filter((r) => r.lat == null || r.lng == null), [rows]);
-
-  const matchFilter = useCallback((r: Row) => {
-    if (filter === "active" && !r.active) return false;
-    if (filter === "paid" && r.plan === "free") return false;
-    const q = search.trim().toLowerCase();
-    if (q && !`${r.name} ${r.slug}`.toLowerCase().includes(q)) return false;
-    return true;
-  }, [filter, search]);
-
-  // Marcadores que se muestran en el mapa (búsqueda + filtro enfocan/recortan).
-  const mapTenants = useMemo(
-    () => located.filter(matchFilter).map((r) => ({ slug: r.slug, name: r.name, lat: r.lat as number, lng: r.lng as number, active: r.active })),
-    [located, matchFilter],
-  );
-  const filteredUnlocated = useMemo(() => unlocated.filter(matchFilter), [unlocated, matchFilter]);
-
-  const kpis = useMemo(() => ({
-    located: located.length,
-    coverage: rows.length ? Math.round((located.length / rows.length) * 100) : 0,
-    activeOnMap: located.filter((r) => r.active).length,
-    unlocated: unlocated.length,
-  }), [located, unlocated, rows]);
+  const stores = data?.stores ?? [];
+  const riders = data?.riders ?? [];
+  const zones = data?.zones ?? [];
+  const unlocated = data?.unlocated ?? [];
+  const k = data?.kpis;
+  const onlineRiders = useMemo(() => (data?.riders ?? []).filter((r) => r.isOnline).sort((a, b) => a.zone.localeCompare(b.zone)), [data]);
+  const maxZone = Math.max(1, ...zones.map((z) => z.count));
 
   return (
     <>
       <SuperAdminModuleTabs tabs={TENANTS_TABS} />
       <AdminTabShell
-        title="Mapa de tiendas"
+        title="Mapa de operaciones en vivo"
         kicker="Plataforma · Tiendas"
-        description="Ubicación de las tiendas en el mapa. Ubica las que falten para verlas acá."
+        description="Tiendas, repartidores y su movimiento en tiempo real. Tráfico por zona."
         icon={MapPin}
         actions={
           <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[var(--data-success-600,#059669)]">
+              <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-success-500)] opacity-60" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" /></span>
+              EN VIVO · 15s{lastAt ? ` · ${pingAgo(lastAt)}` : ""}
+            </span>
             <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
             </button>
@@ -119,55 +132,79 @@ export default function TenantsMapPage() {
           </div>
         }
       >
-        {/* KPIs de cobertura */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <Kpi label="Ubicadas" value={`${kpis.located}/${rows.length}`} sub="con coordenadas" tone="good" />
-          <Kpi label="Cobertura" value={`${kpis.coverage}%`} sub="del total geolocalizado" tone={kpis.coverage >= 70 ? "good" : "warn"} />
-          <Kpi label="Activas en mapa" value={String(kpis.activeOnMap)} sub="puntos teal" />
-          <Kpi label="Sin ubicación" value={String(kpis.unlocated)} sub="por ubicar" tone={kpis.unlocated > 0 ? "warn" : "good"} />
-        </div>
-
-        {/* Búsqueda + filtro (enfocan el mapa) */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tienda → enfoca el mapa…" className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]" />
-            {search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>}
+        {/* KPIs de monitoreo */}
+        {k && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+            <Kpi icon={Truck} label="Repartidores online" value={`${k.ridersOnline}/${k.ridersLocated}`} sub="con GPS activo" tone={k.ridersOnline > 0 ? "good" : "warn"} />
+            <Kpi icon={Activity} label="En entrega" value={String(k.onDelivery)} sub="con pedido asignado" />
+            <Kpi icon={Gauge} label="Entregas activas" value={String(k.activeDeliveries)} sub="sin entregar" />
+            <Kpi icon={Store} label="Tiendas en mapa" value={`${k.storesLocated}/${k.storesTotal}`} sub="geolocalizadas" tone={k.storesLocated > 0 ? "good" : "warn"} />
+            <Kpi icon={Truck} label="Repartidores" value={String(k.ridersLocated)} sub="ubicados" />
+            <Kpi icon={MapPin} label="Zonas activas" value={String(k.zones)} sub="con repartidores" />
           </div>
-          <select value={filter} onChange={(e) => setFilter(e.target.value as Filter)} aria-label="Filtrar tiendas" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
-            <option value="all">Todas</option>
-            <option value="active">Solo activas</option>
-            <option value="paid">Solo de pago</option>
-          </select>
+        )}
+
+        {/* Capas */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Capas:</span>
+          <Toggle on={showStores} onClick={() => setShowStores((v) => !v)} icon={Store} label="Tiendas" />
+          <Toggle on={showRiders} onClick={() => setShowRiders((v) => !v)} icon={Truck} label="Repartidores" />
+          <Toggle on={showZones} onClick={() => setShowZones((v) => !v)} icon={MapPin} label="Zonas" />
+          <span className="ml-auto inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-tertiary)]">
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#00A0A0] border border-white shadow-sm" /> Tienda</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#10b981] border border-white shadow-sm" /> Repartidor online</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#9ca3af] border border-white shadow-sm" /> Offline</span>
+          </span>
         </div>
 
-        <p className="text-sm text-[var(--text-secondary)] mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span><span className="font-bold text-[var(--text-primary)]">{mapTenants.length}</span> en el mapa</span>
-          {/* Leyenda */}
-          <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]"><span className="h-2.5 w-2.5 rounded-full bg-[#00A0A0] border border-white shadow-sm" /> Activa</span>
-          <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]"><span className="h-2.5 w-2.5 rounded-full bg-[#9ca3af] border border-white shadow-sm" /> Inactiva</span>
-        </p>
+        <LiveOpsMap stores={stores} riders={riders} zones={zones} showStores={showStores} showRiders={showRiders} showZones={showZones} />
 
-        <TenantsMap tenants={mapTenants} />
+        {/* Repartidores online + Tráfico por zona */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+            <h3 className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Repartidores online ({onlineRiders.length})</h3>
+            {onlineRiders.length === 0 ? <p className="text-xs text-[var(--text-tertiary)]">Ninguno online ahora.</p> : (
+              <ul className="space-y-2">
+                {onlineRiders.map((r) => (
+                  <li key={r.id} className="flex items-center gap-2.5">
+                    <span className="h-2 w-2 rounded-full bg-[var(--data-success-500)] shrink-0" />
+                    <span className="text-sm font-bold text-[var(--text-primary)] truncate flex-1">{r.name}</span>
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{r.zone} · {r.vehicleType}{r.onDelivery ? " · en entrega" : ""} · {pingAgo(r.lastPingAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+            <h3 className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Tráfico por zona</h3>
+            {zones.length === 0 ? <p className="text-xs text-[var(--text-tertiary)]">Sin datos de zona.</p> : (
+              <div className="space-y-2.5">
+                {zones.map((z) => (
+                  <div key={z.zone} className="flex items-center gap-3">
+                    <span className="w-24 shrink-0 text-sm font-semibold text-[var(--text-primary)] truncate">{z.zone}</span>
+                    <div className="flex-1 h-3 rounded bg-[var(--surface-sunken)] overflow-hidden"><div className="h-full bg-[var(--accent)]" style={{ width: `${Math.round((z.count / maxZone) * 100)}%` }} /></div>
+                    <span className="w-20 shrink-0 text-right text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]"><span className="text-[var(--data-success-500)] font-bold">{z.online}</span>/{z.count} online</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
-        {/* Ubicar las que faltan */}
-        {filteredUnlocated.length > 0 && (
+        {/* Ubicar tiendas que faltan */}
+        {unlocated.length > 0 && (
           <div className="mt-5">
-            <h3 className="text-sm font-bold text-[var(--text-primary)] mb-2">Tiendas sin ubicación ({filteredUnlocated.length})</h3>
+            <h3 className="text-sm font-bold text-[var(--text-primary)] mb-2">Tiendas sin ubicación ({unlocated.length})</h3>
             <div className="border border-[var(--rule-base)] divide-y divide-[var(--rule-base)]">
-              {filteredUnlocated.map((r) => (
+              {unlocated.map((r) => (
                 <div key={r.slug}>
                   <div className="flex items-center gap-3 px-3 py-2.5">
                     <MapPin className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
                     <span className="flex-1 text-sm font-bold text-[var(--text-primary)] truncate">{r.name}</span>
                     {locating?.slug === r.slug ? (
-                      <button onClick={() => { setLocating(null); setPending(null); }} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
-                        <X className="h-3.5 w-3.5" /> Cancelar
-                      </button>
+                      <button onClick={() => { setLocating(null); setPending(null); }} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="h-3.5 w-3.5" /> Cancelar</button>
                     ) : (
-                      <button onClick={() => { setLocating(r); setPending(null); }} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline">
-                        <MapPin className="h-3.5 w-3.5" /> Ubicar
-                      </button>
+                      <button onClick={() => { setLocating(r); setPending(null); }} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline"><MapPin className="h-3.5 w-3.5" /> Ubicar</button>
                     )}
                   </div>
                   {locating?.slug === r.slug && (
@@ -176,9 +213,7 @@ export default function TenantsMapPage() {
                       <LeafletMap lat={pending?.lat ?? -8.38} lon={pending?.lng ?? -74.53} zoom={6} height={260} onPick={(lat, lng) => setPending({ lat, lng })} />
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs text-[var(--text-secondary)] tabular-nums">{pending ? `GPS: ${pending.lat.toFixed(5)}, ${pending.lng.toFixed(5)}` : "Sin marcar"}</span>
-                        <button onClick={() => void save()} disabled={!pending || saving} className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50">
-                          <Check className="h-4 w-4" /> Guardar ubicación
-                        </button>
+                        <button onClick={() => void save()} disabled={!pending || saving} className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50"><Check className="h-4 w-4" /> Guardar ubicación</button>
                       </div>
                     </div>
                   )}
