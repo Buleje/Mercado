@@ -477,7 +477,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)]";
   const navItemIdleClass = isBuleje
-    ? "text-white/90 hover:bg-white/[0.08] hover:text-white"
+    ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
   // Brandon mayo 2026 v3: logo con mejor contraste — gradient ámbar fuerte
   // sobre dark, ring sutil que separa del fondo, sombra cálida. Labels en
@@ -1234,7 +1234,7 @@ function NavGroupsFlyout({
     ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const headerIdleClass = isBuleje
-    ? "text-white/90 hover:bg-white/[0.1] hover:text-white"
+    ? "text-white/75 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
   const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
 
@@ -1432,7 +1432,7 @@ function SuperAdminFlyout({
     ? "bg-linear-to-r from-[rgba(20,194,194,0.22)] via-[rgba(0,160,160,0.14)] to-[rgba(0,160,160,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const itemIdle = isBuleje
-    ? "text-white/90 hover:bg-white/[0.1] hover:text-white"
+    ? "text-white/75 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
 
   return (
@@ -1562,17 +1562,17 @@ function NavGroupsAccordion({
     ? "bg-[rgba(0,160,160,0.16)] text-[#5eead4] font-semibold shadow-[inset_3px_0_0_#14C2C2] ring-1 ring-inset ring-[rgba(20,194,194,0.16)]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold shadow-[inset_3px_0_0_var(--accent)]";
   const itemIdle = isBuleje
-    ? "text-white/90 hover:bg-white/[0.1] hover:text-white"
+    ? "text-white/75 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
   // Label de categoría: blanco legible siempre. El estado activo se marca en el
   // sub-ítem + el dot, NO recolorea el header (más igualitario). Brandon 2026-06-19.
   const labelClass = isBuleje
-    ? "text-white/90 hover:text-white"
+    ? "text-white/75 hover:text-white"
     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
   const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1.5">
       {groups.map((group) => {
         const items = group.items.filter((it) => visibleHrefs.has(it.href));
         if (items.length === 0) return null;
@@ -1597,7 +1597,7 @@ function NavGroupsAccordion({
               onClick={onItemClick}
               aria-current={active ? "page" : undefined}
               className={[
-                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-colors",
+                "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
                 active ? itemActive : itemIdle,
               ].join(" ")}
             >
@@ -1625,7 +1625,7 @@ function NavGroupsAccordion({
               aria-controls={panelId}
               aria-haspopup="menu"
               className={[
-                "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-colors",
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
                 labelClass,
               ].join(" ")}
             >
@@ -1645,7 +1645,7 @@ function NavGroupsAccordion({
               // Sub-enlaces indentados con guía vertical (ref. admin de negocio):
               // más chicos, icono w-4 monocromo, alineados bajo el icono de la
               // categoría. Brandon 2026-06-19.
-              <div id={panelId} className="mt-0.5 mb-1 ml-[1.15rem] pl-3 border-l border-white/[0.08] space-y-0.5">
+              <div id={panelId} className="mt-1 mb-1.5 ml-[1.15rem] pl-3 border-l border-white/[0.08] space-y-1">
                 {items.map((item) => {
                   const active =
                     pathname === item.href ||
@@ -1657,7 +1657,7 @@ function NavGroupsAccordion({
                       onClick={onItemClick}
                       aria-current={active ? "page" : undefined}
                       className={[
-                        "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors",
+                        "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-normal transition-colors",
                         active ? itemActive : itemIdle,
                       ].join(" ")}
                     >
