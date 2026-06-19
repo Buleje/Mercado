@@ -18,7 +18,7 @@ import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_sha
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { csrfHeaders } from "@/lib/csrf-client";
 
-type MapStore = { slug: string; name: string; lat: number; lng: number; active: boolean; logoUrl: string | null };
+type MapStore = { slug: string; name: string; lat: number; lng: number; active: boolean; logoUrl: string | null; address: string | null; source: "negocio" | "superadmin" };
 type MapRider = { id: string; name: string; lat: number; lng: number; isOnline: boolean; vehicleType: string; zone: string; lastPingAt: string | null; onDelivery: boolean };
 type MapZone = { zone: string; count: number; online: number; lat: number; lng: number };
 type Kpis = { storesLocated: number; storesTotal: number; ridersLocated: number; ridersOnline: number; onDelivery: number; activeDeliveries: number; zones: number };

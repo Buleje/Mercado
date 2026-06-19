@@ -10,7 +10,7 @@ import { useEffect, useRef } from "react";
  * sin recrearlo, para que el polling no resetee el zoom ni parpadee.
  */
 
-export type MapStore = { slug: string; name: string; lat: number; lng: number; active: boolean; logoUrl: string | null };
+export type MapStore = { slug: string; name: string; lat: number; lng: number; active: boolean; logoUrl: string | null; address?: string | null; source?: string };
 export type MapRider = { id: string; name: string; lat: number; lng: number; isOnline: boolean; vehicleType: string; zone: string; lastPingAt: string | null; onDelivery: boolean };
 export type MapZone = { zone: string; count: number; online: number; lat: number; lng: number };
 
@@ -81,8 +81,10 @@ export default function LiveOpsMap({ stores, riders, zones, showStores, showRide
         const html = s.logoUrl
           ? `<div style="width:30px;height:30px;border-radius:9999px;border:2px solid ${color};background:#fff url('${esc(s.logoUrl)}') center/cover no-repeat;box-shadow:0 1px 5px rgba(0,0,0,.45)"></div>`
           : `<div style="width:16px;height:16px;border-radius:9999px;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`;
+        const addr = s.address ? `<br/>${esc(s.address)}` : "";
+        const src = s.source === "negocio" ? `<br/><span style="color:#059669">Ubicación configurada por el negocio</span>` : s.source === "superadmin" ? `<br/><span style="color:#9ca3af">Ubicada por superadmin</span>` : "";
         L.marker([s.lat, s.lng], { icon: L.divIcon({ className: "", html, iconSize: s.logoUrl ? [30, 30] : [16, 16], iconAnchor: s.logoUrl ? [15, 15] : [8, 8] }) })
-          .addTo(storesL).bindPopup(`<strong>${esc(s.name)}</strong><br/>Tienda · ${s.active ? "activa" : "inactiva"}`);
+          .addTo(storesL).bindPopup(`<strong>${esc(s.name)}</strong><br/>Tienda · ${s.active ? "activa" : "inactiva"}${addr}${src}`);
       }
     }
     if (d.showRiders) {
