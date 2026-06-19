@@ -35,6 +35,7 @@ import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCard";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
+import CheckoutCouponFields from "@/components/marketplace/checkout/CheckoutCouponFields";
 import AddressPicker from "@/components/marketplace/checkout/AddressPicker";
 import AddAddressFlowModal from "@/components/marketplace/checkout/AddAddressFlowModal";
 import CashChangeModal from "@/components/marketplace/checkout/CashChangeModal";
@@ -49,7 +50,6 @@ import {
   useCheckoutTransition,
 } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
 import { useSavedAddresses, type SavedAddress } from "@/hooks/use-saved-addresses";
-import { csrfHeaders } from "@/lib/csrf-client";
 // Round 23 (Performance): ubigeo dataset (~350KB) ya NO se importa en
 // cliente. Se consume via fetch /api/marketplace/ubigeo y reverse-geocode
 // server-side. Resultado: -350KB en el bundle de checkout (mayor ruta de
@@ -211,9 +211,6 @@ export default function CheckoutEntregaPage() {
   } = useCheckoutData();
   const [touched, setTouched] = useState(false);
 
-  const [couponInputs, setCouponInputs] = useState<Record<string, string>>({});
-  const [couponLoading, setCouponLoading] = useState<Record<string, boolean>>({});
-  const [couponErrors, setCouponErrors] = useState<Record<string, string>>({});
   const [couponsUserOpened, setCouponsUserOpened] = useState(false);
   const hasAppliedCoupons = Object.keys(coupons).length > 0;
   const showCouponFields = couponsUserOpened || hasAppliedCoupons;
@@ -823,62 +820,6 @@ export default function CheckoutEntregaPage() {
     [isAddressValid, allProofsReady, navigateTo, payment.method],
   );
 
-  const validateCoupon = useCallback(
-    async (storeSlug: string) => {
-      const code = (couponInputs[storeSlug] || "").trim();
-      if (!code) return;
-      const cartTotal = totalByStore[storeSlug]?.total ?? 0;
-      setCouponLoading((p) => ({ ...p, [storeSlug]: true }));
-      setCouponErrors((p) => ({ ...p, [storeSlug]: "" }));
-      try {
-        const res = await fetch("/api/marketplace/coupons/validate", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ code, storeSlug, cartTotal }),
-        });
-        // Brandon mayo 15 v4 (audit QA #5): chequear res.ok antes de .json().
-        // Si Vercel edge devuelve 4xx/5xx con body HTML, .json() rompe y
-        // el cliente veia "Error de conexión" cuando en realidad era un 429,
-        // 401 o 503. Ahora intentamos leer un mensaje del server primero.
-        if (!res.ok) {
-          let reason = "Cupón inválido";
-          try {
-            const body = await res.json();
-            if (body?.reason) reason = body.reason;
-            else if (res.status === 429) reason = "Demasiados intentos. Probá en un momento.";
-            else if (res.status >= 500) reason = "El servidor falló. Intentá de nuevo.";
-          } catch {
-            if (res.status === 429) reason = "Demasiados intentos. Probá en un momento.";
-            else if (res.status >= 500) reason = "El servidor falló. Intentá de nuevo.";
-          }
-          setCouponErrors((p) => ({ ...p, [storeSlug]: reason }));
-          return;
-        }
-        const data = await res.json();
-        if (data.valid) {
-          setCouponForStore(storeSlug, {
-            code: data.code || code,
-            discount: Number(data.discount) || 0,
-            description: data.description,
-          });
-          setCouponInputs((p) => ({ ...p, [storeSlug]: "" }));
-        } else {
-          setCouponErrors((p) => ({ ...p, [storeSlug]: data.reason || "Cupón inválido" }));
-        }
-      } catch {
-        setCouponErrors((p) => ({ ...p, [storeSlug]: "Error de conexión" }));
-      } finally {
-        setCouponLoading((p) => ({ ...p, [storeSlug]: false }));
-      }
-    },
-    [couponInputs, totalByStore, setCouponForStore],
-  );
-
-  const removeCoupon = useCallback(
-    (storeSlug: string) => setCouponForStore(storeSlug, null),
-    [setCouponForStore],
-  );
-
   const totalAfterCoupons = Math.max(0, grandTotal - couponDiscountTotal);
   const maxRedeemByCart = totalAfterCoupons * 100;
   const maxRedeem = Math.min(loyaltyAvailable, Math.floor(maxRedeemByCart / 100) * 100);
@@ -1399,10 +1340,10 @@ export default function CheckoutEntregaPage() {
             <button
               type="button"
               onClick={() => setCouponsUserOpened(true)}
-              className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-10 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+              className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-11 text-base font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
               <Tag className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-              <span>¿Tenés un cupón? Agregalo</span>
+              <span>¿Tienes un cupón? Agrégalo</span>
               <span className="text-[var(--accent)] font-extrabold" aria-hidden>+</span>
             </button>
           ) : (
@@ -1427,81 +1368,12 @@ export default function CheckoutEntregaPage() {
               Un cupón por cada tienda. El descuento se refleja en el total.
             </p>
 
-            <div className="space-y-3">
-              {Object.keys(byStore).map((sid) => {
-                const g = byStore[sid];
-                const slug = g.storeSlug;
-                const applied = coupons[slug];
-                const inputVal = couponInputs[slug] ?? "";
-                const isLoading = !!couponLoading[slug];
-                const err = couponErrors[slug];
-                return (
-                  <div key={sid} className="space-y-2">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      {g.storeName}
-                    </p>
-                    {applied ? (
-                      <div className="flex items-center justify-between rounded-full border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)] pl-4 pr-2 py-1.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <CheckCircle2
-                            className="h-4 w-4 text-[var(--accent)] shrink-0"
-                            strokeWidth={2.5}
-                            aria-hidden
-                          />
-                          <span className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] truncate">
-                            {applied.code}
-                          </span>
-                          <span className="text-[length:var(--ts-xs)] text-[var(--accent)] tabular-nums font-bold shrink-0">
-                            −{fmt(applied.discount)}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeCoupon(slug)}
-                          className="inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] px-3 h-7 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={inputVal}
-                          onChange={(e) =>
-                            setCouponInputs((p) => ({ ...p, [slug]: e.target.value.toUpperCase() }))
-                          }
-                          placeholder="Código de cupón"
-                          maxLength={30}
-                          aria-label={`Cupón para ${g.storeName}`}
-                          className={cn(pillCls(!!err), "uppercase tracking-wider font-semibold")}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => validateCoupon(slug)}
-                          disabled={isLoading || !inputVal.trim()}
-                          className={cn(
-                            "shrink-0 inline-flex items-center justify-center rounded-full px-5 h-12",
-                            "text-[length:var(--ts-xs)] font-bold transition-colors",
-                            "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]",
-                            "hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40",
-                            "disabled:opacity-50 disabled:cursor-not-allowed",
-                          )}
-                        >
-                          {isLoading ? "..." : "Aplicar"}
-                        </button>
-                      </div>
-                    )}
-                    {err && !applied && (
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)] inline-flex items-center gap-1 ml-4">
-                        <AlertCircle className="h-3 w-3" strokeWidth={2} aria-hidden />
-                        {err}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <CheckoutCouponFields
+              byStore={byStore}
+              coupons={coupons}
+              setCouponForStore={setCouponForStore}
+              totalByStore={totalByStore}
+            />
               </>
           </SectionBox>
           )}

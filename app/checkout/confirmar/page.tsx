@@ -38,6 +38,7 @@ import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
 import CheckoutUpsell from "@/components/marketplace/checkout/CheckoutUpsell";
 import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
+import CheckoutCouponFields from "@/components/marketplace/checkout/CheckoutCouponFields";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
 import { CheckoutTransitionOverlay } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
@@ -74,6 +75,7 @@ export default function CheckoutConfirmarPage() {
     payment,
     setPayment,
     coupons,
+    setCouponForStore,
     loyalty,
     paymentProofs,
     isCustomerValid,
@@ -93,6 +95,9 @@ export default function CheckoutConfirmarPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastData, setToastData] = useState<{ title: string; subtitle: string } | null>(null);
+  // Cupón editable acá también: el flujo rápido (perfil completo) salta
+  // /entrega, así que confirmar es el único lugar universal para aplicarlo.
+  const [couponsOpen, setCouponsOpen] = useState(false);
 
   // Brandon mayo 15 v4 (audit QA #1): reemplazado `setTimeout(250ms)` por
   // los flags reales `hydrated` de ambos hooks. En redes lentas el cart no
@@ -741,35 +746,47 @@ export default function CheckoutConfirmarPage() {
 
           </div>
 
-          {/* Cupones aplicados (si hay) */}
-          {couponEntries.length > 0 && (
-            <ReviewCard
-              kicker="Descuentos"
-              title="Cupones aplicados"
-              icon={Tag}
-              editHref="/checkout/entrega"
-              wide
+          {/* Cupón de descuento — EDITABLE acá (no solo lectura). El flujo
+              rápido salta /entrega, así que este es el único lugar universal
+              donde el cliente puede aplicar/quitar su cupón. El descuento lo
+              re-valida el backend al crear la orden (anti-fraude). */}
+          {couponEntries.length > 0 || couponsOpen ? (
+            <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <span
+                  aria-hidden
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"
+                >
+                  <Tag className="h-4 w-4" strokeWidth={2.25} />
+                </span>
+                <div>
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+                    Descuentos
+                  </p>
+                  <h3 className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+                    ¿Tienes un cupón?
+                  </h3>
+                </div>
+              </div>
+              <CheckoutCouponFields
+                byStore={byStore}
+                coupons={coupons}
+                setCouponForStore={setCouponForStore}
+                totalByStore={totalByStore}
+              />
+            </section>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCouponsOpen(true)}
+              className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-11 text-base font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
-              <ul className="space-y-1.5 text-[length:var(--ts-sm)]">
-                {couponEntries.map(([slug, c]) => (
-                  <li key={slug} className="flex justify-between gap-3">
-                    <span className="text-[var(--text-secondary)] truncate">
-                      <span className="font-bold text-[var(--text-primary)]">{c.code}</span>{" "}
-                      <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                        (
-                        {byStore[
-                          Object.keys(byStore).find((id) => byStore[id].storeSlug === slug) || ""
-                        ]?.storeName ?? slug}
-                        )
-                      </span>
-                    </span>
-                    <span className="text-[var(--accent)] font-black tabular-nums shrink-0">
-                      −{fmt(c.discount)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </ReviewCard>
+              <Tag className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              <span>¿Tienes un cupón? Agrégalo</span>
+              <span className="text-[var(--accent)] font-extrabold" aria-hidden>
+                +
+              </span>
+            </button>
           )}
 
           {/* Loyalty canjeado */}
