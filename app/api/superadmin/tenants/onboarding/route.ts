@@ -21,8 +21,9 @@ export async function GET(req: NextRequest) {
   if ("status" in auth) return auth;
 
   try {
+    const nowMs = Date.now();
     const [tenants, productsBy, ordersBy, salesBy] = await Promise.all([
-      prisma.tenant.findMany({ select: { id: true, slug: true, name: true, logoUrl: true, createdAt: true } }),
+      prisma.tenant.findMany({ select: { id: true, slug: true, name: true, logoUrl: true, createdAt: true, plan: true, trialEndsAt: true } }),
       prisma.product.groupBy({ by: ["tenantId"], _count: { _all: true } }),
       prisma.order.groupBy({ by: ["tenantId"], _count: { _all: true } }),
       prisma.sale.groupBy({ by: ["tenantId"], _count: { _all: true } }),
@@ -46,10 +47,17 @@ export async function GET(req: NextRequest) {
       };
       const done = STEPS.filter((s) => steps[s]).length;
       const stuckAt = STEPS.find((s) => !steps[s]) ?? null;
+      const trialDaysLeft = t.trialEndsAt
+        ? Math.ceil((t.trialEndsAt.getTime() - nowMs) / 86_400_000)
+        : null;
       return {
         slug: t.slug,
         name: t.name,
+        plan: t.plan,
         createdAt: t.createdAt.toISOString(),
+        trialEndsAt: t.trialEndsAt?.toISOString() ?? null,
+        trialDaysLeft,
+        ageDays: Math.floor((nowMs - t.createdAt.getTime()) / 86_400_000),
         steps,
         done,
         total: STEPS.length,
