@@ -21,6 +21,8 @@ function input(over: Partial<AlertInput> = {}): AlertInput {
     oldestStaleOrderAt: null,
     newTenantCount: 0,
     staleTenants: [],
+    pendingPayments: { count: 0, oldestAt: null },
+    churnRisks: [],
     ...over,
   };
 }
@@ -91,6 +93,31 @@ describe("buildAlerts — stale/new + orden", () => {
     );
     const sevs = alerts.map((a) => a.severity);
     expect(sevs).toEqual(["critical", "warning", "info"]);
+  });
+});
+
+describe("buildAlerts — pagos Yape por aprobar (#8)", () => {
+  it("sin pendientes → no genera alerta", () => {
+    const a = buildAlerts(input({ pendingPayments: { count: 0, oldestAt: null } }), cfg, NOW).find((x) => x.kind === "payment");
+    expect(a).toBeUndefined();
+  });
+  it("pendiente reciente → warning", () => {
+    const a = buildAlerts(input({ pendingPayments: { count: 2, oldestAt: ago(60) } }), cfg, NOW).find((x) => x.kind === "payment")!;
+    expect(a.severity).toBe("warning");
+    expect(a.title).toMatch(/2 pago/);
+  });
+  it("pendiente más viejo >6h → critical", () => {
+    const a = buildAlerts(input({ pendingPayments: { count: 1, oldestAt: ago(7 * 60) } }), cfg, NOW).find((x) => x.kind === "payment")!;
+    expect(a.severity).toBe("critical");
+  });
+});
+
+describe("buildAlerts — riesgo de churn (#9)", () => {
+  it("caída fuerte → warning con % y tenant", () => {
+    const a = buildAlerts(input({ churnRisks: [{ name: "Bodega X", slug: "x", prev: 28, curr: 12 }] }), cfg, NOW).find((x) => x.kind === "churn")!;
+    expect(a.severity).toBe("warning");
+    expect(a.tenant).toBe("Bodega X");
+    expect(a.title).toMatch(/−57%|-57%/);
   });
 });
 

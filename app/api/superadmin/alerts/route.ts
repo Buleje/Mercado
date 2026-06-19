@@ -31,9 +31,15 @@ export async function GET(req: NextRequest) {
     const agoNew = new Date(now - config.newTenantDays * 86_400_000);
     const agoStale = new Date(now - config.staleTenantDays * 86_400_000);
     const nowD = new Date(now);
+    // Ventanas de churn: últimos 30d vs los 30d anteriores.
+    const ago30 = new Date(now - 30 * 86_400_000);
+    const ago60 = new Date(now - 60 * 86_400_000);
+    const pendingStatuses = ["pending", "review_required"];
 
-    const [urgentTickets, expiringTenants, slaCount, oldestStaleOrder, newCount, activeTenants, ordersByTenant] =
-      await Promise.all([
+    const [
+      urgentTickets, expiringTenants, slaCount, oldestStaleOrder, newCount, activeTenants, ordersByTenant,
+      pendingPaymentCount, oldestPendingPayment, curr30Orders, prev30Orders,
+    ] = await Promise.all([
         prisma.supportTicket.findMany({
           where: { status: "open", priority: "high" },
           orderBy: { createdAt: "asc" },
@@ -53,11 +59,31 @@ export async function GET(req: NextRequest) {
         prisma.tenant.count({ where: { createdAt: { gte: agoNew } } }),
         prisma.tenant.findMany({ where: { active: true }, select: { id: true, slug: true, name: true } }),
         prisma.order.groupBy({ by: ["tenantId"], where: { createdAt: { gte: agoStale } }, _count: { _all: true } }),
+        // #8 Pagos Yape esperando aprobación (dinero retenido).
+        prisma.paymentApproval.count({ where: { status: { in: pendingStatuses } } }),
+        prisma.paymentApproval.findFirst({
+          where: { status: { in: pendingStatuses } },
+          orderBy: { createdAt: "asc" },
+          select: { createdAt: true },
+        }),
+        // #9 Churn: pedidos por tienda en 30d actuales y 30d previos.
+        prisma.order.groupBy({ by: ["tenantId"], where: { createdAt: { gte: ago30 } }, _count: { _all: true } }),
+        prisma.order.groupBy({ by: ["tenantId"], where: { createdAt: { gte: ago60, lt: ago30 } }, _count: { _all: true } }),
       ]);
 
     const tenantNames = new Map(activeTenants.map((t) => [t.id, t.name]));
     const tenantsWithRecentOrders = new Set(ordersByTenant.map((r) => r.tenantId));
     const staleTenants = activeTenants.filter((t) => !tenantsWithRecentOrders.has(t.id));
+
+    // #9 Riesgo de churn: tiendas activas con caída ≥ churnDropPct vs el período
+    // anterior (filtrando volumen mínimo previo para evitar ruido). Top 6.
+    const currByTenant = new Map(curr30Orders.map((r) => [r.tenantId, r._count._all]));
+    const prevByTenant = new Map(prev30Orders.map((r) => [r.tenantId, r._count._all]));
+    const churnRisks = activeTenants
+      .map((t) => ({ name: t.name, slug: t.slug, prev: prevByTenant.get(t.id) ?? 0, curr: currByTenant.get(t.id) ?? 0 }))
+      .filter((c) => c.prev >= config.churnMinPrev && c.curr < c.prev * (1 - config.churnDropPct))
+      .sort((a, b) => (b.prev - b.curr) - (a.prev - a.curr))
+      .slice(0, 6);
 
     const input: AlertInput = {
       urgentTickets: urgentTickets.map((t) => ({
@@ -75,6 +101,11 @@ export async function GET(req: NextRequest) {
       oldestStaleOrderAt: oldestStaleOrder?.createdAt.toISOString() ?? null,
       newTenantCount: newCount,
       staleTenants: staleTenants.map((t) => ({ name: t.name })),
+      pendingPayments: {
+        count: pendingPaymentCount,
+        oldestAt: oldestPendingPayment?.createdAt.toISOString() ?? null,
+      },
+      churnRisks,
     };
 
     const alerts = buildAlerts(input, config, now);

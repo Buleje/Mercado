@@ -21,6 +21,8 @@ export interface Alert {
   detail: string;
   href: string;
   at: string | null;
+  /** Tienda asociada (cuando la alerta es de un tenant concreto) — para filtrar. */
+  tenant?: string;
 }
 
 export interface AlertConfig {
@@ -38,6 +40,12 @@ export interface AlertConfig {
   newTenantDays: number;
   /** Sin pedidos en esto (días) → tienda estancada. */
   staleTenantDays: number;
+  /** Pago Yape pendiente más viejo que esto (horas) → critical. */
+  paymentPendingCriticalHours: number;
+  /** Caída de pedidos ≥ esto (0-1) vs período anterior → riesgo de churn. */
+  churnDropPct: number;
+  /** Pedidos mínimos en el período anterior para considerar churn (anti-ruido). */
+  churnMinPrev: number;
 }
 
 export const DEFAULT_ALERT_CONFIG: AlertConfig = {
@@ -48,6 +56,9 @@ export const DEFAULT_ALERT_CONFIG: AlertConfig = {
   ticketCriticalMinutes: 60,
   newTenantDays: 7,
   staleTenantDays: 30,
+  paymentPendingCriticalHours: 6,
+  churnDropPct: 0.5,
+  churnMinPrev: 5,
 };
 
 function parseNum(raw: string | undefined, fallback: number): number {
@@ -68,6 +79,9 @@ export function getAlertConfig(
     ticketCriticalMinutes: parseNum(env.ALERT_TICKET_CRITICAL_MINUTES, DEFAULT_ALERT_CONFIG.ticketCriticalMinutes),
     newTenantDays: parseNum(env.ALERT_NEW_TENANT_DAYS, DEFAULT_ALERT_CONFIG.newTenantDays),
     staleTenantDays: parseNum(env.ALERT_STALE_TENANT_DAYS, DEFAULT_ALERT_CONFIG.staleTenantDays),
+    paymentPendingCriticalHours: parseNum(env.ALERT_PAYMENT_PENDING_CRITICAL_HOURS, DEFAULT_ALERT_CONFIG.paymentPendingCriticalHours),
+    churnDropPct: parseNum(env.ALERT_CHURN_DROP_PCT, DEFAULT_ALERT_CONFIG.churnDropPct),
+    churnMinPrev: parseNum(env.ALERT_CHURN_MIN_PREV, DEFAULT_ALERT_CONFIG.churnMinPrev),
   };
 }
 
@@ -79,6 +93,10 @@ export interface AlertInput {
   oldestStaleOrderAt: string | null;
   newTenantCount: number;
   staleTenants: { name: string }[];
+  /** Pagos Yape esperando aprobación (dinero retenido). */
+  pendingPayments: { count: number; oldestAt: string | null };
+  /** Tiendas con caída fuerte de pedidos vs período anterior (riesgo de churn). */
+  churnRisks: { name: string; slug: string; prev: number; curr: number }[];
 }
 
 const SEV_RANK: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
@@ -103,6 +121,7 @@ export function buildAlerts(
       detail: `${t.tenantName}: ${t.subject}`,
       href: "/superadmin/support",
       at: t.createdAt,
+      tenant: t.tenantName,
     });
   }
 
@@ -120,6 +139,42 @@ export function buildAlerts(
       detail: t.name,
       href: "/superadmin/tenants?qf=trial-expiring",
       at: t.trialEndsAt,
+      tenant: t.name,
+    });
+  }
+
+  // ── Pagos Yape esperando aprobación — dinero retenido, escala por antigüedad ─
+  if (input.pendingPayments.count > 0) {
+    const ageH = input.pendingPayments.oldestAt
+      ? (now - new Date(input.pendingPayments.oldestAt).getTime()) / 3_600_000
+      : 0;
+    const severity: Severity = ageH >= config.paymentPendingCriticalHours ? "critical" : "warning";
+    alerts.push({
+      id: "payments-pending",
+      severity,
+      kind: "payment",
+      title: `${input.pendingPayments.count} pago(s) Yape por aprobar`,
+      detail:
+        severity === "critical"
+          ? `El más viejo lleva ${Math.floor(ageH)}h esperando — aprobá o rechazá`
+          : "Comprobantes Yape esperando tu revisión",
+      href: "/superadmin/pagos-yape",
+      at: input.pendingPayments.oldestAt,
+    });
+  }
+
+  // ── Riesgo de churn — tiendas con caída fuerte de pedidos (warning) ──────────
+  for (const c of input.churnRisks) {
+    const dropPct = c.prev > 0 ? Math.round((1 - c.curr / c.prev) * 100) : 0;
+    alerts.push({
+      id: `churn-${c.slug}`,
+      severity: "warning",
+      kind: "churn",
+      title: `${c.name}: pedidos −${dropPct}%`,
+      detail: `Cayó de ${c.prev} a ${c.curr} pedidos vs período anterior — riesgo de churn`,
+      href: `/superadmin/tenants?q=${encodeURIComponent(c.slug)}`,
+      at: null,
+      tenant: c.name,
     });
   }
 
