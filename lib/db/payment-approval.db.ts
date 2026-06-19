@@ -26,6 +26,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { ensureTable } from "@/lib/db/ensure-table";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,9 +104,7 @@ let bootstrapDone = false;
 
 async function bootstrap(): Promise<void> {
   if (bootstrapDone) return;
-  try {
-     
-    await prisma.$executeRawUnsafe(`
+  await ensureTable("PaymentApproval", `
       CREATE TABLE IF NOT EXISTS "PaymentApproval" (
         "id"              TEXT PRIMARY KEY,
         "tenantId"        TEXT NOT NULL,
@@ -139,14 +138,8 @@ async function bootstrap(): Promise<void> {
         ON "PaymentApproval"("tenantId");
       CREATE INDEX IF NOT EXISTS "PaymentApproval_tenantId_status_idx"
         ON "PaymentApproval"("tenantId", "status");
-    `);
-    bootstrapDone = true;
-  } catch (err) {
-    logger.error("[payment-approval] bootstrap failed", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    throw err;
-  }
+    `, "payment-approval");
+  bootstrapDone = true;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
