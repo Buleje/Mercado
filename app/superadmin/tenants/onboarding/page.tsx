@@ -21,6 +21,8 @@ import { AdminTabShell } from "../../_components/_shared";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 
 type Step = "logo" | "productos" | "pedido" | "venta";
 type Row = {
@@ -67,16 +69,6 @@ function exportCSV(rows: Row[]) {
   a.click(); URL.revokeObjectURL(url);
 }
 
-function Kpi({ label, value, tone = "default", sub }: { label: string; value: string; tone?: "default" | "good" | "warn" | "bad"; sub?: string }) {
-  const c = tone === "good" ? "text-[var(--data-success-600,#059669)]" : tone === "warn" ? "text-[#0d9488]" : tone === "bad" ? "text-[var(--data-error-600,#dc2626)]" : "text-[var(--text-primary)]";
-  return (
-    <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-      <p className={`mt-1 font-display text-2xl font-extrabold tabular-nums ${c}`}>{value}</p>
-      {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
-    </div>
-  );
-}
 
 function isDoubleRisk(r: Row) {
   return !r.complete && r.trialDaysLeft != null && r.trialDaysLeft >= 0 && r.trialDaysLeft <= 7;
@@ -109,12 +101,8 @@ export default function TenantsOnboardingPage() {
     } finally { setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
-
-  // Auto-refresh cada 60s (pausa en background).
-  useEffect(() => {
-    const id = setInterval(() => { if (!(typeof document !== "undefined" && document.hidden)) void load(); }, 60_000);
-    return () => clearInterval(id);
-  }, [load]);
+  // Auto-refresh cada 60s; el hook pausa solo cuando la pestaña no está visible.
+  useVisiblePolling(() => void load(), 60_000);
 
   // Embudo de activación: cuántas tiendas completaron cada hito.
   const funnel = useMemo(() => STEPS.map((s) => ({ step: s, count: rows.filter((r) => r.steps[s]).length })), [rows]);
@@ -216,12 +204,12 @@ export default function TenantsOnboardingPage() {
         {/* KPIs (3 base + extra) */}
         {summary && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-            <Kpi label="Total" value={String(summary.total)} />
-            <Kpi label="Activadas" value={String(summary.complete)} tone="good" sub={`${kpis.activationPct}% del total`} />
-            <Kpi label="Estancadas" value={String(summary.stuck)} tone="warn" />
-            <Kpi label="Paso que más traba" value={kpis.worstStep} />
-            <Kpi label="Antigüedad prom." value={`${kpis.avgStuckAge}d`} sub="estancadas" />
-            <Kpi label="Doble riesgo" value={String(kpis.doubleRisk)} tone={kpis.doubleRisk > 0 ? "bad" : "good"} sub="estancada + trial" />
+            <SAKpiCard label="Total" value={String(summary.total)} />
+            <SAKpiCard label="Activadas" value={String(summary.complete)} tone="good" sub={`${kpis.activationPct}% del total`} />
+            <SAKpiCard label="Estancadas" value={String(summary.stuck)} tone="warn" />
+            <SAKpiCard label="Paso que más traba" value={kpis.worstStep} />
+            <SAKpiCard label="Antigüedad prom." value={`${kpis.avgStuckAge}d`} sub="estancadas" />
+            <SAKpiCard label="Doble riesgo" value={String(kpis.doubleRisk)} tone={kpis.doubleRisk > 0 ? "bad" : "good"} sub="estancada + trial" />
           </div>
         )}
 
@@ -352,8 +340,8 @@ export default function TenantsOnboardingPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <Kpi label="Progreso" value={`${detail.done}/${detail.total}`} tone={detail.complete ? "good" : "warn"} />
-                <Kpi label="Días desde alta" value={`${detail.ageDays}d`} tone={detail.ageDays >= OLD_DAYS && !detail.complete ? "bad" : "default"} />
+                <SAKpiCard label="Progreso" value={`${detail.done}/${detail.total}`} tone={detail.complete ? "good" : "warn"} />
+                <SAKpiCard label="Días desde alta" value={`${detail.ageDays}d`} tone={detail.ageDays >= OLD_DAYS && !detail.complete ? "bad" : "default"} />
               </div>
               {detail.trialDaysLeft != null && (
                 <div className={`flex items-center gap-2 rounded-lg border p-3 text-sm ${isDoubleRisk(detail) ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/5 text-[var(--data-error-600,#dc2626)]" : "border-[var(--rule-soft)] text-[var(--text-secondary)]"}`}>

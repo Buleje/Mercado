@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Wallet, ArrowRight, CheckCircle2, RefreshCw } from "@buleje/design-system/icons";
+import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 
 type Proof = {
   id: string; storeName: string; ownerName: string; planTier: string;
@@ -67,18 +68,9 @@ export function PendingPaymentsCard() {
       ) : (
         <>
           <div className="grid grid-cols-3 gap-3 mb-3">
-            <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
-              <p className="font-display text-2xl font-extrabold tabular-nums text-[#0d9488]">{proofs.length}</p>
-            </div>
-            <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Esperando confirmar</p>
-              <p className="font-display text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{soles(total)}</p>
-            </div>
-            <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">El más viejo</p>
-              <p className={`font-display text-2xl font-extrabold tabular-nums ${oldest >= 2 ? "text-[var(--data-error-600,#dc2626)]" : "text-[var(--text-primary)]"}`}>{oldest <= 0 ? "hoy" : `${oldest}d`}</p>
-            </div>
+            <SAKpiCard label="Pendientes" value={proofs.length} tone="warn" />
+            <SAKpiCard label="Esperando confirmar" value={soles(total)} />
+            <SAKpiCard label="El más viejo" value={oldest <= 0 ? "hoy" : `${oldest}d`} tone={oldest >= 2 ? "bad" : "default"} />
           </div>
           <ul className="border border-[var(--rule-soft)] divide-y divide-[var(--rule-soft)]">
             {proofs.slice(0, 6).map((p) => (

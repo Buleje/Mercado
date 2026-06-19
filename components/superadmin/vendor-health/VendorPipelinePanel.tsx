@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Inbox, CheckCircle2, XCircle, ShieldCheck, Clock, ArrowRight, RefreshCw } from "@buleje/design-system/icons";
+import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 
 type Pending = { id: string; businessName: string; ruc: string; contactName: string; submittedAt: string; ageDays: number };
 type Pipeline = {
@@ -24,17 +25,6 @@ function countdown(toIso: string, nowMs: number): string {
   const m = Math.floor((ms % 3_600_000) / 60_000);
   if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`;
   return `${h}h ${m}m`;
-}
-
-function Kpi({ icon: Icon, label, value, sub, tone = "default" }: { icon: typeof Inbox; label: string; value: string; sub?: string; tone?: "default" | "good" | "warn" | "bad" }) {
-  const c = tone === "good" ? "text-[var(--data-success-600,#059669)]" : tone === "warn" ? "text-[#0d9488]" : tone === "bad" ? "text-[var(--data-error-600,#dc2626)]" : "text-[var(--text-primary)]";
-  return (
-    <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-      <div className="flex items-center gap-1.5 mb-1 text-[var(--text-tertiary)]"><Icon className="h-3.5 w-3.5" /><span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">{label}</span></div>
-      <p className={`font-display text-2xl font-extrabold tabular-nums ${c}`}>{value}</p>
-      {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
-    </div>
-  );
 }
 
 export function VendorPipelinePanel() {
@@ -72,11 +62,11 @@ export function VendorPipelinePanel() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <Kpi icon={Inbox} label="Pendientes" value={String(data.byStatus.pending)} sub={data.oldestPendingDays > 0 ? `la más vieja: ${data.oldestPendingDays}d` : "ninguna esperando"} tone={data.byStatus.pending > 0 ? "warn" : "good"} />
-        <Kpi icon={CheckCircle2} label="Aprobadas" value={String(data.byStatus.approved)} sub="vendors activos" tone="good" />
-        <Kpi icon={XCircle} label="Rechazadas" value={String(data.byStatus.rejected)} />
-        <Kpi icon={ShieldCheck} label="Monitoreados" value={String(data.approvedMonitored)} sub="elegibles RENIEC/SUNAT" />
-        <Kpi icon={Clock} label="Próxima corrida" value={nextIn} sub="re-verificación 02:00 UTC" tone="warn" />
+        <SAKpiCard icon={Inbox} label="Pendientes" value={String(data.byStatus.pending)} sub={data.oldestPendingDays > 0 ? `la más vieja: ${data.oldestPendingDays}d` : "ninguna esperando"} tone={data.byStatus.pending > 0 ? "warn" : "good"} />
+        <SAKpiCard icon={CheckCircle2} label="Aprobadas" value={String(data.byStatus.approved)} sub="vendors activos" tone="good" />
+        <SAKpiCard icon={XCircle} label="Rechazadas" value={String(data.byStatus.rejected)} />
+        <SAKpiCard icon={ShieldCheck} label="Monitoreados" value={String(data.approvedMonitored)} sub="elegibles RENIEC/SUNAT" />
+        <SAKpiCard icon={Clock} label="Próxima corrida" value={nextIn} sub="re-verificación 02:00 UTC" tone="warn" />
       </div>
 
       {data.pendingList.length > 0 && (

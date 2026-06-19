@@ -16,6 +16,8 @@ import {
 import { AdminTabShell } from "../../_components/_shared";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
+import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 type MapStore = { slug: string; name: string; lat: number; lng: number; active: boolean; logoUrl: string | null; address: string | null; source: "negocio" | "superadmin" };
@@ -41,17 +43,6 @@ function pingAgo(iso: string | null): string {
   const h = Math.floor(m / 60);
   if (h < 24) return `hace ${h}h`;
   return `hace ${Math.floor(h / 24)}d`;
-}
-
-function Kpi({ icon: Icon, label, value, sub, tone = "default" }: { icon: typeof Store; label: string; value: string; sub?: string; tone?: "default" | "good" | "warn" }) {
-  const c = tone === "good" ? "text-[var(--data-success-600,#059669)]" : tone === "warn" ? "text-[#0d9488]" : "text-[var(--text-primary)]";
-  return (
-    <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-      <div className="flex items-center gap-1.5 mb-1 text-[var(--text-tertiary)]"><Icon className="h-3.5 w-3.5" /><span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">{label}</span></div>
-      <p className={`font-display text-2xl font-extrabold tabular-nums ${c}`}>{value}</p>
-      {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
-    </div>
-  );
 }
 
 function Toggle({ on, onClick, icon: Icon, label }: { on: boolean; onClick: () => void; icon: typeof Store; label: string }) {
@@ -82,11 +73,8 @@ export default function TenantsMapPage() {
     } finally { if (!silent) setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
-  // Polling en vivo cada 15s (pausa en background).
-  useEffect(() => {
-    const id = setInterval(() => { if (!(typeof document !== "undefined" && document.hidden)) void load(true); }, 15_000);
-    return () => clearInterval(id);
-  }, [load]);
+  // Polling en vivo cada 15s; el hook pausa solo cuando la pestaña no está visible.
+  useVisiblePolling(() => void load(true), 15_000);
 
   const save = useCallback(async () => {
     if (!locating || !pending) return;
@@ -140,12 +128,12 @@ export default function TenantsMapPage() {
         {/* KPIs de monitoreo */}
         {k && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-            <Kpi icon={Truck} label="Repartidores online" value={`${k.ridersOnline}/${k.ridersLocated}`} sub="con GPS activo" tone={k.ridersOnline > 0 ? "good" : "warn"} />
-            <Kpi icon={Activity} label="En entrega" value={String(k.onDelivery)} sub="con pedido asignado" />
-            <Kpi icon={Gauge} label="Entregas activas" value={String(k.activeDeliveries)} sub="sin entregar" />
-            <Kpi icon={Store} label="Tiendas en mapa" value={`${k.storesLocated}/${k.storesTotal}`} sub="geolocalizadas" tone={k.storesLocated > 0 ? "good" : "warn"} />
-            <Kpi icon={Truck} label="Repartidores" value={String(k.ridersLocated)} sub="ubicados" />
-            <Kpi icon={MapPin} label="Zonas activas" value={String(k.zones)} sub="con repartidores" />
+            <SAKpiCard icon={Truck} label="Repartidores online" value={`${k.ridersOnline}/${k.ridersLocated}`} sub="con GPS activo" tone={k.ridersOnline > 0 ? "good" : "warn"} />
+            <SAKpiCard icon={Activity} label="En entrega" value={String(k.onDelivery)} sub="con pedido asignado" />
+            <SAKpiCard icon={Gauge} label="Entregas activas" value={String(k.activeDeliveries)} sub="sin entregar" />
+            <SAKpiCard icon={Store} label="Tiendas en mapa" value={`${k.storesLocated}/${k.storesTotal}`} sub="geolocalizadas" tone={k.storesLocated > 0 ? "good" : "warn"} />
+            <SAKpiCard icon={Truck} label="Repartidores" value={String(k.ridersLocated)} sub="ubicados" />
+            <SAKpiCard icon={MapPin} label="Zonas activas" value={String(k.zones)} sub="con repartidores" />
           </div>
         )}
 

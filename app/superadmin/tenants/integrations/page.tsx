@@ -17,6 +17,8 @@ import {
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 
 type Key = "whatsapp" | "yape" | "plin" | "sunat";
@@ -61,16 +63,6 @@ function Cell({ on }: { on: boolean }) {
   );
 }
 
-function Kpi({ label, value, sub, tone = "default" }: { label: string; value: string; sub?: string; tone?: "default" | "good" | "bad" }) {
-  const c = tone === "good" ? "text-[var(--data-success-600,#059669)]" : tone === "bad" ? "text-[var(--data-error-600,#dc2626)]" : "text-[var(--text-primary)]";
-  return (
-    <div className="border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
-      <p className={`mt-1 font-display text-2xl font-extrabold tabular-nums ${c}`}>{value}</p>
-      {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{sub}</p>}
-    </div>
-  );
-}
 
 export default function IntegrationsPage() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -94,10 +86,8 @@ export default function IntegrationsPage() {
     } finally { setLoading(false); }
   }, []);
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => {
-    const id = setInterval(() => { if (!(typeof document !== "undefined" && document.hidden)) void load(); }, 60_000);
-    return () => clearInterval(id);
-  }, [load]);
+  // Auto-refresh cada 60s; el hook pausa solo cuando la pestaña no está visible.
+  useVisiblePolling(() => void load(), 60_000);
 
   const kpis = useMemo(() => {
     const cells = rows.length * COLS.length;
@@ -157,13 +147,13 @@ export default function IntegrationsPage() {
       >
         {/* KPIs de cobertura */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <Kpi label="Adopción global" value={`${kpis.adoption}%`} sub="de las 4 integraciones" tone={kpis.adoption >= 60 ? "good" : "default"} />
-          <Kpi label="Completas" value={String(kpis.complete)} sub="con las 4 activas" tone="good" />
+          <SAKpiCard label="Adopción global" value={`${kpis.adoption}%`} sub="de las 4 integraciones" tone={kpis.adoption >= 60 ? "good" : "default"} />
+          <SAKpiCard label="Completas" value={String(kpis.complete)} sub="con las 4 activas" tone="good" />
           <button type="button" onClick={() => setFilter("nocobros")} className="text-left">
-            <Kpi label="Sin cobros" value={String(kpis.noCobros)} sub="sin Yape ni Plin → no cobran" tone={kpis.noCobros > 0 ? "bad" : "good"} />
+            <SAKpiCard label="Sin cobros" value={String(kpis.noCobros)} sub="sin Yape ni Plin → no cobran" tone={kpis.noCobros > 0 ? "bad" : "good"} />
           </button>
           <button type="button" onClick={() => setFilter("no:sunat")} className="text-left">
-            <Kpi label="Sin facturación" value={String(kpis.noFactura)} sub="sin SUNAT" tone={kpis.noFactura > 0 ? "bad" : "default"} />
+            <SAKpiCard label="Sin facturación" value={String(kpis.noFactura)} sub="sin SUNAT" tone={kpis.noFactura > 0 ? "bad" : "default"} />
           </button>
         </div>
 
