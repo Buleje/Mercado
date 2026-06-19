@@ -287,16 +287,21 @@ function PlanBar({
   max,
   amount,
   pricePEN,
+  onClick,
+  active,
 }: {
   label: string;
   value: number;
   max: number;
   amount: number;
   pricePEN: number;
+  /** Click → filtra la tabla por este plan (función nueva). */
+  onClick?: () => void;
+  active?: boolean;
 }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return (
-    <div>
+  const inner = (
+    <>
       <div className="flex items-baseline justify-between gap-2 mb-1">
         <span className="font-extrabold text-sm text-[var(--text-primary)]">
           {label}
@@ -318,8 +323,25 @@ function PlanBar({
           aria-hidden
         />
       </div>
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        title={active ? "Quitar filtro" : `Filtrar tabla por ${label}`}
+        className={cn(
+          "w-full text-left rounded-lg -mx-1.5 px-1.5 py-1 transition-colors",
+          active ? "bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]/30" : "hover:bg-[var(--surface-sunken)]/60",
+        )}
+      >
+        {inner}
+      </button>
+    );
+  }
+  return <div>{inner}</div>;
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
@@ -337,6 +359,11 @@ export default function BillingDashboard() {
     "all" | TenantBillingRow["status"]
   >("all");
   const [planFilter, setPlanFilter] = useState<string>("all");
+  // Funciones nuevas (Brandon 2026-06-19): filtro por fuente de pago, toggle
+  // "en riesgo" (cancela al fin del período) y ordenamiento por columna.
+  const [sourceFilter, setSourceFilter] = useState<"all" | "stripe" | "mp" | "none">("all");
+  const [atRiskOnly, setAtRiskOnly] = useState(false);
+  const [sort, setSort] = useState<{ key: "name" | "mrr" | "next"; dir: "asc" | "desc" }>({ key: "mrr", dir: "desc" });
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(1);
@@ -409,6 +436,8 @@ export default function BillingDashboard() {
         setSearchRaw("");
         setStatusFilter("all");
         setPlanFilter("all");
+        setSourceFilter("all");
+        setAtRiskOnly(false);
       }
       if (inField) return;
       if (e.key === "/") {
@@ -443,6 +472,8 @@ export default function BillingDashboard() {
     return data.tenants.filter((t) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
       if (planFilter !== "all" && t.plan !== planFilter) return false;
+      if (sourceFilter !== "all" && t.source !== sourceFilter) return false;
+      if (atRiskOnly && !t.cancelAtPeriodEnd) return false;
       if (!q) return true;
       return (
         t.slug.toLowerCase().includes(q) ||
@@ -451,7 +482,27 @@ export default function BillingDashboard() {
         t.planLabel.toLowerCase().includes(q)
       );
     });
-  }, [data, search, statusFilter, planFilter]);
+  }, [data, search, statusFilter, planFilter, sourceFilter, atRiskOnly]);
+
+  // Ordenamiento (función nueva): por nombre / MRR / próximo cobro. Los nulos
+  // de "próximo" van al final siempre.
+  const sorted = useMemo(() => {
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      if (sort.key === "name") return a.name.localeCompare(b.name) * dir;
+      if (sort.key === "mrr") return (a.monthlyPEN - b.monthlyPEN) * dir;
+      const av = a.nextBillAt ? new Date(a.nextBillAt).getTime() : Number.POSITIVE_INFINITY;
+      const bv = b.nextBillAt ? new Date(b.nextBillAt).getTime() : Number.POSITIVE_INFINITY;
+      if (av === bv) return 0;
+      return av < bv ? -dir : dir;
+    });
+  }, [filtered, sort]);
+
+  const toggleSort = useCallback((key: "name" | "mrr" | "next") => {
+    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: key === "name" ? "asc" : "desc" }));
+  }, []);
+
+  const atRiskCount = useMemo(() => (data ? data.tenants.filter((t) => t.cancelAtPeriodEnd).length : 0), [data]);
 
   // ── Render error ────────────────────────────────────────────────────────
   if (error && !data) {
@@ -587,6 +638,8 @@ export default function BillingDashboard() {
                   max={maxPlanCount}
                   amount={p.mrrPEN}
                   pricePEN={p.pricePEN}
+                  active={planFilter === p.plan}
+                  onClick={() => setPlanFilter(planFilter === p.plan ? "all" : p.plan)}
                 />
               ))}
             </div>
@@ -600,18 +653,22 @@ export default function BillingDashboard() {
           {data.byIndustry.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">Sin datos</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {data.byIndustry.slice(0, 6).map((it) => (
-                <li
-                  key={it.industry}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <span className="text-sm font-semibold text-[var(--text-primary)] truncate capitalize">
-                    {it.industry.replace(/_/g, " ")}
-                  </span>
-                  <span className="text-sm font-extrabold tabular-nums text-[var(--text-tertiary)]">
-                    {it.count}
-                  </span>
+                <li key={it.industry}>
+                  <button
+                    type="button"
+                    onClick={() => setSearchRaw(it.industry)}
+                    title={`Filtrar tabla por ${it.industry.replace(/_/g, " ")}`}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg -mx-1.5 px-1.5 py-1 hover:bg-[var(--surface-sunken)]/60 transition-colors"
+                  >
+                    <span className="text-sm font-semibold text-[var(--text-primary)] truncate capitalize text-left">
+                      {it.industry.replace(/_/g, " ")}
+                    </span>
+                    <span className="text-sm font-extrabold tabular-nums text-[var(--text-tertiary)]">
+                      {it.count}
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -675,7 +732,7 @@ export default function BillingDashboard() {
             className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <select
             value={statusFilter}
             onChange={(e) =>
@@ -705,7 +762,34 @@ export default function BillingDashboard() {
               </option>
             ))}
           </select>
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value as "all" | "stripe" | "mp" | "none")}
+            aria-label="Filtrar por fuente de pago"
+            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+          >
+            <option value="all">Toda fuente</option>
+            <option value="stripe">Stripe</option>
+            <option value="mp">Mercado Pago</option>
+            <option value="none">Sin fuente</option>
+          </select>
         </div>
+        {atRiskCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setAtRiskOnly((v) => !v)}
+            aria-pressed={atRiskOnly}
+            className={cn(
+              "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-colors",
+              atRiskOnly
+                ? "bg-rose-600 text-white"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            En riesgo (cancela) <span className="tabular-nums opacity-80">{atRiskCount}</span>
+          </button>
+        )}
       </div>
 
       {/* ── Tabla / cards ──────────────────────────────── */}
@@ -719,6 +803,8 @@ export default function BillingDashboard() {
               setSearchRaw("");
               setStatusFilter("all");
               setPlanFilter("all");
+              setSourceFilter("all");
+              setAtRiskOnly(false);
             }}
             className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
           >
@@ -729,7 +815,7 @@ export default function BillingDashboard() {
         <>
           {/* Mobile cards */}
           <ul className="md:hidden space-y-2.5">
-            {filtered.map((t) => (
+            {sorted.map((t) => (
               <TenantCard key={t.id} t={t} />
             ))}
           </ul>
@@ -739,16 +825,24 @@ export default function BillingDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
-                  <th className="px-4 py-3 font-extrabold">Tienda</th>
+                  <th className="px-4 py-3">
+                    <button type="button" onClick={() => toggleSort("name")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
+                      Tienda <span className="text-[10px]" aria-hidden>{sort.key === "name" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                    </button>
+                  </th>
                   <th className="px-3 py-3 font-extrabold">Plan</th>
                   <th className="px-3 py-3 font-extrabold text-center">
                     Status
                   </th>
-                  <th className="px-3 py-3 font-extrabold text-right">
-                    MRR (PEN)
+                  <th className="px-3 py-3 text-right">
+                    <button type="button" onClick={() => toggleSort("mrr")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
+                      MRR (PEN) <span className="text-[10px]" aria-hidden>{sort.key === "mrr" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                    </button>
                   </th>
-                  <th className="px-3 py-3 font-extrabold hidden lg:table-cell">
-                    Próximo
+                  <th className="px-3 py-3 hidden lg:table-cell">
+                    <button type="button" onClick={() => toggleSort("next")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
+                      Próximo <span className="text-[10px]" aria-hidden>{sort.key === "next" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                    </button>
                   </th>
                   <th className="px-3 py-3 font-extrabold hidden xl:table-cell">
                     Source
@@ -759,7 +853,7 @@ export default function BillingDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
-                {filtered.map((t) => {
+                {sorted.map((t) => {
                   const s = STATUS_META[t.status];
                   return (
                     <tr
