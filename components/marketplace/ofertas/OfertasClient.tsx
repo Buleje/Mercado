@@ -31,6 +31,7 @@ import DealsFilterBar, { type DealsFilters } from "./DealsFilterBar";
 import DealsGrid from "./DealsGrid";
 import DealsByStore from "./DealsByStore";
 import DealsAlert from "./DealsAlert";
+import OfertasSkeleton from "./OfertasSkeleton";
 import type { Deal, DealStore } from "@/lib/mock-deals";
 import type { DealCategory } from "./types";
 
@@ -164,7 +165,7 @@ function EmptyState() {
           Todavía no hay ofertas activas
         </h2>
         <p className="text-base text-[var(--text-secondary)] leading-relaxed mb-8 max-w-xl mx-auto">
-          Las bodegas de Ciudad Constitución están subiendo sus descuentos. Volvé pronto — o explorá las tiendas activas y descubrí lo que ya está disponible.
+          Las bodegas de Ciudad Constitución están subiendo sus descuentos. Vuelve pronto — o explora las tiendas activas y descubre lo que ya está disponible.
         </p>
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           <Link
@@ -186,10 +187,10 @@ function EmptyState() {
         {/* CTA secundaria — captura leads de bodegueros */}
         <div className="rounded-2xl bg-[var(--accent)]/8 border border-[var(--accent)]/20 p-6 sm:p-8 text-left max-w-xl mx-auto">
           <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
-            Sos bodeguero
+            Eres bodeguero
           </p>
           <h3 className="text-lg sm:text-xl font-black text-[var(--text-primary)] mb-2">
-            ¿Querés publicar tus ofertas acá?
+            ¿Quieres publicar tus ofertas aquí?
           </h3>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-4">
             Tu bodega en el marketplace de Buleje, con tus precios reales, tus descuentos y tus clientes del barrio. Cero comisión inicial.
@@ -206,7 +207,7 @@ function EmptyState() {
               href="/marketplace/como-pagar"
               className="inline-flex items-center gap-1.5 rounded-full border border-[var(--accent)]/40 text-[var(--accent)] px-4 py-2 text-xs font-bold hover:bg-[var(--accent)]/10 transition-colors"
             >
-              ¿Cómo cobrás?
+              ¿Cómo cobras?
             </Link>
           </div>
         </div>
@@ -277,7 +278,7 @@ export default function OfertasClient() {
         setSource(json.source);
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
-        setError("No pudimos cargar las ofertas. Probá recargando la página.");
+        setError("No pudimos cargar las ofertas. Prueba recargando la página.");
         setSource("deals");
       }
     })();
@@ -313,7 +314,9 @@ export default function OfertasClient() {
         </section>
       )}
 
-      {source === "loading" ? null : allDeals.length === 0 ? (
+      {source === "loading" ? (
+        <OfertasSkeleton />
+      ) : allDeals.length === 0 ? (
         <EmptyState />
       ) : (
         <>
