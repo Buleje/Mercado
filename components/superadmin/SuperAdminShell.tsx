@@ -446,16 +446,18 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // tenían cristal o shaded guardado en localStorage ven el nuevo look automáticamente,
   // sin necesidad de re-aplicar preset. Era lo que cristal "intentaba ser" según comentarios
   // legacy del código ("paleta de marca Buleje") pero el render anterior era washed-out.
+  // Brandon 2026-06-19: el tema "dark" (Ejecutivo) ahora COMPARTE el look
+  // near-black + texto blanco del tema buleje. Antes "dark" usaba zinc-900 +
+  // texto gris (--text-secondary) → era lo que dejaba el sidebar gris pese a
+  // los cambios de blanco. Solo el tema claro queda con la rama no-oscura.
   const isBuleje =
-    visual.theme === "buleje" || visual.theme === "cristal" || visual.theme === "shaded";
+    visual.theme === "buleje" || visual.theme === "cristal" ||
+    visual.theme === "shaded" || visual.theme === "dark";
 
   const sidebarBgClass = isBuleje
-    ? // Slate near-black + border teal hairline + text-white. Brandon 2026-06-19:
-      // "más oscuro, igual que el encabezado" → mismo gradiente que headerClass.
+    ? // Slate near-black + border teal hairline + text-white.
       "bg-[linear-gradient(180deg,#060d13_0%,#030a0f_50%,#02080c_100%)] border-r border-[rgba(0,160,160,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0,160,160,0.06)]"
-    : visual.theme === "dark"
-      ? "bg-zinc-900 border-r border-zinc-800 text-zinc-100"
-      : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
+    : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
 
   // Override de clases para items cuando es theme buleje — paleta cohesiva, contraste AAA.
   const navItemActiveClass = isBuleje
@@ -490,12 +492,11 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // AdminTopHeader del panel de negocio (isAutoDarkTheme). Antes el header del
   // superadmin quedaba claro aunque el sidebar fuera oscuro (inconsistente).
   // Los elementos internos reusan los patrones dark del propio sidebar.
-  const isEjecutivo = visual.theme === "dark";
-  const headerDark = isBuleje || isEjecutivo;
+  // isBuleje ya incluye "dark", así que el header oscurece con el sidebar en
+  // todos los temas integral-oscuro. Solo el tema claro usa la rama clara.
+  const headerDark = isBuleje;
   const headerClass = headerDark
-    ? isBuleje
-      ? "bg-[linear-gradient(180deg,#060d13_0%,#02080c_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/90"
-      : "bg-[linear-gradient(180deg,#09090b_0%,#18181b_100%)] border-[color-mix(in_oklab,var(--accent)_25%,transparent)] text-zinc-300"
+    ? "bg-[linear-gradient(180deg,#060d13_0%,#02080c_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/90"
     : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-primary)]";
   const headerSectionClass = headerDark ? "text-white/45" : "text-[var(--text-tertiary)]";
   const headerTitleClass = headerDark ? "text-white" : "text-[var(--text-primary)]";
