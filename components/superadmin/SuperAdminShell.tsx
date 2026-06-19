@@ -450,8 +450,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     visual.theme === "buleje" || visual.theme === "cristal" || visual.theme === "shaded";
 
   const sidebarBgClass = isBuleje
-    ? // Slate-deep editorial gradient + border teal hairline + text-white. Paleta real del proyecto.
-      "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_50%,#091621_100%)] border-r border-[rgba(0,160,160,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0,160,160,0.06)]"
+    ? // Slate near-black + border teal hairline + text-white. Brandon 2026-06-19:
+      // "más oscuro, igual que el encabezado" → mismo gradiente que headerClass.
+      "bg-[linear-gradient(180deg,#08151d_0%,#061016_50%,#050e14_100%)] border-r border-[rgba(0,160,160,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0,160,160,0.06)]"
     : visual.theme === "dark"
       ? "bg-zinc-900 border-r border-zinc-800 text-zinc-100"
       : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
@@ -461,7 +462,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)]";
   const navItemIdleClass = isBuleje
-    ? "text-white/65 hover:bg-white/[0.06] hover:text-white"
+    ? "text-white/80 hover:bg-white/[0.06] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
   // Brandon mayo 2026 v3: logo con mejor contraste — gradient ámbar fuerte
   // sobre dark, ring sutil que separa del fondo, sombra cálida. Labels en
@@ -477,7 +478,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     : "text-teal-300 dark:text-teal-300";
   const logoBorderClass = isBuleje ? "border-white/[0.08]" : "border-white/[0.10]";
   const collapseBtnClass = isBuleje
-    ? "text-white/45 hover:bg-white/[0.06] hover:text-white/85"
+    ? "text-white/70 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]";
 
   const iconClassName =
@@ -493,7 +494,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const headerDark = isBuleje || isEjecutivo;
   const headerClass = headerDark
     ? isBuleje
-      ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/80"
+      ? "bg-[linear-gradient(180deg,#08151d_0%,#050e14_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/85"
       : "bg-[linear-gradient(180deg,#09090b_0%,#18181b_100%)] border-[color-mix(in_oklab,var(--accent)_25%,transparent)] text-zinc-300"
     : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-primary)]";
   const headerSectionClass = headerDark ? "text-white/45" : "text-[var(--text-tertiary)]";
@@ -1219,7 +1220,7 @@ function NavGroupsFlyout({
     ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const headerIdleClass = isBuleje
-    ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
+    ? "text-white/85 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
   const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
 
@@ -1407,7 +1408,7 @@ function SuperAdminFlyout({
 
   // Mismo lenguaje editorial buleje del flyout admin.
   const bg = isBuleje
-    ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#091621_100%)]"
+    ? "bg-[linear-gradient(180deg,#08151d_0%,#050e14_100%)]"
     : "bg-[var(--surface-raised)]";
   const border = isBuleje
     ? "border-[rgba(0,160,160,0.2)] shadow-[var(--shadow-lg)] ring-1 ring-[rgba(20,194,194,0.08)]"
@@ -1417,7 +1418,7 @@ function SuperAdminFlyout({
     ? "bg-linear-to-r from-[rgba(20,194,194,0.22)] via-[rgba(0,160,160,0.14)] to-[rgba(0,160,160,0.04)] text-white font-semibold shadow-[inset_3px_0_0_#14C2C2]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold";
   const itemIdle = isBuleje
-    ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
+    ? "text-white/85 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
 
   return (
@@ -1547,11 +1548,12 @@ function NavGroupsAccordion({
     ? "bg-[rgba(0,160,160,0.16)] text-[#5eead4] font-semibold shadow-[inset_3px_0_0_#14C2C2] ring-1 ring-inset ring-[rgba(20,194,194,0.16)]"
     : "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold shadow-[inset_3px_0_0_var(--accent)]";
   const itemIdle = isBuleje
-    ? "text-white/70 hover:bg-white/[0.06] hover:text-white"
+    ? "text-white/85 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
-  // Header de sección: tenue por defecto; realzado cuando contiene la ruta activa.
+  // Header de sección: blanco legible por defecto; realzado en teal cuando
+  // contiene la ruta activa. Brandon 2026-06-19: "categorías blancas, contrasten".
   const labelIdleClass = isBuleje
-    ? "text-white/45 hover:text-white/75"
+    ? "text-white/70 hover:text-white"
     : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]";
   const labelActiveClass = isBuleje
     ? "text-[#5eead4] hover:text-[#5eead4]"
@@ -1589,7 +1591,7 @@ function NavGroupsAccordion({
                 groupHasActive ? labelActiveClass : labelIdleClass,
               ].join(" ")}
             >
-              <span className="shrink-0 opacity-80 [&_svg]:w-3.5 [&_svg]:h-3.5">{group.icon}</span>
+              <span className="shrink-0 [&_svg]:w-3.5 [&_svg]:h-3.5">{group.icon}</span>
               <span className="flex-1 text-left">{group.label}</span>
               {groupHasActive && !isOpen && (
                 <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
