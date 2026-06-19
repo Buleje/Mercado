@@ -2827,9 +2827,31 @@ model DeliveryPartner {
   createdAt      DateTime             @default(now())
   assignments    DeliveryAssignment[]
   offers         DeliveryOffer[]
+  payouts        PartnerPayout[]
 
   @@index([tenantId])
   @@index([tenantId, isOnline, currentOrderId])
+}
+
+// ─── Retiros (cash-out) del repartidor a Yape ─────────────────────────
+// Patrón Rappi/Uber "Cobra ya". El saldo disponible se calcula en backend
+// (Σ fee+propina de entregas completadas − Σ retiros pending|paid). Un
+// retiro `pending` aparta el dinero; el dueño lo marca `paid` tras yapear,
+// o `rejected` para liberarlo. Decimal(12,2) como el resto del dinero.
+model PartnerPayout {
+  id         String          @id @default(cuid())
+  partnerId  String
+  partner    DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  tenantId   String
+  amount     Decimal         @db.Decimal(12, 2)
+  yapeNumber String // celular Yape destino (9 dígitos)
+  status     String          @default("pending") // pending | paid | rejected
+  note       String? // referencia de pago o motivo de rechazo
+  createdAt  DateTime        @default(now())
+  resolvedAt DateTime?
+
+  @@index([tenantId])
+  @@index([partnerId, status])
 }
 
 // ─── Rappi-style cascading offer system (ADR-087) ─────────────────────

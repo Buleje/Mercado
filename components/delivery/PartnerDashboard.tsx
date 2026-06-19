@@ -21,6 +21,7 @@ import ChatAndSOSPanel from "./ChatAndSOSPanel";
 import StreaksAndBonusCard from "./StreaksAndBonusCard";
 import HotZonesPanel from "./HotZonesPanel";
 import RiderScoreCard from "./RiderScoreCard";
+import CashOutCard from "./CashOutCard";
 
 interface MeResp {
   partner: {
@@ -199,6 +200,9 @@ export default function PartnerDashboard() {
           isOnline={me.isOnline}
           onlineSinceMs={onlineSinceMs}
         />
+
+        {/* Cobra ya — saldo retirable a Yape (dinero junto a dinero) */}
+        <CashOutCard defaultYape={me.phone?.replace(/\D/g, "").slice(-9)} />
 
         {/* Chat + SOS — solo si hay pedido activo (acción inmediata) */}
         {me.currentOrderId && <ChatAndSOSPanel currentOrderId={me.currentOrderId} />}
