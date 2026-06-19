@@ -46,20 +46,30 @@ type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 async function readBalance(
   client: typeof prisma | PrismaTx,
-  tenantId: string,
   partnerId: string,
 ): Promise<PartnerBalance> {
+  // IMPORTANTE — billetera GLOBAL del repartidor, scopeada SOLO por partnerId.
+  // El `partnerId` es único a nivel proyecto (no por tenant), igual que
+  // `listActiveForPartner(partnerId)`. Un repartidor de la red Buleje ("main")
+  // entrega pedidos de OTRAS bodegas; esos DeliveryAssignment llevan el
+  // `tenantId` del pedido (offer-cascade), no el del repartidor. Si filtráramos
+  // por tenantId, ese dinero ganado cross-tenant quedaría invisible y NO
+  // retirable. Por eso NO se filtra por tenantId aquí (sería re-introducir el
+  // bug). El tenantId se sigue guardando en cada PartnerPayout solo como sello
+  // del retiro. Tanto lo ganado como lo retirado se suman cross-tenant para que
+  // el saldo disponible sea consistente (si solo uno fuera global, se podría
+  // retirar de más).
   const [earned, committed, pendingAgg] = await Promise.all([
     client.deliveryAssignment.aggregate({
-      where: { tenantId, partnerId, status: "delivered" },
+      where: { partnerId, status: "delivered" },
       _sum: { fee: true, tipAmount: true },
     }),
     client.partnerPayout.aggregate({
-      where: { tenantId, partnerId, status: { in: [...COMMITTED_STATES] } },
+      where: { partnerId, status: { in: [...COMMITTED_STATES] } },
       _sum: { amount: true },
     }),
     client.partnerPayout.aggregate({
-      where: { tenantId, partnerId, status: "pending" },
+      where: { partnerId, status: "pending" },
       _sum: { amount: true },
     }),
   ]);
@@ -78,19 +88,28 @@ async function readBalance(
 }
 
 export const PartnerPayoutsDB = {
-  /** Saldo del partner (ganancias de por vida − retiros comprometidos). */
-  getBalance(tenantId: string, partnerId: string): Promise<PartnerBalance> {
-    return readBalance(prisma, tenantId, partnerId);
+  /**
+   * Saldo GLOBAL del partner (ganancias de por vida − retiros comprometidos),
+   * across todos los tenants. `tenantId` se ignora para el cálculo (la billetera
+   * es por `partnerId`); se mantiene en la firma por consistencia con el resto
+   * de la clase y porque el caller ya lo tiene a mano.
+   */
+  getBalance(_tenantId: string, partnerId: string): Promise<PartnerBalance> {
+    return readBalance(prisma, partnerId);
   },
 
-  /** Historial de retiros del partner, más reciente primero. */
+  /**
+   * Historial de retiros del partner, más reciente primero. Global por
+   * `partnerId` (across tenants) para que reconcilie con el `withdrawn` del
+   * saldo, que también es global. `tenantId` se ignora (ver readBalance).
+   */
   async listForPartner(
-    tenantId: string,
+    _tenantId: string,
     partnerId: string,
     take = 20,
   ): Promise<PartnerPayoutRow[]> {
     const rows = await prisma.partnerPayout.findMany({
-      where: { tenantId, partnerId },
+      where: { partnerId },
       orderBy: { createdAt: "desc" },
       take,
       select: {
@@ -122,7 +141,7 @@ export const PartnerPayoutsDB = {
     try {
       return await prisma.$transaction(
         async (tx) => {
-          const balance = await readBalance(tx, tenantId, partnerId);
+          const balance = await readBalance(tx, partnerId);
           const check = validatePayoutAmount(input.amount, balance.available);
           if (!check.ok) {
             return { ok: false as const, error: check.error };
