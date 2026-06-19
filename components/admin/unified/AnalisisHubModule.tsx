@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { BarChart3, TrendingUp, Sparkles } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // ── Hub de Análisis (consolidación 2→1) ──────────────────────────────────────
 // Antes: 2 entradas top-level (analytics-pro, forecasting). Ahora 1 centro de
-// análisis con 2 sub-tabs. Cada módulo trae su PROPIO header → el hub NO pone
-// header (evita doble). Rendimiento técnico queda aparte (no es análisis de negocio).
+// análisis con 2 sub-tabs. El header "Análisis" se muestra SIEMPRE arriba
+// (coherencia admin, Brandon 2026-06-19); cada módulo conserva su sub-header
+// debajo. Rendimiento técnico queda aparte (no es análisis de negocio).
 const AnalyticsProModule  = dynamic(() => import("@/components/admin/unified/AnalyticsProModule"),        { loading: S, ssr: false });
 const ForecastingDashboard = dynamic(() => import("@/components/admin/forecasting/ForecastingDashboard"), { loading: S });
 // Inteligencia de negocio — movida desde FinanzasModule (BI operacional, no financiero)
@@ -33,6 +35,12 @@ export default function AnalisisHubModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
+      <AdminModuleHeader
+        eyebrow="Inteligencia · Análisis"
+        title="Análisis"
+        description="Métricas avanzadas, predicción de demanda e inteligencia de negocio para decidir con datos."
+        icon={BarChart3}
+      />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "analytics" && <AnalyticsProModule />}
         {sub === "forecast" && <ForecastingDashboard />}

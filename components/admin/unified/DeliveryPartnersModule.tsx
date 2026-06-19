@@ -71,8 +71,9 @@ export default function DeliveryPartnersModule({ initialTab }: { initialTab?: st
   return (
     <div className="space-y-4">
       <AdminModuleHeader
+        eyebrow="Operaciones · Delivery"
         title="Delivery"
-        description="Gestiona repartidores, asignaciones y permisos"
+        description="Gestiona repartidores, asignaciones y permisos."
         icon={Truck}
       >
         <button

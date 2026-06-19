@@ -9,8 +9,9 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // ── Hub de Sistema (consolidación 3→1) ───────────────────────────────────────
 // Antes: 3 entradas top-level sueltas (rendimiento, auditoria, colas). Ahora 1
-// centro técnico con 3 sub-tabs. RendimientoModule trae su propio header → se
-// oculta el header "Sistema" en esa pestaña (los otros 2 no tienen header).
+// centro técnico con 3 sub-tabs. El header "Sistema" se muestra SIEMPRE arriba
+// (coherencia admin, Brandon 2026-06-19) — los sub-módulos con header propio
+// quedan debajo dando jerarquía "Sistema → <sección>".
 const RendimientoModule = dynamic(() => import("@/components/admin/unified/RendimientoModule"), { loading: S });
 const AuditTab          = dynamic(() => import("@/components/admin/tabs/AuditTab"),             { loading: S });
 const ColasTab          = dynamic(() => import("@/components/admin/ColasTab"),                  { loading: S });
@@ -23,8 +24,6 @@ const TABS = [
   { id: "colas",       label: "Colas",       icon: Activity },
 ];
 
-const FOLDED_SUBS = new Set(["rendimiento"]); // trae su propio header
-
 export default function SistemaHubModule({ initialTab }: { initialTab?: string } = {}) {
   const [sub, setSub] = useState(() => {
     if (initialTab) return initialTab;
@@ -35,13 +34,12 @@ export default function SistemaHubModule({ initialTab }: { initialTab?: string }
 
   return (
     <div className="space-y-4">
-      {!FOLDED_SUBS.has(sub) && (
-        <AdminModuleHeader
-          title="Sistema"
-          description="Salud técnica, auditoría de actividad y colas de procesos."
-          icon={Gauge}
-        />
-      )}
+      <AdminModuleHeader
+        eyebrow="Plataforma · Sistema"
+        title="Sistema"
+        description="Salud técnica, auditoría de actividad y colas de procesos."
+        icon={Gauge}
+      />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "rendimiento" && <RendimientoModule />}
         {sub === "auditoria" && <AuditTab />}

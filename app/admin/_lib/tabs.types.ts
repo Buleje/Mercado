@@ -95,6 +95,7 @@ export const VALID_TABS: readonly Tab[] = [
   "adelantos",
   "por-cobrar",
   "activos",
+  "scoring",
   "documentos",
   "cotizaciones",
   "guias-remision",

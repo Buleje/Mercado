@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import {
@@ -445,6 +446,13 @@ export default function PlanTab() {
 
   return (
     <div className="space-y-8 max-w-4xl">
+      <AdminModuleHeader
+        eyebrow="Cuenta · Suscripción"
+        title="Mi Plan"
+        description="Tu plan actual, el uso del mes y las opciones para mejorar tu tienda."
+        icon={Zap}
+      />
+
       {/* Toast */}
       {toast && (
         <div

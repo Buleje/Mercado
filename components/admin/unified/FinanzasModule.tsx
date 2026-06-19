@@ -1,6 +1,5 @@
 "use client";
 
-import { logger } from "@/lib/logger";
 import { CardTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -13,7 +12,7 @@ import {
 import {
   TrendingUp, TrendingDown, PieChart as PieChartIcon, Target,
   FileBarChart, Waves, Calculator,
-  DollarSign, Wallet, ChevronRight,
+  DollarSign, Wallet,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
   Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
 } from "@buleje/design-system/icons";
@@ -77,10 +76,6 @@ const PorCobrarDashboard = dynamic(() => import("@/components/admin/PorCobrarDas
 const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: S });
 
 const MODULE_ID = "plata";
-
-// Sub-tabs que renderizan un módulo completo con su PROPIO header (no mostramos
-// el header "Mi Plata" cuando uno de estos está activo, para no duplicar).
-const FOLDED_SUBS = new Set(["por-cobrar", "fiados", "prestamos", "adelantos", "activos", "scoring"]);
 
 const TABS = [
   { id: "dashboard" as const,        label: "Dashboard",               icon: BarChart3   },
@@ -1171,7 +1166,11 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
 
   return (
     <div className="space-y-6">
-      {!FOLDED_SUBS.has(sub) && (
+      {/* Brandon 2026-06-19: el header "Mi Plata" se muestra en TODAS las
+          sub-secciones — incluidas las foldeadas (Por cobrar, Fiados, Préstamos,
+          Adelantos, Activos, Scoring) — igual que Tesorería/Reportes. El módulo
+          hijo conserva su propio sub-header debajo, dando jerarquía clara
+          "Mi Plata → <sección>". Antes las foldeadas solo tenían un breadcrumb. */}
       <AdminModuleHeader
         eyebrow="Finanzas · Reportes"
         title="Mi Plata"
@@ -1194,23 +1193,6 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
           Reporte Bancario
         </button>
       </AdminModuleHeader>
-      )}
-
-      {/* Brandon 2026-06-18: en las sub-secciones "folded" (Fiados, Préstamos,
-          Adelantos, Activos, Por cobrar, Scoring) ocultamos el header grande "Mi
-          Plata" para no duplicar el título del módulo hijo — pero igual mostramos
-          un breadcrumb fino "Mi Plata › <sección>" para que SIEMPRE quede claro que
-          estás dentro de Mi Plata, sin importar qué sub-tab presiones. */}
-      {FOLDED_SUBS.has(sub) && (
-        <div className="flex items-center gap-2 border-b border-[var(--rule-base)] pb-3 dark:border-white/10">
-          <Wallet className="h-4 w-4 text-primary" aria-hidden />
-          <span className="text-sm font-bold text-[var(--text-primary)]">Mi Plata</span>
-          <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden />
-          <span className="text-sm font-medium text-[var(--text-secondary)]">
-            {TABS.find((t) => t.id === sub)?.label}
-          </span>
-        </div>
-      )}
 
       <AdminTabBar
         tabs={TABS}

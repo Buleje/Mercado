@@ -31,9 +31,6 @@ const TABS = [
   { id: "mensajes" as const, label: "Mensajes masivos", icon: MessageSquare },
 ];
 
-// LeadsFunnelModule trae su propio header → ocultamos el de CRM en esa pestaña.
-const FOLDED_SUBS = new Set(["leads"]);
-
 function normalizeClientesTab(savedTab: string | null): typeof TABS[number]["id"] {
   if (savedTab === "dashboard" || savedTab === "rfm") return TABS[0].id;
   return TABS.some((tab) => tab.id === savedTab) ? savedTab as typeof TABS[number]["id"] : TABS[0].id;
@@ -74,14 +71,12 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-6">
-      {!FOLDED_SUBS.has(sub) && (
       <AdminModuleHeader
         eyebrow="Relaciones · CRM"
         title="Mis Clientes"
         description="Gestiona tu base de clientes, segmentación, fidelización y opiniones."
         icon={Users}
       />
-      )}
 
       <AdminTabBar
         tabs={TABS}

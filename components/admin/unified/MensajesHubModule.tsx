@@ -43,6 +43,7 @@ export default function MensajesHubModule({ initialTab }: { initialTab?: string 
   return (
     <div className="space-y-4">
       <AdminModuleHeader
+        eyebrow="Comunicación · Mensajes"
         title="Mensajes"
         description="Bandeja unificada: chats con clientes y soporte de la plataforma."
         icon={MessageCircle}

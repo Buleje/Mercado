@@ -367,16 +367,23 @@ export const BASIC_MODULES: TabCategory[] = [
   // ── 06 · FINANZAS ────────────────────────────────
   // "plata" abre FinanzasModule (P&L, gastos, flujo, tesorería + Fiados,
   // Préstamos, Adelantos, Activos, Por cobrar, Scoring como sub-tabs).
-  // fiados/prestamos quedan como acceso directo (uso diario del bodeguero);
-  // adelantos/activos viven dentro del hub.
+  // Estos 7 son ACCESOS DIRECTOS clave desde el sidebar: el dueño llega de un
+  // click a "lo que le deben" (Por cobrar/Fiados/Préstamos) y a su capital
+  // (Adelantos/Activos) + Scoring crediticio, sin entrar al hub a buscar la
+  // sub-tab. P&G, Gastos, Flujo, Tesorería y Reportes viven dentro del
+  // dashboard de Mi Plata (su barra de sub-tabs interna). Brandon 2026-06-19.
   {
     id: "finanzas",
     label: "Finanzas",
     icon: Wallet,
     tabs: [
       "plata",
+      "por-cobrar",
       "fiados",
       "prestamos",
+      "adelantos",
+      "activos",
+      "scoring",
     ],
   },
 

@@ -24,6 +24,7 @@ import {
   BarChart3,
   Banknote,
   Coins,
+  CreditCard,
   Construction,
   Zap,
   ClipboardList,
@@ -80,6 +81,8 @@ export const ALL_TABS = [
   { id: "prestamos" as Tab,           label: "Préstamos",           icon: Banknote },
   { id: "adelantos" as Tab,           label: "Adelantos",           icon: Coins },
   { id: "activos" as Tab,             label: "Activos & Maquinaria", icon: Construction },
+  { id: "por-cobrar" as Tab,          label: "Por cobrar",          icon: CreditCard },
+  { id: "scoring" as Tab,             label: "Scoring crediticio",  icon: Gauge },
   { id: "plan" as Tab,                label: "Plan & Límites",      icon: Zap },
 
   // — FACTURACIÓN SUNAT —

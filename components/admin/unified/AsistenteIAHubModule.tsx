@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { BotMessageSquare, Wand2, Lightbulb } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 // ── Hub del Asistente IA (consolidación 3→1) ─────────────────────────────────
 // Antes eran 3 entradas top-level separadas (asistente-ia, ai-command,
-// sugerencias-ia). Ahora viven como sub-tabs de un solo centro de IA. Cada
-// módulo conserva su PROPIO header → el hub NO renderiza header (evita doble).
+// sugerencias-ia). Ahora viven como sub-tabs de un solo centro de IA. El header
+// "Asistente IA" se muestra SIEMPRE arriba (coherencia admin, Brandon
+// 2026-06-19); cada módulo conserva su sub-header debajo.
 const ChatIAModule        = dynamic(() => import("@/components/admin/unified/ChatIAModule"),        { loading: S, ssr: false });
 const AICommandModule     = dynamic(() => import("@/components/admin/unified/AICommandModule"),     { loading: S });
 const SugerenciasIAModule = dynamic(() => import("@/components/admin/unified/SugerenciasIAModule"), { loading: S });
@@ -32,6 +34,12 @@ export default function AsistenteIAHubModule({ initialTab }: { initialTab?: stri
 
   return (
     <div className="space-y-4">
+      <AdminModuleHeader
+        eyebrow="Inteligencia · Asistente"
+        title="Asistente IA"
+        description="Conversa con tu asistente, dale comandos y recibe sugerencias para tu negocio."
+        icon={BotMessageSquare}
+      />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "chat" && <ChatIAModule />}
         {sub === "comandos" && <AICommandModule />}

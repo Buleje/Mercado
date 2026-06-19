@@ -189,6 +189,9 @@ export const PLAN_PRO: PlanDefinition = {
     // Clientes + fiados
     "clientes",
     "fiados",
+    // Por cobrar — tablero consolidado de cuentas por cobrar (agrega fiados).
+    // Acompaña a fiados/plata en el plan Starter.
+    "por-cobrar",
     // Documentos basicos (boleta interna, no SUNAT todavia)
     "documentos",
     // Plata basico (ingresos/egresos)

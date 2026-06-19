@@ -19,11 +19,8 @@ import {
   LogOut,
   User,
   Users,
-  CreditCard,
   Clock,
   FlaskConical,
-  Landmark,
-  Wallet,
   FileText,
   ClipboardList,
   BarChart3,
@@ -158,44 +155,27 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
       { id: "recetas", label: "Recetas" },
     ],
   },
+  // Mi Plata = hub financiero único del grupo "finanzas". Las sub-tabs son
+  // ACCESOS DIRECTOS a las secciones que rutean como tab top-level (TabRouter →
+  // <FinanzasModule initialTab=...>). Antes apuntaban a ids MUERTOS (pl/gastos/
+  // rentabilidad/exportar NO existen como Tab) y Adelantos/Activos/Scoring no
+  // tenían ningún acceso desde el sidebar. P&G, Gastos, Flujo, Tesorería y
+  // Reportes viven dentro del dashboard de Mi Plata (barra de sub-tabs interna,
+  // que ahora envuelve a 2 filas y muestra el header "Mi Plata"). Antes había 3
+  // módulos sueltos (Por cobrar/Fiados/Préstamos) duplicando estos accesos →
+  // consolidados acá. Brandon 2026-06-19.
   {
     id: "plata",
     label: "Mi Plata",
     icon: DollarSign,
     group: "finanzas",
     tabs: [
-      { id: "pl", label: "Ingresos y egresos" },
-      { id: "gastos", label: "Gastos" },
-      { id: "rentabilidad", label: "Ganancias por producto" },
-      { id: "reportes", label: "Reportes" },
-      { id: "exportar", label: "Exportar a Excel" },
-    ],
-  },
-  {
-    id: "por-cobrar",
-    label: "Por cobrar",
-    icon: Wallet,
-    group: "finanzas",
-    tabs: [
-      { id: "por-cobrar", label: "Resumen" },
-    ],
-  },
-  {
-    id: "fiados",
-    label: "Fiados",
-    icon: CreditCard,
-    group: "finanzas",
-    tabs: [
+      { id: "por-cobrar", label: "Por cobrar" },
       { id: "fiados", label: "Fiados" },
-    ],
-  },
-  {
-    id: "prestamos",
-    label: "Préstamos",
-    icon: Landmark,
-    group: "finanzas",
-    tabs: [
       { id: "prestamos", label: "Préstamos" },
+      { id: "adelantos", label: "Adelantos" },
+      { id: "activos", label: "Activos" },
+      { id: "scoring", label: "Scoring crediticio" },
     ],
   },
   {

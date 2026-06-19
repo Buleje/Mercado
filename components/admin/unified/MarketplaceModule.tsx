@@ -29,10 +29,6 @@ const GiftCardsAdminModule    = lazy(() => import("@/components/admin/unified/Gi
 const SocioMembersAdminModule = lazy(() => import("@/components/admin/unified/SocioMembersAdminModule"));
 const LivesAdminModule        = lazy(() => import("@/components/admin/unified/LivesAdminModule"));
 
-// Sub-tabs que renderizan un módulo completo con su PROPIO header → ocultamos
-// el header "Marketplace" cuando uno está activo (evita doble header).
-const FOLDED_SUBS = new Set(["subscriptions", "gift-cards", "socio", "lives"]);
-
 // Spinner · TableSkeleton · SortIcon · KpiTile · MODULE_ID · ORDER_STATUS_CONFIG
 // + StoreData/COMMISSION/REVIEW/TIER configs → movidos a marketplace/shared.tsx
 // (refactor 2026-06-15). Se importan arriba.
@@ -65,10 +61,10 @@ export default function MarketplaceModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
-      {!FOLDED_SUBS.has(tab) && (
       <AdminModuleHeader
+        eyebrow="Crecimiento · Marketplace"
         title="Marketplace"
-        description="Gestiona tu tienda en la plataforma de ventas"
+        description="Gestiona tu tienda en la plataforma de ventas."
         icon={Store}
       >
         <button
@@ -79,7 +75,6 @@ export default function MarketplaceModule({ initialTab }: { initialTab?: string 
           <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
         </button>
       </AdminModuleHeader>
-      )}
 
       {/* KPI strip removido — Brandon decisión 2026-05-09. Los KPIs detallados
           están dentro del sub-tab "Resumen" (MarketplaceDashboardTab). */}
