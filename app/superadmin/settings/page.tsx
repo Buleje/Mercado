@@ -223,6 +223,11 @@ export default function SettingsPage() {
     <>
       <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
     <AdminTabShell
+      info={{
+        what: "Controla los precios de planes (S//mes), límites por plan (productos, usuarios, pedidos), comisión default y controles globales como modo mantenimiento.",
+        affects: "Los precios se usan para calcular el MRR real del dashboard. Los límites se aplican a cada tienda según su plan. El modo mantenimiento afecta a todos los usuarios.",
+        example: "Si subes el precio del plan Pro de S/100 a S/120, el MRR del dashboard se recalcula automáticamente con el nuevo valor.",
+      }}
       title="Configuración de plataforma"
       kicker="Control global"
       description="Ajusta precios, comisiones, límites y controles de toda la plataforma. Los precios alimentan el MRR del dashboard en tiempo real."

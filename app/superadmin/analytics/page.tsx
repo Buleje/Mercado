@@ -300,6 +300,11 @@ export default function AnalyticsPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Muestra MRR, ARR, crecimiento de tenants, pedidos, comisiones y tiendas en riesgo consolidados de toda la plataforma.",
+        affects: "Solo visible en el superadmin. Las métricas reflejan datos reales de todos los tenants activos.",
+        example: "Si una tienda cancela su plan, aparece en 'Tiendas en riesgo' y su MRR deja de sumarse al total del mes.",
+      }}
       title="Analytics de plataforma"
       description="Métricas globales de todos los tenants — ingresos, registros, conversión, churn."
       icon={BarChart3}

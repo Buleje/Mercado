@@ -263,6 +263,11 @@ export default function SLODashboardPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Muestra el estado de salud de la plataforma: último deploy en Vercel, errores capturados por Sentry en las últimas 24 h, el funnel de checkout de PostHog y los crons programados.",
+        affects: "Solo lectura para el superadmin. No modifica ningún dato de las tiendas. Las alertas aquí reflejan el estado real de la infraestructura compartida.",
+        example: "Si ves 'AuthError (401): subiendo', hay usuarios que no pueden iniciar sesión. Si el checkout completion baja de 30%, revisar el flujo de pago.",
+      }}
       title="SLO Dashboard"
       description="Vercel deploy status, Sentry error rate y PostHog checkout funnel."
       icon={Activity}

@@ -93,6 +93,11 @@ export default function StoresPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Panel central del marketplace multi-tenant: lista y configura tiendas publicadas, revisa pedidos y operaciones, gestiona cupones globales, analítica de ventas, navegación del catálogo y plantilla del panel.",
+        affects: "Los cambios aquí impactan directamente en lo que cada tienda y sus clientes ven en el marketplace público.",
+        example: "Desde 'Salud' puedes ver qué tiendas tienen errores de configuración. Desde 'Cupones' puedes crear un descuento global del 10% para toda la plataforma.",
+      }}
       title="Administrar Marketplace"
       description="Gestión completa de tiendas, pedidos, cupones y métricas del marketplace."
       icon={ShoppingBag}

@@ -113,6 +113,11 @@ export default function TenantsMapPage() {
     <>
       <SuperAdminModuleTabs tabs={TENANTS_TABS} />
       <AdminTabShell
+        info={{
+          what: "Mapa en vivo con la ubicación de todas las tiendas y repartidores activos. Se actualiza cada 15 segundos vía heartbeat GPS. Incluye KPIs de monitoreo y tráfico por zona.",
+          affects: "El picker de ubicación sí escribe: permite al superadmin asignar coordenadas GPS a tiendas que no las tienen (se guarda vía /api/superadmin/tenants/geo).",
+          example: "Si ves 0 repartidores online a las 7 pm, hay un problema de disponibilidad en la flota. Puedes ver qué zonas tienen más pedidos activos para reasignar.",
+        }}
         title="Mapa de operaciones en vivo"
         kicker="Plataforma · Tiendas"
         description="Tiendas, repartidores y su movimiento en tiempo real. Tráfico por zona."

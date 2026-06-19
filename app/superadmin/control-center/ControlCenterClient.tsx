@@ -476,6 +476,11 @@ export function ControlCenterClient({
   return (
     <AdminPage>
       <AdminTabShell
+      info={{
+        what: "Acceso rápido a todas las consolas (Stripe, Vercel, Supabase…) con el estado de credenciales e info del sistema.",
+        affects: "Solo el superadmin. Es un hub de accesos y diagnóstico; no cambia nada en las tiendas.",
+        example: "Querés revisar un pago en Stripe → entrás desde acá y ves si la credencial está activa.",
+      }}
         title="Centro de control"
         description="Acceso rápido a todas las plataformas + estado de credenciales + info del sistema."
         icon={Gauge}

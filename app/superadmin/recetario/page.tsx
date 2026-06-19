@@ -380,6 +380,11 @@ export default function SuperAdminRecetarioPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Administra recetas cross-tenant del catálogo de cocina: crear, editar y activar recetas de cualquier tienda.",
+        affects: "Las recetas activas aparecen en el catálogo de cocina de las tiendas que tienen vertical de comida.",
+        example: "Creás 'Lomo saltado' y la activás → queda disponible para las tiendas de comida.",
+      }}
       title="Recetario Global"
       kicker="Plataforma · Contenido"
       description="Recetas cross-tenant para el catálogo de cocina. Crea, edita y activa recetas de cualquier tienda."

@@ -16,6 +16,7 @@
  * API: GET/PUT /api/superadmin/banners.
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useEffect, useMemo, useState } from "react";
 import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
 import {
@@ -493,9 +494,11 @@ function SuperadminBannersPageInner() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Centro de banners
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                   Banners del Marketplace
-                </h1>
+                
+            <InfoTip side="bottom" title="Banners del Marketplace" what="Administra los banners promocionales que se muestran en el marketplace público." affects="Se ven en la home del marketplace que visitan los clientes." example="Creás un banner '2x1 en gaseosas' y queda arriba en el marketplace para todos los visitantes." />
+          </h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                   Editá los banners promocionales que aparecen rotativos en cada página.
                   Recomendamos imagen + 1 línea de texto + CTA claro para máxima conversión.

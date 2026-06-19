@@ -266,6 +266,11 @@ export default function DashboardPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Resumen ejecutivo en tiempo real: MRR, ARR, tiendas activas, pedidos del mes y top tiendas por volumen.",
+        affects: "Solo visible en el superadmin. Los KPIs se calculan en el backend con datos reales de todos los tenants.",
+        example: "Si este mes se sumaron 3 nuevas tiendas Pro, el MRR sube y el gráfico de crecimiento lo refleja automáticamente.",
+      }}
       title="Dashboard ejecutivo"
       description="Vista global del negocio SaaS · MRR, ARR, crecimiento de tenants y top stores."
       icon={LayoutDashboard}

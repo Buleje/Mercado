@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cookies } from "next/headers";
 import {
   ImageIcon,
@@ -204,8 +205,10 @@ export default async function SuperadminMarketplaceHubPage() {
                     Live
                   </span>
                 </div>
-                <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
+                <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl inline-flex items-center gap-2 flex-wrap">
                   Marketplace
+                
+                  <InfoTip side="bottom" title="Marketplace" what="Centro de control del marketplace multi-vendor: aprobar vendors, gestionar categorías y monitorear el revenue cross-store." affects="Cambia el marketplace público (qué vendors y categorías aparecen) que ven todos los clientes." example="Apruebas un vendor nuevo → su tienda empieza a aparecer en el marketplace para los compradores." />
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">
                   Centro de control cross-store. Aprueba vendors, gestiona categorías y monitorea

@@ -1,4 +1,5 @@
 import "server-only";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Suspense } from "react";
 import Link from "next/link";
 import { CheckCircle2 } from "@buleje/design-system/icons";
@@ -37,9 +38,11 @@ export default async function DLQDashboardPage() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               Superadmin · Operations
             </p>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none inline-flex items-center gap-2 flex-wrap">
               Dead Letter Queue
-            </h1>
+            
+            <InfoTip side="bottom" title="Dead Letter Queue" what="Lista los jobs en segundo plano que fallaron tras varios reintentos (envíos, webhooks, colas)." affects="Solo monitoreo interno. Un job acá significa que algo no se completó y conviene reintentarlo." example="Si falla el email de bienvenida 3 veces, cae acá para reintentarlo o investigar." />
+          </h1>
             <p className="mt-2 max-w-2xl text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
               Eventos, crons y webhooks que fallaron y no se autoreintentaron.
               Investigá si los contadores crecen sostenidamente.

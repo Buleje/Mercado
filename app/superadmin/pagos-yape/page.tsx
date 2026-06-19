@@ -1,4 +1,5 @@
 import "server-only";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { Metadata } from "next";
 import { Smartphone } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
@@ -47,9 +48,11 @@ export default async function PagosYapePage() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Plataforma · Yape
                 </p>
-                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                   Pagos Yape pendientes
-                </h1>
+                
+            <InfoTip side="bottom" title="Pagos Yape pendientes" what="Bandeja de comprobantes Yape que esperan tu aprobación manual." affects="Aprobar un comprobante confirma el pago del pedido o suscripción correspondiente." example="Un cliente paga por Yape y sube su captura → la revisás acá y la aprobás para liberar el pedido." />
+          </h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                   Capturas extraídas por IA. Compará monto/operación detectados
                   vs. esperados y aprobá o rechazá. Atajos:{" "}

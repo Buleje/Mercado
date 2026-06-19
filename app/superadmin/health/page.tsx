@@ -368,6 +368,11 @@ export default function SystemHealthPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Verifica en vivo que la API, la base de datos, la autenticación y los archivos estáticos respondan correctamente.",
+        affects: "Solo visible en el superadmin. Si un servicio aparece en error, puede impactar a todas las tiendas y clientes.",
+        example: "Si la base de datos tarda más de 1000 ms en responder, el indicador cambia a 'Degradado' y el health score baja.",
+      }}
       title="Salud del sistema"
       description="Estado en tiempo real de servicios, latencia y métricas operativas. Auto-refresh cada 30 segundos."
       icon={HeartPulse}

@@ -147,6 +147,11 @@ export default function TenantsUsagePage() {
     <>
       <SuperAdminModuleTabs tabs={TENANTS_TABS} />
       <AdminTabShell
+        info={{
+          what: "Tabla de consumo mensual de pedidos vs el límite del plan de cada tienda. Calcula el MRR potencial si las tiendas cercanas al límite suben de plan (upsell).",
+          affects: "Solo lectura para el superadmin. El botón de chat pre-rellena un mensaje de oferta de upgrade, pero el cambio de plan real se hace desde /superadmin/tenants.",
+          example: "Si 'Pizza Pucallpa' está al 92% de su límite de pedidos en plan Free, aparece resaltada con una sugerencia de subir a Pro y el MRR adicional estimado.",
+        }}
         title="Uso vs límites"
         kicker="Plataforma · Tiendas"
         description="Consumo de cada tienda frente al límite de su plan. Identifica candidatas a upsell."

@@ -1,4 +1,5 @@
 import "server-only";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { CreditCard } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import BillingDashboard from "./BillingDashboard";
@@ -35,9 +36,11 @@ export default async function SuperadminBillingPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Finanzas
               </p>
-              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+              <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                 Billing — plataforma
-              </h1>
+              
+            <InfoTip side="bottom" title="Billing de la plataforma" what="El cobro de Buleje vía Stripe: suscripciones de las tiendas, MRR y estado de pagos." affects="Refleja cuánto factura Buleje a las tiendas; no cambia los precios que las tiendas cobran a sus clientes." example="Si una tienda paga su plan Pro, su suscripción aparece activa y suma al MRR del mes." />
+          </h1>
               <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
                 MRR consolidado, distribución por plan, trials activos y
                 próximos cobros. Atajos:{" "}

@@ -22,6 +22,7 @@
  * API: GET/PATCH /api/superadmin/brand.
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Save, Sparkles, Image as ImageIcon, Palette, Type, Phone,
@@ -256,9 +257,11 @@ export default function SuperadminMarcaPage() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Centro de marca
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                   {brand.identity.name} · Personalización global
-                </h1>
+                
+            <InfoTip side="bottom" title="Marca de la plataforma" what="Personalización global de la marca del marketplace: nombre, logo, colores y textos." affects="Se ve en todo el marketplace público y en los correos de la plataforma." example="Cambiás el logo → aparece el nuevo en la cabecera del marketplace y en los emails." />
+          </h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                   Hub único de la marca. Cada cambio se refleja en{" "}
                   <strong>todas las páginas</strong> del marketplace que consumen{" "}

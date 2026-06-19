@@ -56,6 +56,11 @@ export default function AutomationsPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Reglas que detectan tiendas en cierta condición y disparan un aviso. Activás la regla, ves a cuántas afecta y la ejecutás.",
+        affects: "Manda avisos (WhatsApp/email) a los dueños de las tiendas que cumplen la condición.",
+        example: "Activás 'trial por vencer' → las tiendas con prueba a 3 días de vencer reciben un recordatorio.",
+      }}
       title="Automatizaciones"
       kicker="Plataforma · Operaciones"
       description="Reglas que detectan tiendas y disparan un aviso. Activá, mirá a cuántas afecta y ejecutá."

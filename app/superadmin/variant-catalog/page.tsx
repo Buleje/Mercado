@@ -1,4 +1,5 @@
 import { Layers } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import VariantCatalogClient from "./VariantCatalogClient";
 import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
 
@@ -27,9 +28,11 @@ export default function SuperadminVariantCatalogPage() {
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Marketplace · Personalización
               </p>
-              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                 Catálogo de variaciones
-              </h1>
+              
+            <InfoTip side="bottom" title="Catálogo de variaciones" what="Variaciones estándar reutilizables (talla, color, sabor) para los productos." affects="Las tiendas eligen estas variaciones al crear productos, sin escribirlas de cero." example="Definís tallas S/M/L/XL una vez → todas las tiendas de ropa las usan en sus prendas." />
+          </h1>
               <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                 Plantillas globales de variaciones que los tenants pueden importar a sus productos.
                 Ejemplo: una pollería importa &quot;Cremas&quot; con sus imágenes en lugar de tener que

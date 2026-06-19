@@ -116,6 +116,11 @@ export default function SpecializationsClient({
 
   return (
     <AdminTabShell
+      info={{
+        what: "Activa módulos verticales (forestal CTP, salud, textil…) por cada negocio.",
+        affects: "Aplica en tiempo real al panel admin del tenant: le aparecen los módulos de su vertical.",
+        example: "Activás 'forestal' en una maderera → en su panel aparecen los módulos de trazabilidad de madera.",
+      }}
       title="Especializaciones"
       kicker="Plataforma · Habilitación por tenant"
       description="Activa módulos verticales (forestal CTP, salud, textil) en cada negocio. Cambios aplican en tiempo real al panel admin del tenant."

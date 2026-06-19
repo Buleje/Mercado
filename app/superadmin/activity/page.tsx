@@ -312,6 +312,11 @@ export default function ActivityPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Registra cada acción relevante de la plataforma: creaciones, ediciones, borrados, logins y cambios de plan en todos los tenants.",
+        affects: "Solo visible para ti en el superadmin. No afecta a las tiendas ni al storefront.",
+        example: "Si un dueño de tienda borra un producto o cambia su plan a Pro, el evento aparece aquí con fecha, usuario y tenant.",
+      }}
       title="Log de actividad"
       description={`${pagination.total.toLocaleString("es-PE")} registros — refresh automático cada 30s.`}
       icon={Activity}

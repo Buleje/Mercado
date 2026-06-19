@@ -451,6 +451,11 @@ export default function TenantsPage() {
     <>
       <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
+      info={{
+        what: "Lista y gestiona todas las tiendas (tenants) de la plataforma: activarlas, suspenderlas, cambiarles el plan, ver sus pedidos pendientes e impersonarlas para soporte.",
+        affects: "Suspender una tienda impide que sus clientes compren. Cambiar el plan modifica los límites de uso en tiempo real.",
+        example: "Una tienda con 8 pedidos pendientes en la tarjeta aparece con badge rojo. Puedes hacer clic en 'Impersonar' para entrar a su panel y ayudarle a gestionarlos.",
+      }}
       title="Tenants"
       description={`${sortedFinal.length} tienda${sortedFinal.length !== 1 ? "s" : ""}${tenants.length !== sortedFinal.length ? ` de ${tenants.length}` : ""} — gestión de plataforma multi-tenant.`}
       icon={Building2}

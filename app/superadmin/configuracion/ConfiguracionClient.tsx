@@ -141,6 +141,11 @@ export default function ConfiguracionClient() {
   if (loading) {
     return (
       <AdminTabShell
+      info={{
+        what: "Ajustes globales de la plataforma: landing pública, registro de tiendas y panel del negocio.",
+        affects: "Se aplica en vivo (sin redeploy) en la landing, el registro y el panel admin de los negocios.",
+        example: "Cambiás el texto de bienvenida del registro → los nuevos dueños lo ven al instante.",
+      }}
         title="Configuración general"
         description="Todo lo que cambia acá se aplica en vivo en landing, registro y panel del negocio — sin redeploy."
         icon={Settings}
