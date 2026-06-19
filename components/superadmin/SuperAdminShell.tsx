@@ -201,6 +201,19 @@ const NAV_GROUPS: NavGroupDef[] = [
 // se aplican dentro de cada grupo, no se rompen las prefs de Brandon).
 const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
+// Color distinto por categoría principal (Brandon 2026-06-19, ref. sidebar del
+// admin de negocio). Paleta del proyecto: teal de marca + acentos legibles sobre
+// el slate near-black. Sin naranja/ámbar (constraint de marca).
+const GROUP_ICON_COLOR: Record<NavGroupId, string> = {
+  inicio:      "text-[#5eead4]", // teal de marca
+  tiendas:     "text-[#60a5fa]", // azul
+  marketplace: "text-[#a78bfa]", // violeta
+  finanzas:    "text-[#34d399]", // verde (dinero)
+  diseno:      "text-[#fb7185]", // coral/rosa (creatividad)
+  operaciones: "text-[#22d3ee]", // cian
+  sistema:     "text-[#94a3b8]", // slate neutro
+};
+
 // Title + section (breadcrumb sutil del topbar ejecutivo). El section se
 // muestra como prefijo gris, el title como heading H1 del topbar.
 type PageMeta = { title: string; section: string };
@@ -1551,18 +1564,15 @@ function NavGroupsAccordion({
   const itemIdle = isBuleje
     ? "text-white/90 hover:bg-white/[0.1] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
-  // Header de sección: blanco legible por defecto; realzado en teal cuando
-  // contiene la ruta activa. Brandon 2026-06-19: "categorías blancas, contrasten".
-  const labelIdleClass = isBuleje
+  // Label de categoría: blanco legible siempre. El estado activo se marca en el
+  // sub-ítem + el dot, NO recolorea el header (más igualitario). Brandon 2026-06-19.
+  const labelClass = isBuleje
     ? "text-white/90 hover:text-white"
-    : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]";
-  const labelActiveClass = isBuleje
-    ? "text-[#5eead4] hover:text-[#5eead4]"
-    : "text-[var(--accent)] hover:text-[var(--accent)]";
+    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
   const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {groups.map((group) => {
         const items = group.items.filter((it) => visibleHrefs.has(it.href));
         if (items.length === 0) return null;
@@ -1571,10 +1581,10 @@ function NavGroupsAccordion({
         const groupHasActive = items.some(
           (it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
         );
+        const iconColor = GROUP_ICON_COLOR[group.id];
 
-        // Categoría con UN solo enlace (Brandon 2026-06-19): se muestra el link
-        // directo como ítem de nav, sin header colapsable ni chevron — no tiene
-        // sentido "desplegar" para revelar un único destino.
+        // Categoría con UN solo enlace (Brandon 2026-06-19): link directo, sin
+        // header colapsable ni chevron — no tiene sentido desplegar 1 destino.
         if (items.length === 1) {
           const item = items[0];
           const active =
@@ -1587,11 +1597,11 @@ function NavGroupsAccordion({
               onClick={onItemClick}
               aria-current={active ? "page" : undefined}
               className={[
-                "flex items-center gap-3 px-3 py-2 mt-2 rounded-lg text-sm font-semibold transition-colors",
+                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-colors",
                 active ? itemActive : itemIdle,
               ].join(" ")}
             >
-              <span className="shrink-0">{item.icon}</span>
+              <span className={["shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]", iconColor].join(" ")}>{item.icon}</span>
               <span className="flex-1 truncate">{item.label}</span>
               {active && (
                 <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
@@ -1602,8 +1612,7 @@ function NavGroupsAccordion({
 
         return (
           <div key={group.id}>
-            {/* Sección = icono + título en MAYÚSCULA (estilo admin de negocio),
-                colapsable. El header se realza cuando contiene la ruta activa. */}
+            {/* Categoría = icono a color + label normal-case + chevron. Compacta. */}
             <button
               type="button"
               ref={(el) => { headerRefs.current[group.id] = el; }}
@@ -1616,24 +1625,27 @@ function NavGroupsAccordion({
               aria-controls={panelId}
               aria-haspopup="menu"
               className={[
-                "w-full flex items-center gap-2 px-3 pt-4 pb-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider transition-colors",
-                groupHasActive ? labelActiveClass : labelIdleClass,
+                "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-colors",
+                labelClass,
               ].join(" ")}
             >
-              <span className="shrink-0 [&_svg]:w-3.5 [&_svg]:h-3.5">{group.icon}</span>
-              <span className="flex-1 text-left">{group.label}</span>
+              <span className={["shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]", iconColor].join(" ")}>{group.icon}</span>
+              <span className="flex-1 text-left truncate">{group.label}</span>
               {groupHasActive && !isOpen && (
                 <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
               )}
               <ChevronDown
                 className={[
-                  "w-3.5 h-3.5 transition-transform duration-200 shrink-0",
+                  "w-3.5 h-3.5 shrink-0 opacity-60 transition-transform duration-200",
                   isOpen ? "rotate-0" : "-rotate-90",
                 ].join(" ")}
               />
             </button>
             {isOpen && (
-              <div id={panelId} className="space-y-0.5">
+              // Sub-enlaces indentados con guía vertical (ref. admin de negocio):
+              // más chicos, icono w-4 monocromo, alineados bajo el icono de la
+              // categoría. Brandon 2026-06-19.
+              <div id={panelId} className="mt-0.5 mb-1 ml-[1.15rem] pl-3 border-l border-white/[0.08] space-y-0.5">
                 {items.map((item) => {
                   const active =
                     pathname === item.href ||
@@ -1645,11 +1657,11 @@ function NavGroupsAccordion({
                       onClick={onItemClick}
                       aria-current={active ? "page" : undefined}
                       className={[
-                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                        "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors",
                         active ? itemActive : itemIdle,
                       ].join(" ")}
                     >
-                      <span className="shrink-0">{item.icon}</span>
+                      <span className="shrink-0 opacity-90 [&_svg]:w-4 [&_svg]:h-4">{item.icon}</span>
                       <span className="flex-1 truncate">{item.label}</span>
                       {active && (
                         <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
