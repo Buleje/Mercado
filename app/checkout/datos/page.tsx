@@ -29,6 +29,7 @@ import {
   UserCircle,
   Sparkles,
   AlertCircle,
+  CheckCircle2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
@@ -45,7 +46,7 @@ import {
 
 export default function CheckoutDatosPage() {
   const router = useRouter();
-  const { itemCount, grandTotal, hydrated: cartHydrated } = useMarketplaceCart();
+  const { itemCount, grandTotal, hydrated: cartHydrated, byStore } = useMarketplaceCart();
   const { customer: savedCustomer, accounts } = useCustomer();
   const { setCustomer, setAddress, hydrated: checkoutHydrated } = useCheckoutData();
   const { isPending, pendingLabel, navigateTo } = useCheckoutTransition();
@@ -66,11 +67,59 @@ export default function CheckoutDatosPage() {
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
 
+  // Autocompletado por WhatsApp (Brandon 2026-06-18): si el invitado ya compró
+  // antes en ESTA tienda, al tipear su teléfono le pre-llenamos el nombre de
+  // pila — un dato menos que re-escribir en cada pedido. El guest-checkout no
+  // tiene sesión que recuerde sus datos, así que el teléfono es la única llave.
+  const [recognizedFirstName, setRecognizedFirstName] = useState<string | null>(null);
+  // Si el usuario escribe el nombre a mano, NO lo pisamos con el autocompletado.
+  const nameTouchedRef = useRef(false);
+  // El lookup queda scoped al tenant de la tienda del carrito (sin fuga cross-tenant).
+  const guestStoreSlug = Object.values(byStore)[0]?.storeSlug ?? "";
+
   // Prefetch del proximo paso
   useEffect(() => {
     router.prefetch("/checkout/entrega");
     router.prefetch("/checkout/confirmar");
   }, [router]);
+
+  // Debounce 450ms + AbortController anti-race: al completar el WhatsApp (9 díg.)
+  // consultamos /customer-by-phone y, si nos reconoce, autocompletamos el nombre.
+  // Solo invitado (con sesión, los datos vienen de useCustomer). Mejora opcional:
+  // jamás rompe el flujo si la red falla.
+  useEffect(() => {
+    if (savedCustomer) return;
+    if (!guestStoreSlug) return;
+    if (!/^9\d{8}$/.test(guestPhone)) {
+      setRecognizedFirstName(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/marketplace/checkout/customer-by-phone?phone=${guestPhone}&storeSlug=${encodeURIComponent(guestStoreSlug)}`,
+          { signal: ctrl.signal },
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { found?: boolean; firstName?: string | null };
+        if (!data.found || !data.firstName) {
+          setRecognizedFirstName(null);
+          return;
+        }
+        setRecognizedFirstName(data.firstName);
+        if (!nameTouchedRef.current) setGuestName(data.firstName);
+      } catch {
+        // Silencioso a propósito: AbortError (cancelación del request previo) o
+        // red caída. El autocompletado por teléfono es una mejora opcional —
+        // nunca debe romper ni ensuciar Sentry en el checkout invitado público.
+      }
+    }, 450);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+    };
+  }, [guestPhone, guestStoreSlug, savedCustomer]);
 
   // Pre-llenar checkoutData con los datos del customer activo, asi /entrega
   // y /confirmar leen del estado central sin tener que pegarle al context
@@ -183,12 +232,18 @@ export default function CheckoutDatosPage() {
             >
               <div>
                 <label htmlFor="guest-name" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Nombre completo</label>
-                <input id="guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
+                <input id="guest-name" value={guestName} onChange={(e) => { nameTouchedRef.current = true; setGuestName(e.target.value); }} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
               </div>
               <div>
                 <label htmlFor="guest-phone" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">WhatsApp</label>
                 <input id="guest-phone" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="9XXXXXXXX" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
                 {guestPhone.length > 0 && !phoneOk && <p className="mt-2 ml-1 text-sm text-[var(--data-error-500)]">Tu WhatsApp debe tener 9 dígitos y empezar con 9.</p>}
+                {phoneOk && recognizedFirstName && (
+                  <p className="mt-2 ml-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
+                    <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                    ¡Hola de nuevo, {recognizedFirstName}! Te reconocimos.
+                  </p>
+                )}
               </div>
               <button type="submit" disabled={!guestValid} className="h-12 w-full rounded-2xl bg-[var(--accent)] text-base font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 lg:hidden">
                 Continuar a la entrega

@@ -231,6 +231,24 @@ export const CustomersDB = {
   },
 
   /**
+   * getFirstNameByPhone: SOLO el primer nombre del customer dentro del tenant.
+   * Diseñado para el autocompletado público del checkout invitado — expone la
+   * mínima PII posible (un nombre de pila, jamás apellidos/email/dirección).
+   * Matching tolerante a formatos legacy (ver phoneMatchCandidates). Null si no
+   * existe. Decisión Brandon 2026-06-18: el tradeoff de enumeración de nombres
+   * de pila (scoped al tenant + rate limit estricto) es aceptable por la UX.
+   */
+  async getFirstNameByPhone(tenantId: string, phone: string): Promise<string | null> {
+    if (!tenantId) throw new Error("CustomersDB.getFirstNameByPhone: tenantId requerido");
+    const row = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({
+      where: { phone: { in: phoneMatchCandidates(phone) }, tenantId },
+      select: { name: true },
+    }));
+    const first = row?.name?.trim().split(/\s+/)[0] ?? "";
+    return first || null;
+  },
+
+  /**
    * Lee las preferencias de notificacion del customer (Ley 29733 consent).
    * Audit project-wide 2026-05-19 — migracion de /api/customer-preferences.
    */
