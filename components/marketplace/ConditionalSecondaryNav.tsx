@@ -42,7 +42,15 @@ export default function ConditionalSecondaryNav() {
           va `embedded` (sin su propio sticky). md:hidden — en desktop los chips
           viven en la página (sticky top-112). */}
       {onHome && (
-        <div className="md:hidden sticky top-[52px] z-40 bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
+        // Brandon 2026-06-18 (perf/CLS): `min-h-[81px]` reserva la altura de las
+        // dos barras (chips 43px + subcats 39px — medido con
+        // scripts/dev-helpers/_measure-nav-heights.mjs). Cada barra renderiza
+        // `null` mientras hace su fetch en useEffect (active-verticals / subcats)
+        // y recién entonces crece → sin reserva, ese crecimiento empujaba el
+        // contenido 81px hacia abajo (era el shift dominante de la home móvil,
+        // CLS 0.083). En la home del marketplace (cross-store) SIEMPRE hay varios
+        // verticales, así que las barras llenan exactamente esos 81px.
+        <div className="md:hidden sticky top-[52px] z-40 min-h-[81px] bg-[var(--surface-canvas)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface-canvas)]/80">
           {/* Brandon 2026-06-11: cada barra es dueña de su borde/padding y se
               auto-oculta (verticales si ≤1 categoría; subcats si no hay). Así el
               contenedor no deja una franja vacía cuando no hay nada que mostrar. */}
@@ -63,8 +71,17 @@ export default function ConditionalSecondaryNav() {
           sticky. md:hidden — en desktop manda el mega-menú. Oculta en /tiendas. */}
       {!onHome && showSubNav && !onTiendas && <MarketplaceCategoriesBar />}
 
-      {/* Desktop: mega-menú + filtros rápidos. Solo full/minimo/custom. */}
-      {showSubNav && <MarketplaceSecondaryNav />}
+      {/* Desktop: mega-menú + filtros rápidos. Solo full/minimo/custom.
+          Brandon 2026-06-18 (perf/CLS): Suspense PROPIA. Sin ella, el chunk
+          dynamic de este mega-menú suspendía y burbujeaba a la Suspense externa
+          del layout, dejando TODO el secondary nav (incluidos los chips+subcats
+          de la home móvil) en null hasta que cargaba → aparecían de golpe y
+          empujaban el contenido 81px. Aislado, los chips de la home renderizan ya. */}
+      {showSubNav && (
+        <Suspense fallback={null}>
+          <MarketplaceSecondaryNav />
+        </Suspense>
+      )}
     </>
   );
 }

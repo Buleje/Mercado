@@ -226,3 +226,4 @@ docs/security/vercel-env-backups/
 # .claude anidados dentro de app/ no son del plugin root (cruft de agentes).
 app/**/.claude/
 scripts/.backup-base64-images.json
+scripts/dev-helpers/_measure-nav-heights.mjs
