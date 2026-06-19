@@ -11,6 +11,7 @@
  *  - Tabla de comisiones con tokens DS + status pills consistentes
  */
 
+import { SAMetricCard } from "@/components/superadmin/_shared/SAMetricCard";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -364,7 +365,7 @@ export default function AnalyticsPage() {
         <>
           {/* ─── Growth KPIs (canonical) ─────────────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <KpiCard
+            <SAMetricCard
               icon={TrendingUp}
               label="Nuevos tenants"
               value={analytics.growth.tenantsThisMonth}
@@ -372,7 +373,7 @@ export default function AnalyticsPage() {
               tone={analytics.growth.tenantGrowthPct >= 0 ? "success" : "danger"}
               periodHint={fmtPeriodShortLabel(period)}
             />
-            <KpiCard
+            <SAMetricCard
               icon={CheckCircle2}
               label="Pedidos"
               value={analytics.growth.ordersThisMonth}
@@ -380,14 +381,14 @@ export default function AnalyticsPage() {
               tone={analytics.growth.orderGrowthPct >= 0 ? "success" : "danger"}
               periodHint={fmtPeriodShortLabel(period)}
             />
-            <KpiCard
+            <SAMetricCard
               icon={DollarSign}
               label="MRR"
               value={fmtAmount(analytics.overview.mrr)}
               sub={`ARR: ${fmtAmount(analytics.overview.arr)}`}
               tone="accent"
             />
-            <KpiCard
+            <SAMetricCard
               icon={AlertTriangle}
               label="Tiendas en riesgo"
               value={analytics.atRiskCount}
@@ -758,51 +759,6 @@ function PeriodToolbar({
           {Math.ceil((period.to.getTime() - period.from.getTime()) / 86_400_000)} días
         </span>
       </div>
-    </div>
-  );
-}
-
-function KpiCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  tone,
-  periodHint,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string | number;
-  sub: string;
-  tone: "accent" | "success" | "warning" | "danger" | "neutral";
-  periodHint?: string;
-}) {
-  const iconBg = {
-    accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-    success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
-    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
-    neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-  }[tone];
-  return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
-          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-        </span>
-        {periodHint && (
-          <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-            {periodHint}
-          </span>
-        )}
-      </div>
-      <p className="mt-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{sub}</p>
     </div>
   );
 }
