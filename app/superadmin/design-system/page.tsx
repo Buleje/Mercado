@@ -34,9 +34,11 @@ import {
   Square,
   X,
   AlertTriangle,
+  Search,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/superadmin/_shared/useConfirm";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   DESIGN_PRESETS,
   type DesignTokens,
@@ -276,8 +278,15 @@ export default function DesignSystemPage() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Plataforma · Centro de diseño
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2">
                   Diseño heredable
+                  <InfoTip
+                    side="bottom"
+                    title="Centro de Diseño Heredable"
+                    what="Definís la identidad visual (colores, tipografía, bordes, sombras, botones, animaciones) con un editor en vivo y la guardás como preset."
+                    affects="Se hereda en VIVO al panel admin de TODOS los negocios (vía DesignTokensProvider). No toca el superadmin ni el storefront público."
+                    example="Cambiás el color primario a coral y el radio de bordes a 'redondo' → todos los botones y tarjetas del admin de los negocios se ven coral y redondeados al instante."
+                  />
                 </h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                   Personalizá colores, tipografía, bordes, sombras, botones y animaciones. Todo lo
@@ -606,17 +615,43 @@ function GalleryView({
   onActivate: (slug: string) => void;
   onEdit: (preset: DesignTokens) => void;
 }) {
+  // Buscador de presets (nueva función): filtra oficiales y propios por nombre.
+  const [q, setQ] = useState("");
+  const ql = q.trim().toLowerCase();
+  const match = (p: DesignTokens) => !ql || `${p.meta.name} ${p.meta.slug}`.toLowerCase().includes(ql);
+  const oficial = oficialPresets.filter(match);
+  const saved = savedPresets.filter(match);
   return (
     <div className="space-y-8">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar preset por nombre…"
+          aria-label="Buscar preset"
+          className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+        />
+        {q && <button type="button" onClick={() => setQ("")} aria-label="Limpiar" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>}
+      </div>
+      {ql && oficial.length === 0 && saved.length === 0 && (
+        <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Ningún preset coincide con &ldquo;{q}&rdquo;.</p>
+      )}
+      {oficial.length > 0 && (
       <section className="space-y-4">
         <GallerySectionHeading
           icon={Palette}
           title="Presets oficiales"
           subtitle="Diseños curados por el equipo Buleje. Click para activar, lápiz para editar."
-          count={oficialPresets.length}
+          count={oficial.length}
+          info={{
+            what: "Temas completos ya armados por Buleje (paleta + tipografía + bordes + sombras). Click en la tarjeta activa el tema; el lápiz lo abre en el editor para retocarlo.",
+            affects: "Activar uno cambia al instante el look del panel admin de todos los negocios.",
+            example: "Elegís 'Coral Editorial' → el admin de los negocios pasa a la paleta coral/teal con esa tipografía, sin tocar nada más.",
+          }}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {oficialPresets.map((preset) => (
+          {oficial.map((preset) => (
             <PresetCard
               key={preset.meta.slug}
               preset={preset}
@@ -628,18 +663,24 @@ function GalleryView({
           ))}
         </div>
       </section>
+      )}
 
-      {savedPresets.length > 0 && (
+      {saved.length > 0 && (
         <section className="space-y-4">
           <GallerySectionHeading
             icon={Sparkles}
             title="Mis presets"
             subtitle="Tus diseños guardados. Reactivables en cualquier momento."
-            count={savedPresets.length}
+            count={saved.length}
             muted
+            info={{
+              what: "Tu biblioteca de temas guardados desde el editor. Los podés reactivar, duplicar o borrar cuando quieras.",
+              affects: "Reactivar uno reemplaza el tema vigente del panel admin de los negocios.",
+              example: "Guardaste 'Navidad 2026' en diciembre → en enero reactivás 'Default' con un click y volvés al tema normal.",
+            }}
           />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {savedPresets.map((preset) => (
+            {saved.map((preset) => (
               <PresetCard
                 key={preset.meta.slug}
                 preset={preset}
@@ -786,6 +827,18 @@ function EditorView({
     { key: "motion", label: "Motion", icon: Zap },
   ];
 
+  const EDITOR_INFO: Record<EditorTab, { what: string; affects: string; example: string }> = {
+    meta: { what: "Nombre y datos de identidad del preset que estás armando.", affects: "Cómo se identifica/guarda el tema (no cambia el look).", example: "Lo llamás 'Verano Pucallpa' para reconocerlo en Mis presets." },
+    colors: { what: "La paleta: primario, acento, fondos, texto y estados (éxito/error).", affects: "Botones, links, headers, tarjetas y badges del panel admin de los negocios.", example: "Primario = coral → todos los botones de acción del admin se ven coral." },
+    typography: { what: "Fuente, tamaños de títulos y cuerpo, y peso del texto.", affects: "Todo el texto del panel admin de los negocios.", example: "Subís el tamaño del cuerpo → el admin se lee más grande en toda pantalla." },
+    spacing: { what: "Radio de las esquinas (cuadrado ↔ redondeado) y grosor de bordes.", affects: "Tarjetas, inputs, botones y modales del admin.", example: "Radio 'redondo' → todo el admin pasa a esquinas suaves." },
+    shadows: { what: "Profundidad/elevación de tarjetas y popovers.", affects: "Sombras de cards, menús y modales del admin.", example: "Sombra 'plana' → look editorial sin relieve." },
+    buttons: { what: "Estilo de los botones: relleno, radio, mayúsculas y peso.", affects: "Todos los botones del panel admin de los negocios.", example: "Botones 'pill' en mayúscula → CTAs más marcados." },
+    motion: { what: "Velocidad y tipo de las animaciones y transiciones.", affects: "Hover, aperturas de menús/modales y transiciones del admin.", example: "Motion 'rápido' → la UI del admin se siente más ágil." },
+  };
+  const activeTab = tabs.find((t) => t.key === tab) ?? tabs[0];
+  const activeInfo = EDITOR_INFO[tab];
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-6">
       {/* Controles */}
@@ -811,6 +864,12 @@ function EditorView({
         </div>
 
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-5 space-y-5">
+          {/* Header de la sección activa con InfoTip (qué hace · a dónde afecta · ejemplo) */}
+          <div className="flex items-center gap-2 pb-3 -mt-0.5 border-b border-[var(--rule-soft)]">
+            <activeTab.icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">{activeTab.label}</h3>
+            <InfoTip title={activeTab.label} what={activeInfo.what} affects={activeInfo.affects} example={activeInfo.example} />
+          </div>
           {tab === "meta" && <MetaPanel tokens={tokens} setField={setField} onChange={onChange} />}
           {tab === "colors" && <ColorsPanel tokens={tokens} setField={setField} />}
           {tab === "typography" && <TypographyPanel tokens={tokens} setField={setField} />}
@@ -1801,12 +1860,14 @@ function GallerySectionHeading({
   subtitle,
   count,
   muted,
+  info,
 }: {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
   subtitle: string;
   count: number;
   muted?: boolean;
+  info?: { title?: string; what: string; affects?: string; example?: string };
 }) {
   return (
     <div className="flex items-end justify-between gap-4 border-b border-[var(--rule-soft)] pb-3">
@@ -1821,8 +1882,9 @@ function GallerySectionHeading({
           <Icon className="h-4 w-4" strokeWidth={1.75} />
         </span>
         <div>
-          <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+          <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2">
             {title}
+            {info && <InfoTip side="bottom" title={info.title ?? title} what={info.what} affects={info.affects} example={info.example} />}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
         </div>
