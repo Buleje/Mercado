@@ -6,9 +6,9 @@ import Link from "next/link";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
   Search, SearchX, Clock, Users, ChefHat, ShoppingCart, Flame,
-  X, Sparkles, ArrowRight, Star, Eye, LayoutGrid, List,
+  Sparkles, ArrowRight, Star, Eye, LayoutGrid, List,
   Send, Utensils, Salad, Soup, Cake, GlassWater, Zap,
-  Trophy, MapPin, CheckCircle2, AlertTriangle,
+  Trophy, CheckCircle2, AlertTriangle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
@@ -17,7 +17,8 @@ import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
 import { RecipeImagePlaceholder } from "@buleje/design-system";
 import RecipePreviewModal from "@/components/marketplace/RecipePreviewModal";
-import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
+import HomeHeroBanner from "@/components/marketplace/home/HomeHeroBanner";
+import type { PromoBanner } from "@/components/marketplace/PromoBannerRenderer";
 
 // ── Types ──────────────────────────────────────────────────
 type Ingrediente = {
@@ -332,7 +333,13 @@ function CategoriaCard({
 }
 
 // ── Main Component ─────────────────────────────────────────
-export default function RecetarioClient() {
+export default function RecetarioClient({
+  heroBanners,
+}: {
+  /** Banners del slot "recetas" resueltos en el server (page.tsx) — se pintan
+   *  en el primer byte, sin cascada hidratar→fetch→pintar. */
+  heroBanners?: PromoBanner[];
+} = {}) {
   const [recetas, setRecetas] = useState<Receta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -466,10 +473,15 @@ export default function RecetarioClient() {
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* Banner promocional rotativo (3 slides cada 8s) */}
-      <PromoBannerCarousel slot="recetas" />
+      {/* Hero full-bleed IGUAL que el inicio y /tiendas (mismo HomeHeroBanner:
+          carrusel bold, swipe, flechas, dots). Slot "recetas" resuelto en el
+          server vía heroBanners; si llega vacío, cae al fetch client + fallback
+          de marca del propio componente. */}
+      <HomeHeroBanner slot="recetas" initialBanners={heroBanners} />
 
-      {/* ═══════════════════ HERO INTRO ═══════════════════ */}
+      {/* ═══════════════════ TÍTULO DE SECCIÓN ═══════════════════
+          Patrón de /tiendas: eyebrow + H2 compacto con acento teal en la
+          keyword. El H1 único y canónico es el sr-only del server (page.tsx). */}
       <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6">
         <div className="flex items-start gap-4 flex-wrap">
           <div className="hidden sm:inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
@@ -479,10 +491,11 @@ export default function RecetarioClient() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               Recetario peruano
             </p>
-            <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-              Cocina rico con lo que hay en tu bodega
-            </h1>
-            <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] max-w-2xl">
+            <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+              Cocina rico con lo que hay en tu{" "}
+              <span className="text-[var(--accent)]">bodega</span>
+            </h2>
+            <p className="mt-2 text-base text-[var(--text-secondary)] max-w-2xl leading-snug">
               Te mostramos solo las recetas que <strong className="text-[var(--text-primary)]">puedes
               preparar hoy</strong>. Si un ingrediente esencial falta en todas
               las tiendas, escondemos el plato hasta que vuelva a haber stock.
