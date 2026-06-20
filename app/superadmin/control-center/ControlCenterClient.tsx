@@ -97,6 +97,7 @@ import { PlatformCard } from "@/components/superadmin/control-center/PlatformCar
 import { CredentialRow } from "@/components/superadmin/control-center/CredentialRow";
 import { SystemInfoCard } from "@/components/superadmin/control-center/SystemInfoCard";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
+import { CommandCenterAttention } from "./CommandCenterAttention";
 import type { EnvStatus } from "@/lib/superadmin/env-status";
 import type { PlatformHealthMap, PlatformHealthStatus } from "@/lib/superadmin/platform-health";
 
@@ -486,6 +487,9 @@ export function ControlCenterClient({
         icon={Gauge}
         kicker="Plataforma Buleje"
       >
+      {/* ── Cockpit: lo que necesita atención AHORA ─────────────────── */}
+      <CommandCenterAttention />
+
       {/* ── Quick stats — visión del estado en un golpe ─────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <SAStatChip
