@@ -6,6 +6,7 @@ import { CheckCircle2 } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { getDeadLetterDashboard } from "@/lib/db/dlq.db";
 import { DLQExport } from "./DLQExport";
+import { DLQEvents } from "./DLQEvents";
 import { SUPERADMIN_PAGE, SUPERADMIN_HERO, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 
 // Next 16 (CLAUDE.md #4): NO usar `force-dynamic`. Dejamos sin "use cache"
@@ -137,48 +138,8 @@ async function DLQBody() {
         />
       </div>
 
-      {/* Eventos de dominio */}
-      <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-        <header className="px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50">
-          <h2 className="text-lg font-black text-[var(--text-primary)]">
-            Eventos de dominio
-          </h2>
-          <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mt-0.5">
-            Handlers de dominio que fallaron tras retries. Investigá si el mismo eventType aparece muchas veces.
-          </p>
-        </header>
-        {events.length === 0 ? (
-          <div className="px-5 py-8 flex items-center justify-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            Sin eventos en DLQ
-          </div>
-        ) : (
-          <table className="w-full text-[length:var(--ts-sm)]">
-            <thead className="bg-[var(--surface-sunken)]/30 text-left">
-              <tr>
-                <Th>Tenant</Th>
-                <Th>Tipo</Th>
-                <Th>Handler</Th>
-                <Th>Intentos</Th>
-                <Th>Falló hace</Th>
-                <Th>Error</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((e) => (
-                <tr key={e.id} className="border-t border-[var(--rule-soft)]">
-                  <Td><code className="text-[length:var(--ts-2xs)]">{e.tenantId.slice(0, 12)}…</code></Td>
-                  <Td><span className="font-bold">{e.eventType}</span></Td>
-                  <Td>{e.handlerName}</Td>
-                  <Td><span className="tabular-nums">{e.attemptCount}</span></Td>
-                  <Td>{timeAgo(e.failedAt)}</Td>
-                  <Td><span className="text-[var(--data-error-500)] truncate block max-w-xs">{e.lastError.slice(0, 80)}</span></Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+      {/* Eventos de dominio — accionable (resolver / reintentar) */}
+      <DLQEvents />
 
       {/* Crons fallidos */}
       <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
