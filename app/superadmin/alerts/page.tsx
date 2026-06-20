@@ -20,7 +20,7 @@ import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 
 type Severity = "critical" | "warning" | "info";
 type AlertStateInfo = { status: string; snoozedUntil: string | null } | null;
-type Alert = { id: string; severity: Severity; kind: string; title: string; detail: string; href: string; at: string | null; tenant?: string; state?: AlertStateInfo };
+type Alert = { id: string; severity: Severity; kind: string; title: string; detail: string; href: string; at: string | null; tenant?: string; tenantSlug?: string; state?: AlertStateInfo };
 type Counts = { critical: number; warning: number; info: number; total: number };
 type AlertAction = "snooze" | "resolve" | "reopen";
 
@@ -260,6 +260,9 @@ export default function AlertsPage() {
                   {a.at && <span className="hidden sm:inline text-xs text-[var(--text-tertiary)] tabular-nums shrink-0">{timeAgo(a.at)}</span>}
                   {/* Acciones (#1) — fuera del Link para no anidar interactivos */}
                   <div className="flex items-center gap-1 shrink-0">
+                    {a.tenantSlug && (
+                      <Link href={`/superadmin/tenants/${encodeURIComponent(a.tenantSlug)}`} title="Ficha 360 del negocio" className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] px-2 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] mr-0.5">Ficha 360</Link>
+                    )}
                     {view === "active" ? (
                       <>
                         <button type="button" disabled={isBusy} onClick={() => void act(a.id, "snooze", 24)} title="Posponer 24h" aria-label="Posponer 24 horas" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--accent)] disabled:opacity-40">

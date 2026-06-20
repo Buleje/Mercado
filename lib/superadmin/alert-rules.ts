@@ -23,6 +23,8 @@ export interface Alert {
   at: string | null;
   /** Tienda asociada (cuando la alerta es de un tenant concreto) — para filtrar. */
   tenant?: string;
+  /** Slug del tenant — para saltar a su Ficha 360 / rescate (idea #E). */
+  tenantSlug?: string;
 }
 
 export interface AlertConfig {
@@ -175,6 +177,7 @@ export function buildAlerts(
       href: `/superadmin/tenants?q=${encodeURIComponent(c.slug)}`,
       at: null,
       tenant: c.name,
+      tenantSlug: c.slug,
     });
   }
 
