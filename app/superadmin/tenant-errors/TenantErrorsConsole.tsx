@@ -143,7 +143,11 @@ export function TenantErrorsConsole() {
                       <div className="flex items-start gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="inline-flex items-center gap-1 text-sm font-extrabold text-[var(--text-primary)]"><Store className="h-3.5 w-3.5 text-[var(--accent)]" /> {e.tenantName}</span>
+                            {e.tenantSlug ? (
+                              <Link href={`/superadmin/tenants/${encodeURIComponent(e.tenantSlug)}`} className="inline-flex items-center gap-1 text-sm font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline"><Store className="h-3.5 w-3.5 text-[var(--accent)]" /> {e.tenantName}</Link>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-sm font-extrabold text-[var(--text-primary)]"><Store className="h-3.5 w-3.5 text-[var(--accent)]" /> {e.tenantName}</span>
+                            )}
                             {e.source && <span className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{e.source}</span>}
                             {e.count > 1 && <span className="rounded-full bg-[var(--data-error-500)]/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-error-600,#dc2626)] tabular-nums">×{e.count}</span>}
                             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">· {ago(e.lastSeenAt)}</span>

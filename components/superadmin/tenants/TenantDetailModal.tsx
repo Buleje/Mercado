@@ -217,6 +217,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
           <div className="flex items-center gap-2 shrink-0 ml-2">
             <PlanBadge plan={t.plan} />
             <StatusBadge active={t.active} />
+            <Link href={`/superadmin/tenants/${t.slug}`} title="Ficha 360 del negocio" className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)]">Ficha 360</Link>
             <Link href={`/superadmin/chat?tenant=${t.id}&name=${encodeURIComponent(t.name)}`} title="Chatear con este negocio" className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-[var(--accent-soft)]"><MessageSquare className="w-4 h-4" /></Link>
             <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] text-gray-400"><X className="w-4 h-4" /></button>
           </div>
