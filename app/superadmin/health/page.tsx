@@ -20,6 +20,8 @@ import {
 } from "@buleje/design-system/icons";
 import SAHealthScore from "@/components/superadmin/_shared/SAHealthScore";
 import { AdminTabShell } from "../_components/_shared";
+import { SystemHealthMetrics } from "@/components/superadmin/health/SystemHealthMetrics";
+import { TenantsHealthRollup } from "@/components/superadmin/health/TenantsHealthRollup";
 
 const TenantMonitorPanel = dynamic(
   () => import("@/components/superadmin/TenantMonitorPanel"),
@@ -595,6 +597,9 @@ export default function SystemHealthPage() {
             </div>
           )}
 
+          {/* ─── Métricas reales del sistema (DB/servicios/app) ──── */}
+          <SystemHealthMetrics />
+
           {/* ─── Individual service checks ──────────────────────── */}
           <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
             <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
@@ -669,7 +674,12 @@ export default function SystemHealthPage() {
         </>
       )}
 
-      {activeTab === "tenants" && <TenantMonitorPanel />}
+      {activeTab === "tenants" && (
+        <>
+          <TenantsHealthRollup />
+          <TenantMonitorPanel />
+        </>
+      )}
     </AdminTabShell>
   );
 }
