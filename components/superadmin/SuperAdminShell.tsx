@@ -177,6 +177,7 @@ const NAV_GROUPS: NavGroupDef[] = [
       { label: "Automatizaciones", icon: <Webhook       className="w-5 h-5 shrink-0" />, href: "/superadmin/automations" },
       { label: "Inteligencia de Barrio", icon: <Activity className="w-5 h-5 shrink-0" />, href: "/superadmin/intelligence" },
       { label: "Analytics",     icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics" },
+      { label: "Adopción funciones", icon: <TrendingUp className="w-5 h-5 shrink-0" />, href: "/superadmin/feature-adoption" },
       { label: "Salud sistema", icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"    },
       { label: "SLO & budgets", icon: <TrendingUp      className="w-5 h-5 shrink-0" />, href: "/superadmin/slo"       },
       { label: "Dead-letter",   icon: <AlertOctagon    className="w-5 h-5 shrink-0" />, href: "/superadmin/dlq"       },
