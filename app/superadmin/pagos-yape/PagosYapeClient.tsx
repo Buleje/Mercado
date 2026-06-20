@@ -46,6 +46,8 @@ import {
   Check,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -257,7 +259,6 @@ export default function PagosYapeClient(_: Props) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(1);
   const searchRef = useRef<HTMLInputElement>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const pushToast = useCallback(
     (text: string, tone: ToastTone = "info") => {
@@ -310,18 +311,8 @@ export default function PagosYapeClient(_: Props) {
     void load();
   }, [load]);
 
-  // ── Polling toggle ────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!autoRefresh) {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      pollingRef.current = null;
-      return;
-    }
-    pollingRef.current = setInterval(() => void load(true), 30_000);
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, [autoRefresh, load]);
+  // ── Polling visibility-aware (pausa con la pestaña oculta) ────────────────
+  useVisiblePolling(() => void load(true), 30_000, autoRefresh);
 
   // ── Deep-link ?id= ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -368,6 +359,24 @@ export default function PagosYapeClient(_: Props) {
       );
     });
   }, [approvals, search, deltaFilter]);
+
+  // ── Resumen para los KPIs de triage (sobre TODOS los pendientes) ──────────
+  const stats = useMemo(() => {
+    const exact = approvals.filter((a) => deltaStatus(a.expectedAmount, a.detectedAmount) === "exact").length;
+    const codeCounts = new Map<string, number>();
+    for (const a of approvals) {
+      if (a.yapeOpCode) codeCounts.set(a.yapeOpCode, (codeCounts.get(a.yapeOpCode) ?? 0) + 1);
+    }
+    const dupCodeSet = new Set([...codeCounts.entries()].filter(([, n]) => n > 1).map(([c]) => c));
+    return {
+      pending: approvals.length,
+      totalExpected: approvals.reduce((s, a) => s + a.expectedAmount, 0),
+      exact,
+      review: approvals.length - exact,
+      dupCodes: dupCodeSet.size,
+      dupCodeSet,
+    };
+  }, [approvals]);
 
   // ── Single approve / reject ───────────────────────────────────────────────
   const approve = useCallback(
@@ -643,6 +652,17 @@ export default function PagosYapeClient(_: Props) {
         </button>
       </div>
 
+      {/* ── KPIs de triage ─────────────────────────────────── */}
+      {!isEmpty && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <SAKpiCard label="Pendientes" value={stats.pending} tone="warn" />
+          <SAKpiCard label="A confirmar" value={fmtPEN(stats.totalExpected)} />
+          <SAKpiCard label="Match exacto" value={stats.exact} sub="la IA cuadra el monto" tone="good" />
+          <SAKpiCard label="A revisar" value={stats.review} sub="monto no coincide" tone={stats.review > 0 ? "warn" : "default"} />
+          <SAKpiCard label="Op-code repetido" value={stats.dupCodes} sub="posible fraude" tone={stats.dupCodes > 0 ? "bad" : "default"} />
+        </div>
+      )}
+
       {/* ── Search + filtros ───────────────────────────────── */}
       {!isEmpty && (
         <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3 space-y-2.5">
@@ -898,10 +918,15 @@ export default function PagosYapeClient(_: Props) {
 
                     {a.yapeOpCode && (
                       <p
-                        className="mt-1 text-[10px] font-mono text-[var(--text-tertiary)]"
+                        className="mt-1 text-[10px] font-mono text-[var(--text-tertiary)] flex items-center gap-1.5 flex-wrap"
                         data-no-translate
                       >
                         Op. {a.yapeOpCode}
+                        {stats.dupCodeSet.has(a.yapeOpCode) && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-500)]/10 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-error-600,#dc2626)] not-italic">
+                            <AlertTriangle className="h-3 w-3" aria-hidden /> repetido
+                          </span>
+                        )}
                       </p>
                     )}
                   </button>
