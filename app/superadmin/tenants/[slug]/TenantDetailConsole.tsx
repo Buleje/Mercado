@@ -11,12 +11,13 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, LogIn, MessageSquare, ExternalLink, RefreshCw, ShoppingBag, Users,
-  Package, ShieldAlert, Activity, CheckCircle2, MinusCircle, Store,
+  Package, ShieldAlert, Activity, CheckCircle2, MinusCircle, Store, Sparkles, Loader2,
 } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
 
+type AiResult = { summary: string; action: string; draft: string; ai: boolean };
 type Health = { score: number; riskLevel: string; loginsLast7d: number; loginsLast30d: number; ordersLast7d: number; ordersLast30d: number; featuresUsed: number; daysSinceLastOrder: number; daysSinceLastLogin: number; trialDaysLeft: number | null; calculatedAt: string };
 type Overview = {
   tenant: { id: string; name: string; slug: string; active: boolean; plan: string; trialEndsAt: string | null; createdAt: string; logoUrl: string | null; customDomain: string | null; address: string | null };
@@ -69,6 +70,9 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [ai, setAi] = useState<AiResult | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -88,6 +92,23 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
       if (res.ok) window.open(`/t/${encodeURIComponent(slug)}/admin`, "_blank");
     } finally { setBusy(false); }
   }, [slug]);
+
+  const askCopilot = useCallback(async () => {
+    if (!d) return;
+    setAiLoading(true); setCopied(false);
+    try {
+      const res = await fetch("/api/superadmin/ai-assist", {
+        method: "POST", credentials: "include", headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ task: "tenant-copilot", context: {
+          name: d.tenant.name, plan: d.tenant.plan,
+          score: d.health?.score ?? null, riskLevel: d.health?.riskLevel,
+          daysSinceLastOrder: d.health?.daysSinceLastOrder, daysSinceLastLogin: d.health?.daysSinceLastLogin,
+          trialDaysLeft: d.health?.trialDaysLeft ?? null, ordersTotal: d.counts.orders, errorsCount: d.counts.errors,
+        } }),
+      });
+      if (res.ok) setAi((await res.json()) as AiResult);
+    } finally { setAiLoading(false); }
+  }, [d]);
 
   if (loading && !d) return <div className="h-96 animate-pulse rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]" />;
   if (notFound) return <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-10 text-center"><p className="text-sm font-bold text-[var(--text-primary)]">Negocio no encontrado: <span className="font-mono">{slug}</span></p></div>;
@@ -152,6 +173,38 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
         <SAKpiCard icon={ShoppingBag} label="Pedidos" value={d.counts.orders} />
         <SAKpiCard icon={ShieldAlert} label="Errores panel" value={d.counts.errors} sub={d.counts.errors > 0 ? "sin resolver" : "ninguno"} tone={d.counts.errors > 0 ? "bad" : "good"} />
       </div>
+
+      {/* Co-piloto IA */}
+      <Card title="Co-piloto IA" action={ai && <button type="button" onClick={() => void askCopilot()} disabled={aiLoading} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline disabled:opacity-50">{aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerar</button>}>
+        {!ai ? (
+          <div className="flex items-center gap-3 flex-wrap">
+            <button type="button" onClick={() => void askCopilot()} disabled={aiLoading} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50">
+              {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {aiLoading ? "Analizando el negocio…" : "Pedir análisis IA"}
+            </button>
+            <span className="text-xs text-[var(--text-tertiary)]">La IA resume la situación, sugiere una acción y redacta el mensaje para el dueño.</span>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] mb-0.5">Resumen</p>
+              <p className="text-sm text-[var(--text-secondary)]">{ai.summary}</p>
+            </div>
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[#0d9488] mb-0.5">Acción recomendada</p>
+              <p className="text-sm text-[var(--text-secondary)]">{ai.action}</p>
+            </div>
+            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">Mensaje sugerido para el dueño</p>
+              <p className="text-sm text-[var(--text-primary)] italic">&ldquo;{ai.draft}&rdquo;</p>
+              <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                <button type="button" onClick={() => { void navigator.clipboard?.writeText(ai.draft); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">{copied ? <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success-600,#059669)]" /> : null} {copied ? "Copiado" : "Copiar"}</button>
+                <Link href={`/superadmin/chat?tenant=${encodeURIComponent(t.slug)}&msg=${encodeURIComponent(ai.draft)}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-2.5 text-xs font-bold text-white hover:brightness-110"><MessageSquare className="h-3.5 w-3.5" /> Contactar con este mensaje</Link>
+                {!ai.ai && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">IA no configurada — borrador por plantilla</span>}
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Integraciones */}
