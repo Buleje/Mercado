@@ -17,6 +17,8 @@ import {
   Package,
   User,
   Banknote,
+  HeartHandshake,
+  ShieldAlert,
 } from "@buleje/design-system/icons";
 
 interface InboxOrderItem {
@@ -58,6 +60,8 @@ interface BucketPayload {
 interface InboxResponse {
   total: number;
   buckets: {
+    atRisk: BucketPayload;
+    panelErrors: BucketPayload;
     vendorApplications: BucketPayload;
     paymentApprovals: BucketPayload;
     paymentProofs: BucketPayload;
@@ -69,6 +73,18 @@ const BUCKET_META: Record<
   keyof InboxResponse["buckets"],
   { label: string; description: string; icon: typeof Store; tone: string }
 > = {
+  atRisk: {
+    label: "Negocios en riesgo",
+    description: "Tiendas con riesgo de churn alto o crítico — necesitan rescate",
+    icon: HeartHandshake,
+    tone: "var(--data-error-500)",
+  },
+  panelErrors: {
+    label: "Errores en paneles",
+    description: "Errores en el panel admin de los negocios — ayudalos a resolverlos",
+    icon: ShieldAlert,
+    tone: "var(--data-error-500)",
+  },
   paymentProofs: {
     label: "Yape de apertura de tienda",
     description: "Comprobantes esperando verificación para crear el tenant",
@@ -96,6 +112,8 @@ const BUCKET_META: Record<
 };
 
 const BUCKET_ORDER: Array<keyof InboxResponse["buckets"]> = [
+  "atRisk",
+  "panelErrors",
   "paymentProofs",
   "paymentApprovals",
   "vendorApplications",
