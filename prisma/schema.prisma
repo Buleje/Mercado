@@ -4456,6 +4456,30 @@ model EventDeadLetter {
   @@index([eventType, resolvedAt])
 }
 
+// ─── ClientErrorLog ─────────────────────────────────────
+// Errores runtime del panel admin de los negocios (reportados por el error
+// boundary vía /api/admin/log-error). Brandon 2026-06-19: antes solo se
+// logueaban; ahora se persisten con tenantId para verlos en vivo en el
+// superadmin y ayudar al negocio. Dedup por (tenantId+digest+source) sin
+// resolver → incrementa `count` en vez de crear filas nuevas.
+model ClientErrorLog {
+  id          String    @id @default(cuid())
+  tenantId    String
+  digest      String?
+  message     String    @db.Text
+  source      String    @default("")
+  userAgent   String?
+  count       Int       @default(1)
+  firstSeenAt DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  resolvedAt  DateTime?
+  resolvedBy  String?
+
+  @@index([resolvedAt, lastSeenAt])
+  @@index([tenantId])
+  @@index([digest])
+}
+
 // ─── Industry (nicho de negocio) ────────────────────────
 // Permite que el panel admin se especialice por tipo de negocio.
 // Default: bodega — todos los tenants actuales quedan en este valor.

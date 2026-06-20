@@ -51,6 +51,7 @@ import {
   Bell,
   Webhook,
   Globe,
+  ShieldAlert,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -177,6 +178,7 @@ const NAV_GROUPS: NavGroupDef[] = [
       { label: "Salud sistema", icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"    },
       { label: "SLO & budgets", icon: <TrendingUp      className="w-5 h-5 shrink-0" />, href: "/superadmin/slo"       },
       { label: "Dead-letter",   icon: <AlertOctagon    className="w-5 h-5 shrink-0" />, href: "/superadmin/dlq"       },
+      { label: "Errores negocios", icon: <ShieldAlert          className="w-5 h-5 shrink-0" />, href: "/superadmin/tenant-errors" },
       // Brandon 2026-05-21 audit fix #4: "Setup score" eliminado del nav.
       // El page hace redirect("/superadmin/dashboard") (módulo eliminado por
       // decisión de producto), así que enlazarlo confunde al user.
