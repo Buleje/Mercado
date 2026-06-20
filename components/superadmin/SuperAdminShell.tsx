@@ -53,6 +53,7 @@ import {
   Globe,
   ShieldAlert,
   HeartHandshake,
+  Scale,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -193,6 +194,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     icon: <Server className="w-4 h-4 shrink-0" />,
     items: [
       { label: "Seguridad", icon: <ShieldCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/security" },
+      { label: "Ley 29733", icon: <Scale      className="w-5 h-5 shrink-0" />, href: "/superadmin/compliance" },
       // Consolidado 2026-06-17: Settings + Configuración = 1 módulo con tabs
       // (Plataforma · Integraciones & Flags) vía SuperAdminModuleTabs.
       { label: "Ajustes", icon: <Settings className="w-5 h-5 shrink-0" />, href: "/superadmin/settings" },
