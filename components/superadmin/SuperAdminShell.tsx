@@ -55,6 +55,7 @@ import {
   HeartHandshake,
   Scale,
   History,
+  Megaphone,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -116,6 +117,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     items: [
       { label: "Dashboard",          icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"      },
       { label: "Chat",               icon: <MessageSquare   className="w-5 h-5 shrink-0" />, href: "/superadmin/chat"           },
+      { label: "Comunicados",        icon: <Megaphone       className="w-5 h-5 shrink-0" />, href: "/superadmin/comunicados"    },
       { label: "Soporte",            icon: <Inbox           className="w-5 h-5 shrink-0" />, href: "/superadmin/support"        },
       { label: "Alertas",            icon: <Bell            className="w-5 h-5 shrink-0" />, href: "/superadmin/alerts"         },
       { label: "Rescate",            icon: <HeartHandshake  className="w-5 h-5 shrink-0" />, href: "/superadmin/rescue"         },
