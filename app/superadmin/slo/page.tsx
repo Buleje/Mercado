@@ -21,6 +21,7 @@ import {
   ShoppingCart, TrendingUp, XCircle, Zap, BarChart3, Cable,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
+import { JobsSLO } from "@/components/superadmin/slo/JobsSLO";
 import { fmtTimeSafe, fmtDateTimeSafe } from "@/lib/superadmin/safe-helpers";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -441,6 +442,9 @@ export default function SLODashboardPage() {
           <SourceEmptyState status={sources.posthog} envHint={SOURCE_HINT.posthog} />
         )}
       </div>
+
+      {/* SLO profundo de jobs (7d, error budget, p95) — datos reales */}
+      <JobsSLO />
 
       {/* CronHealth table (datos reales) */}
       {data.cronHealth.length > 0 && (
