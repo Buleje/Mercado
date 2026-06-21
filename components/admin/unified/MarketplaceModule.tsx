@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, lazy, Suspense } from "react";
-import { Store, Package, ShoppingCart, DollarSign, RefreshCw, TrendingUp, Star, BarChart3, Ticket, Gift, Repeat, HeartHandshake, Radio } from "@buleje/design-system/icons";
+import { Store, Package, ShoppingCart, DollarSign, RefreshCw, TrendingUp, Star, BarChart3, Ticket, Gift } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -21,13 +21,10 @@ const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitiveP
 // Dynamic import del dashboard del marketplace (charts unificados)
 const MarketplaceDashboardTab = lazy(() => import("@/components/admin/marketplace/MarketplaceDashboard"));
 
-// ── Programas de crecimiento foldeados como sub-tabs (consolidación 4→1) ──
-// Antes eran 4 entradas top-level separadas (subscriptions, gift-cards-admin,
-// socio-members, lives-admin). Ahora viven como sub-tabs del marketplace.
-const SubscriptionsModule     = lazy(() => import("@/components/admin/unified/SubscriptionsModule"));
-const GiftCardsAdminModule    = lazy(() => import("@/components/admin/unified/GiftCardsAdminModule"));
-const SocioMembersAdminModule = lazy(() => import("@/components/admin/unified/SocioMembersAdminModule"));
-const LivesAdminModule        = lazy(() => import("@/components/admin/unified/LivesAdminModule"));
+// ── Programas de crecimiento MOVIDOS al hub Crecimiento (2026-06-21) ──
+// Antes vivían enterrados acá como sub-tabs (subscriptions, gift-cards, socio,
+// lives). Ahora son sub-tabs visibles del hub Crecimiento (Marketing &
+// Fidelización), su hogar natural. El Marketplace queda enfocado en la tienda.
 
 // Spinner · TableSkeleton · SortIcon · KpiTile · MODULE_ID · ORDER_STATUS_CONFIG
 // + StoreData/COMMISSION/REVIEW/TIER configs → movidos a marketplace/shared.tsx
@@ -43,11 +40,6 @@ const TABS = [
   { id: "cupones",      label: "Cupones",      icon: Ticket },
   { id: "resenas",      label: "Reseñas",      icon: Star },
   { id: "fidelidad",    label: "Fidelidad",    icon: Gift },
-  // ── Programas de crecimiento (consolidados desde módulos top-level) ──
-  { id: "subscriptions", label: "Suscripciones", icon: Repeat },
-  { id: "gift-cards",    label: "Gift Cards",    icon: Gift },
-  { id: "socio",         label: "Socio Buleje",  icon: HeartHandshake },
-  { id: "lives",         label: "Lives",         icon: Radio },
 ];
 
 type TabId = string;
@@ -102,10 +94,6 @@ export default function MarketplaceModule({ initialTab }: { initialTab?: string 
         {tab === "cupones"     && <MarketplaceCuponesTab />}
         {tab === "resenas"     && <MarketplaceResenasTab />}
         {tab === "fidelidad"   && <MarketplaceFidelidadTab />}
-        {tab === "subscriptions" && <Suspense fallback={<Spinner />}><SubscriptionsModule /></Suspense>}
-        {tab === "gift-cards"    && <Suspense fallback={<Spinner />}><GiftCardsAdminModule /></Suspense>}
-        {tab === "socio"         && <Suspense fallback={<Spinner />}><SocioMembersAdminModule /></Suspense>}
-        {tab === "lives"         && <Suspense fallback={<Spinner />}><LivesAdminModule /></Suspense>}
       </AdminTabBar>
     </div>
   );

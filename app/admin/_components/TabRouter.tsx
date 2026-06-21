@@ -287,7 +287,9 @@ export function TabRouter({
   if (tab === "sugerencias-ia") return <AsistenteIAHubModule key="sugerencias-ia" initialTab="sugerencias" />;
   if (tab === "metas-logros")   return <MetasLogrosModule />;
 
-  // ── Crecimiento (Marketing & Fidelización) — Ola 1 ──
+  // ── Crecimiento (Marketing & Fidelización) — hub único ──
+  // Absorbe campañas/segmentos/puntos/RFM + los 4 programas (gift cards, socio,
+  // suscripciones, lives) que antes vivían enterrados como sub-tabs del Marketplace.
   if (tab === "campanas") return <CrecimientoHubModule key="campanas" initialTab="campanas" />;
   if (tab === "puntos")   return <CrecimientoHubModule key="puntos" initialTab="puntos" />;
 
@@ -301,11 +303,12 @@ export function TabRouter({
   if (tab === "delivery-live")     return <DeliveryPartnersModule key="delivery-live" initialTab="pedidos-vivo" />;
   if (tab === "marketplace-chat")  return <MensajesHubModule key="marketplace-chat" initialTab="chat" />;
 
-  // ── ENRICH-5 (programas de crecimiento — sub-tabs del Marketplace) ──
-  if (tab === "subscriptions")     return <MarketplaceModule key="subscriptions" initialTab="subscriptions" />;
-  if (tab === "gift-cards-admin")  return <MarketplaceModule key="gift-cards" initialTab="gift-cards" />;
-  if (tab === "socio-members")     return <MarketplaceModule key="socio" initialTab="socio" />;
-  if (tab === "lives-admin")       return <MarketplaceModule key="lives" initialTab="lives" />;
+  // ── Programas de crecimiento — ahora sub-tabs del hub Crecimiento (movidos
+  //    desde Marketplace, 2026-06-21: single home + visible en sidebar) ──
+  if (tab === "subscriptions")     return <CrecimientoHubModule key="subscriptions" initialTab="subscriptions" />;
+  if (tab === "gift-cards-admin")  return <CrecimientoHubModule key="gift-cards" initialTab="gift-cards" />;
+  if (tab === "socio-members")     return <CrecimientoHubModule key="socio" initialTab="socio" />;
+  if (tab === "lives-admin")       return <CrecimientoHubModule key="lives" initialTab="lives" />;
 
   // ── Rendimiento técnico ──
   if (tab === "rendimiento") return <SistemaHubModule key="rendimiento" initialTab="rendimiento" />;

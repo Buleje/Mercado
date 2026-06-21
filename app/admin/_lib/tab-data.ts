@@ -52,6 +52,13 @@ import {
   UserPlus,
   TreePine,
   Leaf,
+  Megaphone,
+  Gift,
+  HeartHandshake,
+  Repeat,
+  Radio,
+  CheckSquare,
+  StickyNote,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -69,6 +76,16 @@ export const ALL_TABS = [
   { id: "plata" as Tab,               label: "Mi Plata",            icon: Wallet },
   { id: "clientes" as Tab,            label: "Mis Clientes",        icon: Heart },
   { id: "leads-funnel" as Tab,        label: "Funnel de Leads",     icon: UserPlus },
+  // — CRECIMIENTO (Marketing & Fidelización) — hub único, sub-tabs como accesos directos —
+  { id: "campanas" as Tab,            label: "Campañas",            icon: Megaphone },
+  { id: "puntos" as Tab,              label: "Puntos & Fidelización", icon: Heart },
+  { id: "gift-cards-admin" as Tab,    label: "Gift Cards",          icon: Gift },
+  { id: "socio-members" as Tab,       label: "Socio Buleje",        icon: HeartHandshake },
+  { id: "subscriptions" as Tab,       label: "Bodega al Mes",       icon: Repeat },
+  { id: "lives-admin" as Tab,         label: "En Vivo",             icon: Radio },
+  // — EQUIPO (huérfanos montados) —
+  { id: "tareas" as Tab,              label: "Tareas",              icon: CheckSquare },
+  { id: "notas" as Tab,               label: "Notas",               icon: StickyNote },
   // — OPERACIONES —
   { id: "config" as Tab,              label: "Configuración",       icon: SlidersHorizontal },
   { id: "pedidos" as Tab,             label: "Pedidos",             icon: ClipboardCheck },

@@ -148,6 +148,10 @@ export const PLAN_BASICO: PlanDefinition = {
     // Activos & Maquinaria — alquiler de equipos (forestal: cargador, oruga,
     // camión). En basico para que sea visible/usable desde el free.
     "activos",
+    // Equipo — tareas + notas de turno. Herramientas operativas internas,
+    // visibles desde el free (sin costo asociado, igual que adelantos/activos).
+    "tareas",
+    "notas",
     // Config (siempre)
     "config",
     "plan",
@@ -245,6 +249,12 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     "promociones",
     "prestamos",
     "scoring",
+    // Crecimiento (Marketing & Fidelización) — campañas segmentadas + puntos.
+    // Consistente con el highlight "Promociones, fidelizacion y chat".
+    // (Los 4 programas premium — gift cards, socio, suscripciones, lives —
+    //  siguen en Business/max.)
+    "campanas",
+    "puntos",
     // Recetas + tesoreria
     "recetas",
     "tesoreria",

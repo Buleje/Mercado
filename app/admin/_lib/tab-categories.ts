@@ -47,6 +47,8 @@ import {
   UserPlus,
   TreePine,
   Leaf,
+  Megaphone,
+  ClipboardList,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -259,6 +261,36 @@ export const MODULE_INFO: Partial<
     desc: "Transmisiones en vivo para mostrar productos y vender en directo.",
     tip: "Programa lives con productos destacados y mide performance.",
   },
+  // ── Crecimiento (Marketing & Fidelización) ──
+  campanas: {
+    icon: Megaphone,
+    iconColor: "text-[var(--accent)]",
+    priority: "high",
+    desc: "Campañas segmentadas por WhatsApp/email + automatizaciones de marketing.",
+    tip: "Crea una campaña desde un segmento en un clic para que tus clientes vuelvan.",
+  },
+  puntos: {
+    icon: Heart,
+    iconColor: "text-[var(--accent)]",
+    priority: "medium",
+    desc: "Programa de puntos y fidelización: acumulación, canje y reglas.",
+    tip: "Premia a tus clientes frecuentes para que compren más seguido.",
+  },
+  // ── Equipo ──
+  tareas: {
+    icon: ClipboardList,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "medium",
+    desc: "Tareas del equipo con prioridad, estado y asignación.",
+    tip: "Coordina pendientes del día sin perderlos entre conversaciones.",
+  },
+  notas: {
+    icon: ClipboardList,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "low",
+    desc: "Notas de turno y recordatorios tipo sticky.",
+    tip: "Deja anotado lo importante para el siguiente turno.",
+  },
 };
 
 export type TabCategory = {
@@ -364,6 +396,27 @@ export const BASIC_MODULES: TabCategory[] = [
     ],
   },
 
+  // ── 05b · CRECIMIENTO (Marketing & Fidelización) ──
+  // Hub único que reúne TODO lo que hace volver al cliente. Antes estaba
+  // disperso y/o invisible: campañas/puntos/segmentos/RFM eran huérfanos (sin
+  // entrada en el sidebar) y los 4 programas (gift cards, socio, suscripciones,
+  // lives) vivían enterrados como sub-tabs del Marketplace. Ahora UNA categoría
+  // visible cuyos accesos directos abren el CrecimientoHubModule en su sub-tab.
+  // (segmentos y RFM quedan como sub-tabs internos del hub, a 1 click.)
+  {
+    id: "crecimiento",
+    label: "Crecimiento",
+    icon: Megaphone,
+    tabs: [
+      "campanas",
+      "puntos",
+      "gift-cards-admin",
+      "socio-members",
+      "subscriptions",
+      "lives-admin",
+    ],
+  },
+
   // ── 06 · FINANZAS ────────────────────────────────
   // "plata" abre FinanzasModule (P&L, gastos, flujo, tesorería + Fiados,
   // Préstamos, Adelantos, Activos, Por cobrar, Scoring como sub-tabs).
@@ -411,6 +464,20 @@ export const BASIC_MODULES: TabCategory[] = [
       "marketplace",
       "delivery-partners",
       "delivery-live",
+    ],
+  },
+
+  // ── 09 · EQUIPO ──────────────────────────────────
+  // Herramientas operativas internas (tareas + notas de turno). Estaban
+  // construidas y sanas pero huérfanas (sin entrada en el sidebar vivo). Abren
+  // el EquipoHubModule en su sub-tab. Brandon 2026-06-21.
+  {
+    id: "equipo",
+    label: "Equipo",
+    icon: ClipboardList,
+    tabs: [
+      "tareas",
+      "notas",
     ],
   },
 ];
