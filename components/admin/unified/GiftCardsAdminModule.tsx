@@ -22,6 +22,7 @@ import {
   Calendar,
   Trash2,
 } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import KPICard from "@/components/admin/shared/KPICard";
@@ -304,13 +305,23 @@ export default function GiftCardsAdminModule() {
     }
   };
 
-  // TODO(ADR-077 follow-up): implementar endpoint /extend. Por ahora queda
-  // como optimistic local update — no persiste. La UI avisa cuando hay API.
-  const handleExtend = (id: string, newExpiry: string) => {
-    setCards((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, expiresAt: newExpiry } : c)),
-    );
-    setSelected((s) => (s?.id === id ? { ...s, expiresAt: newExpiry } : s));
+  const handleExtend = async (id: string, newExpiry: string) => {
+    try {
+      const res = await fetch(`/api/admin/gift-cards/${id}/extend`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ expiresAt: newExpiry }),
+      });
+      if (!res.ok) return;
+      const iso = new Date(newExpiry).toISOString();
+      setCards((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, expiresAt: iso } : c)),
+      );
+      setSelected((s) => (s?.id === id ? { ...s, expiresAt: iso } : s));
+      void refetch();
+    } catch {
+      /* noop: la UI no cambia si falla la persistencia */
+    }
   };
 
   const handleCreate = async (data: {
@@ -414,9 +425,9 @@ export default function GiftCardsAdminModule() {
             className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">
               Codigo generado
-            </h3>
+            </CardTitle>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
               Este codigo solo se muestra UNA vez. Copialo y entregalo al destinatario
               (WhatsApp, email, impreso). No lo podemos recuperar despues.

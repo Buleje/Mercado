@@ -35,6 +35,18 @@ export async function GET(
 ) {
   const { slug } = await params;
   const section = req.nextUrl.searchParams.get("section") ?? undefined;
+  const scope = req.nextUrl.searchParams.get("scope");
+
+  // scope=admin: el editor del admin necesita TODOS los banners (activos e
+  // inactivos, fuera de ventana). Requiere auth y se resuelve por tenantId propio.
+  if (scope === "admin") {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+    const store = await MarketplaceStoresDB.getIdBySlugAndTenant(auth.tenantId, slug);
+    if (!store) return NextResponse.json({ banners: [] });
+    const banners = await StoreBannersDB.listForAdmin(auth.tenantId, store.id, section);
+    return NextResponse.json({ banners });
+  }
 
   // El marketplace es cross-tenant: el banner se resuelve por slug
   // y luego usamos su tenantId real. Resiliente: cualquier error → lista vacía.

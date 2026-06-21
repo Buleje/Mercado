@@ -121,6 +121,25 @@ export const CampaignsDB = {
     });
   },
 
+  /**
+   * Tracking de apertura/clic: incrementa `opened` por id (público, sin auth —
+   * lo dispara el cliente al hacer clic en el link de la campaña). Devuelve el
+   * tenantId para resolver el destino del redirect. Errores → null.
+   */
+  async trackOpen(id: string): Promise<{ tenantId: string } | null> {
+    try {
+      const updated = await prisma.campaign.update({
+        where: { id },
+        data: { opened: { increment: 1 } },
+        select: { tenantId: true },
+      });
+      revalidateTag(`tenant:${updated.tenantId}:campaigns`, "max");
+      return { tenantId: updated.tenantId };
+    } catch {
+      return null;
+    }
+  },
+
   /** Marca una campaña como despachada (completada + métricas). */
   async markDispatched(tenantId: string, id: string, audience: number) {
     await prisma.campaign.update({

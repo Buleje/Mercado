@@ -244,7 +244,6 @@ const RULES: Rule[] = [
 
 const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   { file: /shared[\\/]AdminTabBar\.tsx$/, allowedRules: ["no-decorative-gradient"] },
-  { file: /BannerEditor\.tsx$/, allowedRules: ["no-decorative-gradient"] },
   // DesignTab es el editor visual de design tokens del modulo Mi tienda publica.
   // Sus gradients violet/fuchsia son previews de los tokens decorativos que el
   // tenant puede activar — no son chrome del DS, son data del tenant.
@@ -257,7 +256,6 @@ const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   { file: /StoreCustomizer\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
   { file: /StoreCreativeMode\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
   { file: /ThemeCustomizer\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
-  { file: /BannerEditor\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
   // Admin token catalog — las clases hardcodeadas ARE the data (single source of truth para todo /admin).
   // El errorBanner usa rose semantico (canonical danger color) que no tiene aun un --danger token.
   { file: /admin[\\/]_components[\\/]_shared[\\/]admin-tokens\.ts$/, allowedRules: ["no-decorative-text-color"] },

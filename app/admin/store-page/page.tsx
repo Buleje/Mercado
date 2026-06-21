@@ -34,6 +34,7 @@ import {
   Globe,
   Layers,
   Paintbrush,
+  Images,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -43,6 +44,9 @@ import PromotionsTab from "./_components/PromotionsTab";
 import AnalyticsTab from "./_components/AnalyticsTab";
 import SectionsTab from "./_components/SectionsTab";
 import DesignTab from "./_components/DesignTab";
+// Banners del storefront (StoreBanner — hero/featured/promo). Editor Prisma ya
+// construido pero antes huérfano; montado aquí (Ola 2). Brandon 2026-06-20.
+import BannerEditorTab from "@/components/admin/marketplace/BannerEditorTab";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 
 const MODULE_ID = "pagina-inicio";
@@ -52,6 +56,7 @@ type TabId =
   | "design"
   | "sections"
   | "branding"
+  | "banners"
   | "promotions"
   | "analytics";
 
@@ -67,6 +72,7 @@ const TABS: TabConfig[] = [
   { id: "design",      label: "Diseño",               shortLabel: "Diseño",   icon: Paintbrush },
   { id: "sections",    label: "Secciones",            shortLabel: "Sec.",     icon: Layers },
   { id: "branding",    label: "Branding marketplace", shortLabel: "Branding", icon: Sparkles },
+  { id: "banners",     label: "Banners de tienda",    shortLabel: "Banners",  icon: Images },
   { id: "promotions",  label: "Promociones del home", shortLabel: "Promos",   icon: Megaphone },
   { id: "analytics",   label: "Métricas storefront",  shortLabel: "Métricas", icon: BarChart3 },
 ];
@@ -137,6 +143,7 @@ export default function StorePageAdminPage() {
         {tab === "design" && <DesignTab />}
         {tab === "sections" && <SectionsTab />}
         {tab === "branding" && <MarketplaceBrandingTab />}
+        {tab === "banners" && <BannerEditorTab storeSlug={slug} />}
         {tab === "promotions" && <PromotionsTab />}
         {tab === "analytics" && <AnalyticsTab />}
       </div>

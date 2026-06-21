@@ -29,14 +29,17 @@ export async function GET(req: NextRequest) {
 
   try {
     const due = await CampaignsDB.listDueWhatsApp();
+    const base = process.env.NEXT_PUBLIC_BASE_URL || "";
     let dispatched = 0;
     let messages = 0;
 
     for (const campaign of due) {
       const audience = await CampaignsDB.resolveAudience(campaign.tenantId, campaign.segment);
+      // Link de tracking: al hacer clic suma `opened` y lleva a la tienda.
+      const trackLink = base ? `\n\nVer más: ${base}/api/c/${campaign.id}` : "";
       for (const customer of audience) {
-        // Personaliza {{nombre}} si la plantilla lo usa.
-        const msg = campaign.message.replace(/\{\{\s*nombre\s*\}\}/gi, customer.name || "");
+        // Personaliza {{nombre}} si la plantilla lo usa + link de tracking.
+        const msg = campaign.message.replace(/\{\{\s*nombre\s*\}\}/gi, customer.name || "") + trackLink;
         void sendWhatsAppQueued(customer.phone, msg, {
           tenantId: campaign.tenantId,
           context: "campaign-broadcast",
