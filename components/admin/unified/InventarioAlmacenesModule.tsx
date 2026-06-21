@@ -13,7 +13,7 @@ import { exportToExcel } from "@/lib/export-excel";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import {
-  LayoutDashboard, AlertTriangle, Package, ArrowLeftRight, CalendarClock,
+  LayoutDashboard, AlertTriangle, Package, ArrowLeftRight, CalendarClock, TrendingDown,
   TrendingUp, DollarSign, Boxes, AlertCircle, XCircle, Hash, RotateCw,
   ListChecks, Maximize2, X as XIcon,
 } from "@buleje/design-system/icons";
@@ -36,6 +36,9 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 const InventoryTab = dynamic(() => import("@/components/admin/InventoryTab"), { loading: S });
 const SimpleMovementsTab = dynamic(() => import("@/components/admin/inventario/SimpleMovementsTab"), { loading: S });
 const SimpleExpiryTab = dynamic(() => import("@/components/admin/inventario/SimpleExpiryTab"), { loading: S });
+// Mermas/Pérdidas: ShrinkageTab estaba huérfano (0 imports) y roto contra /api/mermas
+// (GET paginado, cause↔lossType, registeredBy). Reparado + montado. Brandon 2026-06-20.
+const ShrinkageTab = dynamic(() => import("@/components/admin/ShrinkageTab"), { loading: S });
 const PhysicalCountTab = dynamic(() => import("@/components/admin/PhysicalCountTab"), { loading: S });
 const QuickStockCounter = dynamic(() => import("@/components/admin/QuickStockCounter"), { loading: S });
 
@@ -54,6 +57,8 @@ const TABS = [
   { id: "kardex" as const, label: "Entradas y Salidas", icon: ArrowLeftRight },
   // ── Grupo 3: Vencimientos ──
   { id: "lotes" as const, label: "Vencimientos", icon: CalendarClock },
+  // ── Grupo 4: Pérdidas (mermas) ──
+  { id: "mermas" as const, label: "Pérdidas", icon: TrendingDown },
 ];
 
 // ── Mejora 8: Category Treemap View ─────────────────────────────────────────
@@ -762,6 +767,7 @@ export default function InventarioAlmacenesModule() {
 
       {/* Tab 3: Vencimientos (simplificado) */}
       {sub === "lotes" && <SimpleExpiryTab />}
+      {sub === "mermas" && <ShrinkageTab />}
 
       </AdminTabBar>
 
