@@ -14,6 +14,7 @@
  * página con gráficos de datos para mantener consistencia.
  */
 
+import { SectionTitle } from "@buleje/design-system";
 import { ArrowRight, type LucideIcon } from "@buleje/design-system/icons";
 import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
 
@@ -70,10 +71,10 @@ export default function ChartsEmptyState({
           )}
         </div>
 
-        {/* Headline */}
-        <h3 className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        {/* Headline (SectionTitle del DS para cumplir ADR-075) */}
+        <SectionTitle className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
-        </h3>
+        </SectionTitle>
 
         {/* Descripción */}
         <p className="mt-3 text-[length:var(--ts-base)] font-medium text-[var(--text-secondary)] leading-relaxed">
