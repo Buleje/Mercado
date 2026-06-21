@@ -97,6 +97,7 @@ export const VALID_TABS: readonly Tab[] = [
   "ai-command",
   "fiados",
   "turnos",
+  "recetas",
   "prestamos",
   "adelantos",
   "por-cobrar",

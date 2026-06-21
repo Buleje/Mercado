@@ -59,6 +59,7 @@ import {
   Radio,
   CheckSquare,
   StickyNote,
+  ChefHat,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -71,6 +72,7 @@ export const ALL_TABS = [
   { id: "metas-logros" as Tab,        label: "Metas & Logros",      icon: Trophy },
   { id: "ventas-caja" as Tab,         label: "Ventas & Caja",       icon: Receipt },
   { id: "inventario" as Tab,          label: "Inventario",          icon: Warehouse },
+  { id: "recetas" as Tab,             label: "Recetas",             icon: ChefHat },
   { id: "productos" as Tab,           label: "Promociones & Ofertas", icon: BadgePercent },
   { id: "compras" as Tab,             label: "Compras",             icon: PackagePlus },
   { id: "plata" as Tab,               label: "Mi Plata",            icon: Wallet },

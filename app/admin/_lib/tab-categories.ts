@@ -291,6 +291,14 @@ export const MODULE_INFO: Partial<
     desc: "Notas de turno y recordatorios tipo sticky.",
     tip: "Deja anotado lo importante para el siguiente turno.",
   },
+  // ── Recetas (vertical comida — restaurante) ──
+  recetas: {
+    icon: ChefHat,
+    iconColor: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+    priority: "high",
+    desc: "Recetas, producción y recetario: define platos, su costo por insumos y descuenta stock al producir.",
+    tip: "Para negocios de comida: arma cada plato con sus ingredientes y controlá el costo real.",
+  },
 };
 
 export type TabCategory = {
@@ -377,9 +385,14 @@ export const BASIC_MODULES: TabCategory[] = [
     id: "productos-inventario",
     label: "Productos e inventario",
     icon: Warehouse,
+    // "recetas" se auto-oculta por el filtro vertical: solo aparece en negocios
+    // de comida (vertical "restaurante", que lo tiene en modules.enabled). Para
+    // bodega/otros NO está en su enabled → oculto. Era un módulo huérfano (1446
+    // LOC, /api/recetas) que ruteaba pero no estaba en ningún menú. Brandon 2026-06-21.
     tabs: [
       "productos",
       "inventario",
+      "recetas",
     ],
   },
 
