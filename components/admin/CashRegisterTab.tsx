@@ -238,6 +238,24 @@ export default function CashRegisterTab() {
   const [arqueoFoto, setArqueoFoto] = useState<string | null>(null);
   const fotoInputRef = useRef<HTMLInputElement>(null);
 
+  // Umbral de alerta de exceso de efectivo: viene de Settings (cashAlertMax),
+  // configurable en Configuración → Caja. Antes se leía de localStorage (default
+  // 1000) e IGNORABA el valor que el dueño configuraba. Brandon 2026-06-20.
+  const [cashAlertMax, setCashAlertMax] = useState<number>(500);
+  useEffect(() => {
+    let active = true;
+    // credentials same-origin: /api/settings sólo devuelve cashAlertMax al caller
+    // con sesión admin (tryAdmin); sin la cookie el campo se strippea (ADMIN_ONLY).
+    fetch("/api/settings", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const v = Number(d?.cashAlertMax);
+        if (active && Number.isFinite(v) && v > 0) setCashAlertMax(v);
+      })
+      .catch(() => { /* mantiene el default si falla */ });
+    return () => { active = false; };
+  }, []);
+
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/cash-registers");
@@ -802,7 +820,7 @@ export default function CashRegisterTab() {
 
               {/* Mejora 7: Alerta de exceso de efectivo */}
               {(() => {
-                const threshold = (() => { try { const v = localStorage.getItem("cash-alert-threshold"); return v ? Number(v) : 1000; } catch { return 1000; } })();
+                const threshold = cashAlertMax;
                 const efectivoEnCaja = stats?.expectedCash ?? 0;
                 if (efectivoEnCaja <= threshold) return null;
                 return (
