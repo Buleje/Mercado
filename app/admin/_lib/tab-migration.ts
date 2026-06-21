@@ -68,7 +68,8 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   rrhh: "config", nomina: "config", sucursales: "config",
   comunicaciones: "config", "hub-comunicaciones": "config",
   chat: "config", "plantillas-mensaje": "config", notificaciones: "config",
-  proyectos: "config", tareas: "config", kanban: "config",
+  // "tareas" ya NO migra a config: ahora es tab real del hub Equipo (TasksTab montado).
+  proyectos: "config", kanban: "config",
   "tablero-metas": "config", "proyectos-tareas": "config",
   "alertas-automatizacion": "config", "alertas-automaticas": "config",
   recordatorios: "config", flujos: "config", "reglas-negocio": "config",

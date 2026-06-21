@@ -40,6 +40,9 @@ export type Tab =
   // Crecimiento (Marketing & Fidelización) — Ola 1
   | "campanas"
   | "puntos"
+  // Equipo (tareas + notas) — huérfanos montados
+  | "tareas"
+  | "notas"
   // Módulos de operaciones de marketplace y delivery
   | "marketplace"
   | "delivery-partners"
@@ -108,6 +111,8 @@ export const VALID_TABS: readonly Tab[] = [
   "metas-logros",
   "campanas",
   "puntos",
+  "tareas",
+  "notas",
   "forecasting",
   "marketplace",
   "delivery-partners",

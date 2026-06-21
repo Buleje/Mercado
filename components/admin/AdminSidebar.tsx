@@ -212,6 +212,17 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
       { id: "turnos", label: "Turnos" },
     ],
   },
+  // Equipo (tareas + notas) — herramientas operativas huérfanas montadas. Brandon 2026-06-20.
+  {
+    id: "equipo",
+    label: "Equipo",
+    icon: ClipboardList,
+    group: "operaciones",
+    tabs: [
+      { id: "tareas", label: "Tareas" },
+      { id: "notas", label: "Notas" },
+    ],
+  },
   // ── ENRICH-5: Marketplace/venta visible ──────────────────────────────
   // Módulos bridge desde el marketplace (Bodega al Mes, Gift Cards, Socio, Lives).
   {
