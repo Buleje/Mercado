@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import {
   TrendingUp, TrendingDown, PieChart as PieChartIcon, Target,
-  FileBarChart, Waves, Calculator,
+  FileBarChart, Waves, Calculator, GitCompareArrows,
   DollarSign, Wallet,
   BarChart3, Percent, Truck, CreditCard, RefreshCw, AlertTriangle, Maximize2, X as XIcon,
   Landmark, HandCoins, Banknote, Coins, Construction, Gauge,
@@ -59,6 +59,9 @@ const WeeklyCashFlowTable = dynamic(() => import("@/components/admin/WeeklyCashF
 const HistorialCierresTab = dynamic(() => import("@/components/admin/HistorialCierresTab"), { loading: S });
 const PresupuestoMensualTab = dynamic(() => import("@/components/admin/finanzas/PresupuestoMensualTab"), { loading: S });
 const ReporteMensualTab     = dynamic(() => import("@/components/admin/ReporteMensualTab"),              { loading: S });
+// Comparador de períodos: estaba huérfano (0 imports); real (/api/admin/dashboard),
+// read-only, distinto del dashboard. Montado tras verificar. Brandon 2026-06-20.
+const PeriodComparatorTab   = dynamic(() => import("@/components/admin/PeriodComparatorTab"),            { loading: S });
 // Inteligencia (BI operacional) movida a AnalisisHubModule → components/admin/analisis/InteligenciaTab.tsx
 // DocumentosEmitidosTab → movido a categoría Documentos (no es finanzas)
 const TreasuryDashboard = dynamic(() => import("@/components/admin/TreasuryDashboard"), { loading: S });
@@ -85,6 +88,7 @@ const TABS = [
   { id: "presupuesto" as const,      label: "Presupuesto",              icon: Target       },
   { id: "flujo-caja" as const,       label: "Flujo de Caja",            icon: Waves        },
   { id: "reportes" as const,         label: "Reportes",                 icon: FileBarChart },
+  { id: "comparador" as const,       label: "Comparador",               icon: GitCompareArrows },
   { id: "tesoreria" as const,        label: "Tesorería",                icon: Landmark     },
   // ── Crédito y capital (consolidados desde módulos top-level) ──
   { id: "por-cobrar" as const,       label: "Por cobrar",               icon: CreditCard   },
@@ -1260,6 +1264,7 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
           </div>
         </div>
       )}
+      {sub === "comparador" && <PeriodComparatorTab />}
       {sub === "tesoreria" && (
         <Suspense fallback={<S />}>
           <TreasuryDashboard />
