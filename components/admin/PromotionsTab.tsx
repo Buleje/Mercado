@@ -143,6 +143,8 @@ export default function PromotionsTab() {
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [campaignForm, setCampaignForm] = useState(emptyCampaign);
   const [savingCampaign, setSavingCampaign] = useState(false);
+  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
+  const [campaignFeedback, setCampaignFeedback] = useState<{ id: string; text: string; ok: boolean } | null>(null);
 
   const campaignTemplates: { name: string; icon: string; description: string; form: PromoForm }[] = [
     { name: "🎄 Navidad & Año Nuevo", icon: "🎄", description: "Descuento navideño para fiestas de fin de año",
@@ -352,9 +354,52 @@ export default function PromotionsTab() {
     }
   };
 
-  const sendCampaignNow = (c: ScheduledCampaign) => {
-    alert(`Enviando campaña "${c.name}" ahora...\n\nSegmento: ${c.targetSegment}\nMensaje: ${c.messageTemplate}\nCódigo: ${c.discountCode}`);
-    // In production, call /api/campaigns/send
+  // Resuelve los teléfonos del segmento (best-effort con los datos del cliente
+  // que ya tenemos). El backend filtra además por consentimiento (notifPromotions).
+  const segmentPhones = (segment: string): string[] => {
+    const s = (segment || "all").toLowerCase();
+    let list = customers;
+    if (s === "loyal" || s === "champions" || s === "vip") {
+      list = customers.filter(c => ["oro", "diamante"].includes((c.loyaltyTier || "").toLowerCase()));
+    } else if (s === "deudores") {
+      list = customers.filter(c => (c.creditBalance ?? 0) < 0);
+    }
+    // all / at-risk / lost / new / promising → todos (segmentación fina vive en Crecimiento → Campañas)
+    return list.map(c => c.phone).filter(Boolean);
+  };
+
+  const sendCampaignNow = async (c: ScheduledCampaign) => {
+    const phones = segmentPhones(c.targetSegment);
+    if (phones.length === 0) {
+      setCampaignFeedback({ id: c.id, text: "No hay clientes en ese segmento.", ok: false });
+      return;
+    }
+    setSendingCampaignId(c.id);
+    setCampaignFeedback(null);
+    try {
+      const message = c.discountCode && !c.messageTemplate.includes(c.discountCode)
+        ? `${c.messageTemplate}\n\nCódigo: ${c.discountCode}`
+        : c.messageTemplate;
+      const res = await fetch("/api/campaigns/notify", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ phones, title: c.name, message }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCampaignFeedback({
+          id: c.id,
+          text: `Enviado a ${data.sent} cliente${data.sent === 1 ? "" : "s"} (notificación en la app).${data.skipped ? ` ${data.skipped} sin permiso de promociones.` : ""}`,
+          ok: true,
+        });
+      } else {
+        setCampaignFeedback({ id: c.id, text: "No se pudo enviar la campaña.", ok: false });
+      }
+    } catch {
+      setCampaignFeedback({ id: c.id, text: "Error de red al enviar.", ok: false });
+    } finally {
+      setSendingCampaignId(null);
+    }
   };
 
   // ── AI Suggestions ─────────────────────────────────────────────────────────
@@ -550,10 +595,11 @@ export default function PromotionsTab() {
                         <>
                           <button
                             onClick={() => sendCampaignNow(c)}
-                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                            disabled={sendingCampaignId === c.id}
+                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors"
                             title="Enviar ahora"
                           >
-                            <Send className="h-4 w-4" />
+                            {sendingCampaignId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                           </button>
                           <button
                             onClick={() => toggleCampaignStatus(c.id)}
@@ -582,6 +628,11 @@ export default function PromotionsTab() {
                       </button>
                     </div>
                   </div>
+                  {campaignFeedback?.id === c.id && (
+                    <p className={cn("mt-2 text-xs font-semibold", campaignFeedback.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
+                      {campaignFeedback.text}
+                    </p>
+                  )}
                 </div>
               );
             })}

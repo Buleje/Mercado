@@ -1,239 +1,386 @@
-﻿"use client";
+"use client";
 
 import { CardTitle, PageTitle } from "@buleje/design-system";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Megaphone, Download, Search, Eye, X,
-  Mail, Smartphone, Users,
-  BarChart3,
+  Megaphone, Plus, Trash2, X, Users, Clock, CheckCircle2,
+  Loader2, MessageCircle, Bell, Send, Ban, Eye, TrendingUp,
 } from "@buleje/design-system/icons";
-import { cn, exportToCSV } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types (alineados con /api/campaigns + CampaignsDB) ──────────────────────────
 
-type CampaignType = "email" | "sms" | "push" | "mixto";
-type CampaignStatus = "borrador" | "activa" | "pausada" | "completada" | "cancelada";
-type TriggerType = "manual" | "cumpleaños" | "abandono-carrito" | "inactividad" | "primera-compra" | "recurrente";
+type Segment = "todos" | "vip" | "inactivos" | "cumpleanos" | "deudores";
+type Channel = "whatsapp" | "inapp" | "ambos";
+type Status = "borrador" | "programada" | "activa" | "completada" | "cancelada";
 
 type Campaign = {
   id: string;
   name: string;
-  type: CampaignType;
-  status: CampaignStatus;
-  trigger: TriggerType;
-  segment: string;
-  sentCount: number;
-  openRate: number;
-  clickRate: number;
+  message: string;
+  segment: Segment;
+  channel: Channel;
+  status: Status;
+  scheduledAt: string | null;
+  sentAt: string | null;
+  totalAudience: number;
+  delivered: number;
+  opened: number;
   conversions: number;
   revenue: number;
-  cost: number;
-  startDate: string;
-  endDate: string | null;
+  createdAt: string;
 };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Meta ────────────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
-const pct = (n: number) => n.toFixed(1) + "%";
-
-const TYPE_META: Record<CampaignType, { label: string; icon: typeof Mail; color: string }> = {
-  email: { label: "Email", icon: Mail, color: "text-[var(--data-success-500)]" },
-  sms:   { label: "SMS",   icon: Smartphone, color: "text-[var(--data-success-500)]" },
-  push:  { label: "Push",  icon: Megaphone, color: "text-[var(--text-secondary)]" },
-  mixto: { label: "Mixto", icon: Users, color: "text-[var(--data-warning-500)]" },
+const SEGMENT_LABELS: Record<Segment, string> = {
+  todos: "Todos los clientes",
+  vip: "VIP (oro + diamante)",
+  inactivos: "Inactivos (30 días)",
+  cumpleanos: "Cumpleañeros del mes",
+  deudores: "Con deuda (fiado)",
 };
 
-const STATUS_META: Record<CampaignStatus, { label: string; color: string; bg: string }> = {
-  borrador:   { label: "Borrador",   color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]/30" },
-  activa:     { label: "Activa",     color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  pausada:    { label: "Pausada",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  completada: { label: "Completada", color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  cancelada:  { label: "Cancelada",  color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
+const CHANNEL_META: Record<Channel, { label: string; icon: typeof MessageCircle }> = {
+  whatsapp: { label: "WhatsApp", icon: MessageCircle },
+  inapp: { label: "App", icon: Bell },
+  ambos: { label: "WhatsApp + App", icon: Send },
 };
 
-const TRIGGER_LABELS: Record<TriggerType, string> = {
-  manual: "Manual", "cumpleaños": "Cumpleaños", "abandono-carrito": "Abandono Carrito",
-  inactividad: "Inactividad (30d)", "primera-compra": "Post 1ra Compra", recurrente: "Recurrente Semanal",
+const STATUS_META: Record<Status, { label: string; color: string; bg: string }> = {
+  borrador:   { label: "Borrador",   color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]" },
+  programada: { label: "Programada", color: "text-[var(--data-info-500)]",    bg: "bg-[var(--data-info-50)] dark:bg-[var(--data-info-500)]/15" },
+  activa:     { label: "Activa",     color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15" },
+  completada: { label: "Completada", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  cancelada:  { label: "Cancelada",  color: "text-[var(--data-error-500)]",   bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15" },
 };
 
-// ── Seed Data ─────────────────────────────────────────────────────────────────
+const fmtDate = (s: string | null) =>
+  s ? new Date(s).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
 
-const SEED: Campaign[] = [];
+// datetime-local con la hora local actual (sin segundos)
+const nowLocalInput = () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+};
+
+type FormState = {
+  name: string;
+  message: string;
+  segment: Segment;
+  channel: Channel;
+  mode: "ahora" | "programar" | "borrador";
+  scheduledAt: string;
+};
+
+const emptyForm: FormState = {
+  name: "", message: "", segment: "todos", channel: "whatsapp", mode: "ahora", scheduledAt: "",
+};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function MarketingAutomationTab() {
-  const [campaigns] = useState(SEED);
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<CampaignStatus | "todos">("todos");
-  const [filterType, setFilterType] = useState<CampaignType | "todos">("todos");
-  const [detail, setDetail] = useState<Campaign | null>(null);
+export default function MarketingAutomationTab({
+  initialSegment,
+  onConsumeSegment,
+}: { initialSegment?: string | null; onConsumeSegment?: () => void } = {}) {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [audience, setAudience] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    let list = [...campaigns];
-    if (filterStatus !== "todos") list = list.filter(c => c.status === filterStatus);
-    if (filterType !== "todos") list = list.filter(c => c.type === filterType);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(c => c.name.toLowerCase().includes(q) || c.segment.toLowerCase().includes(q));
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/campaigns");
+      if (res.ok) setCampaigns(await res.json());
+    } catch {
+      /* silencioso: lista vacía si falla */
+    } finally {
+      setLoading(false);
     }
-    return list;
-  }, [campaigns, filterStatus, filterType, search]);
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  // Apertura cross-tab desde "Segmentos": pre-carga el form con el segmento elegido.
+  useEffect(() => {
+    if (!initialSegment) return;
+    const seg = (Object.keys(SEGMENT_LABELS) as Segment[]).includes(initialSegment as Segment)
+      ? (initialSegment as Segment)
+      : "todos";
+    setForm({ ...emptyForm, segment: seg });
+    setError(null);
+    setShowForm(true);
+    onConsumeSegment?.();
+  }, [initialSegment, onConsumeSegment]);
+
+  // Cerrar modal con Escape (ui-components rule: modal = click-fuera + Escape)
+  useEffect(() => {
+    if (!showForm) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowForm(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showForm]);
+
+  // Preview de audiencia en vivo cuando cambia el segmento del form
+  useEffect(() => {
+    if (!showForm) return;
+    let active = true;
+    setAudience(null);
+    fetch(`/api/campaigns/audience-count?segment=${form.segment}`)
+      .then(r => (r.ok ? r.json() : { count: 0 }))
+      .then(d => { if (active) setAudience(d.count ?? 0); })
+      .catch(() => { if (active) setAudience(0); });
+    return () => { active = false; };
+  }, [form.segment, showForm]);
 
   const stats = useMemo(() => {
-    const active = campaigns.filter(c => c.status === "activa").length;
-    const totalRevenue = campaigns.reduce((s, c) => s + c.revenue, 0);
-    const totalCost = campaigns.reduce((s, c) => s + c.cost, 0);
-    const totalConversions = campaigns.reduce((s, c) => s + c.conversions, 0);
-    const roi = totalCost > 0 ? ((totalRevenue - totalCost) / totalCost) * 100 : 0;
-    return { active, totalRevenue, totalConversions, roi };
+    const programadas = campaigns.filter(c => c.status === "programada").length;
+    const completadas = campaigns.filter(c => c.status === "completada").length;
+    const alcance = campaigns.reduce((s, c) => s + (c.delivered || 0), 0);
+    return { total: campaigns.length, programadas, completadas, alcance };
   }, [campaigns]);
+
+  const submit = async () => {
+    setError(null);
+    if (!form.name.trim() || !form.message.trim()) {
+      setError("Ponle nombre y mensaje a la campaña.");
+      return;
+    }
+    const isScheduled = form.mode !== "borrador";
+    const scheduledAt = form.mode === "programar" ? form.scheduledAt : form.mode === "ahora" ? nowLocalInput() : null;
+    if (form.mode === "programar" && !scheduledAt) {
+      setError("Elige fecha y hora para programar.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/campaigns", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          name: form.name.trim(),
+          message: form.message.trim(),
+          segment: form.segment,
+          channel: form.channel,
+          status: isScheduled ? "programada" : "borrador",
+          scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        }),
+      });
+      if (!res.ok) {
+        setError("No se pudo crear la campaña.");
+        return;
+      }
+      // Optimistic: el POST devuelve la campaña creada — la mostramos al instante
+      // (el GET con "use cache" puede tardar ~1s en revalidar el tag).
+      const created = (await res.json()) as Campaign;
+      setCampaigns(prev => [created, ...prev]);
+      setShowForm(false);
+      setForm(emptyForm);
+      void load();
+    } catch {
+      setError("Error de red al crear la campaña.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const patchStatus = async (id: string, status: Status) => {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/campaigns?id=${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) await load();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const remove = async (id: string) => {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/campaigns?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: csrfHeaders({}),
+      });
+      if (res.ok) setCampaigns(prev => prev.filter(c => c.id !== id));
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <Megaphone className="h-6 w-6 text-primary" /> Marketing Automation
+          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+            <Megaphone className="h-6 w-6 text-primary" /> Campañas
           </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Campañas automáticas, segmentación y seguimiento de ROI</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">Envía promos y avisos a tus clientes por WhatsApp o por la app, segmentado.</p>
         </div>
-        <button onClick={() => exportToCSV(campaigns.map(c => ({ nombre: c.name, tipo: TYPE_META[c.type].label, estado: STATUS_META[c.status].label, trigger: TRIGGER_LABELS[c.trigger], enviados: c.sentCount, apertura: c.openRate, clicks: c.clickRate, conversiones: c.conversions, revenue: c.revenue, costo: c.cost })), "marketing-campañas")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-          <Download className="h-4 w-4" /> Exportar
+        <button
+          onClick={() => { setForm(emptyForm); setError(null); setShowForm(true); }}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Nueva campaña
         </button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Campañas activas", value: String(stats.active), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Revenue total", value: fmt(stats.totalRevenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-          { label: "Conversiones", value: stats.totalConversions.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
-          { label: "ROI campañas", value: pct(stats.roi), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-        ].map(({ label, value, color, bg }) => (
+          { label: "Campañas", value: String(stats.total), bg: "bg-[var(--surface-sunken)]", color: "text-[var(--text-primary)]" },
+          { label: "Programadas", value: String(stats.programadas), bg: "bg-[var(--data-info-50)] dark:bg-[var(--data-info-500)]/15", color: "text-[var(--data-info-500)]" },
+          { label: "Completadas", value: String(stats.completadas), bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)]" },
+          { label: "Clientes alcanzados", value: stats.alcance.toLocaleString("es-PE"), bg: "bg-[var(--surface-sunken)]", color: "text-[var(--text-primary)]" },
+        ].map(({ label, value, bg, color }) => (
           <div key={label} className={cn("rounded-xl p-4", bg)}>
-            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{label}</p>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">{label}</p>
             <p className={cn("text-xl font-extrabold", color)}>{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, segmento..." className="w-full pl-9 pr-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-        </div>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as CampaignStatus | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todos los estados</option>
-          {(Object.keys(STATUS_META) as CampaignStatus[]).map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
-        </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value as CampaignType | "todos")} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          <option value="todos">Todos los tipos</option>
-          {(Object.keys(TYPE_META) as CampaignType[]).map(t => <option key={t} value={t}>{TYPE_META[t].label}</option>)}
-        </select>
-      </div>
-
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-              <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Estado</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Campaña</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Tipo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Trigger</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Enviados</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Apertura</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Clicks</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Conv.</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Revenue</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-              {filtered.length === 0 && <tr><td colSpan={10} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">Sin campañas.</td></tr>}
-              {filtered.map(c => {
-                const st = STATUS_META[c.status];
-                const tp = TYPE_META[c.type];
-                const TpIcon = tp.icon;
-                return (
-                  <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs">{c.name}</p>
-                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.segment}</p>
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", tp.color)}><TpIcon className="h-3 w-3" />{tp.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)]">{TRIGGER_LABELS[c.trigger]}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.sentCount.toLocaleString("es-PE")}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{pct(c.openRate)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-[var(--text-secondary)]">{pct(c.clickRate)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--data-success-500)]">{c.conversions}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(c.revenue)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Funnel */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-3">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Embudo de conversión (campañas activas)</CardTitle>
-        {(() => {
-          const active = campaigns.filter(c => c.status === "activa");
-          const totalSent = active.reduce((s, c) => s + c.sentCount, 0);
-          const totalOpened = active.reduce((s, c) => s + Math.round(c.sentCount * c.openRate / 100), 0);
-          const totalClicked = active.reduce((s, c) => s + Math.round(c.sentCount * c.clickRate / 100), 0);
-          const totalConv = active.reduce((s, c) => s + c.conversions, 0);
-          const steps = [
-            { label: "Enviados", value: totalSent, color: "bg-[var(--accent-soft)]" },
-            { label: "Abiertos", value: totalOpened, color: "bg-[var(--text-primary)]" },
-            { label: "Clicks", value: totalClicked, color: "bg-[var(--data-warning-500)]" },
-            { label: "Conversiones", value: totalConv, color: "bg-[var(--accent-soft)]" },
-          ];
-          return (
-            <div className="space-y-2">
-              {steps.map(s => {
-                const w = totalSent > 0 ? (s.value / totalSent) * 100 : 0;
-                return (
-                  <div key={s.label} className="space-y-1">
-                    <div className="flex justify-between text-xs"><span className="text-[var(--text-secondary)] dark:text-muted">{s.label}</span><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.value.toLocaleString("es-PE")}</span></div>
-                    <div className="h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className={cn("h-full rounded-full", s.color)} style={{ width: `${Math.max(w, 2)}%` }} /></div>
+      {/* Lista */}
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
+        {loading ? (
+          <div className="p-8 flex items-center justify-center text-[var(--text-tertiary)] text-sm gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Cargando campañas…
+          </div>
+        ) : campaigns.length === 0 ? (
+          <div className="p-10 text-center">
+            <Megaphone className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Aún no tienes campañas</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">Crea tu primera promo segmentada para que tus clientes vuelvan.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[var(--rule-soft)]">
+            {campaigns.map(c => {
+              const st = STATUS_META[c.status] ?? STATUS_META.borrador;
+              const ch = CHANNEL_META[c.channel] ?? CHANNEL_META.whatsapp;
+              const ChIcon = ch.icon;
+              const segLabel = SEGMENT_LABELS[c.segment] ?? c.segment;
+              const busy = busyId === c.id;
+              return (
+                <div key={c.id} className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span>
+                      <p className="font-bold text-sm text-[var(--text-primary)] truncate">{c.name}</p>
+                    </div>
+                    <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">{c.message}</p>
+                    <div className="flex items-center gap-3 flex-wrap mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                      <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" />{segLabel} · {c.totalAudience}</span>
+                      <span className="inline-flex items-center gap-1"><ChIcon className="h-3 w-3" />{ch.label}</span>
+                      {c.scheduledAt && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{fmtDate(c.scheduledAt)}</span>}
+                      {c.sentAt && (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-[var(--data-success-500)]"><CheckCircle2 className="h-3 w-3" />Enviada {fmtDate(c.sentAt)}</span>
+                          <span className="inline-flex items-center gap-1"><Send className="h-3 w-3" />{c.delivered || 0} entregados</span>
+                          <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" />{c.opened || 0} abiertos{(c.delivered || 0) > 0 ? ` (${Math.round(((c.opened || 0) / c.delivered) * 100)}%)` : ""}</span>
+                          {(c.conversions || 0) > 0 && <span className="inline-flex items-center gap-1 text-[var(--data-success-500)]"><TrendingUp className="h-3 w-3" />{c.conversions} conversiones</span>}
+                        </>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          );
-        })()}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {(c.status === "programada" || c.status === "borrador" || c.status === "activa") && (
+                      <button
+                        onClick={() => patchStatus(c.id, "cancelada")}
+                        disabled={busy}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning-500)]/15 disabled:opacity-50 transition-colors"
+                      >
+                        <Ban className="h-3.5 w-3.5" /> Cancelar
+                      </button>
+                    )}
+                    <button
+                      onClick={() => remove(c.id)}
+                      disabled={busy}
+                      aria-label="Eliminar campaña"
+                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 disabled:opacity-50 transition-colors"
+                    >
+                      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+      <p className="text-xs text-[var(--text-tertiary)]">
+        Las campañas <span className="font-semibold">programadas por WhatsApp</span> se envían automáticamente a la hora indicada, solo a clientes que aceptaron promociones.
+      </p>
+
+      {/* Modal crear */}
+      {showForm && (
+        <div className="modal-backdrop p-4" onClick={() => setShowForm(false)}>
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{detail.name}</CardTitle>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <CardTitle className="font-extrabold text-[var(--text-primary)] text-base flex items-center gap-2"><Megaphone className="h-5 w-5 text-primary" /> Nueva campaña</CardTitle>
+              <button onClick={() => setShowForm(false)} aria-label="Cerrar"><X className="h-5 w-5 text-[var(--text-tertiary)]" /></button>
             </div>
-            <div className="space-y-2 text-sm">
-              {[
-                ["Tipo", TYPE_META[detail.type].label], ["Estado", STATUS_META[detail.status].label],
-                ["Trigger", TRIGGER_LABELS[detail.trigger]], ["Segmento", detail.segment],
-                ["Enviados", detail.sentCount.toLocaleString("es-PE")],
-                ["Tasa apertura", pct(detail.openRate)], ["Tasa clicks", pct(detail.clickRate)],
-                ["Conversiones", String(detail.conversions)], ["Revenue", fmt(detail.revenue)],
-                ["Costo", fmt(detail.cost)],
-                ["ROI", detail.cost > 0 ? pct(((detail.revenue - detail.cost) / detail.cost) * 100) : "—"],
-                ["Inicio", detail.startDate], ["Fin", detail.endDate ?? "En curso"],
-              ].map(([k, v]) => (
-                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
-                  <span className="text-[var(--text-secondary)] dark:text-muted shrink-0">{k}</span>
-                  <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{v}</span>
-                </div>
-              ))}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Oferta de fin de semana" className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary" />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Mensaje</label>
+              <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Hola {{nombre}}, hoy tenemos 20% en arroz. ¡Pásate por la bodega!" className="w-full px-3 py-2 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary resize-none" />
+              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Usa <span className="font-mono font-semibold">{"{{nombre}}"}</span> para personalizar con el nombre del cliente.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--text-secondary)]">A quién</label>
+                <select value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value as Segment }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary">
+                  {(Object.keys(SEGMENT_LABELS) as Segment[]).map(s => <option key={s} value={s}>{SEGMENT_LABELS[s]}</option>)}
+                </select>
+                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] inline-flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {audience === null ? "Calculando…" : `${audience} cliente${audience === 1 ? "" : "s"} alcanzables`}
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--text-secondary)]">Canal</label>
+                <select value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value as Channel }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary">
+                  {(Object.keys(CHANNEL_META) as Channel[]).map(c => <option key={c} value={c}>{CHANNEL_META[c].label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[var(--text-secondary)]">Cuándo</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([["ahora", "Ahora"], ["programar", "Programar"], ["borrador", "Borrador"]] as const).map(([m, lbl]) => (
+                  <button key={m} type="button" onClick={() => setForm(f => ({ ...f, mode: m }))} className={cn("h-11 rounded-xl text-sm font-semibold border-2 transition-colors", form.mode === m ? "border-primary bg-primary/5 text-primary" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}>{lbl}</button>
+                ))}
+              </div>
+              {form.mode === "programar" && (
+                <input type="datetime-local" value={form.scheduledAt} min={nowLocalInput()} onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary" />
+              )}
+            </div>
+
+            {error && <p className="text-xs font-semibold text-[var(--data-error-500)]">{error}</p>}
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+              <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {form.mode === "borrador" ? "Guardar borrador" : form.mode === "programar" ? "Programar" : "Crear y enviar"}
+              </button>
             </div>
           </div>
         </div>

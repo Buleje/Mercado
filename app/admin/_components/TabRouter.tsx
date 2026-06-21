@@ -34,6 +34,8 @@ const FinanzasModule          = dynamic(() => import("@/components/admin/unified
 const CRMClientesModule       = dynamic(() => import("@/components/admin/unified/CRMClientesModule"),       { loading: TabSpinner });
 // leads-funnel → sub-tab "Leads" de CRMClientesModule (ver dispatch)
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
+// Crecimiento (Marketing & Fidelización) — Ola 1: Campañas + Puntos consolidados
+const CrecimientoHubModule    = dynamic(() => import("@/components/admin/unified/CrecimientoHubModule"),    { loading: TabSpinner });
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
 const DocumentosHubModule     = dynamic(() => import("@/components/admin/unified/DocumentosHubModule"),    { loading: TabSpinner });
 const DeliveryPartnersModule  = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"),  { loading: TabSpinner });
@@ -282,6 +284,10 @@ export function TabRouter({
   if (tab === "ai-command")     return <AsistenteIAHubModule key="ai-command" initialTab="comandos" />;
   if (tab === "sugerencias-ia") return <AsistenteIAHubModule key="sugerencias-ia" initialTab="sugerencias" />;
   if (tab === "metas-logros")   return <MetasLogrosModule />;
+
+  // ── Crecimiento (Marketing & Fidelización) — Ola 1 ──
+  if (tab === "campanas") return <CrecimientoHubModule key="campanas" initialTab="campanas" />;
+  if (tab === "puntos")   return <CrecimientoHubModule key="puntos" initialTab="puntos" />;
 
   // ── Marketplace & Delivery ──
   if (tab === "marketplace")       return <MarketplaceModule key="marketplace" />;

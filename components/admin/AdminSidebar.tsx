@@ -30,6 +30,7 @@ import {
   Repeat,
   Gift,
   HeartHandshake,
+  Megaphone,
   Radio,
   Store as StoreIcon,
   type LucideIcon,
@@ -188,6 +189,18 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
       { id: "delivery", label: "Delivery" },
       { id: "resenas", label: "Opiniones" },
       { id: "fidelizacion", label: "Clientes frecuentes" },
+    ],
+  },
+  // Crecimiento (Marketing & Fidelización) — Ola 1, Brandon 2026-06-20.
+  // Campañas segmentadas (/api/campaigns) + programa de puntos (/api/loyalty).
+  {
+    id: "crecimiento",
+    label: "Crecimiento",
+    icon: Megaphone,
+    group: "operaciones",
+    tabs: [
+      { id: "campanas", label: "Campañas" },
+      { id: "puntos", label: "Puntos & Fidelización" },
     ],
   },
   {
