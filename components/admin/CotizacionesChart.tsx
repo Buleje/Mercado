@@ -39,16 +39,19 @@ export default function CotizacionesChart({
   monthlyData,
   topClientes,
   formatCurrency,
-  emptyCot,
 }: CotizacionesChartProps) {
+  // Gráficos sin datos NO se muestran (se ocultan). Si no hay nada, todo el bloque se oculta.
+  const hasMonthly = monthlyData.some((d) => d.count > 0);
+  const hasClientes = topClientes.length > 0;
+  if (!hasMonthly && !hasClientes) return null;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* AreaChart: cotizaciones emitidas por mes */}
+      {/* AreaChart: cotizaciones emitidas por mes — se oculta si no hay datos */}
+      {hasMonthly && (
       <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-4">
           Cotizaciones por mes
         </p>
-        {monthlyData.some((d) => d.count > 0) ? (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
             <AreaChart data={monthlyData}>
               <defs>
@@ -82,17 +85,15 @@ export default function CotizacionesChart({
               />
             </AreaChart>
           </ResponsiveContainer>
-        ) : (
-          emptyCot("Sin cotizaciones en los últimos meses")
-        )}
       </div>
+      )}
 
-      {/* Top 5 clientes */}
+      {/* Top 5 clientes — se oculta si no hay datos */}
+      {hasClientes && (
       <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-4">
           Top 5 clientes por monto
         </p>
-        {topClientes.length > 0 ? (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
             <BarChart data={topClientes} layout="vertical">
               <CartesianGrid
@@ -122,10 +123,8 @@ export default function CotizacionesChart({
               <Bar dataKey="monto" fill="var(--accent)" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        ) : (
-          emptyCot("Sin datos de clientes")
-        )}
       </div>
+      )}
     </div>
   );
 }

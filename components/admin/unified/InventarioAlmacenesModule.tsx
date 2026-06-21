@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import {
   LayoutDashboard, AlertTriangle, Package, ArrowLeftRight, CalendarClock, TrendingDown,
-  TrendingUp, DollarSign, Boxes, AlertCircle, XCircle, Hash, RotateCw,
+  DollarSign, Boxes, AlertCircle, XCircle, Hash, RotateCw,
   ListChecks, Maximize2, X as XIcon,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -22,7 +22,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
 import ChartExpandModal from "@/components/admin/shared/ChartExpandModal";
 import DashboardSkeleton from "@/components/admin/shared/DashboardSkeleton";
-import EmptyState from "@/components/admin/shared/EmptyState";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 import ExportButton from "@/components/admin/shared/ExportButton";
 import PeriodSelector from "@/components/admin/shared/PeriodSelector";
 import FavStar from "@/components/admin/shared/FavStar";
@@ -174,9 +174,8 @@ function CategoryTreemapView() {
         </button>
       </div>
 
-      {treemapData.length === 0 ? (
-        <p className="text-center text-[var(--text-tertiary)] py-8">No hay datos de inventario para mostrar</p>
-      ) : (
+      {/* Guard: sin datos reales el treemap no se muestra */}
+      {treemapData.length === 0 ? null : (
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <ResponsiveContainer minWidth={0} width="100%" height={320}>
             <Treemap
@@ -322,7 +321,12 @@ function InventoryAnalyticsDashboard() {
 
   if (products.length === 0) {
     return (
-      <EmptyState icon={TrendingUp} title="No hay productos para analizar" description="Los datos apareceran cuando registres productos" />
+      <ChartsEmptyState
+        icon={Package}
+        title="Todavía no hay productos en tu inventario"
+        description="Cuando registres tus productos vas a ver acá los gráficos de valor por categoría, top rentables y predicción de agotamiento."
+        action={{ label: "Ir a Stock", onClick: undefined }}
+      />
     );
   }
 
@@ -361,8 +365,8 @@ function InventoryAnalyticsDashboard() {
         ))}
       </div>
 
-      {/* ── 2. Distribucion por Categoria ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ── 2. Distribucion por Categoria — se oculta si no hay categorías ── */}
+      {categoryData.length > 0 && (<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pie Chart */}
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
@@ -456,10 +460,10 @@ function InventoryAnalyticsDashboard() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </div>)}
 
-      {/* ── 3. Top 10 Productos por Valor ── */}
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
+      {/* ── 3. Top 10 Productos por Valor — se oculta si todos tienen valor 0 ── */}
+      {top10Value.some(p => p.value > 0) && (<div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-bold text-[var(--text-primary)]">Top 10 Productos por Valor en Stock</h4>
           <FavStar id="top10" favs={invFavs} />
@@ -495,7 +499,7 @@ function InventoryAnalyticsDashboard() {
             </div>
           ))}
         </div>
-      </div>
+      </div>)}
 
       {/* ── 4. Análisis de Rotación: sección placeholder eliminada (audit
           2026-05-29) — siempre mostraba "Sin datos suficientes" y generaba
@@ -554,8 +558,8 @@ function InventoryAnalyticsDashboard() {
         ) : null;
       })()}
 
-      {/* ── 6. Prediccion de Agotamiento ── */}
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
+      {/* ── 6. Prediccion de Agotamiento — se oculta si no hay productos con stock ── */}
+      {depletionData.length > 0 && (<div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-bold text-[var(--text-primary)]">Prediccion de Agotamiento</h4>
           <FavStar id="agotamiento" favs={invFavs} />
@@ -585,10 +589,7 @@ function InventoryAnalyticsDashboard() {
             );
           })}
         </div>
-        {depletionData.length === 0 && (
-          <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Todos los productos tienen stock suficiente</p>
-        )}
-      </div>
+      </div>)}
 
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (

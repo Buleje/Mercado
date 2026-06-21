@@ -2,6 +2,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useReportChartEmpty } from "@/components/admin/shared/ChartManager";
 import {
   ComposedChart,
   Bar,
@@ -219,6 +220,11 @@ export default function SalesTrendChart() {
     { key: "30d", label: "30D" },
     { key: "90d", label: "90D" },
   ];
+
+  // Reporta vacío si no hay días o todos están en cero (sin ventas reales) → el
+  // ChartManager oculta el gráfico. En error NO reporta (deja ver el mensaje).
+  const isEmpty = chartData.length === 0 || chartData.every(d => (d.total ?? 0) === 0);
+  useReportChartEmpty(!error && isEmpty, !loading);
 
   // ── Loading ──
   if (loading) {

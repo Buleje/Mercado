@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { RefreshCw, AlertTriangle, TrendingDown, TrendingUp, DollarSign } from "@buleje/design-system/icons";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -253,9 +254,11 @@ export default function FiadoAnalyticsPanel() {
   // ── Empty ──
   if (!totales) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-[var(--text-tertiary)]">No hay datos de fiados registrados</p>
-      </div>
+      <ChartsEmptyState
+        title="Todavía no hay fiados registrados"
+        description="Cuando empieces a registrar fiados, acá vas a ver el análisis de deuda, antigüedad y tendencia de cobro."
+        className="rounded-xl"
+      />
     );
   }
 
@@ -299,7 +302,8 @@ export default function FiadoAnalyticsPanel() {
 
       {/* Charts row */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Donut */}
+        {/* Donut — se oculta el bloque completo si no hay datos */}
+        {donutData.length > 0 && (
         <div className="flex-1">
           <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Distribucion por antiguedad
@@ -337,11 +341,7 @@ export default function FiadoAnalyticsPanel() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
-              Sin datos
-            </div>
-          )}
+          ) : null}
           {/* Legend */}
           <div className="flex flex-wrap gap-3 justify-center mt-2">
             {donutData.map((seg) => (
@@ -352,8 +352,10 @@ export default function FiadoAnalyticsPanel() {
             ))}
           </div>
         </div>
+        )}
 
-        {/* Recovery trend */}
+        {/* Tendencia — se oculta el bloque completo si no hay datos */}
+        {(tendencia && tendencia.length > 0) && (
         <div className="flex-1">
           <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Tendencia de recuperacion
@@ -407,12 +409,9 @@ export default function FiadoAnalyticsPanel() {
                 />
               </AreaChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
-              Sin datos de tendencia
-            </div>
-          )}
+          ) : null}
         </div>
+        )}
       </div>
 
       {/* Top deudores */}

@@ -97,6 +97,9 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
     qty: s.qty,
   }));
 
+  // Guard: sin historial de ventas no hay nada que graficar
+  const hasChartData = chartData.length > 0 && chartData.some(d => d.qty > 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -116,8 +119,8 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
         )}
       </div>
 
-      {/* Chart */}
-      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
+      {/* Chart — se oculta si no hay ventas registradas en los últimos 30 días */}
+      {hasChartData && (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
         <h4 className="text-sm font-medium text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (últimos 30 días)</h4>
         <div className="h-48">
           <ResponsiveContainer minWidth={0} width="100%" height="100%">
@@ -152,7 +155,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </div>)}
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 gap-3">

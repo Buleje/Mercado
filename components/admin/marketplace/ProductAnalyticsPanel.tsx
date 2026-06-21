@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { Eye, MousePointer, TrendingUp, DollarSign, Loader2, BarChart2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -82,33 +83,8 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
         const json = await res.json();
         setData(json?.data ?? json);
       } catch {
-        // Fallback: mock data if analytics API returns error
-        // Usando mock temporal para desarrollo
-        const mockDays: AnalyticsDay[] = Array.from({ length: days }, (_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - (days - 1 - i));
-          return {
-            date: d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }),
-            views: Math.floor(Math.random() * 80 + 10),
-            clicks: Math.floor(Math.random() * 30 + 2),
-            conversions: Math.floor(Math.random() * 8),
-            revenue: parseFloat((Math.random() * 200).toFixed(2)),
-          };
-        });
-        const totViews = mockDays.reduce((a, d) => a + d.views, 0);
-        const totClicks = mockDays.reduce((a, d) => a + d.clicks, 0);
-        const totConv = mockDays.reduce((a, d) => a + d.conversions, 0);
-        const totRev = mockDays.reduce((a, d) => a + d.revenue, 0);
-        setData({
-          totalViews: totViews,
-          totalClicks: totClicks,
-          conversionRate: totViews > 0 ? parseFloat(((totConv / totViews) * 100).toFixed(1)) : 0,
-          revenue: parseFloat(totRev.toFixed(2)),
-          days: mockDays,
-          topProducts: [
-            { id: productId, name: productName, views: totViews, revenue: totRev },
-          ],
-        });
+        // NO mock data (Brandon: nunca datos inventados). Sin datos → empty-state.
+        setData(null);
       } finally {
         setLoading(false);
       }
@@ -152,12 +128,11 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
       </div>
 
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <BarChart2 className="h-12 w-12 text-[var(--text-tertiary)] dark:text-[var(--text-primary)]" />
-          <p className="text-sm text-[var(--text-tertiary)] max-w-xs">
-            Aún no hay datos. Los analytics empiezan a registrarse cuando alguien visita el producto.
-          </p>
-        </div>
+        <ChartsEmptyState
+          icon={BarChart2}
+          title="Aún no hay datos de este producto"
+          description="Los analytics empiezan a registrarse cuando alguien visita el producto. No te mostramos gráficos vacíos."
+        />
       ) : (
         <>
           {/* KPIs */}

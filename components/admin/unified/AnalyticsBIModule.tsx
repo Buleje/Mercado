@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 import type { Sale, Customer } from "@/types/erp";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
+import ChartManager, { type ChartDefinition, useReportChartEmpty } from "@/components/admin/shared/ChartManager";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -146,6 +147,13 @@ function InlineKPIStrip() {
     })();
   }, []);
 
+  // Reporta vacío si TODOS los KPI están en cero (sin datos reales) → se oculta.
+  const allZero = kpis
+    ? kpis.ventasHoy === 0 && kpis.ticketPromedio === 0 && kpis.margen === 0 &&
+      kpis.clientesHoy === 0 && kpis.fiadoPendiente === 0 && kpis.rotacion === 0
+    : false;
+  useReportChartEmpty(allZero, kpis !== null);
+
   if (!kpis) {
     return (
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
@@ -213,6 +221,12 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
         }
       })();
   }, [section]);
+
+  // Reporta vacío si todos los valores son cero/N-A (sin datos reales) → se oculta.
+  const allZero = items
+    ? items.every(it => !parseFloat(it.value.replace(/[^0-9.]/g, "")))
+    : false;
+  useReportChartEmpty(allZero, items !== null);
 
   if (!items) {
     return (
@@ -287,7 +301,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
 }
 
 // ── Top 10 Clientes ─────────────────────────────────────────────────────────
-function Top10Clientes({ refreshKey }: { refreshKey: number }) {
+function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number; reportEmpty?: boolean }) {
   const [customers, setCustomers] = useState<Array<{
     id: string; nombre: string; gastoTotal: number; compras: number; ticketPromedio: number; tendencia: number;
   }>>([]);
@@ -314,6 +328,12 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
       finally { setLoading(false); }
     })();
   }, [refreshKey]);
+
+  // Vacío si no hay clientes o ninguno tiene gasto real → se oculta el gráfico.
+  // Solo reporta cuando es slot standalone (en TabbedCard se pasa reportEmpty=false
+  // para no ocultar toda la card al cambiar de pestaña).
+  const noRealData = customers.length === 0 || customers.every(c => (c.gastoTotal ?? 0) === 0);
+  useReportChartEmpty(reportEmpty && noRealData, !loading);
 
   if (loading) {
     return (
@@ -423,6 +443,10 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
       finally { setLoading(false); }
     })();
   }, [refreshKey]);
+
+  // StarProductCard SIEMPRE va anidado dentro de un TabbedCard, así que NO
+  // reporta vacío (ocultaría toda la card incluyendo la otra pestaña). Conserva
+  // su propio mensaje "Aun no hay ventas esta semana".
 
   if (loading) {
     return (
@@ -560,6 +584,28 @@ export default function AnalyticsBIModule() {
   const _handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
   }, []);
+
+  // ── Gate de datos a nivel módulo (mismo patrón que Inicio) ─────────────────
+  // Si el negocio no tiene NINGUNA venta ni pedido, en vez del muro de gráficos
+  // en cero mostramos el empty-state unificado. Brandon 2026-06-21.
+  const [dataState, setDataState] = useState<"loading" | "empty" | "has">("loading");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [salesRaw, ordersRaw] = await Promise.all([
+          fetch("/api/sales?limit=1", { credentials: "include" }).then(r => (r.ok ? r.json() : [])).catch(() => []),
+          fetch("/api/orders?limit=1", { credentials: "include" }).then(r => (r.ok ? r.json() : [])).catch(() => []),
+        ]);
+        const sales = Array.isArray(salesRaw) ? salesRaw : salesRaw.sales ?? [];
+        const orders = Array.isArray(ordersRaw) ? ordersRaw : ordersRaw.orders ?? [];
+        if (!cancelled) setDataState(sales.length > 0 || orders.length > 0 ? "has" : "empty");
+      } catch {
+        if (!cancelled) setDataState("empty");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
   // ── Section content renderer ───────────────────────────────────────────────
   const renderSection = () => {
@@ -726,7 +772,7 @@ export default function AnalyticsBIModule() {
               <TabbedCard title="Inteligencia de Clientes" subtitle="Segmentación por comportamiento de compra · Ranking de los mejores" icon={Users}
                 tabs={[
                   { id: "rfm", label: "Segmentación RFM", content: <RFMWrapper refreshKey={refreshKey} /> },
-                  { id: "top10", label: "Top 10 Ranking", content: <Top10Clientes refreshKey={refreshKey} /> },
+                  { id: "top10", label: "Top 10 Ranking", content: <Top10Clientes refreshKey={refreshKey} reportEmpty={false} /> },
                 ]}
               />
             ),
@@ -783,25 +829,32 @@ export default function AnalyticsBIModule() {
         description="Analítica avanzada de ventas, productos, clientes y predicciones"
         icon={BarChart3}
       />
-      <AdminTabBar
-        tabs={SECTIONS.map(s => ({ id: s.id, label: s.label, icon: s.icon }))}
-        activeTab={activeSection}
-        onTabChange={(id) => setActiveSection(id as SectionId)}
-        moduleId={MODULE_ID}
-      >
-        {/* ── Section content with AnimatePresence ── */}
-        <AnimatePresence mode="wait">
-          <m.div
-            key={activeSection}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-          >
-            {renderSection()}
-          </m.div>
-        </AnimatePresence>
-      </AdminTabBar>
+      {dataState === "empty" ? (
+        <ChartsEmptyState
+          title="Todavía no hay datos para analizar"
+          description="Cuando registres tus primeras ventas, acá vas a ver tendencias, productos top, clientes y predicciones — todo automático. No te mostramos gráficos vacíos."
+        />
+      ) : (
+        <AdminTabBar
+          tabs={SECTIONS.map(s => ({ id: s.id, label: s.label, icon: s.icon }))}
+          activeTab={activeSection}
+          onTabChange={(id) => setActiveSection(id as SectionId)}
+          moduleId={MODULE_ID}
+        >
+          {/* ── Section content with AnimatePresence ── */}
+          <AnimatePresence mode="wait">
+            <m.div
+              key={activeSection}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              {renderSection()}
+            </m.div>
+          </AnimatePresence>
+        </AdminTabBar>
+      )}
     </div>
   );
 }

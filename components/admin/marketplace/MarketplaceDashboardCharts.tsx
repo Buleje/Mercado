@@ -26,6 +26,7 @@ import {
   ChartTooltip,
 } from "@/components/admin/inicio/_shared";
 import { TrendingUp, Smartphone } from "@buleje/design-system/icons";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 
 const T = CHART_TOKENS;
 
@@ -52,6 +53,19 @@ export default function MarketplaceDashboardCharts({
   channelData,
   presetRangeLabel,
 }: Props) {
+  // Guard página completa: ambos arrays sin datos → empty-state unificado.
+  const growthEmpty = myGrowth.length === 0 || myGrowth.every((p) => p.visitas === 0 && p.pedidos === 0);
+  const channelEmpty = channelData.length === 0 || channelData.every((p) => p.value === 0);
+  if (growthEmpty && channelEmpty) {
+    return (
+      <ChartsEmptyState
+        icon={TrendingUp}
+        title="Todavía no hay datos de crecimiento"
+        description="Cuando tu tienda empiece a recibir visitas y pedidos, acá vas a ver la tendencia semanal y de dónde vienen tus compradores."
+      />
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <ChartCard
@@ -59,7 +73,7 @@ export default function MarketplaceDashboardCharts({
         Icon={TrendingUp}
         height={300}
         subtitle="Visitas y pedidos por semana · últimas 8 semanas"
-        isEmpty={myGrowth.length === 0}
+        isEmpty={growthEmpty}
         emptyText="Sin datos históricos"
       >
         <ResponsiveContainer minWidth={0} width="100%" height="100%">
@@ -138,7 +152,7 @@ export default function MarketplaceDashboardCharts({
         Icon={Smartphone}
         height={300}
         subtitle={`${presetRangeLabel} · de dónde vienen tus compradores`}
-        isEmpty={channelData.length === 0}
+        isEmpty={channelEmpty}
         emptyText="Sin pedidos en el período"
       >
         <ResponsiveContainer minWidth={0} width="100%" height="100%">

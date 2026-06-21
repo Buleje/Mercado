@@ -713,7 +713,9 @@ function FinanzasDashboard() {
 
       {/* ════════ SECCION 4: Flujo de Caja Diario (AreaChart) ════════ */}
       <StaggerItem index={3}>
-      {cashFlow.length > 0 && (
+      {/* Guard: el array siempre tiene 30 elementos (uno por día), pero si todos
+          son cero no hay movimientos reales → no mostrar ejes vacíos */}
+      {cashFlow.some(d => d.ingresos > 0 || d.gastos > 0) && (
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -1063,6 +1065,9 @@ function FinanzasDashboard() {
             const d1 = monthlyData.find(m => m.mes === cmpMonth1);
             const d2 = monthlyData.find(m => m.mes === cmpMonth2);
             if (!d1 || !d2) return <EmptyState icon={BarChart3} title="Selecciona meses con datos" description="Los datos apareceran cuando registres ventas" />;
+            // Sin datos reales en ninguno de los dos meses — no mostrar gráfico vacío
+            const sinDatos = d1.ingresos === 0 && d1.gastos === 0 && d2.ingresos === 0 && d2.gastos === 0;
+            if (sinDatos) return <EmptyState icon={BarChart3} title="Sin ventas en esos meses" description="Registra ventas y gastos para ver la comparativa" />;
             const diffIngresos = d1.ingresos > 0 ? Math.round(((d2.ingresos - d1.ingresos) / d1.ingresos) * 100) : 0;
             const diffGastos = d1.gastos > 0 ? Math.round(((d2.gastos - d1.gastos) / d1.gastos) * 100) : 0;
             const compareData = [
@@ -1116,7 +1121,7 @@ function FinanzasDashboard() {
                 </ComposedChart>
               </ResponsiveContainer>
             )}
-            {expandedChart === "flujo-caja" && cashFlow.length > 0 && (
+            {expandedChart === "flujo-caja" && cashFlow.some(d => d.ingresos > 0 || d.gastos > 0) && (
               <ResponsiveContainer minWidth={0} width="100%" height={500}>
                 <AreaChart data={cashFlow}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />

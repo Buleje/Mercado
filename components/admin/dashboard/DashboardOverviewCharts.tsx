@@ -38,6 +38,7 @@ import {
 } from "@buleje/design-system/icons";
 import { ChartCard } from "@buleje/design-system/dashboard";
 import { cn } from "@/lib/utils";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 import type { Period, DateRange } from "@buleje/design-system/dashboard";
 import type { Sale, Purchase } from "@/types/erp";
 
@@ -598,12 +599,36 @@ export function DashboardOverviewCharts({
   // ── Chart height ──────────────────────────────────────────────────────────
   const H = 180;
 
+  // Gráficos sin datos NO se muestran. Cada card se oculta si su serie no tiene
+  // ningún valor > 0; si las 6 están vacías, se muestra el empty-state unificado
+  // (igual que Inicio). Brandon 2026-06-21.
+  const hasVals = (arr: Array<Record<string, unknown>>) =>
+    arr.some((o) => Object.values(o).some((v) => typeof v === "number" && v > 0));
+  const hasVentas = hasVals(ventasData);
+  const hasCompras = hasVals(comprasData);
+  const hasClientes = hasVals(clientesData);
+  const hasInventario = hasVals(inventarioData);
+  const hasProductos = hasVals(productosData);
+  const hasCaja = hasVals(cajaData);
+  const todosVacios =
+    !hasVentas && !hasCompras && !hasClientes && !hasInventario && !hasProductos && !hasCaja;
+
+  if (todosVacios) {
+    return (
+      <ChartsEmptyState
+        title="Todavía no hay datos para tus gráficos"
+        description="Cuando empieces a registrar ventas, compras y clientes, acá vas a ver tus números reales. No te mostramos gráficos vacíos."
+      />
+    );
+  }
+
   return (
     <div
       className={cn("grid grid-cols-1 sm:grid-cols-2 gap-4")}
       data-testid="overview-charts"
     >
       {/* 1. Ventas */}
+      {hasVentas && (
       <ChartCard
         eyebrow="Ventas"
         title="Ingresos del período"
@@ -615,8 +640,10 @@ export function DashboardOverviewCharts({
       >
         <ChartVentas data={ventasData} period={period} />
       </ChartCard>
+      )}
 
       {/* 2. Compras por proveedor */}
+      {hasCompras && (
       <ChartCard
         eyebrow="Compras"
         title="Por proveedor"
@@ -628,8 +655,10 @@ export function DashboardOverviewCharts({
       >
         <ChartCompras data={comprasData} />
       </ChartCard>
+      )}
 
       {/* 3. Nuevos clientes */}
+      {hasClientes && (
       <ChartCard
         eyebrow="Clientes"
         title="Nuevos clientes"
@@ -641,8 +670,10 @@ export function DashboardOverviewCharts({
       >
         <ChartClientes data={clientesData} period={period} />
       </ChartCard>
+      )}
 
       {/* 4. Stock por categoría */}
+      {hasInventario && (
       <ChartCard
         eyebrow="Inventario"
         title="Stock por categoría"
@@ -654,8 +685,10 @@ export function DashboardOverviewCharts({
       >
         <ChartInventario data={inventarioData} />
       </ChartCard>
+      )}
 
       {/* 5. Top categorías */}
+      {hasProductos && (
       <ChartCard
         eyebrow="Productos"
         title="Top categorías"
@@ -667,8 +700,10 @@ export function DashboardOverviewCharts({
       >
         <ChartProductos data={productosData} />
       </ChartCard>
+      )}
 
       {/* 6. Flujo de caja */}
+      {hasCaja && (
       <ChartCard
         eyebrow="Caja"
         title="Flujo de caja"
@@ -680,6 +715,7 @@ export function DashboardOverviewCharts({
       >
         <ChartCaja data={cajaData} period={period} />
       </ChartCard>
+      )}
     </div>
   );
 }

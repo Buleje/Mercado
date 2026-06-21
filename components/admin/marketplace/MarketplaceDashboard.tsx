@@ -21,6 +21,7 @@
 
 import { useEffect, useState } from "react";
 import { StatCard } from "@buleje/design-system";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 import {
   ShoppingCart,
   DollarSign,
@@ -102,22 +103,13 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
       data.topProducts.length === 0);
 
   if (noActivity) {
+    // Gráficos sin datos → empty-state unificado (regla Brandon 2026-06-21)
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-20 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-        <div className="h-16 w-16 rounded-2xl bg-[var(--accent-soft)] flex items-center justify-center">
-          <Store className="h-8 w-8 text-[color:var(--accent,var(--text-primary))]" />
-        </div>
-        <div className="text-center max-w-lg px-6">
-          <h3 className="text-xl font-extrabold text-[var(--text-primary)] mb-2">
-            Tu tienda todavía no registra ventas en el marketplace
-          </h3>
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Cuando entren pedidos vas a ver acá tus números reales: ventas de los
-            últimos 30 días, ticket promedio, ventas diarias y tus productos más
-            vendidos. No mostramos números inventados.
-          </p>
-        </div>
-      </div>
+      <ChartsEmptyState
+        icon={Store}
+        title="Tu tienda todavía no registra ventas en el marketplace"
+        description="Cuando entren pedidos vas a ver acá tus números reales: ventas de los últimos 30 días, ticket promedio, ventas diarias y tus productos más vendidos. No mostramos números inventados."
+      />
     );
   }
 

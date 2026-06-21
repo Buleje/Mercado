@@ -177,6 +177,11 @@ export default function ComparativeReportsTab() {
     });
   }, [dataA, dataB, periods]);
 
+  // Gráfico sin datos NO se muestra (se oculta) — la tabla de métricas queda visible.
+  const hasChartData = chartData.some(
+    (row) => (Number(row[periods.labelA]) || 0) > 0 || (Number(row[periods.labelB]) || 0) > 0,
+  );
+
   // ── Loading ──
   if (loading) {
     return (
@@ -288,7 +293,8 @@ export default function ComparativeReportsTab() {
             </div>
           </div>
 
-          {/* Chart */}
+          {/* Chart — se oculta si no hay datos */}
+          {hasChartData && (
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
             <p className="text-sm font-bold text-[var(--text-secondary)] mb-4">Top 5 métricas — comparación</p>
             <div className="h-64">
@@ -322,6 +328,7 @@ export default function ComparativeReportsTab() {
               </ResponsiveContainer>
             </div>
           </div>
+          )}
         </>
       )}
     </div>

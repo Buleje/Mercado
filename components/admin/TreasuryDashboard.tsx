@@ -342,6 +342,12 @@ export default function TreasuryDashboard() {
         </div>
         {loading ? (
           <Skeleton className="h-52 w-full" />
+        ) : !flowData.some(d => d.ingresos > 0 || d.gastos > 0) ? (
+          // Sin movimientos reales — no mostrar ejes en cero
+          <div className="flex flex-col items-center justify-center h-52 gap-2">
+            <TrendingUp className="h-8 w-8 text-[var(--text-tertiary)]" />
+            <p className="text-sm text-[var(--text-tertiary)]">Sin movimientos en los últimos 30 días</p>
+          </div>
         ) : (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
             <AreaChart data={flowData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>

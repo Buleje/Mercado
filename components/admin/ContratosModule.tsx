@@ -1379,39 +1379,42 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 </div>
 
                 {/* Charts Row */}
+                {/* Gráficos sin datos NO se muestran; cada card se oculta si su serie está vacía */}
+                {(stats.typeData.length > 0 || stats.monthData.length > 0) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Por tipo */}
+                  {stats.typeData.length > 0 && (
                   <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                     <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Tipo</CardTitle>
-                    {stats.typeData.length > 0 ? (
-                      <ResponsiveContainer minWidth={0} width="100%" height={250}>
-                        <RechartsPie>
-                          <Pie data={stats.typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${name}: ${value}`}>
-                            {stats.typeData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </RechartsPie>
-                      </ResponsiveContainer>
-                    ) : <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Sin datos</p>}
+                    <ResponsiveContainer minWidth={0} width="100%" height={250}>
+                      <RechartsPie>
+                        <Pie data={stats.typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${name}: ${value}`}>
+                          {stats.typeData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </RechartsPie>
+                    </ResponsiveContainer>
                   </div>
+                  )}
 
                   {/* Por mes */}
+                  {stats.monthData.length > 0 && (
                   <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                     <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Mes</CardTitle>
-                    {stats.monthData.length > 0 ? (
-                      <ResponsiveContainer minWidth={0} width="100%" height={250}>
-                        <BarChart data={stats.monthData}>
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                          <XAxis dataKey="name" fontSize={11} />
-                          <YAxis fontSize={11} allowDecimals={false} />
-                          <Tooltip />
-                          <Bar dataKey="contratos" fill="var(--brand-ink)" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Sin datos</p>}
+                    <ResponsiveContainer minWidth={0} width="100%" height={250}>
+                      <BarChart data={stats.monthData}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                        <XAxis dataKey="name" fontSize={11} />
+                        <YAxis fontSize={11} allowDecimals={false} />
+                        <Tooltip />
+                        <Bar dataKey="contratos" fill="var(--brand-ink)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
+                  )}
                 </div>
+                )}
 
                 {/* Contratos por vencer */}
                 {stats.porVencer > 0 && (

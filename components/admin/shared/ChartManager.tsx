@@ -1,6 +1,15 @@
 "use client";
 
-import { Fragment, useState, useCallback, useEffect, type ReactNode } from "react";
+import {
+  Fragment,
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { Plus, X, LayoutGrid } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "./AdminModal";
@@ -27,6 +36,52 @@ interface ChartManagerProps {
   charts: ChartDefinition[];
   /** Optional className for the grid container */
   className?: string;
+  /**
+   * Estado vacío UNIFICADO. Cuando TODOS los gráficos visibles reportan que no
+   * tienen datos (vía `useReportChartEmpty`), en vez del muro de gráficos en
+   * cero se muestra esto — igual que el empty-state de Inicio. Brandon 2026-06-21.
+   * Si no se pasa, el grid se muestra igual (backward-compatible).
+   */
+  emptyState?: ReactNode;
+}
+
+// ── Reporte de vacío por gráfico (Brandon 2026-06-21) ────────────────────────
+// Cada gráfico, una vez cargados sus datos, reporta si está vacío vía el hook
+// `useReportChartEmpty`. ChartManager OCULTA los gráficos vacíos y, si TODOS los
+// visibles están vacíos, muestra el `emptyState` unificado. Los gráficos que no
+// usan el hook nunca se reportan → se muestran siempre (backward-compatible).
+interface ChartSlotCtx {
+  id: string;
+  report: (id: string, isEmpty: boolean) => void;
+}
+const ChartSlotContext = createContext<ChartSlotCtx | null>(null);
+
+/**
+ * ChartSlot — provee el contexto de reporte a UN gráfico. El value se memoiza
+ * por (id, report) para que sea ESTABLE entre renders; si no, el `useEffect` de
+ * useReportChartEmpty se dispararía en cada render (loop "Maximum update depth").
+ */
+function ChartSlot({ id, report, children }: ChartSlotCtx & { children: ReactNode }) {
+  const value = useMemo<ChartSlotCtx>(() => ({ id, report }), [id, report]);
+  return <ChartSlotContext.Provider value={value}>{children}</ChartSlotContext.Provider>;
+}
+
+/**
+ * useReportChartEmpty — desde dentro de un gráfico, reporta si está vacío.
+ * @param isEmpty true cuando el gráfico no tiene datos reales que mostrar.
+ * @param ready   false mientras carga (no se reporta vacío hasta tener la data).
+ *
+ * Mientras `ready` es false se reporta NO-vacío (se ve el skeleton del gráfico,
+ * no se oculta). Al desmontar, limpia su reporte. Es no-op fuera de un
+ * ChartManager (seguro de usar en gráficos standalone).
+ */
+export function useReportChartEmpty(isEmpty: boolean, ready: boolean = true) {
+  const ctx = useContext(ChartSlotContext);
+  useEffect(() => {
+    if (!ctx) return;
+    ctx.report(ctx.id, ready ? isEmpty : false);
+    return () => ctx.report(ctx.id, false);
+  }, [ctx, isEmpty, ready]);
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -57,10 +112,16 @@ function saveVisibleIds(moduleId: string, ids: string[]) {
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export default function ChartManager({ moduleId, charts, className }: ChartManagerProps) {
+export default function ChartManager({ moduleId, charts, className, emptyState }: ChartManagerProps) {
   const allIds = charts.map(c => c.id);
   const [visibleIds, setVisibleIds] = useState<string[]>(() => loadVisibleIds(moduleId, allIds));
   const [modalOpen, setModalOpen] = useState(false);
+  // Mapa id→vacío reportado por cada gráfico (ver useReportChartEmpty).
+  const [emptyMap, setEmptyMap] = useState<Record<string, boolean>>({});
+
+  const report = useCallback((id: string, isEmpty: boolean) => {
+    setEmptyMap(prev => (prev[id] === isEmpty ? prev : { ...prev, [id]: isEmpty }));
+  }, []);
 
   // Persist on change
   useEffect(() => {
@@ -78,21 +139,34 @@ export default function ChartManager({ moduleId, charts, className }: ChartManag
   const visibleCharts = charts.filter(c => visibleIds.includes(c.id));
   const hiddenCharts = charts.filter(c => !visibleIds.includes(c.id));
 
+  // Página entera vacía: TODOS los gráficos visibles reportaron vacío. Los que
+  // no usan el hook quedan `undefined` → no cuentan como vacío → no se dispara.
+  const allReportedEmpty =
+    visibleCharts.length > 0 && visibleCharts.every(c => emptyMap[c.id] === true);
+  const showEmptyState = Boolean(emptyState) && allReportedEmpty;
+
   return (
     <>
-      {/* Chart grid */}
-      <div className={cn("space-y-6", className)}>
+      {/* Empty-state unificado cuando no hay NINGÚN dato en la página */}
+      {showEmptyState && emptyState}
+
+      {/* Chart grid — se mantiene montado (oculto) cuando showEmptyState para
+          que los gráficos sigan refrescando y reaparezcan al llegar datos. */}
+      <div className={cn("space-y-6", showEmptyState && "hidden", className)}>
         {visibleCharts.map((chart, idx) => {
           const prevSection = idx > 0 ? visibleCharts[idx - 1].section : undefined;
           const showSectionHeader = chart.section && chart.section !== prevSection;
+          const chartIsEmpty = emptyMap[chart.id] === true;
           return (
             <Fragment key={chart.id}>
-              {showSectionHeader && (
+              {showSectionHeader && !chartIsEmpty && (
                 <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] mt-4 -mb-1 tracking-tight">
                   {chart.section}
                 </h2>
               )}
-              <div className="group relative">
+              {/* El gráfico vacío se OCULTA (hidden), no se desmonta: sigue
+                  fetcheando y reaparece si llegan datos. */}
+              <div className={cn("group relative", chartIsEmpty && "hidden")}>
                 {/* Remove button on hover */}
                 <button
                   onClick={() => removeChart(chart.id)}
@@ -101,7 +175,9 @@ export default function ChartManager({ moduleId, charts, className }: ChartManag
                 >
                   <X className="h-4 w-4" />
                 </button>
-                {chart.component}
+                <ChartSlot id={chart.id} report={report}>
+                  {chart.component}
+                </ChartSlot>
               </div>
             </Fragment>
           );
