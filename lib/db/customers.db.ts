@@ -289,6 +289,29 @@ export const CustomersDB = {
       });
     });
   },
+  /**
+   * Marca una dirección guardada como principal (Customer.activeLocationId).
+   * updateMany con doble filtro (phone + tenantId) para evitar cross-tenant
+   * write (mismo patrón que updatePreferences — Customer.phone @unique global,
+   * TD-040 fase 3 pendiente). La pertenencia de locationId al customer debe
+   * verificarse ANTES en el route (MeAddressesDB.findOwned). Retorna false si
+   * el customer no existía en el tenant.
+   */
+  async setActiveLocation(
+    tenantId: string,
+    phone: string,
+    locationId: string,
+  ): Promise<boolean> {
+    if (!tenantId) throw new Error("CustomersDB.setActiveLocation: tenantId requerido");
+    const normalized = normalizePhone(phone);
+    return withRlsTx(tenantId, async (tx) => {
+      const result = await tx.customer.updateMany({
+        where: { phone: normalized, tenantId },
+        data: { activeLocationId: locationId },
+      });
+      return result.count > 0;
+    });
+  },
   async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
     if (!tenantId) throw new Error("CustomersDB.upsert: tenantId requerido");
     const locs = (data.locations ?? []).map((l) => ({ id: l.id, location: l.location, reference: l.reference }));
