@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ShoppingBag, Settings, ExternalLink, MapPin, Phone, Sparkles, Tag,
-  MessageCircle, Truck, ShieldCheck, ChevronRight, ArrowRight,
-  Search as SearchIcon,
+  MessageCircle, Truck, ShieldCheck, ChevronRight, ArrowRight, ArrowUpRight,
+  LayoutGrid, Search as SearchIcon,
 } from "@buleje/design-system/icons";
 import { prisma } from "@/lib/prisma";
 import { StorePageDB } from "@/lib/db/store-page.db";
@@ -92,6 +92,18 @@ async function loadPageData(slug: string) {
   // (tenantPageProductOverride) usamos esos; si no, caemos al catálogo real
   // (primeros productos activos+visibles). Shape unificado para la vitrina.
   const productCount = catalog.filter((c) => c.active && c.visible).length;
+
+  // Categorías reales (con conteo) para el bento del hero de escritorio.
+  // Solo productos visibles+activos; ordenadas por cantidad desc.
+  const catCounts = new Map<string, number>();
+  for (const c of catalog) {
+    const cat = c.active && c.visible && typeof c.category === "string" ? c.category.trim() : "";
+    if (cat) catCounts.set(cat, (catCounts.get(cat) ?? 0) + 1);
+  }
+  const categories = [...catCounts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
   const showcase: ShowcaseItem[] =
     featured.length > 0
       ? featured.map((p) => ({
@@ -164,7 +176,7 @@ async function loadPageData(slug: string) {
     ? rawFeatures.filter((x): x is string => typeof x === "string")
     : [];
 
-  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme, features };
+  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, categories, editorTheme, features };
 }
 
 export async function generateMetadata({
@@ -258,7 +270,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const data = await loadPageData(slug);
   if (!data) notFound();
 
-  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme, features } = data;
+  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, categories, editorTheme, features } = data;
 
   // Allow admin preview even if inactive/unpublished
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
@@ -284,10 +296,25 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   // tenant ni la marca del marketplace en su propia página.
   const logoText = displayName.slice(0, 2).toUpperCase();
   const heroTitle = customization.heroTitle ?? displayName;
-  const heroSubtitle = customization.heroSubtitle;
+  // Subtítulo: el que cargó el dueño o, si no hay, un tagline derivado de sus
+  // categorías reales ("Tecnología, Hogar y Accesorios con delivery rápido").
+  const catNames = categories.slice(0, 3).map((c) => c.name);
+  const catPhrase =
+    catNames.length === 0
+      ? ""
+      : catNames.length === 1
+        ? catNames[0]
+        : `${catNames.slice(0, -1).join(", ")} y ${catNames[catNames.length - 1]}`;
+  const heroSubtitle =
+    customization.heroSubtitle ?? (catPhrase ? `${catPhrase} con delivery rápido a tu puerta.` : undefined);
   const heroImage = customization.heroImageUrl;
 
   const formatPrice = (n: number) => `S/${n.toFixed(2)}`;
+
+  // Datos del bento del hero de escritorio: 1 producto destacado + tiles de
+  // categorías reales. Sin inventar nada — sale del catálogo del comercio.
+  const heroFeatured = showcase[0] ?? null;
+  const heroTiles = categories.slice(0, 3);
 
   // Plan badges alineados con plan-tiers.ts mayo 2026 v2.
   // PlanId DB ↔ Label: free→Free, pro→Starter, business→Pro, enterprise→Business.
@@ -455,8 +482,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-b from-transparent to-[var(--surface-canvas)]"
         />
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20 sm:pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-8 items-center">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20 sm:pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-12 items-center">
             {/* Columna izq: contenido principal */}
             <div className="text-left">
               {/* Eyebrow con estado live */}
@@ -555,34 +582,79 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               )}
             </div>
 
-            {/* Columna der: logo grande sobre disco decorativo */}
-            <div className="hidden lg:flex items-center justify-center">
-              <div className="relative">
-                {/* Halos decorativos */}
-                <div
-                  aria-hidden
-                  className="absolute inset-0 rounded-full blur-3xl opacity-50"
-                  style={{ background: cssAccent }}
-                />
-                <div
-                  aria-hidden
-                  className="relative w-48 h-48 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/20 flex items-center justify-center shadow-[var(--shadow-xl)]"
+            {/* Columna der (desktop): BENTO producto-primero — muestra el
+                catálogo de un vistazo (producto destacado + categorías reales).
+                Reemplaza el disco del logo. Brandon 2026-06-22. Halo decorativo
+                detrás para dar profundidad. */}
+            <div className="relative hidden lg:block">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-6 rounded-[2rem] blur-3xl opacity-40"
+                style={{ background: cssAccent }}
+              />
+              <div className="relative grid grid-cols-2 gap-3">
+                {/* Producto destacado — ancho completo, lo más prominente */}
+                {heroFeatured && (
+                  <Link
+                    href={`/t/${tenant.slug}/tienda`}
+                    className="col-span-2 group flex items-center gap-4 rounded-2xl bg-white/95 p-4 shadow-[var(--shadow-xl)] ring-1 ring-white/30 transition-all hover:-translate-y-0.5"
+                  >
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-sunken)]">
+                      {heroFeatured.image ? (
+                        <Image src={heroFeatured.image} alt={heroFeatured.name} fill sizes="80px" className="object-cover" />
+                      ) : (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <ShoppingBag className="h-7 w-7 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="mb-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)]" style={{ color: cssPrimary }}>
+                        Destacado
+                      </p>
+                      <p className="line-clamp-2 font-extrabold leading-tight text-[var(--text-primary)]">{heroFeatured.name}</p>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <span className="text-lg font-extrabold" style={{ color: cssPrimary }}>
+                          {formatPrice(heroFeatured.exclusivePrice ?? heroFeatured.price)}
+                        </span>
+                        {heroFeatured.exclusivePrice != null && (
+                          <span className="text-xs text-[var(--text-tertiary)] line-through">{formatPrice(heroFeatured.price)}</span>
+                        )}
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} aria-hidden />
+                  </Link>
+                )}
+
+                {/* Tiles de categorías reales del comercio */}
+                {heroTiles.map((cat) => (
+                  <Link
+                    key={cat.name}
+                    href={`/t/${tenant.slug}/tienda`}
+                    className="group rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/15"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white">
+                        <LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      </span>
+                      <ArrowUpRight className="h-4 w-4 text-white/50 transition-colors group-hover:text-white" strokeWidth={2.5} aria-hidden />
+                    </div>
+                    <p className="truncate font-extrabold leading-tight text-white">{cat.name}</p>
+                    <p className="text-xs font-semibold text-white/70">{cat.count} {cat.count === 1 ? "producto" : "productos"}</p>
+                  </Link>
+                ))}
+
+                {/* Tile "ver todo" — cierra el bento; ocupa fila completa si queda impar */}
+                <Link
+                  href={`/t/${tenant.slug}/tienda`}
+                  className={`group flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-white/30 p-4 text-center transition-all hover:bg-white/10 ${heroTiles.length % 2 === 0 ? "col-span-2" : ""}`}
                 >
-                  {tenant.logoUrl ? (
-                    <Image
-                      src={tenant.logoUrl}
-                      alt=""
-                      width={128}
-                      height={128}
-                      priority
-                      className="w-32 h-32 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-7xl font-extrabold text-white tracking-[var(--ls-tight)]">
-                      {logoText}
-                    </span>
-                  )}
-                </div>
+                  <span className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white">
+                    <ShoppingBag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  </span>
+                  <p className="font-extrabold leading-tight text-white">Ver todo el catálogo</p>
+                  <p className="text-xs font-semibold text-white/70">{productCount} {productCount === 1 ? "producto" : "productos"}</p>
+                </Link>
               </div>
             </div>
 
