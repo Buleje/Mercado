@@ -5,7 +5,7 @@ description: >
   Absorbs: integration-specialist, seo-growth-strategist, growth-specialist.
   Two modes: SEO/metadata (independent) and API-dependent (needs backend).
 model: sonnet
-tools: Read, Edit, Write, Grep, Glob, Bash, LSP
+tools: Read, Edit, Write, Grep, Glob, Bash
 maxTurns: 35
 memory: project
 permissionMode: acceptEdits

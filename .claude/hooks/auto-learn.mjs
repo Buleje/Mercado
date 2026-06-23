@@ -80,11 +80,16 @@ try {
 
   // ── Track edit in edit-log ──────────────────────────────────
   const logPath = join(projectRoot, ".claude/learning/edit-log.json");
-  let editLog = readJSON(logPath) || {
-    edits: [],
-    sessionEdits: [],
-    coEditClusters: [],
-    lastUpdated: null
+  // Fallback robusto por-array: edit-log.json puede existir pero estar parcial
+  // o vacío ({}) → readJSON devuelve un objeto truthy sin las arrays, y el
+  // antiguo `|| {default}` no aplicaba → `.push` sobre undefined (TypeError que
+  // erroreaba en CADA edit). Garantizamos cada array explícitamente.
+  const rawEditLog = readJSON(logPath) || {};
+  const editLog = {
+    edits: Array.isArray(rawEditLog.edits) ? rawEditLog.edits : [],
+    sessionEdits: Array.isArray(rawEditLog.sessionEdits) ? rawEditLog.sessionEdits : [],
+    coEditClusters: Array.isArray(rawEditLog.coEditClusters) ? rawEditLog.coEditClusters : [],
+    lastUpdated: rawEditLog.lastUpdated ?? null,
   };
 
   const now = new Date().toISOString();
@@ -140,11 +145,12 @@ try {
 
   if (strongClusters.length > 0) {
     const patternsPath = join(projectRoot, ".claude/learning/patterns.json");
-    let patterns = readJSON(patternsPath) || {
-      patterns: [],
-      totalScanned: 0,
-      totalLearned: 0,
-      lastScan: null
+    const rawPatterns = readJSON(patternsPath) || {};
+    const patterns = {
+      patterns: Array.isArray(rawPatterns.patterns) ? rawPatterns.patterns : [],
+      totalScanned: rawPatterns.totalScanned ?? 0,
+      totalLearned: rawPatterns.totalLearned ?? 0,
+      lastScan: rawPatterns.lastScan ?? null,
     };
 
     strongClusters.forEach(cluster => {

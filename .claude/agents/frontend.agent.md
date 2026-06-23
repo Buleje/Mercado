@@ -5,7 +5,7 @@ description: >
   Absorbs: frontend-engineer, product-uiux-strategist, mobile-engineer.
   Loads skills capacitor-mobile and bsm-design-system on-demand.
 model: sonnet
-tools: Read, Edit, Write, Grep, Glob, Bash, LSP
+tools: Read, Edit, Write, Grep, Glob, Bash
 maxTurns: 40
 memory: project
 permissionMode: acceptEdits

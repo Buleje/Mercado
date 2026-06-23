@@ -5,7 +5,7 @@ description: >
   Absorbs: database-engineer. Loads skills prisma-schema and
   database-migrations on-demand. Zona de peligro: schema.prisma.
 model: sonnet
-tools: Read, Edit, Write, Grep, Glob, Bash, LSP
+tools: Read, Edit, Write, Grep, Glob, Bash
 maxTurns: 35
 memory: project
 permissionMode: acceptEdits

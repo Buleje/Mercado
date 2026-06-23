@@ -5,7 +5,7 @@ description: >
   3 modes: review (pre-merge), diagnose (bug hunting), refactor (debt).
   Absorbs: code-reviewer, refactoring-expert, bug-hunter.
 model: sonnet
-tools: Read, Edit, Write, Grep, Glob, Bash, LSP
+tools: Read, Edit, Write, Grep, Glob, Bash
 maxTurns: 35
 memory: project
 permissionMode: acceptEdits

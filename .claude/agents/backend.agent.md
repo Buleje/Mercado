@@ -5,7 +5,7 @@ description: >
   Absorbs: backend-platform-engineer, checkout-specialist, ai-ml-engineer.
   Loads skills checkout-flow and ai-features on-demand by context.
 model: sonnet
-tools: Read, Edit, Write, Grep, Glob, Bash, LSP
+tools: Read, Edit, Write, Grep, Glob, Bash
 maxTurns: 40
 memory: project
 permissionMode: acceptEdits
