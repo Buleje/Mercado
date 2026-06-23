@@ -127,10 +127,14 @@ export const CUENTA_NAV_ITEMS: CuentaNavItem[] = [
   },
 ];
 
-/** Dado un pathname, devuelve el item activo. Matches por prefijo mas largo. */
+/** Dado un pathname, devuelve el item activo. Matches por prefijo mas largo.
+ *  Tolera el prefijo de la tienda individual `/t/<slug>/…` comparando sobre la
+ *  ruta base (sin el prefijo) — así el highlight funciona en marketplace y en
+ *  `/t/comprafacil/cuenta/*` por igual. */
 export function findActiveNavItem(pathname: string): CuentaNavItem | null {
+  const base = pathname.replace(/^\/t\/[^/]+/, "") || "/";
   const matches = CUENTA_NAV_ITEMS.filter(
-    (item) => !item.hiddenInSidebar && pathname.startsWith(item.href),
+    (item) => !item.hiddenInSidebar && base.startsWith(item.href),
   );
   if (!matches.length) return null;
   // El match con el href mas largo gana (mas especifico).
