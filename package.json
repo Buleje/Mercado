@@ -72,7 +72,9 @@
     "audit:cross-tenant": "node scripts/audit-cross-tenant.mjs",
     "claude:validate": "node scripts/claude-validate.mjs",
     "claude:dreaming": "node scripts/claude-dreaming-apply.mjs",
-    "claude:dreaming:apply": "node scripts/claude-dreaming-apply.mjs --safe"
+    "claude:dreaming:apply": "node scripts/claude-dreaming-apply.mjs --safe",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 tsc --noEmit",
+    "typecheck:fast": "tsgo --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",
@@ -180,6 +182,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "@typescript/native-preview": "^7.0.0-dev.20260622.1",
     "@vitejs/plugin-react": "^5.2.0",
     "@vitest/coverage-v8": "^4.0.18",
     "babel-loader": "^10.1.1",

@@ -453,7 +453,7 @@ export default function DeclaracionInventarioModule() {
 
           {/* Table grouped by category */}
           <div className="space-y-4 print:space-y-2">
-            {Object.entries((data.porCategoria ?? data.categorias ?? {}) ?? data.categorias ?? {}).map(([category, items]) => {
+            {Object.entries(data.porCategoria ?? data.categorias ?? {}).map(([category, items]) => {
               const productItems = items as ProductItem[];
               const catCosto = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.costPrice, 0);
               const catPrecio = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.price, 0);
