@@ -19,6 +19,7 @@ import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
 import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
+import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
 
 interface TenantLandingProps {
@@ -155,7 +156,15 @@ async function loadPageData(slug: string) {
     shadowLevel: pickStr("shadowLevel"),
   };
 
-  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme };
+  // Feature flags PRO opt-in por tienda (ADR-298): viven en storeTheme.features.
+  // La plantilla es la misma para todas; solo las tiendas con flags ven los
+  // bloques extra (trust/urgency/content/capture). Cero impacto en las demás.
+  const rawFeatures = (st as Record<string, unknown> | undefined)?.["features"];
+  const features = Array.isArray(rawFeatures)
+    ? rawFeatures.filter((x): x is string => typeof x === "string")
+    : [];
+
+  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme, features };
 }
 
 export async function generateMetadata({
@@ -178,7 +187,7 @@ export async function generateMetadata({
   // cuando el tenant no tiene OG personalizada. Antes, sin ogImage ni
   // heroImage, el share en WhatsApp/FB no mostraba preview visual —
   // muy mala UX en discovery. Ahora siempre hay una OG con 1200×630.
-  const ogFallback = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe"}/api/og?title=${encodeURIComponent(displayName)}&subtitle=${encodeURIComponent("Comprá con delivery rápido en Ciudad Constitución")}`;
+  const ogFallback = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe"}/api/og?title=${encodeURIComponent(displayName)}&subtitle=${encodeURIComponent("Compra con delivery rápido en Ciudad Constitución")}`;
   const ogImage = customization.ogImageUrl ?? customization.heroImageUrl ?? ogFallback;
 
   return {
@@ -249,7 +258,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const data = await loadPageData(slug);
   if (!data) notFound();
 
-  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme } = data;
+  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, editorTheme, features } = data;
 
   // Allow admin preview even if inactive/unpublished
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
@@ -336,8 +345,23 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           ? "border border-white/30 bg-white/70 backdrop-blur-md shadow-sm dark:bg-white/10"
           : "border border-[var(--rule-base)] shadow-sm hover:shadow-xl"; // "shadow"/default
 
+  // Override de tokens de marca (--accent/--color-primary) con el color del
+  // tenant para que TODO (navbar, eyebrows, botones token-based) use la marca,
+  // no solo el hero. Solo si el color es literal (#hex) — los tenants sin tema
+  // propio heredan el default. Brandon 2026-06-21.
+  const isLitColor = (v: string) => Boolean(v) && !v.trim().startsWith("var(");
+  const brandTokenVars = isLitColor(primary)
+    ? ({
+        "--accent": primary,
+        "--accent-600": primary,
+        "--accent-dark": primary,
+        "--color-primary": primary,
+        ...(isLitColor(accent) ? { "--accent-soft": accent } : {}),
+      } as React.CSSProperties)
+    : undefined;
+
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme">
+    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme" data-store-chrome="tenant" style={brandTokenVars}>
       {/* CSS dinamico generado a partir de los design tokens del tenant.
           Sobreescribe el theme de Buleje solo en el subarbol .tenant-theme. */}
       <style dangerouslySetInnerHTML={{ __html: tokensToCssBlock(designTokens) }} />
@@ -773,6 +797,21 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         </section>
       )}
 
+      {/* ═══ Bloques PRO opt-in por tienda (ADR-298 · feature flags) ═══
+          Solo se renderizan si el tenant tiene flags en storeTheme.features.
+          CompraFácil los prende; las demás tiendas no ven nada de esto. */}
+      {features.length > 0 && (
+        <ProStoreSections
+          features={features}
+          displayName={displayName}
+          primary={cssPrimary}
+          accent={cssAccent}
+          tenantSlug={tenant.slug}
+          whatsappPhone={customization.whatsappPhone ?? tenant.ownerPhone}
+          bestSellers={showcase.map((p) => ({ id: p.id, name: p.name, image: p.image, unit: p.unit, price: p.price }))}
+        />
+      )}
+
       {/* Si NO hay NINGÚN producto que mostrar y NO es preview: bloque "Cómo
           pedir" como empty-state. Con productos en la vitrina ya no hace falta. */}
       {showcase.length === 0 && !isPreview && (
@@ -782,7 +821,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               Cómo pedir
             </p>
             <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-              Hacé tu pedido en 3 pasos
+              Haz tu pedido en 3 pasos
             </h2>
           </div>
           <ol className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -790,19 +829,19 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               {
                 n: "01",
                 title: "Explorá el catálogo",
-                desc: "Mirá todos los productos disponibles con precios y stock.",
+                desc: "Mira todos los productos disponibles con precios y stock.",
                 Icon: SearchIcon,
               },
               {
                 n: "02",
-                title: "Armá tu pedido",
-                desc: "Agregá lo que quieras. Veras el total real sin sorpresas.",
+                title: "Arma tu pedido",
+                desc: "Agrega lo que quieras. Verás el total real sin sorpresas.",
                 Icon: ShoppingBag,
               },
               {
                 n: "03",
                 title: "Recibí en tu puerta",
-                desc: "Pagás con Yape o efectivo al recibir. Delivery rápido a tu zona.",
+                desc: "Pagas con Yape o efectivo al recibir. Delivery rápido a tu zona.",
                 Icon: Truck,
               },
             ].map((step) => {
@@ -859,7 +898,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             Información del negocio
           </p>
           <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-            Lo que tenés que saber de {displayName}
+            Lo que tienes que saber de {displayName}
           </h2>
         </div>
 
@@ -908,7 +947,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             icon={<Tag className="w-5 h-5" strokeWidth={2} />}
             label="Métodos de pago"
             value="Yape · Plin · Efectivo"
-            hint="Sin tarjeta obligatoria · pagás al recibir"
+            hint="Sin tarjeta obligatoria · pagas al recibir"
             primary={cssPrimary}
           />
 
@@ -1012,7 +1051,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             </div>
             <div className="min-w-0">
               <p className="font-bold text-lg leading-tight">Ver catálogo completo</p>
-              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Todos los productos · armá tu pedido</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Todos los productos · arma tu pedido</p>
             </div>
             <ChevronRight className="w-5 h-5 text-[var(--text-tertiary)] ml-auto" strokeWidth={2.5} />
           </Link>

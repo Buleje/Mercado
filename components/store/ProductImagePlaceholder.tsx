@@ -35,6 +35,10 @@ export default function ProductImagePlaceholder({
         (className ?? "")
       }
       aria-label={label}
+      // Hook estable para ocultar el nag "Falta agregar imagen" SOLO en la tienda
+      // individual del comerciante (CSS scopeado a [data-store-chrome="tenant"]):
+      // al cliente final no le mostramos copy interno de admin. Brandon 2026-06-22.
+      data-img-placeholder=""
     >
       <svg
         viewBox="0 0 24 24"

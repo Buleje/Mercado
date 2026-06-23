@@ -386,6 +386,61 @@ body {
   }
 }
 
+/* ── Tienda individual: bordes rectos (Brandon 2026-06-21) ──────────────────
+   El comerciante pidió esquinas rectas en sus páginas (inicio + catálogo).
+   Scoped a [data-store-chrome="tenant"] (lo setea TenantStoreChrome en el
+   catálogo y el <main> en la landing) → NO afecta el marketplace de Buleje.
+   Se preservan los pills/círculos (rounded-full). */
+[data-store-chrome="tenant"] [class*="rounded"]:not([class*="rounded-full"]) {
+  border-radius: 0 !important;
+}
+
+/* ── Tienda individual: color de marca real en el catálogo (Brandon 2026-06-22) ──
+   PROBLEMA: globals.css declara `--color-primary` en `@theme inline`, así que
+   Tailwind HORNEA el teal Buleje (#00A0A0) literal en cada utility `*-primary`
+   (`bg-primary`, `text-primary`…). El catálogo (ProductCatalog/ProductCard/
+   CategoryBubbles) usa esas utilities → una tienda naranja (CompraFácil) salía
+   en teal, ignorando el `--color-primary` del tenant que el ThemeInjector sí
+   pone en :root.
+   FIX: dentro de la tienda individual (`[data-store-chrome="tenant"]`)
+   re-apuntamos ese set finito de utilities a `var(--color-primary)` /
+   `var(--color-primary-dark)`. Gana por especificidad + capa (regla sin @layer
+   > utilities). NO toca el marketplace (no lleva ese atributo). Lista derivada
+   por grep del árbol del catálogo — sincronizar si crecen las variantes. */
+[data-store-chrome="tenant"] {
+  .bg-primary { background-color: var(--color-primary); }
+  .bg-primary-dark { background-color: var(--color-primary-dark); }
+  .text-primary { color: var(--color-primary); }
+  .text-primary-dark { color: var(--color-primary-dark); }
+  .border-primary { border-color: var(--color-primary); }
+  .ring-primary { --tw-ring-color: var(--color-primary); }
+  .bg-primary\/5 { background-color: color-mix(in oklab, var(--color-primary) 5%, transparent); }
+  .bg-primary\/8 { background-color: color-mix(in oklab, var(--color-primary) 8%, transparent); }
+  .bg-primary\/10 { background-color: color-mix(in oklab, var(--color-primary) 10%, transparent); }
+  .bg-primary\/15 { background-color: color-mix(in oklab, var(--color-primary) 15%, transparent); }
+  .text-primary\/70 { color: color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .border-primary\/20 { border-color: color-mix(in oklab, var(--color-primary) 20%, transparent); }
+  .border-primary\/30 { border-color: color-mix(in oklab, var(--color-primary) 30%, transparent); }
+  .border-l-primary\/40 { border-left-color: color-mix(in oklab, var(--color-primary) 40%, transparent); }
+  .ring-primary\/30 { --tw-ring-color: color-mix(in oklab, var(--color-primary) 30%, transparent); }
+  .shadow-primary\/10 { --tw-shadow-color: color-mix(in oklab, var(--color-primary) 10%, transparent); }
+  .shadow-primary\/20 { --tw-shadow-color: color-mix(in oklab, var(--color-primary) 20%, transparent); }
+  .shadow-primary\/25 { --tw-shadow-color: color-mix(in oklab, var(--color-primary) 25%, transparent); }
+  .hover\:bg-primary:hover { background-color: var(--color-primary); }
+  .hover\:bg-primary-dark:hover { background-color: var(--color-primary-dark); }
+  .hover\:bg-primary\/8:hover { background-color: color-mix(in oklab, var(--color-primary) 8%, transparent); }
+  .hover\:bg-primary\/10:hover { background-color: color-mix(in oklab, var(--color-primary) 10%, transparent); }
+  .hover\:text-primary:hover { color: var(--color-primary); }
+  .hover\:border-primary:hover { border-color: var(--color-primary); }
+  .focus\:ring-primary\/30:focus { --tw-ring-color: color-mix(in oklab, var(--color-primary) 30%, transparent); }
+  .focus\:border-primary:focus { border-color: var(--color-primary); }
+
+  /* El placeholder "Falta agregar imagen" es copy interno para el dueño; al
+     cliente final de la tienda individual NO se lo mostramos. Se conserva el
+     ícono neutro de imagen. (En admin/marketplace la pista al dueño queda.) */
+  [data-img-placeholder] span { display: none; }
+}
+
 /* CSS entrance animations (used for above-fold LCP elements) */
 
 /* Focus-visible: mejor accesibilidad con teclado */

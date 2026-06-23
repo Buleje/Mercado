@@ -42,7 +42,11 @@ import MarketplaceSideRailShell from "@/components/marketplace/MarketplaceSideRa
 import { HideInCheckoutMode, CheckoutModeBar } from "@/components/marketplace/CheckoutModeChrome";
 // Chrome propio de la TIENDA INDIVIDUAL (aislado del marketplace). Brandon 2026-06-07.
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
-import { SettingsDB } from "@/lib/db/settings.db";
+// Footer dedicado white-label + marker de "bordes rectos" — solo tienda individual.
+import TenantFooter from "@/components/store/TenantFooter";
+import TenantStoreChrome from "@/components/store/TenantStoreChrome";
+// Barra de progreso "envío gratis" — opt-in por tienda (flag "shipping", ADR-298).
+import FreeShippingBar from "@/components/store/tenant/FreeShippingBar";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 import { tenantExists } from "@/lib/tenant-check";
 import { headers } from "next/headers";
@@ -153,6 +157,16 @@ async function StoreLayoutContent({
   const storeLogo =
     (settings as { logoUrl?: string | null } | null)?.logoUrl ?? null;
 
+  // Flags PRO opt-in por tienda (ADR-298) viven en settings.storeTheme.features.
+  // "shipping" → barra de progreso de envío gratis con umbral configurable.
+  const storeTheme = (settings as { storeTheme?: Record<string, unknown> } | null)?.storeTheme;
+  const tenantFeatures = Array.isArray(storeTheme?.features)
+    ? (storeTheme!.features as unknown[]).filter((f): f is string => typeof f === "string")
+    : [];
+  const freeShipThreshold =
+    typeof storeTheme?.freeShippingThreshold === "number" ? storeTheme.freeShippingThreshold : 99;
+  const showFreeShipBar = isTenant && tenantFeatures.includes("shipping");
+
   return (
     <StoreProviders tenantSlug={tenantId}>
       <MotionProvider>
@@ -169,14 +183,17 @@ async function StoreLayoutContent({
                   floating widgets. Solo el mundo de la tienda. El carrito y los
                   modales de pedido se mantienen (mismo flujo de checkout). */
               <>
+                {/* Marker para bordes rectos de la tienda individual (CSS scoped
+                    en globals.css). No afecta el marketplace. Brandon 2026-06-21. */}
+                <TenantStoreChrome />
                 <StorefrontNavbar name={storeName} logo={storeLogo} />
+                {showFreeShipBar && <FreeShippingBar threshold={freeShipThreshold} />}
                 {children}
-                {/* Brandon 2026-06-08: footer ÚNICO de Buleje en TODAS las páginas
-                    (incluidas las tiendas individuales) — antes StorefrontFooter. */}
-                <Footer />
-                <Suspense fallback={null}>
-                  <QuickAddDrawer />
-                </Suspense>
+                {/* Footer dedicado de la tienda (white-label) — sin branding del
+                    marketplace. Brandon 2026-06-21: revierte el "footer único".
+                    QuickAddDrawer (marketplace) removido del chrome tenant: duplicaba
+                    el modal con QuickAddModal (ambos useQuickAdd → doble modal). */}
+                <TenantFooter slug={tenantId} storeName={storeName} />
                 {/* El bottom-nav mobile lo aporta el MobileBottomNav legacy de
                     las páginas single-tenant (TiendaClientShell etc.), que usa el
                     cart legacy correcto. No montamos uno extra acá para no duplicar. */}

@@ -130,7 +130,7 @@ function WhatsAppContactStrip({ storeName }: { storeName: string }) {
               Atención directa
             </span>
             <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-              Hablá con {storeName}
+              Habla con {storeName}
             </h3>
             <p className="text-[var(--text-secondary)] text-sm mt-1 max-w-md leading-relaxed">
               Te respondemos por WhatsApp al instante.
@@ -172,7 +172,12 @@ function WhatsAppContactStrip({ storeName }: { storeName: string }) {
   );
 }
 
-export default function TenantFooter({ slug, storeName }: TenantFooterProps) {
+export default function TenantFooter({ slug: slugProp, storeName }: TenantFooterProps) {
+  // El layout (store) pasa el x-tenant-id, que no siempre es el slug de la URL.
+  // Derivamos el slug real del pathname (/t/<slug>/...) para que los links del
+  // footer mantengan el contexto del comercio. Fallback al prop. Brandon 2026-06-21.
+  const pathnameForSlug = usePathname();
+  const slug = pathnameForSlug?.match(/^\/t\/([^/]+)/)?.[1] || slugProp;
   const year = new Date().getFullYear();
   const { deliveryConfig, storeTheme } = useSettings();
   const [nlEmail, setNlEmail] = useState("");
