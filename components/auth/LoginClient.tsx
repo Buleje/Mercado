@@ -15,10 +15,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Phone, Shield, Loader2 } from "lucide-react";
+import { ArrowLeft, Phone, Shield, Loader2, Truck, BadgePercent, MapPin, Star, ShieldCheck } from "lucide-react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { getSupabaseBrowser, isSupabaseAuthConfigured } from "@/lib/supabase/client";
 import { useCustomer } from "@/contexts/customer-context";
+import { BulejeWordmark } from "@/components/ui-system/illustrations";
 
 interface VerifyResponse {
   ok: boolean;
@@ -160,30 +161,66 @@ export default function LoginClient() {
     "w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20";
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col bg-white dark:bg-gray-900 sm:flex-row">
-      {/* ── Panel promo (desktop) ── */}
+    <div className="relative flex min-h-[100dvh] flex-col bg-gray-50 dark:bg-gray-950 sm:flex-row">
+      {/* ── Panel promo (desktop) — gradiente turquesa con glows + marca,
+          beneficios con iconos y prueba social. Decorativo (aria-hidden):
+          lo accionable vive en el panel de auth de la derecha. ── */}
       <aside
         aria-hidden
-        className="relative hidden shrink-0 flex-col justify-between overflow-hidden p-10 text-white sm:flex sm:w-[44%] lg:w-[40%]"
-        style={{ background: "linear-gradient(150deg, var(--accent) 0%, color-mix(in oklch, var(--accent) 60%, #061a1e) 70%, #061a1e 100%)" }}
+        className="relative hidden shrink-0 flex-col justify-between overflow-hidden p-10 text-white sm:flex sm:w-[44%] lg:w-[42%] lg:p-12"
+        style={{ background: "linear-gradient(155deg, color-mix(in oklch, var(--accent) 88%, white) 0%, var(--accent) 42%, #06222a 100%)" }}
       >
-        <span className="text-xl font-black tracking-tight">Buleje</span>
-        <div>
-          <p className="text-3xl font-black leading-[1.1] tracking-tight lg:text-4xl">
+        {/* glows decorativos */}
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
+        <div className="pointer-events-none absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-[#06222a]/50 blur-3xl" />
+
+        <div className="relative">
+          <BulejeWordmark size={40} textSize={22} forceDark className="text-white" />
+        </div>
+
+        <div className="relative">
+          <p className="text-4xl font-black leading-[1.05] tracking-tight lg:text-5xl">
             Tu barrio,
             <br />
             a un toque.
           </p>
-          <p className="mt-4 max-w-sm text-base font-medium text-white/85">
-            Pedí a las bodegas y restaurantes de Ciudad Constitución con delivery rápido.
-            Pagás al recibir — Yape, Plin o efectivo.
+          <p className="mt-5 max-w-sm text-base font-medium leading-relaxed text-white/85">
+            Pedí a las bodegas y restaurantes de Ciudad Constitución con delivery
+            rápido. Pagás al recibir — Yape, Plin o efectivo.
           </p>
+          <ul className="mt-8 space-y-3.5">
+            {[
+              { Icon: Truck, label: "Envío gratis desde S/50" },
+              { Icon: BadgePercent, label: "10% OFF en tu primera compra" },
+              { Icon: MapPin, label: "Seguí tu pedido en vivo" },
+            ].map(({ Icon, label }) => (
+              <li key={label} className="flex items-center gap-3 text-sm font-semibold text-white/95">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 backdrop-blur-sm">
+                  <Icon className="h-[1.05rem] w-[1.05rem]" strokeWidth={2} aria-hidden />
+                </span>
+                {label}
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="space-y-2 text-sm font-medium text-white/90">
-          <li>Envío gratis desde S/50</li>
-          <li>10% OFF en tu primera compra</li>
-          <li>Seguí tu pedido en vivo</li>
-        </ul>
+
+        <div className="relative space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+            <span className="inline-flex">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Star key={i} className="h-4 w-4 fill-amber-300 text-amber-300" aria-hidden />
+              ))}
+            </span>
+            4.8 · +800 vecinos comprando
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {["Yape", "Plin", "Efectivo"].map((p) => (
+              <span key={p} className="rounded-full bg-white/12 px-3 py-1 text-xs font-bold tracking-wide text-white/90 ring-1 ring-white/15">
+                {p}
+              </span>
+            ))}
+          </div>
+        </div>
       </aside>
 
       {/* ── Autenticación ── */}
@@ -201,41 +238,62 @@ export default function LoginClient() {
 
         <div className="flex flex-1 items-center justify-center px-5 py-8 sm:px-8">
           <div className="w-full max-w-sm">
-            {/* Logo + título */}
-            <div className="mb-8 flex flex-col items-center gap-3 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-900 dark:bg-white text-2xl font-black text-white dark:text-gray-900 shadow-md">
-                B
-              </div>
-              <div>
-                <h1 className="font-display text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-                  {step === "otp" ? "Verificación" : "Ingresá o creá tu cuenta"}
+            {/* Marca */}
+            <div className="mb-6 flex justify-center">
+              <BulejeWordmark size={44} textSize={24} className="text-[var(--accent-600)] dark:text-white" />
+            </div>
+
+            {/* Tarjeta de autenticación — eleva el formulario del fondo */}
+            <div className="rounded-3xl border border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-[0_8px_30px_rgba(2,6,23,0.06)] sm:p-7">
+              <div className="mb-6 text-center">
+                <h1 className="font-display text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+                  {step === "otp"
+                    ? "Verificá tu número"
+                    : phoneView === "form"
+                      ? "Ingresá tu celular"
+                      : "Ingresá o creá tu cuenta"}
                 </h1>
                 <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
                   {step === "otp"
                     ? "Ingresá el código que te enviamos por WhatsApp"
-                    : "Comprá en las tiendas de tu barrio, seguro y al toque"}
+                    : phoneView === "form"
+                      ? "Te llega un código por WhatsApp al instante"
+                      : "Comprá en las tiendas de tu barrio, seguro y al toque"}
                 </p>
               </div>
-            </div>
 
             {/* Paso phone — métodos */}
             {step === "phone" && phoneView === "methods" && (
-              <div className="space-y-3">
-                <button onClick={() => oauthReady && void signInWithSupabase("google")} disabled={!oauthReady} className={btnBase}>
-                  <GoogleIcon />
-                  {oauthReady ? "Continuar con Google" : "Google — Próximamente"}
-                </button>
+              <div className="space-y-4">
+                {/* CTA primaria: celular (WhatsApp OTP, el método nativo en PE) */}
                 <button
                   onClick={() => setPhoneView("form")}
-                  className="flex w-full min-h-12 items-center justify-center gap-2.5 rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-white shadow-md transition-all hover:opacity-95 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                  className="flex w-full min-h-12 items-center justify-center gap-2.5 rounded-2xl bg-[var(--accent)] px-4 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:opacity-95 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                 >
                   <Phone className="h-4 w-4" strokeWidth={2.5} aria-hidden />
                   Continuar con tu celular
                 </button>
-                <button onClick={() => oauthReady && void signInWithSupabase("facebook")} disabled={!oauthReady} className={btnBase}>
-                  <FacebookIcon />
-                  {oauthReady ? "Continuar con Facebook" : "Facebook — Próximamente"}
-                </button>
+
+                {/* Divisor */}
+                <div className="flex items-center gap-3">
+                  <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                    o ingresá con
+                  </span>
+                  <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                </div>
+
+                {/* Métodos sociales — lado a lado */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => oauthReady && void signInWithSupabase("google")} disabled={!oauthReady} className={btnBase}>
+                    <GoogleIcon />
+                    <span>{oauthReady ? "Google" : "Pronto"}</span>
+                  </button>
+                  <button onClick={() => oauthReady && void signInWithSupabase("facebook")} disabled={!oauthReady} className={btnBase}>
+                    <FacebookIcon />
+                    <span>{oauthReady ? "Facebook" : "Pronto"}</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -339,8 +397,16 @@ export default function LoginClient() {
               </div>
             )}
 
+            </div>
+
+            {/* Confianza */}
+            <div className="mt-5 flex items-center justify-center gap-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">
+              <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+              Tus datos están protegidos · nunca enviamos spam
+            </div>
+
             {/* Legal */}
-            <p className="mt-8 text-center text-[length:var(--ts-2xs)] leading-relaxed text-gray-400 dark:text-gray-500">
+            <p className="mt-3 text-center text-[length:var(--ts-2xs)] leading-relaxed text-gray-400 dark:text-gray-500">
               Al continuar aceptas los{" "}
               <Link href="/terminos" className="underline hover:text-[var(--accent)]">Términos</Link>{" "}
               y la{" "}
