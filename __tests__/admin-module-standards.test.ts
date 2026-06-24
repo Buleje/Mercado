@@ -35,6 +35,9 @@ const NO_TABS_MODULES = [
   // Añadidos en commits posteriores al estándar — opt-out documentado.
   "DocumentosModule.tsx",
   "LeadsFunnelModule.tsx",
+  // DropshipModule (ADR-298): vista única (tabla de fulfillments al proveedor),
+  // sin sub-tabs → no necesita AdminTabBar/MODULE_ID.
+  "DropshipModule.tsx",
 ];
 // Módulos con header custom (no usan AdminModuleHeader, patrón legítimo documentado)
 const CUSTOM_HEADER_MODULES = [
