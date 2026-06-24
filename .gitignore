@@ -227,3 +227,20 @@ docs/security/vercel-env-backups/
 app/**/.claude/
 scripts/.backup-base64-images.json
 scripts/dev-helpers/_measure-nav-heights.mjs
+
+# ── Artefactos del sandbox / accidentes (2026-06-24) ─────────────────────────
+# Mounts read-only que el sandbox de Claude Code deja en el working tree (no se
+# pueden borrar desde dentro del sandbox). Se ignoran para que no se commiteen:
+#  • ${CLAUDE_PROJECT_DIR}/ = dir con nombre de variable sin expandir (.env→/dev/null)
+#  • dotfiles 0-byte en la raíz = bind-mounts (los reales viven en $HOME, no acá)
+${CLAUDE_PROJECT_DIR}/
+/.bashrc
+/.bash_profile
+/.zshrc
+/.zprofile
+/.profile
+/.ripgreprc
+/.gitconfig
+/.idea
+# Backup de prune de settings (.bak-prune no lo cubría /.claude/*.bak).
+/.claude/*.bak-*
