@@ -463,4 +463,26 @@ export const SettingsDB = {
       return null;
     }
   },
+
+  /**
+   * Merge-patch de `storeThemeJson` — preserva las demás claves.
+   * Brandon 2026-06-24: el storefront `/t/[slug]` lee `settings.storeTheme`
+   * PRIMERO (fuente de verdad). El editor "Mi tienda pública" (TenantStorePage)
+   * quedaba pisado → sus cambios no se veían. Con esto, sus saves escriben-
+   * through los campos compartidos al storeTheme, así SÍ se reflejan.
+   * No-op si no hay fila de settings (entonces storeTheme es null y el
+   * storefront ya cae al valor del editor B vía la cadena de fallback).
+   */
+  async patchStoreThemeJson(
+    tenantId: string,
+    patch: Record<string, unknown>,
+  ): Promise<void> {
+    const cur = (await this.getStoreThemeJson(tenantId)) ?? {};
+    const merged = { ...cur, ...patch };
+    await prisma.settings.updateMany({
+      where: { tenantId },
+      data: { storeThemeJson: JSON.stringify(merged) },
+    });
+    invalidateByPrefix(`settings:${tenantId}`);
+  },
 };

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { StorePageDB } from "@/lib/db/store-page.db";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -63,6 +64,36 @@ export async function PUT(req: NextRequest) {
 
   try {
     const page = await StorePageDB.upsertCustomization(auth.tenantId, parsed.data);
+
+    // Write-through al storeTheme (fuente de verdad del storefront /t/[slug]):
+    // replica los campos COMPARTIDOS con "Identidad y tema" (hero textos+imagen,
+    // colores, contacto) para que lo editado en "Mi tienda pública" SÍ se vea.
+    // El destino del CTA NO se mapea: heroLink es enum en storeTheme vs heroCtaUrl
+    // (URL libre) acá — modelos distintos. `!== undefined` permite limpiar (null→"").
+    const d = parsed.data;
+    const themePatch: Record<string, unknown> = {};
+    const mapField = (raw: unknown, key: string) => {
+      if (raw !== undefined) themePatch[key] = raw ?? "";
+    };
+    mapField(d.heroTitle, "heroTitle");
+    mapField(d.heroSubtitle, "heroSubtitle");
+    mapField(d.heroImageUrl, "heroImage");
+    mapField(d.heroCtaLabel, "heroCTA");
+    mapField(d.primaryColor, "primaryColor");
+    mapField(d.accentColor, "accentColor");
+    mapField(d.whatsappPhone, "whatsapp");
+    mapField(d.contactEmail, "email");
+    mapField(d.address, "address");
+    if (Object.keys(themePatch).length > 0) {
+      await withDbRetry(() => SettingsDB.patchStoreThemeJson(auth.tenantId, themePatch)).catch(
+        (err) =>
+          logger.warn("[store-page/customization] write-through storeTheme falló", {
+            err: err instanceof Error ? err.message : String(err),
+            tenantId: auth.tenantId,
+          }),
+      );
+    }
+
     logger.info("[store-page/customization] updated", {
       tenantId: auth.tenantId,
       username: auth.username,

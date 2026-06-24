@@ -572,7 +572,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                   </span>
                   {customization.heroCtaLabel && customization.heroCtaUrl && (
                     <Link
-                      href={customization.heroCtaUrl}
+                      // Guard anti-`javascript:`/`data:` — solo rutas relativas o http(s).
+                      href={/^(\/|https?:\/\/)/.test(customization.heroCtaUrl) ? customization.heroCtaUrl : "#"}
                       className="px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white hover:bg-white/30 transition-colors"
                     >
                       {customization.heroCtaLabel}
