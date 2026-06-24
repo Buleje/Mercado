@@ -162,7 +162,7 @@ const COLOR_PRESETS = [
   { label: "Azul",    value: "#2563eb" },
   { label: "Emerald", value: "#059669" },
   { label: "Rosa",    value: "#e11d48" },
-  { label: "Amber",   value: "#f0503f" },
+  { label: "Amber",   value: "#f59e0b" },
   { label: "Gris",    value: "#475569" },
   { label: "Naranja", value: "#f0503f" },
 ];
@@ -298,7 +298,7 @@ function ColorPicker({
       <div className="flex flex-wrap gap-2.5 items-center">
         {COLOR_PRESETS.map((c) => (
           <button
-            key={c.value}
+            key={c.label}
             type="button"
             onClick={() => onChange(c.value)}
             title={c.label}
@@ -401,7 +401,7 @@ function HeroTab({
   update: <K extends keyof StoreTheme>(key: K, value: StoreTheme[K]) => void;
   inputCls: string;
 }) {
-  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("mobile");
 
   const storefrontUrl = (() => {
     if (typeof window === "undefined") return "/tienda";
@@ -414,7 +414,7 @@ function HeroTab({
   const accent = theme.accentColor || theme.primaryColor;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Banner explicativo */}
       <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
         <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -429,6 +429,12 @@ function HeroTab({
         </div>
       </div>
 
+      {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la derecha
+          (siempre visible mientras editás), form a la izquierda. Mismo patrón
+          que el tab Identidad. En mobile apila: preview arriba, form abajo. ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+      {/* ── Columna preview ── */}
+      <aside className="min-w-0 space-y-3 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-4">
       {/* ── LIVE PREVIEW (fiel al hero real) ────────────────── */}
       <StyleSection
         icon={<Eye className="h-5 w-5 text-primary" />}
@@ -597,7 +603,7 @@ function HeroTab({
                           boxShadow: `0 10px 25px ${accent}50`,
                         }}
                       >
-                        Hecho en Pucallpa
+                        {theme.heroOriginBadge || "Hecho en Pucallpa"}
                       </div>
                     </div>
                   </div>
@@ -607,7 +613,10 @@ function HeroTab({
           </div>
         </div>
       </StyleSection>
+      </aside>
 
+      {/* ── Columna form (izquierda) ── */}
+      <div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-1">
       {/* ── 1. TÍTULO PRINCIPAL ─────────────────────────────── */}
       <StyleSection
         icon={<Type className="h-5 w-5 text-primary" />}
@@ -959,6 +968,8 @@ function HeroTab({
             </ul>
           </div>
         </div>
+      </div>
+      </div>
       </div>
     </div>
   );
@@ -1634,7 +1645,7 @@ export default function StoreCustomizer() {
 
             {/* ── TAB: COLORES ───────────────────────────────────────── */}
             {activeTab === "colores" && (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {/* Banner explicativo */}
                 <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
                   <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -1648,6 +1659,12 @@ export default function StoreCustomizer() {
                   </div>
                 </div>
 
+                {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la
+                    derecha (siempre visible mientras elegís colores), form a la
+                    izquierda. Mismo patrón que Hero/Identidad. ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+                {/* ── Columna form (izquierda) ── */}
+                <div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-1">
                 {/* ── 1. PLANTILLAS LISTAS ──────────────────────────── */}
                 <StyleSection
                   icon={<Sparkles className="h-5 w-5 text-primary" />}
@@ -1800,7 +1817,71 @@ export default function StoreCustomizer() {
                   </div>
                 </StyleSection>
 
-                {/* ── 3. VISTA PREVIA EN VIVO ─────────────────────── */}
+                {/* ── 3. MODO OSCURO ─────────────────────────────────── */}
+                <StyleSection
+                  icon={<Moon className="h-5 w-5 text-primary" />}
+                  title="Modo oscuro por defecto"
+                  description="Cuando un cliente nuevo entra a tu tienda, ¿en qué modo abre? Igual cada usuario puede cambiar después."
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Light mode card */}
+                    <button
+                      type="button"
+                      onClick={() => update("darkModeDefault", false)}
+                      aria-pressed={!theme.darkModeDefault}
+                      className={cn(
+                        "p-4 rounded-2xl border-2 transition-all",
+                        !theme.darkModeDefault
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
+                      )}
+                    >
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-white dark:bg-[var(--color-card)] border border-gray-200 overflow-hidden flex flex-col">
+                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
+                        <div className="flex-1 p-2 space-y-1">
+                          <div className="h-1.5 rounded-full bg-gray-300 w-3/4" />
+                          <div className="h-1 rounded-full bg-gray-200 w-1/2" />
+                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <Sun className="h-4 w-4 text-[var(--data-warning-500)]" />
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo claro</p>
+                      </div>
+                    </button>
+
+                    {/* Dark mode card */}
+                    <button
+                      type="button"
+                      onClick={() => update("darkModeDefault", true)}
+                      aria-pressed={theme.darkModeDefault}
+                      className={cn(
+                        "p-4 rounded-2xl border-2 transition-all",
+                        theme.darkModeDefault
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
+                      )}
+                    >
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-gray-950 border border-gray-800 overflow-hidden flex flex-col">
+                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
+                        <div className="flex-1 p-2 space-y-1">
+                          <div className="h-1.5 rounded-full bg-gray-700 w-3/4" />
+                          <div className="h-1 rounded-full bg-gray-800 w-1/2" />
+                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <Moon className="h-4 w-4 text-[var(--data-success-500)]" />
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo oscuro</p>
+                      </div>
+                    </button>
+                  </div>
+                </StyleSection>
+                </div>
+
+                {/* ── Columna preview (sticky derecha) ── */}
+                <aside className="min-w-0 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-4">
+                {/* ── VISTA PREVIA EN VIVO ─────────────────────── */}
                 <StyleSection
                   icon={<Eye className="h-5 w-5 text-primary" />}
                   title="Vista previa en vivo"
@@ -1894,67 +1975,8 @@ export default function StoreCustomizer() {
                     </div>
                   </div>
                 </StyleSection>
-
-                {/* ── 4. MODO OSCURO ─────────────────────────────────── */}
-                <StyleSection
-                  icon={<Moon className="h-5 w-5 text-primary" />}
-                  title="Modo oscuro por defecto"
-                  description="Cuando un cliente nuevo entra a tu tienda, ¿en qué modo abre? Igual cada usuario puede cambiar después."
-                >
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Light mode card */}
-                    <button
-                      type="button"
-                      onClick={() => update("darkModeDefault", false)}
-                      aria-pressed={!theme.darkModeDefault}
-                      className={cn(
-                        "p-4 rounded-2xl border-2 transition-all",
-                        !theme.darkModeDefault
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
-                      )}
-                    >
-                      <div className="aspect-[4/3] mb-3 rounded-xl bg-white dark:bg-[var(--color-card)] border border-gray-200 overflow-hidden flex flex-col">
-                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
-                        <div className="flex-1 p-2 space-y-1">
-                          <div className="h-1.5 rounded-full bg-gray-300 w-3/4" />
-                          <div className="h-1 rounded-full bg-gray-200 w-1/2" />
-                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-center gap-2">
-                        <Sun className="h-4 w-4 text-[var(--data-warning-500)]" />
-                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo claro</p>
-                      </div>
-                    </button>
-
-                    {/* Dark mode card */}
-                    <button
-                      type="button"
-                      onClick={() => update("darkModeDefault", true)}
-                      aria-pressed={theme.darkModeDefault}
-                      className={cn(
-                        "p-4 rounded-2xl border-2 transition-all",
-                        theme.darkModeDefault
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
-                      )}
-                    >
-                      <div className="aspect-[4/3] mb-3 rounded-xl bg-gray-950 border border-gray-800 overflow-hidden flex flex-col">
-                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
-                        <div className="flex-1 p-2 space-y-1">
-                          <div className="h-1.5 rounded-full bg-gray-700 w-3/4" />
-                          <div className="h-1 rounded-full bg-gray-800 w-1/2" />
-                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-center gap-2">
-                        <Moon className="h-4 w-4 text-[var(--data-success-500)]" />
-                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo oscuro</p>
-                      </div>
-                    </button>
-                  </div>
-                </StyleSection>
+                </aside>
+                </div>
               </div>
             )}
 
