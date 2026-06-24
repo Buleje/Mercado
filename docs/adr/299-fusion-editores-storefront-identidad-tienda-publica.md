@@ -3,7 +3,7 @@
 > Estado: **Aceptado · implementado fases 1-4** (sesión 2026-06-24) · Fecha: 2026-06-24
 > Autor: Brandon (Buleje) · Relacionado: ADR-114 (RLS), ADR-059 (marketplace), `MANUAL-rls-fix-store-page-guc-2026-06-24.sql`
 
-> **Corrección en fase 3 (trust-but-verify):** la premisa "Mi tienda pública = duplicado" era **incompleta**. Ese editor tiene 4 tabs ÚNICOS (builder de secciones, branding marketplace, banners, promos del home) que NO existen en el unificado. Por eso NO se ocultó entero: se quitaron solo los 3 tabs **duplicados** (Hero/Diseño/Métricas). Resultado: 2 editores con **cero solapamiento** (no "1 editor"). Fase 4 barrió 2145 LOC de tabs huérfanos. **Gap menor abierto:** CTA de hero con URL libre (`heroCtaUrl`) — el unificado solo ofrece destinos preset.
+> **Corrección en fase 3 (trust-but-verify):** la premisa "Mi tienda pública = duplicado" era **incompleta**. Ese editor tiene 4 tabs ÚNICOS (builder de secciones, branding marketplace, banners, promos del home) que NO existen en el unificado. Por eso NO se ocultó entero: se quitaron solo los 3 tabs **duplicados** (Hero/Diseño/Métricas). Resultado: 2 editores con **cero solapamiento** (no "1 editor"). Fase 4 barrió 2145 LOC de tabs huérfanos. **Gap del CTA cerrado** (`02d911f8`): el destino "URL custom" del hero ahora captura `heroCtaUrl` en el editor unificado y `TiendaHero` lo resuelve (sanitizado). **Sin gaps abiertos.**
 
 ## Contexto
 
