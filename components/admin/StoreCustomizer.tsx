@@ -8,7 +8,7 @@ import {
   Save, Loader2, Check, Eye, EyeOff,
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
   MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight, Sun, Moon, Type, Sliders,
-  Paintbrush, FileText, Sparkles, Square, LayoutGrid, WandSparkles, RefreshCw,
+  Paintbrush, FileText, Sparkles, Square, LayoutGrid, RefreshCw,
   Smartphone, Monitor, Zap, Truck, Star, Heart, Clock, ExternalLink } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { LoadingState, PageTitle, PrimaryButton, SectionTitle } from "@buleje/design-system";
@@ -23,6 +23,8 @@ const StoreCreativeMode = dynamic(() => import("./StoreCreativeMode"), { ssr: fa
 const CatalogoTiendaTab = dynamic(() => import("./store-page/CatalogoTiendaTab"), { ssr: false });
 const BrandConceptTab = dynamic(() => import("./BrandConceptTab"), { ssr: false });
 const CategoryBannersTab = dynamic(() => import("./CategoryBannersTab"), { ssr: false });
+// Métricas del storefront — absorbidas de "Mi tienda pública" (ADR-299 fase 2).
+const AnalyticsTab = dynamic(() => import("@/app/admin/store-page/_components/AnalyticsTab"), { ssr: false });
 import type { SectionKey } from "./StorefrontEditor";
 import ImageUpload from "./ImageUpload";
 import { Field } from "@/components/admin/shared/Field";
@@ -979,17 +981,15 @@ function HeroTab({
 
 const MODULE_ID = "store-customizer";
 
+// Fusión ADR-299 fase 2: 11 → 6 tabs. Marca→Colores; Promos/Secciones/Catálogo
+// + Contacto → "Página"; Textos → Avanzado. Se consolidan por condición de
+// render (sin mover bloques) — los ids viejos quedan en el type pero sin botón.
 const TABS = [
   { id: "identidad" as Tab, label: "Identidad", shortLabel: "Identidad", icon: Store },
-  { id: "marca" as Tab, label: "Marca", shortLabel: "Marca", icon: WandSparkles },
-  { id: "colores" as Tab, label: "Colores", icon: Palette },
-  { id: "estilos" as Tab, label: "Estilos", icon: Paintbrush },
   { id: "hero" as Tab, label: "Hero", icon: ImageIcon },
-  { id: "promos" as Tab, label: "Promos por categoría", shortLabel: "Promos", icon: Tag },
-  { id: "secciones" as Tab, label: "Secciones", shortLabel: "Sec.", icon: Layout },
-  { id: "catalogo" as Tab, label: "Catálogo", shortLabel: "Cat.", icon: Package },
-  { id: "contenido" as Tab, label: "Textos y popup", shortLabel: "Textos", icon: FileText },
-  { id: "contacto" as Tab, label: "Contacto", icon: Phone },
+  { id: "colores" as Tab, label: "Colores & Tipografía", shortLabel: "Colores", icon: Palette },
+  { id: "estilos" as Tab, label: "Estilos", icon: Paintbrush },
+  { id: "contacto" as Tab, label: "Página", shortLabel: "Página", icon: Layout },
   { id: "avanzado" as Tab, label: "Avanzado", icon: Settings2 },
 ] as const;
 
@@ -1176,6 +1176,25 @@ export default function StoreCustomizer() {
     return m ? m[1] : "main";
   });
 
+  // Campos que viven en TenantStorePage (no en storeTheme) — absorbidos al
+  // editor unificado (ADR-299 fase 2): SEO + publicado + about. Carga/guardado
+  // vía /api/store-page/customization (store distinto → save cross-store).
+  const [pageFields, setPageFields] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    ogImageUrl: "",
+    published: true,
+    aboutTitle: "",
+    aboutBody: "",
+  });
+  const updatePage = useCallback(
+    (patch: Partial<typeof pageFields>) => {
+      setPageFields((prev) => ({ ...prev, ...patch }));
+      setSaved(false);
+    },
+    [],
+  );
+
   // Detecta si hay cambios pendientes comparando con la última versión guardada
   const hasUnsavedChanges = JSON.stringify(theme) !== JSON.stringify(savedTheme);
 
@@ -1187,6 +1206,32 @@ export default function StoreCustomizer() {
 
   useEffect(() => {
     void load();
+  }, []);
+
+  // Carga SEO/publicado/about desde TenantStorePage (store distinto a storeTheme).
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/store-page/customization");
+        if (!res.ok || cancelled) return;
+        const p = (await res.json()) as Record<string, unknown>;
+        if (cancelled) return;
+        setPageFields({
+          metaTitle: typeof p.metaTitle === "string" ? p.metaTitle : "",
+          metaDescription: typeof p.metaDescription === "string" ? p.metaDescription : "",
+          ogImageUrl: typeof p.ogImageUrl === "string" ? p.ogImageUrl : "",
+          published: p.published !== false,
+          aboutTitle: typeof p.aboutTitle === "string" ? p.aboutTitle : "",
+          aboutBody: typeof p.aboutBody === "string" ? p.aboutBody : "",
+        });
+      } catch {
+        /* fallback: campos vacíos */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function load() {
@@ -1262,6 +1307,17 @@ export default function StoreCustomizer() {
         body: JSON.stringify({ storeTheme: themeToSave }),
       });
       if (!res.ok) throw new Error("Error al guardar");
+      // Cross-store: guardar también SEO/publicado/about en TenantStorePage
+      // (ADR-299 fase 2). Secundario — si falla, el theme ya quedó guardado.
+      try {
+        await fetch("/api/store-page/customization", {
+          method: "PUT",
+          headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
+          body: JSON.stringify(pageFields),
+        });
+      } catch {
+        /* el theme ya se guardó; estos campos son secundarios */
+      }
       setSaved(true);
       setSavedTheme(themeToSave);
       if (!options?.silent) {
@@ -1278,7 +1334,7 @@ export default function StoreCustomizer() {
     } finally {
       setSaving(false);
     }
-  }, [activeTenantSlug]);
+  }, [activeTenantSlug, pageFields]);
 
   const handleSave = useCallback(async () => {
     await saveTheme(theme);
@@ -1435,6 +1491,7 @@ export default function StoreCustomizer() {
                 exactamente dónde aparece cada campo (cabecera de su
                 tienda + resultado de Google) mientras tipea. */}
             {activeTab === "identidad" && (
+              <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
                 {/* ── Columna form ── */}
                 <div className="space-y-6 min-w-0">
@@ -1621,10 +1678,51 @@ export default function StoreCustomizer() {
                   </p>
                 </aside>
               </div>
+
+              {/* SEO, visibilidad y "Acerca de" — absorbidos de "Mi tienda
+                  pública" (ADR-299 fase 2). Guardan en TenantStorePage. */}
+              <StyleSection
+                icon={<Settings2 className="h-5 w-5 text-primary" />}
+                title="SEO y visibilidad"
+                description="Cómo aparece tu tienda en Google y si está publicada (antes vivía en 'Mi tienda pública')."
+              >
+                <div className="space-y-4">
+                  <Field label="Título SEO (meta title)" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <input type="text" value={pageFields.metaTitle} onChange={(e) => updatePage({ metaTitle: e.target.value })} placeholder={theme.storeName || "Mi tienda"} maxLength={200} className={inputCls} />
+                  </Field>
+                  <Field label="Descripción SEO (meta description)" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <textarea rows={2} value={pageFields.metaDescription} onChange={(e) => updatePage({ metaDescription: e.target.value })} placeholder="Lo que se lee bajo el título en Google." maxLength={400} className={inputCls} />
+                  </Field>
+                  <Field label="Imagen para compartir (OG image · URL)" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <input type="url" value={pageFields.ogImageUrl} onChange={(e) => updatePage({ ogImageUrl: e.target.value })} placeholder="https://..." maxLength={500} className={inputCls} />
+                  </Field>
+                  <label className="flex items-center gap-3 cursor-pointer pt-1">
+                    <input type="checkbox" checked={pageFields.published} onChange={(e) => updatePage({ published: e.target.checked })} className="h-5 w-5 rounded accent-[var(--accent)]" />
+                    <span className="text-sm font-semibold text-[var(--text-primary)]">Tienda publicada (visible al público)</span>
+                  </label>
+                </div>
+              </StyleSection>
+
+              <StyleSection
+                icon={<FileText className="h-5 w-5 text-primary" />}
+                title="Acerca de tu tienda"
+                description="Sección 'sobre nosotros' del storefront. Opcional."
+              >
+                <div className="space-y-4">
+                  <Field label="Título" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <input type="text" value={pageFields.aboutTitle} onChange={(e) => updatePage({ aboutTitle: e.target.value })} placeholder="Sobre nosotros" maxLength={200} className={inputCls} />
+                  </Field>
+                  <Field label="Texto" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <textarea rows={4} value={pageFields.aboutBody} onChange={(e) => updatePage({ aboutBody: e.target.value })} placeholder="Contá la historia de tu negocio…" maxLength={4000} className={inputCls} />
+                  </Field>
+                </div>
+              </StyleSection>
+              </div>
             )}
 
             {/* ── TAB: MARCA — análisis de logo + conceptos ─────────── */}
-            {activeTab === "marca" && (
+            {/* Marca → fusionado en "Colores & Tipografía" (ADR-299) */}
+            {activeTab === "colores" && (
               <BrandConceptTab
                 theme={theme}
                 onApplyConcept={(patches) => {
@@ -1639,7 +1737,8 @@ export default function StoreCustomizer() {
             )}
 
             {/* ── TAB: PROMOS POR CATEGORÍA ─────────────────────────── */}
-            {activeTab === "promos" && (
+            {/* Promos → fusionado en "Página" (ADR-299) */}
+            {activeTab === "contacto" && (
               <CategoryBannersTab theme={theme} update={update} inputCls={inputCls} />
             )}
 
@@ -1981,7 +2080,8 @@ export default function StoreCustomizer() {
             )}
 
             {/* ── TAB: SECCIONES — delegado a StorefrontEditor ──────── */}
-            {activeTab === "secciones" && (
+            {/* Secciones → fusionado en "Página" (ADR-299) */}
+            {activeTab === "contacto" && (
               <div className="space-y-8">
                 {/* Banner explicativo coherente con Estilos / Hero */}
                 <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
@@ -2453,7 +2553,8 @@ export default function StoreCustomizer() {
             )}
 
             {/* ── TAB: CONTENIDO ────────────────────────────────────── */}
-            {activeTab === "contenido" && (
+            {/* Textos y popup → fusionado en "Avanzado" (ADR-299) */}
+            {activeTab === "avanzado" && (
               <div className="space-y-8">
                 {/* Banner explicativo */}
                 <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
@@ -2634,7 +2735,8 @@ export default function StoreCustomizer() {
             )}
 
             {/* ── TAB: CATÁLOGO (visibilidad de productos) ─────────── */}
-            {activeTab === "catalogo" && (
+            {/* Catálogo → fusionado en "Página" (ADR-299) */}
+            {activeTab === "contacto" && (
               <div className="space-y-8">
                 <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
                   <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -2666,6 +2768,10 @@ export default function StoreCustomizer() {
                     </p>
                   </div>
                 </div>
+
+                {/* Métricas del storefront — absorbidas de "Mi tienda pública"
+                    (ADR-299 fase 2). Read-only, componente self-contained. */}
+                <AnalyticsTab />
 
                 {/* ── 1. TIPOGRAFÍA — visual font picker ─────────────── */}
                 <StyleSection
