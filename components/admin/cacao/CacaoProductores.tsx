@@ -56,7 +56,7 @@ export default function CacaoProductores() {
 
   const view = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = q ? producers.filter((p) => p.nombre.toLowerCase().includes(q) || (p.codigo ?? "").toLowerCase().includes(q) || (p.sector ?? "").toLowerCase().includes(q)) : [...producers];
+    const list = q ? producers.filter((p) => p.nombre.toLowerCase().includes(q) || (p.codigo ?? "").toLowerCase().includes(q) || (p.sector ?? "").toLowerCase().includes(q)) : [...producers];
     list.sort((a, b) => {
       if (sort === "nombre") return a.nombre.localeCompare(b.nombre);
       if (sort === "reciente") return (b.stats.lastFecha ?? "").localeCompare(a.stats.lastFecha ?? "");
