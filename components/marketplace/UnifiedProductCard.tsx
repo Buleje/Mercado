@@ -11,11 +11,10 @@ import Link from "next/link";
 import { m as motion } from "framer-motion";
 import {
   ShoppingCart,
+  Plus,
+  Eye,
   Store as StoreIcon,
   GitCompareArrows,
-  // Brandon 2026-06-12: el stepper (− N +) se quitó — el carrito de la card solo
-  // SUMA (icono + contador arriba). Por eso Minus/Plus ya no se importan.
-  Heart,
   MessageCircle,
   // Brandon 2026-06-12: agotados ya no muestran un carrito muerto — muestran
   // "Avísame" (campana) que abre WhatsApp a Buleje para avisar al reponer.
@@ -112,7 +111,6 @@ import { celebrate } from "@/lib/celebrate";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import { useCompare } from "@/contexts/compare-context";
-import { QuickViewModal } from "@/components/customer/journey";
 import ProductModifierModal from "@/components/marketplace/ProductModifierModal";
 import type { DbStoreProductModifierGroup } from "@/lib/db/marketplace.db";
 
@@ -226,7 +224,6 @@ export default function UnifiedProductCard({
   const { items: cartItems, addItem } = useMarketplaceCart();
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
-  const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [modifierModalOpen, setModifierModalOpen] = useState(false);
   // Re-edit: cuando el cliente clickea "Editar" en el AddedToCartDrawer,
   // capturamos el evento global y abrimos nuestro modal con la selección
@@ -338,34 +335,6 @@ export default function UnifiedProductCard({
     // (quick add). Unifica el flujo de agregado en un único formato.
     setModifierModalOpen(true);
   }, [isOutOfStock]);
-
-  // Brandon 2026-05-31: add-to-cart DIRECTO (sin abrir modal) — lo usa el
-  // "Ver rápido" (QuickViewModal), donde el cliente YA eligió la cantidad
-  // dentro de ese modal. Antes su onAddToCart llamaba a handleAdd() → abría
-  // ProductModifierModal ENCIMA del QuickView (modal anidado roto: parecía que
-  // "no agregaba"). Ahora agrega directo con precio base y sin modificadores.
-  const addDirect = useCallback(
-    (quantity: number) => {
-      // Mismo shape que el onConfirm del ProductModifierModal (ya tipado OK).
-      addItem({
-        storeId: product.storeId ?? "",
-        storeName: product.storeName ?? "",
-        storeSlug: product.storeSlug ?? "",
-        storeProductId: product.storeProductId ?? String(product.id),
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        basePrice: product.price,
-        image: product.image ?? null,
-        unit: product.unit ?? null,
-        modifiers: [],
-        modifierHash: modifierHashOf([]),
-        quantity: Math.max(1, quantity),
-      });
-      celebrate({ intensity: "sm" }); // 🎉 agregado al carrito
-    },
-    [addItem, product],
-  );
 
   // Tope de stock: si el producto controla stock, no dejar sumar más allá.
   const atStockCap =
@@ -615,24 +584,10 @@ export default function UnifiedProductCard({
           )}
         </div>
 
-        {/* Acciones top-right — quick view + compare. Audit mobile #5: son
-            features de DESKTOP (hover) → ocultas en celular para una card limpia
-            tipo Rappi. En lg+ aparecen al hover como siempre. */}
+        {/* Acciones top-right — solo Comparar. La "Vista" (quick view) se movió
+            a la barra inferior deslizante (Brandon 2026-06-24). Desktop-only al
+            hover para una card limpia tipo Rappi en mobile. */}
         <div className="absolute top-2 right-2 z-10 hidden lg:flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
-          {/* Quick view (heart slot) */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setQuickViewOpen(true);
-            }}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm transition-colors hover:border-gray-400 dark:hover:border-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:border-[var(--accent)]"
-            aria-label={`Ver rápido ${product.name}`}
-          >
-            <Heart className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" strokeWidth={1.75} aria-hidden />
-          </button>
-
           {/* Compare */}
           <button
             type="button"
@@ -652,6 +607,25 @@ export default function UnifiedProductCard({
             )}
           >
             <GitCompareArrows className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+          </button>
+        </div>
+
+        {/* Brandon 2026-06-24: barra inferior deslizante (hover desktop) — un
+            solo botón "Previsualizar" que abre el modal "Armá tu pedido"
+            (opciones + datos de tienda + agregar al carrito). Sube desde abajo
+            de la imagen con animación. Oculta en mobile (card limpia tipo Rappi). */}
+        <div className="absolute inset-x-0 bottom-0 z-20 hidden translate-y-full opacity-0 transition-all duration-[var(--dur-base)] group-hover:translate-y-0 group-hover:opacity-100 focus-within:translate-y-0 focus-within:opacity-100 lg:flex">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setModifierModalOpen(true);
+            }}
+            className="flex flex-1 items-center justify-center gap-1.5 border-t border-primary bg-primary py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+            aria-label={`Previsualizar ${product.name}`}
+          >
+            <Eye className="h-4 w-4" strokeWidth={2} aria-hidden /> Previsualizar
           </button>
         </div>
 
@@ -677,60 +651,6 @@ export default function UnifiedProductCard({
           </div>
         )}
 
-        {/* Brandon 2026-06-12: CTA flotante dentro de la imagen. Carrito BLANCO
-            (icono negro). Al agregar se mantiene el MISMO carrito con el CONTADOR
-            arriba (badge); cada toque suma +1 (sin botón de restar) + animación
-            "vuela al carrito" del nav. Agotado = "Avísame". */}
-        <div className="absolute bottom-2 right-2 z-20">
-          {isOutOfStock ? (
-            <a
-              href={notifyWaHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              aria-label={`Avísame cuando llegue ${product.name}`}
-              className="inline-flex h-11 items-center gap-1.5 rounded-full bg-[var(--surface-raised)]/95 px-3.5 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] shadow-md ring-1 ring-[var(--rule-soft)] backdrop-blur transition-all duration-200 hover:bg-[var(--accent)] hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-            >
-              <BellRing className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
-              <span className="whitespace-nowrap">Avísame</span>
-            </a>
-          ) : (
-            <button
-              type="button"
-              // Brandon 2026-06-12: primer agregado (vacío) → abre el MODAL de
-              // carrito ("Armá tu pedido"). Ya agregado → suma +1 directo (sin
-              // modal) + animación. Productos con adicionales: handleAdd/Increment
-              // ya abren el modal cuando hace falta elegir opciones.
-              onClick={inCartQty === 0 ? handleAdd : handleIncrement}
-              disabled={atStockCap}
-              aria-label={
-                inCartQty > 0
-                  ? atStockCap
-                    ? `${product.name}: alcanzaste el stock disponible`
-                    : `Agregar otro ${product.name} — ${inCartQty} en el carrito`
-                  : `Agregar ${product.name} al carrito`
-              }
-              // Fondo BLANCO + icono NEGRO fijo (el well de la imagen es blanco
-              // también en dark → contraste garantizado en ambos temas).
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-gray-900 dark:text-gray-900 shadow-lg ring-1 ring-black/5 transition-all duration-200 hover:bg-white hover:scale-105 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]"
-            >
-              <ShoppingCart className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-              {/* Contador arriba del carrito — sin restar; cada toque suma +1. */}
-              {inCartQty > 0 && (
-                <motion.span
-                  key={inCartQty}
-                  initial={{ scale: 0.4, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                  aria-hidden
-                  className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-white"
-                >
-                  {inCartQty > 99 ? "99+" : inCartQty}
-                </motion.span>
-              )}
-            </button>
-          )}
-        </div>
       </div>
 
       {/* ── Contenido ──────────────────────────────────────────────────────────
@@ -746,18 +666,78 @@ export default function UnifiedProductCard({
           tabIndex={isCompact ? undefined : -1}
           aria-hidden={isCompact ? undefined : "true"}
         >
-          <h3 className="text-sm sm:text-[0.95rem] font-bold leading-snug text-[var(--text-primary)] line-clamp-2 sm:min-h-[2.5rem] transition-colors">
+          <h3 className="text-sm sm:text-[0.95rem] font-medium leading-snug text-[var(--text-primary)] line-clamp-2 sm:min-h-[2.5rem] transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        {/* Descripción — text-sm bold-medium, leading generoso.
-            Mobile: 1 línea truncate (espacio limitado en card horizontal). */}
-        {product.description && (
-          <p className="mt-0.5 text-xs font-medium leading-snug text-[var(--text-secondary)] line-clamp-1">
+        {/* Descripción + carrito rápido (Brandon 2026-06-24): el icono de
+            carrito vive a la DERECHA de la descripción y queda SIEMPRE visible
+            (antes flotaba sobre la imagen). Tipografía liviana (font-normal)
+            para un tono serio/profesional. Agotado → "Avísame". */}
+        <div className="mt-0.5 flex items-center gap-2">
+          <p className="min-w-0 flex-1 text-xs font-normal leading-snug text-[var(--text-secondary)] line-clamp-1">
             {product.description}
           </p>
-        )}
+          {isOutOfStock ? (
+            <a
+              href={notifyWaHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Avísame cuando llegue ${product.name}`}
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] ring-1 ring-[var(--rule-soft)] transition-all duration-200 hover:bg-[var(--accent)] hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            >
+              <BellRing className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+              <span className="whitespace-nowrap">Avísame</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              // Brandon 2026-06-24: primer agregado (vacío) → abre el MODAL
+              // "Armá tu pedido" (opciones + tienda). Ya agregado → suma +1
+              // directo + animación "vuela al carrito". Con adicionales,
+              // handleIncrement abre el modal cuando hace falta elegir opciones.
+              onClick={inCartQty === 0 ? handleAdd : handleIncrement}
+              disabled={atStockCap}
+              aria-label={
+                inCartQty > 0
+                  ? atStockCap
+                    ? `${product.name}: alcanzaste el stock disponible`
+                    : `Agregar otro ${product.name} — ${inCartQty} en el carrito`
+                  : `Agregar ${product.name} al carrito`
+              }
+              // Minimalista (Brandon 2026-06-24): círculo claro + carrito de
+              // trazo fino con insignia "+" — agregar discreto y profesional
+              // (icono adapta al tema vía tokens del DS). El badge muestra "+"
+              // cuando está vacío y la cantidad cuando ya hay líneas.
+              className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--surface-raised)] text-[var(--text-primary)] ring-1 ring-[var(--rule-base)] shadow-sm transition-all duration-200 hover:ring-[var(--text-primary)]/40 hover:scale-105 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]"
+            >
+              <ShoppingCart className="h-[1.15rem] w-[1.15rem]" strokeWidth={1.5} aria-hidden />
+              {inCartQty > 0 ? (
+                <motion.span
+                  key={inCartQty}
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                  aria-hidden
+                  className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-[var(--surface-raised)]"
+                >
+                  {inCartQty > 99 ? "99+" : inCartQty}
+                </motion.span>
+              ) : (
+                <span
+                  aria-hidden
+                  // "Agregar desde cero": SOLO borde negro (sin relleno) — se
+                  // diferencia del contador (badge teal sólido con la cantidad).
+                  className="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-[var(--text-primary)] bg-transparent text-[var(--text-primary)]"
+                >
+                  <Plus className="h-2.5 w-2.5" strokeWidth={3} aria-hidden />
+                </span>
+              )}
+            </button>
+          )}
+        </div>
 
         {/* Tienda — logo (avatar) + nombre, CLICKEABLE → /marketplace/[slug].
             Brandon 2026-06-05: el cliente identifica la tienda de un vistazo
@@ -871,45 +851,6 @@ export default function UnifiedProductCard({
           </p>
         )}
       </div>
-
-      {/* Quick view modal */}
-      {quickViewOpen && (
-        <QuickViewModal
-          open={quickViewOpen}
-          onOpenChange={setQuickViewOpen}
-          product={{
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            originalPrice: product.originalPrice,
-            image: product.image ?? "",
-            category: product.category,
-            unit: product.unit ?? undefined,
-            stock: product.stock,
-            badges:
-              variant === "flash" && product.discount
-                ? [{ label: `-${product.discount}% OFF`, variant: "accent" as const }]
-                : variant === "liquidation"
-                  ? [{ label: "Liquidacion", variant: "warning" as const }]
-                  : undefined,
-          }}
-          storeName={product.storeName}
-          onAddToCart={(qty) => {
-            // Brandon 2026-05-31 fix: antes llamaba handleAdd() → abría el
-            // ProductModifierModal ENCIMA del QuickView (modal anidado) y el
-            // item NO entraba al carrito ("no agrega" reportado). Ahora:
-            //  - con adicionales → cierra el peek y abre "Armá tu pedido"
-            //  - sin adicionales → agrega DIRECTO la cantidad elegida y cierra.
-            if ((product.modifierGroups?.length ?? 0) > 0) {
-              setQuickViewOpen(false);
-              setModifierModalOpen(true);
-            } else {
-              addDirect(qty);
-              setQuickViewOpen(false);
-            }
-          }}
-        />
-      )}
 
       {/* Modal "Armá tu pedido" — SIEMPRE disponible (Brandon 2026-05-27).
           Con adicionales muestra los grupos; sin adicionales, solo cantidad. */}

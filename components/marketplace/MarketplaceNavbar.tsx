@@ -49,6 +49,8 @@ import { useCustomer } from "@/contexts/customer-context";
 import { useAuthModal } from "@/components/auth/AuthModal";
 import { cn } from "@/lib/utils";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+import { LIGHT_SEARCH_VARS } from "@/components/marketplace/navbar/nav-theme";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { BRAND_GEO } from "@/lib/geo";
 // NotificationsMenu lazy — framer-motion pesado + solo aparece al click.
@@ -557,10 +559,21 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
     return false;
   };
 
+  // Hide-on-scroll (Brandon 2026-06-24): el nav (y el sub-nav, que usa el mismo
+  // hook) se ocultan al bajar y reaparecen al subir, con transición suave.
+  const navHidden = useHideOnScroll();
+
   return (
     <>
       <nav
         aria-label="Navegación del marketplace"
+        style={{
+          transform: navHidden ? "translateY(-100%)" : "translateY(0)",
+          opacity: navHidden ? 0 : 1,
+          transition:
+            "transform 0.7s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.45s ease",
+          willChange: "transform, opacity",
+        }}
         className={cn(
           "nav-smooth-transition sticky top-0 z-50",
           // Minimalista/ejecutivo (Brandon 2026-06-07): superficie sólida +
@@ -569,7 +582,12 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
           // Brandon 2026-06-14: en desktop (md+) el sub-nav va pegado abajo →
           // sin border-b para que NO se vea la línea entre nav y sub-nav (leen
           // como un solo bloque). En mobile (sin sub-nav) conserva el hairline.
-          "bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] md:border-b-0",
+          // Brandon 2026-06-24: nav SIEMPRE oscuro (estilo Amazon) — el contexto
+          // `dark` scopeado a la raíz reusa la paleta dark del DS (texto/iconos/
+          // logo claros) sin reescribir cada clase. Fondo casi-negro #131921
+          // (más oscuro que el sub-nav #232f3e → jerarquía de dos tonos Amazon).
+          "dark",
+          "bg-[#131921] border-b border-white/10 md:border-b-0",
         )}
       >
         <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8">
@@ -668,7 +686,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 vuelven pegados al logo (arriba). Solo modo tiendas, md+. */}
             {isTiendasOnly && (
               <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
-                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] transition-all hover:border-[var(--text-primary)]/35 focus-within:border-[var(--text-primary)] focus-within:bg-[var(--surface-canvas)]">
+                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] transition-all hover:border-[var(--text-primary)]/35 focus-within:border-[var(--text-primary)] focus-within:bg-[var(--surface-canvas)]" style={LIGHT_SEARCH_VARS}>
                   {/* Segmento ubicación */}
                   <div className="flex items-center gap-1.5 pl-4 pr-3 h-full shrink-0 text-[var(--accent)]">
                     <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden="true" />
@@ -697,7 +715,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               >
                 {/* Buscador largo y centrado — protagonista del nav (Brandon
                     2026-06-07). Recto (la card del input ya es rounded-none). */}
-                <div className="mx-auto w-full max-w-[760px]">
+                <div className="mx-auto w-full max-w-[760px]" style={LIGHT_SEARCH_VARS}>
                   <NavbarSearchAutocomplete
                     className="block"
                     storesOnly={false}
