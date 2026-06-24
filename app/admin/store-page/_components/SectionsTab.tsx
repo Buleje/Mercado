@@ -697,6 +697,9 @@ function SectionEditor({
     const data = section.data;
     return (
       <div className="space-y-3">
+        <FieldLabel label="Etiqueta superior (eyebrow)">
+          <input value={data.eyebrow ?? ""} onChange={(e) => onChange({ eyebrow: e.target.value })} placeholder="Nuestra historia" className={inputCls} />
+        </FieldLabel>
         <FieldLabel label="Título">
           <input value={data.title} onChange={(e) => onChange({ title: e.target.value })} className={inputCls} />
         </FieldLabel>
@@ -752,6 +755,29 @@ function SectionEditor({
             >
               Imagen a la derecha →
             </button>
+          </div>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-[var(--text-secondary)] mb-1.5">Fondo del bloque</p>
+          <div className="flex gap-2">
+            {([
+              { id: "light", label: "Claro" },
+              { id: "brand", label: "Marca" },
+              { id: "dark", label: "Oscuro" },
+            ] as const).map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => onChange({ background: b.id })}
+                className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+                  (data.background ?? "light") === b.id
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)]"
+                }`}
+              >
+                {b.label}
+              </button>
+            ))}
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

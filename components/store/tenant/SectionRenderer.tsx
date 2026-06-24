@@ -38,7 +38,7 @@ export default function SectionRenderer({ section, primaryColor, accentColor }: 
     case "faq":          return <FaqBlock        section={section} primary={primaryColor} />;
     case "benefits":     return <BenefitsBlock   section={section} primary={primaryColor} />;
     case "gallery":      return <GalleryBlock    section={section} primary={primaryColor} />;
-    case "image-text":   return <ImageTextBlock  section={section} primary={primaryColor} />;
+    case "image-text":   return <ImageTextBlock  section={section} primary={primaryColor} accent={accentColor} />;
     default: return null;
   }
 }
@@ -371,52 +371,81 @@ function GalleryBlock({ section, primary }: { section: GallerySection; primary: 
   );
 }
 
-// ── Imagen + Texto (split) ─────────────────────────────────────────────
-function ImageTextBlock({ section, primary }: { section: ImageTextSection; primary: string }) {
-  const { title, body, imageUrl, imageAlt, imagePosition, ctaLabel, ctaUrl } = section.data;
+// ── Imagen + Texto (banda editorial) ───────────────────────────────────
+// Bloque potente imagen-al-lado-de-texto, configurable desde el admin:
+// lado de la imagen (izq/der), fondo (claro/marca/oscuro), eyebrow, título,
+// texto y CTA. Pensado para apilar varios y contar la historia de la marca.
+function ImageTextBlock({ section, primary, accent }: { section: ImageTextSection; primary: string; accent: string }) {
+  const {
+    title, body, imageUrl, imageAlt, imagePosition,
+    ctaLabel, ctaUrl, eyebrow, background = "light",
+  } = section.data;
   if (!imageUrl || !imageUrl.trim()) return null;
 
+  const isDark = background === "dark";
+  const isBrand = background === "brand";
+  const onColor = isDark || isBrand; // texto claro sobre fondo oscuro/marca
+
+  const outerClass = isDark
+    ? "bg-[#0d1414]"
+    : isBrand
+      ? ""
+      : "bg-[var(--surface-sunken)]";
+  const outerStyle = isBrand
+    ? { background: `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)` }
+    : undefined;
+
   return (
-    <section className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
-      <div
-        className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center ${
-          imagePosition === "left" ? "" : "lg:[&>*:first-child]:order-2"
-        }`}
-      >
-        {/* Imagen */}
-        <div className="rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/10] bg-[var(--surface-sunken)] shadow-xl relative">
-          <Image
-            src={imageUrl}
-            alt={imageAlt ?? ""}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover hover:scale-[1.02] transition-transform duration-[var(--dur-slower)]"
-          />
-        </div>
-        {/* Texto */}
-        <div>
-          <p
-            className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-3"
-            style={{ color: primary }}
-          >
-            Historia
-          </p>
-          <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight mb-4">
-            {title}
-          </h2>
-          <p className="text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap mb-6">
-            {body}
-          </p>
-          {ctaLabel && ctaUrl && (
-            <a
-              href={ctaUrl}
-              className="inline-flex items-center gap-2 rounded-full px-5 h-11 text-sm font-extrabold text-white shadow-md hover:opacity-90 transition-all"
-              style={{ background: primary }}
+    <section className={`w-full ${outerClass}`} style={outerStyle}>
+      <div className="max-w-6xl mx-auto px-4 py-14 sm:py-20">
+        <div
+          className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center ${
+            imagePosition === "left" ? "" : "lg:[&>*:first-child]:order-2"
+          }`}
+        >
+          {/* Imagen — con glow de realce detrás */}
+          <div className="relative">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-3 rounded-[2rem] blur-2xl opacity-70"
+              style={{ background: onColor ? "rgba(255,255,255,0.14)" : `color-mix(in oklab, ${primary} 18%, transparent)` }}
+            />
+            <div className="relative rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/11] bg-[var(--surface-sunken)] shadow-[0_24px_60px_rgba(2,6,23,0.20)] ring-1 ring-black/5">
+              <Image
+                src={imageUrl}
+                alt={imageAlt ?? ""}
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover transition-transform duration-[var(--dur-slower)] hover:scale-[1.03]"
+              />
+            </div>
+          </div>
+
+          {/* Texto */}
+          <div className={imagePosition === "left" ? "lg:pl-2" : "lg:pr-2"}>
+            <p
+              className={`text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-3 ${onColor ? "text-white/80" : ""}`}
+              style={onColor ? undefined : { color: primary }}
             >
-              {ctaLabel}
-              <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
-            </a>
-          )}
+              {eyebrow || "Conocé más"}
+            </p>
+            <h2 className={`font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight leading-[1.05] mb-5 ${onColor ? "text-white" : "text-[var(--text-primary)]"}`}>
+              {title}
+            </h2>
+            <p className={`text-base sm:text-lg leading-relaxed whitespace-pre-wrap mb-7 ${onColor ? "text-white/85" : "text-[var(--text-secondary)]"}`}>
+              {body}
+            </p>
+            {ctaLabel && ctaUrl && (
+              <a
+                href={ctaUrl}
+                className="inline-flex items-center gap-2 rounded-full px-6 h-12 text-sm font-extrabold shadow-md transition-all hover:gap-3"
+                style={isBrand ? { background: "#fff", color: primary } : { background: primary, color: "#fff" }}
+              >
+                {ctaLabel}
+                <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </section>

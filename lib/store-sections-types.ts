@@ -133,6 +133,10 @@ export interface ImageTextSection extends SectionBase {
     imageAlt?: string;
     /** Lado de la imagen — left | right. */
     imagePosition: "left" | "right";
+    /** Fondo del bloque — claro | marca (gradiente primary→accent) | oscuro. */
+    background?: "light" | "brand" | "dark";
+    /** Etiqueta superior (eyebrow) editable. */
+    eyebrow?: string;
     /** CTA opcional. */
     ctaLabel?: string;
     ctaUrl?: string;
@@ -353,6 +357,8 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
         imageUrl: "",
         imageAlt: "Foto del negocio",
         imagePosition: "right",
+        background: "brand",
+        eyebrow: "Nuestra historia",
         ctaLabel: "Conocenos más",
         ctaUrl: "",
       },
