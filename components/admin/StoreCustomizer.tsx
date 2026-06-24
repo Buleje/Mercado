@@ -46,6 +46,7 @@ export interface StoreTheme {
   heroSubtitle: string;
   heroCTA: string;
   heroLink: string;
+  heroCtaUrl: string;
   heroBadge: string;
   // FIX 2026-05-07 (audit storefront-admin): badge debajo del avatar circular.
   // Antes "Hecho en Pucallpa" era texto fijo en el código.
@@ -109,6 +110,7 @@ const DEFAULT_THEME: StoreTheme = {
   heroSubtitle: "Delivery rápido en Pucallpa. Paga con Yape o efectivo.",
   heroCTA: "Ver productos",
   heroLink: "tienda",
+  heroCtaUrl: "",
   heroBadge: "Delivery gratis +S/50",
   heroOriginBadge: "Hecho en Pucallpa",
   heroImage: "",
@@ -921,6 +923,25 @@ function HeroTab({
                 );
               })}
             </div>
+            {theme.heroLink === "custom" && (
+              <div className="space-y-1.5">
+                <label htmlFor="hero-cta-url" className="text-sm font-semibold text-[var(--text-primary)]">
+                  URL del botón
+                </label>
+                <input
+                  id="hero-cta-url"
+                  type="url"
+                  value={theme.heroCtaUrl}
+                  onChange={(e) => update("heroCtaUrl", e.target.value)}
+                  placeholder="https://… o /ruta-interna"
+                  maxLength={500}
+                  className={inputCls}
+                />
+                <p className="text-xs text-muted">
+                  Link externo (https://…) o interno (/recetas). Solo se usa cuando el destino es URL custom.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </StyleSection>

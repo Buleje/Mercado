@@ -85,7 +85,13 @@ export default function TiendaHero({ slug, storeName, productCount }: TiendaHero
       return phone ? `https://wa.me/${phone}?text=${msg}` : "#productos";
     }
     if (link === "categorias") return "#categorias";
-    // "tienda" + "custom" (que actualmente no se captura) caen al ancla por defecto.
+    if (link === "custom") {
+      // ADR-299: URL custom del CTA (storeTheme.heroCtaUrl). Solo aceptamos
+      // absolutas http(s) o internas que arrancan con "/" (anti javascript:/data:).
+      const url = (storeTheme as { heroCtaUrl?: string } | null | undefined)?.heroCtaUrl?.trim();
+      if (url && /^(https?:\/\/|\/)/.test(url)) return url;
+    }
+    // "tienda" (o custom sin URL válida) cae al ancla por defecto.
     return "#productos";
   })();
 
