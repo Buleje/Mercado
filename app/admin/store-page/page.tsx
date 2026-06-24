@@ -7,11 +7,14 @@
  *   - Pasa de 9 tabs a 4 tabs unicos (sin duplicar otros modulos del admin)
  *   - Label visible: "Mi tienda publica" (era "Pagina de inicio" confuso)
  *
- * Tabs activos:
- *   - Hero & secciones (era "Apariencia")
+ * Tabs activos (ADR-299 fase 3 — solo contenido de pagina, sin duplicados):
+ *   - Secciones (builder de bloques: about/horarios/pago/FAQ/galeria/imagen-texto)
  *   - Branding marketplace (logo + banner para /marketplace/[slug])
+ *   - Banners de tienda (StoreBanner hero/featured/promo)
  *   - Promociones del home (banners rotantes)
- *   - Metricas del storefront (vistas, clicks)
+ *
+ * Movidos al editor unificado "Identidad y tema" (ADR-299 fase 3):
+ *   - Hero / Apariencia · Diseño · Metricas storefront · Contacto · SEO
  *
  * Tabs ELIMINADOS (ahora viven en su modulo dedicado):
  *   - Productos        → /admin?tab=productos
@@ -28,22 +31,17 @@ import Link from "next/link";
 import {
   Palette,
   Megaphone,
-  BarChart3,
   ExternalLink,
   Sparkles,
   Globe,
   Layers,
-  Paintbrush,
   Images,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AppearanceTab from "./_components/AppearanceTab";
 import MarketplaceBrandingTab from "./_components/MarketplaceBrandingTab";
 import PromotionsTab from "./_components/PromotionsTab";
-import AnalyticsTab from "./_components/AnalyticsTab";
 import SectionsTab from "./_components/SectionsTab";
-import DesignTab from "./_components/DesignTab";
 // Banners del storefront (StoreBanner — hero/featured/promo). Editor Prisma ya
 // construido pero antes huérfano; montado aquí (Ola 2). Brandon 2026-06-20.
 import BannerEditorTab from "@/components/admin/marketplace/BannerEditorTab";
@@ -52,13 +50,10 @@ import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 const MODULE_ID = "pagina-inicio";
 
 type TabId =
-  | "appearance"
-  | "design"
   | "sections"
   | "branding"
   | "banners"
-  | "promotions"
-  | "analytics";
+  | "promotions";
 
 type TabConfig = {
   id: TabId;
@@ -67,26 +62,26 @@ type TabConfig = {
   icon: typeof Palette;
 };
 
+// ADR-299 fase 3: quitados Hero/Diseño/Métricas (duplicados → ahora en el
+// editor unificado "Identidad y tema"). Quedan solo los tabs ÚNICOS de
+// contenido de página. El icono `Palette` queda usado por `typeof Palette`.
 const TABS: TabConfig[] = [
-  { id: "appearance",  label: "Hero",                 shortLabel: "Hero",     icon: Palette },
-  { id: "design",      label: "Diseño",               shortLabel: "Diseño",   icon: Paintbrush },
   { id: "sections",    label: "Secciones",            shortLabel: "Sec.",     icon: Layers },
   { id: "branding",    label: "Branding marketplace", shortLabel: "Branding", icon: Sparkles },
   { id: "banners",     label: "Banners de tienda",    shortLabel: "Banners",  icon: Images },
   { id: "promotions",  label: "Promociones del home", shortLabel: "Promos",   icon: Megaphone },
-  { id: "analytics",   label: "Métricas storefront",  shortLabel: "Métricas", icon: BarChart3 },
 ];
 
 const VALID_TABS = TABS.map((t) => t.id) as readonly TabId[];
 
 function normalizeTab(value: string | null): TabId {
   if (value && (VALID_TABS as readonly string[]).includes(value)) return value as TabId;
-  return "appearance";
+  return "sections";
 }
 
 export default function StorePageAdminPage() {
   const [tab, setTab] = useState<TabId>(() => {
-    if (typeof window === "undefined") return "appearance";
+    if (typeof window === "undefined") return "sections";
     return normalizeTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
   });
   const [slug, setSlug] = useState("main");
@@ -108,11 +103,10 @@ export default function StorePageAdminPage() {
       <AdminModuleHeader
         eyebrow="Mi tienda pública"
         title="Qué ve el cliente cuando entra a tu storefront"
-        // Brandon 2026-05-28: descripción reducida — antes era un párrafo
-        // largo con lista de features + 2 links cruzados, ocupaba media
-        // pantalla en mobile. Para colores/tipografía existe la tab
-        // "Identidad y tema"; para productos/promos, sus módulos dedicados.
-        description="Editá el hero, contacto y SEO de tu tienda pública."
+        // ADR-299 fase 3: Hero, Diseño, Contacto, SEO y Métricas se movieron al
+        // editor unificado "Identidad y tema" (fuente de verdad). Acá quedan los
+        // tabs ÚNICOS de contenido de página.
+        description="Secciones, branding, banners y promos del home. El hero, colores, contacto, SEO y métricas se editan en 'Identidad y tema'."
         icon={Globe}
       >
         <Link
@@ -139,13 +133,10 @@ export default function StorePageAdminPage() {
       />
 
       <div>
-        {tab === "appearance" && <AppearanceTab />}
-        {tab === "design" && <DesignTab />}
         {tab === "sections" && <SectionsTab />}
         {tab === "branding" && <MarketplaceBrandingTab />}
         {tab === "banners" && <BannerEditorTab storeSlug={slug} />}
         {tab === "promotions" && <PromotionsTab />}
-        {tab === "analytics" && <AnalyticsTab />}
       </div>
     </div>
   );
