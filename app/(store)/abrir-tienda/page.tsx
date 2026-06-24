@@ -21,6 +21,8 @@ import {
   Percent,
   MapPin,
 } from "@buleje/design-system/icons";
+import ProductShowcase from "@/components/landing/abrir-tienda/ProductShowcase";
+import FounderTestimonial from "@/components/landing/abrir-tienda/FounderTestimonial";
 
 // LandingHeader + Footer removidos — chrome unificado vive en
 // app/(store)/layout.tsx (mismo nav que /tiendas y /marketplace).
@@ -54,6 +56,13 @@ const BodegaScene = dynamic(
       />
     ),
   },
+);
+// Client-only: CTA flotante (scroll) + mini-form de captación (WhatsApp).
+const StickyActivateCTA = dynamic(
+  () => import("@/components/landing/abrir-tienda/StickyActivateCTA"),
+);
+const LeadCaptureForm = dynamic(
+  () => import("@/components/landing/abrir-tienda/LeadCaptureForm"),
 );
 
 const PAGE_URL = "https://www.buleje.pe/abrir-tienda";
@@ -302,13 +311,18 @@ function NetworkHub() {
         className="absolute inset-0 h-full w-full"
         aria-hidden
       >
-        {INTEGRATION_LOGOS.map((item) => {
+        {INTEGRATION_LOGOS.map((item, i) => {
           const p = NET_POS[item.name];
           if (!p) return null;
           return (
             <g key={item.name}>
               <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={3} strokeOpacity={0.28} />
               <line x1={p.x} y1={p.y} x2={NET_CX} y2={NET_CY} stroke="var(--accent)" strokeWidth={4} strokeLinecap="round" className="net-line" strokeOpacity={0.95} />
+              {/* Punto de dato viajando del nodo al hub — sensación de "conectado en vivo" */}
+              <circle r={5} fill="var(--accent)" style={{ filter: "drop-shadow(0 0 6px var(--accent))" }}>
+                <animateMotion dur="2.4s" begin={`${i * 0.35}s`} repeatCount="indefinite" path={`M${p.x},${p.y} L${NET_CX},${NET_CY}`} />
+                <animate attributeName="opacity" dur="2.4s" begin={`${i * 0.35}s`} values="0;1;1;0" keyTimes="0;0.15;0.85;1" repeatCount="indefinite" />
+              </circle>
             </g>
           );
         })}
@@ -324,12 +338,31 @@ function NetworkHub() {
             className="absolute -translate-x-1/2 -translate-y-1/2"
             style={{ left: `${(p.x / 1000) * 100}%`, top: `${(p.y / 600) * 100}%` }}
           >
-            <div className="net-float" style={{ animationDelay: `${i * 0.45}s` }}>
+            <div className="net-float flex flex-col items-center gap-1.5" style={{ animationDelay: `${i * 0.45}s` }}>
               <NodeTile item={item} />
+              <span className="hidden sm:block whitespace-nowrap text-[11px] font-bold text-[var(--text-tertiary)]">
+                {item.name}
+              </span>
             </div>
           </div>
         );
       })}
+
+      {/* Pills de resultado flotando — lo que las integraciones LOGRAN (desktop) */}
+      {[
+        { Icon: CreditCard, label: "Cobrás al instante", pos: "left-[1%] top-[8%]", delay: "0s" },
+        { Icon: MessageCircle, label: "Pedidos por WhatsApp", pos: "right-[1%] top-[4%]", delay: "1.1s" },
+        { Icon: Receipt, label: "Boleta SUNAT lista", pos: "left-0 bottom-[6%]", delay: "0.6s" },
+      ].map((pill) => (
+        <div
+          key={pill.label}
+          style={{ animationDelay: pill.delay }}
+          className={`net-float absolute z-10 hidden items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] shadow-[var(--shadow-md)] lg:flex ${pill.pos}`}
+        >
+          <pill.Icon className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+          {pill.label}
+        </div>
+      ))}
 
       {/* Hub central — Buleje */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
@@ -882,6 +915,9 @@ export default function AbrirTiendaPage() {
         {/* ── Beneficios con tabs interactivas ───────────────────────── */}
         <BenefitsTabs />
 
+        {/* ── Mirá cómo se ve — mockups del producto (tienda + panel) ── */}
+        <ProductShowcase />
+
         {/* ── Comparativa honesta — Buleje vs cuaderno vs POS caro ───── */}
         <CompareSection />
 
@@ -893,6 +929,12 @@ export default function AbrirTiendaPage() {
 
         {/* ── Prueba social — Plan Fundador ──────────────────────────── */}
         <SocialProofSection />
+
+        {/* ── Testimonio de un fundador (cara + nombre) ──────────────── */}
+        <FounderTestimonial />
+
+        {/* ── Captación inline por WhatsApp ──────────────────────────── */}
+        <LeadCaptureForm />
 
         {/* ── FAQ ─────────────────────────────────────────────────────── */}
         <section className="py-20 sm:py-28 bg-[var(--surface-sunken)] border-y border-[var(--rule-soft)]">
@@ -1021,6 +1063,9 @@ export default function AbrirTiendaPage() {
             </div>
           </div>
         </section>
+
+        {/* CTA flotante que sigue el scroll en esta página larga */}
+        <StickyActivateCTA />
       </main>
     </>
   );

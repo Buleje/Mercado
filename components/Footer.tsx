@@ -241,9 +241,10 @@ export default function Footer({ modeOverride }: FooterProps = {}) {
   // ficha de tienda y el resto del marketplace — footer único en todas las
   // páginas. Las landings reales (/negocios, /vender, /abrir-tienda,
   // /repartidores) conservan el footer slim.
+  // Brandon 2026-06-24: /abrir-tienda SALE de isLandingMode → usa el MISMO
+  // footer completo (4 columnas) que el inicio, en vez del slim de landing.
   const isLandingMode =
     pathname.startsWith("/repartidores") ||
-    pathname.startsWith("/abrir-tienda") ||
     pathname.startsWith("/negocios") ||
     pathname.startsWith("/vender");
 
