@@ -87,7 +87,7 @@ export default function StorefrontNavbar({
               initial
             )}
           </span>
-          <span className="hidden max-w-[160px] truncate text-base font-extrabold tracking-tight text-[var(--text-primary)] md:inline">
+          <span data-live="storeName" className="hidden max-w-[160px] truncate text-base font-extrabold tracking-tight text-[var(--text-primary)] md:inline">
             {name}
           </span>
         </Link>
