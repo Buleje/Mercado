@@ -1,40 +1,34 @@
 # SESSION HANDOFF — 2026-06-25
 
-Branch: `audit/storefront-mejoras-verificadas-2026-06-15` (NO commiteado aún).
+Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. **4 commits nuevos (no pusheado).**
 
-## ✅ Hecho y VERIFICADO (tsc verde + screenshots)
-1. **Nav + sub-nav storefront → claro** (revertido del negro Amazon).
-   - `components/marketplace/MarketplaceNavbar.tsx` (bg → `--surface-raised`, sin `dark`, sin override `--text-*`).
-   - `components/marketplace/MarketplaceSecondaryNav.tsx` (bg → `--surface-raised`, sin `dark`, chips/trigger con tokens).
-2. **"Marcas del barrio" (home) → blanco limpio** (sin tinte teal).
-   - `components/marketplace/home/StoreLogosMarquee.tsx`.
-3. **PDP: barra lateral REMOVIDA** (ProductSideNav "Categorías de la tienda" + "En esta página").
-   - `components/marketplace/product-detail/ProductDetailClient.tsx` (quitó sidebar + aplanó grid; `setExploreCategories` setter sin valor).
-4. **PDP: grillas "También compraron" + "Explora tus gustos" = grilla del home** (Opción A).
-   - `ProductRelated.tsx` + `ProductCatalogExplorer.tsx` → `grid-cols-2 sm:3 lg:5 xl:6 2xl:7 gap-3`.
-   - `app/(store)/marketplace/[slug]/producto/[productId]/page.tsx` → related slice 4→12.
+## ✅ Commiteado y verificado esta sesión
+- `316b0412` — nav/sub-nav del marketplace **claros** + StoreLogosMarquee blanco + **PDP sin barra lateral** + grillas "También compraron"/"Explora tus gustos" = grilla densa del home (related 4→12).
+- `5fed12e2` — **Modo Creativo · preview en vivo**: texto del hero (data-live), modo oscuro (toggle clase), **sin flash** (iframe recarga solo si cambia algo no-en-vivo). Fixes: color picker hex fallback, preset duplicado, grid horario roto (comas Tailwind), label secciones, dead code `activeViewport`, logs en catches.
+- `0fbe0aa6` — nombre de tienda **en vivo** en el header (`StorefrontNavbar`).
+- `113195ec` — **Plantillas completas**: 3→8 looks (Clásico/Fresco/Premium/Minimal/Cálido/Selva/Océano/Dulce) con vibe + colores + fuente + modo + radio + estilo botón; `applyTemplate` aplica radio+botón; card con descripción + chips.
+- `c5e5345e` — **Subir imágenes (click/arrastra)** logo (Identidad), hero, favicon (Avanzado) reusando `ImageUpload` envuelto en `.dark`; Identidad mejorada (logo arriba + placeholders).
+- `755d34ce` — **Banner de imagen full-width** arriba de la tienda: campo `announcementImage` en StoreTheme + dropzone en Modo Creativo > Secciones + render en `app/t/[slug]` entre nav y hero. Verificado e2e.
+- `234f08bb` — **Imagen por sección**: campo `sectionImages` (map sección→URL) en StoreTheme; dropzone por cada sección activa en Modo Creativo > Secciones (excepto hero/announcement); render en `app/t/[slug]` como banda full-width por sección (entre trust e info y el catálogo). Verificado e2e (Categorias → banda en /t).
 
-## 🔧 EN CURSO — Modo Creativo — "mejora completa + que todo funcione"
-Entrada: admin?tab=store-customizer → `MiTiendaHubModule` → `StoreCustomizer` (3261 LOC) → botón "Modo Creativo" → `components/admin/StoreCreativeMode.tsx` (1249 LOC).
-Login QA: qaadmin / Qa-admin-1234 → tenant **mi-pollo**.
-Paneles (11): plantillas, identidad, hero, colores, secciones, tipografia, estilos, contacto, automatizacion, avanzado, historial.
+Arquitectura live-preview: `StoreCreativeMode.postLiveTheme` → postMessage {vars, fontLabel, darkMode, text} → `components/store/PreviewLiveTheme.tsx` (CSS vars + font + clase dark + textContent de `[data-live]`). data-live actuales: heroTitle, heroSubtitle (en `app/t/[slug]/page.tsx`), storeName (en `StorefrontNavbar`).
 
-### Verificado funcionando
-- Aplicar plantilla (Fresco Moderno) → preview se pone verde EN VIVO. OK.
+## ✅ Hecho 2026-06-25 (cont.) — Estilos UI + Automatización
+- `e872d7c5` — **Estilos UI con pickers visuales**: 7 dropdowns → tarjetas con mini-preview (helper `StylePicker` module-level en StoreCreativeMode); **`cartStyle` OCULTO** (control muerto). **Automatización**: panel agrupado (campos solo si enabled) + vista previa del popup. **Popup de bienvenida FUNCIONAL**: nuevo `components/store/TenantWelcomePopup.tsx` (dismissable X/click-fuera/Escape, localStorage, siempre visible en `?preview=true`) renderizado en `app/t/[slug]` cuando `welcomePopupEnabled`; **`footerText` wireado** en el footer. editorTheme lee welcomePopup*/footerText. Verificado e2e (pickers + popup renderiza en /t).
 
-### Hallazgos (auditoría parcial)
-- **[ALTA] Live preview incompleto**: `postLiveTheme` solo manda CSS vars (color/radio/fuente). Receptor `components/store/PreviewLiveTheme.tsx` (81 LOC) SOLO aplica vars+font. → Editar **hero (texto/imagen), identidad (nombre/slogan), modo oscuro, secciones** NO se refleja en vivo; solo tras auto-save 2s que recarga iframe (lag+flash). Fix: extender mensaje live-theme + receptor, o "soft reload".
-- **[MEDIA] ColorField** (línea 174): `safe` cae a `var(--color-primary)`, inválido para `<input type=color>` → picker nativo muestra negro con CSS var. Fix: resolver var→hex o fallback hex real.
-- **[BAJA] COLOR_PRESETS** (107-108): `#f0503f` duplicado.
-- **[BAJA] Panel "secciones"** (826): `<span cursor-pointer>` sugiere fila clickeable pero solo el Toggle actúa.
-- Falta auditar EN VIVO: tipografia, estilos UI, contacto/horario, automatizacion, avanzado, historial, viewports tablet/móvil, undo/redo, split, "Aplicar y guardar".
+## 🔜 PRÓXIMA SESIÓN — INICIATIVA GRANDE: Page Builder (tipo WordPress/Elementor)
+**Brandon quiere convertir Modo Creativo en page builder visual** (click-para-editar, arrastrar-reordenar en vivo, profesional y completo). **Spec completo + arquitectura + 4 fases + gotchas → `docs/PAGE_BUILDER_PLAN.md`.** Arrancar con `/clear` + ese archivo + `/goal`. Fase 1+2 = 80% del feel. CAVEAT clave: `/t` tiene el orden de secciones hardcodeado → hay que hacerlo data-driven por `sections` ANTES del drag/drop.
 
-### Plan
-1. Sweep funcional de los 6 paneles no auditados (click + screenshot, anotar roto).
-2. Fix [ALTA] live-preview (lo más impactante para "que todo funcione").
-3. Fix [MEDIA]/[BAJA] + pulido UX por panel.
-4. tsc + eslint + screenshots por cambio.
+### Menor (cuando se quiera): controles muertos restantes en Modo Creativo
+1. **Google Analytics + Meta Pixel** (analyticsId/pixelId muertos por-tenant) → inyectar `<Script>` GA4 + FB Pixel en `/t` (patrón `components/Analytics.tsx`). Alto valor marketing.
+2. Opcional: heroCTA/heroBadge (el hero de `/t` no los renderiza; sí TiendaHero del marketplace).
 
-## Pendiente
-- Commit del trabajo verificado (nav/PDP).
-- OpenClaw VPS Hostinger (srv1774463.hstgr.cloud): modelo `llama-3.2-3b-instruct:free` falla ×50 "before producing content"; gateway sano (curl 200). Pendiente SSH para arreglar config/modelo. (Pausado.)
+Sweep funcional restante (browser, qaadmin→mi-pollo): paneles automatización/avanzado/historial, viewports tablet/móvil, undo/redo, split, snapshots.
+
+## Gotchas
+- **Commit que toca admin/store/app-t → `dangerouslyDisableSandbox`** (hook `tsx` → EPERM bajo sandbox → falso "Design token violations"). Ver [[reference_commit_sandbox_tsx_eperm]]. Commits solo-marketplace pasan sandboxed. tsc gate ~2min → `run_in_background`.
+- Auto-save (2s) del Modo Creativo **persiste** a la tienda real. mi-pollo quedó con "Selva Tropical" aplicado por testing (válido, no roto).
+- Cerrar Playwright antes de tsc (RAM; mem-guard bloquea Edit/Bash <500MB libre).
+
+## Pausado
+- OpenClaw VPS Hostinger (srv1774463.hstgr.cloud): modelo `llama-3.2-3b-instruct:free` falla ×50 "before producing content"; gateway sano. Pendiente SSH.
