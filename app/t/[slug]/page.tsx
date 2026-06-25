@@ -19,6 +19,7 @@ import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
 import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
+import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
@@ -428,6 +429,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Preview EN VIVO: escucha al editor y aplica tokens sin recargar. */}
       {isPreview && <PreviewLiveTheme />}
 
+      {/* Page builder Fase 1 (Brandon 2026-06-25): overlay de edición — click en
+          un bloque [data-pb] abre su panel en el editor. Solo en preview. */}
+      {isPreview && <StorefrontEditOverlay />}
+
       {/* Nav ÚNICO de la tienda — el MISMO StorefrontNavbar del catálogo
           (`/t/<slug>/tienda`). Tenant-aware: Inicio → esta landing, Catálogo →
           el catálogo, buscador → catálogo. El carrito es un enlace al catálogo
@@ -444,7 +449,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Banner de anuncio (Brandon 2026-06-25): imagen full-width arriba de la
           tienda, configurable desde Modo Creativo > Secciones. */}
       {editorTheme.announcementImage && (
-        <div className="w-full bg-[var(--surface-sunken)]">
+        <div data-pb="announcement" className="w-full bg-[var(--surface-sunken)]">
           {/* eslint-disable-next-line @next/next/no-img-element -- banner full-width de aspecto variable */}
           <img
             src={editorTheme.announcementImage}
@@ -459,6 +464,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           izq y CTA cluster. Pucallpa-vibe sin caer en cliche.
       */}
       <section
+        data-pb="hero"
         className="relative overflow-hidden"
         style={
           heroImage
@@ -711,14 +717,16 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       </section>
 
       {/* Trust badges — verificado, ventas, antigüedad */}
-      <VendorTrustBadges
-        verified={tenant.active}
-        createdYear={tenant.createdAt ? new Date(tenant.createdAt).getFullYear() : 2026}
-      />
+      <div data-pb="trust">
+        <VendorTrustBadges
+          verified={tenant.active}
+          createdYear={tenant.createdAt ? new Date(tenant.createdAt).getFullYear() : 2026}
+        />
+      </div>
 
       {/* Active promotions banner — solo renderea si hay promos reales o en modo preview */}
       {(promotions.length > 0 || isPreview) && (
-        <section className="max-w-5xl mx-auto px-4 -mt-6 relative z-20">
+        <section data-pb="promos" className="max-w-5xl mx-auto px-4 -mt-6 relative z-20">
           {promotions.length > 0 ? (
             <div className="space-y-2">
               {promotions.slice(0, 3).map((p) => (
@@ -786,7 +794,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           marcó (tenantPageProductOverride), si no caemos al catálogo real. Es lo
           que más vende: el cliente ve productos sin tener que entrar al catálogo. */}
       {(showcase.length > 0 || isPreview) && (
-        <section className="max-w-5xl mx-auto px-4 py-10">
+        <section data-pb="featured" className="max-w-5xl mx-auto px-4 py-10">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
@@ -1007,7 +1015,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           Brandon, mayo 2026: la landing es el lugar natural para horarios,
           antiguedad, metodos de pago, delivery info — todo lo que el cliente
           quiere saber antes de comprar. */}
-      <section id="info" className="max-w-5xl mx-auto px-4 py-10 scroll-mt-20">
+      <section id="info" data-pb="info" className="max-w-5xl mx-auto px-4 py-10 scroll-mt-20">
         <div className="mb-6">
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
             Información del negocio

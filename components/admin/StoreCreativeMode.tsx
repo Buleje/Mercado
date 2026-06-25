@@ -312,6 +312,25 @@ function reloadSignature(t: StoreTheme): string {
   return JSON.stringify(rest);
 }
 
+// Page builder Fase 1 (Brandon 2026-06-25): cada bloque [data-pb] del storefront
+// abre su panel del editor al clickearlo. Mapa key del bloque → panel.
+const PB_KEY_TO_PANEL: Record<string, CreativePanel> = {
+  announcement: "secciones",
+  hero: "hero",
+  trust: "secciones",
+  promos: "secciones",
+  featured: "secciones",
+  info: "contacto",
+};
+const PB_KEY_LABEL: Record<string, string> = {
+  announcement: "Banner de anuncio",
+  hero: "Hero",
+  trust: "Confianza",
+  promos: "Promociones",
+  featured: "Productos",
+  info: "Información",
+};
+
 // Picker visual de estilo (Brandon 2026-06-25): en vez de un <select>, muestra
 // tarjetas con una MINI VISTA PREVIA de cada opción. La activa se resalta.
 function StylePicker<T extends string>({
@@ -354,6 +373,8 @@ function StylePicker<T extends string>({
 
 export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, onApplyTheme }: StoreCreativeModeProps) {
   const [panel, setPanel] = useState<CreativePanel>("plantillas");
+  // Bloque seleccionado desde el preview (page builder) → resalta el panel.
+  const [pbSelected, setPbSelected] = useState<string | null>(null);
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<StoreTheme>(initialTheme);
@@ -557,8 +578,17 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
-      const d = e.data as { source?: string; type?: string } | null;
-      if (d?.source === "buleje-preview" && d.type === "ready") postLiveTheme(draftRef.current);
+      const d = e.data as { source?: string; type?: string; key?: string } | null;
+      if (d?.source !== "buleje-preview") return;
+      if (d.type === "ready") {
+        postLiveTheme(draftRef.current);
+        return;
+      }
+      // Page builder: click en un bloque del preview → abrir su panel + resaltar.
+      if (d.type === "pb-select" && d.key && PB_KEY_TO_PANEL[d.key]) {
+        setPanel(PB_KEY_TO_PANEL[d.key]);
+        setPbSelected(d.key);
+      }
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
@@ -840,6 +870,16 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <p className="text-sm font-semibold text-white">{panelItems.find((p) => p.id === panel)?.label ?? "Sección"}</p>
           </div>
           <div className="p-4 space-y-3">
+            {pbSelected && PB_KEY_LABEL[pbSelected] && (
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--data-info-500)]/40 bg-[var(--data-info-500)]/10 px-3 py-2">
+                <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
+                  ✎ Seleccionaste <b className="text-white">{PB_KEY_LABEL[pbSelected]}</b> en la tienda
+                </span>
+                <button type="button" onClick={() => setPbSelected(null)} aria-label="Quitar selección" className="text-[var(--text-tertiary)] hover:text-white">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
             {panel === "plantillas" && (
               <>
                 <div>
