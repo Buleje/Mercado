@@ -168,6 +168,11 @@ async function loadPageData(slug: string) {
     shadowLevel: pickStr("shadowLevel"),
     // Banner de anuncio del editor (Brandon 2026-06-25): imagen arriba de la tienda.
     announcementImage: pickStr("announcementImage"),
+    // Imagen por sección (Brandon 2026-06-25): map clave-sección → URL.
+    sectionImages:
+      st?.["sectionImages"] && typeof st["sectionImages"] === "object" && !Array.isArray(st["sectionImages"])
+        ? (st["sectionImages"] as Record<string, string>)
+        : ({} as Record<string, string>),
   };
 
   // Feature flags PRO opt-in por tienda (ADR-298): viven en storeTheme.features.
@@ -753,6 +758,21 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           )}
         </section>
       )}
+
+      {/* Imágenes por sección (Brandon 2026-06-25): bandas full-width que el dueño
+          sube desde Modo Creativo > Secciones (una por sección). */}
+      {Object.entries(editorTheme.sectionImages)
+        .filter(([, url]) => typeof url === "string" && url.length > 0)
+        .map(([key, url]) => (
+          <div key={key} className="w-full bg-[var(--surface-sunken)]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- banda full-width de aspecto variable */}
+            <img
+              src={url}
+              alt={`${displayName} — ${key}`}
+              className="block w-full h-auto max-h-[320px] object-cover"
+            />
+          </div>
+        ))}
 
       {/* ═══════════════ Productos al frente (Brandon 2026-06-08) ═══════════════
           Vitrina de productos REALES en la landing — destacados si el dueño los

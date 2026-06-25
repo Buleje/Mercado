@@ -386,6 +386,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     patch("sections", sections);
   }, [draft.sections, patch]);
 
+  // Imagen por sección (Brandon 2026-06-25): setea/borra la imagen de una sección.
+  const setSectionImage = useCallback((key: string, url: string) => {
+    const next = { ...(draft.sectionImages ?? {}) };
+    if (url) next[key] = url; else delete next[key];
+    patch("sectionImages", next);
+  }, [draft.sectionImages, patch]);
+
   const toggleTiendaSection = useCallback((key: string) => {
     setTiendaSectionsEnabled((prev) => {
       const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
@@ -907,11 +914,29 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Pagina principal</p>
                   {SECTION_ITEMS.map((section) => {
                     const enabled = draft.sections.includes(section.key);
+                    // hero/announcement ya tienen su propio slot de imagen (panel Hero
+                    // y "Banner de la tienda"); el resto recibe imagen por sección.
+                    const hasOwnImageSlot = section.key === "hero" || section.key === "announcement";
+                    const sectionImg = draft.sectionImages?.[section.key] ?? "";
                     return (
-                      <span key={section.key} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
-                        <span className="flex-1 text-xs text-gray-200">{section.label}</span>
-                        <Toggle checked={enabled} onChange={() => toggleSection(section.key)} />
-                      </span>
+                      <div key={section.key} className="rounded-lg bg-white/[0.03] border border-white/10">
+                        <span className="flex items-center justify-between px-2.5 py-2">
+                          <span className="flex-1 text-xs text-gray-200">{section.label}</span>
+                          <Toggle checked={enabled} onChange={() => toggleSection(section.key)} />
+                        </span>
+                        {enabled && !hasOwnImageSlot && (
+                          <div className="dark border-t border-white/10 px-2.5 py-2.5">
+                            <ImageUpload
+                              value={sectionImg}
+                              onChange={(url) => setSectionImage(section.key, url)}
+                              onClear={() => setSectionImage(section.key, "")}
+                              folder="store-customizer"
+                              aspectRatio="banner"
+                              label=""
+                            />
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

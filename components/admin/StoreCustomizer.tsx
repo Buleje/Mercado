@@ -55,6 +55,10 @@ export interface StoreTheme {
   // Banner de anuncio (Brandon 2026-06-25): imagen full-width arriba de la página
   // de la tienda. Vacío = sin banner. Editable desde Modo Creativo > Secciones.
   announcementImage: string;
+  // Imagen por sección (Brandon 2026-06-25): map clave-de-sección → URL de imagen.
+  // Cada sección de la página puede tener su propia imagen. Se renderiza como
+  // banda full-width en la tienda. Editable desde Modo Creativo > Secciones.
+  sectionImages: Record<string, string>;
   // FIX 2026-05-07 (audit storefront-admin): chips de confianza configurables
   // de la TrustBar (la barra que scrollea con beneficios). Antes 6 chips fijas.
   trustChips: string[];
@@ -118,6 +122,7 @@ const DEFAULT_THEME: StoreTheme = {
   heroOriginBadge: "Hecho en Pucallpa",
   heroImage: "",
   announcementImage: "",
+  sectionImages: {},
   trustChips: [
     "Delivery gratis desde S/50",
     "Entrega en menos de 45 min",
