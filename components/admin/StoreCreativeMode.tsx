@@ -133,42 +133,31 @@ const DAYS: Array<keyof StoreTheme["schedules"]> = [
   "domingo",
 ];
 
-const QUICK_TEMPLATES: Array<{
+// Plantillas COMPLETAS (Brandon 2026-06-25): cada una define un look cohesivo —
+// los 3 colores + tipografía + modo + RADIO + estilo de BOTÓN (todo lo que el
+// preview refleja en vivo). `vibe` describe el estilo en el card.
+type QuickTemplate = {
   id: string;
   name: string;
+  vibe: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
   fontFamily: StoreTheme["fontFamily"];
   darkModeDefault: boolean;
-}> = [
-  {
-    id: "clasico",
-    name: "Clasico Bodega",
-    primaryColor: "var(--color-primary)",
-    secondaryColor: "#ff6b5b",
-    accentColor: "var(--color-primary)",
-    fontFamily: "geist",
-    darkModeDefault: false,
-  },
-  {
-    id: "fresco",
-    name: "Fresco Moderno",
-    primaryColor: "#059669",
-    secondaryColor: "#E11D48",
-    accentColor: "#10B981",
-    fontFamily: "poppins",
-    darkModeDefault: false,
-  },
-  {
-    id: "premium",
-    name: "Premium Nocturno",
-    primaryColor: "#1E293B",
-    secondaryColor: "#f0503f",
-    accentColor: "#334155",
-    fontFamily: "montserrat",
-    darkModeDefault: true,
-  },
+  borderRadius: number;
+  buttonStyle: StoreTheme["buttonStyle"];
+};
+
+const QUICK_TEMPLATES: QuickTemplate[] = [
+  { id: "clasico",  name: "Clásico Bodega",   vibe: "Cálido y confiable",   primaryColor: "#00A0A0", secondaryColor: "#ff6b5b", accentColor: "#00A0A0", fontFamily: "geist",      darkModeDefault: false, borderRadius: 14, buttonStyle: "rounded" },
+  { id: "fresco",   name: "Fresco Moderno",   vibe: "Limpio y verde",       primaryColor: "#059669", secondaryColor: "#E11D48", accentColor: "#10B981", fontFamily: "poppins",    darkModeDefault: false, borderRadius: 16, buttonStyle: "pill" },
+  { id: "premium",  name: "Premium Nocturno", vibe: "Oscuro y elegante",    primaryColor: "#1E293B", secondaryColor: "#f0503f", accentColor: "#334155", fontFamily: "montserrat", darkModeDefault: true,  borderRadius: 8,  buttonStyle: "square" },
+  { id: "minimal",  name: "Minimal Blanco",   vibe: "Editorial y sobrio",   primaryColor: "#111827", secondaryColor: "#6B7280", accentColor: "#111827", fontFamily: "inter",      darkModeDefault: false, borderRadius: 4,  buttonStyle: "square" },
+  { id: "calido",   name: "Cálido Mercado",   vibe: "Ámbar acogedor",       primaryColor: "#D97706", secondaryColor: "#DC2626", accentColor: "#F59E0B", fontFamily: "nunito",     darkModeDefault: false, borderRadius: 18, buttonStyle: "rounded" },
+  { id: "selva",    name: "Selva Tropical",   vibe: "Verde de Pucallpa",    primaryColor: "#15803D", secondaryColor: "#84CC16", accentColor: "#22C55E", fontFamily: "raleway",    darkModeDefault: false, borderRadius: 20, buttonStyle: "pill" },
+  { id: "oceano",   name: "Océano Profundo",  vibe: "Azul fresco",          primaryColor: "#0369A1", secondaryColor: "#06B6D4", accentColor: "#0EA5E9", fontFamily: "lato",       darkModeDefault: true,  borderRadius: 12, buttonStyle: "rounded" },
+  { id: "dulce",    name: "Dulce Pastel",     vibe: "Pastelería suave",     primaryColor: "#DB2777", secondaryColor: "#A855F7", accentColor: "#EC4899", fontFamily: "opensans",   darkModeDefault: false, borderRadius: 22, buttonStyle: "pill" },
 ];
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
@@ -541,6 +530,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       accentColor: tpl.accentColor,
       fontFamily: tpl.fontFamily,
       darkModeDefault: tpl.darkModeDefault,
+      borderRadius: tpl.borderRadius,
+      buttonStyle: tpl.buttonStyle,
     });
   }, [draft, pushChange]);
 
@@ -794,16 +785,23 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     </div>
                     <div className="p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-bold text-white">{tpl.name}</p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{tpl.name}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">{tpl.vibe}</p>
+                        </div>
                         <div className="flex gap-1 shrink-0">
                           <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.primaryColor }} />
                           <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.secondaryColor }} />
                           <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.accentColor }} />
                         </div>
                       </div>
-                      <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1 group-hover:text-[var(--data-success-500)]/80 transition-colors">
-                        Click para aplicar →
-                      </p>
+                      {/* Meta del look: fuente · botón · modo + "Aplicar" en hover */}
+                      <div className="mt-2 flex flex-wrap items-center gap-1">
+                        <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-gray-300 capitalize">{tpl.fontFamily}</span>
+                        <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-gray-300 capitalize">{tpl.buttonStyle}</span>
+                        <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-gray-300">{tpl.darkModeDefault ? "Oscuro" : "Claro"}</span>
+                        <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] opacity-0 group-hover:opacity-100 transition-opacity">Aplicar →</span>
+                      </div>
                     </div>
                   </button>
                 ))}
