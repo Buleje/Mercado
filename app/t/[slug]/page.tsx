@@ -18,6 +18,7 @@ import VendorTrustBadges from "@/components/store/VendorTrustBadges";
 import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
 import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
+import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
@@ -173,6 +174,12 @@ async function loadPageData(slug: string) {
       st?.["sectionImages"] && typeof st["sectionImages"] === "object" && !Array.isArray(st["sectionImages"])
         ? (st["sectionImages"] as Record<string, string>)
         : ({} as Record<string, string>),
+    // Automatización (Brandon 2026-06-25): popup de bienvenida + texto del footer.
+    welcomePopupEnabled: st?.["welcomePopupEnabled"] === true,
+    welcomePopupTitle: pickStr("welcomePopupTitle"),
+    welcomePopupMessage: pickStr("welcomePopupMessage"),
+    welcomePopupCoupon: pickStr("welcomePopupCoupon"),
+    footerText: pickStr("footerText"),
   };
 
   // Feature flags PRO opt-in por tienda (ADR-298): viven en storeTheme.features.
@@ -1243,6 +1250,13 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             </div>
           )}
 
+        {/* Texto de footer configurable (Brandon 2026-06-25). */}
+        {editorTheme.footerText && (
+          <p data-live="footerText" className="text-center mt-6 text-sm font-medium text-[var(--text-secondary)]">
+            {editorTheme.footerText}
+          </p>
+        )}
+
         {/* Footer mini con marca Buleje en lugar del slug raw */}
         <p className="text-center mt-6 text-xs text-[var(--text-tertiary)] flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
@@ -1252,6 +1266,18 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
       {/* Cupón flotante — se monta solo si hay cupón activo para este tenant */}
       <StickyCouponBanner tenantSlug={tenant.slug} />
+
+      {/* Popup de bienvenida configurable (Brandon 2026-06-25) — Modo Creativo >
+          Automatización. Dismissable (X / click-fuera / Escape). */}
+      {editorTheme.welcomePopupEnabled && (
+        <TenantWelcomePopup
+          title={editorTheme.welcomePopupTitle ?? "¡Bienvenido!"}
+          message={editorTheme.welcomePopupMessage ?? ""}
+          coupon={editorTheme.welcomePopupCoupon || undefined}
+          ctaHref={`/t/${tenant.slug}/tienda`}
+          storageKey={`buleje-welcome-${tenant.slug}`}
+        />
+      )}
     </main>
   );
 }

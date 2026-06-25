@@ -312,6 +312,46 @@ function reloadSignature(t: StoreTheme): string {
   return JSON.stringify(rest);
 }
 
+// Picker visual de estilo (Brandon 2026-06-25): en vez de un <select>, muestra
+// tarjetas con una MINI VISTA PREVIA de cada opción. La activa se resalta.
+function StylePicker<T extends string>({
+  label, value, onChange, cols = 2, options,
+}: {
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  cols?: 2 | 3 | 4;
+  options: Array<{ value: T; label: string; preview: React.ReactNode }>;
+}) {
+  const colCls = cols === 4 ? "grid-cols-4" : cols === 3 ? "grid-cols-3" : "grid-cols-2";
+  return (
+    <div>
+      <p className={LABEL_CLASS}>{label}</p>
+      <div className={cn("grid gap-2", colCls)}>
+        {options.map((o) => {
+          const active = value === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => onChange(o.value)}
+              className={cn(
+                "rounded-lg border p-2 transition-colors",
+                active
+                  ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10"
+                  : "border-white/10 bg-white/[0.03] hover:border-white/25",
+              )}
+            >
+              <div className="flex h-9 items-center justify-center overflow-hidden rounded bg-white/[0.04]">{o.preview}</div>
+              <span className="mt-1 block text-center text-[length:var(--ts-2xs)] text-gray-300">{o.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, onApplyTheme }: StoreCreativeModeProps) {
   const [panel, setPanel] = useState<CreativePanel>("plantillas");
   const [viewport, setViewport] = useState<Viewport>("desktop");
@@ -1112,58 +1152,45 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "estilos" && (
               <>
-                <Field label="Estilo de cards" labelClassName={LABEL_CLASS}>
-                  <select className={INPUT_CLASS} value={draft.cardStyle} onChange={(e) => patch("cardStyle", e.target.value as StoreTheme["cardStyle"])}>
-                    <option value="minimal">Minimal</option>
-                    <option value="shadow">Shadow</option>
-                    <option value="border">Border</option>
-                    <option value="glass">Glass</option>
-                  </select>
-                </Field>
-                <Field label="Estilo de carrito" labelClassName={LABEL_CLASS}>
-                  <select className={INPUT_CLASS} value={draft.cartStyle} onChange={(e) => patch("cartStyle", e.target.value as StoreTheme["cartStyle"])}>
-                    <option value="sidebar">Sidebar</option>
-                    <option value="modal">Modal</option>
-                    <option value="drawer">Drawer</option>
-                  </select>
-                </Field>
-                <Field label="Botones" labelClassName={LABEL_CLASS}>
-                  <select className={INPUT_CLASS} value={draft.buttonStyle} onChange={(e) => patch("buttonStyle", e.target.value as StoreTheme["buttonStyle"])}>
-                    <option value="rounded">Rounded</option>
-                    <option value="square">Square</option>
-                    <option value="pill">Pill</option>
-                  </select>
-                </Field>
-                <Field label="Navbar" labelClassName={LABEL_CLASS}>
-                  <select className={INPUT_CLASS} value={draft.navbarStyle} onChange={(e) => patch("navbarStyle", e.target.value as StoreTheme["navbarStyle"])}>
-                    <option value="solid">Solid</option>
-                    <option value="transparent">Transparent</option>
-                    <option value="blur">Blur</option>
-                    <option value="minimal">Minimal</option>
-                  </select>
-                </Field>
-                <Field label="Sombras" labelClassName={LABEL_CLASS}>
-                  <select className={INPUT_CLASS} value={draft.shadowLevel} onChange={(e) => patch("shadowLevel", e.target.value as StoreTheme["shadowLevel"])}>
-                    <option value="none">Sin sombra</option>
-                    <option value="soft">Suave</option>
-                    <option value="deep">Profunda</option>
-                  </select>
-                </Field>
-                <Field label="Animaciones" labelClassName={LABEL_CLASS}>
-                  <select className={INPUT_CLASS} value={draft.animations} onChange={(e) => patch("animations", e.target.value as StoreTheme["animations"])}>
-                    <option value="none">Ninguna</option>
-                    <option value="subtle">Sutil</option>
-                    <option value="dynamic">Dinamica</option>
-                  </select>
-                </Field>
-                <Field label="Fondo" labelClassName={LABEL_CLASS}>
-                  <select className={INPUT_CLASS} value={draft.backgroundPattern} onChange={(e) => patch("backgroundPattern", e.target.value as StoreTheme["backgroundPattern"])}>
-                    <option value="none">Plano</option>
-                    <option value="dots">Dots</option>
-                    <option value="waves">Waves</option>
-                    <option value="gradient">Gradient</option>
-                  </select>
-                </Field>
+                <StylePicker label="Estilo de cards" value={draft.cardStyle} onChange={(v) => patch("cardStyle", v)}
+                  options={[
+                    { value: "minimal", label: "Minimal", preview: <span className="h-6 w-9 rounded bg-white border border-gray-300" /> },
+                    { value: "shadow", label: "Shadow", preview: <span className="h-6 w-9 rounded bg-white shadow-md" /> },
+                    { value: "border", label: "Border", preview: <span className="h-6 w-9 rounded bg-white border-2 border-gray-500" /> },
+                    { value: "glass", label: "Glass", preview: <span className="h-6 w-9 rounded bg-white/40 backdrop-blur-sm border border-white/70" /> },
+                  ]} />
+                <StylePicker label="Botones" value={draft.buttonStyle} onChange={(v) => patch("buttonStyle", v)} cols={3}
+                  options={[
+                    { value: "rounded", label: "Rounded", preview: <span className="h-5 w-10 rounded-lg bg-[var(--data-success-500)]" /> },
+                    { value: "square", label: "Square", preview: <span className="h-5 w-10 rounded-none bg-[var(--data-success-500)]" /> },
+                    { value: "pill", label: "Pill", preview: <span className="h-5 w-10 rounded-full bg-[var(--data-success-500)]" /> },
+                  ]} />
+                <StylePicker label="Navbar" value={draft.navbarStyle} onChange={(v) => patch("navbarStyle", v)}
+                  options={[
+                    { value: "solid", label: "Solid", preview: <span className="h-4 w-12 rounded bg-gray-700" /> },
+                    { value: "transparent", label: "Transp.", preview: <span className="h-4 w-12 rounded border border-gray-500" /> },
+                    { value: "blur", label: "Blur", preview: <span className="h-4 w-12 rounded bg-white/25 backdrop-blur" /> },
+                    { value: "minimal", label: "Minimal", preview: <span className="h-4 w-12 border-b-2 border-gray-500" /> },
+                  ]} />
+                <StylePicker label="Sombras" value={draft.shadowLevel} onChange={(v) => patch("shadowLevel", v)} cols={3}
+                  options={[
+                    { value: "none", label: "Sin", preview: <span className="h-6 w-9 rounded bg-white" /> },
+                    { value: "soft", label: "Suave", preview: <span className="h-6 w-9 rounded bg-white shadow-md" /> },
+                    { value: "deep", label: "Profunda", preview: <span className="h-6 w-9 rounded bg-white shadow-2xl" /> },
+                  ]} />
+                <StylePicker label="Animaciones" value={draft.animations} onChange={(v) => patch("animations", v)} cols={3}
+                  options={[
+                    { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-gray-400" /> },
+                    { value: "subtle", label: "Sutil", preview: <Sparkles className="h-4 w-4 text-gray-300" /> },
+                    { value: "dynamic", label: "Dinámica", preview: <Sparkles className="h-5 w-5 text-[var(--data-success-500)]" /> },
+                  ]} />
+                <StylePicker label="Fondo" value={draft.backgroundPattern} onChange={(v) => patch("backgroundPattern", v)}
+                  options={[
+                    { value: "none", label: "Plano", preview: <span className="h-6 w-9 rounded bg-gray-100" /> },
+                    { value: "dots", label: "Dots", preview: <span className="h-6 w-9 rounded bg-gray-100" style={{ backgroundImage: "radial-gradient(circle, #9ca3af 1px, transparent 1px)", backgroundSize: "5px 5px" }} /> },
+                    { value: "waves", label: "Waves", preview: <span className="h-6 w-9 rounded bg-linear-to-r from-gray-200 via-gray-100 to-gray-200" /> },
+                    { value: "gradient", label: "Gradient", preview: <span className="h-6 w-9 rounded bg-linear-to-br from-gray-200 to-gray-500" /> },
+                  ]} />
               </>
             )}
 
@@ -1200,20 +1227,42 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             {panel === "automatizacion" && (
               <>
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
-                  <span className="text-xs font-semibold text-[var(--text-tertiary)]">Popup bienvenida</span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-[var(--text-tertiary)]">Popup de bienvenida</span>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Aparece al entrar a tu tienda · con cupón opcional</p>
+                  </div>
                   <Toggle checked={draft.welcomePopupEnabled} onChange={(v) => patch("welcomePopupEnabled", v)} />
                 </div>
-                <Field label="Titulo popup" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.welcomePopupTitle} onChange={(e) => patch("welcomePopupTitle", e.target.value)} />
-                </Field>
-                <Field label="Mensaje popup" labelClassName={LABEL_CLASS}>
-                  <textarea className={cn(INPUT_CLASS, "resize-none")} rows={3} value={draft.welcomePopupMessage} onChange={(e) => patch("welcomePopupMessage", e.target.value)} />
-                </Field>
-                <Field label="Cupon popup" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.welcomePopupCoupon} onChange={(e) => patch("welcomePopupCoupon", e.target.value)} />
-                </Field>
-                <Field label="Texto footer" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.footerText} onChange={(e) => patch("footerText", e.target.value)} />
+
+                {draft.welcomePopupEnabled && (
+                  <>
+                    <Field label="Título del popup" labelClassName={LABEL_CLASS}>
+                      <input className={INPUT_CLASS} value={draft.welcomePopupTitle} onChange={(e) => patch("welcomePopupTitle", e.target.value)} placeholder="¡Bienvenido!" />
+                    </Field>
+                    <Field label="Mensaje" labelClassName={LABEL_CLASS}>
+                      <textarea className={cn(INPUT_CLASS, "resize-none")} rows={3} value={draft.welcomePopupMessage} onChange={(e) => patch("welcomePopupMessage", e.target.value)} placeholder="10% de descuento en tu primera compra" />
+                    </Field>
+                    <Field label="Cupón (opcional)" labelClassName={LABEL_CLASS}>
+                      <input className={INPUT_CLASS} value={draft.welcomePopupCoupon} onChange={(e) => patch("welcomePopupCoupon", e.target.value)} placeholder="BIENVENIDO10" />
+                    </Field>
+
+                    {/* Vista previa del popup tal cual lo verá el cliente */}
+                    <div>
+                      <p className={LABEL_CLASS}>Vista previa</p>
+                      <div className="rounded-xl border border-white/10 bg-white p-4 shadow-xl">
+                        <p className="text-base font-black" style={{ color: draft.primaryColor }}>{draft.welcomePopupTitle || "¡Bienvenido!"}</p>
+                        <p className="mt-1 text-xs text-gray-600">{draft.welcomePopupMessage || "10% de descuento en tu primera compra"}</p>
+                        {draft.welcomePopupCoupon && (
+                          <span className="mt-2 inline-block rounded-md border-2 border-dashed px-3 py-1 font-mono text-sm font-bold" style={{ borderColor: draft.primaryColor, color: draft.primaryColor }}>{draft.welcomePopupCoupon}</span>
+                        )}
+                        <span className="mt-3 block w-full rounded-lg py-2 text-center text-xs font-bold text-white" style={{ backgroundColor: draft.primaryColor }}>Empezar a comprar</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <Field label="Texto del footer" labelClassName={LABEL_CLASS}>
+                  <input className={INPUT_CLASS} value={draft.footerText} onChange={(e) => patch("footerText", e.target.value)} placeholder="© Tu tienda · Hecho con cariño" />
                 </Field>
               </>
             )}
