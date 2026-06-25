@@ -31,6 +31,7 @@ import {
   Clock,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
+import ImageUpload from "./ImageUpload";
 import { cn } from "@/lib/utils";
 import { EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
 import type { StoreTheme } from "./StoreCustomizer";
@@ -810,17 +811,30 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "identidad" && (
               <>
-                <Field label="Nombre de tienda" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.storeName} onChange={(e) => patch("storeName", e.target.value)} />
+                {/* Logo — click o arrastrá para subir (Brandon 2026-06-25) */}
+                <div className="space-y-1.5">
+                  <p className={LABEL_CLASS}>Logo de la tienda</p>
+                  <div className="dark max-w-[150px]">
+                    <ImageUpload
+                      value={draft.logo}
+                      onChange={(url) => patch("logo", url)}
+                      onClear={() => patch("logo", "")}
+                      folder="store-customizer"
+                      aspectRatio="square"
+                      label=""
+                    />
+                  </div>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Click o arrastrá · cuadrado · máx 5 MB</p>
+                </div>
+
+                <Field label="Nombre de la tienda" labelClassName={LABEL_CLASS}>
+                  <input className={INPUT_CLASS} value={draft.storeName} onChange={(e) => patch("storeName", e.target.value)} placeholder="Mi Bodega" />
                 </Field>
                 <Field label="Slogan" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.slogan} onChange={(e) => patch("slogan", e.target.value)} />
+                  <input className={INPUT_CLASS} value={draft.slogan} onChange={(e) => patch("slogan", e.target.value)} placeholder="Tu tienda de confianza" />
                 </Field>
-                <Field label="Descripcion" labelClassName={LABEL_CLASS}>
-                  <textarea className={cn(INPUT_CLASS, "resize-none")} rows={3} value={draft.description} onChange={(e) => patch("description", e.target.value)} />
-                </Field>
-                <Field label="Logo URL" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.logo} onChange={(e) => patch("logo", e.target.value)} placeholder="https://..." />
+                <Field label="Descripción" labelClassName={LABEL_CLASS}>
+                  <textarea className={cn(INPUT_CLASS, "resize-none")} rows={3} value={draft.description} onChange={(e) => patch("description", e.target.value)} placeholder="Qué vendés y qué te hace especial…" />
                 </Field>
               </>
             )}
@@ -842,9 +856,21 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <Field label="Badge hero" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.heroBadge} onChange={(e) => patch("heroBadge", e.target.value)} />
                 </Field>
-                <Field label="Imagen hero URL" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.heroImage} onChange={(e) => patch("heroImage", e.target.value)} placeholder="https://..." />
-                </Field>
+                {/* Imagen de fondo del hero — click o arrastrá (Brandon 2026-06-25) */}
+                <div className="space-y-1.5">
+                  <p className={LABEL_CLASS}>Imagen del hero</p>
+                  <div className="dark">
+                    <ImageUpload
+                      value={draft.heroImage}
+                      onChange={(url) => patch("heroImage", url)}
+                      onClear={() => patch("heroImage", "")}
+                      folder="store-customizer"
+                      aspectRatio="banner"
+                      label=""
+                    />
+                  </div>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Fondo del hero · click o arrastrá · máx 5 MB</p>
+                </div>
               </>
             )}
 
@@ -1061,9 +1087,20 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <Field label="Facebook Pixel ID" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.pixelId} onChange={(e) => patch("pixelId", e.target.value)} />
                 </Field>
-                <Field label="Favicon URL" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.favicon} onChange={(e) => patch("favicon", e.target.value)} placeholder="https://..." />
-                </Field>
+                <div className="space-y-1.5">
+                  <p className={LABEL_CLASS}>Favicon</p>
+                  <div className="dark max-w-[110px]">
+                    <ImageUpload
+                      value={draft.favicon}
+                      onChange={(url) => patch("favicon", url)}
+                      onClear={() => patch("favicon", "")}
+                      folder="store-customizer"
+                      aspectRatio="square"
+                      label=""
+                    />
+                  </div>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Ícono de la pestaña · cuadrado · PNG/SVG</p>
+                </div>
                 <Field label="Custom CSS" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none font-mono text-xs")} rows={6} value={draft.customCSS} onChange={(e) => patch("customCSS", e.target.value)} />
                 </Field>
