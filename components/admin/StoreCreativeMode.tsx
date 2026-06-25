@@ -110,6 +110,16 @@ const COLOR_PRESETS = [
   "#1F2937",
 ] as const;
 
+// Paletas armónicas (Brandon 2026-06-25): 1 click aplica primario+secundario+acento.
+const COLOR_PALETTES: Array<{ name: string; primary: string; secondary: string; accent: string }> = [
+  { name: "Bodega",    primary: "#00A0A0", secondary: "#FF6B5B", accent: "#00A0A0" },
+  { name: "Bosque",    primary: "#15803D", secondary: "#84CC16", accent: "#22C55E" },
+  { name: "Océano",    primary: "#0369A1", secondary: "#06B6D4", accent: "#0EA5E9" },
+  { name: "Atardecer", primary: "#D97706", secondary: "#DC2626", accent: "#F59E0B" },
+  { name: "Dulce",     primary: "#DB2777", secondary: "#A855F7", accent: "#EC4899" },
+  { name: "Noche",     primary: "#1E293B", secondary: "#F0503F", accent: "#334155" },
+];
+
 const SECTION_ITEMS: { key: SectionKey; label: string }[] = [
   { key: "announcement", label: "Banner anuncio" },
   { key: "hero", label: "Hero" },
@@ -543,6 +553,32 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     });
   }, [draft, pushChange]);
 
+  // Aplica una paleta armónica (3 colores) de un click (Brandon 2026-06-25).
+  const applyPalette = useCallback((p: { primary: string; secondary: string; accent: string }) => {
+    pushChange({ ...draft, primaryColor: p.primary, secondaryColor: p.secondary, accentColor: p.accent });
+  }, [draft, pushChange]);
+
+  // Carga las Google Fonts del editor para que el selector de tipografía muestre
+  // cada fuente en su PROPIO tipo (Brandon 2026-06-25). Geist/sistema no van.
+  useEffect(() => {
+    const families = Object.values(EDITOR_FONT_MAP)
+      .map((f) => f.label)
+      .filter((l): l is string => !!l && l !== "Geist");
+    if (families.length === 0) return;
+    const href =
+      "https://fonts.googleapis.com/css2?" +
+      families.map((fam) => `family=${encodeURIComponent(fam).replace(/%20/g, "+")}:wght@400;600;700;800`).join("&") +
+      "&display=swap";
+    let link = document.getElementById("creative-editor-fonts") as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.id = "creative-editor-fonts";
+      link.rel = "stylesheet";
+      document.head.appendChild(link);
+    }
+    if (link.href !== href) link.href = href;
+  }, []);
+
   const handleApply = useCallback(async () => {
     setSaving(true);
     try {
@@ -883,9 +919,45 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "colores" && (
               <>
+                {/* Paletas armónicas — 1 click aplica los 3 colores (Brandon 2026-06-25) */}
+                <div>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)] mb-2">Paletas listas</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {COLOR_PALETTES.map((pal) => (
+                      <button
+                        key={pal.name}
+                        type="button"
+                        onClick={() => applyPalette(pal)}
+                        className="group rounded-lg border border-white/10 bg-white/[0.03] p-1.5 hover:border-white/25 transition-colors"
+                      >
+                        <span className="flex h-7 w-full overflow-hidden rounded">
+                          <span className="flex-1" style={{ backgroundColor: pal.primary }} />
+                          <span className="flex-1" style={{ backgroundColor: pal.secondary }} />
+                          <span className="flex-1" style={{ backgroundColor: pal.accent }} />
+                        </span>
+                        <span className="mt-1 block text-[length:var(--ts-2xs)] font-semibold text-gray-300 group-hover:text-white">{pal.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <ColorField label="Color primario" value={draft.primaryColor} onChange={(v) => patch("primaryColor", v)} />
                 <ColorField label="Color secundario" value={draft.secondaryColor} onChange={(v) => patch("secondaryColor", v)} />
                 <ColorField label="Color acento" value={draft.accentColor} onChange={(v) => patch("accentColor", v)} />
+
+                {/* Vista previa de cómo combinan los colores en la tienda */}
+                <div className="rounded-lg border border-white/10 overflow-hidden">
+                  <div className="bg-white p-3">
+                    <p className="text-sm font-black" style={{ color: draft.primaryColor }}>Tu tienda online</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Así combinan tus colores.</p>
+                    <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      <span className="inline-block text-xs font-bold text-white px-3 py-1.5 rounded-lg" style={{ backgroundColor: draft.primaryColor }}>Comprar</span>
+                      <span className="inline-block text-xs font-bold text-white px-3 py-1.5 rounded-lg" style={{ backgroundColor: draft.secondaryColor }}>Oferta</span>
+                      <span className="inline-block text-xs font-bold px-3 py-1.5 rounded-lg border-2" style={{ color: draft.accentColor, borderColor: draft.accentColor }}>Ver más</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <span className="text-xs font-semibold text-[var(--text-tertiary)]">Modo oscuro por defecto</span>
                   <Toggle checked={draft.darkModeDefault} onChange={(v) => patch("darkModeDefault", v)} />
@@ -981,13 +1053,40 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "tipografia" && (
               <>
-                <Field label="Fuente" labelClassName={LABEL_CLASS}>
-                  <select className={INPUT_CLASS} value={draft.fontFamily} onChange={(e) => patch("fontFamily", e.target.value as StoreTheme["fontFamily"])}>
-                    {FONT_OPTIONS.map((f) => (
-                      <option key={f.value} value={f.value}>{f.label}</option>
-                    ))}
-                  </select>
-                </Field>
+                {/* Fuente — tarjetas renderizadas en su PROPIA tipografía (Brandon 2026-06-25) */}
+                <div>
+                  <p className={LABEL_CLASS}>Fuente</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {FONT_OPTIONS.map((f) => {
+                      const active = draft.fontFamily === f.value;
+                      const stack = EDITOR_FONT_MAP[f.value]?.stack;
+                      return (
+                        <button
+                          key={f.value}
+                          type="button"
+                          onClick={() => patch("fontFamily", f.value as StoreTheme["fontFamily"])}
+                          className={cn(
+                            "rounded-lg border p-2.5 text-left transition-colors",
+                            active
+                              ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10"
+                              : "border-white/10 bg-white/[0.03] hover:border-white/25",
+                          )}
+                        >
+                          <span className="block text-xl leading-none text-white" style={{ fontFamily: stack }}>Aa</span>
+                          <span className="mt-1 block text-[length:var(--ts-2xs)] text-gray-400">{f.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Vista previa: título + cuerpo en la fuente elegida + redondez del botón */}
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3" style={{ fontFamily: EDITOR_FONT_MAP[draft.fontFamily]?.stack }}>
+                  <p className="text-lg font-black text-white leading-tight">Bodega Buleje</p>
+                  <p className="text-xs text-gray-400 mt-1">Frutas frescas, abarrotes y delivery rápido a tu puerta.</p>
+                  <span className="mt-2.5 inline-block bg-[var(--data-success-500)] text-white text-xs font-bold px-3 py-1.5" style={{ borderRadius: draft.borderRadius }}>Comprar ahora</span>
+                </div>
+
                 <Field
                   label={
                     <div className="flex items-center justify-between mb-1 w-full">
@@ -998,7 +1097,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   labelClassName={LABEL_CLASS}
                 >
                   {(id) => (
-                    <input id={id} type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-[var(--data-success)]" />
+                    <input id={id} type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-[var(--data-success-500)]" />
                   )}
                 </Field>
                 <Field label="Espaciado general" labelClassName={LABEL_CLASS}>
