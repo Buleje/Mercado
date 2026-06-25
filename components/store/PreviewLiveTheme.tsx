@@ -48,6 +48,28 @@ export default function PreviewLiveTheme() {
       if (link.href !== href) link.href = href;
     };
 
+    // Modo oscuro EN VIVO (Brandon 2026-06-25): toggle de la clase `dark` —
+    // antes solo se reflejaba tras recargar el iframe.
+    const applyDarkMode = (dark: boolean | undefined) => {
+      if (typeof dark !== "boolean") return;
+      document.documentElement.classList.toggle("dark", dark);
+      const tenant = document.querySelector(".tenant-theme") as HTMLElement | null;
+      tenant?.classList.toggle("dark", dark);
+    };
+
+    // Texto EN VIVO (Brandon 2026-06-25): el editor manda {heroTitle, heroSubtitle,…}
+    // y acá seteamos el textContent de los elementos marcados con data-live="<campo>".
+    // Así editar el hero/nombre se ve al instante, sin esperar el reload de 2s.
+    const applyText = (text: Record<string, unknown> | undefined) => {
+      if (!text) return;
+      for (const [key, val] of Object.entries(text)) {
+        if (typeof val !== "string") continue;
+        document.querySelectorAll(`[data-live="${key}"]`).forEach((el) => {
+          if (el.textContent !== val) el.textContent = val;
+        });
+      }
+    };
+
     const onMessage = (e: MessageEvent) => {
       // Solo same-origin: el editor vive en el mismo dominio que el preview.
       if (e.origin !== window.location.origin) return;
@@ -56,10 +78,14 @@ export default function PreviewLiveTheme() {
         type?: string;
         vars?: Record<string, unknown>;
         fontLabel?: string | null;
+        darkMode?: boolean;
+        text?: Record<string, unknown>;
       } | null;
       if (!data || data.source !== "buleje-editor" || data.type !== "live-theme") return;
       applyVars(data.vars);
       loadFont(data.fontLabel);
+      applyDarkMode(data.darkMode);
+      applyText(data.text);
     };
 
     window.addEventListener("message", onMessage);

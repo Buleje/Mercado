@@ -501,12 +501,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 )}
               </p>
 
-              <h1 className="font-display text-[clamp(2.5rem,7vw,4.5rem)] font-extrabold text-white tracking-[var(--ls-tight)] leading-[0.95] mb-5">
+              <h1 data-live="heroTitle" className="font-display text-[clamp(2.5rem,7vw,4.5rem)] font-extrabold text-white tracking-[var(--ls-tight)] leading-[0.95] mb-5">
                 {heroTitle}
               </h1>
 
               {heroSubtitle && (
-                <p className="text-white/85 text-lg sm:text-xl max-w-xl leading-[1.45] mb-7">
+                <p data-live="heroSubtitle" className="text-white/85 text-lg sm:text-xl max-w-xl leading-[1.45] mb-7">
                   {heroSubtitle}
                 </p>
               )}

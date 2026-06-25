@@ -105,7 +105,7 @@ const COLOR_PRESETS = [
   "#9333EA",
   "#E11D48",
   "#f0503f",
-  "#f0503f",
+  "#F59E0B",
   "#1F2937",
 ] as const;
 
@@ -172,7 +172,10 @@ const QUICK_TEMPLATES: Array<{
 ];
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  const safe = /^#[0-9A-Fa-f]{6}$/.test(value) ? value : "var(--color-primary)";
+  // El <input type="color"> SOLO acepta hex; si el valor es una CSS var
+  // (var(--color-primary) = teal de marca) caía a algo inválido → el picker
+  // nativo mostraba negro. Fallback al hex real de la marca para que muestre bien.
+  const safe = /^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#00A0A0";
   return (
     <div className="space-y-2">
       <Field label={label} labelClassName={LABEL_CLASS}>
@@ -296,6 +299,19 @@ function PreviewCard({ title, price, primaryColor, borderRadius, styleVariant }:
   );
 }
 
+// Firma de los campos que NO se reflejan en vivo por postMessage (imagen, logo,
+// secciones, etc.). Solo cuando ESTA firma cambia hace falta recargar el iframe.
+// Los campos en vivo (colores, fuente, radio, modo oscuro, título/subtítulo del
+// hero) quedan EXCLUIDOS → editar texto o color ya NO dispara el reload (sin flash).
+function reloadSignature(t: StoreTheme): string {
+  const {
+    primaryColor: _p, secondaryColor: _s, accentColor: _a, borderRadius: _r,
+    buttonStyle: _b, fontFamily: _f, darkModeDefault: _d, heroTitle: _ht,
+    heroSubtitle: _hs, ...rest
+  } = t;
+  return JSON.stringify(rest);
+}
+
 export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, onApplyTheme }: StoreCreativeModeProps) {
   const [panel, setPanel] = useState<CreativePanel>("plantillas");
   const [viewport, setViewport] = useState<Viewport>("desktop");
@@ -315,6 +331,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [savedSnapshots, setSavedSnapshots] = useState<Array<{ theme: StoreTheme; savedAt: string }>>([]);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutoSavedRef = useRef<string>("");
+  // Última firma "no-en-vivo" reflejada en el iframe (ver reloadSignature).
+  const reloadSigRef = useRef<string>(reloadSignature(initialTheme));
   useEffect(() => {
     fetch(`/api/products?limit=4`)
       .then(r => r.ok ? r.json() : [])
@@ -326,7 +344,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           image: (p.image as string) ?? undefined,
         })));
       })
-      .catch(() => { /* fallback to hardcoded */ });
+      .catch((e) => { console.warn("[creative-mode] fetch de productos para preview falló", e); });
     // Fetch tienda section config for preview
     fetch(`/api/settings`, { headers: { "x-tenant-id": tenantSlug } })
       .then(r => r.ok ? r.json() : null)
@@ -344,7 +362,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         }
         setSectionContentCounts(counts);
       })
-      .catch(() => { /* ignore */ });
+      .catch((e) => { console.warn("[creative-mode] operación en background falló", e); });
   }, [tenantSlug]);
 
   const pushChange = useCallback((next: StoreTheme) => {
@@ -386,7 +404,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
         body: JSON.stringify({ storeTheme: { tiendaSections: next } }),
-      }).catch(() => { /* ignore */ });
+      }).catch((e) => { console.warn("[creative-mode] operación en background falló", e); });
       return next;
     });
   }, [tenantSlug]);
@@ -404,7 +422,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
         body: JSON.stringify({ storeTheme: { tiendaSectionOrder: next } }),
-      }).catch(() => { /* ignore */ });
+      }).catch((e) => { console.warn("[creative-mode] operación en background falló", e); });
       return next;
     });
   }, [tenantSlug]);
@@ -416,7 +434,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       lastAutoSavedRef.current = draftJson;
-      onApplyTheme(draft).then(() => setIframeKey((k) => k + 1)).catch(() => { /* ignore */ });
+      onApplyTheme(draft)
+        .then(() => {
+          // Recargar SOLO si cambió algo que el preview en vivo no cubre (imagen,
+          // logo, secciones…). Color/fuente/dark/texto del hero ya están en vivo →
+          // sin recarga = sin flash al escribir.
+          const sig = reloadSignature(draft);
+          if (sig !== reloadSigRef.current) {
+            reloadSigRef.current = sig;
+            setIframeKey((k) => k + 1);
+          }
+        })
+        .catch((e) => { console.warn("[creative-mode] operación en background falló", e); });
     }, 2000);
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
@@ -443,9 +472,27 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       ...(font ? { "--tenant-font": font.stack } : {}),
       ...(EDITOR_BTN_RADIUS[theme.buttonStyle] ? { "--tenant-btn-radius": EDITOR_BTN_RADIUS[theme.buttonStyle] } : {}),
     };
+    // Brandon 2026-06-25: además de las CSS vars, mandamos modo oscuro + textos
+    // del hero/identidad → el receptor (PreviewLiveTheme) los refleja AL INSTANTE
+    // (antes solo color/fuente eran en vivo; el texto/dark esperaban el reload 2s).
+    const text: Record<string, string> = {
+      heroTitle: theme.heroTitle ?? "",
+      heroSubtitle: theme.heroSubtitle ?? "",
+      heroCTA: theme.heroCTA ?? "",
+      heroBadge: theme.heroBadge ?? "",
+      storeName: theme.storeName ?? "",
+      slogan: theme.slogan ?? "",
+    };
     try {
       win.postMessage(
-        { source: "buleje-editor", type: "live-theme", vars, fontLabel: font?.label ?? null },
+        {
+          source: "buleje-editor",
+          type: "live-theme",
+          vars,
+          fontLabel: font?.label ?? null,
+          darkMode: theme.darkModeDefault,
+          text,
+        },
         window.location.origin,
       );
     } catch {
@@ -512,7 +559,6 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     }
   }, [draft, onApplyTheme]);
 
-  const activeViewport = VIEWPORTS.find((v) => v.id === viewport)!;
 
   const fontFamily = useMemo(() => {
     const found = FONT_OPTIONS.find((f) => f.value === draft.fontFamily)?.value ?? "sistema";
@@ -823,8 +869,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   {SECTION_ITEMS.map((section) => {
                     const enabled = draft.sections.includes(section.key);
                     return (
-                      <span key={section.key} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2 cursor-pointer">
-                        <span className="text-xs text-gray-200">{section.label}</span>
+                      <span key={section.key} className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
+                        <span className="flex-1 text-xs text-gray-200">{section.label}</span>
                         <Toggle checked={enabled} onChange={() => toggleSection(section.key)} />
                       </span>
                     );
@@ -978,7 +1024,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="space-y-2">
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Horario</p>
                   {DAYS.map((day) => (
-                    <div key={day} className="grid grid-cols-[1fr,1fr,1fr] gap-2 items-center rounded-lg bg-white/[0.03] border border-white/10 p-2">
+                    <div key={day} className="grid grid-cols-3 gap-2 items-center rounded-lg bg-white/[0.03] border border-white/10 p-2">
                       <span className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] capitalize">{day}</span>
                       <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].open} onChange={(e) => patchSchedule(day, "open", e.target.value)} />
                       <input className={cn(INPUT_CLASS, "px-2 py-1.5 text-xs")} value={draft.schedules[day].close} onChange={(e) => patchSchedule(day, "close", e.target.value)} />
