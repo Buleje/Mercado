@@ -888,6 +888,21 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "secciones" && (
               <div className="space-y-6">
+                {/* Banner de la tienda — imagen arriba de la página (Brandon 2026-06-25) */}
+                <div className="space-y-1.5">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Banner de la tienda</p>
+                  <div className="dark">
+                    <ImageUpload
+                      value={draft.announcementImage}
+                      onChange={(url) => patch("announcementImage", url)}
+                      onClear={() => patch("announcementImage", "")}
+                      folder="store-customizer"
+                      aspectRatio="banner"
+                      label=""
+                    />
+                  </div>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Imagen full-width arriba de la tienda · click o arrastrá · máx 5 MB</p>
+                </div>
                 <div className="space-y-2">
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Pagina principal</p>
                   {SECTION_ITEMS.map((section) => {

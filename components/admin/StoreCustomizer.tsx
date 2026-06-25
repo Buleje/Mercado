@@ -7,9 +7,9 @@ import {
   Palette, Store, Layout, Phone, Settings2, Image as ImageIcon,
   Save, Loader2, Check, Eye, EyeOff,
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
-  MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight, Sun, Moon, Type, Sliders,
-  Paintbrush, FileText, Sparkles, Square, LayoutGrid, RefreshCw,
-  Smartphone, Monitor, Zap, Truck, Star, Heart, Clock, ExternalLink } from "@buleje/design-system/icons";
+  MessageSquare, HelpCircle, Map, Sun, Moon, Type, Sliders,
+  Paintbrush, FileText, Sparkles, Square, LayoutGrid,
+  Smartphone, Monitor, Zap, Truck, Star, Clock, ExternalLink } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { LoadingState, PageTitle, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -52,6 +52,9 @@ export interface StoreTheme {
   // Antes "Hecho en Pucallpa" era texto fijo en el código.
   heroOriginBadge: string;
   heroImage: string;
+  // Banner de anuncio (Brandon 2026-06-25): imagen full-width arriba de la página
+  // de la tienda. Vacío = sin banner. Editable desde Modo Creativo > Secciones.
+  announcementImage: string;
   // FIX 2026-05-07 (audit storefront-admin): chips de confianza configurables
   // de la TrustBar (la barra que scrollea con beneficios). Antes 6 chips fijas.
   trustChips: string[];
@@ -114,6 +117,7 @@ const DEFAULT_THEME: StoreTheme = {
   heroBadge: "Delivery gratis +S/50",
   heroOriginBadge: "Hecho en Pucallpa",
   heroImage: "",
+  announcementImage: "",
   trustChips: [
     "Delivery gratis desde S/50",
     "Entrega en menos de 45 min",

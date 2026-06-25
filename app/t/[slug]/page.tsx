@@ -166,6 +166,8 @@ async function loadPageData(slug: string) {
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
     shadowLevel: pickStr("shadowLevel"),
+    // Banner de anuncio del editor (Brandon 2026-06-25): imagen arriba de la tienda.
+    announcementImage: pickStr("announcementImage"),
   };
 
   // Feature flags PRO opt-in por tienda (ADR-298): viven en storeTheme.features.
@@ -426,6 +428,19 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         searchHref={`/t/${tenant.slug}/tienda#productos`}
         cartHref={`/t/${tenant.slug}/tienda`}
       />
+
+      {/* Banner de anuncio (Brandon 2026-06-25): imagen full-width arriba de la
+          tienda, configurable desde Modo Creativo > Secciones. */}
+      {editorTheme.announcementImage && (
+        <div className="w-full bg-[var(--surface-sunken)]">
+          {/* eslint-disable-next-line @next/next/no-img-element -- banner full-width de aspecto variable */}
+          <img
+            src={editorTheme.announcementImage}
+            alt={`Anuncio de ${displayName}`}
+            className="block w-full h-auto max-h-[280px] object-cover"
+          />
+        </div>
+      )}
 
       {/* ═══════════════ HERO EDITORIAL v3 — mas trabajado ═══════════════
           Layout: full-bleed image/gradient + content layered con texto a la
