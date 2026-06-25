@@ -37,7 +37,8 @@ import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
 import FrequentlyBoughtTogether from "./FrequentlyBoughtTogether";
 import { ProductCatalogExplorer, CATALOG_ALL } from "./ProductCatalogExplorer";
-import { ProductSideNav } from "./ProductSideNav";
+// Brandon 2026-06-25: ProductSideNav (barra lateral con "Categorías de la tienda")
+// REMOVIDA del PDP — contenido a ancho completo, más limpio y menos JS.
 import type { ProductBadgeIntent } from "@buleje/design-system";
 // Trust signals (ronda 4): señales sociales + escasez para aumentar conversion
 import LowStockBadge from "@/components/marketplace/trust/LowStockBadge";
@@ -311,7 +312,9 @@ export function ProductDetailClient({
   const [ugcPhotos, setUgcPhotos] = useState<string[]>([]);
   // Navegación de categorías compartida entre la sidebar y el catálogo de abajo.
   const [exploreCategory, setExploreCategory] = useState<string>(CATALOG_ALL);
-  const [exploreCategories, setExploreCategories] = useState<string[]>([]);
+  // exploreCategories: solo se reporta al explorer (onCategoriesLoaded); ya no se
+  // lee acá tras quitar la sidebar — se mantiene el setter para no romper su API.
+  const [, setExploreCategories] = useState<string[]>([]);
   useEffect(() => {
     let cancelled = false;
     // Mismos params que ProductReviews (el endpoint exige filter+sort+limit+offset;
@@ -480,18 +483,9 @@ export function ProductDetailClient({
               </aside>
             </div>
 
-            {/* Layout inferior: barra lateral de navegación (desktop) + contenido */}
-            <div className="mt-7 lg:grid lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-8">
-              <ProductSideNav
-                storeSlug={store.slug}
-                storeName={store.name}
-                hasRelated={relatedProducts.length > 0}
-                categories={exploreCategories}
-                activeCategory={exploreCategory}
-                onCategoryChange={setExploreCategory}
-                className="hidden lg:block"
-              />
-              <div className="min-w-0">
+            {/* Brandon 2026-06-25: barra lateral (ProductSideNav) REMOVIDA — el
+                contenido del PDP va a ancho completo, más limpio y rápido. */}
+            <div className="mt-7 min-w-0">
 
             {/* Barra de TABS (mobile) — ancla a cada sección de abajo */}
             <nav
@@ -559,7 +553,6 @@ export function ProductDetailClient({
                 <ProductReviews productId={product.id} productName={product.name} />
               </div>
             </div>
-              </div>
             </div>
           </div>
         </div>

@@ -44,7 +44,9 @@ export function ProductRelated({ products, storeSlug }: ProductRelatedProps) {
         <SectionTitle as="h2">También te puede interesar</SectionTitle>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* Brandon 2026-06-25: misma grilla densa que el catálogo del inicio
+          (CatalogView CATALOG_GRID) — cards del mismo tamaño/diseño. */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
         {products.map((product, index) => {
           const cardProduct: UnifiedProductCardProduct = {
             id: product.id,

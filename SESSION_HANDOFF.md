@@ -1,69 +1,40 @@
-# SESSION HANDOFF — 2026-06-18
+# SESSION HANDOFF — 2026-06-25
 
-> Sesión muy larga (**18 commits**). Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. **NO pusheado.** Árbol limpio.
-> Verificación por feature: `tsc -p tsconfig.build.json --noEmit` EXIT=0 · `npm run lint` 0 errores · vitest · screenshots/curl con data real. Estilo: trust-but-verify (agents incluidos).
+Branch: `audit/storefront-mejoras-verificadas-2026-06-15` (NO commiteado aún).
 
-## Lo construido (18 commits: `8a2c018d` → `9f5581a7`)
+## ✅ Hecho y VERIFICADO (tsc verde + screenshots)
+1. **Nav + sub-nav storefront → claro** (revertido del negro Amazon).
+   - `components/marketplace/MarketplaceNavbar.tsx` (bg → `--surface-raised`, sin `dark`, sin override `--text-*`).
+   - `components/marketplace/MarketplaceSecondaryNav.tsx` (bg → `--surface-raised`, sin `dark`, chips/trigger con tokens).
+2. **"Marcas del barrio" (home) → blanco limpio** (sin tinte teal).
+   - `components/marketplace/home/StoreLogosMarquee.tsx`.
+3. **PDP: barra lateral REMOVIDA** (ProductSideNav "Categorías de la tienda" + "En esta página").
+   - `components/marketplace/product-detail/ProductDetailClient.tsx` (quitó sidebar + aplanó grid; `setExploreCategories` setter sin valor).
+4. **PDP: grillas "También compraron" + "Explora tus gustos" = grilla del home** (Opción A).
+   - `ProductRelated.tsx` + `ProductCatalogExplorer.tsx` → `grid-cols-2 sm:3 lg:5 xl:6 2xl:7 gap-3`.
+   - `app/(store)/marketplace/[slug]/producto/[productId]/page.tsx` → related slice 4→12.
 
-**Superadmin — potenciar módulos.** Patrón confirmado en ~10 auditorías: el panel está ~80-90% construido; los gaps reales eran *data computada-pero-no-mostrada* o *umbral hardcodeado→configurable*.
-1. Salud 360 del tenant (tab que cablea el endpoint churn muerto) · 2. MRR movement + cobranza/dunning (billing) · 3. auto-aprobación Yape limpios (**OFF por default**, env-gated) · 4. score de triage de solicitudes vendor · 5. plantillas+variables en broadcast chat · 6. motor de alertas con umbrales env + escalación · 7. dry-run preview de automatizaciones · cohortes de conversión (analytics) · cooldown+dry-run en el cron de automatizaciones · recomendación de upgrade + upside MRR (uso vs límites).
+## 🔧 EN CURSO — Modo Creativo — "mejora completa + que todo funcione"
+Entrada: admin?tab=store-customizer → `MiTiendaHubModule` → `StoreCustomizer` (3261 LOC) → botón "Modo Creativo" → `components/admin/StoreCreativeMode.tsx` (1249 LOC).
+Login QA: qaadmin / Qa-admin-1234 → tenant **mi-pollo**.
+Paneles (11): plantillas, identidad, hero, colores, secciones, tipografia, estilos, contacto, automatizacion, avanzado, historial.
 
-**Storefront / PDP.** ahorro+Yape+entrega honesta (reemplazó "~25 min" fake)+UGC en galería · catálogo navegable + opiniones más abiertas + combo con ancla "Este producto" · dropdown de login por rol bajo "Ingresar" · barra lateral de nav en PDP (categorías de la tienda que filtran el catálogo) + rail global de páginas habilitado en PDP **y** tienda (`MarketplaceSideRailShell.shouldShowRail`).
+### Verificado funcionando
+- Aplicar plantilla (Fresco Moderno) → preview se pone verde EN VIVO. OK.
 
-**Visionario (flagship).** **Inteligencia de Barrio** = red de detección de demanda (`/superadmin/intelligence`). Motor puro `lib/intelligence/demand-signals.ts` (26 tests) + API sobre data REAL (OrderItem→category 30d-vs-30d, StockoutPrediction, Store.zone) + dashboard. Construido con **3 agents en paralelo** (API/UI/tests), integrado y verificado por mí (copiados de worktree a main; worktrees branchean de base vieja).
+### Hallazgos (auditoría parcial)
+- **[ALTA] Live preview incompleto**: `postLiveTheme` solo manda CSS vars (color/radio/fuente). Receptor `components/store/PreviewLiveTheme.tsx` (81 LOC) SOLO aplica vars+font. → Editar **hero (texto/imagen), identidad (nombre/slogan), modo oscuro, secciones** NO se refleja en vivo; solo tras auto-save 2s que recarga iframe (lag+flash). Fix: extender mensaje live-theme + receptor, o "soft reload".
+- **[MEDIA] ColorField** (línea 174): `safe` cae a `var(--color-primary)`, inválido para `<input type=color>` → picker nativo muestra negro con CSS var. Fix: resolver var→hex o fallback hex real.
+- **[BAJA] COLOR_PRESETS** (107-108): `#f0503f` duplicado.
+- **[BAJA] Panel "secciones"** (826): `<span cursor-pointer>` sugiere fila clickeable pero solo el Toggle actúa.
+- Falta auditar EN VIVO: tipografia, estilos UI, contacto/horario, automatizacion, avanzado, historial, viewports tablet/móvil, undo/redo, split, "Aplicar y guardar".
 
-## Pendientes / notas
-- `StockoutPrediction` vacío en dev → `unmetDemand`/`stockoutHotspots` salen vacíos (empty state honesto). Con datos se encienden solos.
-- Próximo paso de la visión: **#2 Fiado inteligente** (mismo patrón: motor puro + scoring sobre `lib/credit/scoring-engine` + fiados).
-- **LOC proyecto:** ~1.07M código fuente (TS 365K · TSX 606K · JS 66K · mjs 25K · Prisma 5.5K), sin `node_modules`/`.next`/`.claude`/generados.
-- Worktrees de agents limpiados (`git worktree prune`).
-- ⚠️ Yape auto-approve está OFF: activar con `YAPE_AUTO_APPROVE=1` (+ `YAPE_AUTO_APPROVE_MAX_DELTA_PCT`, etc.) — decisión de riesgo, dinero real.
+### Plan
+1. Sweep funcional de los 6 paneles no auditados (click + screenshot, anotar roto).
+2. Fix [ALTA] live-preview (lo más impactante para "que todo funcione").
+3. Fix [MEDIA]/[BAJA] + pulido UX por panel.
+4. tsc + eslint + screenshots por cambio.
 
----
-
-# SESSION HANDOFF — 2026-06-17
-
-> Sesión larga (8 commits). Branch: `audit/storefront-mejoras-verificadas-2026-06-15`.
-> Todo verificado: `tsc --noEmit` EXIT_CODE=0 fresco · rubric DS PASS · curl/screenshots donde aplicó. NO se pusheó.
-
-## Commits de la sesión
-| Hash | Qué |
-|---|---|
-| `6d69bb3e` | Poda harness (68→49 skills, CLAUDE.md 276→216, settings limpio) |
-| `1879f1dc` | Naranja→marca en TODO el proyecto (coral/teal vía @theme) + consistencia superadmin |
-| `c0096fd1` | Sprint 1 fiados/whatsapp (aging, cobranza auto, límite real, resumen+fiados, plantillas) |
-| `94ee5840` | #8 Broadcast de campañas por WhatsApp (cron dispatch) |
-| `0a4daefb` | #9 Estado de cuenta público (link firmado HMAC, sin migración) |
-| `301a1469` | #6 Foto del arqueo server-side (upload + URL en notes) |
-| `3abc73aa` | #10 Foto DNI + firma del compromiso (upload + URL, sin migración) |
-| `6542bc69` | Tokens DS --color-whatsapp + canvas firma (rubric no-hex PASS) |
-
-## ⚠️ CHECKLIST DE ACTIVACIÓN — lo construido está DORMIDO sin esto
-Mucho de lo nuevo es lógica completa pero **gated por env/config**. Para activarlo:
-
-| Feature construida | Qué la activa | Sin esto |
-|---|---|---|
-| **Cobranza fiados auto-WhatsApp** (`c0096fd1`) | `FIADO_AUTO_WHATSAPP=1` | Solo crea notif para revisar (no auto-envía) |
-| **Envío WhatsApp saliente** (cobranza, broadcast, resumen diario) | `WHATSAPP_API_URL` + `WHATSAPP_API_TOKEN` | Los workers loguean y salen sin enviar (no-op) |
-| **Bot inteligente + insights IA + sugeridas** | `ANTHROPIC_API_KEY` **o** `GROQ_API_KEY` | Degrada a fallback keyword (funciona pero "tonto") |
-| **Bot entrante WhatsApp** (toma pedidos) | `WHATSAPP_APP_SECRET` + filas en `TenantWhatsAppConfig` (DB) | Mensaje entrante se descarta |
-| **Estado de cuenta público** (`0a4daefb`) | `AUTH_SECRET` (ya seteado) · opcional `FIADO_STATEMENT_SECRET` | — (ya funciona) |
-| **Broadcast** (`94ee5840`) | cron corre `:15` cada hora + `WHATSAPP_API_*` | Campañas quedan en "programada" sin despachar |
-
-> El bot que "toma pedidos" NO es build — es activación (envs + `TenantWhatsAppConfig`). El código está y testeado en `lib/whatsapp/concierge/*`.
-
-## Pendiente — roadmap de potenciación POS/Fiados/WhatsApp (plan en `docs/PLAN-potenciar-pos-fiados-whatsapp-2026-06-17.md`)
-| Ítem | Estado | Por qué falta |
-|---|---|---|
-| #7 **Yape QR real** | ⛔ bloqueado externo | Necesita cuenta **Yape Empresas** + spec de su QR dinámico/API. El QR actual (`YapeQRPayment.tsx`) es decorativo (patrón dibujado, no escaneable) + confirmación manual. Money-zone: gate DANGER al construir. |
-| **UI config bot WhatsApp** | listo para build | La API existe (`app/api/admin/whatsapp-config` GET/PUT, token enmascarado); falta el form admin. Self-serve para `TenantWhatsAppConfig` → activa el bot por tenant. ~150 LOC + montar tab. |
-| **POS auto-envío ticket WA** | requiere endpoint nuevo | Hoy `wa.me` manual (`POSView.tsx:492`). No existe `/api/whatsapp/send`; auto-enviar = endpoint + opt-in (Ley 29733). |
-| **Bug cierre de turno** | money-zone | `POSCajaModule.tsx:118-128` POST best-effort traga errores; el resumen re-bucketea pagos en cliente en vez del corte del backend. Sesión dedicada. |
-| **iOS barcode** | quick-win | `BarcodeScanner.tsx` usa `BarcodeDetector` nativo (falla en Safari iOS) → polyfill `@zxing/browser`. |
-
-## Gotchas confirmados esta sesión (para no re-investigar)
-- **Eliminar un color del proyecto** = remapear paleta Tailwind en `@theme` (globals.css), no codemod 300 archivos.
-- **Tailwind arbitrary values con ESPACIOS no renderizan**: `bg-[rgba(0, 160, 160,...)]` se rompe → sin espacios. (Era el bug del highlight del sidebar superadmin.)
-- **Formato superadmin YA existe** = `ADMIN_TOKENS` + `lib/superadmin-layout.ts`. No crear primitivos que compitan.
-- **Persistir imágenes sin migración**: subir a `/api/upload` → guardar la URL (corta) en un campo de texto existente. El base64 directo lo rechaza el Zod `max(500)`.
-- **Login superadmin local bloqueado**: `SUPERADMIN_PASSWORD` vacío en `.env` → no hay QA visual del superadmin sin setearlo + reiniciar dev.
+## Pendiente
+- Commit del trabajo verificado (nav/PDP).
+- OpenClaw VPS Hostinger (srv1774463.hstgr.cloud): modelo `llama-3.2-3b-instruct:free` falla ×50 "before producing content"; gateway sano (curl 200). Pendiente SSH para arreglar config/modelo. (Pausado.)

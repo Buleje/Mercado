@@ -582,12 +582,10 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
           // Brandon 2026-06-14: en desktop (md+) el sub-nav va pegado abajo →
           // sin border-b para que NO se vea la línea entre nav y sub-nav (leen
           // como un solo bloque). En mobile (sin sub-nav) conserva el hairline.
-          // Brandon 2026-06-24: nav SIEMPRE oscuro (estilo Amazon) — el contexto
-          // `dark` scopeado a la raíz reusa la paleta dark del DS (texto/iconos/
-          // logo claros) sin reescribir cada clase. Fondo casi-negro #131921
-          // (más oscuro que el sub-nav #232f3e → jerarquía de dos tonos Amazon).
-          "dark",
-          "bg-[#131921] border-b border-white/10 md:border-b-0",
+          // Brandon 2026-06-25: nav CLARO (revertido del oscuro Amazon, vuelta a
+          // "como antes") — superficie raised del DS + hairline soft. Texto e
+          // iconos oscuros por los tokens light; el buscador ya era blanco.
+          "bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] md:border-b-0",
         )}
       >
         <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8">

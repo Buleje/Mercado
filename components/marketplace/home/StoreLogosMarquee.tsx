@@ -94,11 +94,14 @@ export default function StoreLogosMarquee({
         }
       `}</style>
 
-      <div className="relative overflow-hidden rounded-[28px] border border-[var(--rule-base)] bg-gradient-to-br from-[var(--accent-soft)]/55 via-[var(--surface-raised)] to-[var(--surface-raised)] px-3 py-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:px-5 sm:py-7">
-        {/* Glow decorativo de marca (esquina) */}
+      {/* Brandon 2026-06-25: contenedor BLANCO LIMPIO (sin tinte teal) — más
+          claro/premium. Antes tenía un wash de --accent-soft que lo ensuciaba;
+          ahora superficie blanca pura + sombra suave que lo eleva como tarjeta. */}
+      <div className="relative overflow-hidden rounded-[28px] border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-6 shadow-[0_8px_30px_-14px_rgba(0,0,0,0.12)] sm:px-5 sm:py-7">
+        {/* Glow decorativo de marca (esquina) — apenas perceptible, no ensucia. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[var(--accent)]/10 blur-3xl"
+          className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[var(--accent)]/[0.06] blur-3xl"
         />
 
         {/* ── Header editorial ─────────────────────────────────────────── */}

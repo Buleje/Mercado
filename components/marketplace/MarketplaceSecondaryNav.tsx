@@ -123,16 +123,15 @@ export default function MarketplaceSecondaryNav() {
           "transform 0.7s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.45s ease",
         willChange: "transform, opacity",
       }}
-      className="hidden md:block w-full border-b border-white/10 bg-[#232f3e] sticky top-16 z-40"
+      className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40"
     >
       {/* Brandon 2026-06-14: contenido centrado al MISMO ancho que el catálogo
           y las secciones (max-w-[1760px]) para que nav, sub-nav y contenido
           queden alineados. El mega-menú full-width es hermano (queda full). */}
       <div className="relative mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8">
-        {/* `dark` SOLO en la fila de contenido (no en el mega-menú hermano de
-            abajo) → chips/iconos/pills en claro sobre el bar #232f3e, pero el
-            CategoryMegaMenu sigue claro (panel grande tipo Amazon). */}
-        <div className="dark flex items-center gap-2 lg:gap-4 h-9">
+        {/* Brandon 2026-06-25: sub-nav CLARO (revertido del oscuro). Fila de
+            contenido sin `dark` → chips/trigger usan tokens light del DS. */}
+        <div className="flex items-center gap-2 lg:gap-4 h-9">
           {/* ── Chips de CATEGORÍAS populares — scrolleables si no caben.
                Filtran el catálogo de la home vía /?category=<id>#catalogo
                (CatalogUrlSync aplica el filtro y baja a #catalogo). ── */}
@@ -145,7 +144,7 @@ export default function MarketplaceSecondaryNav() {
               <Link
                 key={cat.id}
                 href={`/?category=${encodeURIComponent(cat.id)}#catalogo`}
-                className="shrink-0 whitespace-nowrap inline-flex items-center border-b-2 border-transparent px-2 sm:px-2.5 h-7 text-[13px] sm:text-sm font-semibold text-white/85 transition-colors hover:border-[var(--accent)] hover:text-white"
+                className="shrink-0 whitespace-nowrap inline-flex items-center border-b-2 border-transparent px-2 sm:px-2.5 h-7 text-[13px] sm:text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
               >
                 {prettyCategoryLabel(cat.id)}
               </Link>
@@ -176,7 +175,7 @@ export default function MarketplaceSecondaryNav() {
                 "inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-3 sm:px-3.5 h-7 text-[13px] sm:text-sm font-bold tracking-tight transition-colors",
                 menuOpen
                   ? "bg-[var(--accent)] text-white"
-                  : "bg-transparent text-white hover:bg-white/10",
+                  : "bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               <LayoutGrid className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
