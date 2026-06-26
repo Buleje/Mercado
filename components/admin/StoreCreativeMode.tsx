@@ -521,6 +521,17 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     } catch { /* cross-origin guard */ }
   }, [draft.bodyOrder, patch]);
 
+  // Mover ↑↓ desde la barra flotante del iframe (Fase 4): intercambia con el vecino.
+  const moveBodySection = useCallback((key: string, dir: "up" | "down") => {
+    const current = draft.bodyOrder?.length ? draft.bodyOrder : LANDING_BODY_DEFAULT;
+    const base = current.filter((k) => LANDING_BODY_DEFAULT.includes(k));
+    for (const k of LANDING_BODY_DEFAULT) if (!base.includes(k)) base.push(k);
+    const i = base.indexOf(key);
+    const j = dir === "up" ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= base.length) return;
+    reorderBody(key, base[j]);
+  }, [draft.bodyOrder, reorderBody]);
+
   // Highlight de sección en el iframe (Fase 3): panel hover → outline ámbar en el iframe.
   const sendHighlight = useCallback((key: SectionKey | null) => {
     const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
@@ -659,6 +670,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         key?: string;
         field?: string;
         value?: string;
+        dir?: "up" | "down";
+        color?: string;
       } | null;
       if (d?.source !== "buleje-preview") return;
       if (d.type === "ready") {
@@ -668,6 +681,22 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       // Fase 1: click en un bloque del preview → abrir su panel + resaltar.
       if (d.type === "pb-select" && d.key && PB_KEY_TO_PANEL[d.key]) {
         setPanel(PB_KEY_TO_PANEL[d.key]);
+        setPbSelected(d.key);
+        return;
+      }
+      // Fase 4 (barra flotante): mover ↑↓ una sección del cuerpo.
+      if (d.type === "pb-move" && d.key && (d.dir === "up" || d.dir === "down")) {
+        moveBodySection(d.key, d.dir);
+        return;
+      }
+      // Fase 4 (pintar): color inline → setea el color primario de la marca + live.
+      if (d.type === "pb-color" && typeof d.color === "string" && /^#[0-9a-fA-F]{6}$/.test(d.color)) {
+        patch("primaryColor", d.color);
+        return;
+      }
+      // Fase 4 (imagen): click 🖼 → abre el panel con el subidor de esa sección.
+      if (d.type === "pb-image" && d.key) {
+        setPanel(d.key === "hero" ? "hero" : "secciones");
         setPbSelected(d.key);
         return;
       }
@@ -686,7 +715,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, [postLiveTheme, patch]);
+  }, [postLiveTheme, patch, moveBodySection]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;

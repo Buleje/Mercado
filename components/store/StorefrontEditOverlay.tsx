@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUp, ArrowDown, Palette, Image as ImageIcon } from "lucide-react";
 
 /**
  * StorefrontEditOverlay — capa de edición tipo page builder (Brandon 2026-06-25,
@@ -26,6 +27,24 @@ const LABELS: Record<string, string> = {
 
 const SKY = "#0ea5e9";
 const AMBER = "#f59e0b";
+
+// Secciones del cuerpo que se pueden mover ↑↓ (las fijas hero/announcement no).
+const BODY_REORDERABLE = new Set(["trust", "promos", "featured", "info"]);
+// Secciones con imagen propia (click 🖼 abre su subidor en el editor).
+const IMAGE_CAPABLE = new Set(["hero", "announcement"]);
+// Paleta rápida de "pintar" (color inline) → setea el color primario de la marca.
+const PRESET_COLORS = [
+  "#00A0A0", "#FF6B5B", "#16a34a", "#2563eb",
+  "#7c3aed", "#db2777", "#ea580c", "#0f172a",
+];
+
+function postToEditor(msg: Record<string, unknown>) {
+  try {
+    window.parent?.postMessage({ source: "buleje-preview", ...msg }, window.location.origin);
+  } catch {
+    /* cross-origin guard */
+  }
+}
 
 type Box = { top: number; left: number; width: number; height: number };
 
@@ -73,6 +92,8 @@ export default function StorefrontEditOverlay() {
   const [selected, setSelected] = useState<{ box: Box; key: string } | null>(null);
   const [panelHighlight, setPanelHighlight] = useState<{ box: Box; key: string } | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
+  // Barra flotante (Brandon 2026-06-26, Fase 4 "editar potencia"): popover de color abierto.
+  const [colorOpen, setColorOpen] = useState(false);
 
   const selectedEl = useRef<Element | null>(null);
   const editingEl = useRef<HTMLElement | null>(null);
@@ -151,14 +172,8 @@ export default function StorefrontEditOverlay() {
       const key = el.getAttribute("data-pb") || "";
       selectedEl.current = el;
       setSelected({ box: rectOf(el), key });
-      try {
-        window.parent?.postMessage(
-          { source: "buleje-preview", type: "pb-select", key },
-          window.location.origin,
-        );
-      } catch {
-        /* cross-origin guard */
-      }
+      setColorOpen(false);
+      postToEditor({ type: "pb-select", key });
     };
 
     /* ── Doble click: edición inline en [data-live] ── */
@@ -320,6 +335,84 @@ export default function StorefrontEditOverlay() {
           <span className="absolute left-0 top-0 -translate-y-full rounded-t-md bg-black/85 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white">
             ✎ {LABELS[selected.key] ?? selected.key} · editando en el panel
           </span>
+        </div>
+      )}
+
+      {/* Barra flotante de acciones rápidas (Fase 4 "editar potencia"): mover,
+          pintar (color), imagen. pointer-events-auto para ser clickeable. */}
+      {selected && !editingField && (
+        <div
+          className="pointer-events-auto fixed z-[95] flex items-center gap-0.5 rounded-lg bg-black/90 p-1 shadow-xl ring-1 ring-white/15"
+          style={{
+            top: Math.max(8, selected.box.top - 44),
+            left: Math.max(8, selected.box.left + selected.box.width - 196),
+          }}
+        >
+          {BODY_REORDERABLE.has(selected.key) && (
+            <>
+              <button
+                type="button"
+                title="Subir sección"
+                aria-label="Subir sección"
+                onClick={(e) => { e.stopPropagation(); postToEditor({ type: "pb-move", key: selected.key, dir: "up" }); }}
+                className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+              >
+                <ArrowUp className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              </button>
+              <button
+                type="button"
+                title="Bajar sección"
+                aria-label="Bajar sección"
+                onClick={(e) => { e.stopPropagation(); postToEditor({ type: "pb-move", key: selected.key, dir: "down" }); }}
+                className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+              >
+                <ArrowDown className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              </button>
+              <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+            </>
+          )}
+
+          {IMAGE_CAPABLE.has(selected.key) && (
+            <button
+              type="button"
+              title="Cambiar imagen"
+              aria-label="Cambiar imagen"
+              onClick={(e) => { e.stopPropagation(); postToEditor({ type: "pb-image", key: selected.key }); }}
+              className="flex h-7 items-center gap-1 rounded px-2 text-[length:var(--ts-2xs)] font-bold text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+            >
+              <ImageIcon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Imagen
+            </button>
+          )}
+
+          <button
+            type="button"
+            title="Cambiar color de la marca"
+            aria-label="Cambiar color de la marca"
+            onClick={(e) => { e.stopPropagation(); setColorOpen((o) => !o); }}
+            className={`flex h-7 items-center gap-1 rounded px-2 text-[length:var(--ts-2xs)] font-bold transition-colors hover:bg-white/15 hover:text-white ${colorOpen ? "bg-white/15 text-white" : "text-white/85"}`}
+          >
+            <Palette className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Color
+          </button>
+
+          {colorOpen && (
+            <div className="absolute right-0 top-full mt-1 grid grid-cols-4 gap-1 rounded-lg bg-black/95 p-1.5 shadow-xl ring-1 ring-white/15">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  title={`Usar ${c}`}
+                  aria-label={`Usar color ${c}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    postToEditor({ type: "pb-color", color: c });
+                    setColorOpen(false);
+                  }}
+                  className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                  style={{ background: c }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
