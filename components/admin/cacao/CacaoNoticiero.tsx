@@ -10,6 +10,8 @@ import dynamic from "next/dynamic";
 import {
   Newspaper, RefreshCw, TrendingUp, TrendingDown, Minus, ExternalLink, AlertCircle, Coins, Globe, ArrowUpRight, Activity,
 } from "@buleje/design-system/icons";
+// Escalera de precios por plaza (sin recharts → import eager, liviano)
+import CacaoPreciosRegionales from "./CacaoPreciosRegionales";
 
 // recharts fuera del bundle inicial del admin
 const CacaoPriceChart = dynamic(() => import("./CacaoPriceChart"), {
@@ -128,8 +130,11 @@ export default function CacaoNoticiero() {
         </div>
       )}
 
+      {/* A cuánto se vende en soles por plaza (CC vs Lima vs mundo) */}
+      {data && <CacaoPreciosRegionales refSolKg={data.pricePenPerKg} usdPen={data.usdPen} />}
+
       {/* Flujo de precio + analítica de movimiento */}
-      {p?.series && p.series.length > 1 && <CacaoPriceChart series={p.series} />}
+      {p?.series && p.series.length > 1 && <CacaoPriceChart series={p.series} usdPen={data?.usdPen ?? null} />}
 
       <CacaoMiPrecio marketRefSolKg={data?.pricePenPerKg ?? null} />
 
