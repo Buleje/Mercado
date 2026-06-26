@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   Phone,
   Layout,
+  GripVertical,
   Type,
   Sparkles,
   WandSparkles,
@@ -375,6 +376,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [panel, setPanel] = useState<CreativePanel>("plantillas");
   // Bloque seleccionado desde el preview (page builder) → resalta el panel.
   const [pbSelected, setPbSelected] = useState<string | null>(null);
+  // Drag-reorder de secciones (page builder Fase 2): qué se arrastra / sobre quién.
+  const [dragKey, setDragKey] = useState<SectionKey | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<SectionKey | null>(null);
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<StoreTheme>(initialTheme);
@@ -455,6 +459,19 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       ? draft.sections.filter((s) => s !== key)
       : [...draft.sections, key];
     patch("sections", sections);
+  }, [draft.sections, patch]);
+
+  // Drag-reorder (Brandon 2026-06-25, page builder Fase 2): mueve `fromKey` a la
+  // posición de `toKey` dentro de las secciones activas (draft.sections).
+  const reorderSection = useCallback((fromKey: SectionKey, toKey: SectionKey) => {
+    if (fromKey === toKey) return;
+    const arr = [...draft.sections];
+    const from = arr.indexOf(fromKey);
+    const to = arr.indexOf(toKey);
+    if (from < 0 || to < 0) return;
+    arr.splice(from, 1);
+    arr.splice(to, 0, fromKey);
+    patch("sections", arr);
   }, [draft.sections, patch]);
 
   // Imagen por sección (Brandon 2026-06-25): setea/borra la imagen de una sección.
@@ -1064,24 +1081,67 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 </div>
                 <div className="space-y-2">
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Pagina principal</p>
-                  {SECTION_ITEMS.map((section) => {
-                    const enabled = draft.sections.includes(section.key);
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Arrastrá el asa para reordenar · el toggle activa u oculta la sección</p>
+                  {[
+                    ...draft.sections,
+                    ...SECTION_ITEMS.filter((s) => !draft.sections.includes(s.key)).map((s) => s.key),
+                  ].map((key) => {
+                    const section = SECTION_ITEMS.find((s) => s.key === key);
+                    if (!section) return null;
+                    const enabled = draft.sections.includes(key);
                     // hero/announcement ya tienen su propio slot de imagen (panel Hero
                     // y "Banner de la tienda"); el resto recibe imagen por sección.
-                    const hasOwnImageSlot = section.key === "hero" || section.key === "announcement";
-                    const sectionImg = draft.sectionImages?.[section.key] ?? "";
+                    const hasOwnImageSlot = key === "hero" || key === "announcement";
+                    const sectionImg = draft.sectionImages?.[key] ?? "";
                     return (
-                      <div key={section.key} className="rounded-lg bg-white/[0.03] border border-white/10">
-                        <span className="flex items-center justify-between px-2.5 py-2">
+                      <div
+                        key={key}
+                        onDragOver={(e) => {
+                          if (dragKey && dragKey !== key && enabled) {
+                            e.preventDefault();
+                            setDragOverKey(key);
+                          }
+                        }}
+                        onDragLeave={() => setDragOverKey((k) => (k === key ? null : k))}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (dragKey) reorderSection(dragKey, key);
+                          setDragKey(null);
+                          setDragOverKey(null);
+                        }}
+                        className={cn(
+                          "rounded-lg bg-white/[0.03] border transition-colors",
+                          dragOverKey === key ? "border-[var(--data-info-500)]" : "border-white/10",
+                          dragKey === key && "opacity-40",
+                        )}
+                      >
+                        <span className="flex items-center gap-1.5 px-2.5 py-2">
+                          {enabled ? (
+                            <button
+                              type="button"
+                              draggable
+                              onDragStart={() => setDragKey(key)}
+                              onDragEnd={() => {
+                                setDragKey(null);
+                                setDragOverKey(null);
+                              }}
+                              aria-label={`Arrastrar ${section.label} para reordenar`}
+                              className="shrink-0 cursor-grab text-[var(--text-tertiary)] transition-colors hover:text-white active:cursor-grabbing"
+                            >
+                              <GripVertical className="h-3.5 w-3.5" aria-hidden />
+                            </button>
+                          ) : (
+                            <span className="w-3.5 shrink-0" aria-hidden />
+                          )}
                           <span className="flex-1 text-xs text-gray-200">{section.label}</span>
-                          <Toggle checked={enabled} onChange={() => toggleSection(section.key)} />
+                          <Toggle checked={enabled} onChange={() => toggleSection(key)} />
                         </span>
                         {enabled && !hasOwnImageSlot && (
                           <div className="dark border-t border-white/10 px-2.5 py-2.5">
                             <ImageUpload
                               value={sectionImg}
-                              onChange={(url) => setSectionImage(section.key, url)}
-                              onClear={() => setSectionImage(section.key, "")}
+                              onChange={(url) => setSectionImage(key, url)}
+                              onClear={() => setSectionImage(key, "")}
                               folder="store-customizer"
                               aspectRatio="banner"
                               label=""
