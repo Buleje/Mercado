@@ -101,6 +101,12 @@ export interface StoreTheme {
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" }>;
+  // Contador de oferta (Brandon 2026-06-26): banda con cuenta regresiva.
+  countdownEnabled: boolean;
+  countdownTitle: string;
+  countdownEndsAt: string; // ISO datetime
+  // Testimonios (Brandon 2026-06-26): reseñas que el dueño carga.
+  testimonials: Array<{ name: string; stars: number; comment: string }>;
   // Contenido
   footerText: string;
   welcomePopupEnabled: boolean;
@@ -187,6 +193,10 @@ const DEFAULT_THEME: StoreTheme = {
   whatsappFloatEnabled: false,
   animateOnScroll: false,
   textStyles: {},
+  countdownEnabled: false,
+  countdownTitle: "¡Oferta por tiempo limitado!",
+  countdownEndsAt: "",
+  testimonials: [],
   footerText: "",
   welcomePopupEnabled: false,
   welcomePopupTitle: "Bienvenido a nuestra tienda!",

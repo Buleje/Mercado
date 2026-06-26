@@ -25,6 +25,8 @@ import TenantHero, { type HeroVariant } from "@/components/store/tenant/TenantHe
 import WhatsAppFloat from "@/components/store/tenant/WhatsAppFloat";
 import ScrollReveal from "@/components/store/tenant/ScrollReveal";
 import TenantTextStyles from "@/components/store/tenant/TenantTextStyles";
+import CountdownBanner from "@/components/store/tenant/CountdownBanner";
+import TenantTestimonials from "@/components/store/tenant/TenantTestimonials";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
@@ -202,6 +204,17 @@ async function loadPageData(slug: string) {
     whatsapp: pickStr("whatsapp"), // número que el dueño pone en Contacto
     whatsappMessage: pickStr("whatsappMessage"),
     animateOnScroll: st?.["animateOnScroll"] === true,
+    // Contador de oferta (Brandon 2026-06-26).
+    countdownEnabled: st?.["countdownEnabled"] === true,
+    countdownTitle: pickStr("countdownTitle"),
+    countdownEndsAt: pickStr("countdownEndsAt"),
+    // Testimonios (Brandon 2026-06-26): array de reseñas.
+    testimonials: Array.isArray(st?.["testimonials"])
+      ? (st["testimonials"] as unknown[]).filter(
+          (t): t is { name: string; stars: number; comment: string } =>
+            !!t && typeof t === "object" && "name" in t,
+        )
+      : ([] as Array<{ name: string; stars: number; comment: string }>),
     // Estilos por texto (barra de texto flotante): map campo → {size,bold,color,align}.
     textStyles:
       st?.["textStyles"] && typeof st["textStyles"] === "object" && !Array.isArray(st["textStyles"])
@@ -502,6 +515,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         searchHref={`/t/${tenant.slug}/tienda#productos`}
         cartHref={`/t/${tenant.slug}/tienda`}
       />
+
+      {/* Contador de oferta (Brandon 2026-06-26) — banda de urgencia arriba.
+          Se oculta sola al vencer (client component). */}
+      {editorTheme.countdownEnabled && editorTheme.countdownEndsAt && (
+        <CountdownBanner
+          title={editorTheme.countdownTitle ?? "¡Oferta por tiempo limitado!"}
+          endsAt={editorTheme.countdownEndsAt}
+        />
+      )}
 
       {/* Banner de anuncio (Brandon 2026-06-25): imagen full-width arriba de la
           tienda, configurable desde Modo Creativo > Secciones. */}
@@ -950,8 +972,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         )}
       </section>
         );
+        // Testimonios (Brandon 2026-06-26): sección reordenable del cuerpo.
+        __body.testimonials = (
+          <TenantTestimonials testimonials={editorTheme.testimonials} primary={cssPrimary} />
+        );
         // Orden final: bodyOrder válido primero, luego cualquier faltante (default).
-        const __def = ["trust", "promos", "featured", "info"];
+        const __def = ["trust", "promos", "featured", "testimonials", "info"];
         const __ord = (Array.isArray(editorTheme.bodyOrder) && editorTheme.bodyOrder.length
           ? editorTheme.bodyOrder.filter((k) => __def.includes(k))
           : []) as string[];

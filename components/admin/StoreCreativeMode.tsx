@@ -30,6 +30,8 @@ import {
   ChevronDown,
   Columns2,
   Clock,
+  Plus,
+  Trash2,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import ImageUpload from "./ImageUpload";
@@ -142,9 +144,10 @@ const LANDING_BODY_ITEMS: { key: string; label: string }[] = [
   { key: "trust", label: "Confianza (insignias)" },
   { key: "promos", label: "Promociones" },
   { key: "featured", label: "Productos destacados" },
+  { key: "testimonials", label: "Testimonios" },
   { key: "info", label: "Información del negocio" },
 ];
-const LANDING_BODY_DEFAULT = ["trust", "promos", "featured", "info"];
+const LANDING_BODY_DEFAULT = ["trust", "promos", "featured", "testimonials", "info"];
 
 const DAYS: Array<keyof StoreTheme["schedules"]> = [
   "lunes",
@@ -549,6 +552,19 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     if (url) next[key] = url; else delete next[key];
     patch("sectionImages", next);
   }, [draft.sectionImages, patch]);
+
+  // Testimonios (Brandon 2026-06-26): alta/edición/baja del array de reseñas.
+  const addTestimonial = useCallback(() => {
+    patch("testimonials", [...(draft.testimonials ?? []), { name: "", stars: 5, comment: "" }]);
+  }, [draft.testimonials, patch]);
+  const updateTestimonial = useCallback((idx: number, field: "name" | "stars" | "comment", value: string | number) => {
+    const next = [...(draft.testimonials ?? [])];
+    next[idx] = { ...next[idx], [field]: value };
+    patch("testimonials", next);
+  }, [draft.testimonials, patch]);
+  const removeTestimonial = useCallback((idx: number) => {
+    patch("testimonials", (draft.testimonials ?? []).filter((_, i) => i !== idx));
+  }, [draft.testimonials, patch]);
 
   const toggleTiendaSection = useCallback((key: string) => {
     setTiendaSectionsEnabled((prev) => {
@@ -1652,6 +1668,52 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "automatizacion" && (
               <>
+                {/* Contador de oferta (Brandon 2026-06-26) */}
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-[var(--text-tertiary)]">Contador de oferta</span>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Banda con cuenta regresiva arriba de la tienda · urgencia</p>
+                  </div>
+                  <Toggle checked={draft.countdownEnabled ?? false} onChange={(v) => patch("countdownEnabled", v)} />
+                </div>
+                {draft.countdownEnabled && (
+                  <>
+                    <Field label="Texto del contador" labelClassName={LABEL_CLASS}>
+                      <input className={INPUT_CLASS} value={draft.countdownTitle ?? ""} onChange={(e) => patch("countdownTitle", e.target.value)} placeholder="¡Oferta por tiempo limitado!" />
+                    </Field>
+                    <Field label="Termina el" labelClassName={LABEL_CLASS}>
+                      <input type="datetime-local" className={INPUT_CLASS} value={draft.countdownEndsAt ?? ""} onChange={(e) => patch("countdownEndsAt", e.target.value)} />
+                    </Field>
+                  </>
+                )}
+
+                {/* Testimonios (Brandon 2026-06-26) */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[var(--text-tertiary)]">Testimonios</span>
+                    <button type="button" onClick={addTestimonial} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-500)]/15 px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/25 transition-colors">
+                      <Plus className="h-3 w-3" strokeWidth={2.5} aria-hidden /> Agregar
+                    </button>
+                  </div>
+                  {(draft.testimonials ?? []).length === 0 && (
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Sin reseñas. Agregá las opiniones de tus clientes.</p>
+                  )}
+                  {(draft.testimonials ?? []).map((t, idx) => (
+                    <div key={idx} className="space-y-1.5 rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
+                      <div className="flex items-center gap-2">
+                        <input className={cn(INPUT_CLASS, "flex-1")} value={t.name} onChange={(e) => updateTestimonial(idx, "name", e.target.value)} placeholder="Nombre del cliente" />
+                        <button type="button" onClick={() => removeTestimonial(idx)} aria-label="Quitar reseña" className="shrink-0 text-[var(--data-error-500)] hover:opacity-80 transition-opacity">
+                          <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                        </button>
+                      </div>
+                      <select className={INPUT_CLASS} value={t.stars} onChange={(e) => updateTestimonial(idx, "stars", Number(e.target.value))}>
+                        {[5, 4, 3, 2, 1].map((s) => <option key={s} value={s}>{"★".repeat(s)} ({s})</option>)}
+                      </select>
+                      <textarea className={cn(INPUT_CLASS, "resize-none")} rows={2} value={t.comment} onChange={(e) => updateTestimonial(idx, "comment", e.target.value)} placeholder="Comentario de la reseña…" />
+                    </div>
+                  ))}
+                </div>
+
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Popup de bienvenida</span>

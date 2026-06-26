@@ -22,14 +22,16 @@ const LABELS: Record<string, string> = {
   trust: "Confianza",
   promos: "Promociones",
   featured: "Productos",
+  testimonials: "Testimonios",
   info: "Información",
+  countdown: "Contador de oferta",
 };
 
 const SKY = "#0ea5e9";
 const AMBER = "#f59e0b";
 
 // Secciones del cuerpo que se pueden mover ↑↓ (las fijas hero/announcement no).
-const BODY_REORDERABLE = new Set(["trust", "promos", "featured", "info"]);
+const BODY_REORDERABLE = new Set(["trust", "promos", "featured", "testimonials", "info"]);
 // Secciones con imagen propia (click 🖼 abre su subidor en el editor).
 const IMAGE_CAPABLE = new Set(["hero", "announcement"]);
 // Paleta rápida de "pintar" (color inline) → setea el color primario de la marca.
