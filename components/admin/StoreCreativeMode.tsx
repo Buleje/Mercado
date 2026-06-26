@@ -1058,6 +1058,131 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "hero" && (
               <>
+                {/* Variantes de diseño del hero (Brandon 2026-06-26, Fase 4) */}
+                <StylePicker
+                  label="Diseño del hero"
+                  value={draft.heroVariant ?? "editorial"}
+                  onChange={(v) => patch("heroVariant", v)}
+                  cols={2}
+                  options={[
+                    {
+                      value: "editorial",
+                      label: "Editorial",
+                      preview: (
+                        <div className="flex w-full items-center gap-1 px-1.5">
+                          <div className="flex-1 space-y-0.5">
+                            <div className="h-1 w-3/4 rounded bg-white/55" />
+                            <div className="h-0.5 w-full rounded bg-white/25" />
+                            <div className="h-1 w-1/2 rounded bg-[var(--data-success-500)]/60" />
+                          </div>
+                          <div className="grid w-1/3 grid-cols-2 gap-0.5">
+                            <div className="h-1.5 rounded bg-white/30" />
+                            <div className="h-1.5 rounded bg-white/30" />
+                            <div className="h-1.5 rounded bg-white/30" />
+                            <div className="h-1.5 rounded bg-white/30" />
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      value: "centered",
+                      label: "Centrado",
+                      preview: (
+                        <div className="flex w-full flex-col items-center gap-0.5 px-1.5">
+                          <div className="h-1 w-1/2 rounded bg-white/55" />
+                          <div className="h-0.5 w-2/3 rounded bg-white/25" />
+                          <div className="h-1 w-1/3 rounded bg-[var(--data-success-500)]/60" />
+                        </div>
+                      ),
+                    },
+                    {
+                      value: "split",
+                      label: "Split (foto)",
+                      preview: (
+                        <div className="flex w-full items-center gap-1 px-1.5">
+                          <div className="flex-1 space-y-0.5">
+                            <div className="h-1 w-3/4 rounded bg-white/55" />
+                            <div className="h-1 w-1/2 rounded bg-[var(--data-success-500)]/60" />
+                          </div>
+                          <div className="h-6 w-1/3 rounded bg-white/35" />
+                        </div>
+                      ),
+                    },
+                    {
+                      value: "immersive",
+                      label: "Inmersivo",
+                      preview: (
+                        <div className="relative flex h-7 w-full items-end overflow-hidden rounded bg-white/25 px-1.5 pb-0.5">
+                          <div className="w-full space-y-0.5">
+                            <div className="h-1 w-2/3 rounded bg-white/70" />
+                            <div className="h-1 w-1/3 rounded bg-[var(--data-success-500)]/70" />
+                          </div>
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
+
+                {/* Controles "editar potencia" del hero */}
+                <StylePicker
+                  label="Altura"
+                  value={draft.heroHeight ?? "normal"}
+                  onChange={(v) => patch("heroHeight", v)}
+                  cols={3}
+                  options={[
+                    { value: "compact", label: "Compacto", preview: <div className="h-3 w-6 rounded bg-white/30" /> },
+                    { value: "normal", label: "Normal", preview: <div className="h-5 w-6 rounded bg-white/30" /> },
+                    { value: "tall", label: "Alto", preview: <div className="h-7 w-6 rounded bg-white/30" /> },
+                  ]}
+                />
+                <StylePicker
+                  label="Alineación del texto"
+                  value={draft.heroAlign ?? "left"}
+                  onChange={(v) => patch("heroAlign", v)}
+                  cols={2}
+                  options={[
+                    {
+                      value: "left",
+                      label: "Izquierda",
+                      preview: (
+                        <div className="w-full space-y-0.5 px-2">
+                          <div className="h-1 w-3/4 rounded bg-white/45" />
+                          <div className="h-1 w-1/2 rounded bg-white/30" />
+                        </div>
+                      ),
+                    },
+                    {
+                      value: "center",
+                      label: "Centrado",
+                      preview: (
+                        <div className="flex w-full flex-col items-center gap-0.5 px-2">
+                          <div className="h-1 w-3/4 rounded bg-white/45" />
+                          <div className="h-1 w-1/2 rounded bg-white/30" />
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
+                <div className="space-y-1.5">
+                  <label htmlFor="hero-overlay" className={LABEL_CLASS}>
+                    Oscurecer foto · {draft.heroOverlay ?? 0}%
+                  </label>
+                  <input
+                    id="hero-overlay"
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={draft.heroOverlay ?? 0}
+                    onChange={(e) => patch("heroOverlay", Number(e.target.value))}
+                    className="w-full accent-[var(--data-success-500)]"
+                  />
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Más oscuro = el texto se lee mejor sobre fotos claras.</p>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
+                  <span className="text-xs text-gray-200">Mostrar insignias (productos · pago · delivery)</span>
+                  <Toggle checked={draft.heroShowBadges ?? true} onChange={(v) => patch("heroShowBadges", v)} />
+                </div>
+
                 <Field label="Titulo hero" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.heroTitle} onChange={(e) => patch("heroTitle", e.target.value)} />
                 </Field>

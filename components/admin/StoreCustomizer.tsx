@@ -52,6 +52,13 @@ export interface StoreTheme {
   // Antes "Hecho en Pucallpa" era texto fijo en el código.
   heroOriginBadge: string;
   heroImage: string;
+  // Variantes de diseño del hero (Brandon 2026-06-26, page builder Fase 4):
+  // editorial (default) | centered | split | immersive. Controles "editar potencia".
+  heroVariant: "editorial" | "centered" | "split" | "immersive";
+  heroOverlay: number; // 0-100 oscurecimiento de la foto
+  heroAlign: "left" | "center";
+  heroHeight: "compact" | "normal" | "tall";
+  heroShowBadges: boolean;
   // Banner de anuncio (Brandon 2026-06-25): imagen full-width arriba de la página
   // de la tienda. Vacío = sin banner. Editable desde Modo Creativo > Secciones.
   announcementImage: string;
@@ -124,6 +131,11 @@ const DEFAULT_THEME: StoreTheme = {
   heroBadge: "Delivery gratis +S/50",
   heroOriginBadge: "Hecho en Pucallpa",
   heroImage: "",
+  heroVariant: "editorial",
+  heroOverlay: 0,
+  heroAlign: "left",
+  heroHeight: "normal",
+  heroShowBadges: true,
   announcementImage: "",
   sectionImages: {},
   trustChips: [

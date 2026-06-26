@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ShoppingBag, Settings, ExternalLink, MapPin, Phone, Sparkles, Tag,
-  MessageCircle, Truck, ShieldCheck, ChevronRight, ArrowRight, ArrowUpRight,
-  LayoutGrid, Search as SearchIcon,
+  MessageCircle, Truck, ShieldCheck, ChevronRight, ArrowRight,
+  Search as SearchIcon,
 } from "@buleje/design-system/icons";
 import { prisma } from "@/lib/prisma";
 import { StorePageDB } from "@/lib/db/store-page.db";
@@ -21,6 +21,7 @@ import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import TenantAnalytics from "@/components/store/TenantAnalytics";
+import TenantHero, { type HeroVariant } from "@/components/store/tenant/TenantHero";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
@@ -185,6 +186,12 @@ async function loadPageData(slug: string) {
     // Analytics por tenant (Brandon 2026-06-26): GA4 + Meta Pixel del comerciante.
     analyticsId: pickStr("analyticsId"),
     pixelId: pickStr("pixelId"),
+    // Variantes + controles del hero (Brandon 2026-06-26, page builder Fase 4).
+    heroVariant: pickStr("heroVariant"),
+    heroOverlay: typeof st?.["heroOverlay"] === "number" ? (st["heroOverlay"] as number) : undefined,
+    heroAlign: pickStr("heroAlign"),
+    heroHeight: pickStr("heroHeight"),
+    heroShowBadges: st?.["heroShowBadges"] !== false, // default true
     // Orden del cuerpo de la landing (Brandon 2026-06-26, page builder Fase 2):
     // keys reordenables = trust|promos|featured|info. Vacío = orden histórico.
     bodyOrder: Array.isArray(st?.["bodyOrder"])
@@ -314,7 +321,6 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const cssPrimary = `var(--tenant-primary, ${primary})`;
   const cssAccent = `var(--tenant-accent, ${accent})`;
   const cssPrimaryA = (pct: number) => `color-mix(in srgb, var(--tenant-primary, ${primary}) ${pct}%, transparent)`;
-  const cssAccentA = (pct: number) => `color-mix(in srgb, var(--tenant-accent, ${accent}) ${pct}%, transparent)`;
   // El logo y el título usan el nombre público real (storeTheme.storeName) en
   // lugar de `tenant.name` — para que el comercio nunca vea el nombre raw del
   // tenant ni la marca del marketplace en su propia página.
@@ -384,7 +390,6 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const fontStack = editorFont?.stack ?? baseFont.stack;
   const fontLabel = editorFont ? editorFont.label : baseFont.label; // null = sistema (sin Google Font)
   const btnRadius = editorTheme.buttonStyle ? EDITOR_BTN_RADIUS[editorTheme.buttonStyle] : undefined;
-  const cssBtnRadius = `var(--tenant-btn-radius, ${btnRadius ?? "9999px"})`;
 
   // cardStyle del editor → tratamiento de las tarjetas de producto de la vitrina.
   const cardClass =
@@ -474,262 +479,37 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         </div>
       )}
 
-      {/* ═══════════════ HERO EDITORIAL v3 — mas trabajado ═══════════════
-          Layout: full-bleed image/gradient + content layered con texto a la
-          izq y CTA cluster. Pucallpa-vibe sin caer en cliche.
-      */}
-      <section
-        data-pb="hero"
-        className="relative overflow-hidden"
-        style={
-          heroImage
-            ? undefined
-            : {
-                background: `radial-gradient(circle at 30% 20%, ${cssAccentA(40)} 0%, transparent 50%), linear-gradient(135deg, ${cssPrimary} 0%, ${cssPrimaryA(87)} 50%, ${cssPrimary} 100%)`,
-              }
-        }
-      >
-        {/* PERF 2026-05-24: hero LCP via next/image (AVIF/WebP + preload por
-            priority) en vez de CSS background-image, que el browser no podía
-            preloadear ni optimizar. El gradient queda como overlay aparte. */}
-        {heroImage && (
-          <>
-            <Image
-              src={heroImage}
-              alt=""
-              fill
-              priority
-              fetchPriority="high"
-              sizes="100vw"
-              className="object-cover"
-              aria-hidden
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage: `linear-gradient(180deg, ${cssPrimaryA(87)} 0%, ${cssPrimaryA(67)} 50%, ${cssPrimaryA(80)} 100%)`,
-              }}
-            />
-          </>
-        )}
-
-        {/* Pattern decorativo sutil */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-25"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.18) 1.5px, transparent 1.5px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-        {/* Gradient mask abajo para suavizar borde con la siguiente seccion */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-b from-transparent to-[var(--surface-canvas)]"
-        />
-
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20 sm:pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-8 lg:gap-12 items-center">
-            {/* Columna izq: contenido principal */}
-            <div className="text-left">
-              {/* Eyebrow con estado live */}
-              <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-white/85 mb-5">
-                <span aria-hidden className="relative inline-flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-60 animate-ping" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-                </span>
-                Tienda en Buleje
-                {tenant.createdAt && (
-                  <>
-                    <span aria-hidden className="text-white/40">·</span>
-                    <span>Desde {new Date(tenant.createdAt).getFullYear()}</span>
-                  </>
-                )}
-              </p>
-
-              <h1 data-live="heroTitle" className="font-display text-[clamp(2.5rem,7vw,4.5rem)] font-extrabold text-white tracking-[var(--ls-tight)] leading-[0.95] mb-5">
-                {heroTitle}
-              </h1>
-
-              {heroSubtitle && (
-                <p data-live="heroSubtitle" className="text-white/85 text-lg sm:text-xl max-w-xl leading-[1.45] mb-7">
-                  {heroSubtitle}
-                </p>
-              )}
-
-              {/* Exclusive prices badge */}
-              {exclusiveCount > 0 && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-extrabold text-sm mb-5">
-                  <Sparkles className="w-4 h-4" strokeWidth={2.5} aria-hidden />
-                  {exclusiveCount} {exclusiveCount === 1 ? "precio exclusivo hoy" : "precios exclusivos hoy"}
-                </div>
-              )}
-
-              {/* CTAs */}
-              <div className="flex items-center gap-3 flex-wrap">
-                {(customization.whatsappPhone || tenant.ownerPhone) && (
-                  <a
-                    href={`https://wa.me/${(customization.whatsappPhone ?? tenant.ownerPhone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${displayName}, quiero hacer un pedido.`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-2 px-6 h-12 bg-white font-extrabold text-sm hover:gap-2.5 transition-all shadow-xl"
-                    style={{ color: cssPrimary, borderRadius: cssBtnRadius }}
-                  >
-                    <MessageCircle className="w-4 h-4" strokeWidth={2.75} />
-                    Pedir por WhatsApp
-                    <ArrowRight className="w-4 h-4 opacity-70" strokeWidth={2.5} />
-                  </a>
-                )}
-                <Link
-                  href={`/t/${tenant.slug}/tienda`}
-                  className="inline-flex items-center gap-2 px-6 h-12 border-2 border-white/40 text-white font-extrabold text-sm hover:bg-white/15 backdrop-blur transition-all"
-                  style={{ borderRadius: cssBtnRadius }}
-                >
-                  <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
-                  Ver catálogo
-                </Link>
-              </div>
-
-              {/* Stats strip — qué ofrece de un vistazo (hero más potente,
-                  Brandon 2026-06-08). Sin duplicar "Verificado/Desde" (eso vive
-                  en VendorTrustBadges justo debajo). */}
-              <div className="mt-7 flex flex-wrap items-center gap-2.5">
-                {productCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur">
-                    <ShoppingBag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                    {productCount} {productCount === 1 ? "producto" : "productos"}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur">
-                  <Tag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                  Yape · Plin · Efectivo
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur">
-                  <Truck className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                  Delivery 25–35 min
-                </span>
-              </div>
-
-              {/* Preview-only: plan badge + custom CTA */}
-              {isPreview && (
-                <div className="mt-5 flex items-center gap-2 flex-wrap opacity-90">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${badge.className}`}>
-                    Vista previa · plan {badge.label}
-                  </span>
-                  {customization.heroCtaLabel && customization.heroCtaUrl && (
-                    <Link
-                      // Guard anti-`javascript:`/`data:` — solo rutas relativas o http(s).
-                      href={/^(\/|https?:\/\/)/.test(customization.heroCtaUrl) ? customization.heroCtaUrl : "#"}
-                      className="px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white hover:bg-white/30 transition-colors"
-                    >
-                      {customization.heroCtaLabel}
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Columna der (desktop): BENTO producto-primero — muestra el
-                catálogo de un vistazo (producto destacado + categorías reales).
-                Reemplaza el disco del logo. Brandon 2026-06-22. Halo decorativo
-                detrás para dar profundidad. */}
-            <div className="relative hidden lg:block">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -inset-6 rounded-[2rem] blur-3xl opacity-40"
-                style={{ background: cssAccent }}
-              />
-              <div className="relative grid grid-cols-2 gap-3">
-                {/* Producto destacado — ancho completo, lo más prominente */}
-                {heroFeatured && (
-                  <Link
-                    href={`/t/${tenant.slug}/tienda`}
-                    className="col-span-2 group flex items-center gap-4 rounded-2xl bg-white/95 p-4 shadow-[var(--shadow-xl)] ring-1 ring-white/30 transition-all hover:-translate-y-0.5"
-                  >
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-sunken)]">
-                      {heroFeatured.image ? (
-                        <Image src={heroFeatured.image} alt={heroFeatured.name} fill sizes="80px" className="object-cover" />
-                      ) : (
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <ShoppingBag className="h-7 w-7 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="mb-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)]" style={{ color: cssPrimary }}>
-                        Destacado
-                      </p>
-                      <p className="line-clamp-2 font-extrabold leading-tight text-[var(--text-primary)]">{heroFeatured.name}</p>
-                      <div className="mt-1 flex items-baseline gap-2">
-                        <span className="text-lg font-extrabold" style={{ color: cssPrimary }}>
-                          {formatPrice(heroFeatured.exclusivePrice ?? heroFeatured.price)}
-                        </span>
-                        {heroFeatured.exclusivePrice != null && (
-                          <span className="text-xs text-[var(--text-tertiary)] line-through">{formatPrice(heroFeatured.price)}</span>
-                        )}
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} aria-hidden />
-                  </Link>
-                )}
-
-                {/* Tiles de categorías reales del comercio */}
-                {heroTiles.map((cat) => (
-                  <Link
-                    key={cat.name}
-                    href={`/t/${tenant.slug}/tienda`}
-                    className="group rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/15"
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white">
-                        <LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden />
-                      </span>
-                      <ArrowUpRight className="h-4 w-4 text-white/50 transition-colors group-hover:text-white" strokeWidth={2.5} aria-hidden />
-                    </div>
-                    <p className="truncate font-extrabold leading-tight text-white">{cat.name}</p>
-                    <p className="text-xs font-semibold text-white/70">{cat.count} {cat.count === 1 ? "producto" : "productos"}</p>
-                  </Link>
-                ))}
-
-                {/* Tile "ver todo" — cierra el bento; ocupa fila completa si queda impar */}
-                <Link
-                  href={`/t/${tenant.slug}/tienda`}
-                  className={`group flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-white/30 p-4 text-center transition-all hover:bg-white/10 ${heroTiles.length % 2 === 0 ? "col-span-2" : ""}`}
-                >
-                  <span className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white">
-                    <ShoppingBag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                  </span>
-                  <p className="font-extrabold leading-tight text-white">Ver todo el catálogo</p>
-                  <p className="text-xs font-semibold text-white/70">{productCount} {productCount === 1 ? "producto" : "productos"}</p>
-                </Link>
-              </div>
-            </div>
-
-            {/* Logo compacto solo en mobile */}
-            <div className="lg:hidden order-first flex items-center gap-3">
-              <span
-                className="inline-flex w-16 h-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border-2 border-white/25 text-white text-xl font-extrabold shadow-lg overflow-hidden"
-              >
-                {tenant.logoUrl ? (
-                  <Image
-                    src={tenant.logoUrl}
-                    alt=""
-                    width={64}
-                    height={64}
-                    priority
-                    sizes="64px"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  logoText
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* HERO con variantes (Brandon 2026-06-26, page builder Fase 4) — TenantHero.tsx.
+          El dueño elige editorial|centered|split|immersive desde Modo Creativo > Hero. */}
+      <TenantHero
+        variant={(editorTheme.heroVariant as HeroVariant) ?? "editorial"}
+        heroTitle={heroTitle}
+        heroSubtitle={heroSubtitle}
+        heroImage={heroImage}
+        displayName={displayName}
+        slug={tenant.slug}
+        ownerPhone={tenant.ownerPhone}
+        whatsappPhone={customization.whatsappPhone}
+        createdYear={tenant.createdAt ? new Date(tenant.createdAt).getFullYear() : null}
+        logoUrl={tenant.logoUrl}
+        logoText={logoText}
+        primary={primary}
+        accent={accent}
+        btnRadiusFallback={btnRadius ?? "9999px"}
+        exclusiveCount={exclusiveCount}
+        productCount={productCount}
+        heroFeatured={heroFeatured}
+        heroTiles={heroTiles}
+        isPreview={isPreview}
+        badgeLabel={badge.label}
+        badgeClassName={badge.className}
+        heroCtaLabel={customization.heroCtaLabel}
+        heroCtaUrl={customization.heroCtaUrl}
+        overlay={editorTheme.heroOverlay}
+        align={(editorTheme.heroAlign as "left" | "center") ?? "left"}
+        height={(editorTheme.heroHeight as "compact" | "normal" | "tall") ?? "normal"}
+        showBadges={editorTheme.heroShowBadges}
+      />
 
       {/* ═══ Cuerpo reordenable (Brandon 2026-06-26, page builder Fase 2):
           trust, promos, featured, info se renderizan en el orden de
