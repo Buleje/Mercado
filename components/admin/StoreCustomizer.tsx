@@ -98,6 +98,9 @@ export interface StoreTheme {
   fontScale: "small" | "normal" | "large";
   whatsappFloatEnabled: boolean;
   animateOnScroll: boolean;
+  // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
+  // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
+  textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" }>;
   // Contenido
   footerText: string;
   welcomePopupEnabled: boolean;
@@ -183,6 +186,7 @@ const DEFAULT_THEME: StoreTheme = {
   fontScale: "normal",
   whatsappFloatEnabled: false,
   animateOnScroll: false,
+  textStyles: {},
   footerText: "",
   welcomePopupEnabled: false,
   welcomePopupTitle: "Bienvenido a nuestra tienda!",

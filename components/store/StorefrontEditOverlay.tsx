@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, ArrowDown, Palette, Image as ImageIcon } from "lucide-react";
+import { ArrowUp, ArrowDown, Palette, Image as ImageIcon, Bold, AlignLeft, AlignCenter } from "lucide-react";
 
 /**
  * StorefrontEditOverlay — capa de edición tipo page builder (Brandon 2026-06-25,
@@ -92,8 +92,10 @@ export default function StorefrontEditOverlay() {
   const [selected, setSelected] = useState<{ box: Box; key: string } | null>(null);
   const [panelHighlight, setPanelHighlight] = useState<{ box: Box; key: string } | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingBox, setEditingBox] = useState<Box | null>(null);
   // Barra flotante (Brandon 2026-06-26, Fase 4 "editar potencia"): popover de color abierto.
   const [colorOpen, setColorOpen] = useState(false);
+  const [textColorOpen, setTextColorOpen] = useState(false);
   // Drag de secciones en el canvas (Brandon 2026-06-26): indicador de drop.
   const [dropTarget, setDropTarget] = useState<{ box: Box; key: string } | null>(null);
   const canvasDragKey = useRef<string | null>(null);
@@ -106,6 +108,9 @@ export default function StorefrontEditOverlay() {
   const reposition = useCallback(() => {
     if (selectedEl.current && document.contains(selectedEl.current)) {
       setSelected((s) => (s ? { ...s, box: rectOf(selectedEl.current as Element) } : s));
+    }
+    if (editingEl.current && document.contains(editingEl.current)) {
+      setEditingBox(rectOf(editingEl.current));
     }
   }, []);
 
@@ -120,6 +125,8 @@ export default function StorefrontEditOverlay() {
     el.style.removeProperty("cursor");
     editingEl.current = null;
     setEditingField(null);
+    setEditingBox(null);
+    setTextColorOpen(false);
     if (field && value !== editingOriginal.current) {
       try {
         window.parent?.postMessage(
@@ -142,7 +149,42 @@ export default function StorefrontEditOverlay() {
     el.style.removeProperty("cursor");
     editingEl.current = null;
     setEditingField(null);
+    setEditingBox(null);
+    setTextColorOpen(false);
   }, []);
+
+  // Barra de texto flotante (Brandon 2026-06-26): aplica tamaño/negrita/color/
+  // alineación al texto en edición EN VIVO y lo persiste (pb-text-style).
+  const textAction = useCallback(
+    (action: "size+" | "size-" | "bold" | "left" | "center" | "right" | { color: string }) => {
+      const el = editingEl.current;
+      if (!el) return;
+      const field = el.getAttribute("data-live") || "";
+      let size = parseFloat(el.dataset.bulejeSize ?? "1") || 1;
+      let bold = el.style.fontWeight === "800";
+      let color: string | undefined = el.style.color || undefined;
+      let align = (el.style.textAlign || undefined) as "left" | "center" | "right" | undefined;
+
+      if (action === "size+") size = Math.min(2, +(size + 0.1).toFixed(2));
+      else if (action === "size-") size = Math.max(0.6, +(size - 0.1).toFixed(2));
+      else if (action === "bold") bold = !bold;
+      else if (action === "left" || action === "center" || action === "right") align = action;
+      else color = action.color;
+
+      // Aplicar en vivo manteniendo el tamaño base (px actual ÷ mult actual).
+      const curMult = parseFloat(el.dataset.bulejeSize ?? "1") || 1;
+      const curPx = parseFloat(el.style.fontSize || getComputedStyle(el).fontSize) || 16;
+      const basePx = curPx / curMult;
+      el.style.fontSize = `${(basePx * size).toFixed(1)}px`;
+      el.dataset.bulejeSize = String(size);
+      el.style.fontWeight = bold ? "800" : "";
+      if (color) el.style.color = color;
+      if (align) el.style.textAlign = align;
+
+      postToEditor({ type: "pb-text-style", field, style: { size, bold, color, align } });
+    },
+    [],
+  );
 
   useEffect(() => {
     const isPreview =
@@ -193,6 +235,7 @@ export default function StorefrontEditOverlay() {
       live.style.outline = `2px solid ${SKY}`;
       live.style.cursor = "text";
       setEditingField(live.getAttribute("data-live") || "");
+      setEditingBox(rectOf(live));
       // Foco al final del texto
       live.focus();
       const range = document.createRange();
@@ -485,6 +528,63 @@ export default function StorefrontEditOverlay() {
                   className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
                   style={{ background: c }}
                 />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Barra de texto flotante (Brandon 2026-06-26): tamaño, negrita, color,
+          alineación del texto en edición. onMouseDown preventDefault mantiene el
+          foco en el contentEditable (no dispara blur/commit). */}
+      {editingField && editingBox && (
+        <div
+          className="pointer-events-auto fixed z-[97] flex items-center gap-0.5 rounded-lg bg-black/90 p-1 shadow-xl ring-1 ring-white/15"
+          style={{
+            top: Math.max(8, editingBox.top - 46),
+            left: Math.max(8, editingBox.left),
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <button type="button" title="Letra más chica" aria-label="Letra más chica"
+            onClick={() => textAction("size-")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-2xs)] font-bold">A−</span>
+          </button>
+          <button type="button" title="Letra más grande" aria-label="Letra más grande"
+            onClick={() => textAction("size+")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-sm)] font-bold">A+</span>
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          <button type="button" title="Negrita" aria-label="Negrita"
+            onClick={() => textAction("bold")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <Bold className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+          </button>
+          <button type="button" title="Alinear izquierda" aria-label="Alinear izquierda"
+            onClick={() => textAction("left")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <AlignLeft className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <button type="button" title="Centrar" aria-label="Centrar"
+            onClick={() => textAction("center")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <AlignCenter className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          <button type="button" title="Color del texto" aria-label="Color del texto"
+            onClick={() => setTextColorOpen((o) => !o)}
+            className={`flex h-7 w-7 items-center justify-center rounded transition-colors hover:bg-white/15 hover:text-white ${textColorOpen ? "bg-white/15 text-white" : "text-white/85"}`}>
+            <Palette className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          {textColorOpen && (
+            <div className="absolute right-0 top-full mt-1 grid grid-cols-4 gap-1 rounded-lg bg-black/95 p-1.5 shadow-xl ring-1 ring-white/15">
+              {["#ffffff", "#0f172a", ...PRESET_COLORS].slice(0, 8).map((c) => (
+                <button key={c} type="button" title={`Texto ${c}`} aria-label={`Color de texto ${c}`}
+                  onClick={() => { textAction({ color: c }); setTextColorOpen(false); }}
+                  className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                  style={{ background: c }} />
               ))}
             </div>
           )}

@@ -674,6 +674,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         color?: string;
         fromKey?: string;
         toKey?: string;
+        style?: { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" };
       } | null;
       if (d?.source !== "buleje-preview") return;
       if (d.type === "ready") {
@@ -694,6 +695,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       // Fase 4 (drag en canvas): soltar una sección sobre otra → reordena.
       if (d.type === "pb-drop" && d.fromKey && d.toKey) {
         reorderBody(d.fromKey, d.toKey);
+        return;
+      }
+      // Fase 4 (barra de texto): estilo por campo → guarda en textStyles[field].
+      if (d.type === "pb-text-style" && d.field && d.style && typeof d.style === "object") {
+        const cur = draftRef.current.textStyles ?? {};
+        patch("textStyles", { ...cur, [d.field]: d.style });
         return;
       }
       // Fase 4 (pintar): color inline → setea el color primario de la marca + live.

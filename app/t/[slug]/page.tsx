@@ -24,6 +24,7 @@ import TenantAnalytics from "@/components/store/TenantAnalytics";
 import TenantHero, { type HeroVariant } from "@/components/store/tenant/TenantHero";
 import WhatsAppFloat from "@/components/store/tenant/WhatsAppFloat";
 import ScrollReveal from "@/components/store/tenant/ScrollReveal";
+import TenantTextStyles from "@/components/store/tenant/TenantTextStyles";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
@@ -201,6 +202,11 @@ async function loadPageData(slug: string) {
     whatsapp: pickStr("whatsapp"), // número que el dueño pone en Contacto
     whatsappMessage: pickStr("whatsappMessage"),
     animateOnScroll: st?.["animateOnScroll"] === true,
+    // Estilos por texto (barra de texto flotante): map campo → {size,bold,color,align}.
+    textStyles:
+      st?.["textStyles"] && typeof st["textStyles"] === "object" && !Array.isArray(st["textStyles"])
+        ? (st["textStyles"] as Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" }>)
+        : ({} as Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" }>),
     // Orden del cuerpo de la landing (Brandon 2026-06-26, page builder Fase 2):
     // keys reordenables = trust|promos|featured|info. Vacío = orden histórico.
     bodyOrder: Array.isArray(st?.["bodyOrder"])
@@ -477,6 +483,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Page builder Fase 1 (Brandon 2026-06-25): overlay de edición — click en
           un bloque [data-pb] abre su panel en el editor. Solo en preview. */}
       {isPreview && <StorefrontEditOverlay />}
+
+      {/* Estilos por texto (barra de texto flotante) — aplica tamaño/negrita/color/
+          alineación sobre los [data-live]. Solo si el dueño configuró alguno. */}
+      {Object.keys(editorTheme.textStyles).length > 0 && (
+        <TenantTextStyles styles={editorTheme.textStyles} />
+      )}
 
       {/* Nav ÚNICO de la tienda — el MISMO StorefrontNavbar del catálogo
           (`/t/<slug>/tienda`). Tenant-aware: Inicio → esta landing, Catálogo →
