@@ -37,6 +37,7 @@ import { Field } from "@/components/admin/shared/Field";
 import ImageUpload from "./ImageUpload";
 import { cn } from "@/lib/utils";
 import { EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
+import { csrfHeaders } from "@/lib/csrf-client";
 import type { StoreTheme } from "./StoreCustomizer";
 import type { SectionKey } from "./StorefrontEditor";
 
@@ -184,6 +185,67 @@ const QUICK_TEMPLATES: QuickTemplate[] = [
   { id: "selva",    name: "Selva Tropical",   vibe: "Verde de Pucallpa",    primaryColor: "#15803D", secondaryColor: "#84CC16", accentColor: "#22C55E", fontFamily: "raleway",    darkModeDefault: false, borderRadius: 20, buttonStyle: "pill" },
   { id: "oceano",   name: "Océano Profundo",  vibe: "Azul fresco",          primaryColor: "#0369A1", secondaryColor: "#06B6D4", accentColor: "#0EA5E9", fontFamily: "lato",       darkModeDefault: true,  borderRadius: 12, buttonStyle: "rounded" },
   { id: "dulce",    name: "Dulce Pastel",     vibe: "Pastelería suave",     primaryColor: "#DB2777", secondaryColor: "#A855F7", accentColor: "#EC4899", fontFamily: "opensans",   darkModeDefault: false, borderRadius: 22, buttonStyle: "pill" },
+];
+
+// Plantillas POR RUBRO (Brandon 2026-06-26): además del look, traen copy del hero
+// pensado para cada negocio. Un click deja la tienda con identidad del rubro.
+// `industry` matchea lib/verticals/registry.ts para marcar "recomendado".
+type RubroTemplate = QuickTemplate & {
+  industry: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  slogan: string;
+};
+
+const RUBRO_TEMPLATES: RubroTemplate[] = [
+  {
+    id: "rubro-bodega", industry: "bodega", name: "Bodega / Minimarket", vibe: "Cálido y de barrio",
+    primaryColor: "#00A0A0", secondaryColor: "#FF6B5B", accentColor: "#0F766E", fontFamily: "geist",
+    darkModeDefault: false, borderRadius: 14, buttonStyle: "rounded",
+    heroTitle: "Tu bodega de confianza, ahora online",
+    heroSubtitle: "Abarrotes, bebidas y delivery rápido. Pagá con Yape o efectivo.",
+    slogan: "Lo de siempre, a un clic",
+  },
+  {
+    id: "rubro-restaurante", industry: "restaurante", name: "Restaurante / Cafetería", vibe: "Apetitoso y vivo",
+    primaryColor: "#DC2626", secondaryColor: "#F59E0B", accentColor: "#EA580C", fontFamily: "poppins",
+    darkModeDefault: false, borderRadius: 18, buttonStyle: "pill",
+    heroTitle: "Pedí tu plato favorito sin moverte",
+    heroSubtitle: "Comida recién hecha y delivery calentito a tu puerta.",
+    slogan: "Sabor que llega a tu casa",
+  },
+  {
+    id: "rubro-madereria", industry: "madereria", name: "Maderería / Construcción", vibe: "Sobrio y de oficio",
+    primaryColor: "#92400E", secondaryColor: "#65A30D", accentColor: "#B45309", fontFamily: "montserrat",
+    darkModeDefault: false, borderRadius: 6, buttonStyle: "square",
+    heroTitle: "Madera y materiales para tu obra",
+    heroSubtitle: "Stock real, medidas exactas y entrega a tu proyecto.",
+    slogan: "Construí con lo mejor",
+  },
+  {
+    id: "rubro-farmacia", industry: "farmacia", name: "Farmacia / Botica", vibe: "Limpio y confiable",
+    primaryColor: "#0369A1", secondaryColor: "#10B981", accentColor: "#0EA5E9", fontFamily: "inter",
+    darkModeDefault: false, borderRadius: 12, buttonStyle: "rounded",
+    heroTitle: "Tu salud, atendida al instante",
+    heroSubtitle: "Medicamentos y cuidado personal con delivery discreto.",
+    slogan: "Cuidarte es fácil",
+  },
+  {
+    id: "rubro-ferreteria", industry: "ferreteria", name: "Ferretería", vibe: "Industrial y directo",
+    primaryColor: "#EA580C", secondaryColor: "#334155", accentColor: "#F97316", fontFamily: "roboto",
+    darkModeDefault: false, borderRadius: 6, buttonStyle: "square",
+    heroTitle: "Herramientas y todo para el hogar",
+    heroSubtitle: "Lo que necesitás para arreglar y construir, al toque.",
+    slogan: "La solución a la mano",
+  },
+  {
+    id: "rubro-panaderia", industry: "panaderia", name: "Panadería / Pastelería", vibe: "Dulce y acogedor",
+    primaryColor: "#DB2777", secondaryColor: "#F59E0B", accentColor: "#EC4899", fontFamily: "nunito",
+    darkModeDefault: false, borderRadius: 20, buttonStyle: "pill",
+    heroTitle: "Pan fresquito y postres del día",
+    heroSubtitle: "Encargá tu torta o pan caliente con delivery a tu mesa.",
+    slogan: "Recién salido del horno",
+  },
 ];
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
@@ -692,7 +754,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         toKey?: string;
         style?: {
           size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right";
+          italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean;
           bg?: string; text?: string; pad?: "sm" | "md" | "lg";
+          radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep";
         };
       } | null;
       if (d?.source !== "buleje-preview") return;
@@ -725,8 +789,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       // Estilo POR SECCIÓN (editar componente individual) → sectionStyles[key].
       if (d.type === "pb-section-style" && d.key && d.style && typeof d.style === "object") {
         const cur = draftRef.current.sectionStyles ?? {};
-        const { bg, text, pad } = d.style;
-        patch("sectionStyles", { ...cur, [d.key]: { bg, text, pad } });
+        const { bg, text, pad, radius, border, borderW, shadow } = d.style;
+        patch("sectionStyles", { ...cur, [d.key]: { bg, text, pad, radius, border, borderW, shadow } });
         return;
       }
       // Fase 4 (pintar): color inline → setea el color primario de la marca + live.
@@ -785,6 +849,68 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       buttonStyle: tpl.buttonStyle,
     });
   }, [draft, pushChange]);
+
+  // Plantilla por rubro: además del look, aplica el copy del hero (Brandon 2026-06-26).
+  const applyRubroTemplate = useCallback((tpl: RubroTemplate) => {
+    pushChange({
+      ...draft,
+      primaryColor: tpl.primaryColor,
+      secondaryColor: tpl.secondaryColor,
+      accentColor: tpl.accentColor,
+      fontFamily: tpl.fontFamily,
+      darkModeDefault: tpl.darkModeDefault,
+      borderRadius: tpl.borderRadius,
+      buttonStyle: tpl.buttonStyle,
+      heroTitle: tpl.heroTitle,
+      heroSubtitle: tpl.heroSubtitle,
+      slogan: tpl.slogan,
+    });
+  }, [draft, pushChange]);
+
+  // ── Tema con IA (Brandon 2026-06-26) ──────────────────────────────────────
+  // El dueño describe su negocio → POST a /api/admin/store-customizer/ai-theme →
+  // aplica colores + fuente + estilo + copy del hero en un solo pushChange.
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const generateAiTheme = useCallback(async () => {
+    const description = aiPrompt.trim();
+    if (description.length < 4 || aiLoading) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/admin/store-customizer/ai-theme", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
+        body: JSON.stringify({ description, storeName: draft.storeName }),
+      });
+      const data = await res.json().catch((err) => { console.warn("[creative-mode] ai-theme respuesta no-JSON", err); return null; });
+      if (!res.ok || !data?.theme) {
+        setAiError(data?.error ?? "No se pudo generar el tema. Probá de nuevo.");
+        return;
+      }
+      const t = data.theme as Partial<StoreTheme>;
+      pushChange({
+        ...draft,
+        primaryColor: t.primaryColor ?? draft.primaryColor,
+        secondaryColor: t.secondaryColor ?? draft.secondaryColor,
+        accentColor: t.accentColor ?? draft.accentColor,
+        fontFamily: t.fontFamily ?? draft.fontFamily,
+        darkModeDefault: t.darkModeDefault ?? draft.darkModeDefault,
+        borderRadius: t.borderRadius ?? draft.borderRadius,
+        buttonStyle: t.buttonStyle ?? draft.buttonStyle,
+        heroTitle: t.heroTitle ?? draft.heroTitle,
+        heroSubtitle: t.heroSubtitle ?? draft.heroSubtitle,
+        slogan: t.slogan ?? draft.slogan,
+      });
+    } catch (err) {
+      setAiError("Falló la conexión con la IA. Revisá tu internet e intentá de nuevo.");
+      console.warn("[creative-mode] generateAiTheme falló", err);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [aiPrompt, aiLoading, draft, pushChange, tenantSlug]);
 
   // Aplica una paleta armónica (3 colores) de un click (Brandon 2026-06-25).
   const applyPalette = useCallback((p: { primary: string; secondary: string; accent: string }) => {
@@ -1045,6 +1171,36 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             )}
             {panel === "plantillas" && (
               <>
+                {/* Diseñá con IA (Brandon 2026-06-26): describí el negocio → tema completo */}
+                <div className="rounded-xl border border-[var(--accent-soft)]/40 bg-linear-to-br from-[var(--accent-soft)]/15 to-transparent p-3 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <WandSparkles className="h-4 w-4 text-[var(--accent-soft)]" />
+                    <p className="text-sm font-bold text-white">Diseñá con IA</p>
+                  </div>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-400 leading-snug">Contá qué vendés y la IA arma colores, tipografía y textos por vos.</p>
+                  <textarea
+                    className={cn(INPUT_CLASS, "resize-none")}
+                    rows={2}
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") generateAiTheme(); }}
+                    placeholder="Ej: vendo pollo a la brasa, ambiente familiar y precios justos"
+                    maxLength={500}
+                    disabled={aiLoading}
+                  />
+                  {aiError && <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">{aiError}</p>}
+                  <button
+                    type="button"
+                    onClick={generateAiTheme}
+                    disabled={aiLoading || aiPrompt.trim().length < 4}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--accent-soft)] px-3 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {aiLoading
+                      ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Generando…</>
+                      : <><Sparkles className="h-3.5 w-3.5" /> Generar mi tema</>}
+                  </button>
+                </div>
+
                 <div>
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)] mb-1">Plantillas listas</p>
                   <p className="text-xs text-gray-400 leading-snug">Aplicá un look completo en 1 click — colores + tipografía + estilo.</p>
@@ -1088,6 +1244,47 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-gray-300 capitalize">{tpl.buttonStyle}</span>
                         <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-gray-300">{tpl.darkModeDefault ? "Oscuro" : "Claro"}</span>
                         <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] opacity-0 group-hover:opacity-100 transition-opacity">Aplicar →</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+
+                {/* Plantillas POR RUBRO (Brandon 2026-06-26): traen también el copy del hero */}
+                <div className="pt-2">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-info-500)] mb-1">Según tu rubro</p>
+                  <p className="text-xs text-gray-400 leading-snug">Look + textos pensados para tu negocio.</p>
+                </div>
+                {RUBRO_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => applyRubroTemplate(tpl)}
+                    className="group w-full text-left rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/20 hover:bg-white/[0.05] transition-colors overflow-hidden"
+                  >
+                    <div
+                      className="h-14 w-full relative overflow-hidden"
+                      style={{ background: `linear-gradient(135deg, ${tpl.primaryColor}, ${tpl.accentColor})` }}
+                    >
+                      <div className="absolute inset-x-2 bottom-2 flex items-center gap-1.5">
+                        <div className="h-1.5 w-12 rounded-full bg-white/40" />
+                        <div className="h-3 w-8 rounded-md ml-auto" style={{ backgroundColor: tpl.secondaryColor }} />
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{tpl.name}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">{tpl.vibe}</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.primaryColor }} />
+                          <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.secondaryColor }} />
+                          <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.accentColor }} />
+                        </div>
+                      </div>
+                      <p className="mt-1.5 text-[length:var(--ts-2xs)] text-gray-500 italic truncate">“{tpl.heroTitle}”</p>
+                      <div className="mt-1.5 flex items-center">
+                        <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-500)] opacity-0 group-hover:opacity-100 transition-opacity">Aplicar →</span>
                       </div>
                     </div>
                   </button>
@@ -1678,6 +1875,54 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "automatizacion" && (
               <>
+                {/* Conversión (Brandon 2026-06-26): envío gratis, prueba social,
+                    abierto/cerrado, tema estacional. */}
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-[var(--text-tertiary)]">Barra de envío gratis</span>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">&quot;Te faltan S/ X para envío gratis&quot; · sube con el carrito</p>
+                  </div>
+                  <Toggle checked={draft.freeShipEnabled ?? false} onChange={(v) => patch("freeShipEnabled", v)} />
+                </div>
+                {draft.freeShipEnabled && (
+                  <>
+                    <Field label="Monto para envío gratis (S/)" labelClassName={LABEL_CLASS}>
+                      <input type="number" min={0} step={1} className={INPUT_CLASS} value={draft.freeShipThreshold ?? 50} onChange={(e) => patch("freeShipThreshold", Number(e.target.value) || 0)} placeholder="50" />
+                    </Field>
+                    <Field label="Texto (opcional · usá {falta})" labelClassName={LABEL_CLASS}>
+                      <input className={INPUT_CLASS} value={draft.freeShipText ?? ""} onChange={(e) => patch("freeShipText", e.target.value)} placeholder="Te faltan {falta} para envío gratis" />
+                    </Field>
+                  </>
+                )}
+
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-[var(--text-tertiary)]">Prueba social en vivo</span>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Avisos &quot;Alguien pidió X hace 5 min&quot; desde tus pedidos reales</p>
+                  </div>
+                  <Toggle checked={draft.socialProofEnabled ?? false} onChange={(v) => patch("socialProofEnabled", v)} />
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-[var(--text-tertiary)]">Estado Abierto / Cerrado</span>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Badge &quot;Abierto · cierra 10pm&quot; con tus horarios de Contacto</p>
+                  </div>
+                  <Toggle checked={draft.openStatusEnabled ?? false} onChange={(v) => patch("openStatusEnabled", v)} />
+                </div>
+
+                <Field label="Tema estacional (1 clic)" labelClassName={LABEL_CLASS}>
+                  <select className={INPUT_CLASS} value={draft.seasonalTheme ?? "none"} onChange={(e) => patch("seasonalTheme", e.target.value as StoreTheme["seasonalTheme"])}>
+                    <option value="none">Ninguno</option>
+                    <option value="navidad">Navidad</option>
+                    <option value="fiestas_patrias">Fiestas Patrias</option>
+                    <option value="halloween">Halloween</option>
+                  </select>
+                </Field>
+                <p className="-mt-1 text-[length:var(--ts-2xs)] text-gray-500">Agrega un detalle de temporada (cinta + efecto) sin tocar tus colores.</p>
+
+                <div className="my-1.5 border-t border-white/10" />
+
                 {/* Contador de oferta (Brandon 2026-06-26) */}
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">

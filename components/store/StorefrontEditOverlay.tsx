@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, ArrowDown, Palette, Image as ImageIcon, Bold, AlignLeft, AlignCenter, PaintBucket, RotateCcw } from "lucide-react";
+import { ArrowUp, ArrowDown, Palette, Image as ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, PaintBucket, RotateCcw } from "lucide-react";
 
 /**
  * StorefrontEditOverlay — capa de edición tipo page builder (Brandon 2026-06-25,
@@ -160,18 +160,29 @@ export default function StorefrontEditOverlay() {
   // Barra de texto flotante (Brandon 2026-06-26): aplica tamaño/negrita/color/
   // alineación al texto en edición EN VIVO y lo persiste (pb-text-style).
   const textAction = useCallback(
-    (action: "size+" | "size-" | "bold" | "left" | "center" | "right" | { color: string }) => {
+    (action: "size+" | "size-" | "bold" | "italic" | "underline" | "upper" | "track+" | "track-" | "tshadow" | "left" | "center" | "right" | { color: string }) => {
       const el = editingEl.current;
       if (!el) return;
       const field = el.getAttribute("data-live") || "";
       let size = parseFloat(el.dataset.bulejeSize ?? "1") || 1;
       let bold = el.style.fontWeight === "800";
+      let italic = el.style.fontStyle === "italic";
+      let underline = el.style.textDecoration.includes("underline");
+      let upper = el.style.textTransform === "uppercase";
+      let track = parseFloat(el.style.letterSpacing) || 0;
+      let tshadow = !!el.style.textShadow && el.style.textShadow !== "none";
       let color: string | undefined = el.style.color || undefined;
       let align = (el.style.textAlign || undefined) as "left" | "center" | "right" | undefined;
 
       if (action === "size+") size = Math.min(2, +(size + 0.1).toFixed(2));
       else if (action === "size-") size = Math.max(0.6, +(size - 0.1).toFixed(2));
       else if (action === "bold") bold = !bold;
+      else if (action === "italic") italic = !italic;
+      else if (action === "underline") underline = !underline;
+      else if (action === "upper") upper = !upper;
+      else if (action === "track+") track = Math.min(0.3, +(track + 0.02).toFixed(3));
+      else if (action === "track-") track = Math.max(-0.05, +(track - 0.02).toFixed(3));
+      else if (action === "tshadow") tshadow = !tshadow;
       else if (action === "left" || action === "center" || action === "right") align = action;
       else color = action.color;
 
@@ -182,10 +193,15 @@ export default function StorefrontEditOverlay() {
       el.style.fontSize = `${(basePx * size).toFixed(1)}px`;
       el.dataset.bulejeSize = String(size);
       el.style.fontWeight = bold ? "800" : "";
+      el.style.fontStyle = italic ? "italic" : "";
+      el.style.textDecoration = underline ? "underline" : "";
+      el.style.textTransform = upper ? "uppercase" : "";
+      el.style.letterSpacing = `${track}em`;
+      el.style.textShadow = tshadow ? "0 2px 8px rgba(0,0,0,0.45)" : "";
       if (color) el.style.color = color;
       if (align) el.style.textAlign = align;
 
-      postToEditor({ type: "pb-text-style", field, style: { size, bold, color, align } });
+      postToEditor({ type: "pb-text-style", field, style: { size, bold, italic, underline, upper, track, tshadow, color, align } });
     },
     [],
   );
@@ -194,24 +210,33 @@ export default function StorefrontEditOverlay() {
   // la sección seleccionada EN VIVO y lo persiste (pb-section-style). El cambio
   // afecta únicamente a ESE componente.
   const sectionStyleAction = useCallback(
-    (change: { bg?: string | null; text?: string | null; pad?: "sm" | "md" | "lg" | null } | "reset") => {
+    (change: { bg?: string | null; text?: string | null; pad?: "sm" | "md" | "lg" | null; radius?: number | null; border?: string | null; borderW?: number | null; shadow?: "none" | "soft" | "deep" | null } | "reset") => {
       const key = selectedEl.current?.getAttribute("data-pb");
       const el = selectedEl.current as HTMLElement | null;
       if (!key || !el) return;
 
-      let next: { bg?: string; text?: string; pad?: "sm" | "md" | "lg" };
+      type SS = { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" };
+      let next: SS;
       if (change === "reset") {
         next = {};
       } else {
-        const cur: { bg?: string; text?: string; pad?: "sm" | "md" | "lg" } = {
+        const cur: SS = {
           bg: el.style.background || undefined,
           text: el.style.color || undefined,
           pad: (el.dataset.bulejePad as "sm" | "md" | "lg") || undefined,
+          radius: el.dataset.bulejeRadius != null ? Number(el.dataset.bulejeRadius) : undefined,
+          border: el.dataset.bulejeBorder || undefined,
+          borderW: el.dataset.bulejeBorderW != null ? Number(el.dataset.bulejeBorderW) : undefined,
+          shadow: (el.dataset.bulejeShadow as "none" | "soft" | "deep") || undefined,
         };
         next = { ...cur };
         if ("bg" in change) next.bg = change.bg || undefined;
         if ("text" in change) next.text = change.text || undefined;
         if ("pad" in change) next.pad = change.pad || undefined;
+        if ("radius" in change) next.radius = change.radius == null ? undefined : change.radius;
+        if ("border" in change) next.border = change.border || undefined;
+        if ("borderW" in change) next.borderW = change.borderW == null ? undefined : change.borderW;
+        if ("shadow" in change) next.shadow = change.shadow || undefined;
       }
 
       // Aplicar en vivo solo a esta sección.
@@ -220,6 +245,14 @@ export default function StorefrontEditOverlay() {
       if (next.pad === "sm") { el.style.paddingTop = "1.25rem"; el.style.paddingBottom = "1.25rem"; el.dataset.bulejePad = "sm"; }
       else if (next.pad === "lg") { el.style.paddingTop = "4rem"; el.style.paddingBottom = "4rem"; el.dataset.bulejePad = "lg"; }
       else { el.style.removeProperty("padding-top"); el.style.removeProperty("padding-bottom"); delete el.dataset.bulejePad; }
+      // Forma (Brandon 2026-06-26): radio de bordes, borde, sombra.
+      if (typeof next.radius === "number") { el.style.borderRadius = `${next.radius}px`; el.dataset.bulejeRadius = String(next.radius); }
+      else { el.style.removeProperty("border-radius"); delete el.dataset.bulejeRadius; }
+      if (next.border) { el.style.border = `${next.borderW ?? 2}px solid ${next.border}`; el.dataset.bulejeBorder = next.border; if (next.borderW != null) el.dataset.bulejeBorderW = String(next.borderW); }
+      else { el.style.removeProperty("border"); delete el.dataset.bulejeBorder; delete el.dataset.bulejeBorderW; }
+      const SHADOW: Record<string, string> = { none: "none", soft: "0 4px 16px rgba(0,0,0,0.10)", deep: "0 12px 32px rgba(0,0,0,0.18)" };
+      if (next.shadow) { el.style.boxShadow = SHADOW[next.shadow] ?? ""; el.dataset.bulejeShadow = next.shadow; }
+      else { el.style.removeProperty("box-shadow"); delete el.dataset.bulejeShadow; }
 
       postToEditor({ type: "pb-section-style", key, style: next });
     },
@@ -631,6 +664,56 @@ export default function StorefrontEditOverlay() {
                   ))}
                 </div>
               </div>
+              {/* Forma (Brandon 2026-06-26): bordes redondeados, borde, sombra. */}
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Bordes redondeados</p>
+                <div className="grid grid-cols-4 gap-1">
+                  {([["Recto", 0], ["Suave", 12], ["Redondo", 24], ["Píldora", 40]] as const).map(([label, r]) => (
+                    <button key={label} type="button" title={label}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ radius: r }); }}
+                      className="rounded bg-white/[0.06] px-1 py-1 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Borde</p>
+                <div className="flex flex-wrap gap-1">
+                  <button type="button" title="Sin borde" aria-label="Sin borde"
+                    onClick={(e) => { e.stopPropagation(); sectionStyleAction({ border: null }); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full ring-1 ring-white/30 text-white/70 hover:scale-110 transition-transform">
+                    <RotateCcw className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  </button>
+                  {["#0f172a", "#FF6B5B", "#00A0A0", "#e5e7eb"].map((c) => (
+                    <button key={c} type="button" title={`Borde ${c}`} aria-label={`Borde ${c}`}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ border: c }); }}
+                      className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                      style={{ background: c }} />
+                  ))}
+                </div>
+                <div className="mt-1.5 grid grid-cols-3 gap-1">
+                  {([["Fino", 1], ["Medio", 2], ["Grueso", 4]] as const).map(([label, w]) => (
+                    <button key={label} type="button" title={`Borde ${label.toLowerCase()}`}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ borderW: w }); }}
+                      className="rounded bg-white/[0.06] px-1 py-1 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Sombra</p>
+                <div className="grid grid-cols-3 gap-1">
+                  {([["none", "Ninguna"], ["soft", "Suave"], ["deep", "Profunda"]] as const).map(([s, label]) => (
+                    <button key={s} type="button"
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ shadow: s === "none" ? null : s }); }}
+                      className="rounded bg-white/[0.06] px-1 py-1 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button type="button"
                 onClick={(e) => { e.stopPropagation(); sectionStyleAction("reset"); setStylePanelOpen(false); }}
                 className="flex w-full items-center justify-center gap-1 rounded bg-white/[0.06] px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
@@ -669,6 +752,38 @@ export default function StorefrontEditOverlay() {
             className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
             <Bold className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
           </button>
+          <button type="button" title="Itálica" aria-label="Itálica"
+            onClick={() => textAction("italic")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <Italic className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <button type="button" title="Subrayado" aria-label="Subrayado"
+            onClick={() => textAction("underline")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <Underline className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <button type="button" title="MAYÚSCULAS" aria-label="Mayúsculas"
+            onClick={() => textAction("upper")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-2xs)] font-extrabold leading-none">TT</span>
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          <button type="button" title="Menos espacio entre letras" aria-label="Menos interletra"
+            onClick={() => textAction("track-")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-2xs)] font-bold leading-none tracking-tighter">A‹A</span>
+          </button>
+          <button type="button" title="Más espacio entre letras" aria-label="Más interletra"
+            onClick={() => textAction("track+")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-2xs)] font-bold leading-none tracking-widest">A›A</span>
+          </button>
+          <button type="button" title="Sombra de texto" aria-label="Sombra de texto"
+            onClick={() => textAction("tshadow")}
+            className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">
+            <span aria-hidden className="text-[length:var(--ts-sm)] font-extrabold leading-none" style={{ textShadow: "0 1.5px 2px rgba(255,255,255,0.6)" }}>S</span>
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
           <button type="button" title="Alinear izquierda" aria-label="Alinear izquierda"
             onClick={() => textAction("left")}
             className="flex h-7 w-7 items-center justify-center rounded text-white/85 transition-colors hover:bg-white/15 hover:text-white">

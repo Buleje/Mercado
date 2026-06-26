@@ -12,6 +12,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { SettingsDB } from "@/lib/db/settings.db";
+import { OrdersDB } from "@/lib/db/orders.db";
 import { logger } from "@/lib/logger";
 import TenantPageTracker from "./_components/TenantPageTracker";
 import VendorTrustBadges from "@/components/store/VendorTrustBadges";
@@ -27,6 +28,10 @@ import ScrollReveal from "@/components/store/tenant/ScrollReveal";
 import TenantTextStyles from "@/components/store/tenant/TenantTextStyles";
 import TenantSectionStyles from "@/components/store/tenant/TenantSectionStyles";
 import CountdownBanner from "@/components/store/tenant/CountdownBanner";
+import FreeShipPromoBar from "@/components/store/tenant/FreeShipPromoBar";
+import SocialProofToasts from "@/components/store/tenant/SocialProofToasts";
+import OpenStatusBadge from "@/components/store/tenant/OpenStatusBadge";
+import SeasonalDecor from "@/components/store/tenant/SeasonalDecor";
 import TenantTestimonials from "@/components/store/tenant/TenantTestimonials";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
@@ -219,18 +224,30 @@ async function loadPageData(slug: string) {
     // Estilos POR SECCIÓN (Brandon 2026-06-26): map data-pb → {bg,text,pad}.
     sectionStyles:
       st?.["sectionStyles"] && typeof st["sectionStyles"] === "object" && !Array.isArray(st["sectionStyles"])
-        ? (st["sectionStyles"] as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg" }>)
-        : ({} as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg" }>),
-    // Estilos por texto (barra de texto flotante): map campo → {size,bold,color,align}.
+        ? (st["sectionStyles"] as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>)
+        : ({} as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>),
+    // Estilos por texto (barra de texto flotante): map campo → {size,bold,color,align,italic,underline,upper}.
     textStyles:
       st?.["textStyles"] && typeof st["textStyles"] === "object" && !Array.isArray(st["textStyles"])
-        ? (st["textStyles"] as Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" }>)
-        : ({} as Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" }>),
+        ? (st["textStyles"] as Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>)
+        : ({} as Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>),
     // Orden del cuerpo de la landing (Brandon 2026-06-26, page builder Fase 2):
     // keys reordenables = trust|promos|featured|info. Vacío = orden histórico.
     bodyOrder: Array.isArray(st?.["bodyOrder"])
       ? (st["bodyOrder"] as unknown[]).filter((x): x is string => typeof x === "string")
       : ([] as string[]),
+    // Conversión (Brandon 2026-06-26, Modo Creativo > Automatización): envío
+    // gratis, prueba social, estado abierto/cerrado, tema estacional.
+    freeShipEnabled: st?.["freeShipEnabled"] === true,
+    freeShipThreshold: typeof st?.["freeShipThreshold"] === "number" ? (st["freeShipThreshold"] as number) : 50,
+    freeShipText: pickStr("freeShipText"),
+    socialProofEnabled: st?.["socialProofEnabled"] === true,
+    openStatusEnabled: st?.["openStatusEnabled"] === true,
+    seasonalTheme: pickStr("seasonalTheme") || "none",
+    schedules:
+      st?.["schedules"] && typeof st["schedules"] === "object" && !Array.isArray(st["schedules"])
+        ? (st["schedules"] as Record<string, { open: string; close: string }>)
+        : ({} as Record<string, { open: string; close: string }>),
   };
 
   // Feature flags PRO opt-in por tienda (ADR-298): viven en storeTheme.features.
@@ -241,7 +258,19 @@ async function loadPageData(slug: string) {
     ? rawFeatures.filter((x): x is string => typeof x === "string")
     : [];
 
-  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, categories, editorTheme, features };
+  // Prueba social (Brandon 2026-06-26): pedidos recientes ANONIMIZADOS, solo si
+  // el dueño activó el toggle. Sin pedidos → array vacío (no se inventa data).
+  let socialProof: Array<{ product: string; at: string }> = [];
+  if (editorTheme.socialProofEnabled) {
+    try {
+      const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7); // últimos 7 días
+      socialProof = await OrdersDB.recentForSocialProof(tenant.id, since);
+    } catch {
+      socialProof = [];
+    }
+  }
+
+  return { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, categories, editorTheme, features, socialProof };
 }
 
 export async function generateMetadata({
@@ -335,7 +364,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const data = await loadPageData(slug);
   if (!data) notFound();
 
-  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, categories, editorTheme, features } = data;
+  const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, categories, editorTheme, features, socialProof } = data;
 
   // Allow admin preview even if inactive/unpublished
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
@@ -527,6 +556,20 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         searchHref={`/t/${tenant.slug}/tienda#productos`}
         cartHref={`/t/${tenant.slug}/tienda`}
       />
+
+      {/* Tema estacional + envío gratis + estado Abierto/Cerrado (Brandon
+          2026-06-26, Modo Creativo > Automatización). */}
+      {editorTheme.seasonalTheme && editorTheme.seasonalTheme !== "none" && (
+        <SeasonalDecor season={editorTheme.seasonalTheme as "none" | "navidad" | "fiestas_patrias" | "halloween"} />
+      )}
+      {editorTheme.freeShipEnabled && (
+        <FreeShipPromoBar slug={tenant.slug} threshold={editorTheme.freeShipThreshold} text={editorTheme.freeShipText} />
+      )}
+      {editorTheme.openStatusEnabled && Object.keys(editorTheme.schedules || {}).length > 0 && (
+        <div className="flex justify-center px-4 pt-3">
+          <OpenStatusBadge schedules={editorTheme.schedules} />
+        </div>
+      )}
 
       {/* Contador de oferta (Brandon 2026-06-26) — banda de urgencia arriba.
           Se oculta sola al vencer (client component). */}
@@ -1176,6 +1219,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
       {/* Cupón flotante — se monta solo si hay cupón activo para este tenant */}
       <StickyCouponBanner tenantSlug={tenant.slug} />
+
+      {/* Prueba social en vivo (Brandon 2026-06-26) — pedidos reales anonimizados.
+          Solo si el dueño lo activó y hay pedidos recientes. */}
+      {editorTheme.socialProofEnabled && socialProof.length > 0 && (
+        <SocialProofToasts items={socialProof} />
+      )}
 
       {/* Popup de bienvenida configurable (Brandon 2026-06-25) — Modo Creativo >
           Automatización. Dismissable (X / click-fuera / Escape). */}

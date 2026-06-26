@@ -100,7 +100,7 @@ export interface StoreTheme {
   animateOnScroll: boolean;
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
-  textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" }>;
+  textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
   // Contador de oferta (Brandon 2026-06-26): banda con cuenta regresiva.
   countdownEnabled: boolean;
   countdownTitle: string;
@@ -109,13 +109,21 @@ export interface StoreTheme {
   testimonials: Array<{ name: string; stars: number; comment: string }>;
   // Estilos POR SECCIÓN (Brandon 2026-06-26): editar un componente individual —
   // fondo/texto/espaciado aplicados SOLO a esa sección (data-pb). Edición libre.
-  sectionStyles: Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg" }>;
+  sectionStyles: Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>;
   // Contenido
   footerText: string;
   welcomePopupEnabled: boolean;
   welcomePopupTitle: string;
   welcomePopupMessage: string;
   welcomePopupCoupon: string;
+  // Conversión (Brandon 2026-06-26, Modo Creativo): barra de envío gratis,
+  // prueba social en vivo, estado abierto/cerrado, tema estacional 1-clic.
+  freeShipEnabled: boolean;
+  freeShipThreshold: number; // S/ — meta para envío gratis
+  freeShipText: string; // texto opcional; "{falta}" se reemplaza por el monto
+  socialProofEnabled: boolean;
+  openStatusEnabled: boolean;
+  seasonalTheme: "none" | "navidad" | "fiestas_patrias" | "halloween";
   customCSS: string;
   // Banners promocionales por categoría — controla "Oferta de Temporada".
   // El admin sube una imagen + textos; al click va a la categoría o producto vinculado.
@@ -206,6 +214,12 @@ const DEFAULT_THEME: StoreTheme = {
   welcomePopupTitle: "Bienvenido a nuestra tienda!",
   welcomePopupMessage: "Usa este cupon en tu primera compra",
   welcomePopupCoupon: "BIENVENIDO10",
+  freeShipEnabled: false,
+  freeShipThreshold: 50,
+  freeShipText: "",
+  socialProofEnabled: false,
+  openStatusEnabled: false,
+  seasonalTheme: "none",
   customCSS: "",
 };
 

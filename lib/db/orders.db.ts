@@ -165,6 +165,23 @@ export const OrdersDB = {
     }));
   },
 
+  /**
+   * Pedidos recientes ANONIMIZADOS para la prueba social del storefront (Brandon
+   * 2026-06-26, Modo Creativo). Solo nombre del 1er producto + fecha — SIN datos
+   * del cliente (privacidad Ley 29733). Excluye cancelados. Máx 8.
+   */
+  async recentForSocialProof(tenantId: string, since: Date): Promise<Array<{ product: string; at: string }>> {
+    const rows = await withRlsTx(tenantId, (tx) => tx.order.findMany({
+      where: { tenantId, createdAt: { gt: since }, status: { not: "cancelado" as never } },
+      select: { createdAt: true, items: { select: { name: true }, take: 1 } },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }));
+    return rows
+      .filter((r) => r.items.length > 0 && !!r.items[0].name)
+      .map((r) => ({ product: r.items[0].name, at: toISO(r.createdAt) }));
+  },
+
   async getAll(tenantId: string): Promise<DbOrder[]> {
     const where: Record<string, unknown> = { tenantId };
     return (await withRlsTx(tenantId, (tx) => tx.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" }, take: 1000 }))).map(mapOrder);

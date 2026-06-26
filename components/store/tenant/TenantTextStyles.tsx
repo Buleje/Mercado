@@ -13,7 +13,7 @@ import { useEffect } from "react";
  * romper el clamp responsive del hero. Deja `data-buleje-size` para que el
  * editor lea el multiplicador actual.
  */
-type TextStyle = { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" };
+type TextStyle = { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean };
 
 export default function TenantTextStyles({ styles }: { styles: Record<string, TextStyle> }) {
   useEffect(() => {
@@ -23,6 +23,11 @@ export default function TenantTextStyles({ styles }: { styles: Record<string, Te
           if (typeof s.bold === "boolean") el.style.fontWeight = s.bold ? "800" : "";
           if (s.color) el.style.color = s.color;
           if (s.align) el.style.textAlign = s.align;
+          if (typeof s.italic === "boolean") el.style.fontStyle = s.italic ? "italic" : "";
+          if (typeof s.underline === "boolean") el.style.textDecoration = s.underline ? "underline" : "";
+          if (typeof s.upper === "boolean") el.style.textTransform = s.upper ? "uppercase" : "";
+          if (typeof s.track === "number") el.style.letterSpacing = `${s.track}em`;
+          if (typeof s.tshadow === "boolean") el.style.textShadow = s.tshadow ? "0 2px 8px rgba(0,0,0,0.45)" : "";
           if (typeof s.size === "number" && s.size > 0) {
             el.style.fontSize = ""; // reset para leer el tamaño base real
             const base = parseFloat(getComputedStyle(el).fontSize) || 16;
