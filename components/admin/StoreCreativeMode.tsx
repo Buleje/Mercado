@@ -1537,6 +1537,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <option value="spacious">Espacioso</option>
                   </select>
                 </Field>
+                {/* Escala tipográfica global (Brandon 2026-06-26) */}
+                <StylePicker
+                  label="Tamaño de toda la letra"
+                  value={draft.fontScale ?? "normal"}
+                  onChange={(v) => patch("fontScale", v)}
+                  cols={3}
+                  options={[
+                    { value: "small", label: "Chico", preview: <span className="text-[length:var(--ts-2xs)] font-bold text-white/70">Aa</span> },
+                    { value: "normal", label: "Normal", preview: <span className="text-[length:var(--ts-sm)] font-bold text-white/80">Aa</span> },
+                    { value: "large", label: "Grande", preview: <span className="text-base font-bold text-white">Aa</span> },
+                  ]}
+                />
               </>
             )}
 
@@ -1592,6 +1604,11 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <Field label="Mensaje WhatsApp" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none")} rows={2} value={draft.whatsappMessage} onChange={(e) => patch("whatsappMessage", e.target.value)} />
                 </Field>
+                {/* Botón flotante de WhatsApp (Brandon 2026-06-26) */}
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
+                  <span className="text-xs text-gray-200">Burbuja flotante de WhatsApp en la tienda</span>
+                  <Toggle checked={draft.whatsappFloatEnabled ?? false} onChange={(v) => patch("whatsappFloatEnabled", v)} />
+                </div>
                 <Field label="Email" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.email} onChange={(e) => patch("email", e.target.value)} />
                 </Field>

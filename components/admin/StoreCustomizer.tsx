@@ -93,6 +93,11 @@ export interface StoreTheme {
   shadowLevel: "none" | "soft" | "deep";
   animations: "none" | "subtle" | "dynamic";
   backgroundPattern: "none" | "dots" | "waves" | "gradient";
+  // Mejoras Modo Creativo (Brandon 2026-06-26): escala tipográfica global,
+  // botón flotante de WhatsApp, animaciones de entrada al scrollear.
+  fontScale: "small" | "normal" | "large";
+  whatsappFloatEnabled: boolean;
+  animateOnScroll: boolean;
   // Contenido
   footerText: string;
   welcomePopupEnabled: boolean;
@@ -175,6 +180,9 @@ const DEFAULT_THEME: StoreTheme = {
   shadowLevel: "soft",
   animations: "subtle",
   backgroundPattern: "none",
+  fontScale: "normal",
+  whatsappFloatEnabled: false,
+  animateOnScroll: false,
   footerText: "",
   welcomePopupEnabled: false,
   welcomePopupTitle: "Bienvenido a nuestra tienda!",

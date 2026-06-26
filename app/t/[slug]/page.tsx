@@ -22,6 +22,7 @@ import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import TenantAnalytics from "@/components/store/TenantAnalytics";
 import TenantHero, { type HeroVariant } from "@/components/store/tenant/TenantHero";
+import WhatsAppFloat from "@/components/store/tenant/WhatsAppFloat";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
@@ -192,6 +193,13 @@ async function loadPageData(slug: string) {
     heroAlign: pickStr("heroAlign"),
     heroHeight: pickStr("heroHeight"),
     heroShowBadges: st?.["heroShowBadges"] !== false, // default true
+    // Mejoras Modo Creativo (Brandon 2026-06-26): escala tipográfica, WhatsApp
+    // flotante, animaciones de entrada.
+    fontScale: pickStr("fontScale"),
+    whatsappFloatEnabled: st?.["whatsappFloatEnabled"] === true,
+    whatsapp: pickStr("whatsapp"), // número que el dueño pone en Contacto
+    whatsappMessage: pickStr("whatsappMessage"),
+    animateOnScroll: st?.["animateOnScroll"] === true,
     // Orden del cuerpo de la landing (Brandon 2026-06-26, page builder Fase 2):
     // keys reordenables = trust|promos|featured|info. Vacío = orden histórico.
     bodyOrder: Array.isArray(st?.["bodyOrder"])
@@ -390,6 +398,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const fontStack = editorFont?.stack ?? baseFont.stack;
   const fontLabel = editorFont ? editorFont.label : baseFont.label; // null = sistema (sin Google Font)
   const btnRadius = editorTheme.buttonStyle ? EDITOR_BTN_RADIUS[editorTheme.buttonStyle] : undefined;
+  // Escala tipográfica global (Brandon 2026-06-26): agranda/achica TODO el texto
+  // de la tienda escalando el font-size raíz (los text-* de Tailwind son rem).
+  // Solo afecta a /t (documento propio), no al admin.
+  const fontScalePct = editorTheme.fontScale === "small" ? 92 : editorTheme.fontScale === "large" ? 112 : 100;
 
   // cardStyle del editor → tratamiento de las tarjetas de producto de la vitrina.
   const cardClass =
@@ -421,6 +433,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* CSS dinamico generado a partir de los design tokens del tenant.
           Sobreescribe el theme de Buleje solo en el subarbol .tenant-theme. */}
       <style dangerouslySetInnerHTML={{ __html: tokensToCssBlock(designTokens) }} />
+      {/* Escala tipográfica global del editor (chico/normal/grande). */}
+      {fontScalePct !== 100 && (
+        <style dangerouslySetInnerHTML={{ __html: `html{font-size:${fontScalePct}%}` }} />
+      )}
       {/* Override de tipografía (editor) + radio de botón — sobre .tenant-theme,
           después de tokensToCssBlock para ganar. PreviewLiveTheme pisa en vivo. */}
       <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{--tenant-font:${fontStack};--font-display-family:var(--tenant-font);${btnRadius ? `--tenant-btn-radius:${btnRadius};` : ""}}` }} />
@@ -1088,6 +1104,16 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           Tienda verificada en Buleje · <span className="font-mono">/{tenant.slug}</span>
         </p>
       </section>
+
+      {/* Botón flotante de WhatsApp (Brandon 2026-06-26) — Modo Creativo > Contacto.
+          Solo si el dueño lo activa y hay número. */}
+      {editorTheme.whatsappFloatEnabled && (editorTheme.whatsapp || customization.whatsappPhone || tenant.ownerPhone) && (
+        <WhatsAppFloat
+          phone={editorTheme.whatsapp || customization.whatsappPhone || tenant.ownerPhone || ""}
+          displayName={displayName}
+          message={editorTheme.whatsappMessage}
+        />
+      )}
 
       {/* Cupón flotante — se monta solo si hay cupón activo para este tenant */}
       <StickyCouponBanner tenantSlug={tenant.slug} />
