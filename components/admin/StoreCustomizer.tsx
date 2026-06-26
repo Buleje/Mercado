@@ -107,6 +107,9 @@ export interface StoreTheme {
   countdownEndsAt: string; // ISO datetime
   // Testimonios (Brandon 2026-06-26): reseñas que el dueño carga.
   testimonials: Array<{ name: string; stars: number; comment: string }>;
+  // Estilos POR SECCIÓN (Brandon 2026-06-26): editar un componente individual —
+  // fondo/texto/espaciado aplicados SOLO a esa sección (data-pb). Edición libre.
+  sectionStyles: Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg" }>;
   // Contenido
   footerText: string;
   welcomePopupEnabled: boolean;
@@ -197,6 +200,7 @@ const DEFAULT_THEME: StoreTheme = {
   countdownTitle: "¡Oferta por tiempo limitado!",
   countdownEndsAt: "",
   testimonials: [],
+  sectionStyles: {},
   footerText: "",
   welcomePopupEnabled: false,
   welcomePopupTitle: "Bienvenido a nuestra tienda!",

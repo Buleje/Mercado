@@ -690,7 +690,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         color?: string;
         fromKey?: string;
         toKey?: string;
-        style?: { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right" };
+        style?: {
+          size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right";
+          bg?: string; text?: string; pad?: "sm" | "md" | "lg";
+        };
       } | null;
       if (d?.source !== "buleje-preview") return;
       if (d.type === "ready") {
@@ -717,6 +720,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       if (d.type === "pb-text-style" && d.field && d.style && typeof d.style === "object") {
         const cur = draftRef.current.textStyles ?? {};
         patch("textStyles", { ...cur, [d.field]: d.style });
+        return;
+      }
+      // Estilo POR SECCIÓN (editar componente individual) → sectionStyles[key].
+      if (d.type === "pb-section-style" && d.key && d.style && typeof d.style === "object") {
+        const cur = draftRef.current.sectionStyles ?? {};
+        const { bg, text, pad } = d.style;
+        patch("sectionStyles", { ...cur, [d.key]: { bg, text, pad } });
         return;
       }
       // Fase 4 (pintar): color inline → setea el color primario de la marca + live.

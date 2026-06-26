@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, ArrowDown, Palette, Image as ImageIcon, Bold, AlignLeft, AlignCenter } from "lucide-react";
+import { ArrowUp, ArrowDown, Palette, Image as ImageIcon, Bold, AlignLeft, AlignCenter, PaintBucket, RotateCcw } from "lucide-react";
 
 /**
  * StorefrontEditOverlay — capa de edición tipo page builder (Brandon 2026-06-25,
@@ -98,6 +98,8 @@ export default function StorefrontEditOverlay() {
   // Barra flotante (Brandon 2026-06-26, Fase 4 "editar potencia"): popover de color abierto.
   const [colorOpen, setColorOpen] = useState(false);
   const [textColorOpen, setTextColorOpen] = useState(false);
+  // Panel de estilo POR SECCIÓN (Brandon 2026-06-26): editar el componente individual.
+  const [stylePanelOpen, setStylePanelOpen] = useState(false);
   // Drag de secciones en el canvas (Brandon 2026-06-26): indicador de drop.
   const [dropTarget, setDropTarget] = useState<{ box: Box; key: string } | null>(null);
   const canvasDragKey = useRef<string | null>(null);
@@ -188,6 +190,42 @@ export default function StorefrontEditOverlay() {
     [],
   );
 
+  // Estilo POR SECCIÓN (Brandon 2026-06-26): aplica fondo/texto/espaciado SOLO a
+  // la sección seleccionada EN VIVO y lo persiste (pb-section-style). El cambio
+  // afecta únicamente a ESE componente.
+  const sectionStyleAction = useCallback(
+    (change: { bg?: string | null; text?: string | null; pad?: "sm" | "md" | "lg" | null } | "reset") => {
+      const key = selectedEl.current?.getAttribute("data-pb");
+      const el = selectedEl.current as HTMLElement | null;
+      if (!key || !el) return;
+
+      let next: { bg?: string; text?: string; pad?: "sm" | "md" | "lg" };
+      if (change === "reset") {
+        next = {};
+      } else {
+        const cur: { bg?: string; text?: string; pad?: "sm" | "md" | "lg" } = {
+          bg: el.style.background || undefined,
+          text: el.style.color || undefined,
+          pad: (el.dataset.bulejePad as "sm" | "md" | "lg") || undefined,
+        };
+        next = { ...cur };
+        if ("bg" in change) next.bg = change.bg || undefined;
+        if ("text" in change) next.text = change.text || undefined;
+        if ("pad" in change) next.pad = change.pad || undefined;
+      }
+
+      // Aplicar en vivo solo a esta sección.
+      el.style.background = next.bg || "";
+      el.style.color = next.text || "";
+      if (next.pad === "sm") { el.style.paddingTop = "1.25rem"; el.style.paddingBottom = "1.25rem"; el.dataset.bulejePad = "sm"; }
+      else if (next.pad === "lg") { el.style.paddingTop = "4rem"; el.style.paddingBottom = "4rem"; el.dataset.bulejePad = "lg"; }
+      else { el.style.removeProperty("padding-top"); el.style.removeProperty("padding-bottom"); delete el.dataset.bulejePad; }
+
+      postToEditor({ type: "pb-section-style", key, style: next });
+    },
+    [],
+  );
+
   useEffect(() => {
     const isPreview =
       typeof window !== "undefined" &&
@@ -220,6 +258,7 @@ export default function StorefrontEditOverlay() {
       selectedEl.current = el;
       setSelected({ box: rectOf(el), key });
       setColorOpen(false);
+      setStylePanelOpen(false);
       postToEditor({ type: "pb-select", key });
     };
 
@@ -531,6 +570,72 @@ export default function StorefrontEditOverlay() {
                   style={{ background: c }}
                 />
               ))}
+            </div>
+          )}
+
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-white/20" />
+          {/* Estilo SOLO de esta sección (edición libre del componente individual) */}
+          <button
+            type="button"
+            title="Estilo de esta sección"
+            aria-label="Estilo de esta sección"
+            onClick={(e) => { e.stopPropagation(); setStylePanelOpen((o) => !o); }}
+            className={`flex h-7 items-center gap-1 rounded px-2 text-[length:var(--ts-2xs)] font-bold transition-colors hover:bg-white/15 hover:text-white ${stylePanelOpen ? "bg-white/15 text-white" : "text-white/85"}`}
+          >
+            <PaintBucket className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Estilo
+          </button>
+
+          {stylePanelOpen && (
+            <div className="absolute right-0 top-full mt-1 w-56 space-y-2 rounded-lg bg-black/95 p-2.5 shadow-xl ring-1 ring-white/15">
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Fondo de esta sección</p>
+                <div className="flex flex-wrap gap-1">
+                  <button type="button" title="Sin fondo" aria-label="Sin fondo"
+                    onClick={(e) => { e.stopPropagation(); sectionStyleAction({ bg: null }); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full ring-1 ring-white/30 text-white/70 hover:scale-110 transition-transform">
+                    <RotateCcw className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  </button>
+                  {[...new Set(["#ffffff", "#f8fafc", ...PRESET_COLORS])].slice(0, 11).map((c) => (
+                    <button key={c} type="button" title={`Fondo ${c}`} aria-label={`Fondo ${c}`}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ bg: c }); }}
+                      className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                      style={{ background: c }} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Color del texto</p>
+                <div className="flex flex-wrap gap-1">
+                  <button type="button" title="Texto automático" aria-label="Texto automático"
+                    onClick={(e) => { e.stopPropagation(); sectionStyleAction({ text: null }); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full ring-1 ring-white/30 text-white/70 hover:scale-110 transition-transform">
+                    <RotateCcw className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  </button>
+                  {["#ffffff", "#0f172a", "#FF6B5B", "#00A0A0"].map((c) => (
+                    <button key={c} type="button" title={`Texto ${c}`} aria-label={`Texto ${c}`}
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ text: c }); }}
+                      className="h-6 w-6 rounded-full ring-1 ring-white/30 transition-transform hover:scale-110"
+                      style={{ background: c }} />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[length:var(--ts-2xs)] font-bold text-white/70">Espaciado</p>
+                <div className="grid grid-cols-3 gap-1">
+                  {([["sm", "Compacto"], ["md", "Normal"], ["lg", "Amplio"]] as const).map(([p, label]) => (
+                    <button key={p} type="button"
+                      onClick={(e) => { e.stopPropagation(); sectionStyleAction({ pad: p === "md" ? null : p }); }}
+                      className="rounded bg-white/[0.06] px-1 py-1 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button type="button"
+                onClick={(e) => { e.stopPropagation(); sectionStyleAction("reset"); setStylePanelOpen(false); }}
+                className="flex w-full items-center justify-center gap-1 rounded bg-white/[0.06] px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white/80 hover:bg-white/15 transition-colors">
+                <RotateCcw className="h-3 w-3" strokeWidth={2.5} aria-hidden /> Restablecer sección
+              </button>
             </div>
           )}
         </div>

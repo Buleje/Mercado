@@ -25,6 +25,7 @@ import TenantHero, { type HeroVariant } from "@/components/store/tenant/TenantHe
 import WhatsAppFloat from "@/components/store/tenant/WhatsAppFloat";
 import ScrollReveal from "@/components/store/tenant/ScrollReveal";
 import TenantTextStyles from "@/components/store/tenant/TenantTextStyles";
+import TenantSectionStyles from "@/components/store/tenant/TenantSectionStyles";
 import CountdownBanner from "@/components/store/tenant/CountdownBanner";
 import TenantTestimonials from "@/components/store/tenant/TenantTestimonials";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
@@ -215,6 +216,11 @@ async function loadPageData(slug: string) {
             !!t && typeof t === "object" && "name" in t,
         )
       : ([] as Array<{ name: string; stars: number; comment: string }>),
+    // Estilos POR SECCIÓN (Brandon 2026-06-26): map data-pb → {bg,text,pad}.
+    sectionStyles:
+      st?.["sectionStyles"] && typeof st["sectionStyles"] === "object" && !Array.isArray(st["sectionStyles"])
+        ? (st["sectionStyles"] as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg" }>)
+        : ({} as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg" }>),
     // Estilos por texto (barra de texto flotante): map campo → {size,bold,color,align}.
     textStyles:
       st?.["textStyles"] && typeof st["textStyles"] === "object" && !Array.isArray(st["textStyles"])
@@ -501,6 +507,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           alineación sobre los [data-live]. Solo si el dueño configuró alguno. */}
       {Object.keys(editorTheme.textStyles).length > 0 && (
         <TenantTextStyles styles={editorTheme.textStyles} />
+      )}
+
+      {/* Estilos por sección (editar componente individual) — aplica fondo/texto/
+          espaciado SOLO a la sección [data-pb] elegida. */}
+      {Object.keys(editorTheme.sectionStyles).length > 0 && (
+        <TenantSectionStyles styles={editorTheme.sectionStyles} />
       )}
 
       {/* Nav ÚNICO de la tienda — el MISMO StorefrontNavbar del catálogo
