@@ -20,6 +20,7 @@ import StorefrontNavbar from "@/components/store/StorefrontNavbar";
 import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
+import TenantAnalytics from "@/components/store/TenantAnalytics";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
@@ -181,6 +182,9 @@ async function loadPageData(slug: string) {
     welcomePopupMessage: pickStr("welcomePopupMessage"),
     welcomePopupCoupon: pickStr("welcomePopupCoupon"),
     footerText: pickStr("footerText"),
+    // Analytics por tenant (Brandon 2026-06-26): GA4 + Meta Pixel del comerciante.
+    analyticsId: pickStr("analyticsId"),
+    pixelId: pickStr("pixelId"),
     // Orden del cuerpo de la landing (Brandon 2026-06-26, page builder Fase 2):
     // keys reordenables = trust|promos|featured|info. Vacío = orden histórico.
     bodyOrder: Array.isArray(st?.["bodyOrder"])
@@ -430,6 +434,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
       {/* Beacon tracker (client component) */}
       <TenantPageTracker tenantSlug={tenant.slug} />
+
+      {/* GA4 + Meta Pixel del comerciante (Brandon 2026-06-26) — solo en la tienda
+          pública, NUNCA en preview (no contaminar las métricas con el dueño editando). */}
+      {!isPreview && (
+        <TenantAnalytics gaId={editorTheme.analyticsId} pixelId={editorTheme.pixelId} />
+      )}
 
       {/* Preview EN VIVO: escucha al editor y aplica tokens sin recargar. */}
       {isPreview && <PreviewLiveTheme />}
