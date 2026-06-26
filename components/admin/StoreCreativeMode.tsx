@@ -463,6 +463,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
   // Drag-reorder (Brandon 2026-06-25, page builder Fase 2): mueve `fromKey` a la
   // posición de `toKey` dentro de las secciones activas (draft.sections).
+  // También avisa al iframe (pb-reorder) para que reordene el DOM en vivo.
   const reorderSection = useCallback((fromKey: SectionKey, toKey: SectionKey) => {
     if (fromKey === toKey) return;
     const arr = [...draft.sections];
@@ -472,7 +473,26 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     arr.splice(from, 1);
     arr.splice(to, 0, fromKey);
     patch("sections", arr);
+    // Fase 2 — reflejo visual inmediato en el iframe (DOM reorder vía postMessage)
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage(
+        { source: "buleje-editor", type: "pb-reorder", order: arr },
+        window.location.origin,
+      );
+    } catch { /* cross-origin guard */ }
   }, [draft.sections, patch]);
+
+  // Highlight de sección en el iframe (Fase 3): panel hover → outline ámbar en el iframe.
+  const sendHighlight = useCallback((key: SectionKey | null) => {
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage(
+        { source: "buleje-editor", type: "pb-highlight", key: key ?? null },
+        window.location.origin,
+      );
+    } catch { /* cross-origin guard */ }
+  }, []);
 
   // Imagen por sección (Brandon 2026-06-25): setea/borra la imagen de una sección.
   const setSectionImage = useCallback((key: string, url: string) => {
@@ -595,21 +615,40 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
-      const d = e.data as { source?: string; type?: string; key?: string } | null;
+      const d = e.data as {
+        source?: string;
+        type?: string;
+        key?: string;
+        field?: string;
+        value?: string;
+      } | null;
       if (d?.source !== "buleje-preview") return;
       if (d.type === "ready") {
         postLiveTheme(draftRef.current);
         return;
       }
-      // Page builder: click en un bloque del preview → abrir su panel + resaltar.
+      // Fase 1: click en un bloque del preview → abrir su panel + resaltar.
       if (d.type === "pb-select" && d.key && PB_KEY_TO_PANEL[d.key]) {
         setPanel(PB_KEY_TO_PANEL[d.key]);
         setPbSelected(d.key);
+        return;
+      }
+      // Fase 3: edición inline de texto en el iframe → patch en el draft.
+      if (d.type === "pb-inline-edit" && d.field && typeof d.value === "string") {
+        const INLINE_FIELDS = [
+          "heroTitle", "heroSubtitle", "heroCTA", "heroBadge",
+          "storeName", "slogan", "footerText",
+          "welcomePopupTitle", "welcomePopupMessage",
+        ] as const;
+        type InlineField = typeof INLINE_FIELDS[number];
+        if ((INLINE_FIELDS as readonly string[]).includes(d.field)) {
+          patch(d.field as InlineField, d.value);
+        }
       }
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, [postLiveTheme]);
+  }, [postLiveTheme, patch]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
@@ -1096,6 +1135,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     return (
                       <div
                         key={key}
+                        onMouseEnter={() => sendHighlight(key)}
+                        onMouseLeave={() => sendHighlight(null)}
                         onDragOver={(e) => {
                           if (dragKey && dragKey !== key && enabled) {
                             e.preventDefault();

@@ -60,11 +60,13 @@ export default function PreviewLiveTheme() {
     // Texto EN VIVO (Brandon 2026-06-25): el editor manda {heroTitle, heroSubtitle,…}
     // y acá seteamos el textContent de los elementos marcados con data-live="<campo>".
     // Así editar el hero/nombre se ve al instante, sin esperar el reload de 2s.
+    // Skip si el elemento está focused (usuario editando inline → no pisamos su texto).
     const applyText = (text: Record<string, unknown> | undefined) => {
       if (!text) return;
       for (const [key, val] of Object.entries(text)) {
         if (typeof val !== "string") continue;
         document.querySelectorAll(`[data-live="${key}"]`).forEach((el) => {
+          if (el === document.activeElement) return; // En edición inline → skip
           if (el.textContent !== val) el.textContent = val;
         });
       }
