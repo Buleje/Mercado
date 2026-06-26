@@ -23,6 +23,7 @@ import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import TenantAnalytics from "@/components/store/TenantAnalytics";
 import TenantHero, { type HeroVariant } from "@/components/store/tenant/TenantHero";
 import WhatsAppFloat from "@/components/store/tenant/WhatsAppFloat";
+import ScrollReveal from "@/components/store/tenant/ScrollReveal";
 import SectionRenderer from "@/components/store/tenant/SectionRenderer";
 import ProStoreSections from "@/components/store/tenant/ProStoreSections";
 import { deserializePageData, tokensToCssBlock, FONT_FAMILIES, EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
@@ -436,6 +437,14 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Escala tipográfica global del editor (chico/normal/grande). */}
       {fontScalePct !== 100 && (
         <style dangerouslySetInnerHTML={{ __html: `html{font-size:${fontScalePct}%}` }} />
+      )}
+      {/* Animaciones de entrada al scrollear (Brandon 2026-06-26) — el estado
+          oculto lo agrega ScrollReveal (JS), no el server → SEO/no-JS intactos. */}
+      {editorTheme.animateOnScroll && (
+        <>
+          <style dangerouslySetInnerHTML={{ __html: ".pb-reveal{opacity:0;transform:translateY(18px)}.pb-reveal-in{opacity:1;transform:none;transition:opacity .6s ease,transform .6s ease}" }} />
+          <ScrollReveal />
+        </>
       )}
       {/* Override de tipografía (editor) + radio de botón — sobre .tenant-theme,
           después de tokensToCssBlock para ganar. PreviewLiveTheme pisa en vivo. */}

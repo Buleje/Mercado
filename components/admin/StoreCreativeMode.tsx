@@ -672,6 +672,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         value?: string;
         dir?: "up" | "down";
         color?: string;
+        fromKey?: string;
+        toKey?: string;
       } | null;
       if (d?.source !== "buleje-preview") return;
       if (d.type === "ready") {
@@ -687,6 +689,11 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       // Fase 4 (barra flotante): mover ↑↓ una sección del cuerpo.
       if (d.type === "pb-move" && d.key && (d.dir === "up" || d.dir === "down")) {
         moveBodySection(d.key, d.dir);
+        return;
+      }
+      // Fase 4 (drag en canvas): soltar una sección sobre otra → reordena.
+      if (d.type === "pb-drop" && d.fromKey && d.toKey) {
+        reorderBody(d.fromKey, d.toKey);
         return;
       }
       // Fase 4 (pintar): color inline → setea el color primario de la marca + live.
@@ -715,7 +722,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, [postLiveTheme, patch, moveBodySection]);
+  }, [postLiveTheme, patch, moveBodySection, reorderBody]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
@@ -1593,6 +1600,11 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     { value: "waves", label: "Waves", preview: <span className="h-6 w-9 rounded bg-linear-to-r from-gray-200 via-gray-100 to-gray-200" /> },
                     { value: "gradient", label: "Gradient", preview: <span className="h-6 w-9 rounded bg-linear-to-br from-gray-200 to-gray-500" /> },
                   ]} />
+                {/* Animaciones de entrada al scrollear (Brandon 2026-06-26) */}
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
+                  <span className="text-xs text-gray-200">Animar secciones al scrollear (fade + slide)</span>
+                  <Toggle checked={draft.animateOnScroll ?? false} onChange={(v) => patch("animateOnScroll", v)} />
+                </div>
               </>
             )}
 

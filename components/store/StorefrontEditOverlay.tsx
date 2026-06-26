@@ -94,6 +94,9 @@ export default function StorefrontEditOverlay() {
   const [editingField, setEditingField] = useState<string | null>(null);
   // Barra flotante (Brandon 2026-06-26, Fase 4 "editar potencia"): popover de color abierto.
   const [colorOpen, setColorOpen] = useState(false);
+  // Drag de secciones en el canvas (Brandon 2026-06-26): indicador de drop.
+  const [dropTarget, setDropTarget] = useState<{ box: Box; key: string } | null>(null);
+  const canvasDragKey = useRef<string | null>(null);
 
   const selectedEl = useRef<Element | null>(null);
   const editingEl = useRef<HTMLElement | null>(null);
@@ -264,8 +267,56 @@ export default function StorefrontEditOverlay() {
     document.addEventListener("mouseover", onOver, true);
     document.addEventListener("click", onClick, true);
     document.addEventListener("dblclick", onDblClick, true);
+    /* ── Drag de secciones EN EL CANVAS (Brandon 2026-06-26) ──
+       Las secciones del cuerpo (trust/promos/featured/info) se arrastran directo
+       en el preview. Drop sobre otra → pb-drop {fromKey,toKey} → editor reordena. */
+    const bodyBlock = (t: EventTarget | null): HTMLElement | null => {
+      const el = t instanceof Element ? (t.closest("[data-pb]") as HTMLElement | null) : null;
+      return el && BODY_REORDERABLE.has(el.getAttribute("data-pb") || "") ? el : null;
+    };
+    const setDraggable = () => {
+      document.querySelectorAll<HTMLElement>("main > [data-pb]").forEach((el) => {
+        el.draggable = BODY_REORDERABLE.has(el.getAttribute("data-pb") || "");
+      });
+    };
+    setDraggable();
+
+    const onDragStart = (e: DragEvent) => {
+      // Ignorar drag de imágenes/links internos (son drag nativo, no de sección).
+      if (e.target instanceof Element && e.target.closest("img, a")) return;
+      const el = bodyBlock(e.target);
+      if (!el) return;
+      canvasDragKey.current = el.getAttribute("data-pb");
+      e.dataTransfer?.setData("text/plain", canvasDragKey.current || "");
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+    };
+    const onDragOver = (e: DragEvent) => {
+      if (!canvasDragKey.current) return;
+      const el = bodyBlock(e.target);
+      if (!el) return;
+      const key = el.getAttribute("data-pb") || "";
+      if (key === canvasDragKey.current) { setDropTarget(null); return; }
+      e.preventDefault(); // permite drop
+      setDropTarget({ box: rectOf(el), key });
+    };
+    const onDrop = (e: DragEvent) => {
+      const el = bodyBlock(e.target);
+      const from = canvasDragKey.current;
+      canvasDragKey.current = null;
+      setDropTarget(null);
+      if (!el || !from) return;
+      e.preventDefault();
+      const to = el.getAttribute("data-pb") || "";
+      if (to && to !== from) postToEditor({ type: "pb-drop", fromKey: from, toKey: to });
+    };
+    const onDragEnd = () => { canvasDragKey.current = null; setDropTarget(null); };
+
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("blur", onBlur, true);
+    document.addEventListener("dragstart", onDragStart, true);
+    document.addEventListener("dragover", onDragOver, true);
+    document.addEventListener("drop", onDrop, true);
+    document.addEventListener("dragend", onDragEnd, true);
     window.addEventListener("scroll", reposition, true);
     window.addEventListener("resize", reposition);
     window.addEventListener("message", onMessage);
@@ -275,6 +326,10 @@ export default function StorefrontEditOverlay() {
       document.removeEventListener("dblclick", onDblClick, true);
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("blur", onBlur, true);
+      document.removeEventListener("dragstart", onDragStart, true);
+      document.removeEventListener("dragover", onDragOver, true);
+      document.removeEventListener("drop", onDrop, true);
+      document.removeEventListener("dragend", onDragEnd, true);
       window.removeEventListener("scroll", reposition, true);
       window.removeEventListener("resize", reposition);
       window.removeEventListener("message", onMessage);
@@ -285,6 +340,26 @@ export default function StorefrontEditOverlay() {
 
   return (
     <>
+      {/* Indicador de drop al arrastrar una sección en el canvas (verde sólido) */}
+      {dropTarget && (
+        <div
+          className="pointer-events-none fixed z-[92] rounded-sm"
+          style={{
+            top: dropTarget.box.top,
+            left: dropTarget.box.left,
+            width: dropTarget.box.width,
+            height: dropTarget.box.height,
+            outline: "3px solid #16a34a",
+            outlineOffset: "-3px",
+            background: "rgba(22,163,74,0.08)",
+          }}
+        >
+          <span className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-[#16a34a] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white shadow-lg">
+            Soltar aquí
+          </span>
+        </div>
+      )}
+
       {/* Highlight desde el panel (hover sección en el editor → outline ámbar) */}
       {panelHighlight && panelHighlight.key !== selected?.key && (
         <div
