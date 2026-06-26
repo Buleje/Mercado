@@ -135,6 +135,17 @@ const SECTION_ITEMS: { key: SectionKey; label: string }[] = [
   { key: "delivery_map", label: "Mapa delivery" },
 ];
 
+// Secciones REALES del cuerpo de la landing /t (page builder Fase 2). Estas SÍ
+// se renderizan y se reordenan de verdad en la tienda pública (editorTheme.bodyOrder).
+// announcement/hero quedan fijos (banner arriba + header); el cuerpo es reordenable.
+const LANDING_BODY_ITEMS: { key: string; label: string }[] = [
+  { key: "trust", label: "Confianza (insignias)" },
+  { key: "promos", label: "Promociones" },
+  { key: "featured", label: "Productos destacados" },
+  { key: "info", label: "Información del negocio" },
+];
+const LANDING_BODY_DEFAULT = ["trust", "promos", "featured", "info"];
+
 const DAYS: Array<keyof StoreTheme["schedules"]> = [
   "lunes",
   "martes",
@@ -379,6 +390,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   // Drag-reorder de secciones (page builder Fase 2): qué se arrastra / sobre quién.
   const [dragKey, setDragKey] = useState<SectionKey | null>(null);
   const [dragOverKey, setDragOverKey] = useState<SectionKey | null>(null);
+  // Drag del cuerpo REAL de la landing (trust/promos/featured/info → bodyOrder).
+  const [bodyDragKey, setBodyDragKey] = useState<string | null>(null);
+  const [bodyDragOverKey, setBodyDragOverKey] = useState<string | null>(null);
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<StoreTheme>(initialTheme);
@@ -482,6 +496,30 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       );
     } catch { /* cross-origin guard */ }
   }, [draft.sections, patch]);
+
+  // Reorder REAL del cuerpo de la landing (Brandon 2026-06-26): mueve `fromKey`
+  // a la posición de `toKey` en bodyOrder → persiste en /t (data-driven) + refleja
+  // en el iframe en vivo (pb-reorder usa las mismas keys data-pb del storefront).
+  const reorderBody = useCallback((fromKey: string, toKey: string) => {
+    if (fromKey === toKey) return;
+    const current = draft.bodyOrder?.length ? draft.bodyOrder : LANDING_BODY_DEFAULT;
+    // base = orden actual saneado a las 4 keys válidas (+ faltantes al final).
+    const base = current.filter((k) => LANDING_BODY_DEFAULT.includes(k));
+    for (const k of LANDING_BODY_DEFAULT) if (!base.includes(k)) base.push(k);
+    const from = base.indexOf(fromKey);
+    const to = base.indexOf(toKey);
+    if (from < 0 || to < 0) return;
+    base.splice(from, 1);
+    base.splice(to, 0, fromKey);
+    patch("bodyOrder", base);
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage(
+        { source: "buleje-editor", type: "pb-reorder", order: base },
+        window.location.origin,
+      );
+    } catch { /* cross-origin guard */ }
+  }, [draft.bodyOrder, patch]);
 
   // Highlight de sección en el iframe (Fase 3): panel hover → outline ámbar en el iframe.
   const sendHighlight = useCallback((key: SectionKey | null) => {
@@ -1193,6 +1231,63 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     );
                   })}
                 </div>
+
+                {/* Orden REAL del inicio (page builder Fase 2): arrastra para
+                    cambiar el orden en tu tienda pública. Persiste en /t. */}
+                <div className="space-y-2">
+                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Orden del inicio · en vivo</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Arrastrá para reordenar las secciones de tu página de inicio. El banner y el hero quedan fijos arriba.</p>
+                  {(() => {
+                    // Orden visible = bodyOrder válido primero, faltantes al final.
+                    const valid = (draft.bodyOrder ?? []).filter((k) => LANDING_BODY_DEFAULT.includes(k));
+                    const finalOrder = [...valid, ...LANDING_BODY_DEFAULT.filter((k) => !valid.includes(k))];
+                    return finalOrder.map((key) => {
+                      const item = LANDING_BODY_ITEMS.find((s) => s.key === key);
+                      if (!item) return null;
+                      return (
+                        <div
+                          key={key}
+                          onMouseEnter={() => sendHighlight(key as SectionKey)}
+                          onMouseLeave={() => sendHighlight(null)}
+                          onDragOver={(e) => {
+                            if (bodyDragKey && bodyDragKey !== key) {
+                              e.preventDefault();
+                              setBodyDragOverKey(key);
+                            }
+                          }}
+                          onDragLeave={() => setBodyDragOverKey((k) => (k === key ? null : k))}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (bodyDragKey) reorderBody(bodyDragKey, key);
+                            setBodyDragKey(null);
+                            setBodyDragOverKey(null);
+                          }}
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-lg bg-white/[0.03] border px-2.5 py-2 transition-colors",
+                            bodyDragOverKey === key ? "border-[var(--data-info-500)]" : "border-white/10",
+                            bodyDragKey === key && "opacity-40",
+                          )}
+                        >
+                          <button
+                            type="button"
+                            draggable
+                            onDragStart={() => setBodyDragKey(key)}
+                            onDragEnd={() => {
+                              setBodyDragKey(null);
+                              setBodyDragOverKey(null);
+                            }}
+                            aria-label={`Arrastrar ${item.label} para reordenar`}
+                            className="shrink-0 cursor-grab text-[var(--text-tertiary)] transition-colors hover:text-white active:cursor-grabbing"
+                          >
+                            <GripVertical className="h-3.5 w-3.5" aria-hidden />
+                          </button>
+                          <span className="flex-1 text-xs text-gray-200">{item.label}</span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+
                 <div className="space-y-2">
                   <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Tienda online</p>
                   {tiendaSectionOrder.map((key, idx) => {

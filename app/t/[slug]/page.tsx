@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, Fragment, type ReactNode } from "react";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -181,6 +181,11 @@ async function loadPageData(slug: string) {
     welcomePopupMessage: pickStr("welcomePopupMessage"),
     welcomePopupCoupon: pickStr("welcomePopupCoupon"),
     footerText: pickStr("footerText"),
+    // Orden del cuerpo de la landing (Brandon 2026-06-26, page builder Fase 2):
+    // keys reordenables = trust|promos|featured|info. Vacío = orden histórico.
+    bodyOrder: Array.isArray(st?.["bodyOrder"])
+      ? (st["bodyOrder"] as unknown[]).filter((x): x is string => typeof x === "string")
+      : ([] as string[]),
   };
 
   // Feature flags PRO opt-in por tienda (ADR-298): viven en storeTheme.features.
@@ -716,14 +721,24 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         </div>
       </section>
 
-      {/* Trust badges — verificado, ventas, antigüedad */}
+      {/* ═══ Cuerpo reordenable (Brandon 2026-06-26, page builder Fase 2):
+          trust, promos, featured, info se renderizan en el orden de
+          editorTheme.bodyOrder. Default (vacío) = orden histórico → sin cambio
+          visual. Los bloques quedan en su sitio; solo cambia el orden de emisión. ═══ */}
+      {(() => {
+        const __body: Record<string, ReactNode> = {};
+        // Trust badges — verificado, ventas, antigüedad
+        __body.trust = (
       <div data-pb="trust">
         <VendorTrustBadges
           verified={tenant.active}
           createdYear={tenant.createdAt ? new Date(tenant.createdAt).getFullYear() : 2026}
         />
       </div>
-
+        );
+        // Promociones + bandas de imágenes por sección (anidadas a este bloque)
+        __body.promos = (
+          <>
       {/* Active promotions banner — solo renderea si hay promos reales o en modo preview */}
       {(promotions.length > 0 || isPreview) && (
         <section data-pb="promos" className="max-w-5xl mx-auto px-4 -mt-6 relative z-20">
@@ -788,7 +803,11 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             />
           </div>
         ))}
-
+          </>
+        );
+        // Productos al frente + bloques PRO + empty-state (anidados a este bloque)
+        __body.featured = (
+          <>
       {/* ═══════════════ Productos al frente (Brandon 2026-06-08) ═══════════════
           Vitrina de productos REALES en la landing — destacados si el dueño los
           marcó (tenantPageProductOverride), si no caemos al catálogo real. Es lo
@@ -1010,11 +1029,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           </div>
         </section>
       )}
-
-      {/* ═══════════════ Información del negocio (anchor #info) ═══════════════
-          Brandon, mayo 2026: la landing es el lugar natural para horarios,
-          antiguedad, metodos de pago, delivery info — todo lo que el cliente
-          quiere saber antes de comprar. */}
+          </>
+        );
+        // Información del negocio (anchor #info)
+        __body.info = (
       <section id="info" data-pb="info" className="max-w-5xl mx-auto px-4 py-10 scroll-mt-20">
         <div className="mb-6">
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
@@ -1104,6 +1122,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           </p>
         )}
       </section>
+        );
+        // Orden final: bodyOrder válido primero, luego cualquier faltante (default).
+        const __def = ["trust", "promos", "featured", "info"];
+        const __ord = (Array.isArray(editorTheme.bodyOrder) && editorTheme.bodyOrder.length
+          ? editorTheme.bodyOrder.filter((k) => __def.includes(k))
+          : []) as string[];
+        for (const k of __def) if (!__ord.includes(k)) __ord.push(k);
+        return __ord.map((k) => <Fragment key={k}>{__body[k]}</Fragment>);
+      })()}
 
       {/* ═══════════════ Secciones custom del SectionsBuilder ═══════════════
           El bodeguero arma estas desde /admin?tab=pagina-inicio → Secciones.

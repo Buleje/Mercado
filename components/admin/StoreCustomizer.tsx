@@ -75,6 +75,9 @@ export interface StoreTheme {
   pixelId: string;
   favicon: string;
   sections: SectionKey[];
+  // Orden del cuerpo de la landing /t (page builder Fase 2): keys reordenables
+  // del landing = trust|promos|featured|info. Default = orden histórico.
+  bodyOrder: string[];
   // Estilos avanzados
   cardStyle: "minimal" | "shadow" | "border" | "glass";
   cartStyle: "sidebar" | "modal" | "drawer";
@@ -152,6 +155,7 @@ const DEFAULT_THEME: StoreTheme = {
   pixelId: "",
   favicon: "",
   sections: ["announcement", "hero", "categories", "popular", "deals", "combos", "recipes", "testimonials", "faq", "contact", "delivery_map"],
+  bodyOrder: ["trust", "promos", "featured", "info"],
   cardStyle: "shadow",
   cartStyle: "sidebar",
   buttonStyle: "rounded",
