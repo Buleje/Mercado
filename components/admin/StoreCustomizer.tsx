@@ -110,6 +110,21 @@ export interface StoreTheme {
   // Estilos POR SECCIÓN (Brandon 2026-06-26): editar un componente individual —
   // fondo/texto/espaciado aplicados SOLO a esa sección (data-pb). Edición libre.
   sectionStyles: Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>;
+  // Texto POR SECCIÓN (Brandon 2026-06-27): etiqueta + título + alineación
+  // personalizados de cada sección del cuerpo (featured/info…). Editable inline
+  // (doble-click en el preview) o desde el panel. Vacío = texto por defecto.
+  sectionText: Record<string, { eyebrow?: string; title?: string; align?: "left" | "center" | "right" }>;
+  // Texto inline GENÉRICO (Brandon 2026-06-27): cualquier nodo de texto del
+  // storefront etiquetado con data-live="inlineText:<key>" (botones, CTAs,
+  // headings, labels…). Vacío = texto por defecto. Editable con doble-click.
+  inlineText: Record<string, string>;
+  // Diseño de las TARJETAS de producto (Brandon 2026-06-27): seleccionás una card
+  // en el preview y cambiás fondo/forma/borde/sombra + color de nombre y precio.
+  // Aplica a todas las tarjetas de producto de la vitrina (data-pb-card).
+  cardDesign: { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string };
+  // Secciones del cuerpo ocultas (Brandon 2026-06-27): keys de bodyOrder que el
+  // dueño apagó (trust/promos/featured/testimonials/info). No se renderizan en /t.
+  bodyHidden: string[];
   // Contenido
   footerText: string;
   welcomePopupEnabled: boolean;
@@ -209,6 +224,10 @@ const DEFAULT_THEME: StoreTheme = {
   countdownEndsAt: "",
   testimonials: [],
   sectionStyles: {},
+  sectionText: {},
+  inlineText: {},
+  cardDesign: {},
+  bodyHidden: [],
   footerText: "",
   welcomePopupEnabled: false,
   welcomePopupTitle: "Bienvenido a nuestra tienda!",

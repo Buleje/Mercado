@@ -227,6 +227,8 @@ export {
   // ── Extended set (post-migration) ───────────────────────────
   AlertOctagon,
   AlignLeft,
+  AlignCenter,
+  AlignRight,
   Archive,
   ArrowDownCircle,
   ArrowUpCircle,

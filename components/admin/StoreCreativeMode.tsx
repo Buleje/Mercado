@@ -32,6 +32,20 @@ import {
   Clock,
   Plus,
   Trash2,
+  Home,
+  ShoppingBag,
+  ShieldCheck,
+  Tag,
+  Megaphone,
+  Quote,
+  MapPin,
+  Star,
+  ArrowLeft,
+  Square,
+  RotateCcw,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import ImageUpload from "./ImageUpload";
@@ -40,6 +54,20 @@ import { EDITOR_FONT_MAP, EDITOR_BTN_RADIUS } from "@/lib/store-design-tokens";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { StoreTheme } from "./StoreCustomizer";
 import type { SectionKey } from "./StorefrontEditor";
+import type { Section, SectionTemplate } from "@/lib/store-sections-types";
+import { SECTION_TEMPLATES } from "@/lib/store-sections-types";
+
+// Etiquetas legibles por tipo de sección custom (SectionRenderer / ADR-301 Fase 4).
+const CUSTOM_SECTION_LABELS: Record<string, string> = {
+  about: "Sobre nosotros",
+  hours: "Horarios",
+  payment: "Métodos de pago",
+  "how-to-order": "Cómo pedir",
+  faq: "Preguntas frecuentes",
+  benefits: "Beneficios",
+  gallery: "Galería",
+  "image-text": "Imagen + texto",
+};
 
 // Tienda section labels for preview
 const TIENDA_SECTION_LABELS: Record<string, string> = {
@@ -141,14 +169,29 @@ const SECTION_ITEMS: { key: SectionKey; label: string }[] = [
 // Secciones REALES del cuerpo de la landing /t (page builder Fase 2). Estas SÍ
 // se renderizan y se reordenan de verdad en la tienda pública (editorTheme.bodyOrder).
 // announcement/hero quedan fijos (banner arriba + header); el cuerpo es reordenable.
-const LANDING_BODY_ITEMS: { key: string; label: string }[] = [
-  { key: "trust", label: "Confianza (insignias)" },
-  { key: "promos", label: "Promociones" },
-  { key: "featured", label: "Productos destacados" },
-  { key: "testimonials", label: "Testimonios" },
-  { key: "info", label: "Información del negocio" },
+const LANDING_BODY_ITEMS: { key: string; label: string; desc: string; icon: typeof Home }[] = [
+  { key: "trust", label: "Confianza", desc: "Insignias de pago seguro, delivery y atención", icon: ShieldCheck },
+  { key: "promos", label: "Promociones", desc: "Banner con tus ofertas activas", icon: Tag },
+  { key: "featured", label: "Destacados", desc: "Carrusel de productos que recomendás", icon: Star },
+  { key: "testimonials", label: "Testimonios", desc: "Reseñas reales de tus clientes", icon: Quote },
+  { key: "info", label: "Información", desc: "Horario, dirección, contacto y mapa", icon: MapPin },
 ];
 const LANDING_BODY_DEFAULT = ["trust", "promos", "featured", "testimonials", "info"];
+
+// Iconos para las secciones del catálogo (/tienda) — solo presentación.
+const TIENDA_SECTION_ICONS: Record<string, typeof Home> = {
+  daily_special: Tag,
+  seasonal_promo: Sparkles,
+  countdown: Clock,
+  flash_deals: Megaphone,
+  popular_products: Star,
+  featured_carousel: ShoppingBag,
+  combos: Layout,
+  last_units: Tag,
+  recipes: Layout,
+  favorites: Star,
+  recently_viewed: Clock,
+};
 
 const DAYS: Array<keyof StoreTheme["schedules"]> = [
   "lunes",
@@ -291,6 +334,645 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
+/** Badge "En vivo" — marca los controles que se reflejan en la tienda real. */
+function LiveBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-500)]">
+      <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-success-500)] opacity-70" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
+      </span>
+      En vivo
+    </span>
+  );
+}
+
+/**
+ * SectionCard — tarjeta con encabezado (icono + título + hint + badge opcional)
+ * para agrupar controles del panel. Da jerarquía y aire profesional al editor.
+ */
+function SectionCard({
+  icon: Icon,
+  title,
+  hint,
+  badge,
+  children,
+}: {
+  icon: typeof Home;
+  title: string;
+  hint?: string;
+  badge?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+      <div className="flex items-center gap-2.5 border-b border-white/5 bg-white/[0.02] px-3 py-2.5">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)]/15 text-[var(--accent-soft)]">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold leading-tight text-white">{title}</p>
+          {hint && <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-gray-400">{hint}</p>}
+        </div>
+        {badge}
+      </div>
+      <div className="space-y-2.5 p-3">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * SectionColorPicker — fila de presets + color custom + limpiar, para el panel
+ * lateral de estilo por sección. Devuelve `undefined` al limpiar (sin override).
+ */
+function SectionColorPicker({
+  label,
+  value,
+  onChange,
+  allowClear = true,
+  clearLabel = "Sin color",
+}: {
+  label: string;
+  value?: string;
+  onChange: (v: string | undefined) => void;
+  allowClear?: boolean;
+  clearLabel?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">{label}</p>
+        {allowClear && value && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 transition-colors hover:text-white"
+          >
+            {clearLabel}
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {SECTION_COLOR_PRESETS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => onChange(c)}
+            aria-label={`Color ${c}`}
+            className={cn(
+              "h-6 w-6 rounded-md border transition-transform hover:scale-110",
+              value?.toLowerCase() === c.toLowerCase()
+                ? "border-white ring-2 ring-[var(--accent-soft)]"
+                : "border-white/15",
+            )}
+            style={{ backgroundColor: c }}
+          />
+        ))}
+        <label
+          className="relative inline-flex h-6 w-6 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15"
+          title="Color personalizado"
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{ background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }}
+          />
+          <input
+            type="color"
+            value={value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000"}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+            aria-label={`${label} personalizado`}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * TextStyleControls — controles compactos de estilo de TEXTO para un nodo
+ * [data-live] (tamaño, peso, itálica, mayúsculas, color). Escribe en textStyles
+ * vía onChange(field, partial). Brandon 2026-06-27 — edición profunda por componente.
+ */
+function TextStyleControls({
+  field,
+  value,
+  onChange,
+}: {
+  field: string;
+  value: { size?: number; bold?: boolean; color?: string; italic?: boolean; upper?: boolean };
+  onChange: (field: string, partial: Record<string, unknown>) => void;
+}) {
+  const SIZES: Array<[string, number]> = [["S", 0.85], ["M", 1], ["L", 1.25], ["XL", 1.6]];
+  const curSize = value.size ?? 1;
+  const toggleBtn = (active: boolean) =>
+    cn(
+      "inline-flex h-7 min-w-7 items-center justify-center rounded px-1.5 text-[length:var(--ts-2xs)] font-bold transition-colors",
+      active ? "bg-[var(--accent-soft)] text-white" : "bg-white/[0.04] text-gray-300 hover:bg-white/10",
+    );
+  return (
+    <div className="space-y-1.5 rounded-lg border border-white/10 bg-white/[0.02] p-2">
+      <div className="flex flex-wrap items-center gap-1">
+        {SIZES.map(([lbl, mult]) => (
+          <button key={lbl} type="button" onClick={() => onChange(field, { size: mult })} className={toggleBtn(Math.abs(curSize - mult) < 0.001)}>
+            {lbl}
+          </button>
+        ))}
+        <span aria-hidden className="mx-0.5 h-4 w-px bg-white/15" />
+        <button type="button" title="Negrita" onClick={() => onChange(field, { bold: !value.bold })} className={cn(toggleBtn(!!value.bold), "font-black")}>B</button>
+        <button type="button" title="Itálica" onClick={() => onChange(field, { italic: !value.italic })} className={cn(toggleBtn(!!value.italic), "italic")}>I</button>
+        <button type="button" title="Mayúsculas" onClick={() => onChange(field, { upper: !value.upper })} className={toggleBtn(!!value.upper)}>TT</button>
+      </div>
+      <div className="flex flex-wrap items-center gap-1">
+        {SECTION_COLOR_PRESETS.slice(0, 8).map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => onChange(field, { color: c })}
+            aria-label={`Color de texto ${c}`}
+            className={cn("h-5 w-5 rounded-md border transition-transform hover:scale-110", value.color?.toLowerCase() === c.toLowerCase() ? "border-white ring-2 ring-[var(--accent-soft)]" : "border-white/15")}
+            style={{ backgroundColor: c }}
+          />
+        ))}
+        <label className="relative inline-flex h-5 w-5 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15" title="Color personalizado">
+          <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }} />
+          <input type="color" value={value.color && /^#[0-9a-fA-F]{6}$/.test(value.color) ? value.color : "#000000"} onChange={(e) => onChange(field, { color: e.target.value })} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Color de texto personalizado" />
+        </label>
+        {value.color && (
+          <button type="button" onClick={() => onChange(field, { color: undefined })} className="ml-auto text-[length:var(--ts-2xs)] font-semibold text-gray-500 hover:text-white">Auto</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * SectionStyleEditor — panel lateral que aparece al seleccionar una sección en el
+ * preview. Cambia fondo, texto, espaciado, forma, borde y sombra SOLO de esa
+ * sección (Brandon 2026-06-27). Cada cambio se aplica en vivo + persiste.
+ */
+function SectionStyleEditor({
+  label,
+  sectionKey,
+  value,
+  onChange,
+  onPreset,
+  textFields,
+  text,
+  onText,
+  textStyles,
+  onTextStyle,
+  image,
+  onImage,
+  hidden,
+  onToggleHidden,
+  onBack,
+}: {
+  label: string;
+  sectionKey: string;
+  value: SectionStyle;
+  onChange: (change: Partial<SectionStyle> | "reset") => void;
+  onPreset: (style: SectionStyle) => void;
+  textFields?: { eyebrow: string; title: string };
+  text: { eyebrow?: string; title?: string; align?: "left" | "center" | "right" };
+  onText: (field: "eyebrow" | "title" | "align", value: string) => void;
+  textStyles: Record<string, { size?: number; bold?: boolean; color?: string; italic?: boolean; upper?: boolean }>;
+  onTextStyle: (field: string, partial: Record<string, unknown>) => void;
+  image?: string;
+  onImage: (url: string) => void;
+  hidden: boolean;
+  onToggleHidden: (hidden: boolean) => void;
+  onBack: () => void;
+}) {
+  const hasBorder = !!value.border;
+  const hasAnyStyle = Object.keys(value).length > 0;
+  const presetKey = JSON.stringify(
+    Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined && v !== null && v !== "")),
+  );
+  return (
+    <div className="space-y-3">
+      {/* Encabezado: volver + sección + scope */}
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 px-2.5 py-2">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Volver al menú"
+          className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]">Editando sección</p>
+          <p className="truncate text-sm font-bold text-white">{label}</p>
+        </div>
+        <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">
+          Solo esta
+        </span>
+      </div>
+
+      {/* Mostrar / ocultar esta sección (Brandon 2026-06-27 · #1) */}
+      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+        <div className="min-w-0">
+          <p className="text-xs font-bold text-white">Mostrar en la tienda</p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-400">{hidden ? "Oculta para tus clientes" : "Visible para tus clientes"}</p>
+        </div>
+        <Toggle checked={!hidden} onChange={(on) => onToggleHidden(!on)} />
+      </div>
+
+      {/* Texto de la sección — etiqueta + título + alineación (Brandon 2026-06-27).
+          También editable con doble-click sobre el texto en el preview. */}
+      {textFields && (
+        <SectionCard icon={Type} title="Texto de la sección" hint="Editá acá o doble-click sobre el texto en el preview">
+          <div className="space-y-1.5">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Etiqueta</p>
+            <input
+              className={INPUT_CLASS}
+              value={text.eyebrow ?? ""}
+              onChange={(e) => onText("eyebrow", e.target.value)}
+              placeholder={textFields.eyebrow}
+              maxLength={60}
+            />
+            <TextStyleControls field={`sectionText:${sectionKey}:eyebrow`} value={textStyles[`sectionText:${sectionKey}:eyebrow`] ?? {}} onChange={onTextStyle} />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Título</p>
+            <input
+              className={INPUT_CLASS}
+              value={text.title ?? ""}
+              onChange={(e) => onText("title", e.target.value)}
+              placeholder={textFields.title}
+              maxLength={80}
+            />
+            <TextStyleControls field={`sectionText:${sectionKey}:title`} value={textStyles[`sectionText:${sectionKey}:title`] ?? {}} onChange={onTextStyle} />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Alineación</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([["left", "Izquierda", AlignLeft], ["center", "Centro", AlignCenter], ["right", "Derecha", AlignRight]] as const).map(([val, lbl, Ico]) => {
+                const active = (text.align ?? "left") === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => onText("align", val)}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-lg border py-2 transition-colors",
+                      active ? "border-[var(--accent-soft)] bg-[var(--accent-soft)]/10 text-white" : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/25",
+                    )}
+                  >
+                    <Ico className="h-4 w-4" />
+                    <span className="text-[length:var(--ts-2xs)] font-semibold">{lbl}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500">Vacío = se usa el texto por defecto.</p>
+        </SectionCard>
+      )}
+
+      {/* Imagen de la sección — banda full-width arriba de esta sección */}
+      <SectionCard icon={ImageIcon} title="Imagen de la sección" hint="Banda full-width que aparece con esta sección">
+        <div className="dark">
+          <ImageUpload
+            value={image ?? ""}
+            onChange={(url) => onImage(url)}
+            onClear={() => onImage("")}
+            folder="store-customizer"
+            aspectRatio="banner"
+            label=""
+          />
+        </div>
+        <p className="text-[length:var(--ts-2xs)] text-gray-500">Opcional · click o arrastrá · máx 5 MB</p>
+      </SectionCard>
+
+      {/* Diseños de 1 clic — formas y looks listos */}
+      <SectionCard icon={WandSparkles} title="Diseño rápido" hint="Aplicá un look completo en 1 clic">
+        <div className="grid grid-cols-2 gap-2">
+          {SECTION_DESIGN_PRESETS.map((p) => {
+            const cleaned = JSON.stringify(
+              Object.fromEntries(Object.entries(p.style).filter(([, v]) => v !== undefined && v !== null && v !== "")),
+            );
+            const active = cleaned === presetKey;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onPreset(p.style)}
+                className={cn(
+                  "group rounded-lg border p-2 text-left transition-colors",
+                  active ? "border-[var(--accent-soft)] bg-[var(--accent-soft)]/10" : "border-white/10 bg-white/[0.03] hover:border-white/25",
+                )}
+              >
+                <span
+                  className="mb-1.5 flex h-9 w-full items-center justify-center overflow-hidden"
+                  style={{
+                    background: p.style.bg || "rgba(255,255,255,0.04)",
+                    color: p.style.text || "#94a3b8",
+                    borderRadius: p.style.radius ?? 6,
+                    border: p.style.border ? `${p.style.borderW ?? 2}px solid ${p.style.border}` : "1px solid rgba(255,255,255,0.1)",
+                    boxShadow: p.style.shadow === "deep" ? "0 8px 20px rgba(0,0,0,0.35)" : p.style.shadow === "soft" ? "0 4px 12px rgba(0,0,0,0.25)" : "none",
+                  }}
+                >
+                  <span className="text-[length:var(--ts-2xs)] font-bold">Aa</span>
+                </span>
+                <span className="block text-[length:var(--ts-2xs)] font-semibold text-gray-200">{p.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </SectionCard>
+
+      <SectionCard icon={Palette} title="Colores">
+        <SectionColorPicker label="Fondo" value={value.bg} onChange={(v) => onChange({ bg: v })} clearLabel="Sin fondo" />
+        <SectionColorPicker label="Texto" value={value.text} onChange={(v) => onChange({ text: v })} clearLabel="Auto" />
+      </SectionCard>
+
+      <SectionCard icon={SlidersHorizontal} title="Forma y espaciado">
+        <StylePicker
+          label="Espaciado vertical"
+          cols={3}
+          value={value.pad ?? "md"}
+          onChange={(v) => onChange({ pad: v === "md" ? undefined : (v as "sm" | "lg") })}
+          options={[
+            { value: "sm", label: "Compacto", preview: <span className="h-3 w-7 rounded bg-white/30" /> },
+            { value: "md", label: "Normal", preview: <span className="h-4 w-7 rounded bg-white/40" /> },
+            { value: "lg", label: "Amplio", preview: <span className="h-5 w-7 rounded bg-white/50" /> },
+          ]}
+        />
+        <Field
+          label={
+            <div className="mb-1 flex w-full items-center justify-between">
+              <span>Redondez de esquinas</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">{value.radius ?? 0}px</span>
+            </div>
+          }
+          labelClassName={LABEL_CLASS}
+        >
+          {(id) => (
+            <input
+              id={id}
+              type="range"
+              min={0}
+              max={32}
+              value={value.radius ?? 0}
+              onChange={(e) => onChange({ radius: Number(e.target.value) })}
+              className="w-full accent-[var(--accent-soft)]"
+            />
+          )}
+        </Field>
+        <StylePicker
+          label="Sombra"
+          cols={3}
+          value={value.shadow ?? "none"}
+          onChange={(v) => onChange({ shadow: v === "none" ? undefined : (v as "soft" | "deep") })}
+          options={[
+            { value: "none", label: "Ninguna", preview: <span className="h-5 w-7 rounded bg-white/20" /> },
+            { value: "soft", label: "Suave", preview: <span className="h-5 w-7 rounded bg-white/30 shadow-md" /> },
+            { value: "deep", label: "Profunda", preview: <span className="h-5 w-7 rounded bg-white/40 shadow-xl" /> },
+          ]}
+        />
+      </SectionCard>
+
+      <SectionCard icon={Square} title="Borde">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-200">Mostrar borde</span>
+          <Toggle
+            checked={hasBorder}
+            onChange={(on) =>
+              onChange(on ? { border: value.border ?? "#E2E8F0", borderW: value.borderW ?? 2 } : { border: undefined, borderW: undefined })
+            }
+          />
+        </div>
+        {hasBorder && (
+          <>
+            <SectionColorPicker label="Color del borde" value={value.border} onChange={(v) => onChange({ border: v })} allowClear={false} />
+            <Field
+              label={
+                <div className="mb-1 flex w-full items-center justify-between">
+                  <span>Grosor</span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">{value.borderW ?? 2}px</span>
+                </div>
+              }
+              labelClassName={LABEL_CLASS}
+            >
+              {(id) => (
+                <input
+                  id={id}
+                  type="range"
+                  min={1}
+                  max={6}
+                  value={value.borderW ?? 2}
+                  onChange={(e) => onChange({ borderW: Number(e.target.value) })}
+                  className="w-full accent-[var(--accent-soft)]"
+                />
+              )}
+            </Field>
+          </>
+        )}
+      </SectionCard>
+
+      {hasAnyStyle && (
+        <button
+          type="button"
+          onClick={() => onChange("reset")}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--data-error-500)]/40 hover:text-[var(--data-error-500)]"
+        >
+          <RotateCcw className="h-3.5 w-3.5" /> Quitar estilos de esta sección
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * CustomSectionEditor — panel para las secciones del SectionsBuilder
+ * (about/gallery/image-text/…). Edita texto e imágenes; persiste en footerHtml
+ * vía /api/store-page/sections (ADR-301 Fase 4). Detecta los campos presentes en
+ * section.data, así un solo componente sirve para todos los tipos.
+ */
+function CustomSectionEditor({
+  section,
+  onPatch,
+  textStyles,
+  onTextStyle,
+  onBack,
+}: {
+  section: Section;
+  onPatch: (dataPatch: Record<string, unknown>) => void;
+  textStyles: Record<string, { size?: number; bold?: boolean; color?: string; italic?: boolean; upper?: boolean }>;
+  onTextStyle: (field: string, partial: Record<string, unknown>) => void;
+  onBack: () => void;
+}) {
+  const d = section.data as Record<string, unknown>;
+  const label = CUSTOM_SECTION_LABELS[section.type] ?? "Sección";
+  const images = Array.isArray((d as { images?: unknown }).images)
+    ? ((d as { images: Array<{ url: string; alt?: string; caption?: string }> }).images)
+    : null;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 px-2.5 py-2">
+        <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]">Sección de tu página</p>
+          <p className="truncate text-sm font-bold text-white">{label}</p>
+        </div>
+        <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">Solo esta</span>
+      </div>
+
+      <SectionCard icon={Type} title="Texto" hint="Editá acá o doble-click sobre el texto en el preview">
+        {typeof d.eyebrow === "string" && (
+          <div className="space-y-1.5">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Etiqueta</p>
+            <input className={INPUT_CLASS} value={d.eyebrow as string} onChange={(e) => onPatch({ eyebrow: e.target.value })} maxLength={60} />
+          </div>
+        )}
+        {typeof d.title === "string" && (
+          <div className="space-y-1.5">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Título</p>
+            <input className={INPUT_CLASS} value={d.title as string} onChange={(e) => onPatch({ title: e.target.value })} maxLength={100} />
+            <TextStyleControls field={`customText:${section.id}:title`} value={textStyles[`customText:${section.id}:title`] ?? {}} onChange={onTextStyle} />
+          </div>
+        )}
+        {typeof d.subtitle === "string" && (
+          <div className="space-y-1.5">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Subtítulo</p>
+            <input className={INPUT_CLASS} value={d.subtitle as string} onChange={(e) => onPatch({ subtitle: e.target.value })} maxLength={140} />
+          </div>
+        )}
+        {typeof d.body === "string" && (
+          <div className="space-y-1.5">
+            <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Texto</p>
+            <textarea className={cn(INPUT_CLASS, "resize-none")} rows={4} value={d.body as string} onChange={(e) => onPatch({ body: e.target.value })} maxLength={1000} />
+          </div>
+        )}
+      </SectionCard>
+
+      {typeof d.imageUrl === "string" && (
+        <SectionCard icon={ImageIcon} title="Imagen">
+          <div className="dark">
+            <ImageUpload value={d.imageUrl as string} onChange={(url) => onPatch({ imageUrl: url })} onClear={() => onPatch({ imageUrl: "" })} folder="store-customizer" aspectRatio="banner" label="" />
+          </div>
+        </SectionCard>
+      )}
+
+      {images && (
+        <SectionCard icon={ImageIcon} title="Galería" hint="Agregá, cambiá o quitá fotos">
+          {images.map((img, i) => (
+            <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Foto {i + 1}</p>
+                <button type="button" onClick={() => onPatch({ images: images.filter((_, j) => j !== i) })} aria-label="Quitar foto" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="dark">
+                <ImageUpload value={img.url} onChange={(url) => { const next = images.map((x, j) => (j === i ? { ...x, url } : x)); onPatch({ images: next }); }} onClear={() => onPatch({ images: images.filter((_, j) => j !== i) })} folder="store-customizer" aspectRatio="square" label="" />
+              </div>
+            </div>
+          ))}
+          <button type="button" onClick={() => onPatch({ images: [...images, { url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+            <Plus className="h-3.5 w-3.5" /> Agregar foto
+          </button>
+        </SectionCard>
+      )}
+    </div>
+  );
+}
+
+/**
+ * CardDesignEditor — panel para el diseño de las TARJETAS de producto (Brandon
+ * 2026-06-27). Cambia fondo/forma/borde/sombra + color de nombre y precio.
+ * Aplica a TODAS las tarjetas de la vitrina.
+ */
+function CardDesignEditor({
+  value,
+  onChange,
+  onBack,
+}: {
+  value: { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string };
+  onChange: (change: Partial<{ bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string }> | "reset") => void;
+  onBack: () => void;
+}) {
+  const hasBorder = !!value.border;
+  const hasAny = Object.keys(value).length > 0;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 px-2.5 py-2">
+        <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]">Editando</p>
+          <p className="truncate text-sm font-bold text-white">Tarjetas de producto</p>
+        </div>
+        <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">Todas</span>
+      </div>
+
+      <SectionCard icon={Palette} title="Colores">
+        <SectionColorPicker label="Fondo de la tarjeta" value={value.bg} onChange={(v) => onChange({ bg: v })} clearLabel="Auto" />
+        <SectionColorPicker label="Color del nombre" value={value.nameColor} onChange={(v) => onChange({ nameColor: v })} clearLabel="Auto" />
+        <SectionColorPicker label="Color del precio" value={value.priceColor} onChange={(v) => onChange({ priceColor: v })} clearLabel="Auto" />
+      </SectionCard>
+
+      <SectionCard icon={SlidersHorizontal} title="Forma y sombra">
+        <Field
+          label={<div className="mb-1 flex w-full items-center justify-between"><span>Redondez</span><span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">{value.radius ?? 16}px</span></div>}
+          labelClassName={LABEL_CLASS}
+        >
+          {(id) => (
+            <input id={id} type="range" min={0} max={28} value={value.radius ?? 16} onChange={(e) => onChange({ radius: Number(e.target.value) })} className="w-full accent-[var(--accent-soft)]" />
+          )}
+        </Field>
+        <StylePicker
+          label="Sombra"
+          cols={3}
+          value={value.shadow ?? "none"}
+          onChange={(v) => onChange({ shadow: v === "none" ? undefined : (v as "soft" | "deep") })}
+          options={[
+            { value: "none", label: "Ninguna", preview: <span className="h-5 w-7 rounded bg-white/20" /> },
+            { value: "soft", label: "Suave", preview: <span className="h-5 w-7 rounded bg-white/30 shadow-md" /> },
+            { value: "deep", label: "Profunda", preview: <span className="h-5 w-7 rounded bg-white/40 shadow-xl" /> },
+          ]}
+        />
+      </SectionCard>
+
+      <SectionCard icon={Square} title="Borde">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-200">Mostrar borde</span>
+          <Toggle checked={hasBorder} onChange={(on) => onChange(on ? { border: value.border ?? "#E2E8F0", borderW: value.borderW ?? 2 } : { border: undefined, borderW: undefined })} />
+        </div>
+        {hasBorder && (
+          <>
+            <SectionColorPicker label="Color del borde" value={value.border} onChange={(v) => onChange({ border: v })} allowClear={false} />
+            <Field
+              label={<div className="mb-1 flex w-full items-center justify-between"><span>Grosor</span><span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">{value.borderW ?? 2}px</span></div>}
+              labelClassName={LABEL_CLASS}
+            >
+              {(id) => (
+                <input id={id} type="range" min={1} max={6} value={value.borderW ?? 2} onChange={(e) => onChange({ borderW: Number(e.target.value) })} className="w-full accent-[var(--accent-soft)]" />
+              )}
+            </Field>
+          </>
+        )}
+      </SectionCard>
+
+      {hasAny && (
+        <button
+          type="button"
+          onClick={() => onChange("reset")}
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--data-error-500)]/40 hover:text-[var(--data-error-500)]"
+        >
+          <RotateCcw className="h-3.5 w-3.5" /> Quitar diseño de tarjetas
+        </button>
+      )}
+    </div>
+  );
+}
+
 /**
  * PreviewBrowserFrame — chrome estilo Chrome con dots, URL bar y iframe.
  * Hace que la vista previa se sienta como una ventana de browser real,
@@ -384,7 +1066,12 @@ function reloadSignature(t: StoreTheme): string {
   const {
     primaryColor: _p, secondaryColor: _s, accentColor: _a, borderRadius: _r,
     buttonStyle: _b, fontFamily: _f, darkModeDefault: _d, heroTitle: _ht,
-    heroSubtitle: _hs, ...rest
+    heroSubtitle: _hs,
+    // Estilo/texto POR SECCIÓN ya se reflejan EN VIVO por postMessage
+    // (pb-apply-section-style / pb-apply-section-text) o por contentEditable
+    // (inlineText) → excluir del reload para que editar NO cause flash (Brandon 2026-06-27).
+    sectionStyles: _ss, sectionText: _stx, inlineText: _itx, textStyles: _txs, cardDesign: _cdg,
+    ...rest
   } = t;
   return JSON.stringify(rest);
 }
@@ -397,6 +1084,7 @@ const PB_KEY_TO_PANEL: Record<string, CreativePanel> = {
   trust: "secciones",
   promos: "secciones",
   featured: "secciones",
+  testimonials: "secciones",
   info: "contacto",
 };
 const PB_KEY_LABEL: Record<string, string> = {
@@ -404,8 +1092,54 @@ const PB_KEY_LABEL: Record<string, string> = {
   hero: "Hero",
   trust: "Confianza",
   promos: "Promociones",
-  featured: "Productos",
+  featured: "Productos destacados",
+  testimonials: "Testimonios",
   info: "Información",
+};
+
+// Estilo POR SECCIÓN — el shape que persiste en sectionStyles[key] y que lee /t.
+type SectionStyle = {
+  bg?: string;
+  text?: string;
+  pad?: "sm" | "md" | "lg";
+  radius?: number;
+  border?: string;
+  borderW?: number;
+  shadow?: "none" | "soft" | "deep";
+};
+
+// Secciones del cuerpo a las que el panel lateral puede cambiarles el estilo.
+// hero/announcement quedan fuera: tienen flujo propio (editor de hero / banda de
+// imagen vía pb-image), y abrir el editor de estilo pisaría ese flujo.
+const STYLABLE_SECTIONS = new Set(["trust", "promos", "featured", "testimonials", "info"]);
+
+// Paleta rápida para fondos/bordes del panel lateral por sección.
+const SECTION_COLOR_PRESETS = [
+  "#FFFFFF", "#F8FAFC", "#F1F5F9", "#0F172A",
+  "#00A0A0", "#FF6B5B", "#16A34A", "#2563EB",
+  "#7C3AED", "#DB2777", "#EA580C", "#F59E0B",
+];
+
+// Diseños de 1 clic por sección (Brandon 2026-06-27): cada uno reemplaza el
+// estilo de la sección con una combinación cohesiva (fondo + forma + sombra +
+// borde + espaciado). Le da al dueño "formas y diseños" listos para elegir.
+const SECTION_DESIGN_PRESETS: { id: string; name: string; style: SectionStyle }[] = [
+  { id: "plano", name: "Plano", style: {} },
+  { id: "tarjeta", name: "Tarjeta", style: { bg: "#FFFFFF", radius: 20, shadow: "soft", pad: "lg" } },
+  { id: "flotante", name: "Flotante", style: { bg: "#FFFFFF", radius: 24, shadow: "deep", pad: "lg" } },
+  { id: "suave", name: "Suave", style: { bg: "#F8FAFC", radius: 16, pad: "md" } },
+  { id: "banda", name: "Banda", style: { bg: "#00A0A0", text: "#FFFFFF", pad: "lg" } },
+  { id: "oscuro", name: "Oscuro", style: { bg: "#0F172A", text: "#F8FAFC", radius: 18, shadow: "deep", pad: "lg" } },
+  { id: "contorno", name: "Contorno", style: { border: "#0F172A", borderW: 2, radius: 14, pad: "md" } },
+  { id: "marcado", name: "Marcado", style: { bg: "#FFF7ED", border: "#FB923C", borderW: 2, radius: 16, pad: "md" } },
+];
+
+// Secciones cuyo texto (etiqueta + título) se puede editar desde el panel lateral.
+// Los valores son los placeholders (texto por defecto que muestra /t si está vacío).
+const SECTION_TEXT_FIELDS: Record<string, { eyebrow: string; title: string }> = {
+  featured: { eyebrow: "Destacados · Nuestro catálogo", title: "Lo que recomendamos" },
+  info: { eyebrow: "Información del negocio", title: "Lo que tienes que saber" },
+  testimonials: { eyebrow: "Lo que dicen", title: "Reseñas de nuestros clientes" },
 };
 
 // Picker visual de estilo (Brandon 2026-06-25): en vez de un <select>, muestra
@@ -452,9 +1186,6 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [panel, setPanel] = useState<CreativePanel>("plantillas");
   // Bloque seleccionado desde el preview (page builder) → resalta el panel.
   const [pbSelected, setPbSelected] = useState<string | null>(null);
-  // Drag-reorder de secciones (page builder Fase 2): qué se arrastra / sobre quién.
-  const [dragKey, setDragKey] = useState<SectionKey | null>(null);
-  const [dragOverKey, setDragOverKey] = useState<SectionKey | null>(null);
   // Drag del cuerpo REAL de la landing (trust/promos/featured/info → bodyOrder).
   const [bodyDragKey, setBodyDragKey] = useState<string | null>(null);
   const [bodyDragOverKey, setBodyDragOverKey] = useState<string | null>(null);
@@ -469,6 +1200,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [tiendaSectionsEnabled, setTiendaSectionsEnabled] = useState<string[]>([]);
   const [tiendaSectionOrder, setTiendaSectionOrder] = useState<string[]>(TIENDA_SECTION_KEYS);
   const [sectionContentCounts, setSectionContentCounts] = useState<Record<string, number>>({});
+  // Secciones custom (SectionRenderer) — ADR-301 Fase 4. Persisten en footerHtml
+  // vía /api/store-page/sections (separado de storeTheme).
+  const [customSections, setCustomSections] = useState<Section[]>([]);
+  const customSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [livePreview, setLivePreview] = useState(true);
   const [splitPreview, setSplitPreview] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
@@ -507,7 +1242,80 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         setSectionContentCounts(counts);
       })
       .catch((e) => { console.warn("[creative-mode] operación en background falló", e); });
+    // Cargar secciones custom (about/gallery/image-text…) — ADR-301 Fase 4.
+    fetch(`/api/store-page/sections`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (Array.isArray(data?.sections)) setCustomSections(data.sections as Section[]);
+      })
+      .catch((e) => { console.warn("[creative-mode] fetch de secciones custom falló", e); });
   }, [tenantSlug]);
+
+  // Guardar secciones custom (debounce 1.2s) → PUT /api/store-page/sections +
+  // recarga el preview para reflejar (no hay live DOM-patch para estructura).
+  const saveCustomSections = useCallback((next: Section[]) => {
+    if (customSaveTimer.current) clearTimeout(customSaveTimer.current);
+    customSaveTimer.current = setTimeout(() => {
+      fetch("/api/store-page/sections", {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ sections: next }),
+      })
+        .then((r) => { if (r.ok) setIframeKey((k) => k + 1); })
+        .catch((e) => { console.warn("[creative-mode] guardar secciones custom falló", e); });
+    }, 1200);
+  }, []);
+
+  // Editar un campo de data de una sección custom (title/body/subtitle/eyebrow…).
+  const patchCustomSection = useCallback((id: string, dataPatch: Record<string, unknown>) => {
+    setCustomSections((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, data: { ...s.data, ...dataPatch } } : s)) as Section[];
+      saveCustomSections(next);
+      return next;
+    });
+  }, [saveCustomSections]);
+
+  // ── #6 Gestión de secciones custom (crear / reordenar / borrar / visibilidad) ──
+  const addCustomSection = useCallback((tpl: SectionTemplate) => {
+    setCustomSections((prev) => {
+      const created = tpl.create() as Omit<Section, "id" | "order">;
+      const id = `sec-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4).toString(36)}`;
+      const section = { ...created, id, order: prev.length } as Section;
+      const next = [...prev, section];
+      saveCustomSections(next);
+      return next;
+    });
+  }, [saveCustomSections]);
+
+  const removeCustomSection = useCallback((id: string) => {
+    setCustomSections((prev) => {
+      const next = prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, order: i })) as Section[];
+      saveCustomSections(next);
+      return next;
+    });
+    setPbSelected((cur) => (cur === `custom:${id}` ? null : cur));
+  }, [saveCustomSections]);
+
+  const moveCustomSection = useCallback((id: string, dir: "up" | "down") => {
+    setCustomSections((prev) => {
+      const i = prev.findIndex((s) => s.id === id);
+      const j = dir === "up" ? i - 1 : i + 1;
+      if (i < 0 || j < 0 || j >= prev.length) return prev;
+      const arr = [...prev];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      const next = arr.map((s, k) => ({ ...s, order: k })) as Section[];
+      saveCustomSections(next);
+      return next;
+    });
+  }, [saveCustomSections]);
+
+  const setCustomSectionVisible = useCallback((id: string, visible: boolean) => {
+    setCustomSections((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, visible } : s)) as Section[];
+      saveCustomSections(next);
+      return next;
+    });
+  }, [saveCustomSections]);
 
   const pushChange = useCallback((next: StoreTheme) => {
     setHistory((prev) => [...prev.slice(-30), draft]);
@@ -531,36 +1339,6 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       },
     });
   }, [draft, pushChange]);
-
-  const toggleSection = useCallback((key: SectionKey) => {
-    const has = draft.sections.includes(key);
-    const sections = has
-      ? draft.sections.filter((s) => s !== key)
-      : [...draft.sections, key];
-    patch("sections", sections);
-  }, [draft.sections, patch]);
-
-  // Drag-reorder (Brandon 2026-06-25, page builder Fase 2): mueve `fromKey` a la
-  // posición de `toKey` dentro de las secciones activas (draft.sections).
-  // También avisa al iframe (pb-reorder) para que reordene el DOM en vivo.
-  const reorderSection = useCallback((fromKey: SectionKey, toKey: SectionKey) => {
-    if (fromKey === toKey) return;
-    const arr = [...draft.sections];
-    const from = arr.indexOf(fromKey);
-    const to = arr.indexOf(toKey);
-    if (from < 0 || to < 0) return;
-    arr.splice(from, 1);
-    arr.splice(to, 0, fromKey);
-    patch("sections", arr);
-    // Fase 2 — reflejo visual inmediato en el iframe (DOM reorder vía postMessage)
-    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
-    try {
-      frame?.contentWindow?.postMessage(
-        { source: "buleje-editor", type: "pb-reorder", order: arr },
-        window.location.origin,
-      );
-    } catch { /* cross-origin guard */ }
-  }, [draft.sections, patch]);
 
   // Reorder REAL del cuerpo de la landing (Brandon 2026-06-26): mueve `fromKey`
   // a la posición de `toKey` en bodyOrder → persiste en /t (data-driven) + refleja
@@ -614,6 +1392,119 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     if (url) next[key] = url; else delete next[key];
     patch("sectionImages", next);
   }, [draft.sectionImages, patch]);
+
+  // Estilo POR SECCIÓN desde el panel lateral (Brandon 2026-06-27): cambia fondo,
+  // texto, espaciado, forma, borde y sombra SOLO de la sección seleccionada.
+  // Persiste en sectionStyles[key] (lo lee /t en TenantSectionStyles) y lo aplica
+  // EN VIVO en el iframe (pb-apply-section-style → StorefrontEditOverlay).
+  const patchSectionStyle = useCallback((key: string, change: Partial<SectionStyle> | "reset" | { __replace: SectionStyle }) => {
+    const cur = (draftRef.current.sectionStyles ?? {}) as Record<string, SectionStyle>;
+    const nextForKey: SectionStyle = {};
+    if (change !== "reset") {
+      // `__replace` = preset de diseño (reemplaza todo); si no, merge sobre lo actual.
+      const source: SectionStyle = "__replace" in change ? change.__replace : { ...(cur[key] ?? {}), ...change };
+      // Saca claves vacías/undefined para no persistir basura.
+      for (const [k, v] of Object.entries(source)) {
+        if (v !== undefined && v !== null && v !== "") {
+          (nextForKey as Record<string, unknown>)[k] = v;
+        }
+      }
+    }
+    patch("sectionStyles", { ...cur, [key]: nextForKey });
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage(
+        { source: "buleje-editor", type: "pb-apply-section-style", key, style: nextForKey },
+        window.location.origin,
+      );
+    } catch { /* cross-origin guard */ }
+  }, [patch]);
+
+  // Texto POR SECCIÓN desde el panel lateral (Brandon 2026-06-27): cambia la
+  // etiqueta/título de la sección seleccionada. Persiste en sectionText[key] (lo
+  // lee /t con fallback al texto por defecto) + lo refleja EN VIVO en el iframe.
+  const patchSectionText = useCallback((key: string, field: "eyebrow" | "title" | "align", value: string) => {
+    type ST = { eyebrow?: string; title?: string; align?: "left" | "center" | "right" };
+    const cur = (draftRef.current.sectionText ?? {}) as Record<string, ST>;
+    const entry: ST = { ...(cur[key] ?? {}) };
+    if (field === "align") {
+      if (value) entry.align = value as "left" | "center" | "right"; else delete entry.align;
+    } else if (value) entry[field] = value; else delete entry[field];
+    patch("sectionText", { ...cur, [key]: entry });
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage(
+        { source: "buleje-editor", type: "pb-apply-section-text", key, field, value },
+        window.location.origin,
+      );
+    } catch { /* cross-origin guard */ }
+  }, [patch]);
+
+  // Texto inline GENÉRICO (Brandon 2026-06-27): cualquier nodo data-live="inlineText:key"
+  // editado con doble-click en el preview → persiste en inlineText[key]. El DOM ya quedó
+  // editado por contentEditable, así que sólo persistimos (sin echo en vivo).
+  const patchInlineText = useCallback((key: string, value: string) => {
+    const cur = (draftRef.current.inlineText ?? {}) as Record<string, string>;
+    const next = { ...cur };
+    if (value) next[key] = value; else delete next[key];
+    patch("inlineText", next);
+  }, [patch]);
+
+  // Estilo de TEXTO por nodo [data-live] (Brandon 2026-06-27): tamaño/peso/color/
+  // alineación/itálica/mayúsculas de cualquier texto editable. Persiste en
+  // textStyles[field] (lo lee TenantTextStyles) + lo aplica EN VIVO en el iframe.
+  const patchTextStyle = useCallback((field: string, partial: Record<string, unknown>) => {
+    type TS = { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean };
+    const cur = (draftRef.current.textStyles ?? {}) as Record<string, TS>;
+    const merged: TS = { ...(cur[field] ?? {}), ...partial };
+    const clean: TS = {};
+    for (const [k, v] of Object.entries(merged)) {
+      if (v !== undefined && v !== null && v !== "") (clean as Record<string, unknown>)[k] = v;
+    }
+    patch("textStyles", { ...cur, [field]: clean });
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage(
+        { source: "buleje-editor", type: "pb-apply-text-style", field, textStyle: clean },
+        window.location.origin,
+      );
+    } catch { /* cross-origin guard */ }
+  }, [patch]);
+
+  // Mostrar/ocultar una sección del cuerpo (Brandon 2026-06-27 · #1): agrega/quita
+  // la key de bodyHidden. En el preview la atenúa (pb-toggle-section); en /t real
+  // no se renderiza. Persiste vía auto-save.
+  const patchBodyHidden = useCallback((key: string, hidden: boolean) => {
+    const cur = (draftRef.current.bodyHidden ?? []) as string[];
+    const next = hidden ? Array.from(new Set([...cur, key])) : cur.filter((k) => k !== key);
+    patch("bodyHidden", next);
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage(
+        { source: "buleje-editor", type: "pb-toggle-section", key, hidden },
+        window.location.origin,
+      );
+    } catch { /* cross-origin guard */ }
+  }, [patch]);
+
+  // Diseño de TARJETAS de producto (Brandon 2026-06-27): fondo/forma/borde/sombra
+  // + color de nombre y precio. Aplica a todas las tarjetas (data-pb-card).
+  const patchCardDesign = useCallback((change: Partial<StoreTheme["cardDesign"]> | "reset") => {
+    const cur = (draftRef.current.cardDesign ?? {}) as StoreTheme["cardDesign"];
+    const nextRaw = change === "reset" ? {} : { ...cur, ...change };
+    const next: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(nextRaw)) {
+      if (v !== undefined && v !== null && v !== "") next[k] = v;
+    }
+    patch("cardDesign", next as StoreTheme["cardDesign"]);
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage(
+        { source: "buleje-editor", type: "pb-apply-card-style", cardStyle: next },
+        window.location.origin,
+      );
+    } catch { /* cross-origin guard */ }
+  }, [patch]);
 
   // Testimonios (Brandon 2026-06-26): alta/edición/baja del array de reseñas.
   const addTestimonial = useCallback(() => {
@@ -770,6 +1661,16 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         setPbSelected(d.key);
         return;
       }
+      // Fase 4: click en una sección custom (custom:<id>) → editor de sección custom.
+      if (d.type === "pb-select" && d.key && d.key.startsWith("custom:")) {
+        setPbSelected(d.key);
+        return;
+      }
+      // Click en una tarjeta de producto → editor de diseño de tarjetas.
+      if (d.type === "pb-select" && d.key === "cards") {
+        setPbSelected("cards");
+        return;
+      }
       // Fase 4 (barra flotante): mover ↑↓ una sección del cuerpo.
       if (d.type === "pb-move" && d.key && (d.dir === "up" || d.dir === "down")) {
         moveBodySection(d.key, d.dir);
@@ -806,6 +1707,26 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       }
       // Fase 3: edición inline de texto en el iframe → patch en el draft.
       if (d.type === "pb-inline-edit" && d.field && typeof d.value === "string") {
+        // Texto POR SECCIÓN editado inline (data-live="sectionText:key:field").
+        if (d.field.startsWith("sectionText:")) {
+          const [, secKey, sub] = d.field.split(":");
+          if (secKey && (sub === "eyebrow" || sub === "title")) {
+            patchSectionText(secKey, sub, d.value);
+          }
+          return;
+        }
+        // Texto inline genérico (data-live="inlineText:key") — botones, CTAs, etc.
+        if (d.field.startsWith("inlineText:")) {
+          const key = d.field.slice("inlineText:".length);
+          if (key) patchInlineText(key, d.value);
+          return;
+        }
+        // Texto de sección custom (data-live="customText:<id>:<campo>") — ADR-301 Fase 4.
+        if (d.field.startsWith("customText:")) {
+          const [, id, sub] = d.field.split(":");
+          if (id && sub) patchCustomSection(id, { [sub]: d.value });
+          return;
+        }
         const INLINE_FIELDS = [
           "heroTitle", "heroSubtitle", "heroCTA", "heroBadge",
           "storeName", "slogan", "footerText",
@@ -819,7 +1740,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
-  }, [postLiveTheme, patch, moveBodySection, reorderBody]);
+  }, [postLiveTheme, patch, moveBodySection, reorderBody, patchSectionText, patchInlineText, patchCustomSection]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
@@ -1129,7 +2050,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               return (
                 <button
                   key={item.id}
-                  onClick={() => setPanel(item.id)}
+                  onClick={() => { setPanel(item.id); setPbSelected(null); }}
                   className={cn(
                     "relative w-full flex items-center gap-3 pl-3.5 pr-2.5 h-10 rounded-lg text-sm transition-colors text-left",
                     // Activo minimalista: barra fina + texto blanco, sin caja.
@@ -1159,6 +2080,54 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <p className="text-sm font-semibold text-white">{panelItems.find((p) => p.id === panel)?.label ?? "Sección"}</p>
           </div>
           <div className="p-4 space-y-3">
+            {pbSelected === "cards" ? (
+              <CardDesignEditor
+                value={(draft.cardDesign ?? {}) as { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string }}
+                onChange={patchCardDesign}
+                onBack={() => setPbSelected(null)}
+              />
+            ) : pbSelected?.startsWith("custom:") ? (
+              (() => {
+                const cid = pbSelected.slice("custom:".length);
+                const sec = customSections.find((s) => s.id === cid);
+                if (!sec) {
+                  return (
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center">
+                      <p className="text-sm text-gray-300">Cargando la sección…</p>
+                      <button type="button" onClick={() => setPbSelected(null)} className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--accent-soft)] hover:underline">← Volver</button>
+                    </div>
+                  );
+                }
+                return (
+                  <CustomSectionEditor
+                    section={sec}
+                    onPatch={(dataPatch) => patchCustomSection(cid, dataPatch)}
+                    textStyles={(draft.textStyles ?? {}) as Record<string, { size?: number; bold?: boolean; color?: string; italic?: boolean; upper?: boolean }>}
+                    onTextStyle={patchTextStyle}
+                    onBack={() => setPbSelected(null)}
+                  />
+                );
+              })()
+            ) : pbSelected && STYLABLE_SECTIONS.has(pbSelected) ? (
+              <SectionStyleEditor
+                label={PB_KEY_LABEL[pbSelected] ?? "Sección"}
+                sectionKey={pbSelected}
+                value={(draft.sectionStyles?.[pbSelected] ?? {}) as SectionStyle}
+                onChange={(change) => patchSectionStyle(pbSelected, change)}
+                onPreset={(style) => patchSectionStyle(pbSelected, { __replace: style })}
+                textFields={SECTION_TEXT_FIELDS[pbSelected]}
+                text={(draft.sectionText?.[pbSelected] ?? {}) as { eyebrow?: string; title?: string; align?: "left" | "center" | "right" }}
+                onText={(field, value) => patchSectionText(pbSelected, field, value)}
+                textStyles={(draft.textStyles ?? {}) as Record<string, { size?: number; bold?: boolean; color?: string; italic?: boolean; upper?: boolean }>}
+                onTextStyle={patchTextStyle}
+                image={draft.sectionImages?.[pbSelected]}
+                onImage={(url) => setSectionImage(pbSelected, url)}
+                hidden={(draft.bodyHidden ?? []).includes(pbSelected)}
+                onToggleHidden={(h) => patchBodyHidden(pbSelected, h)}
+                onBack={() => setPbSelected(null)}
+              />
+            ) : (
+            <>
             {pbSelected && PB_KEY_LABEL[pbSelected] && (
               <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--data-info-500)]/40 bg-[var(--data-info-500)]/10 px-3 py-2">
                 <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">
@@ -1531,190 +2500,226 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             )}
 
             {panel === "secciones" && (
-              <div className="space-y-6">
-                {/* Banner de la tienda — imagen arriba de la página (Brandon 2026-06-25) */}
-                <div className="space-y-1.5">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Banner de la tienda</p>
-                  <div className="dark">
-                    <ImageUpload
-                      value={draft.announcementImage}
-                      onChange={(url) => patch("announcementImage", url)}
-                      onClear={() => patch("announcementImage", "")}
-                      folder="store-customizer"
-                      aspectRatio="banner"
-                      label=""
-                    />
-                  </div>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Imagen full-width arriba de la tienda · click o arrastrá · máx 5 MB</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Pagina principal</p>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Arrastrá el asa para reordenar · el toggle activa u oculta la sección</p>
-                  {[
-                    ...draft.sections,
-                    ...SECTION_ITEMS.filter((s) => !draft.sections.includes(s.key)).map((s) => s.key),
-                  ].map((key) => {
-                    const section = SECTION_ITEMS.find((s) => s.key === key);
-                    if (!section) return null;
-                    const enabled = draft.sections.includes(key);
-                    // hero/announcement ya tienen su propio slot de imagen (panel Hero
-                    // y "Banner de la tienda"); el resto recibe imagen por sección.
-                    const hasOwnImageSlot = key === "hero" || key === "announcement";
-                    const sectionImg = draft.sectionImages?.[key] ?? "";
-                    return (
-                      <div
-                        key={key}
-                        onMouseEnter={() => sendHighlight(key)}
-                        onMouseLeave={() => sendHighlight(null)}
-                        onDragOver={(e) => {
-                          if (dragKey && dragKey !== key && enabled) {
-                            e.preventDefault();
-                            setDragOverKey(key);
-                          }
-                        }}
-                        onDragLeave={() => setDragOverKey((k) => (k === key ? null : k))}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (dragKey) reorderSection(dragKey, key);
-                          setDragKey(null);
-                          setDragOverKey(null);
-                        }}
-                        className={cn(
-                          "rounded-lg bg-white/[0.03] border transition-colors",
-                          dragOverKey === key ? "border-[var(--data-info-500)]" : "border-white/10",
-                          dragKey === key && "opacity-40",
-                        )}
-                      >
-                        <span className="flex items-center gap-1.5 px-2.5 py-2">
-                          {enabled ? (
-                            <button
-                              type="button"
-                              draggable
-                              onDragStart={() => setDragKey(key)}
-                              onDragEnd={() => {
-                                setDragKey(null);
-                                setDragOverKey(null);
-                              }}
-                              aria-label={`Arrastrar ${section.label} para reordenar`}
-                              className="shrink-0 cursor-grab text-[var(--text-tertiary)] transition-colors hover:text-white active:cursor-grabbing"
-                            >
-                              <GripVertical className="h-3.5 w-3.5" aria-hidden />
-                            </button>
-                          ) : (
-                            <span className="w-3.5 shrink-0" aria-hidden />
-                          )}
-                          <span className="flex-1 text-xs text-gray-200">{section.label}</span>
-                          <Toggle checked={enabled} onChange={() => toggleSection(key)} />
-                        </span>
-                        {enabled && !hasOwnImageSlot && (
-                          <div className="dark border-t border-white/10 px-2.5 py-2.5">
-                            <ImageUpload
-                              value={sectionImg}
-                              onChange={(url) => setSectionImage(key, url)}
-                              onClear={() => setSectionImage(key, "")}
-                              folder="store-customizer"
-                              aspectRatio="banner"
-                              label=""
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="space-y-4">
+                <p className="text-xs leading-snug text-gray-400">
+                  Ordená y activá lo que ve tu cliente. Todo lo de acá se refleja en tu tienda real.
+                </p>
 
-                {/* Orden REAL del inicio (page builder Fase 2): arrastra para
-                    cambiar el orden en tu tienda pública. Persiste en /t. */}
-                <div className="space-y-2">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Orden del inicio · en vivo</p>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Arrastrá para reordenar las secciones de tu página de inicio. El banner y el hero quedan fijos arriba.</p>
-                  {(() => {
-                    // Orden visible = bodyOrder válido primero, faltantes al final.
-                    const valid = (draft.bodyOrder ?? []).filter((k) => LANDING_BODY_DEFAULT.includes(k));
-                    const finalOrder = [...valid, ...LANDING_BODY_DEFAULT.filter((k) => !valid.includes(k))];
-                    return finalOrder.map((key) => {
-                      const item = LANDING_BODY_ITEMS.find((s) => s.key === key);
-                      if (!item) return null;
-                      return (
-                        <div
-                          key={key}
-                          onMouseEnter={() => sendHighlight(key as SectionKey)}
-                          onMouseLeave={() => sendHighlight(null)}
-                          onDragOver={(e) => {
-                            if (bodyDragKey && bodyDragKey !== key) {
+                {/* ── Página de inicio (orden REAL via bodyOrder) ─────────────── */}
+                <SectionCard
+                  icon={Home}
+                  title="Página de inicio"
+                  hint="El orden de tu portada · arrastrá para reordenar"
+                  badge={<LiveBadge />}
+                >
+                  {/* Banner superior (announcementImage) — banda full-width arriba */}
+                  <div className="space-y-1.5">
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Banner superior</p>
+                    <div className="dark">
+                      <ImageUpload
+                        value={draft.announcementImage}
+                        onChange={(url) => patch("announcementImage", url)}
+                        onClear={() => patch("announcementImage", "")}
+                        folder="store-customizer"
+                        aspectRatio="banner"
+                        label=""
+                      />
+                    </div>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Imagen full-width arriba de todo · click o arrastrá · máx 5 MB</p>
+                  </div>
+
+                  {/* Secciones reordenables del cuerpo */}
+                  <div className="space-y-1.5 pt-1">
+                    <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Secciones del cuerpo</p>
+                    {(() => {
+                      // Orden visible = bodyOrder válido primero, faltantes al final.
+                      const valid = (draft.bodyOrder ?? []).filter((k) => LANDING_BODY_DEFAULT.includes(k));
+                      const finalOrder = [...valid, ...LANDING_BODY_DEFAULT.filter((k) => !valid.includes(k))];
+                      return finalOrder.map((key, idx) => {
+                        const item = LANDING_BODY_ITEMS.find((s) => s.key === key);
+                        if (!item) return null;
+                        const Icon = item.icon;
+                        return (
+                          <div
+                            key={key}
+                            onMouseEnter={() => sendHighlight(key as SectionKey)}
+                            onMouseLeave={() => sendHighlight(null)}
+                            onDragOver={(e) => {
+                              if (bodyDragKey && bodyDragKey !== key) {
+                                e.preventDefault();
+                                setBodyDragOverKey(key);
+                              }
+                            }}
+                            onDragLeave={() => setBodyDragOverKey((k) => (k === key ? null : k))}
+                            onDrop={(e) => {
                               e.preventDefault();
-                              setBodyDragOverKey(key);
-                            }
-                          }}
-                          onDragLeave={() => setBodyDragOverKey((k) => (k === key ? null : k))}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            if (bodyDragKey) reorderBody(bodyDragKey, key);
-                            setBodyDragKey(null);
-                            setBodyDragOverKey(null);
-                          }}
-                          className={cn(
-                            "flex items-center gap-1.5 rounded-lg bg-white/[0.03] border px-2.5 py-2 transition-colors",
-                            bodyDragOverKey === key ? "border-[var(--data-info-500)]" : "border-white/10",
-                            bodyDragKey === key && "opacity-40",
-                          )}
-                        >
-                          <button
-                            type="button"
-                            draggable
-                            onDragStart={() => setBodyDragKey(key)}
-                            onDragEnd={() => {
+                              if (bodyDragKey) reorderBody(bodyDragKey, key);
                               setBodyDragKey(null);
                               setBodyDragOverKey(null);
                             }}
-                            aria-label={`Arrastrar ${item.label} para reordenar`}
-                            className="shrink-0 cursor-grab text-[var(--text-tertiary)] transition-colors hover:text-white active:cursor-grabbing"
+                            className={cn(
+                              "group flex items-center gap-2 rounded-lg border bg-white/[0.03] px-2 py-2 transition-colors",
+                              bodyDragOverKey === key ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/5" : "border-white/10 hover:border-white/20",
+                              bodyDragKey === key && "opacity-40",
+                            )}
                           >
-                            <GripVertical className="h-3.5 w-3.5" aria-hidden />
-                          </button>
-                          <span className="flex-1 text-xs text-gray-200">{item.label}</span>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+                            <button
+                              type="button"
+                              draggable
+                              onDragStart={() => setBodyDragKey(key)}
+                              onDragEnd={() => {
+                                setBodyDragKey(null);
+                                setBodyDragOverKey(null);
+                              }}
+                              aria-label={`Arrastrar ${item.label} para reordenar`}
+                              className="shrink-0 cursor-grab rounded p-0.5 text-gray-500 transition-colors hover:text-white active:cursor-grabbing"
+                            >
+                              <GripVertical className="h-4 w-4" aria-hidden />
+                            </button>
+                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-[length:var(--ts-2xs)] font-bold tabular-nums text-gray-400">
+                              {idx + 1}
+                            </span>
+                            <Icon className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" aria-hidden />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-semibold text-gray-100 leading-tight">{item.label}</p>
+                              <p className="truncate text-[length:var(--ts-2xs)] text-gray-500 leading-tight">{item.desc}</p>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500 leading-snug">
+                      Cada sección aparece sola cuando tiene contenido (ej. promos activas o testimonios).
+                    </p>
+                  </div>
+                </SectionCard>
 
-                <div className="space-y-2">
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Tienda online</p>
+                {/* ── Página de catálogo (tiendaSections REAL via /api/settings) ── */}
+                <SectionCard
+                  icon={ShoppingBag}
+                  title="Página de catálogo"
+                  hint="Secciones de descubrimiento en tu página de productos"
+                >
                   {tiendaSectionOrder.map((key, idx) => {
                     const enabled = tiendaSectionsEnabled.includes(key);
                     const count = sectionContentCounts[key] ?? 0;
+                    const Icon = TIENDA_SECTION_ICONS[key] ?? Layout;
                     return (
-                      <div key={key} className="flex items-center gap-1.5 rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
-                        <div className="flex flex-col">
+                      <div
+                        key={key}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-2 transition-opacity",
+                          !enabled && "opacity-55",
+                        )}
+                      >
+                        <div className="flex shrink-0 flex-col">
                           <button
                             type="button"
                             onClick={() => moveTiendaSection(key, "up")}
                             disabled={idx === 0}
-                            className="text-[var(--text-secondary)] hover:text-white disabled:opacity-20 transition-colors"
+                            aria-label="Subir sección"
+                            className="text-gray-500 transition-colors hover:text-white disabled:opacity-20"
                           >
-                            <ChevronUp className="h-3 w-3" />
+                            <ChevronUp className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => moveTiendaSection(key, "down")}
                             disabled={idx === tiendaSectionOrder.length - 1}
-                            className="text-[var(--text-secondary)] hover:text-white disabled:opacity-20 transition-colors"
+                            aria-label="Bajar sección"
+                            className="text-gray-500 transition-colors hover:text-white disabled:opacity-20"
                           >
-                            <ChevronDown className="h-3 w-3" />
+                            <ChevronDown className="h-3.5 w-3.5" />
                           </button>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs text-gray-200 block">{TIENDA_SECTION_LABELS[key]}</span>
-                          <span className={cn("text-[length:var(--ts-2xs)]", count > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]")}>
-                            {count > 0 ? `${count} productos` : "Sin productos"}
+                        <Icon className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" aria-hidden />
+                        <div className="min-w-0 flex-1">
+                          <span className="block truncate text-xs font-semibold text-gray-100 leading-tight">{TIENDA_SECTION_LABELS[key]}</span>
+                          <span className={cn("text-[length:var(--ts-2xs)] leading-tight", count > 0 ? "text-[var(--data-success-500)]" : "text-gray-500")}>
+                            {count > 0 ? `${count} ${count === 1 ? "producto" : "productos"}` : "Sin productos"}
                           </span>
                         </div>
                         <Toggle checked={enabled} onChange={() => toggleTiendaSection(key)} />
                       </div>
                     );
                   })}
-                </div>
+                </SectionCard>
+
+                {/* ── #6 Secciones de tu página (custom): crear/ordenar/ocultar/borrar ── */}
+                <SectionCard icon={Layout} title="Secciones de tu página" hint="Galería, sobre nosotros, horarios… crear, ordenar, ocultar o borrar">
+                  {customSections.length === 0 && (
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Todavía no agregaste secciones. Usá “Agregar sección” abajo.</p>
+                  )}
+                  {customSections.map((s, idx) => (
+                    <div key={s.id} className={cn("flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-2", !s.visible && "opacity-55")}>
+                      <div className="flex shrink-0 flex-col">
+                        <button type="button" onClick={() => moveCustomSection(s.id, "up")} disabled={idx === 0} aria-label="Subir" className="text-gray-500 transition-colors hover:text-white disabled:opacity-20">
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button type="button" onClick={() => moveCustomSection(s.id, "down")} disabled={idx === customSections.length - 1} aria-label="Bajar" className="text-gray-500 transition-colors hover:text-white disabled:opacity-20">
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <button type="button" onClick={() => setPbSelected(`custom:${s.id}`)} className="min-w-0 flex-1 text-left">
+                        <span className="block truncate text-xs font-semibold text-gray-100">{CUSTOM_SECTION_LABELS[s.type] ?? s.type}</span>
+                        <span className="text-[length:var(--ts-2xs)] text-gray-500">{s.visible ? "Visible" : "Oculta"} · editar →</span>
+                      </button>
+                      <Toggle checked={s.visible} onChange={(v) => setCustomSectionVisible(s.id, v)} />
+                      <button type="button" onClick={() => removeCustomSection(s.id)} aria-label="Borrar sección" className="shrink-0 rounded p-1 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <details className="group rounded-lg border border-dashed border-white/15 bg-white/[0.02]">
+                    <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:text-white">
+                      <Plus className="h-3.5 w-3.5" /> Agregar sección
+                    </summary>
+                    <div className="grid grid-cols-2 gap-1.5 p-2">
+                      {SECTION_TEMPLATES.map((t) => (
+                        <button
+                          key={t.type}
+                          type="button"
+                          onClick={() => addCustomSection(t)}
+                          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-2 text-left text-[length:var(--ts-2xs)] font-semibold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white"
+                        >
+                          <span aria-hidden>{t.emoji}</span>
+                          <span className="truncate">{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </details>
+                </SectionCard>
+
+                {/* ── Bandas de imagen extra (sectionImages REAL) — secundario ── */}
+                <details className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+                  <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/[0.02]">
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)]/15 text-[var(--accent-soft)]">
+                      <ImageIcon className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold leading-tight text-white">Bandas de imagen</p>
+                      <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-gray-400">Imágenes full-width opcionales entre secciones</p>
+                    </div>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" aria-hidden />
+                  </summary>
+                  <div className="space-y-3 border-t border-white/5 p-3">
+                    {SECTION_ITEMS.filter((s) => s.key !== "hero" && s.key !== "announcement").map((s) => (
+                      <div key={s.key} className="space-y-1.5">
+                        <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">{s.label}</p>
+                        <div className="dark">
+                          <ImageUpload
+                            value={draft.sectionImages?.[s.key] ?? ""}
+                            onChange={(url) => setSectionImage(s.key, url)}
+                            onClear={() => setSectionImage(s.key, "")}
+                            folder="store-customizer"
+                            aspectRatio="banner"
+                            label=""
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </div>
             )}
 
@@ -2072,6 +3077,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   ))
                 )}
               </div>
+            )}
+            </>
             )}
           </div>
         </aside>

@@ -56,10 +56,10 @@ function AboutBlock({ section, primary }: { section: AboutSection; primary: stri
           >
             Conocenos
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight mb-4">
+          <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight mb-4">
             {title}
           </h2>
-          <p className="text-base text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
+          <p data-live={`customText:${section.id}:body`} className="text-base text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
             {body}
           </p>
         </div>
@@ -109,7 +109,7 @@ function HoursBlock({ section, primary }: { section: HoursSection; primary: stri
           >
             Horarios
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+          <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
             {title}
           </h2>
         </div>
@@ -185,7 +185,7 @@ function PaymentBlock({ section, primary, accent: _accent }: { section: PaymentS
         >
           Métodos de pago
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -229,7 +229,7 @@ function HowToOrderBlock({ section, primary }: { section: HowToOrderSection; pri
         >
           Cómo pedir
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -279,7 +279,7 @@ function FaqBlock({ section, primary }: { section: FaqSection; primary: string }
         >
           Preguntas frecuentes
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
       </div>
@@ -331,7 +331,7 @@ function GalleryBlock({ section, primary }: { section: GallerySection; primary: 
         >
           Galería
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
         {subtitle && (
@@ -410,7 +410,7 @@ function ImageTextBlock({ section, primary, accent }: { section: ImageTextSectio
               className="pointer-events-none absolute -inset-3 rounded-[2rem] blur-2xl opacity-70"
               style={{ background: onColor ? "rgba(255,255,255,0.14)" : `color-mix(in oklab, ${primary} 18%, transparent)` }}
             />
-            <div className="relative rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/11] bg-[var(--surface-sunken)] shadow-[0_24px_60px_rgba(2,6,23,0.20)] ring-1 ring-black/5">
+            <div className="relative rounded-3xl overflow-hidden aspect-[4/3] sm:aspect-[16/11] bg-[var(--surface-sunken)] shadow-[var(--shadow-xl)] ring-1 ring-black/5">
               <Image
                 src={imageUrl}
                 alt={imageAlt ?? ""}
@@ -429,10 +429,10 @@ function ImageTextBlock({ section, primary, accent }: { section: ImageTextSectio
             >
               {eyebrow || "Conocé más"}
             </p>
-            <h2 className={`font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight leading-[1.05] mb-5 ${onColor ? "text-white" : "text-[var(--text-primary)]"}`}>
+            <h2 data-live={`customText:${section.id}:title`} className={`font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight leading-[1.05] mb-5 ${onColor ? "text-white" : "text-[var(--text-primary)]"}`}>
               {title}
             </h2>
-            <p className={`text-base sm:text-lg leading-relaxed whitespace-pre-wrap mb-7 ${onColor ? "text-white/85" : "text-[var(--text-secondary)]"}`}>
+            <p data-live={`customText:${section.id}:body`} className={`text-base sm:text-lg leading-relaxed whitespace-pre-wrap mb-7 ${onColor ? "text-white/85" : "text-[var(--text-secondary)]"}`}>
               {body}
             </p>
             {ctaLabel && ctaUrl && (
@@ -463,7 +463,7 @@ function BenefitsBlock({ section, primary }: { section: BenefitsSection; primary
         >
           Por qué elegirnos
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </h2>
       </div>

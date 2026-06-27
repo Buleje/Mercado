@@ -59,6 +59,8 @@ export interface TenantHeroProps {
   align?: "left" | "center";
   height?: "compact" | "normal" | "tall";
   showBadges?: boolean;
+  // Texto inline editable desde Modo Creativo (Brandon 2026-06-27). Vacío = default.
+  inlineText?: Record<string, string>;
 }
 
 const HEIGHT_PAD: Record<NonNullable<TenantHeroProps["height"]>, string> = {
@@ -96,7 +98,10 @@ export default function TenantHero(props: TenantHeroProps) {
     align = "left",
     height = "normal",
     showBadges = true,
+    inlineText,
   } = props;
+  // Helper de texto inline editable (data-live = doble-click en el preview).
+  const htxt = (key: string, fallback: string) => inlineText?.[key] || fallback;
 
   const cssPrimary = `var(--tenant-primary, ${primary})`;
   const cssAccent = `var(--tenant-accent, ${accent})`;
@@ -169,7 +174,7 @@ export default function TenantHero(props: TenantHeroProps) {
           style={{ color: cssPrimary, borderRadius: cssBtnRadius }}
         >
           <MessageCircle className="w-4 h-4" strokeWidth={2.75} />
-          Pedir por WhatsApp
+          <span data-live="inlineText:hero.ctaWhatsApp">{htxt("hero.ctaWhatsApp", "Pedir por WhatsApp")}</span>
           <ArrowRight className="w-4 h-4 opacity-70" strokeWidth={2.5} />
         </a>
       )}
@@ -179,7 +184,7 @@ export default function TenantHero(props: TenantHeroProps) {
         style={{ borderRadius: cssBtnRadius }}
       >
         <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
-        Ver catálogo
+        <span data-live="inlineText:hero.ctaCatalog">{htxt("hero.ctaCatalog", "Ver catálogo")}</span>
       </Link>
     </div>
   );
@@ -357,7 +362,7 @@ export default function TenantHero(props: TenantHeroProps) {
           <span className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white">
             <ShoppingBag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           </span>
-          <p className="font-extrabold leading-tight text-white">Ver todo el catálogo</p>
+          <p data-live="inlineText:hero.catalogCardTitle" className="font-extrabold leading-tight text-white">{htxt("hero.catalogCardTitle", "Ver todo el catálogo")}</p>
           <p className="text-xs font-semibold text-white/70">{productCount} {productCount === 1 ? "producto" : "productos"}</p>
         </Link>
       </div>
@@ -459,7 +464,7 @@ export default function TenantHero(props: TenantHeroProps) {
                   style={{ background: cssPrimary, borderRadius: cssBtnRadius }}
                 >
                   <MessageCircle className="w-4 h-4" strokeWidth={2.75} />
-                  Pedir por WhatsApp
+                  <span data-live="inlineText:hero.ctaWhatsApp">{htxt("hero.ctaWhatsApp", "Pedir por WhatsApp")}</span>
                   <ArrowRight className="w-4 h-4 opacity-80" strokeWidth={2.5} />
                 </a>
               )}
@@ -469,7 +474,7 @@ export default function TenantHero(props: TenantHeroProps) {
                 style={{ borderColor: "var(--rule-base)", borderRadius: cssBtnRadius }}
               >
                 <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
-                Ver catálogo
+                <span data-live="inlineText:hero.ctaCatalog">{htxt("hero.ctaCatalog", "Ver catálogo")}</span>
               </Link>
             </div>
             {showBadges && (

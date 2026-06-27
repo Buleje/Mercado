@@ -39,6 +39,14 @@ import { useSettings } from "@/contexts/settings-context";
 interface TenantFooterProps {
   slug: string;
   storeName: string;
+  // Texto inline editable desde Modo Creativo (Brandon 2026-06-27). Vacío = default.
+  inlineText?: Record<string, string>;
+}
+
+// Helper: texto editable inline. Si hay override en inlineText[key] lo usa; si no,
+// el default. El nodo lleva data-live para edición por doble-click en el preview.
+function txt(inlineText: Record<string, string> | undefined, key: string, fallback: string): string {
+  return inlineText?.[key] || fallback;
 }
 
 // Construye un path tenant-aware: si el slug viene del props, prefija
@@ -89,7 +97,7 @@ function getPageContextMessage(pathname: string, storeName: string): string {
   return `Hola ${storeName}, quiero hacer una consulta.`;
 }
 
-function WhatsAppContactStrip({ storeName }: { storeName: string }) {
+function WhatsAppContactStrip({ storeName, inlineText }: { storeName: string; inlineText?: Record<string, string> }) {
   const { deliveryConfig, storeTheme } = useSettings();
   const pathname = usePathname();
   const [showPulse, setShowPulse] = useState(false);
@@ -127,13 +135,13 @@ function WhatsAppContactStrip({ storeName }: { storeName: string }) {
           <div className="text-left">
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-2">
               <MessageCircle className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-              Atención directa
+              <span data-live="inlineText:footer.contactEyebrow">{txt(inlineText, "footer.contactEyebrow", "Atención directa")}</span>
             </span>
-            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-              Habla con {storeName}
+            <h3 data-live="inlineText:footer.contactTitle" className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+              {txt(inlineText, "footer.contactTitle", `Habla con ${storeName}`)}
             </h3>
-            <p className="text-[var(--text-secondary)] text-sm mt-1 max-w-md leading-relaxed">
-              Te respondemos por WhatsApp al instante.
+            <p data-live="inlineText:footer.contactSubtitle" className="text-[var(--text-secondary)] text-sm mt-1 max-w-md leading-relaxed">
+              {txt(inlineText, "footer.contactSubtitle", "Te respondemos por WhatsApp al instante.")}
             </p>
             <div className="flex items-center gap-4 mt-3">
               <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] tabular-nums">
@@ -164,7 +172,7 @@ function WhatsAppContactStrip({ storeName }: { storeName: string }) {
               <span className="absolute inset-0 rounded-full animate-ping bg-[var(--surface-sunken)] pointer-events-none" style={{ animationDuration: "2s" }} />
             )}
             <WhatsAppIcon className="h-4 w-4" />
-            Iniciar chat
+            <span data-live="inlineText:footer.contactCta">{txt(inlineText, "footer.contactCta", "Iniciar chat")}</span>
           </a>
         </div>
       </div>
@@ -172,7 +180,7 @@ function WhatsAppContactStrip({ storeName }: { storeName: string }) {
   );
 }
 
-export default function TenantFooter({ slug: slugProp, storeName }: TenantFooterProps) {
+export default function TenantFooter({ slug: slugProp, storeName, inlineText }: TenantFooterProps) {
   // El layout (store) pasa el x-tenant-id, que no siempre es el slug de la URL.
   // Derivamos el slug real del pathname (/t/<slug>/...) para que los links del
   // footer mantengan el contexto del comercio. Fallback al prop. Brandon 2026-06-21.
@@ -204,7 +212,7 @@ export default function TenantFooter({ slug: slugProp, storeName }: TenantFooter
 
   return (
     <footer className="bg-[var(--surface-sunken)] text-[var(--text-primary)] border-t border-[var(--rule-base)]" aria-label={`Pie de página de ${storeName}`}>
-      <WhatsAppContactStrip storeName={storeName} />
+      <WhatsAppContactStrip storeName={storeName} inlineText={inlineText} />
 
       {/* Perks */}
       <div className="border-b border-[var(--rule-base)]">
@@ -230,8 +238,8 @@ export default function TenantFooter({ slug: slugProp, storeName }: TenantFooter
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
           {/* Col 1: Mi cuenta */}
           <nav aria-label="Mi cuenta">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-5">
-              Mi cuenta
+            <h3 data-live="inlineText:footer.colAccount" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-5">
+              {txt(inlineText, "footer.colAccount", "Mi cuenta")}
             </h3>
             <ul className="space-y-2.5">
               <li>
@@ -254,8 +262,8 @@ export default function TenantFooter({ slug: slugProp, storeName }: TenantFooter
 
           {/* Col 2: Ayuda */}
           <nav aria-label="Ayuda">
-            <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-5">
-              Ayuda
+            <h3 data-live="inlineText:footer.colHelp" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-5">
+              {txt(inlineText, "footer.colHelp", "Ayuda")}
             </h3>
             <ul className="space-y-2.5">
               {helpLinks.map((link) => (
@@ -355,9 +363,9 @@ export default function TenantFooter({ slug: slugProp, storeName }: TenantFooter
             <div>
               <h3 className="text-sm font-extrabold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
                 <Mail className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
-                Recibe ofertas de {storeName}
+                <span data-live="inlineText:footer.newsTitle">{txt(inlineText, "footer.newsTitle", `Recibe ofertas de ${storeName}`)}</span>
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">Promociones y nuevos productos directo a tu correo.</p>
+              <p data-live="inlineText:footer.newsSubtitle" className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">{txt(inlineText, "footer.newsSubtitle", "Promociones y nuevos productos directo a tu correo.")}</p>
             </div>
             <form
               onSubmit={async (e) => {

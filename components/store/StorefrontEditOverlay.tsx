@@ -55,6 +55,115 @@ function rectOf(el: Element): Box {
   return { top: r.top, left: r.left, width: r.width, height: r.height };
 }
 
+type SectionStyle = {
+  bg?: string;
+  text?: string;
+  pad?: "sm" | "md" | "lg";
+  radius?: number;
+  border?: string;
+  borderW?: number;
+  shadow?: "none" | "soft" | "deep";
+};
+
+const SECTION_SHADOW: Record<string, string> = {
+  none: "none",
+  soft: "0 4px 16px rgba(0,0,0,0.10)",
+  deep: "0 12px 32px rgba(0,0,0,0.18)",
+};
+
+type TextStyle = {
+  size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right";
+  italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean;
+};
+
+/**
+ * Aplica estilo de TEXTO a un nodo [data-live] EN VIVO (tamaño/peso/color/
+ * alineación/itálica/etc.). Misma lógica que TenantTextStyles; compartido con
+ * el panel lateral del editor (pb-apply-text-style).
+ */
+function applyTextStyleToEl(el: HTMLElement, s: TextStyle) {
+  el.style.fontWeight = s.bold ? "800" : "";
+  el.style.color = s.color || "";
+  el.style.textAlign = s.align || "";
+  el.style.fontStyle = s.italic ? "italic" : "";
+  el.style.textDecoration = s.underline ? "underline" : "";
+  el.style.textTransform = s.upper ? "uppercase" : "";
+  el.style.letterSpacing = typeof s.track === "number" ? `${s.track}em` : "";
+  el.style.textShadow = s.tshadow ? "0 2px 8px rgba(0,0,0,0.45)" : "";
+  el.style.fontSize = "";
+  if (typeof s.size === "number" && s.size > 0) {
+    const base = parseFloat(getComputedStyle(el).fontSize) || 16;
+    el.style.fontSize = `${(base * s.size).toFixed(1)}px`;
+    el.dataset.bulejeSize = String(s.size);
+  }
+}
+
+type CardDesign = { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string };
+
+/**
+ * Aplica el diseño a TODAS las tarjetas de producto [data-pb-card] EN VIVO
+ * (fondo/forma/borde/sombra + color de nombre y precio). Brandon 2026-06-27.
+ */
+function applyAllCardStyles(cd: CardDesign) {
+  const SHADOW: Record<string, string> = { none: "none", soft: "0 4px 16px rgba(0,0,0,0.10)", deep: "0 12px 32px rgba(0,0,0,0.18)" };
+  document.querySelectorAll<HTMLElement>("[data-pb-card]").forEach((el) => {
+    el.style.background = cd.bg || "";
+    el.style.borderRadius = typeof cd.radius === "number" ? `${cd.radius}px` : "";
+    el.style.border = cd.border ? `${cd.borderW ?? 2}px solid ${cd.border}` : "";
+    el.style.boxShadow = cd.shadow ? SHADOW[cd.shadow] ?? "" : "";
+  });
+  document.querySelectorAll<HTMLElement>("[data-pb-card-name]").forEach((el) => { el.style.color = cd.nameColor || ""; });
+  document.querySelectorAll<HTMLElement>("[data-pb-card-price]").forEach((el) => { el.style.color = cd.priceColor || ""; });
+}
+
+/**
+ * Aplica un estilo POR SECCIÓN a un elemento [data-pb] EN VIVO (fondo, texto,
+ * espaciado, forma, borde, sombra). Compartido entre la barra flotante del
+ * preview y los cambios que llegan del panel lateral del editor
+ * (pb-apply-section-style). Guarda los valores no-CSS en data-attrs para poder
+ * releerlos al reabrir la barra.
+ */
+function applySectionStyleToEl(el: HTMLElement, next: SectionStyle) {
+  el.style.background = next.bg || "";
+  el.style.color = next.text || "";
+  if (next.pad === "sm") {
+    el.style.paddingTop = "1.25rem";
+    el.style.paddingBottom = "1.25rem";
+    el.dataset.bulejePad = "sm";
+  } else if (next.pad === "lg") {
+    el.style.paddingTop = "4rem";
+    el.style.paddingBottom = "4rem";
+    el.dataset.bulejePad = "lg";
+  } else {
+    el.style.removeProperty("padding-top");
+    el.style.removeProperty("padding-bottom");
+    delete el.dataset.bulejePad;
+  }
+  if (typeof next.radius === "number") {
+    el.style.borderRadius = `${next.radius}px`;
+    el.dataset.bulejeRadius = String(next.radius);
+  } else {
+    el.style.removeProperty("border-radius");
+    delete el.dataset.bulejeRadius;
+  }
+  if (next.border) {
+    el.style.border = `${next.borderW ?? 2}px solid ${next.border}`;
+    el.dataset.bulejeBorder = next.border;
+    if (next.borderW != null) el.dataset.bulejeBorderW = String(next.borderW);
+  } else {
+    el.style.removeProperty("border");
+    delete el.dataset.bulejeBorder;
+    delete el.dataset.bulejeBorderW;
+  }
+  if (next.shadow) {
+    el.style.boxShadow = SECTION_SHADOW[next.shadow] ?? "";
+    el.dataset.bulejeShadow = next.shadow;
+  } else {
+    el.style.removeProperty("box-shadow");
+    delete el.dataset.bulejeShadow;
+  }
+}
+
 /**
  * Reordena directamente en el DOM los [data-pb] hijos de <main> según `order`.
  * Los elementos que no estén en `order` permanecen donde están.
@@ -239,20 +348,8 @@ export default function StorefrontEditOverlay() {
         if ("shadow" in change) next.shadow = change.shadow || undefined;
       }
 
-      // Aplicar en vivo solo a esta sección.
-      el.style.background = next.bg || "";
-      el.style.color = next.text || "";
-      if (next.pad === "sm") { el.style.paddingTop = "1.25rem"; el.style.paddingBottom = "1.25rem"; el.dataset.bulejePad = "sm"; }
-      else if (next.pad === "lg") { el.style.paddingTop = "4rem"; el.style.paddingBottom = "4rem"; el.dataset.bulejePad = "lg"; }
-      else { el.style.removeProperty("padding-top"); el.style.removeProperty("padding-bottom"); delete el.dataset.bulejePad; }
-      // Forma (Brandon 2026-06-26): radio de bordes, borde, sombra.
-      if (typeof next.radius === "number") { el.style.borderRadius = `${next.radius}px`; el.dataset.bulejeRadius = String(next.radius); }
-      else { el.style.removeProperty("border-radius"); delete el.dataset.bulejeRadius; }
-      if (next.border) { el.style.border = `${next.borderW ?? 2}px solid ${next.border}`; el.dataset.bulejeBorder = next.border; if (next.borderW != null) el.dataset.bulejeBorderW = String(next.borderW); }
-      else { el.style.removeProperty("border"); delete el.dataset.bulejeBorder; delete el.dataset.bulejeBorderW; }
-      const SHADOW: Record<string, string> = { none: "none", soft: "0 4px 16px rgba(0,0,0,0.10)", deep: "0 12px 32px rgba(0,0,0,0.18)" };
-      if (next.shadow) { el.style.boxShadow = SHADOW[next.shadow] ?? ""; el.dataset.bulejeShadow = next.shadow; }
-      else { el.style.removeProperty("box-shadow"); delete el.dataset.bulejeShadow; }
+      // Aplicar en vivo solo a esta sección (lógica compartida con el panel lateral).
+      applySectionStyleToEl(el, next);
 
       postToEditor({ type: "pb-section-style", key, style: next });
     },
@@ -283,6 +380,18 @@ export default function StorefrontEditOverlay() {
     /* ── Click único: selecciona sección → avisa al editor ── */
     const onClick = (e: MouseEvent) => {
       if (editingEl.current) return; // En edición inline: dejar pasar
+      // Prioridad: una TARJETA de producto [data-pb-card] → editor de tarjetas.
+      const card = e.target instanceof Element ? (e.target.closest("[data-pb-card]") as HTMLElement | null) : null;
+      if (card) {
+        e.preventDefault();
+        e.stopPropagation();
+        selectedEl.current = card;
+        setSelected({ box: rectOf(card), key: "cards" });
+        setColorOpen(false);
+        setStylePanelOpen(false);
+        postToEditor({ type: "pb-select", key: "cards" });
+        return;
+      }
       const el = pbBlock(e.target);
       if (!el) return;
       e.preventDefault();
@@ -353,6 +462,12 @@ export default function StorefrontEditOverlay() {
         type?: string;
         key?: string | null;
         order?: string[];
+        style?: SectionStyle;
+        textStyle?: TextStyle;
+        cardStyle?: CardDesign;
+        field?: string;
+        value?: string;
+        hidden?: boolean;
       } | null;
       if (!d || d.source !== "buleje-editor") return;
 
@@ -378,6 +493,59 @@ export default function StorefrontEditOverlay() {
           const el = document.querySelector(`[data-pb="${ph.key}"]`);
           return el ? { box: rectOf(el), key: ph.key } : null;
         });
+      }
+
+      // pb-apply-section-style: el panel lateral del editor cambió el estilo de
+      // una sección → aplicarlo EN VIVO a su [data-pb] (Brandon 2026-06-27).
+      if (d.type === "pb-apply-section-style" && d.key) {
+        const el = document.querySelector(`[data-pb="${d.key}"]`) as HTMLElement | null;
+        if (el) {
+          applySectionStyleToEl(el, d.style ?? {});
+          if (selectedEl.current === el) {
+            setSelected((s) => (s ? { ...s, box: rectOf(el) } : s));
+          }
+        }
+      }
+
+      // pb-apply-section-text: el panel lateral cambió la etiqueta/título/alineación
+      // de una sección → reflejarlo EN VIVO (Brandon 2026-06-27).
+      if (d.type === "pb-apply-section-text" && d.key && d.field) {
+        if (d.field === "align") {
+          // Alineación: aplicar a etiqueta + título de la sección.
+          const align = (d.value || "") as string;
+          ["eyebrow", "title"].forEach((f) => {
+            const n = document.querySelector(`[data-pb-text="${d.key}:${f}"]`) as HTMLElement | null;
+            if (n) n.style.textAlign = align;
+          });
+        } else {
+          const node = document.querySelector(`[data-pb-text="${d.key}:${d.field}"]`) as HTMLElement | null;
+          if (node) node.textContent = d.value ?? "";
+        }
+        if (selectedEl.current) {
+          setSelected((s) => (s ? { ...s, box: rectOf(selectedEl.current as Element) } : s));
+        }
+      }
+
+      // pb-apply-text-style: el panel lateral cambió el estilo de un texto
+      // [data-live] → aplicarlo EN VIVO (Brandon 2026-06-27).
+      if (d.type === "pb-apply-text-style" && d.field) {
+        document.querySelectorAll<HTMLElement>(`[data-live="${d.field}"]`).forEach((el) => applyTextStyleToEl(el, d.textStyle ?? {}));
+      }
+
+      // pb-apply-card-style: el panel cambió el diseño de las tarjetas de producto.
+      if (d.type === "pb-apply-card-style") {
+        applyAllCardStyles(d.cardStyle ?? {});
+      }
+
+      // pb-toggle-section: mostrar/ocultar una sección. En preview la atenúa (no la
+      // borra) para poder reactivarla; en /t real la sección no se renderiza.
+      if (d.type === "pb-toggle-section" && d.key) {
+        const el = document.querySelector(`[data-pb="${d.key}"]`) as HTMLElement | null;
+        if (el) {
+          el.style.opacity = d.hidden ? "0.4" : "";
+          el.style.outline = d.hidden ? "2px dashed rgba(148,163,184,0.6)" : "";
+          el.style.outlineOffset = d.hidden ? "-4px" : "";
+        }
       }
     };
 

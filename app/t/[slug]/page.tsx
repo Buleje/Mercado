@@ -230,6 +230,26 @@ async function loadPageData(slug: string) {
       st?.["sectionStyles"] && typeof st["sectionStyles"] === "object" && !Array.isArray(st["sectionStyles"])
         ? (st["sectionStyles"] as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>)
         : ({} as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>),
+    // Texto POR SECCIÓN (Brandon 2026-06-27): map data-pb → {eyebrow,title}.
+    // Override del texto por defecto de cada sección del cuerpo (featured/info…).
+    sectionText:
+      st?.["sectionText"] && typeof st["sectionText"] === "object" && !Array.isArray(st["sectionText"])
+        ? (st["sectionText"] as Record<string, { eyebrow?: string; title?: string; align?: "left" | "center" | "right" }>)
+        : ({} as Record<string, { eyebrow?: string; title?: string; align?: "left" | "center" | "right" }>),
+    // Texto inline genérico (Brandon 2026-06-27): map data-live="inlineText:key" → override.
+    inlineText:
+      st?.["inlineText"] && typeof st["inlineText"] === "object" && !Array.isArray(st["inlineText"])
+        ? (st["inlineText"] as Record<string, string>)
+        : ({} as Record<string, string>),
+    // Secciones del cuerpo ocultas (Brandon 2026-06-27).
+    bodyHidden: Array.isArray(st?.["bodyHidden"])
+      ? (st["bodyHidden"] as unknown[]).filter((x): x is string => typeof x === "string")
+      : ([] as string[]),
+    // Diseño de tarjetas de producto (Brandon 2026-06-27).
+    cardDesign:
+      st?.["cardDesign"] && typeof st["cardDesign"] === "object" && !Array.isArray(st["cardDesign"])
+        ? (st["cardDesign"] as { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string })
+        : ({} as { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string }),
     // Estilos por texto (barra de texto flotante): map campo → {size,bold,color,align,italic,underline,upper}.
     textStyles:
       st?.["textStyles"] && typeof st["textStyles"] === "object" && !Array.isArray(st["textStyles"])
@@ -486,6 +506,16 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           ? "border border-white/30 bg-white/70 backdrop-blur-md shadow-sm dark:bg-white/10"
           : "border border-[var(--rule-base)] shadow-sm hover:shadow-xl"; // "shadow"/default
 
+  // Diseño de tarjetas (Brandon 2026-06-27): override inline sobre cardClass.
+  const _cd = editorTheme.cardDesign ?? {};
+  const _cardShadow: Record<string, string> = { none: "none", soft: "0 4px 16px rgba(0,0,0,0.10)", deep: "0 12px 32px rgba(0,0,0,0.18)" };
+  const cardDesignStyle = {
+    ...(_cd.bg ? { background: _cd.bg } : {}),
+    ...(typeof _cd.radius === "number" ? { borderRadius: _cd.radius } : {}),
+    ...(_cd.border ? { border: `${_cd.borderW ?? 2}px solid ${_cd.border}` } : {}),
+    ...(_cd.shadow ? { boxShadow: _cardShadow[_cd.shadow] } : {}),
+  } as Record<string, string | number>;
+
   // Override de tokens de marca (--accent/--color-primary) con el color del
   // tenant para que TODO (navbar, eyebrows, botones token-based) use la marca,
   // no solo el hero. Solo si el color es literal (#hex) — los tenants sin tema
@@ -641,6 +671,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         align={(editorTheme.heroAlign as "left" | "center") ?? "left"}
         height={(editorTheme.heroHeight as "compact" | "normal" | "tall") ?? "normal"}
         showBadges={editorTheme.heroShowBadges}
+        inlineText={editorTheme.inlineText}
       />
 
       {/* ═══ Cuerpo reordenable (Brandon 2026-06-26, page builder Fase 2):
@@ -737,19 +768,19 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {(showcase.length > 0 || isPreview) && (
         <section data-pb="featured" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="mb-6 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
-                {featured.length > 0 ? "Destacados" : "Nuestro catálogo"}
+            <div style={editorTheme.sectionText?.featured?.align ? { textAlign: editorTheme.sectionText.featured.align } : undefined}>
+              <p data-pb-text="featured:eyebrow" data-live="sectionText:featured:eyebrow" className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+                {editorTheme.sectionText?.featured?.eyebrow || (featured.length > 0 ? "Destacados" : "Nuestro catálogo")}
               </p>
-              <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-                {featured.length > 0 ? "Lo que recomendamos" : `Algunos productos de ${displayName}`}
+              <h2 data-pb-text="featured:title" data-live="sectionText:featured:title" className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+                {editorTheme.sectionText?.featured?.title || (featured.length > 0 ? "Lo que recomendamos" : `Algunos productos de ${displayName}`)}
               </h2>
             </div>
             <Link
               href={`/t/${tenant.slug}/tienda`}
               className="hidden shrink-0 items-center gap-1.5 text-sm font-extrabold text-[var(--accent)] transition-all hover:gap-2.5 sm:inline-flex"
             >
-              Ver todo
+              <span data-live="inlineText:featured.viewAll">{editorTheme.inlineText?.["featured.viewAll"] || "Ver todo"}</span>
               <ArrowRight className="w-4 h-4" strokeWidth={2.5} aria-hidden />
             </Link>
           </div>
@@ -763,6 +794,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                   <Link
                     key={p.id}
                     href={`/t/${tenant.slug}/tienda`}
+                    data-pb-card="1"
+                    style={cardDesignStyle}
                     className={`group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 ${cardClass}`}
                   >
                     <div className="aspect-square bg-[var(--surface-sunken)] overflow-hidden relative">
@@ -799,12 +832,13 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                     )}
 
                     <div className="p-3">
-                      <p className="font-semibold text-sm truncate text-[var(--text-primary)]">{p.name}</p>
+                      <p data-pb-card-name className="font-semibold text-sm truncate text-[var(--text-primary)]" style={_cd.nameColor ? { color: _cd.nameColor } : undefined}>{p.name}</p>
                       <p className="text-xs text-[var(--text-secondary)] mb-2">{p.unit}</p>
                       <div className="flex items-baseline gap-2">
                         <span
+                          data-pb-card-price
                           className="font-extrabold text-lg"
-                          style={{ color: isExclusive ? cssPrimary : undefined }}
+                          style={{ color: _cd.priceColor || (isExclusive ? cssPrimary : undefined) }}
                         >
                           {formatPrice(shownPrice)}
                         </span>
@@ -853,7 +887,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                 style={{ background: cssPrimary }}
               >
                 <ShoppingBag className="w-4 h-4" strokeWidth={2.5} aria-hidden />
-                Ver catálogo completo
+                <span data-live="inlineText:featured.viewAllFull">{editorTheme.inlineText?.["featured.viewAllFull"] || "Ver catálogo completo"}</span>
                 <ChevronRight className="w-4 h-4" strokeWidth={2.5} aria-hidden />
               </Link>
             </div>
@@ -956,12 +990,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         // Información del negocio (anchor #info)
         __body.info = (
       <section id="info" data-pb="info" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 scroll-mt-20">
-        <div className="mb-6">
-          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
-            Información del negocio
+        <div className="mb-6" style={editorTheme.sectionText?.info?.align ? { textAlign: editorTheme.sectionText.info.align } : undefined}>
+          <p data-pb-text="info:eyebrow" data-live="sectionText:info:eyebrow" className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+            {editorTheme.sectionText?.info?.eyebrow || "Información del negocio"}
           </p>
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-            Lo que tienes que saber de {displayName}
+          <h2 data-pb-text="info:title" data-live="sectionText:info:title" className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+            {editorTheme.sectionText?.info?.title || `Lo que tienes que saber de ${displayName}`}
           </h2>
         </div>
 
@@ -979,6 +1013,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               })()}
               hint={`En Buleje desde ${new Date(tenant.createdAt).getFullYear()}`}
               primary={cssPrimary}
+              cardId="antiguedad"
+              inlineText={editorTheme.inlineText}
             />
           )}
 
@@ -991,6 +1027,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               hint="Respondemos al toque"
               primary={cssPrimary}
               href={`https://wa.me/${(customization.whatsappPhone ?? tenant.ownerPhone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${displayName}, quiero hacer un pedido.`)}`}
+              cardId="whatsapp"
+              inlineText={editorTheme.inlineText}
             />
           )}
 
@@ -1002,6 +1040,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               value={customization.address}
               hint="Delivery a tu zona"
               primary={cssPrimary}
+              cardId="ubicacion"
+              inlineText={editorTheme.inlineText}
             />
           )}
 
@@ -1012,6 +1052,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             value="Yape · Plin · Efectivo"
             hint="Sin tarjeta obligatoria · pagas al recibir"
             primary={cssPrimary}
+            cardId="pago"
+            inlineText={editorTheme.inlineText}
           />
 
           {/* Delivery info */}
@@ -1021,6 +1063,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
             value="25–35 min promedio"
             hint="Motorizado propio o de la zona"
             primary={cssPrimary}
+            cardId="delivery"
+            inlineText={editorTheme.inlineText}
           />
 
           {/* Email si existe */}
@@ -1032,6 +1076,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               hint="Para consultas formales"
               primary={cssPrimary}
               href={`mailto:${customization.contactEmail}`}
+              cardId="email"
+              inlineText={editorTheme.inlineText}
             />
           )}
         </div>
@@ -1047,7 +1093,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         );
         // Testimonios (Brandon 2026-06-26): sección reordenable del cuerpo.
         __body.testimonials = (
-          <TenantTestimonials testimonials={editorTheme.testimonials} primary={cssPrimary} />
+          <TenantTestimonials testimonials={editorTheme.testimonials} primary={cssPrimary} text={editorTheme.sectionText?.testimonials} />
         );
         // Orden final: bodyOrder válido primero, luego cualquier faltante (default).
         const __def = ["trust", "promos", "featured", "testimonials", "info"];
@@ -1055,7 +1101,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           ? editorTheme.bodyOrder.filter((k) => __def.includes(k))
           : []) as string[];
         for (const k of __def) if (!__ord.includes(k)) __ord.push(k);
-        return __ord.map((k) => <Fragment key={k}>{__body[k]}</Fragment>);
+        // Secciones ocultas por el dueño (Brandon 2026-06-27): no renderizar.
+        // En preview SÍ se muestran (atenuadas vía data-pb-hidden) para poder reactivarlas.
+        const __hidden = new Set(Array.isArray(editorTheme.bodyHidden) ? editorTheme.bodyHidden : []);
+        return __ord
+          .filter((k) => isPreview || !__hidden.has(k))
+          .map((k) => <Fragment key={k}>{__body[k]}</Fragment>);
       })()}
 
       {/* ═══════════════ Secciones custom del SectionsBuilder ═══════════════
@@ -1070,12 +1121,14 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         return (
           <div className="border-t border-[var(--rule-soft)]">
             {customSections.map((sec) => (
-              <SectionRenderer
-                key={sec.id}
-                section={sec}
-                primaryColor={primary}
-                accentColor={accent}
-              />
+              // data-pb="custom:<id>" → seleccionable en Modo Creativo (ADR-301 Fase 4)
+              <div key={sec.id} data-pb={`custom:${sec.id}`}>
+                <SectionRenderer
+                  section={sec}
+                  primaryColor={primary}
+                  accentColor={accent}
+                />
+              </div>
             ))}
           </div>
         );
@@ -1148,7 +1201,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           slug del path /t/[slug]) le da el contexto que el footer consume; la home
           es standalone y no monta el StoreProviders del layout de (store). */}
       <SettingsProvider>
-        <TenantFooter slug={tenant.slug} storeName={displayName} />
+        <TenantFooter slug={tenant.slug} storeName={displayName} inlineText={editorTheme.inlineText} />
       </SettingsProvider>
 
       {/* Botón flotante de WhatsApp (Brandon 2026-06-26) — Modo Creativo > Contacto.
@@ -1203,6 +1256,8 @@ function InfoCard({
   hint,
   primary,
   href,
+  cardId,
+  inlineText,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -1210,7 +1265,16 @@ function InfoCard({
   hint?: string;
   primary: string;
   href?: string;
+  // Edición inline (Brandon 2026-06-27): cada cuadro tiene un id → su label/value/
+  // hint se editan con doble-click y se guardan en inlineText.
+  cardId?: string;
+  inlineText?: Record<string, string>;
 }) {
+  const k = (f: string) => `info.${cardId}.${f}`;
+  // data-live debe llevar el prefijo "inlineText:" para que el editor lo rutee a
+  // patchInlineText; la clave guardada en inlineText es k(f) (sin prefijo).
+  const dl = (f: string) => `inlineText:${k(f)}`;
+  const ov = (f: string, fb: string) => (cardId && inlineText?.[k(f)]) || fb;
   const inner = (
     <>
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -1221,15 +1285,15 @@ function InfoCard({
           {icon}
         </span>
       </div>
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-        {label}
+      <p {...(cardId ? { "data-live": dl("label") } : {})} className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+        {ov("label", label)}
       </p>
-      <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
-        {value}
+      <p {...(cardId ? { "data-live": dl("value") } : {})} className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+        {ov("value", value)}
       </p>
       {hint && (
-        <p className="mt-1 text-xs text-[var(--text-secondary)] leading-snug">
-          {hint}
+        <p {...(cardId ? { "data-live": dl("hint") } : {})} className="mt-1 text-xs text-[var(--text-secondary)] leading-snug">
+          {ov("hint", hint)}
         </p>
       )}
     </>

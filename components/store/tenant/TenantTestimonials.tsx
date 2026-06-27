@@ -14,21 +14,24 @@ export interface Testimonial {
 export default function TenantTestimonials({
   testimonials,
   primary,
+  text,
 }: {
   testimonials: Testimonial[];
   primary: string;
+  // Override de texto desde Modo Creativo (Brandon 2026-06-27). Vacío = default.
+  text?: { eyebrow?: string; title?: string; align?: "left" | "center" | "right" };
 }) {
   const list = testimonials.filter((t) => t.name?.trim() || t.comment?.trim());
   if (list.length === 0) return null;
 
   return (
     <section data-pb="testimonials" className="max-w-5xl mx-auto px-4 py-10">
-      <div className="mb-6">
-        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
-          Lo que dicen
+      <div className="mb-6" style={text?.align ? { textAlign: text.align } : undefined}>
+        <p data-pb-text="testimonials:eyebrow" data-live="sectionText:testimonials:eyebrow" className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
+          {text?.eyebrow || "Lo que dicen"}
         </p>
-        <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-          Reseñas de nuestros clientes
+        <h2 data-pb-text="testimonials:title" data-live="sectionText:testimonials:title" className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+          {text?.title || "Reseñas de nuestros clientes"}
         </h2>
       </div>
 
