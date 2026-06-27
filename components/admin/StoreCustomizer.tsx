@@ -9,7 +9,7 @@ import {
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
   MessageSquare, HelpCircle, Map, Sun, Moon, Type, Sliders,
   Paintbrush, FileText, Sparkles, Square, LayoutGrid,
-  Smartphone, Monitor, Zap, Truck, Star, Clock, ExternalLink } from "@buleje/design-system/icons";
+  Smartphone, Monitor, Zap, Truck, Star, Clock, ExternalLink, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { LoadingState, PageTitle, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -1028,6 +1028,113 @@ function HeroTab({
         />
       </StyleSection>
 
+      {/* ── 6. DISEÑO DEL HERO (Brandon 2026-06-26): variante, alineación,
+          altura, overlay, badges — antes solo en Modo Creativo. ── */}
+      <StyleSection
+        icon={<LayoutGrid className="h-5 w-5 text-primary" />}
+        title="Diseño del hero"
+        description="Cómo se arma el banner: variante de layout, alineación, altura, oscurecido y badges."
+      >
+        <div className="space-y-5">
+          {/* Variante */}
+          <div className="space-y-2">
+            <span className="text-sm font-semibold text-[var(--text-primary)]">Variante de layout</span>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: "editorial", label: "Editorial", desc: "Texto a la izquierda, oscuro" },
+                { value: "centered", label: "Centrado", desc: "Todo al centro" },
+                { value: "split", label: "Split", desc: "Texto + imagen lado a lado" },
+                { value: "immersive", label: "Inmersivo", desc: "Imagen a pantalla completa" },
+              ] as const).map((v) => {
+                const active = (theme.heroVariant ?? "editorial") === v.value;
+                return (
+                  <button
+                    key={v.value}
+                    type="button"
+                    onClick={() => update("heroVariant", v.value)}
+                    aria-pressed={active}
+                    className={cn(
+                      "flex flex-col items-start gap-0.5 rounded-xl border-2 px-3 py-2.5 text-left transition-all",
+                      active ? "border-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40",
+                    )}
+                  >
+                    <span className="text-sm font-bold text-[var(--text-primary)]">{v.label}</span>
+                    <span className="text-xs text-muted">{v.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Alineación + Altura */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Alineación del texto</span>
+              <div className="grid grid-cols-2 gap-2">
+                {([["left", "Izquierda"], ["center", "Centro"]] as const).map(([val, label]) => {
+                  const active = (theme.heroAlign ?? "left") === val;
+                  return (
+                    <button key={val} type="button" onClick={() => update("heroAlign", val)} aria-pressed={active}
+                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Altura</span>
+              <div className="grid grid-cols-3 gap-2">
+                {([["compact", "Compacto"], ["normal", "Normal"], ["tall", "Alto"]] as const).map(([val, label]) => {
+                  const active = (theme.heroHeight ?? "normal") === val;
+                  return (
+                    <button key={val} type="button" onClick={() => update("heroHeight", val)} aria-pressed={active}
+                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Oscurecer foto — solo si hay imagen de fondo */}
+          {theme.heroImage?.trim() && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Oscurecer la foto</span>
+                <span className="text-xs font-mono text-muted shrink-0">{theme.heroOverlay ?? 0}%</span>
+              </div>
+              <input
+                type="range" min={0} max={100} step={5}
+                value={theme.heroOverlay ?? 0}
+                onChange={(e) => update("heroOverlay", Number(e.target.value))}
+                className="w-full accent-[var(--accent)]"
+                aria-label="Oscurecer la foto del hero"
+              />
+              <p className="text-xs text-muted">Más oscuro = el texto blanco se lee mejor sobre la imagen.</p>
+            </div>
+          )}
+
+          {/* Mostrar badges */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Mostrar badges</span>
+              <p className="text-xs text-muted">El badge superior y el de origen (&ldquo;Hecho en…&rdquo;).</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => update("heroShowBadges", !(theme.heroShowBadges ?? true))}
+              aria-pressed={theme.heroShowBadges ?? true}
+              aria-label="Mostrar badges del hero"
+              className={cn("relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors", (theme.heroShowBadges ?? true) ? "bg-primary" : "bg-gray-300 dark:bg-surface")}
+            >
+              <span className={cn("inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform", (theme.heroShowBadges ?? true) ? "translate-x-6" : "translate-x-1")} />
+            </button>
+          </div>
+        </div>
+      </StyleSection>
+
       {/* Tips finales */}
       <div className="rounded-2xl border-2 border-[var(--data-success-500)]/20 bg-[var(--data-success-500)]/5 p-5">
         <div className="flex items-start gap-3">
@@ -1078,6 +1185,52 @@ const TABS = [
   { id: "contacto" as Tab, label: "Página", shortLabel: "Página", icon: Layout },
   { id: "avanzado" as Tab, label: "Avanzado", icon: Settings2 },
 ] as const;
+
+// ── Salud de la marca (Brandon 2026-06-26): completitud por tab + avisos ──────
+type HealthTab = "identidad" | "hero" | "colores" | "contacto" | "avanzado";
+const HEALTH_TABS: { id: HealthTab; label: string; keys: (keyof StoreTheme)[] }[] = [
+  { id: "identidad", label: "Identidad", keys: ["logo", "storeName", "slogan", "description"] },
+  { id: "hero", label: "Hero", keys: ["heroTitle", "heroSubtitle", "heroImage"] },
+  { id: "colores", label: "Colores", keys: ["primaryColor", "secondaryColor", "accentColor"] },
+  { id: "contacto", label: "Página", keys: ["whatsapp", "email", "phone", "address"] },
+  { id: "avanzado", label: "Avanzado", keys: ["analyticsId", "favicon"] },
+];
+function fieldFilled(v: unknown): boolean {
+  if (typeof v === "string") return v.trim() !== "" && v !== "var(--color-primary)";
+  return Boolean(v);
+}
+/** Contraste WCAG del color (hex) contra texto blanco. null si no es hex. */
+function contrastWithWhite(hex: string): number | null {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec((hex ?? "").trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  const lum = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+  const L = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
+  return Math.round((1.05 / (L + 0.05)) * 10) / 10;
+}
+interface StoreHealth {
+  pct: number;
+  perTab: { id: HealthTab; label: string; filled: number; total: number }[];
+  issues: { label: string; tab: HealthTab }[];
+}
+function computeStoreHealth(theme: StoreTheme): StoreHealth {
+  const perTab = HEALTH_TABS.map((t) => ({
+    id: t.id,
+    label: t.label,
+    filled: t.keys.filter((k) => fieldFilled(theme[k])).length,
+    total: t.keys.length,
+  }));
+  const filled = perTab.reduce((a, t) => a + t.filled, 0);
+  const total = perTab.reduce((a, t) => a + t.total, 0);
+  const issues: { label: string; tab: HealthTab }[] = [];
+  if (!fieldFilled(theme.logo)) issues.push({ label: "Falta el logo de tu tienda", tab: "identidad" });
+  if (!fieldFilled(theme.whatsapp)) issues.push({ label: "Sin número de WhatsApp para pedidos", tab: "contacto" });
+  if (!fieldFilled(theme.heroImage)) issues.push({ label: "El Hero no tiene imagen de fondo", tab: "hero" });
+  const c = contrastWithWhite(theme.primaryColor);
+  if (c != null && c < 3) issues.push({ label: `Color principal con contraste bajo (${c}:1) sobre texto blanco`, tab: "colores" });
+  return { pct: total ? Math.round((filled / total) * 100) : 0, perTab, issues };
+}
 
 // ── Preview en vivo ───────────────────────────────────────────────────────────
 
@@ -1482,6 +1635,7 @@ export default function StoreCustomizer() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const activeTabMeta = TABS.find((t) => t.id === activeTab);
+  const health = computeStoreHealth(theme);
 
   return (
     <div className="flex flex-col h-full">
@@ -1544,6 +1698,48 @@ export default function StoreCustomizer() {
           </PrimaryButton>
         </div>
       </AdminModuleHeader>
+
+      {/* ── Salud de la marca: completitud + indicadores por-tab + avisos (Brandon 2026-06-26) ── */}
+      <div className="mb-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="shrink-0 text-sm font-bold text-[var(--text-primary)]">Tu tienda: {health.pct}% configurada</span>
+          <div className="h-2 min-w-[120px] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${health.pct}%` }} />
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {health.perTab.map((t) => {
+            const done = t.filled === t.total;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id as Tab)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] transition-colors"
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: done ? "var(--data-success-500)" : "var(--text-tertiary)" }} />
+                {t.label}<span className="text-[var(--text-tertiary)]">{t.filled}/{t.total}</span>
+              </button>
+            );
+          })}
+        </div>
+        {health.issues.length > 0 ? (
+          <ul className="mt-3 space-y-1.5 border-t border-[var(--rule-soft)] pt-3">
+            {health.issues.map((i, idx) => (
+              <li key={idx} className="flex items-center justify-between gap-2 text-xs">
+                <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)]" /> {i.label}
+                </span>
+                <button type="button" onClick={() => setActiveTab(i.tab as Tab)} className="shrink-0 font-bold text-[var(--accent)] hover:underline">Arreglar →</button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-3 text-xs font-bold text-[var(--data-success-500)]">
+            <Check className="h-3.5 w-3.5" /> Tu tienda está lista — sin pendientes.
+          </p>
+        )}
+      </div>
 
       {/* ── AdminTabBar (horizontal arriba, draggable, mismo patrón que POSCajaModule/Compras) ── */}
       <AdminTabBar
