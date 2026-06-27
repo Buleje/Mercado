@@ -872,11 +872,17 @@ export default function NotificacionesPage() {
               </button>
             )}
 
-            {notifications.length > 0 && <HeatMap items={notifications} />}
+            {/* Mapa de calor — secundario, solo desktop (audit 2026-06-26: en móvil
+                apilaba sobre las notificaciones y obligaba a un scroll largo). */}
+            {notifications.length > 0 && (
+              <div className="hidden lg:block">
+                <HeatMap items={notifications} />
+              </div>
+            )}
 
-            {/* Help */}
+            {/* Help — secundario, solo desktop */}
             <div
-              className="rounded-2xl p-4"
+              className="hidden lg:block rounded-2xl p-4"
               style={{
                 background: "var(--color-card)",
                 border: "1px solid var(--color-card-border)",
