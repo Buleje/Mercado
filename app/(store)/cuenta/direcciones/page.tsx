@@ -290,7 +290,7 @@ export default function DireccionesPage() {
       <BreadcrumbSchema
         items={[
           { name: "Inicio", url: "https://www.buleje.pe/" },
-          { name: "Mi panel", url: "https://www.buleje.pe/mi-panel" },
+          { name: "Mi cuenta", url: "https://www.buleje.pe/cuenta" },
           { name: "Direcciones", url: "https://www.buleje.pe/cuenta/direcciones" },
         ]}
       />
@@ -333,10 +333,10 @@ export default function DireccionesPage() {
             </Link>
             <span className="text-white/45">/</span>
             <Link
-              href="/mi-panel"
+              href="/cuenta"
               className="hover:text-white transition-colors"
             >
-              Mi panel
+              Mi cuenta
             </Link>
             <span className="text-white/45">/</span>
             <span className="text-white">Direcciones</span>
@@ -344,9 +344,9 @@ export default function DireccionesPage() {
 
           <div className="flex items-center gap-4">
             <Link
-              href="/mi-panel"
+              href="/cuenta"
               className="h-11 w-11 inline-flex items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm hover:bg-white/25 transition-colors text-white shrink-0 border border-white/20"
-              aria-label="Volver al panel"
+              aria-label="Volver a mi cuenta"
             >
               <ArrowLeft className="h-5 w-5" strokeWidth={2} />
             </Link>

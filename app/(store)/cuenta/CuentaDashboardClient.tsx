@@ -38,6 +38,7 @@ import {
   TrendingUp,
   Award,
   Package,
+  AlertTriangle,
 } from "@buleje/design-system/icons";
 
 // ── Tier helpers ──────────────────────────────────────────────────────
@@ -152,6 +153,10 @@ export function CuentaDashboardClient() {
   // Orders
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  // Estado de error del fetch (audit 2026-06-26): antes el catch era vacío y un
+  // error de red mostraba "sin pedidos" en vez de un aviso. reloadKey re-dispara.
+  const [ordersError, setOrdersError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!customer?.phone) {
@@ -162,15 +167,16 @@ export function CuentaDashboardClient() {
     fetch(`/api/orders?phone=${encodeURIComponent(customer.phone)}`, {
       signal: ctrl.signal,
     })
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => {
         const list = Array.isArray(data?.orders) ? (data.orders as Order[]) : [];
         setOrders(list);
+        setOrdersError(false);
       })
-      .catch(() => {})
+      .catch((err: unknown) => { if ((err as { name?: string })?.name !== "AbortError") setOrdersError(true); })
       .finally(() => setLoadingOrders(false));
     return () => ctrl.abort();
-  }, [customer?.phone]);
+  }, [customer?.phone, reloadKey]);
 
   const stats = useMemo(() => {
     const total = orders.reduce((acc, o) => acc + (o.total ?? 0), 0);
@@ -373,6 +379,25 @@ export function CuentaDashboardClient() {
                 }}
               />
             ))}
+          </div>
+        ) : ordersError ? (
+          <div className="p-8 text-center">
+            <div
+              className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-3"
+              style={{ background: "color-mix(in oklch, var(--data-error-500, #ef4444) 12%, transparent)" }}
+            >
+              <AlertTriangle className="h-7 w-7" strokeWidth={2} style={{ color: "var(--data-error-500, #ef4444)" }} />
+            </div>
+            <p className="text-base font-extrabold text-[var(--text-primary)]">No pudimos cargar tus pedidos</p>
+            <p className="text-sm text-muted mt-1">Revisá tu conexión e intentá de nuevo.</p>
+            <button
+              type="button"
+              onClick={() => { setLoadingOrders(true); setReloadKey((k) => k + 1); }}
+              className="inline-flex items-center gap-2 mt-4 h-12 px-5 rounded-xl text-sm font-extrabold text-white"
+              style={{ background: "var(--color-primary, #00A0A0)" }}
+            >
+              Reintentar
+            </button>
           </div>
         ) : recentOrders.length === 0 ? (
           <div className="p-8 text-center">
