@@ -18,8 +18,16 @@ import {
   Sparkles,
   Check,
   ChevronRight,
+  MapPin,
+  ArrowRight,
+  Users,
+  Instagram,
+  Facebook,
+  Link2,
+  MessageCircle,
 } from "@buleje/design-system/icons";
-import type { Section, AboutSection, HoursSection, PaymentSection, HowToOrderSection, FaqSection, BenefitsSection, GallerySection, ImageTextSection } from "@/lib/store-sections-types";
+import type { Section, AboutSection, HoursSection, PaymentSection, HowToOrderSection, FaqSection, BenefitsSection, GallerySection, ImageTextSection, CtaSection, VideoSection, MapSection, LogosSection, CountdownSection, TeamSection, SocialSection, CategoriesSection } from "@/lib/store-sections-types";
+import CountdownBanner from "@/components/store/tenant/CountdownBanner";
 
 interface RenderProps {
   section: Section;
@@ -39,8 +47,266 @@ export default function SectionRenderer({ section, primaryColor, accentColor }: 
     case "benefits":     return <BenefitsBlock   section={section} primary={primaryColor} />;
     case "gallery":      return <GalleryBlock    section={section} primary={primaryColor} />;
     case "image-text":   return <ImageTextBlock  section={section} primary={primaryColor} accent={accentColor} />;
+    case "cta":          return <CtaBlock        section={section} primary={primaryColor} accent={accentColor} />;
+    case "video":        return <VideoBlock      section={section} primary={primaryColor} />;
+    case "map":          return <MapBlock        section={section} primary={primaryColor} />;
+    case "logos":        return <LogosBlock      section={section} primary={primaryColor} />;
+    case "countdown":    return <CountdownBlock  section={section} primary={primaryColor} />;
+    case "team":         return <TeamBlock       section={section} primary={primaryColor} />;
+    case "social":       return <SocialBlock     section={section} primary={primaryColor} accent={accentColor} />;
+    case "categories":   return <CategoriesBlock section={section} primary={primaryColor} accent={accentColor} />;
     default: return null;
   }
+}
+
+// ── Categorías visual ──────────────────────────────────────────────────
+function CategoriesBlock({ section, primary, accent }: { section: CategoriesSection; primary: string; accent: string }) {
+  const { title, subtitle, items } = section.data;
+  const list = (items || []).filter((c) => c.name);
+  return (
+    <section className="max-w-6xl mx-auto px-4 py-10 sm:py-12">
+      <div className="mb-7 text-center">
+        <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+          {title || "Explorá por categoría"}
+        </h2>
+        {subtitle && <p data-live={`customText:${section.id}:subtitle`} className="mt-2 text-base text-[var(--text-secondary)]">{subtitle}</p>}
+      </div>
+      {list.length > 0 ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {list.map((c, i) => (
+            <a key={i} href={c.url || "#"} className="group relative block aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-black/5">
+              {c.image ? (
+                // eslint-disable-next-line @next/next/no-img-element -- imagen de categoría (aspect variable)
+                <img src={c.image} alt={c.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              ) : (
+                <span className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${primary}, ${accent})` }} />
+              )}
+              <span className="absolute inset-0 bg-linear-to-t from-black/65 via-black/10 to-transparent" />
+              <span className="absolute inset-x-0 bottom-0 p-3 text-base font-extrabold text-white drop-shadow">{c.name}</span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-sm text-[var(--text-tertiary)]">Agregá categorías desde el editor</p>
+      )}
+    </section>
+  );
+}
+
+// ── Nuestro equipo ─────────────────────────────────────────────────────
+function TeamBlock({ section, primary }: { section: TeamSection; primary: string }) {
+  const { title, subtitle, members } = section.data;
+  const list = (members || []).filter((m) => m.name);
+  return (
+    <section className="max-w-5xl mx-auto px-4 py-10 sm:py-12">
+      <div className="mb-7 text-center">
+        <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+          {title || "Nuestro equipo"}
+        </h2>
+        {subtitle && <p data-live={`customText:${section.id}:subtitle`} className="mt-2 text-base text-[var(--text-secondary)]">{subtitle}</p>}
+      </div>
+      {list.length > 0 ? (
+        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+          {list.map((m, i) => (
+            <div key={i} className="flex flex-col items-center text-center">
+              <div className="relative h-24 w-24 overflow-hidden rounded-full bg-[var(--surface-sunken)] ring-2 ring-black/5">
+                {m.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- foto de equipo (aspect variable)
+                  <img src={m.photo} alt={m.name} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center" style={{ color: primary }}>
+                    <Users className="h-9 w-9" strokeWidth={1.5} aria-hidden />
+                  </span>
+                )}
+              </div>
+              <p className="mt-3 text-base font-bold text-[var(--text-primary)]">{m.name}</p>
+              {m.role && <p className="text-sm text-[var(--text-secondary)]">{m.role}</p>}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-sm text-[var(--text-tertiary)]">Agregá personas desde el editor</p>
+      )}
+    </section>
+  );
+}
+
+// ── Redes sociales ─────────────────────────────────────────────────────
+const SOCIAL_META: Record<string, { label: string; Icon: typeof Instagram }> = {
+  instagram: { label: "Instagram", Icon: Instagram },
+  facebook: { label: "Facebook", Icon: Facebook },
+  tiktok: { label: "TikTok", Icon: MessageCircle },
+  whatsapp: { label: "WhatsApp", Icon: MessageCircle },
+  web: { label: "Sitio web", Icon: Link2 },
+};
+function SocialBlock({ section, primary, accent }: { section: SocialSection; primary: string; accent: string }) {
+  const { title, links } = section.data;
+  const list = (links || []).filter((l) => l.url);
+  return (
+    <section className="max-w-3xl mx-auto px-4 py-10 sm:py-12 text-center">
+      {title && (
+        <h2 data-live={`customText:${section.id}:title`} className="mb-6 font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+          {title}
+        </h2>
+      )}
+      {list.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {list.map((l, i) => {
+            const meta = SOCIAL_META[l.platform] ?? SOCIAL_META.web;
+            const Icon = meta.Icon;
+            return (
+              <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full px-5 h-12 text-sm font-bold text-white shadow-md transition-transform hover:-translate-y-0.5" style={{ background: `linear-gradient(135deg, ${primary}, ${accent})` }}>
+                <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                {meta.label}
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-sm text-[var(--text-tertiary)]">Agregá los links de tus redes desde el editor</p>
+      )}
+    </section>
+  );
+}
+
+// ── Banner CTA ─────────────────────────────────────────────────────────
+function CtaBlock({ section, primary, accent }: { section: CtaSection; primary: string; accent: string }) {
+  const { title, subtitle, buttonLabel, buttonUrl, background } = section.data;
+  const onColor = background === "brand" || background === "dark" || !background;
+  const bg = background === "dark" ? "#0F172A" : background === "light" ? "var(--surface-sunken)" : `linear-gradient(135deg, ${primary}, ${accent})`;
+  return (
+    <section className="max-w-5xl mx-auto px-4 py-10 sm:py-12">
+      <div className="rounded-3xl px-6 py-10 sm:px-10 sm:py-14 text-center" style={{ background: bg }}>
+        <h2 data-live={`customText:${section.id}:title`} className={`font-display text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight ${onColor ? "text-white" : "text-[var(--text-primary)]"}`}>
+          {title}
+        </h2>
+        {subtitle && (
+          <p data-live={`customText:${section.id}:subtitle`} className={`mt-3 text-base sm:text-lg ${onColor ? "text-white/85" : "text-[var(--text-secondary)]"}`}>
+            {subtitle}
+          </p>
+        )}
+        {buttonLabel && (
+          <a
+            href={buttonUrl || "#"}
+            target={buttonUrl?.startsWith("http") ? "_blank" : undefined}
+            rel={buttonUrl?.startsWith("http") ? "noopener noreferrer" : undefined}
+            className={`mt-6 inline-flex items-center gap-2 rounded-full px-7 h-12 text-sm font-extrabold shadow-lg transition-all hover:gap-3 ${onColor ? "bg-white text-[var(--text-primary)]" : "text-white"}`}
+            style={onColor ? undefined : { background: primary }}
+          >
+            {buttonLabel}
+            <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+          </a>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Video ──────────────────────────────────────────────────────────────
+function toYouTubeEmbed(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
+  return m ? `https://www.youtube.com/embed/${m[1]}` : null;
+}
+function VideoBlock({ section, primary }: { section: VideoSection; primary: string }) {
+  const { title, subtitle, videoUrl } = section.data;
+  const yt = videoUrl ? toYouTubeEmbed(videoUrl) : null;
+  const isMp4 = !!videoUrl && /\.mp4($|\?)/i.test(videoUrl);
+  return (
+    <section className="max-w-4xl mx-auto px-4 py-10 sm:py-12">
+      {(title || subtitle) && (
+        <div className="mb-6 text-center">
+          {title && (
+            <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+              {title}
+            </h2>
+          )}
+          {subtitle && <p data-live={`customText:${section.id}:subtitle`} className="mt-2 text-base text-[var(--text-secondary)]">{subtitle}</p>}
+        </div>
+      )}
+      <div className="relative aspect-video overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-black/5">
+        {yt ? (
+          <iframe src={yt} title={title || "Video"} className="absolute inset-0 h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+        ) : isMp4 ? (
+          <video src={videoUrl} controls className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-center">
+            <p className="px-6 text-sm text-[var(--text-tertiary)]" style={{ color: primary }}>Pegá un link de YouTube o un .mp4 en el editor</p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── Mapa ───────────────────────────────────────────────────────────────
+function MapBlock({ section, primary }: { section: MapSection; primary: string }) {
+  const { title, address } = section.data;
+  const src = address ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed` : null;
+  return (
+    <section className="max-w-5xl mx-auto px-4 py-10 sm:py-12">
+      <div className="mb-4 flex items-center gap-2">
+        <MapPin className="h-5 w-5" strokeWidth={2} style={{ color: primary }} aria-hidden />
+        <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+          {title || "Dónde estamos"}
+        </h2>
+      </div>
+      <div className="relative aspect-[16/9] overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-black/5">
+        {src ? (
+          <iframe src={src} title={title || "Mapa"} className="absolute inset-0 h-full w-full" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <p className="px-6 text-sm text-[var(--text-tertiary)]">Escribí tu dirección en el editor</p>
+          </div>
+        )}
+      </div>
+      {address && <p className="mt-2 text-sm text-[var(--text-secondary)]">{address}</p>}
+    </section>
+  );
+}
+
+// ── Logos / marcas ─────────────────────────────────────────────────────
+function LogosBlock({ section }: { section: LogosSection; primary: string }) {
+  const { title, logos } = section.data;
+  const list = (logos || []).filter((l) => l.url);
+  return (
+    <section className="max-w-5xl mx-auto px-4 py-10 sm:py-12">
+      {title && (
+        <p data-live={`customText:${section.id}:title`} className="mb-6 text-center text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          {title}
+        </p>
+      )}
+      {list.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+          {list.map((l, i) => (
+            // eslint-disable-next-line @next/next/no-img-element -- logos de marcas (aspect variable)
+            <img key={i} src={l.url} alt={l.alt || "Marca"} className="h-10 sm:h-12 w-auto object-contain opacity-70 grayscale transition hover:opacity-100 hover:grayscale-0" />
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-sm text-[var(--text-tertiary)]">Agregá logos desde el editor</p>
+      )}
+    </section>
+  );
+}
+
+// ── Countdown ──────────────────────────────────────────────────────────
+function CountdownBlock({ section, primary }: { section: CountdownSection; primary: string }) {
+  const { title, subtitle, endsAt } = section.data;
+  return (
+    <section className="max-w-4xl mx-auto px-4 py-10 sm:py-12 text-center">
+      <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        {title}
+      </h2>
+      {subtitle && <p data-live={`customText:${section.id}:subtitle`} className="mt-2 text-base text-[var(--text-secondary)]">{subtitle}</p>}
+      <div className="mt-5 flex justify-center">
+        {endsAt ? (
+          <CountdownBanner title="" endsAt={endsAt} />
+        ) : (
+          <p className="text-sm text-[var(--text-tertiary)]" style={{ color: primary }}>Elegí la fecha de fin en el editor</p>
+        )}
+      </div>
+    </section>
+  );
 }
 
 // ── About ──────────────────────────────────────────────────────────────

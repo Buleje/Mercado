@@ -63,6 +63,17 @@ type SectionStyle = {
   border?: string;
   borderW?: number;
   shadow?: "none" | "soft" | "deep";
+  font?: string;
+  width?: "narrow" | "normal" | "full";
+  padY?: number;
+  divider?: "none" | "line" | "space";
+  anim?: "none" | "fade" | "up" | "zoom";
+};
+
+const SECTION_ANIM_CSS: Record<string, string> = {
+  fade: "buleje-fade .6s ease both",
+  up: "buleje-up .6s ease both",
+  zoom: "buleje-zoom .6s ease both",
 };
 
 const SECTION_SHADOW: Record<string, string> = {
@@ -162,6 +173,30 @@ function applySectionStyleToEl(el: HTMLElement, next: SectionStyle) {
     el.style.removeProperty("box-shadow");
     delete el.dataset.bulejeShadow;
   }
+  el.style.fontFamily = next.font || "";
+  // Cargar la fuente Google en vivo si el stack trae una familia entre comillas
+  // (#3 fuentes reales) — así el preview la muestra sin esperar un reload.
+  if (next.font) ensureFontLoaded(next.font);
+  // #4 Layout y animación (Brandon 2026-06-27)
+  el.style.maxWidth = next.width === "narrow" ? "768px" : next.width === "full" ? "none" : "";
+  if (typeof next.padY === "number") { el.style.paddingTop = `${next.padY}px`; el.style.paddingBottom = `${next.padY}px`; }
+  if (next.divider === "line") el.style.borderBottom = "1px solid color-mix(in oklab, currentColor 14%, transparent)";
+  else if (!next.border) el.style.borderBottom = "";
+  el.style.marginBottom = next.divider === "space" ? "2.5rem" : "";
+  el.style.animation = next.anim && next.anim !== "none" ? (SECTION_ANIM_CSS[next.anim] ?? "") : "";
+}
+
+/** Inyecta un <link> de Google Fonts para la familia entre comillas del stack. */
+function ensureFontLoaded(stack: string) {
+  const fam = stack.match(/"([^"]+)"/)?.[1];
+  if (!fam) return; // web-safe (sin comillas) → ya disponible
+  const id = `buleje-font-${fam.replace(/\s+/g, "-")}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fam).replace(/%20/g, "+")}:wght@400;600;700;800;900&display=swap`;
+  document.head.appendChild(link);
 }
 
 /**

@@ -70,6 +70,9 @@ export interface StoreTheme {
   // de la TrustBar (la barra que scrollea con beneficios). Antes 6 chips fijas.
   trustChips: string[];
   fontFamily: string;
+  // Par de fuentes (Brandon 2026-06-27 · Lote A): fontFamily = TÍTULOS,
+  // bodyFontFamily = CUERPO. Vacío = usa la de títulos (comportamiento previo).
+  bodyFontFamily: string;
   borderRadius: number;
   spacing: "compact" | "normal" | "spacious";
   whatsapp: string;
@@ -98,6 +101,14 @@ export interface StoreTheme {
   fontScale: "small" | "normal" | "large";
   whatsappFloatEnabled: boolean;
   animateOnScroll: boolean;
+  // Lote B (Brandon 2026-06-27): gradiente del hero (vacío = sólido), swatches de
+  // marca reutilizables, y grid configurable de productos destacados.
+  heroGradientFrom: string;
+  heroGradientTo: string;
+  heroGradientAngle: number;
+  brandSwatches: string[];
+  featuredCols: 2 | 3 | 4;
+  featuredCount: number;
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
@@ -109,7 +120,7 @@ export interface StoreTheme {
   testimonials: Array<{ name: string; stars: number; comment: string }>;
   // Estilos POR SECCIÓN (Brandon 2026-06-26): editar un componente individual —
   // fondo/texto/espaciado aplicados SOLO a esa sección (data-pb). Edición libre.
-  sectionStyles: Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>;
+  sectionStyles: Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; font?: string; width?: "narrow" | "normal" | "full"; padY?: number; divider?: "none" | "line" | "space"; anim?: "none" | "fade" | "up" | "zoom" }>;
   // Texto POR SECCIÓN (Brandon 2026-06-27): etiqueta + título + alineación
   // personalizados de cada sección del cuerpo (featured/info…). Editable inline
   // (doble-click en el preview) o desde el panel. Vacío = texto por defecto.
@@ -139,6 +150,19 @@ export interface StoreTheme {
   socialProofEnabled: boolean;
   openStatusEnabled: boolean;
   seasonalTheme: "none" | "navidad" | "fiestas_patrias" | "halloween";
+  // Lote C (Brandon 2026-06-27): conversión avanzada.
+  // Anuncios rotativos (barra superior); vacío = sin barra.
+  announcements: string[];
+  // Exit-intent popup: aparece al intentar cerrar la pestaña.
+  exitIntentEnabled: boolean;
+  exitIntentTitle: string;
+  exitIntentMessage: string;
+  exitIntentCoupon: string;
+  // Excepciones de horario (feriados): fecha YYYY-MM-DD + etiqueta + cerrado.
+  scheduleExceptions: Array<{ date: string; label: string; closed: boolean }>;
+  // Widget de chat flotante: posición + texto de la burbuja.
+  chatPosition: "right" | "left";
+  chatBubbleText: string;
   customCSS: string;
   // Banners promocionales por categoría — controla "Oferta de Temporada".
   // El admin sube una imagen + textos; al click va a la categoría o producto vinculado.
@@ -187,6 +211,7 @@ const DEFAULT_THEME: StoreTheme = {
     "Atención personalizada",
   ],
   fontFamily: "sistema",
+  bodyFontFamily: "",
   borderRadius: 12,
   spacing: "normal",
   whatsapp: "",
@@ -218,6 +243,12 @@ const DEFAULT_THEME: StoreTheme = {
   fontScale: "normal",
   whatsappFloatEnabled: false,
   animateOnScroll: false,
+  heroGradientFrom: "",
+  heroGradientTo: "",
+  heroGradientAngle: 135,
+  brandSwatches: [],
+  featuredCols: 4,
+  featuredCount: 8,
   textStyles: {},
   countdownEnabled: false,
   countdownTitle: "¡Oferta por tiempo limitado!",
@@ -239,6 +270,14 @@ const DEFAULT_THEME: StoreTheme = {
   socialProofEnabled: false,
   openStatusEnabled: false,
   seasonalTheme: "none",
+  announcements: [],
+  exitIntentEnabled: false,
+  exitIntentTitle: "¡Esperá! No te vayas sin tu descuento",
+  exitIntentMessage: "Llevate un cupón para tu primera compra.",
+  exitIntentCoupon: "VUELVE10",
+  scheduleExceptions: [],
+  chatPosition: "right",
+  chatBubbleText: "¿Necesitas ayuda? Escribenos por WhatsApp",
   customCSS: "",
 };
 

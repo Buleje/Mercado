@@ -10,7 +10,9 @@ import { useEffect } from "react";
  *
  * `bg`/`text` = color CSS; `pad` = compacto|normal|amplio → padding vertical.
  */
-type SectionStyle = { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" };
+type SectionStyle = { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; font?: string; width?: "narrow" | "normal" | "full"; padY?: number; divider?: "none" | "line" | "space"; anim?: "none" | "fade" | "up" | "zoom" };
+
+const ANIM_CSS: Record<string, string> = { fade: "buleje-fade .6s ease both", up: "buleje-up .6s ease both", zoom: "buleje-zoom .6s ease both" };
 
 const PAD_PX: Record<"sm" | "md" | "lg", string> = { sm: "1.25rem", md: "", lg: "4rem" };
 const SHADOW_CSS: Record<"none" | "soft" | "deep", string> = { none: "none", soft: "0 4px 16px rgba(0,0,0,0.10)", deep: "0 12px 32px rgba(0,0,0,0.18)" };
@@ -38,6 +40,14 @@ export default function TenantSectionStyles({ styles }: { styles: Record<string,
           else el.style.removeProperty("border");
           if (s.shadow) el.style.boxShadow = SHADOW_CSS[s.shadow] ?? "";
           else el.style.removeProperty("box-shadow");
+          el.style.fontFamily = s.font || "";
+          // #4 Layout y animación
+          el.style.maxWidth = s.width === "narrow" ? "768px" : s.width === "full" ? "none" : "";
+          if (typeof s.padY === "number") { el.style.paddingTop = `${s.padY}px`; el.style.paddingBottom = `${s.padY}px`; }
+          if (s.divider === "line") el.style.borderBottom = "1px solid color-mix(in oklab, currentColor 14%, transparent)";
+          else if (!s.border) el.style.removeProperty("border-bottom");
+          el.style.marginBottom = s.divider === "space" ? "2.5rem" : "";
+          el.style.animation = s.anim && s.anim !== "none" ? (ANIM_CSS[s.anim] ?? "") : "";
         });
       }
     };

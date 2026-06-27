@@ -34,14 +34,14 @@ export default function PreviewLiveTheme() {
 
     // Carga la Google Font elegida en el editor (live) inyectando/actualizando
     // un <link>. `null` = fuente de sistema → no carga nada.
-    const loadFont = (label: string | null | undefined) => {
+    const loadFont = (label: string | null | undefined, id = "buleje-live-font") => {
       if (!label) return;
       const family = encodeURIComponent(label).replace(/%20/g, "+");
       const href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;600;700;800;900&display=swap`;
-      let link = document.getElementById("buleje-live-font") as HTMLLinkElement | null;
+      let link = document.getElementById(id) as HTMLLinkElement | null;
       if (!link) {
         link = document.createElement("link");
-        link.id = "buleje-live-font";
+        link.id = id;
         link.rel = "stylesheet";
         document.head.appendChild(link);
       }
@@ -80,12 +80,14 @@ export default function PreviewLiveTheme() {
         type?: string;
         vars?: Record<string, unknown>;
         fontLabel?: string | null;
+        bodyFontLabel?: string | null;
         darkMode?: boolean;
         text?: Record<string, unknown>;
       } | null;
       if (!data || data.source !== "buleje-editor" || data.type !== "live-theme") return;
       applyVars(data.vars);
       loadFont(data.fontLabel);
+      loadFont(data.bodyFontLabel, "buleje-live-font-body");
       applyDarkMode(data.darkMode);
       applyText(data.text);
     };

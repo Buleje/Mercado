@@ -10,6 +10,7 @@ import { ImageValidationPanel } from "@/components/admin/shared/ImageValidationP
 import { installDragGuard, uninstallDragGuard, compressIfLarge } from "@/lib/image-upload-utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { activateProps } from "@/components/admin/shared/a11y";
+import ImageCropModal from "@/components/admin/ImageCropModal";
 
 type ImageUploadProps = {
   value?: string;
@@ -54,6 +55,8 @@ export default function ImageUpload({
   // se sube. Se libera (revokeObjectURL) cuando llega la URL real o falla.
   const [optimistic, setOptimistic] = useState<string | null>(null);
   const optimisticRef = useRef<string | null>(null);
+  // Recorte/ajuste de imagen (Brandon 2026-06-27, audit #4).
+  const [cropOpen, setCropOpen] = useState(false);
 
   // Instalar global drag guard mientras este componente esté montado.
   useEffect(() => {
@@ -207,6 +210,14 @@ export default function ImageUpload({
             </button>
             <button
               type="button"
+              onClick={() => setCropOpen(true)}
+              disabled={uploading}
+              className="bg-white/90 text-[var(--text-primary)] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-white dark:bg-[var(--color-card)] transition-colors"
+            >
+              Ajustar
+            </button>
+            <button
+              type="button"
               onClick={handleClear}
               className="bg-[var(--data-error-500)]/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--data-error-500)] transition-colors"
             >
@@ -290,6 +301,24 @@ export default function ImageUpload({
       {/* Hint */}
       {hint && !error && (
         <p className="text-xs text-muted">{hint}</p>
+      )}
+
+      {/* Modal de recorte/ajuste (audit #4) — exporta a blob y re-sube. */}
+      {cropOpen && displayUrl && (
+        <ImageCropModal
+          src={displayUrl}
+          aspectRatio={aspectRatio}
+          onCancel={() => setCropOpen(false)}
+          onApply={(blob) => {
+            setCropOpen(false);
+            const file = new File([blob], "recorte.jpg", { type: blob.type || "image/jpeg" });
+            const preview = URL.createObjectURL(file);
+            if (optimisticRef.current) URL.revokeObjectURL(optimisticRef.current);
+            optimisticRef.current = preview;
+            setOptimistic(preview);
+            uploadFile(file);
+          }}
+        />
       )}
     </div>
   );

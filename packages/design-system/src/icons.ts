@@ -208,6 +208,8 @@ export {
   Type,
   Link,
   Link2,
+  Instagram,
+  Facebook,
   Image,
   ImageIcon,
 

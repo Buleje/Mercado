@@ -24,6 +24,8 @@ import TenantFooter from "@/components/store/TenantFooter";
 import { SettingsProvider } from "@/contexts/settings-context";
 import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
+import TenantExitIntentPopup from "@/components/store/tenant/TenantExitIntentPopup";
+import RotatingAnnouncementBar from "@/components/store/tenant/RotatingAnnouncementBar";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import TenantAnalytics from "@/components/store/TenantAnalytics";
 import TenantHero, { type HeroVariant } from "@/components/store/tenant/TenantHero";
@@ -140,7 +142,7 @@ async function loadPageData(slug: string) {
         }))
       : catalog
           .filter((c) => c.active && c.visible)
-          .slice(0, 8)
+          .slice(0, 12)
           .map((c) => ({
             id: String(c.productId),
             name: c.name,
@@ -181,6 +183,13 @@ async function loadPageData(slug: string) {
     accentColor: pick("accentColor"),
     // Tipografía + estilos UI del editor (otra taxonomía) — opcionales.
     fontFamily: pickStr("fontFamily"),
+    bodyFontFamily: pickStr("bodyFontFamily"),
+    // Lote B (Brandon 2026-06-27): gradiente del hero + grid de destacados.
+    heroGradientFrom: pickStr("heroGradientFrom"),
+    heroGradientTo: pickStr("heroGradientTo"),
+    heroGradientAngle: typeof st?.["heroGradientAngle"] === "number" ? (st["heroGradientAngle"] as number) : undefined,
+    featuredCols: typeof st?.["featuredCols"] === "number" ? (st["featuredCols"] as number) : undefined,
+    featuredCount: typeof st?.["featuredCount"] === "number" ? (st["featuredCount"] as number) : undefined,
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
@@ -197,6 +206,15 @@ async function loadPageData(slug: string) {
     welcomePopupTitle: pickStr("welcomePopupTitle"),
     welcomePopupMessage: pickStr("welcomePopupMessage"),
     welcomePopupCoupon: pickStr("welcomePopupCoupon"),
+    // Lote C (Brandon 2026-06-27): conversión avanzada.
+    announcements: Array.isArray(st?.["announcements"]) ? (st["announcements"] as unknown[]).filter((x): x is string => typeof x === "string") : [],
+    exitIntentEnabled: st?.["exitIntentEnabled"] === true,
+    exitIntentTitle: pickStr("exitIntentTitle"),
+    exitIntentMessage: pickStr("exitIntentMessage"),
+    exitIntentCoupon: pickStr("exitIntentCoupon"),
+    scheduleExceptions: Array.isArray(st?.["scheduleExceptions"]) ? (st["scheduleExceptions"] as Array<{ date: string; label: string; closed: boolean }>) : [],
+    chatPosition: pickStr("chatPosition"),
+    chatBubbleText: pickStr("chatBubbleText"),
     footerText: pickStr("footerText"),
     // Analytics por tenant (Brandon 2026-06-26): GA4 + Meta Pixel del comerciante.
     analyticsId: pickStr("analyticsId"),
@@ -228,8 +246,8 @@ async function loadPageData(slug: string) {
     // Estilos POR SECCIÓN (Brandon 2026-06-26): map data-pb → {bg,text,pad}.
     sectionStyles:
       st?.["sectionStyles"] && typeof st["sectionStyles"] === "object" && !Array.isArray(st["sectionStyles"])
-        ? (st["sectionStyles"] as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>)
-        : ({} as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep" }>),
+        ? (st["sectionStyles"] as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; font?: string; width?: "narrow" | "normal" | "full"; padY?: number; divider?: "none" | "line" | "space"; anim?: "none" | "fade" | "up" | "zoom" }>)
+        : ({} as Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; font?: string; width?: "narrow" | "normal" | "full"; padY?: number; divider?: "none" | "line" | "space"; anim?: "none" | "fade" | "up" | "zoom" }>),
     // Texto POR SECCIÓN (Brandon 2026-06-27): map data-pb → {eyebrow,title}.
     // Override del texto por defecto de cada sección del cuerpo (featured/info…).
     sectionText:
@@ -490,6 +508,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const editorFont = editorTheme.fontFamily ? EDITOR_FONT_MAP[editorTheme.fontFamily] : undefined;
   const fontStack = editorFont?.stack ?? baseFont.stack;
   const fontLabel = editorFont ? editorFont.label : baseFont.label; // null = sistema (sin Google Font)
+  // Par de fuentes (Lote A): bodyFontFamily = CUERPO; vacío = misma que títulos.
+  const editorBodyFont = editorTheme.bodyFontFamily ? EDITOR_FONT_MAP[editorTheme.bodyFontFamily] : undefined;
+  const bodyStack = editorBodyFont?.stack ?? fontStack;
+  const bodyLabel = editorBodyFont ? editorBodyFont.label : null;
   const btnRadius = editorTheme.buttonStyle ? EDITOR_BTN_RADIUS[editorTheme.buttonStyle] : undefined;
   // Escala tipográfica global (Brandon 2026-06-26): agranda/achica TODO el texto
   // de la tienda escalando el font-size raíz (los text-* de Tailwind son rem).
@@ -533,6 +555,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme" data-store-chrome="tenant" style={brandTokenVars}>
+      {/* Anuncios rotativos (Lote C) — barra superior con N mensajes. */}
+      {editorTheme.announcements.length > 0 && <RotatingAnnouncementBar messages={editorTheme.announcements} />}
       {/* CSS dinamico generado a partir de los design tokens del tenant.
           Sobreescribe el theme de Buleje solo en el subarbol .tenant-theme. */}
       <style dangerouslySetInnerHTML={{ __html: tokensToCssBlock(designTokens) }} />
@@ -550,7 +574,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       )}
       {/* Override de tipografía (editor) + radio de botón — sobre .tenant-theme,
           después de tokensToCssBlock para ganar. PreviewLiveTheme pisa en vivo. */}
-      <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{--tenant-font:${fontStack};--font-display-family:var(--tenant-font);${btnRadius ? `--tenant-btn-radius:${btnRadius};` : ""}}` }} />
+      <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{--tenant-font:${bodyStack};--font-display-family:${fontStack};${btnRadius ? `--tenant-btn-radius:${btnRadius};` : ""}}` }} />
+      {/* Keyframes de animación de entrada por sección (Brandon 2026-06-27 · #4).
+          @media reduced-motion las desactiva (a11y). */}
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes buleje-fade{from{opacity:0}to{opacity:1}}@keyframes buleje-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}@keyframes buleje-zoom{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}@media (prefers-reduced-motion: reduce){[data-pb]{animation:none !important}}" }} />
 
       {/* Google Fonts loader — carga solo la fuente que el tenant eligio.
           PERF 2026-05-24: preconnect evita ~200-400ms de DNS+TCP+TLS a Google
@@ -563,6 +590,28 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontLabel).replace(/%20/g, "+")}:wght@400;600;700;800;900&display=swap`}
         />
       )}
+      {/* Fuente de CUERPO (Lote A) — solo si difiere de la de títulos. */}
+      {bodyLabel && bodyLabel !== fontLabel && (
+        <link
+          rel="stylesheet"
+          href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(bodyLabel).replace(/%20/g, "+")}:wght@400;600;700;800;900&display=swap`}
+        />
+      )}
+      {/* Fuentes reales POR SECCIÓN (Brandon 2026-06-27 · #3): carga las familias
+          Google usadas en sectionStyles[].font (la 1ª entre comillas del stack). */}
+      {Array.from(new Set(
+        Object.values(editorTheme.sectionStyles ?? {})
+          .map((s) => (s as { font?: string }).font)
+          .filter((f): f is string => typeof f === "string" && f.includes('"'))
+          .map((f) => f.match(/"([^"]+)"/)?.[1])
+          .filter((x): x is string => !!x),
+      )).map((fam) => (
+        <link
+          key={fam}
+          rel="stylesheet"
+          href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(fam).replace(/%20/g, "+")}:wght@400;600;700;800;900&display=swap`}
+        />
+      ))}
 
       {/* Beacon tracker (client component) */}
       <TenantPageTracker tenantSlug={tenant.slug} />
@@ -613,9 +662,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {editorTheme.freeShipEnabled && (
         <FreeShipPromoBar slug={tenant.slug} threshold={editorTheme.freeShipThreshold} text={editorTheme.freeShipText} />
       )}
-      {editorTheme.openStatusEnabled && Object.keys(editorTheme.schedules || {}).length > 0 && (
+      {editorTheme.openStatusEnabled && (Object.keys(editorTheme.schedules || {}).length > 0 || editorTheme.scheduleExceptions.length > 0) && (
         <div className="flex justify-center px-4 pt-3">
-          <OpenStatusBadge schedules={editorTheme.schedules} />
+          <OpenStatusBadge schedules={editorTheme.schedules} exceptions={editorTheme.scheduleExceptions} />
         </div>
       )}
 
@@ -648,6 +697,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         heroTitle={heroTitle}
         heroSubtitle={heroSubtitle}
         heroImage={heroImage}
+        heroGradientFrom={editorTheme.heroGradientFrom}
+        heroGradientTo={editorTheme.heroGradientTo}
+        heroGradientAngle={editorTheme.heroGradientAngle}
         displayName={displayName}
         slug={tenant.slug}
         ownerPhone={tenant.ownerPhone}
@@ -786,8 +838,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           </div>
 
           {showcase.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {showcase.map((p) => {
+            <div className={`grid gap-4 ${editorTheme.featuredCols === 2 ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-2" : editorTheme.featuredCols === 3 ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"}`}>
+              {showcase.slice(0, editorTheme.featuredCount ?? 8).map((p) => {
                 const isExclusive = p.exclusivePrice != null;
                 const shownPrice = isExclusive ? p.exclusivePrice! : p.price;
                 return (
@@ -1211,6 +1263,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           phone={editorTheme.whatsapp || customization.whatsappPhone || tenant.ownerPhone || ""}
           displayName={displayName}
           message={editorTheme.whatsappMessage}
+          position={editorTheme.chatPosition === "left" ? "left" : "right"}
+          bubbleText={editorTheme.chatBubbleText}
         />
       )}
 
@@ -1232,6 +1286,17 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           coupon={editorTheme.welcomePopupCoupon || undefined}
           ctaHref={`/t/${tenant.slug}/tienda`}
           storageKey={`buleje-welcome-${tenant.slug}`}
+        />
+      )}
+
+      {/* Exit-intent popup (Lote C): cupón de último momento al intentar salir. */}
+      {editorTheme.exitIntentEnabled && (
+        <TenantExitIntentPopup
+          title={editorTheme.exitIntentTitle ?? "¡Esperá!"}
+          message={editorTheme.exitIntentMessage ?? ""}
+          coupon={editorTheme.exitIntentCoupon || undefined}
+          ctaHref={`/t/${tenant.slug}/tienda`}
+          storageKey={`buleje-exit-${tenant.slug}`}
         />
       )}
     </main>

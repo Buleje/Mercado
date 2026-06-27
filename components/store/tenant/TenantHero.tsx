@@ -33,6 +33,10 @@ export interface TenantHeroProps {
   heroTitle: string;
   heroSubtitle?: string | null;
   heroImage?: string | null;
+  // Lote B (Brandon 2026-06-27): gradiente del hero (si no hay imagen).
+  heroGradientFrom?: string;
+  heroGradientTo?: string;
+  heroGradientAngle?: number;
   displayName: string;
   slug: string;
   ownerPhone?: string | null;
@@ -75,6 +79,9 @@ export default function TenantHero(props: TenantHeroProps) {
     heroTitle,
     heroSubtitle,
     heroImage,
+    heroGradientFrom,
+    heroGradientTo,
+    heroGradientAngle,
     displayName,
     slug,
     ownerPhone,
@@ -240,10 +247,16 @@ export default function TenantHero(props: TenantHeroProps) {
 
   /* ── Capas de fondo (imagen + gradiente + patrón + mask) ────────────── */
 
+  // Lote B: gradiente personalizado del dueño (2 colores + ángulo) tiene prioridad
+  // sobre el degradado por defecto basado en la marca. Solo si no hay foto de fondo.
+  const customGradient = heroGradientFrom && heroGradientTo
+    ? `linear-gradient(${heroGradientAngle ?? 135}deg, ${heroGradientFrom}, ${heroGradientTo})`
+    : null;
   const gradientBg = heroImage
     ? undefined
     : {
-        background: `radial-gradient(circle at 30% 20%, ${cssAccentA(40)} 0%, transparent 50%), linear-gradient(135deg, ${cssPrimary} 0%, ${cssPrimaryA(87)} 50%, ${cssPrimary} 100%)`,
+        background: customGradient
+          ?? `radial-gradient(circle at 30% 20%, ${cssAccentA(40)} 0%, transparent 50%), linear-gradient(135deg, ${cssPrimary} 0%, ${cssPrimaryA(87)} 50%, ${cssPrimary} 100%)`,
       };
 
   const BgLayers = (

@@ -23,7 +23,7 @@ import {
 
 const SectionSchema = z.object({
   id: z.string(),
-  type: z.enum(["about", "hours", "payment", "how-to-order", "faq", "benefits", "gallery", "image-text"]),
+  type: z.enum(["about", "hours", "payment", "how-to-order", "faq", "benefits", "gallery", "image-text", "cta", "video", "map", "logos", "countdown", "team", "social", "categories"]),
   visible: z.boolean(),
   order: z.number().int(),
   data: z.record(z.string(), z.any()),

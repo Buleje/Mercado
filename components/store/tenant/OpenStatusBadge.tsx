@@ -37,8 +37,20 @@ function limaNow(): { day: string; minutes: number } {
   return { day: EN_A_ES[wd] ?? "lunes", minutes: (h || 0) * 60 + (m || 0) };
 }
 
+type Exception = { date: string; label: string; closed: boolean };
+function limaDateKey(): string {
+  // YYYY-MM-DD en hora de Lima (en-CA da ese formato).
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
 interface Status { open: boolean; label: string; sub: string }
-function computeStatus(schedules: Schedule): Status | null {
+function computeStatus(schedules: Schedule, exceptions?: Exception[]): Status | null {
+  // Excepciones de horario (Lote C): un feriado/fecha especial pisa el horario.
+  const exc = (exceptions || []).find((e) => e?.date === limaDateKey());
+  if (exc) {
+    if (exc.closed) return { open: false, label: exc.label || "Cerrado hoy", sub: "" };
+    if (exc.label) return { open: true, label: "Abierto", sub: exc.label };
+  }
   if (!schedules || typeof schedules !== "object") return null;
   const { day, minutes } = limaNow();
   const todayIdx = ORDEN.indexOf(day);
@@ -63,15 +75,15 @@ function computeStatus(schedules: Schedule): Status | null {
   return { open: false, label: "Cerrado", sub: "" };
 }
 
-export default function OpenStatusBadge({ schedules }: { schedules: Schedule }) {
+export default function OpenStatusBadge({ schedules, exceptions }: { schedules: Schedule; exceptions?: Exception[] }) {
   const [status, setStatus] = useState<Status | null>(null);
 
   useEffect(() => {
-    const tick = () => setStatus(computeStatus(schedules));
+    const tick = () => setStatus(computeStatus(schedules, exceptions));
     tick();
     const id = setInterval(tick, 60000); // refresca cada minuto
     return () => clearInterval(id);
-  }, [schedules]);
+  }, [schedules, exceptions]);
 
   if (!status) return null;
 

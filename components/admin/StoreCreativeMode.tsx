@@ -46,6 +46,12 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Copy,
+  Download,
+  Upload,
+  Users,
+  Share2,
+  Maximize2,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import ImageUpload from "./ImageUpload";
@@ -67,6 +73,14 @@ const CUSTOM_SECTION_LABELS: Record<string, string> = {
   benefits: "Beneficios",
   gallery: "Galería",
   "image-text": "Imagen + texto",
+  cta: "Banner de acción",
+  video: "Video",
+  map: "Mapa de ubicación",
+  logos: "Marcas / logos",
+  countdown: "Cuenta regresiva",
+  team: "Nuestro equipo",
+  social: "Redes sociales",
+  categories: "Categorías visual",
 };
 
 // Tienda section labels for preview
@@ -291,6 +305,75 @@ const RUBRO_TEMPLATES: RubroTemplate[] = [
   },
 ];
 
+// ── Plantillas de PÁGINA COMPLETA (Brandon 2026-06-27) ──────────────────
+// Aplican de un saque: tema (colores/fuente/radio/botón/dark) + orden de
+// secciones + estilo por sección. Un look integral en 1 clic.
+type PageTemplate = {
+  id: string;
+  name: string;
+  vibe: string;
+  theme: {
+    primaryColor: string; secondaryColor: string; accentColor: string;
+    fontFamily: StoreTheme["fontFamily"]; darkModeDefault: boolean;
+    borderRadius: number; buttonStyle: StoreTheme["buttonStyle"];
+  };
+  bodyOrder: string[];
+  sectionStyles: Record<string, SectionStyle>;
+};
+
+const SERIF_STACK = 'Georgia, "Times New Roman", serif';
+
+const PAGE_TEMPLATES: PageTemplate[] = [
+  {
+    id: "resto-elegante",
+    name: "Restaurante elegante",
+    vibe: "Oscuro · serif · premium",
+    theme: { primaryColor: "#DC2626", secondaryColor: "#F59E0B", accentColor: "#EA580C", fontFamily: "montserrat", darkModeDefault: true, borderRadius: 12, buttonStyle: "pill" },
+    bodyOrder: ["featured", "trust", "testimonials", "info", "promos"],
+    sectionStyles: {
+      featured: { bg: "#0F172A", text: "#F8FAFC", radius: 18, shadow: "deep", pad: "lg", font: SERIF_STACK },
+      testimonials: { bg: "#1E293B", text: "#F8FAFC", pad: "lg" },
+      info: { bg: "#F8FAFC", radius: 16, pad: "lg" },
+    },
+  },
+  {
+    id: "bodega-vibrante",
+    name: "Bodega vibrante",
+    vibe: "Teal + coral · redondeado",
+    theme: { primaryColor: "#00A0A0", secondaryColor: "#FF6B5B", accentColor: "#00A0A0", fontFamily: "poppins", darkModeDefault: false, borderRadius: 20, buttonStyle: "rounded" },
+    bodyOrder: ["trust", "featured", "promos", "testimonials", "info"],
+    sectionStyles: {
+      featured: { bg: "#FFFFFF", radius: 24, shadow: "soft", pad: "lg" },
+      promos: { bg: "linear-gradient(135deg, #00A0A0, #FF6B5B)", text: "#FFFFFF", radius: 20, pad: "lg" },
+      info: { bg: "#ECFEFF", radius: 16, pad: "md" },
+    },
+  },
+  {
+    id: "minimal-premium",
+    name: "Minimal premium",
+    vibe: "Blanco · aire · editorial",
+    theme: { primaryColor: "#111827", secondaryColor: "#6B7280", accentColor: "#111827", fontFamily: "inter", darkModeDefault: false, borderRadius: 4, buttonStyle: "square" },
+    bodyOrder: ["featured", "testimonials", "info", "trust", "promos"],
+    sectionStyles: {
+      featured: { pad: "lg", font: SERIF_STACK },
+      testimonials: { bg: "#F8FAFC", pad: "lg" },
+      info: { border: "#E2E8F0", borderW: 1, radius: 0, pad: "lg" },
+    },
+  },
+  {
+    id: "fresco-natural",
+    name: "Fresco natural",
+    vibe: "Verde · suave · cálido",
+    theme: { primaryColor: "#15803D", secondaryColor: "#84CC16", accentColor: "#22C55E", fontFamily: "nunito", darkModeDefault: false, borderRadius: 18, buttonStyle: "pill" },
+    bodyOrder: ["trust", "featured", "testimonials", "promos", "info"],
+    sectionStyles: {
+      featured: { bg: "#F0FDF4", radius: 20, pad: "lg" },
+      testimonials: { bg: "#ECFDF5", radius: 16, pad: "lg" },
+      info: { bg: "#FFFFFF", border: "#BBF7D0", borderW: 1, radius: 16, pad: "md" },
+    },
+  },
+];
+
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   // El <input type="color"> SOLO acepta hex; si el valor es una CSS var
   // (var(--color-primary) = teal de marca) caía a algo inválido → el picker
@@ -450,6 +533,83 @@ function SectionColorPicker({
   );
 }
 
+// Patrones de fondo (Brandon 2026-06-27 · #3) — strings CSS para el campo bg.
+const BG_PATTERNS: Array<{ id: string; label: string; css: string }> = [
+  { id: "puntos", label: "Puntos", css: "radial-gradient(rgba(15,23,42,0.10) 1.5px, transparent 1.5px) 0 0 / 18px 18px, #FFFFFF" },
+  { id: "cuadricula", label: "Cuadrícula", css: "linear-gradient(rgba(15,23,42,0.06) 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(90deg, rgba(15,23,42,0.06) 1px, transparent 1px) 0 0 / 22px 22px, #FFFFFF" },
+  { id: "rayas", label: "Rayas", css: "repeating-linear-gradient(45deg, rgba(15,23,42,0.05) 0 10px, #FFFFFF 10px 20px)" },
+];
+
+/**
+ * AdvancedBackground — fondo avanzado por sección (Brandon 2026-06-27 · #3):
+ * degradado personalizado (2 colores + ángulo), imagen con overlay, y patrones.
+ * Todo se compone en un string CSS y se guarda en sectionStyle.bg vía onSetBg.
+ */
+function AdvancedBackground({ onSetBg }: { onSetBg: (bg: string) => void }) {
+  const [gA, setGA] = useState("#00A0A0");
+  const [gB, setGB] = useState("#FF6B5B");
+  const [angle, setAngle] = useState(135);
+  const [overlay, setOverlay] = useState(35);
+  const [imgUrl, setImgUrl] = useState("");
+  const composeImage = (url: string, ov: number) =>
+    `linear-gradient(rgba(0,0,0,${(ov / 100).toFixed(2)}), rgba(0,0,0,${(ov / 100).toFixed(2)})), url("${url}") center/cover no-repeat`;
+  const colorInput = (val: string, set: (v: string) => void, label: string) => (
+    <label className="relative inline-flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15" title={label}>
+      <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: val }} />
+      <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(val) ? val : "#000000"} onChange={(e) => set(e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label={label} />
+    </label>
+  );
+  return (
+    <div className="space-y-3">
+      {/* Degradado personalizado */}
+      <div className="space-y-1.5">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Degradado personalizado</p>
+        <div className="flex items-center gap-2">
+          {colorInput(gA, setGA, "Color 1")}
+          {colorInput(gB, setGB, "Color 2")}
+          <div className="h-7 flex-1 rounded-md border border-white/10" style={{ background: `linear-gradient(${angle}deg, ${gA}, ${gB})` }} />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[length:var(--ts-2xs)] text-gray-400">Ángulo</span>
+          <input type="range" min={0} max={360} value={angle} onChange={(e) => setAngle(Number(e.target.value))} className="w-full accent-[var(--accent-soft)]" />
+          <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-soft)]">{angle}°</span>
+        </div>
+        <button type="button" onClick={() => onSetBg(`linear-gradient(${angle}deg, ${gA}, ${gB})`)} className="w-full rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90">
+          Aplicar degradado
+        </button>
+      </div>
+
+      {/* Imagen de fondo + overlay */}
+      <div className="space-y-1.5">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Imagen de fondo</p>
+        <div className="dark">
+          <ImageUpload value={imgUrl} onChange={(url) => { setImgUrl(url); if (url) onSetBg(composeImage(url, overlay)); }} onClear={() => { setImgUrl(""); }} folder="store-customizer" aspectRatio="banner" label="" />
+        </div>
+        {imgUrl && (
+          <div className="flex items-center gap-2">
+            <span className="text-[length:var(--ts-2xs)] text-gray-400">Oscurecer</span>
+            <input type="range" min={0} max={80} value={overlay} onChange={(e) => { const ov = Number(e.target.value); setOverlay(ov); onSetBg(composeImage(imgUrl, ov)); }} className="w-full accent-[var(--accent-soft)]" />
+            <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-soft)]">{overlay}%</span>
+          </div>
+        )}
+      </div>
+
+      {/* Patrones */}
+      <div className="space-y-1.5">
+        <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Patrón</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          {BG_PATTERNS.map((p) => (
+            <button key={p.id} type="button" onClick={() => onSetBg(p.css)} className="rounded-lg border border-white/10 p-1 transition-colors hover:border-[var(--accent-soft)]">
+              <span className="block h-8 w-full rounded" style={{ background: p.css }} />
+              <span className="mt-1 block text-center text-[length:var(--ts-2xs)] font-semibold text-gray-300">{p.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * TextStyleControls — controles compactos de estilo de TEXTO para un nodo
  * [data-live] (tamaño, peso, itálica, mayúsculas, color). Escribe en textStyles
@@ -464,7 +624,7 @@ function TextStyleControls({
   value: { size?: number; bold?: boolean; color?: string; italic?: boolean; upper?: boolean };
   onChange: (field: string, partial: Record<string, unknown>) => void;
 }) {
-  const SIZES: Array<[string, number]> = [["S", 0.85], ["M", 1], ["L", 1.25], ["XL", 1.6]];
+  const SIZES: Array<[string, number]> = [["XS", 0.7], ["S", 0.85], ["M", 1], ["L", 1.25], ["XL", 1.6], ["2XL", 2]];
   const curSize = value.size ?? 1;
   const toggleBtn = (active: boolean) =>
     cn(
@@ -689,6 +849,23 @@ function SectionStyleEditor({
         <SectionColorPicker label="Texto" value={value.text} onChange={(v) => onChange({ text: v })} clearLabel="Auto" />
       </SectionCard>
 
+      {/* Fondo avanzado (Brandon 2026-06-27 · #3): degradado / imagen+overlay / patrón */}
+      <details className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+        <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/[0.02]">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)]/15 text-[var(--accent-soft)]">
+            <Palette className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold leading-tight text-white">Fondo avanzado</p>
+            <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-gray-400">Degradado · imagen con overlay · patrón</p>
+          </div>
+          <ChevronDown className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="border-t border-white/5 p-3">
+          <AdvancedBackground onSetBg={(bg) => onChange({ bg })} />
+        </div>
+      </details>
+
       <SectionCard icon={SlidersHorizontal} title="Forma y espaciado">
         <StylePicker
           label="Espaciado vertical"
@@ -731,6 +908,68 @@ function SectionStyleEditor({
             { value: "none", label: "Ninguna", preview: <span className="h-5 w-7 rounded bg-white/20" /> },
             { value: "soft", label: "Suave", preview: <span className="h-5 w-7 rounded bg-white/30 shadow-md" /> },
             { value: "deep", label: "Profunda", preview: <span className="h-5 w-7 rounded bg-white/40 shadow-xl" /> },
+          ]}
+        />
+        <StylePicker
+          label="Tipografía de la sección"
+          cols={4}
+          value={value.font ?? ""}
+          onChange={(v) => onChange({ font: v || undefined })}
+          options={SECTION_FONT_OPTIONS.map((f) => ({
+            value: f.stack, // guardar el STACK (no el id) → familia CSS real + carga del link
+            label: f.label,
+            preview: <span className="text-base font-bold text-white" style={f.stack ? { fontFamily: f.stack } : undefined}>Aa</span>,
+          }))}
+        />
+      </SectionCard>
+
+      {/* #4 Layout y movimiento (Brandon 2026-06-27) */}
+      <SectionCard icon={SlidersHorizontal} title="Layout y movimiento">
+        <StylePicker
+          label="Ancho del contenido"
+          cols={3}
+          value={value.width ?? "normal"}
+          onChange={(v) => onChange({ width: v === "normal" ? undefined : (v as "narrow" | "full") })}
+          options={[
+            { value: "narrow", label: "Angosto", preview: <span className="h-4 w-4 rounded bg-white/40" /> },
+            { value: "normal", label: "Normal", preview: <span className="h-4 w-6 rounded bg-white/40" /> },
+            { value: "full", label: "Full", preview: <span className="h-4 w-8 rounded bg-white/40" /> },
+          ]}
+        />
+        <Field
+          label={
+            <div className="mb-1 flex w-full items-center justify-between">
+              <span>Ajuste fino vertical</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">{typeof value.padY === "number" ? `${value.padY}px` : "auto"}</span>
+            </div>
+          }
+          labelClassName={LABEL_CLASS}
+        >
+          {(id) => (
+            <input id={id} type="range" min={0} max={96} value={value.padY ?? 0} onChange={(e) => onChange({ padY: Number(e.target.value) || undefined })} className="w-full accent-[var(--accent-soft)]" />
+          )}
+        </Field>
+        <StylePicker
+          label="Separador (abajo)"
+          cols={3}
+          value={value.divider ?? "none"}
+          onChange={(v) => onChange({ divider: v === "none" ? undefined : (v as "line" | "space") })}
+          options={[
+            { value: "none", label: "Ninguno", preview: <span className="h-4 w-6 rounded bg-white/20" /> },
+            { value: "line", label: "Línea", preview: <span className="h-4 w-6 border-b-2 border-white/50" /> },
+            { value: "space", label: "Espacio", preview: <span className="h-4 w-6 rounded bg-white/10" /> },
+          ]}
+        />
+        <StylePicker
+          label="Animación de entrada"
+          cols={4}
+          value={value.anim ?? "none"}
+          onChange={(v) => onChange({ anim: v === "none" ? undefined : (v as "fade" | "up" | "zoom") })}
+          options={[
+            { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-gray-400" /> },
+            { value: "fade", label: "Aparecer", preview: <Sparkles className="h-4 w-4 text-gray-300" /> },
+            { value: "up", label: "Subir", preview: <ChevronUp className="h-4 w-4 text-gray-300" /> },
+            { value: "zoom", label: "Zoom", preview: <Plus className="h-4 w-4 text-gray-300" /> },
           ]}
         />
       </SectionCard>
@@ -850,6 +1089,135 @@ function CustomSectionEditor({
           </div>
         )}
       </SectionCard>
+
+      {/* Campos específicos de bloques nuevos (Brandon 2026-06-27 · #2) */}
+      {(typeof d.buttonLabel === "string" || typeof d.videoUrl === "string" || typeof d.address === "string" || typeof d.endsAt === "string") && (
+        <SectionCard icon={SlidersHorizontal} title="Opciones del bloque">
+          {typeof d.buttonLabel === "string" && (
+            <div className="space-y-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Texto del botón</p>
+              <input className={INPUT_CLASS} value={d.buttonLabel as string} onChange={(e) => onPatch({ buttonLabel: e.target.value })} maxLength={40} />
+            </div>
+          )}
+          {typeof d.buttonUrl === "string" && (
+            <div className="space-y-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Link del botón</p>
+              <input className={INPUT_CLASS} value={d.buttonUrl as string} onChange={(e) => onPatch({ buttonUrl: e.target.value })} placeholder="https://wa.me/51… o /t/mi-tienda/tienda" />
+            </div>
+          )}
+          {typeof d.videoUrl === "string" && (
+            <div className="space-y-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Link del video</p>
+              <input className={INPUT_CLASS} value={d.videoUrl as string} onChange={(e) => onPatch({ videoUrl: e.target.value })} placeholder="YouTube o .mp4" />
+            </div>
+          )}
+          {typeof d.address === "string" && (
+            <div className="space-y-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Dirección</p>
+              <input className={INPUT_CLASS} value={d.address as string} onChange={(e) => onPatch({ address: e.target.value })} placeholder="Jr. Lima 123, Ciudad Constitución" />
+            </div>
+          )}
+          {typeof d.endsAt === "string" && (
+            <div className="space-y-1.5">
+              <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Termina el</p>
+              <input type="datetime-local" className={INPUT_CLASS} value={(d.endsAt as string).slice(0, 16)} onChange={(e) => onPatch({ endsAt: e.target.value })} />
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {Array.isArray((d as { logos?: unknown }).logos) && (
+        <SectionCard icon={ImageIcon} title="Logos / marcas" hint="Agregá, cambiá o quitá logos">
+          {((d as { logos: Array<{ url: string; alt?: string }> }).logos).map((lg, i, arr) => (
+            <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Logo {i + 1}</p>
+                <button type="button" onClick={() => onPatch({ logos: arr.filter((_, j) => j !== i) })} aria-label="Quitar logo" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="dark">
+                <ImageUpload value={lg.url} onChange={(url) => onPatch({ logos: arr.map((x, j) => (j === i ? { ...x, url } : x)) })} onClear={() => onPatch({ logos: arr.filter((_, j) => j !== i) })} folder="store-customizer" aspectRatio="square" label="" />
+              </div>
+            </div>
+          ))}
+          <button type="button" onClick={() => onPatch({ logos: [...((d as { logos: Array<{ url: string; alt?: string }> }).logos), { url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+            <Plus className="h-3.5 w-3.5" /> Agregar logo
+          </button>
+        </SectionCard>
+      )}
+
+      {/* Equipo (Lote A): miembros con foto/nombre/rol */}
+      {Array.isArray((d as { members?: unknown }).members) && (
+        <SectionCard icon={Users} title="Personas del equipo" hint="Foto, nombre y rol de cada uno">
+          {((d as { members: Array<{ name: string; role?: string; photo?: string }> }).members).map((m, i, arr) => (
+            <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Persona {i + 1}</p>
+                <button type="button" onClick={() => onPatch({ members: arr.filter((_, j) => j !== i) })} aria-label="Quitar persona" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="dark">
+                <ImageUpload value={m.photo ?? ""} onChange={(url) => onPatch({ members: arr.map((x, j) => (j === i ? { ...x, photo: url } : x)) })} onClear={() => onPatch({ members: arr.map((x, j) => (j === i ? { ...x, photo: "" } : x)) })} folder="store-customizer" aspectRatio="square" label="" />
+              </div>
+              <input className={INPUT_CLASS} placeholder="Nombre" value={m.name} onChange={(e) => onPatch({ members: arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} maxLength={50} />
+              <input className={INPUT_CLASS} placeholder="Rol (ej. Dueño/a)" value={m.role ?? ""} onChange={(e) => onPatch({ members: arr.map((x, j) => (j === i ? { ...x, role: e.target.value } : x)) })} maxLength={40} />
+            </div>
+          ))}
+          <button type="button" onClick={() => onPatch({ members: [...((d as { members: Array<{ name: string; role?: string; photo?: string }> }).members), { name: "", role: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+            <Plus className="h-3.5 w-3.5" /> Agregar persona
+          </button>
+        </SectionCard>
+      )}
+
+      {/* Redes (Lote A): plataforma + URL */}
+      {Array.isArray((d as { links?: unknown }).links) && (
+        <SectionCard icon={Share2} title="Links de redes" hint="Elegí la red y pegá el link">
+          {((d as { links: Array<{ platform: string; url: string }> }).links).map((lk, i, arr) => (
+            <div key={i} className="flex items-center gap-1.5 rounded-lg border border-white/10 p-2">
+              <select value={lk.platform} onChange={(e) => onPatch({ links: arr.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x)) })} className={cn(INPUT_CLASS, "w-28 shrink-0")} aria-label="Red social">
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+                <option value="tiktok">TikTok</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="web">Sitio web</option>
+              </select>
+              <input className={INPUT_CLASS} placeholder="https://..." value={lk.url} onChange={(e) => onPatch({ links: arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })} />
+              <button type="button" onClick={() => onPatch({ links: arr.filter((_, j) => j !== i) })} aria-label="Quitar red" className="shrink-0 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => onPatch({ links: [...((d as { links: Array<{ platform: string; url: string }> }).links), { platform: "instagram", url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+            <Plus className="h-3.5 w-3.5" /> Agregar red
+          </button>
+        </SectionCard>
+      )}
+
+      {/* Categorías (Lote B): nombre + imagen + link. Gated por tipo (benefits también usa items). */}
+      {section.type === "categories" && Array.isArray((d as { items?: unknown }).items) && (
+        <SectionCard icon={Layout} title="Categorías" hint="Nombre, imagen de fondo y a dónde lleva">
+          {((d as { items: Array<{ name: string; image?: string; url?: string }> }).items).map((it, i, arr) => (
+            <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Categoría {i + 1}</p>
+                <button type="button" onClick={() => onPatch({ items: arr.filter((_, j) => j !== i) })} aria-label="Quitar categoría" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="dark">
+                <ImageUpload value={it.image ?? ""} onChange={(url) => onPatch({ items: arr.map((x, j) => (j === i ? { ...x, image: url } : x)) })} onClear={() => onPatch({ items: arr.map((x, j) => (j === i ? { ...x, image: "" } : x)) })} folder="store-customizer" aspectRatio="banner" label="" />
+              </div>
+              <input className={INPUT_CLASS} placeholder="Nombre" value={it.name} onChange={(e) => onPatch({ items: arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} maxLength={40} />
+              <input className={INPUT_CLASS} placeholder="Link (ej. /t/mi-tienda/tienda?cat=bebidas)" value={it.url ?? ""} onChange={(e) => onPatch({ items: arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })} />
+            </div>
+          ))}
+          <button type="button" onClick={() => onPatch({ items: [...((d as { items: Array<{ name: string; image?: string; url?: string }> }).items), { name: "", image: "", url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+            <Plus className="h-3.5 w-3.5" /> Agregar categoría
+          </button>
+        </SectionCard>
+      )}
 
       {typeof d.imageUrl === "string" && (
         <SectionCard icon={ImageIcon} title="Imagen">
@@ -1071,6 +1439,8 @@ function reloadSignature(t: StoreTheme): string {
     // (pb-apply-section-style / pb-apply-section-text) o por contentEditable
     // (inlineText) → excluir del reload para que editar NO cause flash (Brandon 2026-06-27).
     sectionStyles: _ss, sectionText: _stx, inlineText: _itx, textStyles: _txs, cardDesign: _cdg,
+    // brandSwatches es solo del editor (no cambia /t) → no recargar el iframe.
+    brandSwatches: _bsw,
     ...rest
   } = t;
   return JSON.stringify(rest);
@@ -1106,7 +1476,26 @@ type SectionStyle = {
   border?: string;
   borderW?: number;
   shadow?: "none" | "soft" | "deep";
+  font?: string; // family stack web-safe (serif/sans/mono) o vacío = tema
+  // #4 Layout y animación (Brandon 2026-06-27)
+  width?: "narrow" | "normal" | "full";
+  padY?: number; // padding vertical fino en px (override de pad)
+  divider?: "none" | "line" | "space";
+  anim?: "none" | "fade" | "up" | "zoom";
 };
+
+// Tipografías por sección. Web-safe (serif/sans/mono) + Google reales (Brandon
+// 2026-06-27 · #3). Las reales llevan la familia entre comillas como 1ª del stack
+// → /t las detecta y carga el <link>, y el overlay las inyecta en vivo.
+const SECTION_FONT_OPTIONS: Array<{ id: string; label: string; stack: string }> = [
+  { id: "", label: "Tema", stack: "" },
+  { id: "serif", label: "Serif", stack: 'Georgia, "Times New Roman", serif' },
+  { id: "sans", label: "Sans", stack: 'ui-sans-serif, system-ui, -apple-system, sans-serif' },
+  { id: "mono", label: "Mono", stack: 'ui-monospace, "Courier New", monospace' },
+  { id: "playfair", label: "Playfair", stack: '"Playfair Display", Georgia, serif' },
+  { id: "poppins", label: "Poppins", stack: '"Poppins", system-ui, sans-serif' },
+  { id: "montserrat", label: "Montserrat", stack: '"Montserrat", system-ui, sans-serif' },
+];
 
 // Secciones del cuerpo a las que el panel lateral puede cambiarles el estilo.
 // hero/announcement quedan fuera: tienen flujo propio (editor de hero / banda de
@@ -1132,6 +1521,17 @@ const SECTION_DESIGN_PRESETS: { id: string; name: string; style: SectionStyle }[
   { id: "oscuro", name: "Oscuro", style: { bg: "#0F172A", text: "#F8FAFC", radius: 18, shadow: "deep", pad: "lg" } },
   { id: "contorno", name: "Contorno", style: { border: "#0F172A", borderW: 2, radius: 14, pad: "md" } },
   { id: "marcado", name: "Marcado", style: { bg: "#FFF7ED", border: "#FB923C", borderW: 2, radius: 16, pad: "md" } },
+  // Degradados y looks nuevos (Brandon 2026-06-27)
+  { id: "degradado-marca", name: "Degradado marca", style: { bg: "linear-gradient(135deg, #00A0A0, #FF6B5B)", text: "#FFFFFF", radius: 20, shadow: "soft", pad: "lg" } },
+  { id: "degradado-noche", name: "Noche degradada", style: { bg: "linear-gradient(135deg, #0F172A, #334155)", text: "#F8FAFC", radius: 20, shadow: "deep", pad: "lg" } },
+  { id: "atardecer", name: "Atardecer", style: { bg: "linear-gradient(135deg, #F59E0B, #DC2626)", text: "#FFFFFF", radius: 18, pad: "lg" } },
+  { id: "menta", name: "Menta", style: { bg: "#ECFDF5", radius: 16, border: "#6EE7B7", borderW: 1, pad: "md" } },
+  { id: "cielo", name: "Cielo", style: { bg: "#EFF6FF", radius: 16, border: "#93C5FD", borderW: 1, pad: "md" } },
+  { id: "crema", name: "Crema", style: { bg: "#FEFCE8", radius: 18, shadow: "soft", pad: "lg" } },
+  { id: "elevado", name: "Elevado", style: { bg: "#FFFFFF", radius: 28, shadow: "deep", border: "#F1F5F9", borderW: 1, pad: "lg" } },
+  { id: "lavanda", name: "Lavanda", style: { bg: "linear-gradient(135deg, #EDE9FE, #FCE7F3)", radius: 20, pad: "lg" } },
+  { id: "borde-acento", name: "Borde acento", style: { bg: "#FFFFFF", border: "#00A0A0", borderW: 3, radius: 16, pad: "md" } },
+  { id: "compacto", name: "Compacto", style: { bg: "#F1F5F9", radius: 12, pad: "sm" } },
 ];
 
 // Secciones cuyo texto (etiqueta + título) se puede editar desde el panel lateral.
@@ -1190,6 +1590,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [bodyDragKey, setBodyDragKey] = useState<string | null>(null);
   const [bodyDragOverKey, setBodyDragOverKey] = useState<string | null>(null);
   const [viewport, setViewport] = useState<Viewport>("desktop");
+  // #11 Ancho de preview personalizado (px). null = usar el viewport preset.
+  const [customWidth, setCustomWidth] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<StoreTheme>(initialTheme);
   const [history, setHistory] = useState<StoreTheme[]>([]);
@@ -1208,6 +1610,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [splitPreview, setSplitPreview] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const [savedSnapshots, setSavedSnapshots] = useState<Array<{ theme: StoreTheme; savedAt: string }>>([]);
+  // #10 Indicador de autoguardado: timestamp del último guardado + tick para "hace X".
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState(0);
+  useEffect(() => { const id = setInterval(() => setNowTick((t) => t + 1), 15000); return () => clearInterval(id); }, []);
+  const savedLabel = useMemo(() => {
+    void nowTick; // recomputar en cada tick para el "hace X"
+    if (savedAt == null) return null;
+    const diff = Math.max(0, Math.floor((Date.now() - savedAt) / 1000));
+    if (diff < 5) return "Guardado";
+    if (diff < 60) return `Guardado hace ${diff}s`;
+    return `Guardado hace ${Math.floor(diff / 60)} min`;
+  }, [savedAt, nowTick]);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutoSavedRef = useRef<string>("");
   // Última firma "no-en-vivo" reflejada en el iframe (ver reloadSignature).
@@ -1317,11 +1731,60 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     });
   }, [saveCustomSections]);
 
+  // Duplicar una sección custom (#1): copia su data justo debajo del original.
+  const duplicateCustomSection = useCallback((id: string) => {
+    setCustomSections((prev) => {
+      const i = prev.findIndex((s) => s.id === id);
+      if (i < 0) return prev;
+      const src = prev[i];
+      const copyId = `sec-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4).toString(36)}`;
+      const copy = { ...src, id: copyId, data: structuredClone(src.data) } as Section;
+      const arr = [...prev.slice(0, i + 1), copy, ...prev.slice(i + 1)];
+      const next = arr.map((s, k) => ({ ...s, order: k })) as Section[];
+      saveCustomSections(next);
+      return next;
+    });
+  }, [saveCustomSections]);
+
   const pushChange = useCallback((next: StoreTheme) => {
     setHistory((prev) => [...prev.slice(-30), draft]);
     setFuture([]);
     setDraft(next);
   }, [draft]);
+
+  // #10 Exportar / Importar tema (JSON) — para clonar el look entre sucursales.
+  const exportTheme = useCallback(() => {
+    const payload = { __buleje_theme__: 1, theme: draftRef.current, customSections };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tema-${tenantSlug}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [customSections, tenantSlug]);
+
+  const [importError, setImportError] = useState<string | null>(null);
+  const importTheme = useCallback((file: File) => {
+    setImportError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result)) as { __buleje_theme__?: number; theme?: Partial<StoreTheme>; customSections?: Section[] };
+        if (!parsed?.theme || typeof parsed.theme !== "object") { setImportError("El archivo no es un tema válido de Buleje."); return; }
+        pushChange({ ...draftRef.current, ...parsed.theme });
+        if (Array.isArray(parsed.customSections)) {
+          setCustomSections(parsed.customSections);
+          saveCustomSections(parsed.customSections);
+        }
+      } catch {
+        setImportError("No se pudo leer el archivo. ¿Es un .json exportado desde acá?");
+      }
+    };
+    reader.readAsText(file);
+  }, [pushChange, saveCustomSections]);
 
   const patch = useCallback(<K extends keyof StoreTheme>(key: K, value: StoreTheme[K]) => {
     pushChange({ ...draft, [key]: value });
@@ -1559,6 +2022,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       lastAutoSavedRef.current = draftJson;
       onApplyTheme(draft)
         .then(() => {
+          setSavedAt(Date.now());
           // Recargar SOLO si cambió algo que el preview en vivo no cubre (imagen,
           // logo, secciones…). Color/fuente/dark/texto del hero ya están en vivo →
           // sin recarga = sin flash al escribir.
@@ -1587,12 +2051,16 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     const win = frame?.contentWindow;
     if (!win) return;
     const font = EDITOR_FONT_MAP[theme.fontFamily];
+    // Par de fuentes (Lote A): título = font, cuerpo = bodyFont (o título si vacío).
+    const bodyFont = theme.bodyFontFamily ? EDITOR_FONT_MAP[theme.bodyFontFamily] : undefined;
+    const bodyStack = bodyFont?.stack ?? font?.stack;
     const vars: Record<string, string> = {
       "--tenant-primary": theme.primaryColor,
       "--tenant-secondary": theme.secondaryColor,
       "--tenant-accent": theme.accentColor,
       "--tenant-radius": `${theme.borderRadius}px`,
-      ...(font ? { "--tenant-font": font.stack } : {}),
+      ...(bodyStack ? { "--tenant-font": bodyStack } : {}),
+      ...(font ? { "--font-display-family": font.stack } : {}),
       ...(EDITOR_BTN_RADIUS[theme.buttonStyle] ? { "--tenant-btn-radius": EDITOR_BTN_RADIUS[theme.buttonStyle] } : {}),
     };
     // Brandon 2026-06-25: además de las CSS vars, mandamos modo oscuro + textos
@@ -1613,6 +2081,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           type: "live-theme",
           vars,
           fontLabel: font?.label ?? null,
+          bodyFontLabel: bodyFont?.label ?? null,
           darkMode: theme.darkModeDefault,
           text,
         },
@@ -1788,6 +2257,26 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     });
   }, [draft, pushChange]);
 
+  // Plantilla de PÁGINA COMPLETA (Brandon 2026-06-27): tema + orden + estilos por
+  // sección en un solo pushChange, y reflejo en vivo (colores via postLiveTheme;
+  // estilos por sección + orden via postMessage).
+  const applyPageTemplate = useCallback((tpl: PageTemplate) => {
+    pushChange({
+      ...draft,
+      ...tpl.theme,
+      bodyOrder: tpl.bodyOrder,
+      sectionStyles: { ...tpl.sectionStyles } as StoreTheme["sectionStyles"],
+      bodyHidden: [],
+    });
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      for (const [key, style] of Object.entries(tpl.sectionStyles)) {
+        frame?.contentWindow?.postMessage({ source: "buleje-editor", type: "pb-apply-section-style", key, style }, window.location.origin);
+      }
+      frame?.contentWindow?.postMessage({ source: "buleje-editor", type: "pb-reorder", order: tpl.bodyOrder }, window.location.origin);
+    } catch { /* cross-origin guard */ }
+  }, [draft, pushChange]);
+
   // ── Tema con IA (Brandon 2026-06-26) ──────────────────────────────────────
   // El dueño describe su negocio → POST a /api/admin/store-customizer/ai-theme →
   // aplica colores + fuente + estilo + copy del hero en un solo pushChange.
@@ -1864,6 +2353,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     try {
       await onApplyTheme(draft);
       lastAutoSavedRef.current = JSON.stringify(draft);
+      setSavedAt(Date.now());
       setIframeKey((k) => k + 1);
       setSavedSnapshots((prev) => [
         { theme: draft, savedAt: new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) },
@@ -1936,11 +2426,11 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         <div className="flex items-center justify-center">
           <div className="inline-flex items-center gap-0.5 bg-white/[0.04] rounded-lg p-0.5 border border-white/5">
             {VIEWPORTS.map((vp) => {
-              const active = viewport === vp.id;
+              const active = viewport === vp.id && customWidth === null;
               return (
                 <button
                   key={vp.id}
-                  onClick={() => setViewport(vp.id)}
+                  onClick={() => { setViewport(vp.id); setCustomWidth(null); }}
                   title={vp.label}
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all",
@@ -1954,6 +2444,20 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 </button>
               );
             })}
+            {/* #11 Ancho personalizado en px */}
+            <label className={cn("inline-flex items-center gap-1 rounded-lg pl-2 pr-1 h-8 transition-all", customWidth !== null ? "bg-white/10" : "")} title="Ancho personalizado (px)">
+              <Maximize2 className="h-3.5 w-3.5 text-gray-400" aria-hidden />
+              <input
+                type="number"
+                min={280}
+                max={1920}
+                placeholder="px"
+                value={customWidth ?? ""}
+                onChange={(e) => { const n = Number(e.target.value); setCustomWidth(e.target.value === "" || Number.isNaN(n) ? null : Math.min(1920, Math.max(280, n))); }}
+                aria-label="Ancho personalizado en píxeles"
+                className="w-12 bg-transparent text-xs font-bold text-white outline-none placeholder:text-gray-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </label>
           </div>
         </div>
 
@@ -2016,6 +2520,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               </>
             )}
           </div>
+
+          {/* #10 Indicador de autoguardado */}
+          {savedLabel && (
+            <span data-testid="autosave-indicator" className="hidden items-center gap-1 px-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] lg:inline-flex" title="Tus cambios se guardan solos">
+              <Check className="h-3.5 w-3.5" />
+              {savedLabel}
+            </span>
+          )}
 
           <a
             href={`/t/${tenantSlug}?preview=true`}
@@ -2171,6 +2683,35 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 </div>
 
                 <div>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)] mb-1">Plantillas de página completas</p>
+                  <p className="text-xs text-gray-400 leading-snug">Un look INTEGRAL en 1 clic — colores + tipografía + orden y estilo de cada sección.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {PAGE_TEMPLATES.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => applyPageTemplate(tpl)}
+                      className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] text-left transition-colors hover:border-[var(--accent-soft)] hover:bg-white/[0.05]"
+                    >
+                      {/* Mini-mockup multi-banda: representa varias secciones */}
+                      <div className="flex h-16 flex-col gap-0.5 p-1.5" style={{ background: tpl.theme.darkModeDefault ? "#0f172a" : "#ffffff" }}>
+                        <div className="h-2 w-2/3 rounded-full" style={{ background: tpl.theme.primaryColor }} />
+                        <div className="flex-1 rounded" style={{ background: `linear-gradient(135deg, ${tpl.theme.primaryColor}, ${tpl.theme.accentColor})` }} />
+                        <div className="flex gap-0.5">
+                          <div className="h-3 flex-1 rounded-sm" style={{ background: tpl.theme.secondaryColor, opacity: 0.5 }} />
+                          <div className="h-3 flex-1 rounded-sm" style={{ background: tpl.theme.secondaryColor, opacity: 0.3 }} />
+                        </div>
+                      </div>
+                      <div className="px-2 py-1.5">
+                        <p className="truncate text-[length:var(--ts-2xs)] font-bold text-white">{tpl.name}</p>
+                        <p className="truncate text-[length:var(--ts-2xs)] text-gray-400">{tpl.vibe}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="pt-1">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)] mb-1">Plantillas listas</p>
                   <p className="text-xs text-gray-400 leading-snug">Aplicá un look completo en 1 click — colores + tipografía + estilo.</p>
                 </div>
@@ -2448,6 +2989,32 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   </div>
                   <p className="text-[length:var(--ts-2xs)] text-gray-500">Fondo del hero · click o arrastrá · máx 5 MB</p>
                 </div>
+
+                {/* #2 Gradiente del hero (si no hay foto) — 2 colores + ángulo */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <p className={LABEL_CLASS}>Gradiente del hero {draft.heroImage ? "(quitá la foto para verlo)" : ""}</p>
+                  <div className="flex items-center gap-2">
+                    <label className="relative inline-flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15" title="Color 1">
+                      <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: draft.heroGradientFrom || "#00A0A0" }} />
+                      <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(draft.heroGradientFrom) ? draft.heroGradientFrom : "#00A0A0"} onChange={(e) => patch("heroGradientFrom", e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Color 1 del gradiente" />
+                    </label>
+                    <label className="relative inline-flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15" title="Color 2">
+                      <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: draft.heroGradientTo || "#FF6B5B" }} />
+                      <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(draft.heroGradientTo) ? draft.heroGradientTo : "#FF6B5B"} onChange={(e) => patch("heroGradientTo", e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Color 2 del gradiente" />
+                    </label>
+                    <div className="h-8 flex-1 rounded-md border border-white/10" style={{ background: `linear-gradient(${draft.heroGradientAngle ?? 135}deg, ${draft.heroGradientFrom || "#00A0A0"}, ${draft.heroGradientTo || "#FF6B5B"})` }} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[length:var(--ts-2xs)] text-gray-400">Ángulo</span>
+                    <input type="range" min={0} max={360} value={draft.heroGradientAngle ?? 135} onChange={(e) => patch("heroGradientAngle", Number(e.target.value))} className="w-full accent-[var(--data-success-500)]" />
+                    <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--data-success-500)]">{draft.heroGradientAngle ?? 135}°</span>
+                  </div>
+                  {(draft.heroGradientFrom || draft.heroGradientTo) && (
+                    <button type="button" onClick={() => { patch("heroGradientFrom", ""); patch("heroGradientTo", ""); }} className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 transition-colors hover:text-[var(--data-error-500)]">
+                      Quitar gradiente (volver a color de marca)
+                    </button>
+                  )}
+                </div>
               </>
             )}
 
@@ -2478,6 +3045,39 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <ColorField label="Color primario" value={draft.primaryColor} onChange={(v) => patch("primaryColor", v)} />
                 <ColorField label="Color secundario" value={draft.secondaryColor} onChange={(v) => patch("secondaryColor", v)} />
                 <ColorField label="Color acento" value={draft.accentColor} onChange={(v) => patch("accentColor", v)} />
+
+                {/* #2 Swatches de marca: guardá colores y reutilizalos en 1 click */}
+                <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-300">Colores de marca</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cur = (draft.brandSwatches ?? []) as string[];
+                        const add = [draft.primaryColor, draft.secondaryColor, draft.accentColor].filter((c) => /^#[0-9A-Fa-f]{6}$/.test(c));
+                        const next = Array.from(new Set([...cur, ...add])).slice(0, 6);
+                        patch("brandSwatches", next);
+                      }}
+                      className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-gray-200 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <Plus className="h-3 w-3" /> Guardar actuales
+                    </button>
+                  </div>
+                  {(draft.brandSwatches ?? []).length === 0 ? (
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Guardá tus colores para reusarlos. Click en un color → lo aplica al primario.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(draft.brandSwatches ?? []).map((c, i) => (
+                        <div key={`${c}-${i}`} className="group relative">
+                          <button type="button" onClick={() => patch("primaryColor", c)} title={`Aplicar ${c} al primario`} className="h-7 w-7 rounded-md border border-white/20 transition-transform hover:scale-110" style={{ background: c }} aria-label={`Aplicar color ${c}`} />
+                          <button type="button" onClick={() => patch("brandSwatches", (draft.brandSwatches ?? []).filter((_, j) => j !== i))} aria-label="Quitar color" className="absolute -right-1 -top-1 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--data-error-500)] text-white group-hover:flex">
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Vista previa de cómo combinan los colores en la tienda */}
                 <div className="rounded-lg border border-white/10 overflow-hidden">
@@ -2645,6 +3245,32 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   })}
                 </SectionCard>
 
+                {/* #5 Grid configurable de productos destacados (columnas + cantidad) */}
+                <SectionCard icon={ShoppingBag} title="Productos destacados" hint="Cómo se ve la grilla de productos en la home">
+                  <StylePicker
+                    label="Columnas"
+                    cols={3}
+                    value={String(draft.featuredCols ?? 4)}
+                    onChange={(v) => patch("featuredCols", Number(v) as 2 | 3 | 4)}
+                    options={[
+                      { value: "2", label: "2", preview: <span className="h-4 w-4 rounded bg-white/40" /> },
+                      { value: "3", label: "3", preview: <span className="h-4 w-6 rounded bg-white/40" /> },
+                      { value: "4", label: "4", preview: <span className="h-4 w-8 rounded bg-white/40" /> },
+                    ]}
+                  />
+                  <StylePicker
+                    label="Cuántos mostrar"
+                    cols={3}
+                    value={String(draft.featuredCount ?? 8)}
+                    onChange={(v) => patch("featuredCount", Number(v))}
+                    options={[
+                      { value: "4", label: "4", preview: <span className="text-xs font-bold text-gray-300">4</span> },
+                      { value: "8", label: "8", preview: <span className="text-xs font-bold text-gray-300">8</span> },
+                      { value: "12", label: "12", preview: <span className="text-xs font-bold text-gray-300">12</span> },
+                    ]}
+                  />
+                </SectionCard>
+
                 {/* ── #6 Secciones de tu página (custom): crear/ordenar/ocultar/borrar ── */}
                 <SectionCard icon={Layout} title="Secciones de tu página" hint="Galería, sobre nosotros, horarios… crear, ordenar, ocultar o borrar">
                   {customSections.length === 0 && (
@@ -2665,6 +3291,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         <span className="text-[length:var(--ts-2xs)] text-gray-500">{s.visible ? "Visible" : "Oculta"} · editar →</span>
                       </button>
                       <Toggle checked={s.visible} onChange={(v) => setCustomSectionVisible(s.id, v)} />
+                      <button type="button" onClick={() => duplicateCustomSection(s.id)} aria-label="Duplicar sección" className="shrink-0 rounded p-1 text-gray-500 transition-colors hover:text-white">
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
                       <button type="button" onClick={() => removeCustomSection(s.id)} aria-label="Borrar sección" className="shrink-0 rounded p-1 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -2725,9 +3354,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "tipografia" && (
               <>
-                {/* Fuente — tarjetas renderizadas en su PROPIA tipografía (Brandon 2026-06-25) */}
+                {/* Fuente de TÍTULOS — tarjetas en su propia tipografía (Brandon 2026-06-25) */}
                 <div>
-                  <p className={LABEL_CLASS}>Fuente</p>
+                  <p className={LABEL_CLASS}>Fuente de títulos</p>
                   <div className="grid grid-cols-2 gap-2">
                     {FONT_OPTIONS.map((f) => {
                       const active = draft.fontFamily === f.value;
@@ -2752,10 +3381,37 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   </div>
                 </div>
 
-                {/* Vista previa: título + cuerpo en la fuente elegida + redondez del botón */}
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3" style={{ fontFamily: EDITOR_FONT_MAP[draft.fontFamily]?.stack }}>
-                  <p className="text-lg font-black text-white leading-tight">Bodega Buleje</p>
-                  <p className="text-xs text-gray-400 mt-1">Frutas frescas, abarrotes y delivery rápido a tu puerta.</p>
+                {/* Fuente del CUERPO (Lote A): par de fuentes título + cuerpo */}
+                <div>
+                  <p className={LABEL_CLASS}>Fuente del cuerpo</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{ value: "", label: "Igual que títulos" }, ...FONT_OPTIONS].map((f) => {
+                      const active = (draft.bodyFontFamily ?? "") === f.value;
+                      const stack = f.value ? EDITOR_FONT_MAP[f.value]?.stack : EDITOR_FONT_MAP[draft.fontFamily]?.stack;
+                      return (
+                        <button
+                          key={f.value || "same"}
+                          type="button"
+                          onClick={() => patch("bodyFontFamily", f.value)}
+                          className={cn(
+                            "rounded-lg border p-2.5 text-left transition-colors",
+                            active
+                              ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10"
+                              : "border-white/10 bg-white/[0.03] hover:border-white/25",
+                          )}
+                        >
+                          <span className="block text-xl leading-none text-white" style={{ fontFamily: stack }}>Aa</span>
+                          <span className="mt-1 block text-[length:var(--ts-2xs)] text-gray-400">{f.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Vista previa: título + cuerpo en SUS fuentes + redondez del botón */}
+                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                  <p className="text-lg font-black text-white leading-tight" style={{ fontFamily: EDITOR_FONT_MAP[draft.fontFamily]?.stack }}>Bodega Buleje</p>
+                  <p className="text-xs text-gray-400 mt-1" style={{ fontFamily: EDITOR_FONT_MAP[draft.bodyFontFamily || draft.fontFamily]?.stack }}>Frutas frescas, abarrotes y delivery rápido a tu puerta.</p>
                   <span className="mt-2.5 inline-block bg-[var(--data-success-500)] text-white text-xs font-bold px-3 py-1.5" style={{ borderRadius: draft.borderRadius }}>Comprar ahora</span>
                 </div>
 
@@ -2916,6 +3572,86 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <Toggle checked={draft.openStatusEnabled ?? false} onChange={(v) => patch("openStatusEnabled", v)} />
                 </div>
 
+                {/* #8 Excepciones de horario (feriados) */}
+                {draft.openStatusEnabled && (
+                  <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-300">Excepciones de horario</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Feriados o días especiales que pisan tu horario normal.</p>
+                    {(draft.scheduleExceptions ?? []).map((ex, i, arr) => (
+                      <div key={i} className="flex items-center gap-1.5 rounded-lg border border-white/10 p-2">
+                        <input type="date" value={ex.date} onChange={(e) => patch("scheduleExceptions", arr.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))} className={cn(INPUT_CLASS, "w-36 shrink-0")} aria-label="Fecha" />
+                        <input value={ex.label} onChange={(e) => patch("scheduleExceptions", arr.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} placeholder="Ej. Navidad: Cerrado" className={INPUT_CLASS} />
+                        <label className="flex shrink-0 items-center gap-1 text-[length:var(--ts-2xs)] text-gray-300" title="Cerrado ese día">
+                          <input type="checkbox" checked={ex.closed} onChange={(e) => patch("scheduleExceptions", arr.map((x, j) => (j === i ? { ...x, closed: e.target.checked } : x)))} className="accent-[var(--data-error-500)]" /> Cerrado
+                        </label>
+                        <button type="button" onClick={() => patch("scheduleExceptions", arr.filter((_, j) => j !== i))} aria-label="Quitar excepción" className="shrink-0 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => patch("scheduleExceptions", [...(draft.scheduleExceptions ?? []), { date: "", label: "", closed: true }])} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                      <Plus className="h-3.5 w-3.5" /> Agregar excepción
+                    </button>
+                  </div>
+                )}
+
+                {/* #8 Anuncios rotativos (barra superior) */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-300">Anuncios rotativos</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Barra arriba de la tienda; varios mensajes rotan cada 4s.</p>
+                  {(draft.announcements ?? []).map((msg, i, arr) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <input value={msg} onChange={(e) => patch("announcements", arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder="Ej. Envío gratis hoy en toda la tienda" className={INPUT_CLASS} maxLength={90} />
+                      <button type="button" onClick={() => patch("announcements", arr.filter((_, j) => j !== i))} aria-label="Quitar anuncio" className="shrink-0 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => patch("announcements", [...(draft.announcements ?? []), ""])} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                    <Plus className="h-3.5 w-3.5" /> Agregar anuncio
+                  </button>
+                </div>
+
+                {/* #8 Exit-intent popup */}
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-[var(--text-tertiary)]">Popup al intentar salir</span>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Aparece al ir a cerrar la pestaña · ofrece un cupón</p>
+                  </div>
+                  <Toggle checked={draft.exitIntentEnabled ?? false} onChange={(v) => patch("exitIntentEnabled", v)} />
+                </div>
+                {draft.exitIntentEnabled && (
+                  <>
+                    <Field label="Título" labelClassName={LABEL_CLASS}>
+                      <input className={INPUT_CLASS} value={draft.exitIntentTitle ?? ""} onChange={(e) => patch("exitIntentTitle", e.target.value)} maxLength={60} />
+                    </Field>
+                    <Field label="Mensaje" labelClassName={LABEL_CLASS}>
+                      <input className={INPUT_CLASS} value={draft.exitIntentMessage ?? ""} onChange={(e) => patch("exitIntentMessage", e.target.value)} maxLength={120} />
+                    </Field>
+                    <Field label="Cupón (opcional)" labelClassName={LABEL_CLASS}>
+                      <input className={INPUT_CLASS} value={draft.exitIntentCoupon ?? ""} onChange={(e) => patch("exitIntentCoupon", e.target.value)} maxLength={20} />
+                    </Field>
+                  </>
+                )}
+
+                {/* #8 Widget de chat flotante (posición + burbuja) */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-300">Botón de chat (WhatsApp)</p>
+                  <StylePicker
+                    label="Posición"
+                    cols={2}
+                    value={draft.chatPosition ?? "right"}
+                    onChange={(v) => patch("chatPosition", v as "right" | "left")}
+                    options={[
+                      { value: "right", label: "Derecha", preview: <span className="ml-auto block h-3 w-3 rounded-full bg-white/40" /> },
+                      { value: "left", label: "Izquierda", preview: <span className="mr-auto block h-3 w-3 rounded-full bg-white/40" /> },
+                    ]}
+                  />
+                  <Field label="Texto de la burbuja" labelClassName={LABEL_CLASS}>
+                    <input className={INPUT_CLASS} value={draft.chatBubbleText ?? ""} onChange={(e) => patch("chatBubbleText", e.target.value)} maxLength={80} placeholder="¿Necesitas ayuda? Escribenos" />
+                  </Field>
+                </div>
+
                 <Field label="Tema estacional (1 clic)" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.seasonalTheme ?? "none"} onChange={(e) => patch("seasonalTheme", e.target.value as StoreTheme["seasonalTheme"])}>
                     <option value="none">Ninguno</option>
@@ -3040,6 +3776,22 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <Field label="Custom CSS" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none font-mono text-xs")} rows={6} value={draft.customCSS} onChange={(e) => patch("customCSS", e.target.value)} />
                 </Field>
+
+                {/* #10 Exportar / Importar tema (clonar look entre sucursales) */}
+                <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                  <p className="text-sm font-bold text-white">Exportar / Importar tema</p>
+                  <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-400">Guardá toda la personalización como archivo y aplicala en otra de tus tiendas.</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={exportTheme} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                      <Download className="h-3.5 w-3.5" /> Exportar
+                    </button>
+                    <label className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                      <Upload className="h-3.5 w-3.5" /> Importar
+                      <input type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) importTheme(f); e.target.value = ""; }} />
+                    </label>
+                  </div>
+                  {importError && <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error-500)]">{importError}</p>}
+                </div>
               </>
             )}
 
@@ -3105,6 +3857,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 style={
                   splitPreview
                     ? { width: "48%", maxWidth: "640px" }
+                    : customWidth !== null
+                    ? { width: `${customWidth}px` }
                     : viewport === "mobile"
                     ? { width: "390px" }
                     : viewport === "tablet"

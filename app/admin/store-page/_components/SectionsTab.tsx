@@ -56,6 +56,14 @@ const TYPE_EMOJI: Record<SectionType, string> = {
   benefits: "✨",
   gallery: "📸",
   "image-text": "🖼️",
+  cta: "🎯",
+  video: "🎬",
+  map: "📍",
+  logos: "🏷️",
+  countdown: "⏳",
+  team: "👥",
+  social: "📲",
+  categories: "🗂️",
 };
 
 const TYPE_LABEL: Record<SectionType, string> = {
@@ -67,6 +75,14 @@ const TYPE_LABEL: Record<SectionType, string> = {
   benefits: "Beneficios",
   gallery: "Galería de fotos",
   "image-text": "Imagen + texto",
+  cta: "Banner de acción",
+  video: "Video",
+  map: "Mapa de ubicación",
+  logos: "Marcas / logos",
+  countdown: "Cuenta regresiva",
+  team: "Nuestro equipo",
+  social: "Redes sociales",
+  categories: "Categorías visual",
 };
 
 export default function SectionsTab({ slug = "main" }: { slug?: string }) {
