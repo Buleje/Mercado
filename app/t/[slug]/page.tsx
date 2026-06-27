@@ -190,6 +190,20 @@ async function loadPageData(slug: string) {
     heroGradientAngle: typeof st?.["heroGradientAngle"] === "number" ? (st["heroGradientAngle"] as number) : undefined,
     featuredCols: typeof st?.["featuredCols"] === "number" ? (st["featuredCols"] as number) : undefined,
     featuredCount: typeof st?.["featuredCount"] === "number" ? (st["featuredCount"] as number) : undefined,
+    // Lote D (Brandon 2026-06-27): video/2º CTA hero, velocidad anuncios, fondo página.
+    heroVideoUrl: pickStr("heroVideoUrl"),
+    heroCta2Label: pickStr("heroCta2Label"),
+    heroCta2Url: pickStr("heroCta2Url"),
+    announcementInterval: typeof st?.["announcementInterval"] === "number" ? (st["announcementInterval"] as number) : undefined,
+    pageBgColor: pickStr("pageBgColor"),
+    // Lote E (Brandon 2026-06-27): color de navbar + layout de destacados.
+    navbarBgColor: pickStr("navbarBgColor"),
+    navbarTextColor: pickStr("navbarTextColor"),
+    featuredLayout: pickStr("featuredLayout"),
+    // Lote F (Brandon 2026-06-27): fuente propia por URL.
+    customFontUrl: pickStr("customFontUrl"),
+    customFontName: pickStr("customFontName"),
+    customFontTarget: pickStr("customFontTarget"),
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
@@ -510,8 +524,18 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const fontLabel = editorFont ? editorFont.label : baseFont.label; // null = sistema (sin Google Font)
   // Par de fuentes (Lote A): bodyFontFamily = CUERPO; vacío = misma que títulos.
   const editorBodyFont = editorTheme.bodyFontFamily ? EDITOR_FONT_MAP[editorTheme.bodyFontFamily] : undefined;
-  const bodyStack = editorBodyFont?.stack ?? fontStack;
+  let bodyStack = editorBodyFont?.stack ?? fontStack;
   const bodyLabel = editorBodyFont ? editorBodyFont.label : null;
+  // Fuente personalizada (Lote F): URL hosteada → @font-face. Se aplica a títulos
+  // y/o cuerpo según customFontTarget. Tiene prioridad como 1ª familia del stack.
+  const customFontActive = Boolean(editorTheme.customFontUrl) && editorTheme.customFontTarget !== "none" && editorTheme.customFontTarget !== "";
+  let headingStack = fontStack;
+  if (customFontActive) {
+    const cf = `"BulejeCustomFont"`;
+    const tgt = editorTheme.customFontTarget;
+    if (tgt === "headings" || tgt === "all") headingStack = `${cf}, ${fontStack}`;
+    if (tgt === "body" || tgt === "all") bodyStack = `${cf}, ${bodyStack}`;
+  }
   const btnRadius = editorTheme.buttonStyle ? EDITOR_BTN_RADIUS[editorTheme.buttonStyle] : undefined;
   // Escala tipográfica global (Brandon 2026-06-26): agranda/achica TODO el texto
   // de la tienda escalando el font-size raíz (los text-* de Tailwind son rem).
@@ -554,9 +578,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
     : undefined;
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme" data-store-chrome="tenant" style={brandTokenVars}>
+    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme" data-store-chrome="tenant" style={{ ...(brandTokenVars ?? {}), ...(editorTheme.pageBgColor ? ({ "--surface-canvas": editorTheme.pageBgColor } as React.CSSProperties) : {}) }}>
       {/* Anuncios rotativos (Lote C) — barra superior con N mensajes. */}
-      {editorTheme.announcements.length > 0 && <RotatingAnnouncementBar messages={editorTheme.announcements} />}
+      {editorTheme.announcements.length > 0 && <RotatingAnnouncementBar messages={editorTheme.announcements} intervalMs={(editorTheme.announcementInterval ?? 4) * 1000} />}
       {/* CSS dinamico generado a partir de los design tokens del tenant.
           Sobreescribe el theme de Buleje solo en el subarbol .tenant-theme. */}
       <style dangerouslySetInnerHTML={{ __html: tokensToCssBlock(designTokens) }} />
@@ -574,7 +598,11 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       )}
       {/* Override de tipografía (editor) + radio de botón — sobre .tenant-theme,
           después de tokensToCssBlock para ganar. PreviewLiveTheme pisa en vivo. */}
-      <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{--tenant-font:${bodyStack};--font-display-family:${fontStack};${btnRadius ? `--tenant-btn-radius:${btnRadius};` : ""}}` }} />
+      <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{--tenant-font:${bodyStack};--font-display-family:${headingStack};${btnRadius ? `--tenant-btn-radius:${btnRadius};` : ""}}` }} />
+      {/* Fuente personalizada del dueño (Lote F) — @font-face desde URL hosteada. */}
+      {customFontActive && (
+        <style dangerouslySetInnerHTML={{ __html: `@font-face{font-family:"BulejeCustomFont";src:url("${(editorTheme.customFontUrl ?? "").replace(/"/g, "")}");font-display:swap;}` }} />
+      )}
       {/* Keyframes de animación de entrada por sección (Brandon 2026-06-27 · #4).
           @media reduced-motion las desactiva (a11y). */}
       <style dangerouslySetInnerHTML={{ __html: "@keyframes buleje-fade{from{opacity:0}to{opacity:1}}@keyframes buleje-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}@keyframes buleje-zoom{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}@media (prefers-reduced-motion: reduce){[data-pb]{animation:none !important}}" }} />
@@ -652,6 +680,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         catalogHref={`/t/${tenant.slug}/tienda`}
         searchHref={`/t/${tenant.slug}/tienda#productos`}
         cartHref={`/t/${tenant.slug}/tienda`}
+        bgColor={editorTheme.navbarBgColor || undefined}
+        textColor={editorTheme.navbarTextColor || undefined}
       />
 
       {/* Tema estacional + envío gratis + estado Abierto/Cerrado (Brandon
@@ -700,6 +730,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         heroGradientFrom={editorTheme.heroGradientFrom}
         heroGradientTo={editorTheme.heroGradientTo}
         heroGradientAngle={editorTheme.heroGradientAngle}
+        heroVideoUrl={editorTheme.heroVideoUrl}
+        heroCta2Label={editorTheme.heroCta2Label}
+        heroCta2Url={editorTheme.heroCta2Url}
         displayName={displayName}
         slug={tenant.slug}
         ownerPhone={tenant.ownerPhone}
@@ -838,19 +871,25 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           </div>
 
           {showcase.length > 0 ? (
-            <div className={`grid gap-4 ${editorTheme.featuredCols === 2 ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-2" : editorTheme.featuredCols === 3 ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"}`}>
+            <div className={
+              editorTheme.featuredLayout === "list" ? "flex flex-col gap-3"
+              : editorTheme.featuredLayout === "carousel" ? "flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]"
+              : `grid gap-4 ${editorTheme.featuredCols === 2 ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-2" : editorTheme.featuredCols === 3 ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"}`
+            }>
               {showcase.slice(0, editorTheme.featuredCount ?? 8).map((p) => {
                 const isExclusive = p.exclusivePrice != null;
                 const shownPrice = isExclusive ? p.exclusivePrice! : p.price;
+                const isList = editorTheme.featuredLayout === "list";
+                const isCarousel = editorTheme.featuredLayout === "carousel";
                 return (
                   <Link
                     key={p.id}
                     href={`/t/${tenant.slug}/tienda`}
                     data-pb-card="1"
                     style={cardDesignStyle}
-                    className={`group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 ${cardClass}`}
+                    className={`group relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] transition-all hover:-translate-y-0.5 ${cardClass} ${isList ? "sm:flex sm:items-stretch" : ""} ${isCarousel ? "snap-start shrink-0 w-44 sm:w-52" : ""}`}
                   >
-                    <div className="aspect-square bg-[var(--surface-sunken)] overflow-hidden relative">
+                    <div className={`${isList ? "aspect-[4/3] sm:w-44 sm:shrink-0" : "aspect-square"} bg-[var(--surface-sunken)] overflow-hidden relative`}>
                       {p.image ? (
                         <Image
                           src={p.image}
@@ -883,7 +922,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
                       </div>
                     )}
 
-                    <div className="p-3">
+                    <div className={`p-3 ${isList ? "sm:flex-1 sm:flex sm:flex-col sm:justify-center" : ""}`}>
                       <p data-pb-card-name className="font-semibold text-sm truncate text-[var(--text-primary)]" style={_cd.nameColor ? { color: _cd.nameColor } : undefined}>{p.name}</p>
                       <p className="text-xs text-[var(--text-secondary)] mb-2">{p.unit}</p>
                       <div className="flex items-baseline gap-2">

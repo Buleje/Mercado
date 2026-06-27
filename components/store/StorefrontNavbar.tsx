@@ -41,6 +41,10 @@ interface StorefrontNavbarProps {
    * `/t/<slug>`, que no monta StoreProviders). Si se omite → carrito vivo.
    */
   cartHref?: string;
+  /** Lote E (Brandon 2026-06-27): color de fondo del navbar (vacío = superficie). */
+  bgColor?: string;
+  /** Color de texto del navbar (vacío = tokens). Cascada a los enlaces vía vars. */
+  textColor?: string;
 }
 
 export default function StorefrontNavbar({
@@ -50,6 +54,8 @@ export default function StorefrontNavbar({
   catalogHref,
   searchHref,
   cartHref,
+  bgColor,
+  textColor,
 }: StorefrontNavbarProps) {
   const initial = (name?.trim()?.charAt(0) || "T").toUpperCase();
   const pathname = usePathname() ?? "";
@@ -75,8 +81,17 @@ export default function StorefrontNavbar({
         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
     );
 
+  // Lote E: override de color de navbar. textColor cascada vía --text-* a los
+  // enlaces (usan text-[var(--text-primary/secondary)]).
+  const navStyle: React.CSSProperties | undefined = (bgColor || textColor)
+    ? {
+        ...(bgColor ? { background: bgColor } : {}),
+        ...(textColor ? ({ "--text-primary": textColor, "--text-secondary": textColor } as React.CSSProperties) : {}),
+      }
+    : undefined;
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+    <header className={cn("sticky top-0 z-50 border-b border-[var(--rule-soft)]", !bgColor && "bg-[var(--surface-raised)]")} style={navStyle}>
       <div className="mx-auto flex h-14 md:h-16 max-w-[1280px] items-center gap-2 sm:gap-3 px-4 sm:px-6 lg:px-8">
         {/* Logo de la tienda → inicio */}
         <Link href={home} aria-label={`${name} — inicio`} className="flex shrink-0 items-center gap-2">

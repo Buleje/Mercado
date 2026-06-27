@@ -37,6 +37,10 @@ export interface TenantHeroProps {
   heroGradientFrom?: string;
   heroGradientTo?: string;
   heroGradientAngle?: number;
+  // Lote D (Brandon 2026-06-27): video de fondo + segundo CTA.
+  heroVideoUrl?: string;
+  heroCta2Label?: string;
+  heroCta2Url?: string;
   displayName: string;
   slug: string;
   ownerPhone?: string | null;
@@ -82,6 +86,9 @@ export default function TenantHero(props: TenantHeroProps) {
     heroGradientFrom,
     heroGradientTo,
     heroGradientAngle,
+    heroVideoUrl,
+    heroCta2Label,
+    heroCta2Url,
     displayName,
     slug,
     ownerPhone,
@@ -193,6 +200,18 @@ export default function TenantHero(props: TenantHeroProps) {
         <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
         <span data-live="inlineText:hero.ctaCatalog">{htxt("hero.ctaCatalog", "Ver catálogo")}</span>
       </Link>
+      {/* Lote D: segundo CTA configurable (ej. "Ver el menú" / "Contáctanos"). */}
+      {heroCta2Label && heroCta2Url && (
+        <Link
+          href={/^(\/|https?:\/\/)/.test(heroCta2Url) ? heroCta2Url : "#"}
+          target={heroCta2Url.startsWith("http") ? "_blank" : undefined}
+          rel={heroCta2Url.startsWith("http") ? "noopener noreferrer" : undefined}
+          className="inline-flex items-center gap-2 px-6 h-12 border-2 border-white/40 text-white font-extrabold text-sm hover:bg-white/15 backdrop-blur transition-all"
+          style={{ borderRadius: cssBtnRadius }}
+        >
+          <span data-live="inlineText:hero.cta2">{heroCta2Label}</span>
+        </Link>
+      )}
     </div>
   );
 
@@ -259,9 +278,30 @@ export default function TenantHero(props: TenantHeroProps) {
           ?? `radial-gradient(circle at 30% 20%, ${cssAccentA(40)} 0%, transparent 50%), linear-gradient(135deg, ${cssPrimary} 0%, ${cssPrimaryA(87)} 50%, ${cssPrimary} 100%)`,
       };
 
+  // Lote D: video de fondo (MP4 o YouTube). Tiene prioridad sobre imagen/gradiente.
+  const ytId = heroVideoUrl?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/)?.[1];
+  const isMp4Hero = !!heroVideoUrl && /\.mp4($|\?)/i.test(heroVideoUrl);
+
   const BgLayers = (
     <>
-      {heroImage && (
+      {heroVideoUrl && (ytId || isMp4Hero) && (
+        <>
+          {ytId ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&showinfo=0&modestbranding=1&playsinline=1`}
+              title="Video de fondo del hero"
+              aria-hidden
+              tabIndex={-1}
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2"
+              allow="autoplay; encrypted-media"
+            />
+          ) : (
+            <video src={heroVideoUrl} autoPlay muted loop playsInline aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+          )}
+          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${(0.35 + (overlay ?? 0) / 200).toFixed(3)})` }} aria-hidden />
+        </>
+      )}
+      {heroImage && !heroVideoUrl && (
         <>
           <Image
             src={heroImage}

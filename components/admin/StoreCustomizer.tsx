@@ -109,6 +109,22 @@ export interface StoreTheme {
   brandSwatches: string[];
   featuredCols: 2 | 3 | 4;
   featuredCount: number;
+  // Lote D (Brandon 2026-06-27): video de fondo + 2º CTA en hero, velocidad de
+  // anuncios, color de fondo global de la página.
+  heroVideoUrl: string;
+  heroCta2Label: string;
+  heroCta2Url: string;
+  announcementInterval: number; // segundos entre anuncios; 0 = sin rotación
+  pageBgColor: string; // vacío = canvas por defecto
+  // Lote E (Brandon 2026-06-27): color de navbar + layout de destacados.
+  navbarBgColor: string; // vacío = superficie por defecto
+  navbarTextColor: string; // vacío = tokens por defecto
+  featuredLayout: "grid" | "list" | "carousel"; // grid (default), lista o carrusel
+  // Lote F (Brandon 2026-06-27): fuente propia por URL (.woff2/.ttf hosteado) +
+  // a qué la aplica. Vacío = usa las fuentes del tema.
+  customFontUrl: string;
+  customFontName: string;
+  customFontTarget: "none" | "headings" | "body" | "all";
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
@@ -249,6 +265,17 @@ const DEFAULT_THEME: StoreTheme = {
   brandSwatches: [],
   featuredCols: 4,
   featuredCount: 8,
+  heroVideoUrl: "",
+  heroCta2Label: "",
+  heroCta2Url: "",
+  announcementInterval: 4,
+  pageBgColor: "",
+  navbarBgColor: "",
+  navbarTextColor: "",
+  featuredLayout: "grid",
+  customFontUrl: "",
+  customFontName: "",
+  customFontTarget: "none",
   textStyles: {},
   countdownEnabled: false,
   countdownTitle: "¡Oferta por tiempo limitado!",

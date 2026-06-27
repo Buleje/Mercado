@@ -83,6 +83,26 @@ const CUSTOM_SECTION_LABELS: Record<string, string> = {
   categories: "Categorías visual",
 };
 
+// Lote F: ¿la sección custom está vacía de contenido? → badge "Falta contenido"
+// para guiar al dueño (score de completitud por sección).
+function customSectionEmpty(section: Section): boolean {
+  const d = section.data as Record<string, unknown>;
+  const arr = (k: string, f: string) => Array.isArray(d[k]) && (d[k] as Array<Record<string, unknown>>).filter((x) => x && x[f]).length === 0;
+  switch (section.type) {
+    case "gallery": return arr("images", "url");
+    case "logos": return arr("logos", "url");
+    case "team": return arr("members", "name");
+    case "categories": return arr("items", "name");
+    case "social": return arr("links", "url");
+    case "video": return !d.videoUrl;
+    case "map": return !d.address;
+    case "cta": return !d.buttonLabel;
+    case "about":
+    case "image-text": return !d.body && !d.title;
+    default: return false;
+  }
+}
+
 // Tienda section labels for preview
 const TIENDA_SECTION_LABELS: Record<string, string> = {
   daily_special: "Oferta del Dia",
@@ -1609,7 +1629,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [livePreview, setLivePreview] = useState(true);
   const [splitPreview, setSplitPreview] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
-  const [savedSnapshots, setSavedSnapshots] = useState<Array<{ theme: StoreTheme; savedAt: string }>>([]);
+  const [savedSnapshots, setSavedSnapshots] = useState<Array<{ theme: StoreTheme; savedAt: string; name?: string }>>([]);
+  // Lote E: nombre para guardar una versión etiquetada del historial.
+  const [versionName, setVersionName] = useState("");
+  const saveNamedVersion = useCallback(() => {
+    const nm = versionName.trim();
+    if (!nm) return;
+    setSavedSnapshots((prev) => [
+      { theme: draftRef.current, savedAt: new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }), name: nm },
+      ...prev.slice(0, 9),
+    ]);
+    setVersionName("");
+  }, [versionName]);
   // #10 Indicador de autoguardado: timestamp del último guardado + tick para "hace X".
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [nowTick, setNowTick] = useState(0);
@@ -2834,6 +2865,15 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "hero" && (
               <>
+                {/* Lote E: sugerencia contextual — hero sin fondo visual convierte menos. */}
+                {!draft.heroImage && !draft.heroVideoUrl && !(draft.heroGradientFrom && draft.heroGradientTo) && (
+                  <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
+                    <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-200">
+                      Tu hero no tiene imagen ni video de fondo. Las tiendas con fondo visual <strong className="text-white">captan más la atención</strong> — subí una imagen, pegá un video o aplicá un gradiente abajo.
+                    </p>
+                  </div>
+                )}
                 {/* Variantes de diseño del hero (Brandon 2026-06-26, Fase 4) */}
                 <StylePicker
                   label="Diseño del hero"
@@ -3015,6 +3055,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     </button>
                   )}
                 </div>
+
+                {/* Lote D: video de fondo del hero (YouTube o .mp4) */}
+                <Field label="Video de fondo (YouTube o .mp4)" labelClassName={LABEL_CLASS}>
+                  <input className={INPUT_CLASS} value={draft.heroVideoUrl ?? ""} onChange={(e) => patch("heroVideoUrl", e.target.value)} placeholder="https://youtu.be/… (reemplaza la imagen)" />
+                </Field>
+
+                {/* Lote D: segundo botón CTA del hero */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <p className={LABEL_CLASS}>Segundo botón (CTA)</p>
+                  <input className={INPUT_CLASS} value={draft.heroCta2Label ?? ""} onChange={(e) => patch("heroCta2Label", e.target.value)} placeholder="Texto · ej. Ver el menú" maxLength={30} />
+                  <input className={INPUT_CLASS} value={draft.heroCta2Url ?? ""} onChange={(e) => patch("heroCta2Url", e.target.value)} placeholder="Link · /t/mi-tienda/tienda o https://…" />
+                </div>
               </>
             )}
 
@@ -3045,6 +3097,46 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <ColorField label="Color primario" value={draft.primaryColor} onChange={(v) => patch("primaryColor", v)} />
                 <ColorField label="Color secundario" value={draft.secondaryColor} onChange={(v) => patch("secondaryColor", v)} />
                 <ColorField label="Color acento" value={draft.accentColor} onChange={(v) => patch("accentColor", v)} />
+
+                {/* Lote D: color de fondo global de la página (vacío = por defecto) */}
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white">Fondo de la página</p>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Color de fondo de toda la tienda</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <label className="relative inline-flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15" title="Fondo de página">
+                      <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: draft.pageBgColor || "#ffffff" }} />
+                      <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(draft.pageBgColor) ? draft.pageBgColor : "#ffffff"} onChange={(e) => patch("pageBgColor", e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Color de fondo de la página" />
+                    </label>
+                    {draft.pageBgColor && (
+                      <button type="button" onClick={() => patch("pageBgColor", "")} aria-label="Quitar fondo" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Lote E: color de la barra de navegación (fondo + texto) */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <p className={LABEL_CLASS}>Barra de navegación</p>
+                  {([["navbarBgColor", "Fondo", "#ffffff"], ["navbarTextColor", "Texto", "#111827"]] as const).map(([field, lbl, fallback]) => (
+                    <div key={field} className="flex items-center justify-between gap-2">
+                      <span className="text-[length:var(--ts-2xs)] text-gray-300">{lbl}</span>
+                      <div className="flex items-center gap-1.5">
+                        <label className="relative inline-flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15" title={lbl}>
+                          <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: draft[field] || fallback }} />
+                          <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(draft[field]) ? draft[field] : fallback} onChange={(e) => patch(field, e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label={`Color ${lbl} del navbar`} />
+                        </label>
+                        {draft[field] && (
+                          <button type="button" onClick={() => patch(field, "")} aria-label={`Quitar ${lbl}`} className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
                 {/* #2 Swatches de marca: guardá colores y reutilizalos en 1 click */}
                 <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
@@ -3180,10 +3272,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                               {idx + 1}
                             </span>
                             <Icon className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" aria-hidden />
-                            <div className="min-w-0 flex-1">
+                            <div className={cn("min-w-0 flex-1", (draft.bodyHidden ?? []).includes(key) && "opacity-50")}>
                               <p className="truncate text-xs font-semibold text-gray-100 leading-tight">{item.label}</p>
                               <p className="truncate text-[length:var(--ts-2xs)] text-gray-500 leading-tight">{item.desc}</p>
                             </div>
+                            {/* Lote D: toggle de visibilidad por sección del cuerpo */}
+                            <Toggle checked={!(draft.bodyHidden ?? []).includes(key)} onChange={(v) => patchBodyHidden(key, !v)} />
                           </div>
                         );
                       });
@@ -3269,6 +3363,17 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       { value: "12", label: "12", preview: <span className="text-xs font-bold text-gray-300">12</span> },
                     ]}
                   />
+                  <StylePicker
+                    label="Disposición"
+                    cols={3}
+                    value={draft.featuredLayout ?? "grid"}
+                    onChange={(v) => patch("featuredLayout", v as "grid" | "list" | "carousel")}
+                    options={[
+                      { value: "grid", label: "Cuadrícula", preview: <span className="grid grid-cols-2 gap-0.5"><span className="h-2 w-2 rounded-sm bg-white/40" /><span className="h-2 w-2 rounded-sm bg-white/40" /><span className="h-2 w-2 rounded-sm bg-white/40" /><span className="h-2 w-2 rounded-sm bg-white/40" /></span> },
+                      { value: "list", label: "Lista", preview: <span className="flex flex-col gap-0.5"><span className="h-1.5 w-7 rounded-sm bg-white/40" /><span className="h-1.5 w-7 rounded-sm bg-white/40" /></span> },
+                      { value: "carousel", label: "Carrusel", preview: <span className="flex gap-0.5 overflow-hidden"><span className="h-4 w-2.5 shrink-0 rounded-sm bg-white/40" /><span className="h-4 w-2.5 shrink-0 rounded-sm bg-white/40" /><span className="h-4 w-2.5 shrink-0 rounded-sm bg-white/20" /></span> },
+                    ]}
+                  />
                 </SectionCard>
 
                 {/* ── #6 Secciones de tu página (custom): crear/ordenar/ocultar/borrar ── */}
@@ -3288,7 +3393,11 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       </div>
                       <button type="button" onClick={() => setPbSelected(`custom:${s.id}`)} className="min-w-0 flex-1 text-left">
                         <span className="block truncate text-xs font-semibold text-gray-100">{CUSTOM_SECTION_LABELS[s.type] ?? s.type}</span>
-                        <span className="text-[length:var(--ts-2xs)] text-gray-500">{s.visible ? "Visible" : "Oculta"} · editar →</span>
+                        {customSectionEmpty(s) ? (
+                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]"><Sparkles className="h-3 w-3" /> Falta contenido · editar →</span>
+                        ) : (
+                          <span className="text-[length:var(--ts-2xs)] text-gray-500">{s.visible ? "Visible" : "Oculta"} · editar →</span>
+                        )}
                       </button>
                       <Toggle checked={s.visible} onChange={(v) => setCustomSectionVisible(s.id, v)} />
                       <button type="button" onClick={() => duplicateCustomSection(s.id)} aria-label="Duplicar sección" className="shrink-0 rounded p-1 text-gray-500 transition-colors hover:text-white">
@@ -3428,6 +3537,28 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <input id={id} type="range" min={0} max={24} value={draft.borderRadius} onChange={(e) => patch("borderRadius", Number(e.target.value))} className="w-full accent-[var(--data-success-500)]" />
                   )}
                 </Field>
+
+                {/* Lote F: fuente personalizada por URL (.woff2/.ttf hosteado) */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <p className={LABEL_CLASS}>Fuente personalizada</p>
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Pegá la URL de tu fuente (.woff2 o .ttf hosteado) para usar tu tipografía de marca.</p>
+                  <input className={INPUT_CLASS} value={draft.customFontUrl ?? ""} onChange={(e) => patch("customFontUrl", e.target.value)} placeholder="https://…/MiFuente.woff2" />
+                  {draft.customFontUrl && (
+                    <StylePicker
+                      label="Aplicar a"
+                      cols={4}
+                      value={draft.customFontTarget ?? "none"}
+                      onChange={(v) => patch("customFontTarget", v as "none" | "headings" | "body" | "all")}
+                      options={[
+                        { value: "none", label: "Off", preview: <span className="text-[length:var(--ts-2xs)] text-gray-400">—</span> },
+                        { value: "headings", label: "Títulos", preview: <span className="text-sm font-black text-white">A</span> },
+                        { value: "body", label: "Cuerpo", preview: <span className="text-xs text-gray-300">a</span> },
+                        { value: "all", label: "Todo", preview: <span className="text-xs font-bold text-white">Aa</span> },
+                      ]}
+                    />
+                  )}
+                </div>
+
                 <Field label="Espaciado general" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.spacing} onChange={(e) => patch("spacing", e.target.value as StoreTheme["spacing"])}>
                     <option value="compact">Compacto</option>
@@ -3610,6 +3741,20 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <button type="button" onClick={() => patch("announcements", [...(draft.announcements ?? []), ""])} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
                     <Plus className="h-3.5 w-3.5" /> Agregar anuncio
                   </button>
+                  {(draft.announcements ?? []).length > 1 && (
+                    <StylePicker
+                      label="Velocidad de rotación"
+                      cols={4}
+                      value={String(draft.announcementInterval ?? 4)}
+                      onChange={(v) => patch("announcementInterval", Number(v))}
+                      options={[
+                        { value: "2", label: "2s", preview: <span className="text-xs font-bold text-gray-300">2s</span> },
+                        { value: "4", label: "4s", preview: <span className="text-xs font-bold text-gray-300">4s</span> },
+                        { value: "8", label: "8s", preview: <span className="text-xs font-bold text-gray-300">8s</span> },
+                        { value: "0", label: "Manual", preview: <span className="text-[length:var(--ts-2xs)] font-bold text-gray-300">‹ ›</span> },
+                      ]}
+                    />
+                  )}
                 </div>
 
                 {/* #8 Exit-intent popup */}
@@ -3797,18 +3942,31 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "historial" && (
               <div className="space-y-3">
+                {/* Lote E: guardar una versión con nombre (ej. "Versión Navidad") */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <p className={LABEL_CLASS}>Guardar versión con nombre</p>
+                  <div className="flex items-center gap-1.5">
+                    <input className={INPUT_CLASS} value={versionName} onChange={(e) => setVersionName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveNamedVersion(); }} placeholder="Ej. Versión Navidad" maxLength={40} />
+                    <button type="button" onClick={saveNamedVersion} disabled={!versionName.trim()} className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[var(--data-success-500)] px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40">
+                      <Save className="h-3.5 w-3.5" /> Guardar
+                    </button>
+                  </div>
+                </div>
                 <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Versiones guardadas</p>
                 {savedSnapshots.length === 0 ? (
                   <p className="text-xs text-[var(--text-secondary)]">Aún no hay versiones. Guarda cambios para crear una.</p>
                 ) : (
                   savedSnapshots.map((snap, idx) => (
                     <div key={idx} className="rounded-lg bg-white/[0.03] border border-white/10 p-2.5 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{snap.savedAt}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 flex-1 truncate text-[length:var(--ts-2xs)] font-bold text-white">
+                          {snap.name || <span className="font-normal text-[var(--text-tertiary)]">Sin nombre</span>}
+                          <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">· {snap.savedAt}</span>
+                        </span>
                         <button
                           type="button"
                           onClick={() => pushChange(snap.theme)}
-                          className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors"
+                          className="shrink-0 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors"
                         >
                           Restaurar
                         </button>
