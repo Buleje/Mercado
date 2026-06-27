@@ -26,7 +26,7 @@ import {
  * `data-pb="hero"` (page builder) y `data-live` (live text) se conservan.
  */
 
-export type HeroVariant = "editorial" | "centered" | "split" | "immersive";
+export type HeroVariant = "editorial" | "centered" | "split" | "immersive" | "minimal";
 
 export interface TenantHeroProps {
   variant: HeroVariant;
@@ -405,6 +405,103 @@ export default function TenantHero(props: TenantHeroProps) {
   /* ── Variantes ───────────────────────────────────────────────────────── */
 
   const padding = HEIGHT_PAD[height];
+
+  // MINIMAL: hero claro y aireado — fondo casi blanco con un velo de marca sutil,
+  // texto oscuro y el color de marca solo como acento (eyebrow, CTA). Sin bloque
+  // de color saturado ni caja vacía de imagen. (Brandon 2026-06-26.)
+  if (variant === "minimal") {
+    return (
+      <section data-pb="hero" className="relative overflow-hidden border-b border-[var(--rule-soft)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: `linear-gradient(180deg, ${cssPrimaryA(7)} 0%, transparent 55%)` }}
+        />
+        <div className={`relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${padding}`}>
+          <div className={align === "center" ? "text-center max-w-3xl mx-auto" : "max-w-3xl"}>
+            <p
+              className={`inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-5 ${align === "center" ? "justify-center" : ""}`}
+              style={{ color: cssPrimary }}
+            >
+              <span aria-hidden className="relative inline-flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full opacity-50 animate-ping" style={{ background: cssPrimary }} />
+                <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: cssPrimary }} />
+              </span>
+              Tienda en Buleje
+              {createdYear && (
+                <>
+                  <span aria-hidden className="text-[var(--text-tertiary)]">·</span>
+                  <span>Desde {createdYear}</span>
+                </>
+              )}
+            </p>
+            <h1
+              data-live="heroTitle"
+              className="font-display text-[clamp(2.25rem,6vw,4rem)] font-extrabold text-[var(--text-primary)] tracking-[var(--ls-tight)] leading-[1.02] mb-5"
+            >
+              {heroTitle}
+            </h1>
+            {heroSubtitle && (
+              <p
+                data-live="heroSubtitle"
+                className={`text-[var(--text-secondary)] text-lg sm:text-xl leading-[1.5] mb-8 ${align === "center" ? "mx-auto max-w-xl" : "max-w-xl"}`}
+              >
+                {heroSubtitle}
+              </p>
+            )}
+            <div className={`flex items-center gap-3 flex-wrap ${align === "center" ? "justify-center" : ""}`}>
+              {waHref && (
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-2 px-6 h-12 font-extrabold text-sm text-white hover:gap-2.5 transition-all shadow-lg"
+                  style={{ background: cssPrimary, borderRadius: cssBtnRadius }}
+                >
+                  <MessageCircle className="w-4 h-4" strokeWidth={2.75} />
+                  Pedir por WhatsApp
+                  <ArrowRight className="w-4 h-4 opacity-80" strokeWidth={2.5} />
+                </a>
+              )}
+              <Link
+                href={catalogHref}
+                className="inline-flex items-center gap-2 px-6 h-12 border-2 font-extrabold text-sm text-[var(--text-primary)] transition-all hover:bg-[var(--surface-sunken)]"
+                style={{ borderColor: "var(--rule-base)", borderRadius: cssBtnRadius }}
+              >
+                <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
+                Ver catálogo
+              </Link>
+            </div>
+            {showBadges && (
+              <div className={`mt-7 flex flex-wrap items-center gap-2.5 ${align === "center" ? "justify-center" : ""}`}>
+                {productCount > 0 && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold text-[var(--text-secondary)] border border-[var(--rule-soft)] bg-[var(--color-card)]">
+                    <ShoppingBag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                    {productCount} {productCount === 1 ? "producto" : "productos"}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold text-[var(--text-secondary)] border border-[var(--rule-soft)] bg-[var(--color-card)]">
+                  <Tag className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Yape · Plin · Efectivo
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold text-[var(--text-secondary)] border border-[var(--rule-soft)] bg-[var(--color-card)]">
+                  <Truck className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Delivery 25–35 min
+                </span>
+              </div>
+            )}
+            {isPreview && badgeLabel && (
+              <p className={`mt-5 ${align === "center" ? "text-center" : ""}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${badgeClassName ?? ""}`}>
+                  Vista previa · plan {badgeLabel}
+                </span>
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   // SPLIT: texto izq | foto der (sin imagen de fondo full-bleed; usa gradiente)
   if (variant === "split") {

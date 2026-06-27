@@ -54,7 +54,7 @@ export interface StoreTheme {
   heroImage: string;
   // Variantes de diseño del hero (Brandon 2026-06-26, page builder Fase 4):
   // editorial (default) | centered | split | immersive. Controles "editar potencia".
-  heroVariant: "editorial" | "centered" | "split" | "immersive";
+  heroVariant: "minimal" | "editorial" | "centered" | "split" | "immersive";
   heroOverlay: number; // 0-100 oscurecimiento de la foto
   heroAlign: "left" | "center";
   heroHeight: "compact" | "normal" | "tall";
@@ -1041,12 +1041,13 @@ function HeroTab({
             <span className="text-sm font-semibold text-[var(--text-primary)]">Variante de layout</span>
             <div className="grid grid-cols-2 gap-2">
               {([
+                { value: "minimal", label: "Minimalista", desc: "Claro y aireado, sin bloque de color (base)" },
                 { value: "editorial", label: "Editorial", desc: "Texto a la izquierda, oscuro" },
                 { value: "centered", label: "Centrado", desc: "Todo al centro" },
                 { value: "split", label: "Split", desc: "Texto + imagen lado a lado" },
                 { value: "immersive", label: "Inmersivo", desc: "Imagen a pantalla completa" },
               ] as const).map((v) => {
-                const active = (theme.heroVariant ?? "editorial") === v.value;
+                const active = (theme.heroVariant ?? "minimal") === v.value;
                 return (
                   <button
                     key={v.value}

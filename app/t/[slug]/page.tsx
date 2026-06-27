@@ -614,7 +614,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* HERO con variantes (Brandon 2026-06-26, page builder Fase 4) — TenantHero.tsx.
           El dueño elige editorial|centered|split|immersive desde Modo Creativo > Hero. */}
       <TenantHero
-        variant={(editorTheme.heroVariant as HeroVariant) ?? "editorial"}
+        variant={(editorTheme.heroVariant as HeroVariant) || "minimal"}
         heroTitle={heroTitle}
         heroSubtitle={heroSubtitle}
         heroImage={heroImage}
