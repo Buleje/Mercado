@@ -74,7 +74,6 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bypassLoading, setBypassLoading] = useState(false);
-  const [activeTenant, setActiveTenant] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
   // ADR-120 login unificado: si la credencial existe en varias tiendas, el
   // backend devuelve la lista y mostramos un selector en vez de adivinar.
@@ -84,16 +83,16 @@ export default function AdminLoginPage() {
     const params = new URLSearchParams(window.location.search);
     fromRef.current = params.get("from");
 
+    // Login universal (ADR-120): el backend resuelve el tenant por la
+    // credencial. Si vino ?tenant= (desde un /t/{slug} o el superadmin) lo
+    // guardamos SOLO como hint para el header x-tenant-id y el redirect
+    // post-login — el usuario nunca ve "entrando a (tienda)": siempre es
+    // usuario + contraseña.
     const tenantParam = params.get("tenant");
-
     if (tenantParam) {
       localStorage.setItem("active-tenant-slug", tenantParam);
       sessionStorage.setItem("active-tenant-slug", tenantParam);
-      setActiveTenant(tenantParam);
       if (!fromRef.current) fromRef.current = `/t/${tenantParam}/admin`;
-    } else {
-      const slug = localStorage.getItem("active-tenant-slug");
-      if (slug && slug !== "main") setActiveTenant(slug);
     }
 
     const saved = localStorage.getItem("login-remember-username");
@@ -302,29 +301,9 @@ export default function AdminLoginPage() {
               de vuelta.
             </span>
           </SectionTitle>
-          {activeTenant ? (
-            <p className="text-sm text-[var(--text-secondary)] mt-4">
-              Entrando a{" "}
-              <strong className="text-[var(--text-primary)]">
-                {activeTenant}
-              </strong>
-              .{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTenant(null);
-                  localStorage.removeItem("active-tenant-slug");
-                }}
-                className="text-[var(--accent)] hover:underline font-semibold"
-              >
-                cambiar
-              </button>
-            </p>
-          ) : (
-            <p className="text-sm text-[var(--text-secondary)] mt-4 max-w-sm">
-              Usuario y contraseña te llevan a tu panel.
-            </p>
-          )}
+          <p className="text-sm text-[var(--text-secondary)] mt-4 max-w-sm">
+            Usuario y contraseña te llevan a tu panel.
+          </p>
 
           {/* ADR-120: selector de tienda cuando la credencial existe en varias */}
           {tenantChoices ? (
