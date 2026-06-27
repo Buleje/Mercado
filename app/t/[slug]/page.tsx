@@ -20,6 +20,8 @@ import TenantPageTracker from "./_components/TenantPageTracker";
 import VendorTrustBadges from "@/components/store/VendorTrustBadges";
 import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
+import TenantFooter from "@/components/store/TenantFooter";
+import { SettingsProvider } from "@/contexts/settings-context";
 import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
@@ -340,7 +342,7 @@ function TenantPageSkeleton() {
           <div className="h-5 w-80 bg-white/15 rounded mx-auto" />
         </div>
       </section>
-      <section className="max-w-5xl mx-auto px-4 py-12">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="h-8 w-48 bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] rounded mb-6" />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -661,7 +663,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           <>
       {/* Active promotions banner — solo renderea si hay promos reales o en modo preview */}
       {(promotions.length > 0 || isPreview) && (
-        <section data-pb="promos" className="max-w-5xl mx-auto px-4 -mt-6 relative z-20">
+        <section data-pb="promos" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20">
           {promotions.length > 0 ? (
             <div className="space-y-2">
               {promotions.slice(0, 3).map((p) => (
@@ -733,7 +735,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           marcó (tenantPageProductOverride), si no caemos al catálogo real. Es lo
           que más vende: el cliente ve productos sin tener que entrar al catálogo. */}
       {(showcase.length > 0 || isPreview) && (
-        <section data-pb="featured" className="max-w-5xl mx-auto px-4 py-10">
+        <section data-pb="featured" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
@@ -877,7 +879,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Si NO hay NINGÚN producto que mostrar y NO es preview: bloque "Cómo
           pedir" como empty-state. Con productos en la vitrina ya no hace falta. */}
       {showcase.length === 0 && !isPreview && (
-        <section className="max-w-5xl mx-auto px-4 py-12">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="mb-8 text-center max-w-2xl mx-auto">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               Cómo pedir
@@ -953,7 +955,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         );
         // Información del negocio (anchor #info)
         __body.info = (
-      <section id="info" data-pb="info" className="max-w-5xl mx-auto px-4 py-10 scroll-mt-20">
+      <section id="info" data-pb="info" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 scroll-mt-20">
         <div className="mb-6">
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
             Información del negocio
@@ -1110,118 +1112,44 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         </section>
       )}
 
-      {/* Actions — al público solo "Ver Tienda". El botón Admin SOLO en preview. */}
-      <section className="max-w-3xl mx-auto px-4 pb-12">
-        <div className={`grid gap-4 mb-6 ${isPreview ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+      {/* Acción admin — SOLO en preview (el dueño editando su página). El público
+          va directo al footer dedicado de la tienda. */}
+      {isPreview && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
           <Link
-            href={`/t/${tenant.slug}/tienda`}
-            className="group flex items-center gap-4 p-6 bg-[var(--surface-raised)] rounded-2xl shadow-md hover:shadow-xl transition-all border border-[var(--rule-base)]"
+            href={`/t/${tenant.slug}/admin`}
+            className="group inline-flex items-center gap-4 p-5 bg-[var(--surface-raised)] rounded-2xl shadow-sm hover:shadow-md transition-all border border-[var(--rule-base)]"
           >
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: cssPrimaryA(9) }}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "color-mix(in oklch, var(--accent) 12%, transparent)" }}
             >
-              <ShoppingBag className="w-7 h-7" style={{ color: cssPrimary }} />
+              <Settings className="w-6 h-6" style={{ color: accent }} />
             </div>
             <div className="min-w-0">
-              <p className="font-bold text-lg leading-tight">Ver catálogo completo</p>
-              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Todos los productos · arma tu pedido</p>
+              <p className="font-bold text-base leading-tight">Editar tienda</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Solo vos lo ves · panel admin</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-[var(--text-tertiary)] ml-auto" strokeWidth={2.5} />
+            <ExternalLink className="w-4 h-4 text-[var(--text-tertiary)] ml-auto" />
           </Link>
+        </section>
+      )}
 
-          {/* Admin — SOLO en modo preview (cuando el dueño está mirando su pagina) */}
-          {isPreview && (
-            <Link
-              href={`/t/${tenant.slug}/admin`}
-              className="group flex items-center gap-4 p-6 bg-[var(--surface-raised)] rounded-2xl shadow-md hover:shadow-xl transition-all border border-[var(--rule-base)]"
-            >
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-orange-50 dark:bg-orange-900/20">
-                <Settings className="w-7 h-7" style={{ color: accent }} />
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-lg leading-tight">Editar tienda</p>
-                <p className="text-sm text-[var(--text-secondary)] mt-0.5">Solo vos lo ves · panel admin</p>
-              </div>
-              <ExternalLink className="w-4 h-4 text-[var(--text-tertiary)] ml-auto" />
-            </Link>
-          )}
-        </div>
-
-        {/* Contact info — solo si hay datos reales; placeholder oculto al publico */}
-        {(customization.whatsappPhone ||
-          customization.contactEmail ||
-          customization.address ||
-          tenant.ownerPhone ||
-          tenant.customDomain) && (
-          <div className="bg-[var(--surface-raised)] rounded-2xl p-6 shadow-sm border border-[var(--rule-base)] space-y-3">
-            <h3 className="text-sm font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
-              Contacto
-            </h3>
-            {(customization.whatsappPhone || tenant.ownerPhone) && (
-              <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-                <Phone className="w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0" />
-                <a
-                  href={`https://wa.me/${(customization.whatsappPhone ?? tenant.ownerPhone ?? "").replace(/\D/g, "")}`}
-                  className="text-sm hover:underline"
-                >
-                  {customization.whatsappPhone ?? tenant.ownerPhone}
-                </a>
-              </div>
-            )}
-            {customization.address && (
-              <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-                <MapPin className="w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0" />
-                <span className="text-sm">{customization.address}</span>
-              </div>
-            )}
-            {customization.contactEmail && (
-              <div className="flex items-center gap-3 text-[var(--text-secondary)]">
-                <ExternalLink className="w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0" />
-                <a
-                  href={`mailto:${customization.contactEmail}`}
-                  className="text-sm hover:underline"
-                >
-                  {customization.contactEmail}
-                </a>
-              </div>
-            )}
-          </div>
-        )}
-        {isPreview &&
-          !customization.whatsappPhone &&
-          !customization.contactEmail &&
-          !customization.address &&
-          !tenant.ownerPhone && (
-            <div className="rounded-2xl p-6 border-2 border-dashed border-[var(--rule-base)] bg-white/60 dark:bg-[var(--surface-canvas)]/60 space-y-3">
-              <h3 className="text-sm font-bold text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] uppercase tracking-wider">
-                Contacto · vista previa
-              </h3>
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-gray-200 dark:text-[var(--text-secondary)] flex-shrink-0" />
-                <div className="h-4 w-32 bg-[var(--surface-sunken)] rounded" />
-              </div>
-              <div className="flex items-center gap-3">
-                <MapPin className="w-4 h-4 text-gray-200 dark:text-[var(--text-secondary)] flex-shrink-0" />
-                <div className="h-4 w-48 bg-[var(--surface-sunken)] rounded" />
-              </div>
-              <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">Solo visible para vos · configura desde Mi Tienda &gt; Contacto</p>
-            </div>
-          )}
-
-        {/* Texto de footer configurable (Brandon 2026-06-25). */}
-        {editorTheme.footerText && (
-          <p data-live="footerText" className="text-center mt-6 text-sm font-medium text-[var(--text-secondary)]">
-            {editorTheme.footerText}
-          </p>
-        )}
-
-        {/* Footer mini con marca Buleje en lugar del slug raw */}
-        <p className="text-center mt-6 text-xs text-[var(--text-tertiary)] flex items-center justify-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-          Tienda verificada en Buleje · <span className="font-mono">/{tenant.slug}</span>
+      {/* Texto de footer configurable (Brandon 2026-06-25). */}
+      {editorTheme.footerText && (
+        <p data-live="footerText" className="text-center px-4 pb-6 text-sm font-medium text-[var(--text-secondary)]">
+          {editorTheme.footerText}
         </p>
-      </section>
+      )}
+
+      {/* Footer dedicado de la tienda — el MISMO del catálogo (Brandon 2026-06-26):
+          contacto, navegación, ayuda, newsletter y marca verificada. Reemplaza el
+          mini-footer custom anterior. SettingsProvider (auto-inicializa leyendo el
+          slug del path /t/[slug]) le da el contexto que el footer consume; la home
+          es standalone y no monta el StoreProviders del layout de (store). */}
+      <SettingsProvider>
+        <TenantFooter slug={tenant.slug} storeName={displayName} />
+      </SettingsProvider>
 
       {/* Botón flotante de WhatsApp (Brandon 2026-06-26) — Modo Creativo > Contacto.
           Solo si el dueño lo activa y hay número. */}
