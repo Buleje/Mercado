@@ -484,9 +484,29 @@ function SectionCard({
   );
 }
 
+// Lote G (Brandon 2026-06-27): helpers de alpha/transparencia para colores.
+function isSimpleColor(v?: string): boolean {
+  return !!v && (/^#[0-9a-fA-F]{6}$/.test(v) || /^rgba?\(/.test(v.trim()));
+}
+function currentAlpha(v?: string): number {
+  if (!v) return 1;
+  const m = v.match(/rgba?\([^)]*,\s*([\d.]+)\s*\)/);
+  return m ? Math.max(0, Math.min(1, parseFloat(m[1]))) : 1;
+}
+function colorWithAlpha(v: string | undefined, alpha: number): string | undefined {
+  if (!v) return undefined;
+  let r = 0, g = 0, b = 0;
+  const hex = v.match(/^#([0-9a-fA-F]{6})$/);
+  if (hex) { const n = parseInt(hex[1], 16); r = (n >> 16) & 255; g = (n >> 8) & 255; b = n & 255; }
+  else { const m = v.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/); if (!m) return v; r = +m[1]; g = +m[2]; b = +m[3]; }
+  if (alpha >= 1) return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(2)})`;
+}
+
 /**
  * SectionColorPicker — fila de presets + color custom + limpiar, para el panel
  * lateral de estilo por sección. Devuelve `undefined` al limpiar (sin override).
+ * enableAlpha (Lote G): agrega slider de opacidad → emite rgba().
  */
 function SectionColorPicker({
   label,
@@ -494,12 +514,14 @@ function SectionColorPicker({
   onChange,
   allowClear = true,
   clearLabel = "Sin color",
+  enableAlpha = false,
 }: {
   label: string;
   value?: string;
   onChange: (v: string | undefined) => void;
   allowClear?: boolean;
   clearLabel?: string;
+  enableAlpha?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
@@ -543,12 +565,28 @@ function SectionColorPicker({
           <input
             type="color"
             value={value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000"}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(enableAlpha ? colorWithAlpha(e.target.value, currentAlpha(value)) : e.target.value)}
             className="absolute inset-0 cursor-pointer opacity-0"
             aria-label={`${label} personalizado`}
           />
         </label>
       </div>
+      {/* Lote G: slider de opacidad (transparencia) → rgba(). Solo para colores simples. */}
+      {enableAlpha && (value === undefined || isSimpleColor(value)) && (
+        <div className="flex items-center gap-2 pt-0.5">
+          <span className="text-[length:var(--ts-2xs)] text-gray-400">Opacidad</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(currentAlpha(value) * 100)}
+            onChange={(e) => onChange(colorWithAlpha(value ?? "#000000", Number(e.target.value) / 100))}
+            className="w-full accent-[var(--accent-soft)]"
+            aria-label={`Opacidad de ${label}`}
+          />
+          <span className="w-8 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-soft)]">{Math.round(currentAlpha(value) * 100)}%</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -865,7 +903,7 @@ function SectionStyleEditor({
       </SectionCard>
 
       <SectionCard icon={Palette} title="Colores">
-        <SectionColorPicker label="Fondo" value={value.bg} onChange={(v) => onChange({ bg: v })} clearLabel="Sin fondo" />
+        <SectionColorPicker label="Fondo" value={value.bg} onChange={(v) => onChange({ bg: v })} clearLabel="Sin fondo" enableAlpha />
         <SectionColorPicker label="Texto" value={value.text} onChange={(v) => onChange({ text: v })} clearLabel="Auto" />
       </SectionCard>
 
@@ -1632,6 +1670,11 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [savedSnapshots, setSavedSnapshots] = useState<Array<{ theme: StoreTheme; savedAt: string; name?: string }>>([]);
   // Lote E: nombre para guardar una versión etiquetada del historial.
   const [versionName, setVersionName] = useState("");
+  // Lote G: comparar 2 versiones del historial (índices seleccionados, máx 2).
+  const [compareIdx, setCompareIdx] = useState<number[]>([]);
+  const toggleCompare = useCallback((idx: number) => {
+    setCompareIdx((prev) => prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx].slice(-2));
+  }, []);
   const saveNamedVersion = useCallback(() => {
     const nm = versionName.trim();
     if (!nm) return;
@@ -2835,6 +2878,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "identidad" && (
               <>
+                {/* Lote G: sugerencia contextual — sin logo se ve menos profesional. */}
+                {!draft.logo && (
+                  <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
+                    <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-200">Subí tu <strong className="text-white">logo</strong>: las tiendas con logo se ven más profesionales y se reconocen mejor.</p>
+                  </div>
+                )}
                 {/* Logo — click o arrastrá para subir (Brandon 2026-06-25) */}
                 <div className="space-y-1.5">
                   <p className={LABEL_CLASS}>Logo de la tienda</p>
@@ -3667,6 +3717,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "automatizacion" && (
               <>
+                {/* Lote G: sugerencia contextual — sin herramientas de conversión activas. */}
+                {!draft.freeShipEnabled && !draft.welcomePopupEnabled && !draft.exitIntentEnabled && (draft.announcements ?? []).length === 0 && !draft.openStatusEnabled && (
+                  <div className="flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
+                    <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-200">No tenés ninguna <strong className="text-white">herramienta de conversión</strong> activa. Probá una barra de envío gratis, un popup de bienvenida o anuncios — ayudan a vender más.</p>
+                  </div>
+                )}
                 {/* Conversión (Brandon 2026-06-26): envío gratis, prueba social,
                     abierto/cerrado, tema estacional. */}
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
@@ -3953,16 +4010,50 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   </div>
                 </div>
                 <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">Versiones guardadas</p>
+
+                {/* Lote G: comparación side-by-side de 2 versiones seleccionadas. */}
+                {compareIdx.length === 2 && (
+                  <div className="rounded-lg border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 p-2.5">
+                    <p className="mb-2 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">Comparando 2 versiones</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {compareIdx.map((ci) => {
+                        const sn = savedSnapshots[ci];
+                        if (!sn) return null;
+                        return (
+                          <div key={ci} className="rounded-md border border-white/10 bg-white/[0.03] p-2">
+                            <p className="truncate text-[length:var(--ts-2xs)] font-bold text-white">{sn.name || "Sin nombre"}</p>
+                            <p className="mb-1.5 text-[length:var(--ts-2xs)] text-gray-500">{sn.savedAt}</p>
+                            <div className="flex gap-1">
+                              <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: sn.theme.primaryColor }} />
+                              <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: sn.theme.secondaryColor }} />
+                              <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: sn.theme.accentColor }} />
+                            </div>
+                            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-gray-400">{sn.theme.fontFamily}{sn.theme.darkModeDefault ? " · Dark" : ""}</p>
+                            <button type="button" onClick={() => pushChange(sn.theme)} className="mt-1.5 w-full rounded bg-[var(--data-success-500)]/15 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] transition-colors hover:bg-[var(--data-success-500)]/25">Usar esta</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {savedSnapshots.length === 0 ? (
                   <p className="text-xs text-[var(--text-secondary)]">Aún no hay versiones. Guarda cambios para crear una.</p>
                 ) : (
                   savedSnapshots.map((snap, idx) => (
-                    <div key={idx} className="rounded-lg bg-white/[0.03] border border-white/10 p-2.5 space-y-2">
+                    <div key={idx} className={cn("rounded-lg bg-white/[0.03] border p-2.5 space-y-2", compareIdx.includes(idx) ? "border-[var(--accent-soft)]" : "border-white/10")}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="min-w-0 flex-1 truncate text-[length:var(--ts-2xs)] font-bold text-white">
                           {snap.name || <span className="font-normal text-[var(--text-tertiary)]">Sin nombre</span>}
                           <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">· {snap.savedAt}</span>
                         </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleCompare(idx)}
+                          className={cn("shrink-0 text-[length:var(--ts-2xs)] font-bold transition-colors", compareIdx.includes(idx) ? "text-[var(--accent-soft)]" : "text-gray-500 hover:text-white")}
+                        >
+                          Comparar
+                        </button>
                         <button
                           type="button"
                           onClick={() => pushChange(snap.theme)}
