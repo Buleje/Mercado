@@ -1318,6 +1318,20 @@ function CustomSectionEditor({
           />
         </SectionCard>
       )}
+      {section.type === "faq" && (
+        <SectionCard icon={SlidersHorizontal} title="Disposición">
+          <StylePicker
+            label="Estilo de las preguntas"
+            cols={2}
+            value={((d as { layout?: string }).layout) ?? "accordion"}
+            onChange={(v) => onPatch({ layout: v })}
+            options={[
+              { value: "accordion", label: "Acordeón", preview: <span className="text-[length:var(--ts-2xs)] text-gray-300">▸ ▾</span> },
+              { value: "open", label: "Lista abierta", preview: <span className="flex flex-col gap-0.5"><span className="h-1 w-6 rounded-sm bg-white/40" /><span className="h-1 w-6 rounded-sm bg-white/40" /></span> },
+            ]}
+          />
+        </SectionCard>
+      )}
 
       {typeof d.imageUrl === "string" && (
         <SectionCard icon={ImageIcon} title="Imagen">
@@ -3781,6 +3795,20 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <input id={id} type="range" min={1.2} max={2.0} step={0.1} value={(draft.lineHeight ?? 0) >= 1.2 ? draft.lineHeight : 1.6} onChange={(e) => patch("lineHeight", Number(e.target.value))} className="w-full accent-[var(--data-success-500)]" />
                   )}
                 </Field>
+                {/* Lote J: peso de fuente de los títulos */}
+                <StylePicker
+                  label="Peso de los títulos"
+                  cols={3}
+                  value={String(draft.headingWeight ?? 0)}
+                  onChange={(v) => patch("headingWeight", Number(v))}
+                  options={[
+                    { value: "0", label: "Auto", preview: <span className="text-[length:var(--ts-2xs)] text-gray-400">—</span> },
+                    { value: "500", label: "Medium", preview: <span className="text-sm text-white" style={{ fontWeight: 500 }}>A</span> },
+                    { value: "600", label: "Semi", preview: <span className="text-sm text-white" style={{ fontWeight: 600 }}>A</span> },
+                    { value: "700", label: "Bold", preview: <span className="text-sm text-white" style={{ fontWeight: 700 }}>A</span> },
+                    { value: "900", label: "Black", preview: <span className="text-sm text-white" style={{ fontWeight: 900 }}>A</span> },
+                  ]}
+                />
 
                 <Field label="Espaciado general" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.spacing} onChange={(e) => patch("spacing", e.target.value as StoreTheme["spacing"])}>

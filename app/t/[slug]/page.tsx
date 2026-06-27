@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  ShoppingBag, Settings, ExternalLink, MapPin, Phone, Sparkles, Tag,
+  ShoppingBag, Settings, ExternalLink, MapPin, Sparkles, Tag,
   MessageCircle, Truck, ShieldCheck, ChevronRight, ArrowRight,
   Search as SearchIcon,
 } from "@buleje/design-system/icons";
@@ -210,6 +210,8 @@ async function loadPageData(slug: string) {
     // Lote I (Brandon 2026-06-27): menú de navegación editable.
     navCatalogLabel: pickStr("navCatalogLabel"),
     navExtraLinks: Array.isArray(st?.["navExtraLinks"]) ? (st["navExtraLinks"] as Array<{ label: string; url: string }>) : [],
+    // Lote J (Brandon 2026-06-27): peso de fuente de títulos.
+    headingWeight: typeof st?.["headingWeight"] === "number" ? (st["headingWeight"] as number) : undefined,
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
@@ -459,7 +461,6 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   // accent vía postMessage y la tienda cambia de color sin recargar.
   const cssPrimary = `var(--tenant-primary, ${primary})`;
   const cssAccent = `var(--tenant-accent, ${accent})`;
-  const cssPrimaryA = (pct: number) => `color-mix(in srgb, var(--tenant-primary, ${primary}) ${pct}%, transparent)`;
   // El logo y el título usan el nombre público real (storeTheme.storeName) en
   // lugar de `tenant.name` — para que el comercio nunca vea el nombre raw del
   // tenant ni la marca del marketplace en su propia página.
@@ -602,6 +603,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Lote H: interlineado global opcional. */}
       {lineH && (
         <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{line-height:${lineH}}` }} />
+      )}
+      {/* Lote J: peso de fuente de los títulos (override de las clases font-bold). */}
+      {typeof editorTheme.headingWeight === "number" && editorTheme.headingWeight >= 400 && editorTheme.headingWeight <= 900 && (
+        <style dangerouslySetInnerHTML={{ __html: `.tenant-theme .font-display{font-weight:${editorTheme.headingWeight} !important}` }} />
       )}
       {/* Animaciones de entrada al scrollear (Brandon 2026-06-26) — el estado
           oculto lo agrega ScrollReveal (JS), no el server → SEO/no-JS intactos. */}

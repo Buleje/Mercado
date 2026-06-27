@@ -535,7 +535,9 @@ function HowToOrderBlock({ section, primary }: { section: HowToOrderSection; pri
 
 // ── FAQ ────────────────────────────────────────────────────────────────
 function FaqBlock({ section, primary }: { section: FaqSection; primary: string }) {
-  const { title, items } = section.data;
+  const { title, items, layout } = section.data;
+  // Lote J: "open" = todas las respuestas visibles (lista abierta) sin colapsar.
+  const openList = layout === "open";
   return (
     <section className="max-w-3xl mx-auto px-4 py-10 sm:py-12">
       <div className="mb-6">
@@ -549,7 +551,17 @@ function FaqBlock({ section, primary }: { section: FaqSection; primary: string }
           {title}
         </h2>
       </div>
-      <div className="space-y-2">
+      {openList ? (
+        <div className="space-y-3" data-pb-faq="open">
+          {items.map((item, i) => (
+            <div key={i} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <p className="font-bold text-[var(--text-primary)]">{item.question}</p>
+              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">{item.answer}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+      <div className="space-y-2" data-pb-faq="accordion">
         {items.map((item, i) => (
           <details
             key={i}
@@ -568,6 +580,7 @@ function FaqBlock({ section, primary }: { section: FaqSection; primary: string }
           </details>
         ))}
       </div>
+      )}
     </section>
   );
 }

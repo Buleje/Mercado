@@ -131,6 +131,8 @@ export interface StoreTheme {
   // Lote I (Brandon 2026-06-27): menú de navegación editable.
   navCatalogLabel: string; // vacío = "Catálogo"
   navExtraLinks: Array<{ label: string; url: string }>;
+  // Lote J (Brandon 2026-06-27): peso de fuente de los títulos. 0 = default del tema.
+  headingWeight: number;
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
@@ -286,6 +288,7 @@ const DEFAULT_THEME: StoreTheme = {
   lineHeight: 0,
   navCatalogLabel: "",
   navExtraLinks: [],
+  headingWeight: 0,
   textStyles: {},
   countdownEnabled: false,
   countdownTitle: "¡Oferta por tiempo limitado!",

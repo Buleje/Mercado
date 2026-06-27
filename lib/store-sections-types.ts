@@ -104,6 +104,8 @@ export interface FaqSection extends SectionBase {
       question: string;
       answer: string;
     }>;
+    /** Lote J (Brandon 2026-06-27): accordion (colapsable) o lista abierta. */
+    layout?: "accordion" | "open";
   };
 }
 
