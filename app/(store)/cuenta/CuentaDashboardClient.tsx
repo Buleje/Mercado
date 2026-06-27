@@ -39,6 +39,8 @@ import {
   Award,
   Package,
   AlertTriangle,
+  Medal,
+  Crown,
 } from "@buleje/design-system/icons";
 
 // ── Tier helpers ──────────────────────────────────────────────────────
@@ -51,11 +53,12 @@ const TIER_THRESHOLDS: Record<Tier, number> = {
   diamante: 5000,
 };
 const TIER_ORDER: Tier[] = ["bronce", "plata", "oro", "diamante"];
-const TIER_META: Record<Tier, { label: string; color: string; medal: string }> = {
-  bronce:   { label: "Bronce",   color: "#cd7f32", medal: "🥉" },
-  plata:    { label: "Plata",    color: "#c0c0c0", medal: "🥈" },
-  oro:      { label: "Oro",      color: "#ffd700", medal: "🥇" },
-  diamante: { label: "Diamante", color: "#b9f2ff", medal: "💎" },
+// Iconos Lucide por tier (audit 2026-06-26: antes eran emojis 🥉🥈🥇💎 en UI).
+const TIER_META: Record<Tier, { label: string; color: string; Icon: typeof Medal }> = {
+  bronce:   { label: "Bronce",   color: "#cd7f32", Icon: Medal },
+  plata:    { label: "Plata",    color: "#c0c0c0", Icon: Award },
+  oro:      { label: "Oro",      color: "#ffd700", Icon: Trophy },
+  diamante: { label: "Diamante", color: "#b9f2ff", Icon: Crown },
 };
 
 function nextTierInfo(currentTier: Tier, points: number) {
@@ -149,6 +152,7 @@ export function CuentaDashboardClient() {
   const points = intelligence.loyaltyPoints;
   const tierMeta = TIER_META[tier];
   const { nextTier, pointsToNext, progress } = nextTierInfo(tier, points);
+  const NextTierIcon = nextTier ? TIER_META[nextTier].Icon : null;
 
   // Orders
   const [orders, setOrders] = useState<Order[]>([]);
@@ -232,7 +236,7 @@ export function CuentaDashboardClient() {
             </h1>
             {isAuth ? (
               <div className="inline-flex items-center gap-2 mt-3 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1.5 border border-white/20">
-                <span className="text-base">{tierMeta.medal}</span>
+                <tierMeta.Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                 <span className="text-sm font-extrabold">
                   Cliente {tierMeta.label}
                 </span>
@@ -271,8 +275,8 @@ export function CuentaDashboardClient() {
               />
             </div>
             <div className="flex items-center justify-between mt-1.5 text-xs text-white/85 font-semibold">
-              <span>{TIER_META[tier].medal} {tierMeta.label}</span>
-              <span>{TIER_META[nextTier].medal} {TIER_META[nextTier].label}</span>
+              <span className="inline-flex items-center gap-1"><tierMeta.Icon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden /> {tierMeta.label}</span>
+              <span className="inline-flex items-center gap-1">{NextTierIcon && <NextTierIcon className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />} {TIER_META[nextTier].label}</span>
             </div>
           </div>
         )}

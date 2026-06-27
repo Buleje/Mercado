@@ -247,7 +247,7 @@ function LinkRow({
         <p
           className={cn(
             "text-sm font-extrabold",
-            danger ? "text-[var(--data-error-600)] dark:text-red-400" : "text-[var(--text-primary)]",
+            danger ? "text-[var(--data-error-600)] dark:text-[var(--data-error-400)]" : "text-[var(--text-primary)]",
           )}
         >
           {label}

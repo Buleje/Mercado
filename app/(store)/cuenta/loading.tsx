@@ -6,7 +6,7 @@ export default function Loading() {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-5 pb-28">
         {/* Perfil: avatar + datos */}
-        <div className="bg-white dark:bg-[var(--surface-sunken)] rounded-2xl border border-gray-100 dark:border-[var(--rule-base)] p-5 animate-pulse">
+        <div className="bg-[var(--color-card)] dark:bg-[var(--surface-sunken)] rounded-2xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 animate-pulse">
           <div className="flex items-center gap-4">
             {/* Avatar */}
             <div className="w-16 h-16 rounded-2xl bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] shrink-0" />
@@ -24,7 +24,7 @@ export default function Loading() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white dark:bg-[var(--surface-sunken)] rounded-2xl border border-gray-100 dark:border-[var(--rule-base)] p-4 animate-pulse text-center space-y-2"
+              className="bg-[var(--color-card)] dark:bg-[var(--surface-sunken)] rounded-2xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4 animate-pulse text-center space-y-2"
             >
               <div className="h-7 w-10 mx-auto bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded-lg" />
               <div className="h-2.5 w-16 mx-auto bg-[var(--surface-sunken)] dark:bg-[var(--surface-raised)] rounded-full" />
@@ -33,7 +33,7 @@ export default function Loading() {
         </div>
 
         {/* Tabs skeleton */}
-        <div className="flex gap-1.5 bg-white dark:bg-[var(--surface-sunken)] rounded-2xl border border-gray-100 dark:border-[var(--rule-base)] p-1.5">
+        <div className="flex gap-1.5 bg-[var(--color-card)] dark:bg-[var(--surface-sunken)] rounded-2xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-1.5">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -47,7 +47,7 @@ export default function Loading() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white dark:bg-[var(--surface-sunken)] rounded-2xl border border-gray-100 dark:border-[var(--rule-base)] p-4 animate-pulse"
+              className="bg-[var(--color-card)] dark:bg-[var(--surface-sunken)] rounded-2xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4 animate-pulse"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] shrink-0" />
@@ -62,7 +62,7 @@ export default function Loading() {
         </div>
 
         {/* Sección favoritos / listas guardadas */}
-        <div className="bg-white dark:bg-[var(--surface-sunken)] rounded-2xl border border-gray-100 dark:border-[var(--rule-base)] p-5 animate-pulse space-y-3">
+        <div className="bg-[var(--color-card)] dark:bg-[var(--surface-sunken)] rounded-2xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 animate-pulse space-y-3">
           <div className="h-4 w-32 bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded-lg" />
           <div className="grid grid-cols-2 gap-3">
             {[1, 2].map((i) => (
@@ -75,7 +75,7 @@ export default function Loading() {
         </div>
 
         {/* Direcciones guardadas */}
-        <div className="bg-white dark:bg-[var(--surface-sunken)] rounded-2xl border border-gray-100 dark:border-[var(--rule-base)] p-5 animate-pulse space-y-3">
+        <div className="bg-[var(--color-card)] dark:bg-[var(--surface-sunken)] rounded-2xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-5 animate-pulse space-y-3">
           <div className="h-4 w-40 bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded-lg" />
           {[1, 2].map((i) => (
             <div key={i} className="flex items-center gap-3">
