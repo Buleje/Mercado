@@ -14,7 +14,7 @@ import { StepPago } from "./steps/StepPago";
 import { StepConfirmar, StepConfirmarFooter } from "./steps/StepConfirmar";
 import { MiniCartSummary } from "./parts/MiniCartSummary";
 import { CheckoutModalShell } from "./parts/CheckoutModalShell";
-import { useCheckoutState } from "./hooks/useCheckoutState";
+import { useCheckoutFlow } from "./checkout-flow-context";
 import { useCoupon } from "./hooks/useCoupon";
 import { useLoyalty, getTierDiscountPct } from "./hooks/useLoyalty";
 import { useDniLookup } from "./hooks/useDniLookup";
@@ -61,7 +61,7 @@ export default function CheckoutModal() {
   } = useSettings();
   const { getBestPromotion } = usePromotions();
 
-  const { state, dispatch, reset } = useCheckoutState();
+  const { state, dispatch, reset } = useCheckoutFlow();
   const phoneSearch = usePhoneSearch({ findByPhone });
   const [editingCustomerData, setEditingCustomerData] = useState(false);
   const [skippedAccount, setSkippedAccount] = useState(false);

@@ -18,6 +18,7 @@ import { WishlistProvider } from "@/contexts/wishlist-context";
 import { SocioBulejeProvider } from "@/contexts/socio-buleje-context";
 import { SubscriptionProvider } from "@/contexts/subscription-context";
 import { LastOrderProvider } from "@/contexts/last-order-context";
+import { CheckoutFlowProvider } from "@/components/checkout/checkout-flow-context";
 import ThemeInjector from "@/components/store/ThemeInjector";
 
 export default function StoreProviders({
@@ -47,7 +48,11 @@ export default function StoreProviders({
                                 marketplace/tiendas bajo el (store) layout:
                                 MarketplaceStoresView y OrderTrackerNavBadge lo
                                 consumen y sin él quedaban en NOOP silencioso. */}
-                            <LastOrderProvider>{children}</LastOrderProvider>
+                            <LastOrderProvider>
+                              {/* CheckoutFlowProvider — estado del checkout
+                                  elevado (Paso 1 refactor modal→páginas). */}
+                              <CheckoutFlowProvider>{children}</CheckoutFlowProvider>
+                            </LastOrderProvider>
                           </CustomerProvider>
                         </SubscriptionProvider>
                       </SocioBulejeProvider>
