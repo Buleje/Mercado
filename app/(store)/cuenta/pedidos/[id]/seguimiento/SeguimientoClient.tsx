@@ -50,7 +50,9 @@ function nextStatus(current: TrackingStatus): TrackingStatus {
 export default function SeguimientoClient({
   initialSnapshot,
   publicView = false,
-  enableMockAdvance = true,
+  // SECURITY/UX (audit 2026-06-26): la simulación fake del repartidor solo corre
+  // en desarrollo. En producción el progreso viene del polling real, nunca mockeado.
+  enableMockAdvance = process.env.NODE_ENV !== "production",
 }: Props) {
   const [snapshot, setSnapshot] = useState<TrackingSnapshot>(initialSnapshot);
   const [refreshing, setRefreshing] = useState(false);

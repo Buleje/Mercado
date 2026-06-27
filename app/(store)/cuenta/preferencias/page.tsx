@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -374,12 +374,35 @@ export default function PreferenciasPage() {
   const [lang, setLang] = useState<LangOption>("es");
   const [saved, setSaved] = useState(false);
 
+  // Persistencia de preferencias (audit 2026-06-26): antes "Guardar" era un no-op
+  // y todo se perdía al recargar. Persistimos en localStorage; el guardado
+  // server-side llega con el rediseño de /cuenta.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("buleje-cuenta-preferencias");
+      if (!raw) return;
+      const p = JSON.parse(raw) as Partial<Record<string, unknown>>;
+      if (typeof p.notifWhatsApp === "boolean") setNotifWhatsApp(p.notifWhatsApp);
+      if (typeof p.notifEmail === "boolean") setNotifEmail(p.notifEmail);
+      if (typeof p.notifPromos === "boolean") setNotifPromos(p.notifPromos);
+      if (typeof p.notifPedidos === "boolean") setNotifPedidos(p.notifPedidos);
+      if (typeof p.theme === "string") setTheme(p.theme as ThemeOption);
+      if (typeof p.lang === "string") setLang(p.lang as LangOption);
+    } catch { /* ignore */ }
+  }, []);
+
   const activeChannelsCount =
     Number(notifWhatsApp) + Number(notifEmail);
   const activeNotifsCount =
     Number(notifPedidos) + Number(notifPromos);
 
   function handleSave() {
+    try {
+      localStorage.setItem(
+        "buleje-cuenta-preferencias",
+        JSON.stringify({ notifWhatsApp, notifEmail, notifPromos, notifPedidos, theme, lang }),
+      );
+    } catch { /* ignore */ }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }

@@ -368,7 +368,7 @@ export default function TenantHero(props: TenantHeroProps) {
     <div className="lg:hidden order-first flex items-center gap-3">
       <span className="inline-flex w-16 h-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur border-2 border-white/25 text-white text-xl font-extrabold shadow-lg overflow-hidden">
         {logoUrl ? (
-          <Image src={logoUrl} alt="" width={64} height={64} priority sizes="64px" className="w-full h-full object-cover" />
+          <Image src={logoUrl} alt={`Logo de ${displayName}`} width={64} height={64} priority sizes="64px" className="w-full h-full object-cover" />
         ) : (
           logoText
         )}

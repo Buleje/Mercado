@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, Fragment, type ReactNode } from "react";
 import { connection } from "next/server";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,6 +11,7 @@ import {
   Search as SearchIcon,
 } from "@buleje/design-system/icons";
 import { prisma } from "@/lib/prisma";
+import { getSessionPayload, SESSION } from "@/lib/session";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { OrdersDB } from "@/lib/db/orders.db";
@@ -360,13 +362,27 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   await connection();
   const { slug } = await params;
   const { preview } = await searchParams;
-  const isPreview = preview === "true";
+  const isPreviewParam = preview === "true";
   const data = await loadPageData(slug);
   if (!data) notFound();
 
   const { tenant, customization, featured, promotions, exclusiveCount, displayName, showcase, productCount, categories, editorTheme, features, socialProof } = data;
 
-  // Allow admin preview even if inactive/unpublished
+  // SECURITY (audit 2026-06-26): `?preview=true` solo lo honra el DUEÑO de este
+  // tenant o un superadmin con sesión válida. Antes, cualquier visitante anónimo
+  // podía ver una tienda no publicada/inactiva agregando el parámetro a la URL.
+  let isPreview = false;
+  if (isPreviewParam) {
+    try {
+      const token = (await cookies()).get(SESSION.COOKIE_NAME)?.value;
+      const payload = token ? await getSessionPayload(token) : null;
+      isPreview = !!payload && (payload.role === "superadmin" || payload.tenantId === tenant.id);
+    } catch {
+      isPreview = false;
+    }
+  }
+
+  // Permitir preview del dueño/superadmin aunque esté inactiva/sin publicar.
   if (!isPreview && (!tenant.active || !customization.published)) notFound();
 
   // Design tokens del SectionsBuilder tienen prioridad sobre customization viejo.
