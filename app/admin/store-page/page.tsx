@@ -133,7 +133,7 @@ export default function StorePageAdminPage() {
       />
 
       <div>
-        {tab === "sections" && <SectionsTab />}
+        {tab === "sections" && <SectionsTab slug={slug} />}
         {tab === "branding" && <MarketplaceBrandingTab />}
         {tab === "banners" && <BannerEditorTab storeSlug={slug} />}
         {tab === "promotions" && <PromotionsTab />}

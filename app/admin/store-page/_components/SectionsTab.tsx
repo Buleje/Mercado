@@ -23,6 +23,10 @@ import {
   EyeOff,
   ArrowUp,
   ArrowDown,
+  GripVertical,
+  Columns2,
+  RotateCcw,
+  Copy,
   Trash2,
   Save,
   Edit3,
@@ -65,7 +69,7 @@ const TYPE_LABEL: Record<SectionType, string> = {
   "image-text": "Imagen + texto",
 };
 
-export default function SectionsTab() {
+export default function SectionsTab({ slug = "main" }: { slug?: string }) {
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,6 +77,12 @@ export default function SectionsTab() {
   const [error, setError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Drag-and-drop para reordenar (Brandon 2026-06-26 — el "v2" que pedía el código).
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  // Vista previa en vivo del storefront (Brandon 2026-06-26): drawer /t/{slug}.
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0);
 
   // ── Load ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -107,6 +117,7 @@ export default function SectionsTab() {
         setError(typeof j.error === "string" ? j.error : "Error al guardar");
       } else {
         setSaved(true);
+        setPreviewKey((k) => k + 1); // recarga el preview con lo recién publicado
         setTimeout(() => setSaved(false), 2500);
       }
     } catch {
@@ -129,6 +140,21 @@ export default function SectionsTab() {
     setEditingId(newSection.id);
   }, [sections.length]);
 
+  // Duplicar una sección: clona tipo + datos, la inserta justo debajo (Brandon 2026-06-26).
+  const duplicateSection = useCallback((id: string) => {
+    setSections((prev) => {
+      const idx = prev.findIndex((s) => s.id === id);
+      if (idx === -1) return prev;
+      const copy = {
+        ...prev[idx],
+        id: `s_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        data: structuredClone(prev[idx].data),
+      } as Section;
+      const next = [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)];
+      return next.map((s, i) => ({ ...s, order: i }));
+    });
+  }, []);
+
   const removeSection = useCallback((id: string) => {
     if (!confirm("¿Eliminar esta sección? Esta acción no se puede deshacer.")) return;
     setSections((prev) => prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, order: i })));
@@ -148,6 +174,17 @@ export default function SectionsTab() {
       if (swapIdx < 0 || swapIdx >= prev.length) return prev;
       const next = [...prev];
       [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+      return next.map((s, i) => ({ ...s, order: i }));
+    });
+  }, []);
+
+  // Reordenar por drag-and-drop: mueve la sección `from` a la posición `to`.
+  const reorderSection = useCallback((from: number, to: number) => {
+    setSections((prev) => {
+      if (from === to || from < 0 || to < 0 || from >= prev.length || to >= prev.length) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
       return next.map((s, i) => ({ ...s, order: i }));
     });
   }, []);
@@ -185,15 +222,41 @@ export default function SectionsTab() {
             {sections.filter((s) => s.visible).length} visibles
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowTemplates(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-4 h-10 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-md"
-        >
-          <Plus className="w-4 h-4" strokeWidth={2.5} />
-          Añadir sección
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowPreview((v) => !v)}
+            aria-pressed={showPreview}
+            className={`inline-flex items-center gap-2 rounded-full px-4 h-10 text-sm font-extrabold transition-colors ${showPreview ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"}`}
+          >
+            <Columns2 className="w-4 h-4" strokeWidth={2.5} />
+            Vista previa
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowTemplates(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-4 h-10 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-md"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2.5} />
+            Añadir sección
+          </button>
+        </div>
       </section>
+
+      {/* Drawer de vista previa en vivo del storefront (Brandon 2026-06-26).
+          Muestra /t/{slug}; se recarga al guardar. */}
+      {showPreview && (
+        <div className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[480px] flex-col border-l-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-2xl">
+          <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-3 py-2">
+            <span className="truncate text-xs font-bold text-[var(--text-secondary)]">Vista previa · /t/{slug} · se actualiza al guardar</span>
+            <div className="flex shrink-0 items-center gap-1">
+              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} aria-label="Recargar vista previa" className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"><RotateCcw className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setShowPreview(false)} aria-label="Cerrar vista previa" className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"><X className="h-4 w-4" /></button>
+            </div>
+          </div>
+          <iframe key={previewKey} src={`/t/${slug}`} title="Vista previa de la tienda" className="w-full flex-1 bg-white" />
+        </div>
+      )}
 
       {/* Estado vacio */}
       {sections.length === 0 && (
@@ -226,12 +289,30 @@ export default function SectionsTab() {
             return (
               <div
                 key={section.id}
+                onDragOver={(e) => { if (dragIndex === null) return; e.preventDefault(); if (dragOverIndex !== idx) setDragOverIndex(idx); }}
+                onDrop={(e) => { if (dragIndex === null) return; e.preventDefault(); reorderSection(dragIndex, idx); setDragIndex(null); setDragOverIndex(null); }}
                 className={`rounded-2xl border-2 bg-[var(--surface-raised)] transition-all ${
-                  isEditing ? "border-[var(--accent)] shadow-lg" : "border-[var(--rule-base)]"
-                } ${!section.visible ? "opacity-60" : ""}`}
+                  isEditing
+                    ? "border-[var(--accent)] shadow-lg"
+                    : dragOverIndex === idx && dragIndex !== idx
+                      ? "border-dashed border-[var(--accent)]"
+                      : "border-[var(--rule-base)]"
+                } ${!section.visible ? "opacity-60" : ""} ${dragIndex === idx ? "opacity-40" : ""}`}
               >
                 {/* Header de la card */}
-                <div className="flex items-center gap-3 p-4 border-b border-[var(--rule-soft)]">
+                <div className="flex items-center gap-2 p-4 border-b border-[var(--rule-soft)]">
+                  <span
+                    draggable
+                    onDragStart={(e) => { setDragIndex(idx); if (e.dataTransfer) e.dataTransfer.effectAllowed = "move"; }}
+                    onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Arrastrá para reordenar la sección"
+                    title="Arrastrá para reordenar"
+                    className="inline-flex h-9 w-5 shrink-0 cursor-grab items-center justify-center rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] active:cursor-grabbing"
+                  >
+                    <GripVertical className="h-4 w-4" aria-hidden />
+                  </span>
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-xl shrink-0">
                     {TYPE_EMOJI[section.type]}
                   </span>
@@ -284,6 +365,16 @@ export default function SectionsTab() {
                       }`}
                     >
                       {isEditing ? <Check className="h-4 w-4" strokeWidth={2.5} /> : <Edit3 className="h-4 w-4" />}
+                    </button>
+                    {/* Duplicar */}
+                    <button
+                      type="button"
+                      onClick={() => duplicateSection(section.id)}
+                      aria-label="Duplicar sección"
+                      title="Duplicar"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                    >
+                      <Copy className="h-4 w-4" />
                     </button>
                     {/* Eliminar */}
                     <button
