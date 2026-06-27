@@ -251,6 +251,9 @@ export default function StorefrontEditOverlay() {
   const selectedEl = useRef<Element | null>(null);
   const editingEl = useRef<HTMLElement | null>(null);
   const editingOriginal = useRef<string>("");
+  // Lote H #6: modo navegación — el overlay deja de interceptar clicks/hover
+  // para que el dueño pruebe la tienda como un cliente (scroll/click reales).
+  const navModeRef = useRef(false);
 
   // recalcula la caja del bloque seleccionado (scroll/resize lo desalinean)
   const reposition = useCallback(() => {
@@ -406,7 +409,7 @@ export default function StorefrontEditOverlay() {
 
     /* ── Hover: outline dashed sobre el bloque ── */
     const onOver = (e: MouseEvent) => {
-      if (editingEl.current) return;
+      if (navModeRef.current || editingEl.current) return;
       const el = pbBlock(e.target);
       if (!el) { setHover(null); return; }
       setHover({ box: rectOf(el), key: el.getAttribute("data-pb") || "" });
@@ -414,6 +417,7 @@ export default function StorefrontEditOverlay() {
 
     /* ── Click único: selecciona sección → avisa al editor ── */
     const onClick = (e: MouseEvent) => {
+      if (navModeRef.current) return; // Modo navegación: dejar pasar el click real
       if (editingEl.current) return; // En edición inline: dejar pasar
       // Prioridad: una TARJETA de producto [data-pb-card] → editor de tarjetas.
       const card = e.target instanceof Element ? (e.target.closest("[data-pb-card]") as HTMLElement | null) : null;
@@ -441,6 +445,7 @@ export default function StorefrontEditOverlay() {
 
     /* ── Doble click: edición inline en [data-live] ── */
     const onDblClick = (e: MouseEvent) => {
+      if (navModeRef.current) return; // Modo navegación: sin edición inline
       const live = liveEl(e.target);
       if (!live) return;
       e.preventDefault();
@@ -503,8 +508,17 @@ export default function StorefrontEditOverlay() {
         field?: string;
         value?: string;
         hidden?: boolean;
+        mode?: string;
       } | null;
       if (!d || d.source !== "buleje-editor") return;
+
+      // Lote H #6: pb-set-mode — alternar edición / navegación (interactiva).
+      if (d.type === "pb-set-mode") {
+        navModeRef.current = d.mode === "nav";
+        if (navModeRef.current) { setHover(null); setSelected(null); setPanelHighlight(null); }
+        document.body.style.cursor = navModeRef.current ? "" : "";
+        return;
+      }
 
       // pb-highlight: panel hoverea una sección → ámbar en el iframe
       if (d.type === "pb-highlight") {

@@ -52,6 +52,8 @@ import {
   Users,
   Share2,
   Maximize2,
+  Keyboard,
+  MousePointer,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import ImageUpload from "./ImageUpload";
@@ -133,6 +135,12 @@ type CreativePanel =
   | "automatizacion"
   | "avanzado"
   | "historial";
+
+// Orden de paneles para atajos Ctrl+1..9 (Lote H, Brandon 2026-06-27).
+const PANEL_ORDER: CreativePanel[] = [
+  "plantillas", "identidad", "hero", "colores", "secciones",
+  "tipografia", "estilos", "contacto", "automatizacion", "avanzado", "historial",
+];
 
 interface StoreCreativeModeProps {
   tenantSlug: string;
@@ -1667,6 +1675,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   const [livePreview, setLivePreview] = useState(true);
   const [splitPreview, setSplitPreview] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
+  // Lote H #6: modo navegación — preview totalmente interactivo (sin overlay de edición).
+  const [navMode, setNavMode] = useState(false);
+  const navModeRef = useRef(false);
+  useEffect(() => { navModeRef.current = navMode; }, [navMode]);
   const [savedSnapshots, setSavedSnapshots] = useState<Array<{ theme: StoreTheme; savedAt: string; name?: string }>>([]);
   // Lote E: nombre para guardar una versión etiquetada del historial.
   const [versionName, setVersionName] = useState("");
@@ -2172,6 +2184,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     return () => clearTimeout(t);
   }, [draft, postLiveTheme]);
 
+  // Lote H #6: avisar al overlay del iframe el modo edición/navegación.
+  useEffect(() => {
+    const frame = document.querySelector<HTMLIFrameElement>('iframe[data-live-preview="1"]');
+    try {
+      frame?.contentWindow?.postMessage({ source: "buleje-editor", type: "pb-set-mode", mode: navMode ? "nav" : "edit" }, window.location.origin);
+    } catch { /* cross-origin guard */ }
+  }, [navMode, iframeKey]);
+
   // Cuando el preview (re)carga avisa "ready" → reenviar el tema actual.
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
@@ -2196,6 +2216,10 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       if (d?.source !== "buleje-preview") return;
       if (d.type === "ready") {
         postLiveTheme(draftRef.current);
+        // Reenviar el modo navegación tras recargar el iframe.
+        try {
+          (e.source as Window | null)?.postMessage({ source: "buleje-editor", type: "pb-set-mode", mode: navModeRef.current ? "nav" : "edit" }, window.location.origin);
+        } catch { /* no-op */ }
         return;
       }
       // Fase 1: click en un bloque del preview → abrir su panel + resaltar.
@@ -2438,6 +2462,33 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     }
   }, [draft, onApplyTheme]);
 
+  // #16 Atajos de teclado (Lote H, Brandon 2026-06-27). Capture + stopImmediate
+  // para preempt el shell admin (que usa teclas sueltas para navegar tabs).
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tgt = e.target as HTMLElement | null;
+      const typing = !!tgt && (tgt.tagName === "INPUT" || tgt.tagName === "TEXTAREA" || tgt.tagName === "SELECT" || tgt.isContentEditable);
+      const mod = e.metaKey || e.ctrlKey;
+      const k = e.key.toLowerCase();
+      const take = () => { e.preventDefault(); e.stopImmediatePropagation(); };
+      // Con modificador (Ctrl/⌘): guardar, deshacer/rehacer, preview, ir a panel.
+      if (mod && k === "s") { take(); handleApply(); return; }
+      if (mod && k === "z" && !e.shiftKey) { take(); handleUndo(); return; }
+      if (mod && (k === "y" || (k === "z" && e.shiftKey))) { take(); handleRedo(); return; }
+      if (mod && k === "p") { take(); window.open(`/t/${tenantSlug}?preview=true`, "_blank", "noopener"); return; }
+      if (mod && /^[1-9]$/.test(e.key)) { take(); const id = PANEL_ORDER[Number(e.key) - 1]; if (id) { setPanel(id); setPbSelected(null); } return; }
+      if (typing || mod) return; // teclas sueltas: no en inputs ni con otro modificador
+      if (e.key === "Escape") { take(); setShowShortcuts(false); setPbSelected(null); return; }
+      if (e.key === "?") { take(); setShowShortcuts((s) => !s); return; }
+      if (k === "d") { take(); setViewport("desktop"); setCustomWidth(null); return; }
+      if (k === "t") { take(); setViewport("tablet"); setCustomWidth(null); return; }
+      if (k === "m") { take(); setViewport("mobile"); setCustomWidth(null); return; }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [handleApply, handleUndo, handleRedo, tenantSlug]);
+
 
   const fontFamily = useMemo(() => {
     const found = FONT_OPTIONS.find((f) => f.value === draft.fontFamily)?.value ?? "sistema";
@@ -2472,6 +2523,35 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-[#0c0d10] text-gray-200">
+      {/* #16 Modal de atajos de teclado (Lote H) */}
+      {showShortcuts && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <button type="button" aria-label="Cerrar" onClick={() => setShowShortcuts(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div role="dialog" aria-modal="true" aria-label="Atajos de teclado" className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="inline-flex items-center gap-2 text-sm font-bold text-white"><Keyboard className="h-4 w-4" /> Atajos de teclado</p>
+              <button type="button" onClick={() => setShowShortcuts(false)} aria-label="Cerrar" className="rounded-md p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
+            </div>
+            <ul className="space-y-1.5">
+              {([
+                ["Ctrl/⌘ + S", "Aplicar y guardar"],
+                ["Ctrl/⌘ + Z", "Deshacer"],
+                ["Ctrl/⌘ + Y", "Rehacer"],
+                ["Ctrl/⌘ + P", "Vista previa en nueva pestaña"],
+                ["Ctrl/⌘ + 1…9", "Ir a un panel del sidebar"],
+                ["D / T / M", "Escritorio / Tablet / Móvil"],
+                ["Escape", "Cerrar panel / volver"],
+                ["?", "Mostrar estos atajos"],
+              ] as const).map(([keys, desc]) => (
+                <li key={keys} className="flex items-center justify-between gap-3 text-[length:var(--ts-2xs)]">
+                  <span className="text-gray-300">{desc}</span>
+                  <kbd className="shrink-0 rounded-md border border-white/15 bg-white/[0.06] px-2 py-0.5 font-mono font-bold text-gray-100">{keys}</kbd>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
       {/* Header reorganizado: branding | viewport (center) | actions (right).
        * Cada grupo separado por hairline. Active states más obvios. */}
       <header className="grid grid-cols-3 items-center h-14 px-4 bg-[#0c0d10]/80 border-b border-white/5 shrink-0 backdrop-blur-xl">
@@ -2591,6 +2671,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 >
                   <Columns2 className="h-3.5 w-3.5" />
                 </button>
+                {/* Lote H #6: modo navegación (preview interactivo) */}
+                <button
+                  onClick={() => setNavMode((v) => !v)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md text-xs font-bold transition-colors",
+                    navMode ? "bg-[var(--accent-soft)]/20 text-[var(--accent-soft)]" : "text-gray-300 hover:text-white hover:bg-gray-700",
+                  )}
+                  title={navMode ? "Volver a editar (click selecciona)" : "Probar la tienda: scroll y clicks reales"}
+                >
+                  <MousePointer className="h-3.5 w-3.5" />
+                  {navMode ? "Navegando" : "Navegar"}
+                </button>
               </>
             )}
           </div>
@@ -2602,6 +2694,17 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               {savedLabel}
             </span>
           )}
+
+          {/* #16 Atajos de teclado */}
+          <button
+            type="button"
+            onClick={() => setShowShortcuts(true)}
+            className="p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+            title="Atajos de teclado (?)"
+            aria-label="Ver atajos de teclado"
+          >
+            <Keyboard className="h-3.5 w-3.5" />
+          </button>
 
           <a
             href={`/t/${tenantSlug}?preview=true`}
@@ -3608,6 +3711,24 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     />
                   )}
                 </div>
+
+                {/* Lote H: tamaño base del texto (px) + interlineado global */}
+                <Field
+                  label={<div className="mb-1 flex w-full items-center justify-between"><span>Tamaño base del texto</span><span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">{draft.baseFontSize ?? 16}px</span></div>}
+                  labelClassName={LABEL_CLASS}
+                >
+                  {(id) => (
+                    <input id={id} type="range" min={13} max={20} value={draft.baseFontSize ?? 16} onChange={(e) => patch("baseFontSize", Number(e.target.value))} className="w-full accent-[var(--data-success-500)]" />
+                  )}
+                </Field>
+                <Field
+                  label={<div className="mb-1 flex w-full items-center justify-between"><span>Interlineado</span><span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">{(draft.lineHeight ?? 0) >= 1.2 ? (draft.lineHeight ?? 0).toFixed(1) : "Auto"}</span></div>}
+                  labelClassName={LABEL_CLASS}
+                >
+                  {(id) => (
+                    <input id={id} type="range" min={1.2} max={2.0} step={0.1} value={(draft.lineHeight ?? 0) >= 1.2 ? draft.lineHeight : 1.6} onChange={(e) => patch("lineHeight", Number(e.target.value))} className="w-full accent-[var(--data-success-500)]" />
+                  )}
+                </Field>
 
                 <Field label="Espaciado general" labelClassName={LABEL_CLASS}>
                   <select className={INPUT_CLASS} value={draft.spacing} onChange={(e) => patch("spacing", e.target.value as StoreTheme["spacing"])}>

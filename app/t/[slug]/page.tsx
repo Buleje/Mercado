@@ -204,6 +204,9 @@ async function loadPageData(slug: string) {
     customFontUrl: pickStr("customFontUrl"),
     customFontName: pickStr("customFontName"),
     customFontTarget: pickStr("customFontTarget"),
+    // Lote H (Brandon 2026-06-27): tamaño base + interlineado.
+    baseFontSize: typeof st?.["baseFontSize"] === "number" ? (st["baseFontSize"] as number) : undefined,
+    lineHeight: typeof st?.["lineHeight"] === "number" ? (st["lineHeight"] as number) : undefined,
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
@@ -541,6 +544,9 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   // de la tienda escalando el font-size raíz (los text-* de Tailwind son rem).
   // Solo afecta a /t (documento propio), no al admin.
   const fontScalePct = editorTheme.fontScale === "small" ? 92 : editorTheme.fontScale === "large" ? 112 : 100;
+  // Lote H: tamaño base en px tiene prioridad sobre la escala %; interlineado opcional.
+  const baseFontPx = typeof editorTheme.baseFontSize === "number" && editorTheme.baseFontSize >= 12 && editorTheme.baseFontSize <= 24 && editorTheme.baseFontSize !== 16 ? editorTheme.baseFontSize : null;
+  const lineH = typeof editorTheme.lineHeight === "number" && editorTheme.lineHeight >= 1.2 && editorTheme.lineHeight <= 2.2 ? editorTheme.lineHeight : null;
 
   // cardStyle del editor → tratamiento de las tarjetas de producto de la vitrina.
   const cardClass =
@@ -584,9 +590,15 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* CSS dinamico generado a partir de los design tokens del tenant.
           Sobreescribe el theme de Buleje solo en el subarbol .tenant-theme. */}
       <style dangerouslySetInnerHTML={{ __html: tokensToCssBlock(designTokens) }} />
-      {/* Escala tipográfica global del editor (chico/normal/grande). */}
-      {fontScalePct !== 100 && (
+      {/* Escala tipográfica global del editor: tamaño base px (prioridad) o escala %. */}
+      {baseFontPx ? (
+        <style dangerouslySetInnerHTML={{ __html: `html{font-size:${baseFontPx}px}` }} />
+      ) : fontScalePct !== 100 ? (
         <style dangerouslySetInnerHTML={{ __html: `html{font-size:${fontScalePct}%}` }} />
+      ) : null}
+      {/* Lote H: interlineado global opcional. */}
+      {lineH && (
+        <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{line-height:${lineH}}` }} />
       )}
       {/* Animaciones de entrada al scrollear (Brandon 2026-06-26) — el estado
           oculto lo agrega ScrollReveal (JS), no el server → SEO/no-JS intactos. */}
