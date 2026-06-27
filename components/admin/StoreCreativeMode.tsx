@@ -1285,6 +1285,40 @@ function CustomSectionEditor({
         </SectionCard>
       )}
 
+      {/* Lote I #10: disposición interna de la sección (galería / imagen+texto) */}
+      {section.type === "gallery" && (
+        <SectionCard icon={SlidersHorizontal} title="Disposición">
+          <StylePicker
+            label="Columnas"
+            cols={4}
+            value={String((d as { columns?: number }).columns ?? 0)}
+            onChange={(v) => onPatch({ columns: Number(v) || undefined })}
+            options={[
+              { value: "0", label: "Auto", preview: <span className="text-[length:var(--ts-2xs)] text-gray-400">A</span> },
+              { value: "2", label: "2", preview: <span className="text-xs font-bold text-gray-300">2</span> },
+              { value: "3", label: "3", preview: <span className="text-xs font-bold text-gray-300">3</span> },
+              { value: "4", label: "4", preview: <span className="text-xs font-bold text-gray-300">4</span> },
+            ]}
+          />
+        </SectionCard>
+      )}
+      {section.type === "image-text" && typeof d.imagePosition === "string" && (
+        <SectionCard icon={SlidersHorizontal} title="Disposición">
+          <StylePicker
+            label="Posición de la imagen"
+            cols={4}
+            value={d.imagePosition as string}
+            onChange={(v) => onPatch({ imagePosition: v })}
+            options={[
+              { value: "left", label: "Izq.", preview: <AlignLeft className="h-4 w-4 text-gray-300" /> },
+              { value: "right", label: "Der.", preview: <AlignRight className="h-4 w-4 text-gray-300" /> },
+              { value: "top", label: "Arriba", preview: <span className="text-xs font-bold text-gray-300">↑</span> },
+              { value: "bottom", label: "Abajo", preview: <span className="text-xs font-bold text-gray-300">↓</span> },
+            ]}
+          />
+        </SectionCard>
+      )}
+
       {typeof d.imageUrl === "string" && (
         <SectionCard icon={ImageIcon} title="Imagen">
           <div className="dark">
@@ -3289,6 +3323,24 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       </div>
                     </div>
                   ))}
+                  {/* Lote I: renombrar "Catálogo" + links extra del navbar */}
+                  <div className="space-y-1.5 border-t border-white/5 pt-2">
+                    <span className="text-[length:var(--ts-2xs)] text-gray-300">Nombre de &quot;Catálogo&quot;</span>
+                    <input className={INPUT_CLASS} value={draft.navCatalogLabel ?? ""} onChange={(e) => patch("navCatalogLabel", e.target.value)} placeholder="Catálogo (ej. Menú, Productos)" maxLength={24} />
+                    <span className="text-[length:var(--ts-2xs)] text-gray-300">Links extra del menú</span>
+                    {(draft.navExtraLinks ?? []).map((lk, i, arr) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <input className={cn(INPUT_CLASS, "w-24 shrink-0")} value={lk.label} onChange={(e) => patch("navExtraLinks", arr.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} placeholder="Nombre" maxLength={20} />
+                        <input className={INPUT_CLASS} value={lk.url} onChange={(e) => patch("navExtraLinks", arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))} placeholder="https://instagram.com/…" />
+                        <button type="button" onClick={() => patch("navExtraLinks", arr.filter((_, j) => j !== i))} aria-label="Quitar link" className="shrink-0 text-gray-500 transition-colors hover:text-[var(--data-error-500)]"><X className="h-3.5 w-3.5" /></button>
+                      </div>
+                    ))}
+                    {(draft.navExtraLinks ?? []).length < 3 && (
+                      <button type="button" onClick={() => patch("navExtraLinks", [...(draft.navExtraLinks ?? []), { label: "", url: "" }])} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                        <Plus className="h-3 w-3" /> Agregar link
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* #2 Swatches de marca: guardá colores y reutilizalos en 1 click */}

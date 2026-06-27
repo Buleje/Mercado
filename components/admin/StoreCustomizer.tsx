@@ -128,6 +128,9 @@ export interface StoreTheme {
   // Lote H (Brandon 2026-06-27): tamaño base del texto (px) + interlineado.
   baseFontSize: number; // px; 0/16 = default
   lineHeight: number; // 0 = auto (usa el del tema); 1.2-2.0 = override
+  // Lote I (Brandon 2026-06-27): menú de navegación editable.
+  navCatalogLabel: string; // vacío = "Catálogo"
+  navExtraLinks: Array<{ label: string; url: string }>;
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
@@ -281,6 +284,8 @@ const DEFAULT_THEME: StoreTheme = {
   customFontTarget: "none",
   baseFontSize: 16,
   lineHeight: 0,
+  navCatalogLabel: "",
+  navExtraLinks: [],
   textStyles: {},
   countdownEnabled: false,
   countdownTitle: "¡Oferta por tiempo limitado!",

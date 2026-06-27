@@ -207,6 +207,9 @@ async function loadPageData(slug: string) {
     // Lote H (Brandon 2026-06-27): tamaño base + interlineado.
     baseFontSize: typeof st?.["baseFontSize"] === "number" ? (st["baseFontSize"] as number) : undefined,
     lineHeight: typeof st?.["lineHeight"] === "number" ? (st["lineHeight"] as number) : undefined,
+    // Lote I (Brandon 2026-06-27): menú de navegación editable.
+    navCatalogLabel: pickStr("navCatalogLabel"),
+    navExtraLinks: Array.isArray(st?.["navExtraLinks"]) ? (st["navExtraLinks"] as Array<{ label: string; url: string }>) : [],
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
@@ -694,6 +697,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         cartHref={`/t/${tenant.slug}/tienda`}
         bgColor={editorTheme.navbarBgColor || undefined}
         textColor={editorTheme.navbarTextColor || undefined}
+        catalogLabel={editorTheme.navCatalogLabel || undefined}
+        extraLinks={editorTheme.navExtraLinks}
       />
 
       {/* Tema estacional + envío gratis + estado Abierto/Cerrado (Brandon

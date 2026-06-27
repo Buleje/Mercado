@@ -45,6 +45,9 @@ interface StorefrontNavbarProps {
   bgColor?: string;
   /** Color de texto del navbar (vacío = tokens). Cascada a los enlaces vía vars. */
   textColor?: string;
+  /** Lote I (Brandon 2026-06-27): renombrar "Catálogo" + links extra del navbar. */
+  catalogLabel?: string;
+  extraLinks?: Array<{ label: string; url: string }>;
 }
 
 export default function StorefrontNavbar({
@@ -56,6 +59,8 @@ export default function StorefrontNavbar({
   cartHref,
   bgColor,
   textColor,
+  catalogLabel,
+  extraLinks,
 }: StorefrontNavbarProps) {
   const initial = (name?.trim()?.charAt(0) || "T").toUpperCase();
   const pathname = usePathname() ?? "";
@@ -114,8 +119,17 @@ export default function StorefrontNavbar({
             Inicio
           </Link>
           <Link href={catalog} aria-current={onCatalog ? "page" : undefined} className={linkCls(onCatalog)}>
-            Catálogo
+            {catalogLabel?.trim() || "Catálogo"}
           </Link>
+          {/* Lote I: links extra del dueño (Instagram, WhatsApp, etc.). */}
+          {(extraLinks ?? []).filter((l) => l.label?.trim() && l.url?.trim()).map((l, i) => {
+            const ext = /^https?:\/\//.test(l.url);
+            return (
+              <a key={i} href={l.url} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined} className={linkCls(false)}>
+                {l.label}
+              </a>
+            );
+          })}
         </nav>
 
         {/* Buscador de la tienda — barra estilo input que lleva al catálogo

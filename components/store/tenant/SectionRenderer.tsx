@@ -584,9 +584,11 @@ const BENEFIT_ICONS = {
 
 // ── Galeria ────────────────────────────────────────────────────────────
 function GalleryBlock({ section, primary }: { section: GallerySection; primary: string }) {
-  const { title, subtitle, images } = section.data;
+  const { title, subtitle, images, columns } = section.data;
   const validImages = images.filter((img) => img.url && img.url.trim() !== "");
   if (validImages.length === 0) return null;
+  // Lote I: columnas configurables (override del auto-por-cantidad).
+  const colsClass = columns === 2 ? "grid-cols-2" : columns === 3 ? "grid-cols-2 sm:grid-cols-3" : columns === 4 ? "grid-cols-2 md:grid-cols-4" : null;
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
@@ -607,11 +609,11 @@ function GalleryBlock({ section, primary }: { section: GallerySection; primary: 
         )}
       </div>
       <div
-        className={`grid gap-3 ${
+        className={`grid gap-3 ${colsClass ?? (
           validImages.length === 2 ? "grid-cols-1 sm:grid-cols-2" :
           validImages.length === 3 ? "grid-cols-1 sm:grid-cols-3" :
           "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-        }`}
+        )}`}
       >
         {validImages.map((img, i) => (
           <figure
@@ -661,16 +663,19 @@ function ImageTextBlock({ section, primary, accent }: { section: ImageTextSectio
     ? { background: `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)` }
     : undefined;
 
+  // Lote I: posición de la imagen — left/right (lado) o top/bottom (vertical).
+  const vertical = imagePosition === "top" || imagePosition === "bottom";
+  const gridClass = vertical
+    ? "grid-cols-1 gap-8 max-w-3xl mx-auto text-center"
+    : "grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center";
+  const imageOrder = imagePosition === "right" || imagePosition === "bottom" ? "lg:order-2 order-2" : "";
+
   return (
     <section className={`w-full ${outerClass}`} style={outerStyle}>
       <div className="max-w-6xl mx-auto px-4 py-14 sm:py-20">
-        <div
-          className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center ${
-            imagePosition === "left" ? "" : "lg:[&>*:first-child]:order-2"
-          }`}
-        >
+        <div className={`grid ${gridClass}`}>
           {/* Imagen — con glow de realce detrás */}
-          <div className="relative">
+          <div className={`relative ${imageOrder}`}>
             <div
               aria-hidden
               className="pointer-events-none absolute -inset-3 rounded-[2rem] blur-2xl opacity-70"

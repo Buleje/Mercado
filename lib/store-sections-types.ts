@@ -131,6 +131,8 @@ export interface GallerySection extends SectionBase {
       alt?: string;
       caption?: string;
     }>;
+    /** Lote I (Brandon 2026-06-27): columnas del grid. Default = auto por cantidad. */
+    columns?: 2 | 3 | 4;
   };
 }
 
@@ -142,8 +144,8 @@ export interface ImageTextSection extends SectionBase {
     body: string;
     imageUrl: string;
     imageAlt?: string;
-    /** Lado de la imagen — left | right. */
-    imagePosition: "left" | "right";
+    /** Lado de la imagen — left | right | top | bottom (Lote I). */
+    imagePosition: "left" | "right" | "top" | "bottom";
     /** Fondo del bloque — claro | marca (gradiente primary→accent) | oscuro. */
     background?: "light" | "brand" | "dark";
     /** Etiqueta superior (eyebrow) editable. */
