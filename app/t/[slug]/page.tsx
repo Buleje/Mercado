@@ -1137,7 +1137,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
               className="group flex items-center gap-4 p-6 bg-[var(--surface-raised)] rounded-2xl shadow-md hover:shadow-xl transition-all border border-[var(--rule-base)]"
             >
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-orange-50 dark:bg-orange-900/20">
-                <Settings className="w-7 h-7 text-[#f4a261]" />
+                <Settings className="w-7 h-7" style={{ color: accent }} />
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-lg leading-tight">Editar tienda</p>
