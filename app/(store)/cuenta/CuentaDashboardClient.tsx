@@ -28,7 +28,6 @@ import {
   Truck,
   CheckCircle2,
   Clock,
-  Sparkles,
   ChevronRight,
   MapPin,
   CreditCard,
@@ -136,7 +135,6 @@ const TILES: Tile[] = [
   { href: "/cuenta/cupones",        label: "Cupones",        hint: "Descuentos disponibles",  Icon: Gift },
   { href: "/cuenta/notificaciones", label: "Notificaciones", hint: "Avisos del negocio",      Icon: Bell },
   { href: "/cuenta/preferencias",   label: "Preferencias",   hint: "Idioma, tema, alertas",   Icon: Settings },
-  { href: "/favoritos",             label: "Favoritos",      hint: "Tus productos guardados", Icon: Sparkles },
 ];
 
 export function CuentaDashboardClient() {
