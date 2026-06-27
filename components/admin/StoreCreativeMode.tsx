@@ -142,6 +142,15 @@ const PANEL_ORDER: CreativePanel[] = [
   "tipografia", "estilos", "contacto", "automatizacion", "avanzado", "historial",
 ];
 
+// Onboarding guiado (Lote K #17, Brandon 2026-06-27): 5 pasos para el 1er uso.
+const TOUR_STEPS: Array<{ panel: CreativePanel; title: string; desc: string }> = [
+  { panel: "identidad", title: "1. Tu identidad", desc: "Subí tu logo y poné el nombre de tu tienda. Es lo primero que ve tu cliente." },
+  { panel: "colores", title: "2. Tus colores", desc: "Elegí los colores de tu marca o aplicá una paleta lista en 1 clic." },
+  { panel: "hero", title: "3. Tu portada", desc: "Poné una imagen o video de fondo y un título que enganche al visitante." },
+  { panel: "contacto", title: "4. WhatsApp y horario", desc: "Cargá tu WhatsApp para recibir pedidos y tu horario de atención." },
+  { panel: "plantillas", title: "5. ¡Listo para publicar!", desc: "Cuando te guste cómo quedó, tocá “Aplicar y guardar” arriba a la derecha." },
+];
+
 interface StoreCreativeModeProps {
   tenantSlug: string;
   initialTheme: StoreTheme;
@@ -2510,6 +2519,27 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     }
   }, [draft, onApplyTheme]);
 
+  // #17 Onboarding guiado (Lote K). Auto en el 1er uso (localStorage), reabrible.
+  const [tourStep, setTourStep] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(`creative-tour-done-${tenantSlug}`) !== "1") {
+        const t = setTimeout(() => setTourStep(0), 1200);
+        return () => clearTimeout(t);
+      }
+    } catch { /* private browsing */ }
+  }, [tenantSlug]);
+  const closeTour = useCallback(() => {
+    setTourStep(null);
+    try { localStorage.setItem(`creative-tour-done-${tenantSlug}`, "1"); } catch { /* ignore */ }
+  }, [tenantSlug]);
+  const goTourStep = useCallback((i: number) => {
+    if (i < 0 || i >= TOUR_STEPS.length) { closeTour(); return; }
+    setTourStep(i);
+    setPanel(TOUR_STEPS[i].panel);
+    setPbSelected(null);
+  }, [closeTour]);
+
   // #16 Atajos de teclado (Lote H, Brandon 2026-06-27). Capture + stopImmediate
   // para preempt el shell admin (que usa teclas sueltas para navegar tabs).
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -2571,6 +2601,34 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-[#0c0d10] text-gray-200">
+      {/* #17 Onboarding guiado (Lote K) — tarjeta de pasos, abajo a la derecha */}
+      {tourStep !== null && TOUR_STEPS[tourStep] && (
+        <div className="fixed bottom-5 right-5 z-[115] w-full max-w-xs rounded-2xl border border-[var(--accent-soft)]/40 bg-[#16181d] p-4 shadow-2xl">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]"><Sparkles className="h-3.5 w-3.5" /> Tour · {tourStep + 1}/{TOUR_STEPS.length}</span>
+            <button type="button" onClick={closeTour} aria-label="Saltar tour" className="rounded-md p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
+          </div>
+          <p className="text-sm font-bold text-white">{TOUR_STEPS[tourStep].title}</p>
+          <p className="mt-1 text-[length:var(--ts-2xs)] leading-snug text-gray-300">{TOUR_STEPS[tourStep].desc}</p>
+          {/* Progress */}
+          <div className="mt-3 flex gap-1">
+            {TOUR_STEPS.map((_, i) => (
+              <span key={i} className={cn("h-1 flex-1 rounded-full", i <= tourStep ? "bg-[var(--accent-soft)]" : "bg-white/15")} />
+            ))}
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <button type="button" onClick={closeTour} className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 transition-colors hover:text-white">Saltar</button>
+            <div className="flex items-center gap-1.5">
+              {tourStep > 0 && (
+                <button type="button" onClick={() => goTourStep(tourStep - 1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-gray-200 transition-colors hover:bg-white/5">Anterior</button>
+              )}
+              <button type="button" onClick={() => goTourStep(tourStep + 1)} className="rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white transition-opacity hover:opacity-90">
+                {tourStep === TOUR_STEPS.length - 1 ? "Terminar" : "Siguiente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* #16 Modal de atajos de teclado (Lote H) */}
       {showShortcuts && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
@@ -2743,6 +2801,16 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             </span>
           )}
 
+          {/* #17 Tour guiado */}
+          <button
+            type="button"
+            onClick={() => goTourStep(0)}
+            className="hidden p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors lg:inline-flex"
+            title="Tour guiado"
+            aria-label="Iniciar tour guiado"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+          </button>
           {/* #16 Atajos de teclado */}
           <button
             type="button"
