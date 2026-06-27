@@ -92,7 +92,7 @@ export function ShareTrackingButton({ orderId, storeName, className }: Props) {
       </div>
       <p className="text-base text-muted leading-relaxed">
         Envíale a quien quieras un link sin login para que vea el estado en tiempo real.
-        Vive 72 horas.
+        Vive 24 horas.
       </p>
 
       {status !== "ready" && (

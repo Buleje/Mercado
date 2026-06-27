@@ -1,6 +1,6 @@
 /**
  * POST /api/orders/:orderId/tracking/share — Genera token público (HMAC) para
- * compartir el tracking por WhatsApp. Vive 72h.
+ * compartir el tracking por WhatsApp. Vive 24h.
  *
  * Respuesta:
  *   { token, url, expiresAt }

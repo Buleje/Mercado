@@ -99,7 +99,7 @@ export default async function PublicTrackingPage({ params }: PageProps) {
 
       <footer className="border-t border-[var(--rule-base)] mt-12 py-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-[length:var(--ts-2xs)] text-muted">
-          Este link vive 72 horas y permite ver el estado del pedido sin login.
+          Este link vive 24 horas y permite ver el estado del pedido sin login.
           <br />
           Hecho con{" "}
           <Link href="/" className="text-[var(--text-primary)] font-semibold hover:text-primary">
