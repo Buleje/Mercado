@@ -24,6 +24,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/contexts/cart-context";
+import OAuthButton from "@/components/auth/OAuthButton";
 
 interface StorefrontNavbarProps {
   name: string;
@@ -127,6 +128,10 @@ export default function StorefrontNavbar({
           <LiveCartButton />
         )}
 
+        {/* Notificaciones — icono de campana + dropdown con los avisos de esta
+            tienda individual (Brandon 2026-06-27). */}
+        <NotifMenu base={tBase} />
+
         {/* Menú de usuario: cuenta, pedidos, puntos, cupones, notificaciones.
             Enlaces planos (sin CustomerProvider) → funciona en la landing y en
             el catálogo. Brandon 2026-06-22: "como lo tenía antes". */}
@@ -210,6 +215,149 @@ function AccountMenu({ base }: { base: string }) {
               {label}
             </Link>
           ))}
+          {/* Iniciar sesión con Google (Brandon 2026-06-27) — OAuth Supabase. */}
+          <div className="mt-1 border-t border-[var(--rule-soft)] px-3 pb-1 pt-2.5">
+            <p className="pb-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              ¿No iniciaste sesión?
+            </p>
+            <OAuthButton provider="google" redirectTo={`${base}/cuenta`} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type NotifItem = {
+  id: string;
+  title: string;
+  message?: string;
+  link?: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+/**
+ * NotifMenu — campana + dropdown con las notificaciones del cliente para esta
+ * tienda. Fetch a /api/me/notifications (requireCustomer) al abrir; sin sesión de
+ * cliente muestra estado vacío honesto. Cierra con click-fuera + Escape.
+ */
+function NotifMenu({ base }: { base: string }) {
+  const [open, setOpen] = useState(false);
+  const [notifs, setNotifs] = useState<NotifItem[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || loaded) return;
+    setLoading(true);
+    const ctrl = new AbortController();
+    fetch("/api/me/notifications", { credentials: "include", signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const list = Array.isArray(data?.notifications) ? (data.notifications as NotifItem[]) : [];
+        setNotifs(list);
+        setUnread(typeof data?.unreadCount === "number" ? data.unreadCount : list.filter((n) => !n.read).length);
+      })
+      .catch((err) => {
+        if ((err as { name?: string })?.name !== "AbortError") {
+          console.warn("[nav/notif] no se pudo cargar las notificaciones", err);
+        }
+      })
+      .finally(() => { setLoading(false); setLoaded(true); });
+    return () => ctrl.abort();
+  }, [open, loaded]);
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={unread > 0 ? `Notificaciones — ${unread} sin leer` : "Notificaciones"}
+        className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      >
+        <Bell className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+        {unread > 0 && (
+          <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[length:var(--ts-2xs)] font-black tabular-nums text-white ring-2 ring-[var(--surface-raised)]">
+            {unread > 99 ? "99+" : unread}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          aria-label="Notificaciones"
+          className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        >
+          <div className="flex items-center justify-between border-b border-[var(--rule-soft)] px-4 py-2.5">
+            <p className="text-sm font-extrabold text-[var(--text-primary)]">Notificaciones</p>
+            <Link
+              href={`${base}/cuenta/notificaciones`}
+              onClick={() => setOpen(false)}
+              className="text-xs font-bold text-[var(--accent)] hover:underline"
+            >
+              Ver todas
+            </Link>
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto py-1">
+            {loading ? (
+              <div className="space-y-2 p-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
+                ))}
+              </div>
+            ) : notifs.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <Bell className="mx-auto h-7 w-7 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden="true" />
+                <p className="mt-2 text-sm font-bold text-[var(--text-primary)]">Sin notificaciones</p>
+                <p className="text-xs text-[var(--text-tertiary)]">Acá verás avisos de tus pedidos y ofertas.</p>
+              </div>
+            ) : (
+              notifs.slice(0, 6).map((n) => (
+                <Link
+                  key={n.id}
+                  href={n.link || `${base}/cuenta/notificaciones`}
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex items-start gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--surface-sunken)]"
+                >
+                  <span
+                    className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", n.read ? "bg-[var(--rule-base)]" : "bg-[var(--accent)]")}
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className={cn("block truncate text-sm", n.read ? "font-semibold text-[var(--text-secondary)]" : "font-extrabold text-[var(--text-primary)]")}>
+                      {n.title}
+                    </span>
+                    {n.message && (
+                      <span className="mt-0.5 block truncate text-xs text-[var(--text-tertiary)]">{n.message}</span>
+                    )}
+                  </span>
+                </Link>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
