@@ -27,6 +27,7 @@ import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
 import TenantExitIntentPopup from "@/components/store/tenant/TenantExitIntentPopup";
 import AbHeroTest from "@/components/store/tenant/AbHeroTest";
 import TenantPushOptIn from "@/components/store/tenant/TenantPushOptIn";
+import SectionViewTracker from "@/components/store/tenant/SectionViewTracker";
 import RotatingAnnouncementBar from "@/components/store/tenant/RotatingAnnouncementBar";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import TenantAnalytics from "@/components/store/TenantAnalytics";
@@ -1245,6 +1246,8 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         if (customSections.length === 0) return null;
         return (
           <div className="border-t border-[var(--rule-soft)]">
+            {/* #12: engagement por sección (IntersectionObserver → beacon). */}
+            <SectionViewTracker slug={tenant.slug} />
             {customSections.map((sec) => (
               // data-pb="custom:<id>" → seleccionable en Modo Creativo (ADR-301 Fase 4)
               <div key={sec.id} data-pb={`custom:${sec.id}`}>

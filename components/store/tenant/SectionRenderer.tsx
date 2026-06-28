@@ -39,25 +39,28 @@ interface RenderProps {
 export default function SectionRenderer({ section, primaryColor, accentColor }: RenderProps) {
   if (!section.visible) return null;
 
+  let block: React.ReactNode = null;
   switch (section.type) {
-    case "about":        return <AboutBlock      section={section} primary={primaryColor} />;
-    case "hours":        return <HoursBlock      section={section} primary={primaryColor} />;
-    case "payment":      return <PaymentBlock    section={section} primary={primaryColor} accent={accentColor} />;
-    case "how-to-order": return <HowToOrderBlock section={section} primary={primaryColor} />;
-    case "faq":          return <FaqBlock        section={section} primary={primaryColor} />;
-    case "benefits":     return <BenefitsBlock   section={section} primary={primaryColor} />;
-    case "gallery":      return <GalleryBlock    section={section} primary={primaryColor} />;
-    case "image-text":   return <ImageTextBlock  section={section} primary={primaryColor} accent={accentColor} />;
-    case "cta":          return <CtaBlock        section={section} primary={primaryColor} accent={accentColor} />;
-    case "video":        return <VideoBlock      section={section} primary={primaryColor} />;
-    case "map":          return <MapBlock        section={section} primary={primaryColor} />;
-    case "logos":        return <LogosBlock      section={section} primary={primaryColor} />;
-    case "countdown":    return <CountdownBlock  section={section} primary={primaryColor} />;
-    case "team":         return <TeamBlock       section={section} primary={primaryColor} />;
-    case "social":       return <SocialBlock     section={section} primary={primaryColor} accent={accentColor} />;
-    case "categories":   return <CategoriesBlock section={section} primary={primaryColor} accent={accentColor} />;
+    case "about":        block = <AboutBlock      section={section} primary={primaryColor} />; break;
+    case "hours":        block = <HoursBlock      section={section} primary={primaryColor} />; break;
+    case "payment":      block = <PaymentBlock    section={section} primary={primaryColor} accent={accentColor} />; break;
+    case "how-to-order": block = <HowToOrderBlock section={section} primary={primaryColor} />; break;
+    case "faq":          block = <FaqBlock        section={section} primary={primaryColor} />; break;
+    case "benefits":     block = <BenefitsBlock   section={section} primary={primaryColor} />; break;
+    case "gallery":      block = <GalleryBlock    section={section} primary={primaryColor} />; break;
+    case "image-text":   block = <ImageTextBlock  section={section} primary={primaryColor} accent={accentColor} />; break;
+    case "cta":          block = <CtaBlock        section={section} primary={primaryColor} accent={accentColor} />; break;
+    case "video":        block = <VideoBlock      section={section} primary={primaryColor} />; break;
+    case "map":          block = <MapBlock        section={section} primary={primaryColor} />; break;
+    case "logos":        block = <LogosBlock      section={section} primary={primaryColor} />; break;
+    case "countdown":    block = <CountdownBlock  section={section} primary={primaryColor} />; break;
+    case "team":         block = <TeamBlock       section={section} primary={primaryColor} />; break;
+    case "social":       block = <SocialBlock     section={section} primary={primaryColor} accent={accentColor} />; break;
+    case "categories":   block = <CategoriesBlock section={section} primary={primaryColor} accent={accentColor} />; break;
     default: return null;
   }
+  // #12: data-section-* para el tracker de engagement (IntersectionObserver).
+  return <div data-section-type={section.type} data-section-id={section.id}>{block}</div>;
 }
 
 // ── Categorías visual ──────────────────────────────────────────────────

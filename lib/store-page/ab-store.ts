@@ -43,6 +43,34 @@ export async function abIncr(slug: string, variant: AbVariant, event: AbEvent): 
   _mem.set(k, (_mem.get(k) ?? 0) + 1);
 }
 
+// ── Engagement por sección (#12) ────────────────────────────────────────────
+// Cuenta cuántas veces una sección entró en viewport. Clave: secv:<slug>:<type>.
+const secKey = (slug: string, section: string) => `secv:${slug}:${section}`;
+
+export async function sectionViewIncr(slug: string, section: string): Promise<void> {
+  const k = secKey(slug, section);
+  const r = await getRedis();
+  if (r) {
+    try { await r.incr(k); return; }
+    catch (err) { logger.warn("[ab-store] sectionViewIncr falló, uso memoria", { error: String(err) }); }
+  }
+  _mem.set(k, (_mem.get(k) ?? 0) + 1);
+}
+
+export async function sectionViewStats(slug: string, sections: string[]): Promise<Record<string, number>> {
+  const r = await getRedis();
+  const out: Record<string, number> = {};
+  for (const s of sections) {
+    const k = secKey(slug, s);
+    if (r) {
+      try { out[s] = Number(await r.get(k)) || 0; continue; }
+      catch { /* cae a memoria */ }
+    }
+    out[s] = _mem.get(k) ?? 0;
+  }
+  return out;
+}
+
 export async function abStats(slug: string): Promise<AbStats> {
   const r = await getRedis();
   const read = async (variant: AbVariant, event: AbEvent): Promise<number> => {

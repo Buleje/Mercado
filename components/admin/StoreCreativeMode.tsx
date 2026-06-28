@@ -54,6 +54,7 @@ import {
   Maximize2,
   Keyboard,
   MousePointer,
+  Eye,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import ImageUpload from "./ImageUpload";
@@ -2690,6 +2691,21 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     }
   }, [tenantSlug]);
 
+  // #12 Métricas de engagement por sección (Lote R).
+  const [sectionStats, setSectionStats] = useState<Record<string, number> | null>(null);
+  const [sectionStatsLoading, setSectionStatsLoading] = useState(false);
+  const loadSectionStats = useCallback(async () => {
+    setSectionStatsLoading(true);
+    try {
+      const types = Array.from(new Set(customSections.map((s) => s.type)));
+      const res = await fetch(`/api/store-page/section-stats?slug=${encodeURIComponent(tenantSlug)}&sections=${types.join(",")}&_=${Date.now()}`, { cache: "no-store" });
+      const json = await res.json().catch((err) => { console.warn("[section-stats] no-JSON", err); return null; });
+      if (res.ok && json?.stats) setSectionStats(json.stats);
+    } finally {
+      setSectionStatsLoading(false);
+    }
+  }, [tenantSlug, customSections]);
+
   // #16 Atajos de teclado (Lote H, Brandon 2026-06-27). Capture + stopImmediate
   // para preempt el shell admin (que usa teclas sueltas para navegar tabs).
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -3884,6 +3900,25 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       </button>
                     </div>
                   ))}
+                  {/* #12 Métricas de engagement por sección */}
+                  {customSections.length > 0 && (
+                    <div className="space-y-1.5 border-t border-white/10 pt-2">
+                      <button type="button" onClick={loadSectionStats} disabled={sectionStatsLoading} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white disabled:opacity-50">
+                        <Eye className="h-3.5 w-3.5" /> {sectionStatsLoading ? "Cargando…" : "Ver métricas de tus secciones"}
+                      </button>
+                      {sectionStats && (
+                        <div className="space-y-1">
+                          {customSections.map((s) => (
+                            <div key={s.id} className="flex items-center justify-between rounded-md bg-white/[0.03] px-2 py-1">
+                              <span className="truncate text-[length:var(--ts-2xs)] text-gray-300">{CUSTOM_SECTION_LABELS[s.type] ?? s.type}</span>
+                              <span className="shrink-0 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">{sectionStats[s.type] ?? 0} vistas</span>
+                            </div>
+                          ))}
+                          <p className="text-[length:var(--ts-2xs)] text-gray-500">Cuántas veces se vio cada sección en tu tienda.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <details className="group rounded-lg border border-dashed border-white/15 bg-white/[0.02]">
                     <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:text-white">
                       <Plus className="h-3.5 w-3.5" /> Agregar sección
