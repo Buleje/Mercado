@@ -10,6 +10,7 @@ import {
   Sparkles,
   X,
   Plus,
+  Wallet,
 } from "@buleje/design-system/icons";
 
 /**
@@ -32,6 +33,7 @@ type BriefingStats = {
   pedidosPendientes: number;
   stockBajo: number;
   fiadosVencidos: number;
+  yapeVerificar: number;
 };
 
 function formatCurrency(n: number) {
@@ -87,11 +89,16 @@ export default function MorningBriefingCard() {
         if (cancelled || !r.ok) return;
         const s = await r.json();
         if (cancelled || !s) return;
+        // Los nombres deben matchear EXACTO el payload de /api/admin/stats
+        // (AdminStatsPayload). Antes leían claves inexistentes (salesYesterday→
+        // todayRevenue, lowStockCount→lowStockProducts, overdueDebts→overdueFiados)
+        // y 3 de 4 señales salían siempre en 0 → la tarjeta no mostraba nada.
         setStats({
-          ventasAyer: s.salesYesterday ?? s.totalRevenue ?? 0,
+          ventasAyer: s.salesYesterday ?? 0,
           pedidosPendientes: s.pendingOrders ?? 0,
-          stockBajo: s.lowStockCount ?? 0,
-          fiadosVencidos: s.overdueDebts ?? 0,
+          stockBajo: s.lowStockProducts ?? 0,
+          fiadosVencidos: s.overdueFiados ?? 0,
+          yapeVerificar: s.pendingYape ?? 0,
         });
       } catch {
         /* silent — la tarjeta simplemente no aparece */
@@ -114,12 +121,21 @@ export default function MorningBriefingCard() {
 
   const allTasks: Task[] = [
     {
+      key: "yape",
+      count: stats.yapeVerificar,
+      Icon: Wallet,
+      text: stats.yapeVerificar === 1 ? "pago Yape por verificar" : "pagos Yape por verificar",
+      cta: "Verificar",
+      href: "/admin?tab=pedidos",
+      tone: "warning",
+    },
+    {
       key: "fiados",
       count: stats.fiadosVencidos,
       Icon: AlertTriangle,
       text: stats.fiadosVencidos === 1 ? "fiado vencido" : "fiados vencidos",
       cta: "Cobrar",
-      href: "/admin?module=fiados",
+      href: "/admin?tab=fiados",
       tone: "error",
     },
     {
@@ -146,9 +162,11 @@ export default function MorningBriefingCard() {
   // Frecuencia: solo si hay algo accionable. Día tranquilo → no molesta.
   if (tasks.length === 0) return null;
 
-  // Sugerencia contextual (prioridad: fiados → pedidos → stock).
+  // Sugerencia contextual (prioridad: yape → fiados → pedidos → stock).
   let sugerencia: string;
-  if (stats.fiadosVencidos > 0) {
+  if (stats.yapeVerificar > 0) {
+    sugerencia = `Verificá los pagos Yape pendientes antes de preparar el pedido — así no despachás sin tener la plata confirmada.`;
+  } else if (stats.fiadosVencidos > 0) {
     sugerencia = `Cobrá los fiados vencidos hoy — mientras más esperás, más difícil es recuperar esa plata.`;
   } else if (stats.pedidosPendientes > 0) {
     sugerencia = `Confirmá los pedidos pendientes rápido para no perder la venta.`;
