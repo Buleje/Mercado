@@ -133,6 +133,9 @@ export interface StoreTheme {
   navExtraLinks: Array<{ label: string; url: string }>;
   // Lote J (Brandon 2026-06-27): peso de fuente de los títulos. 0 = default del tema.
   headingWeight: number;
+  // Lote P (Brandon 2026-06-28): A/B test del hero (variante B de título/subtítulo).
+  abTestEnabled: boolean;
+  heroVariantB: { heroTitle?: string; heroSubtitle?: string };
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
@@ -289,6 +292,8 @@ const DEFAULT_THEME: StoreTheme = {
   navCatalogLabel: "",
   navExtraLinks: [],
   headingWeight: 0,
+  abTestEnabled: false,
+  heroVariantB: {},
   textStyles: {},
   countdownEnabled: false,
   countdownTitle: "¡Oferta por tiempo limitado!",

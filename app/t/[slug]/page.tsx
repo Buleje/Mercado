@@ -25,6 +25,7 @@ import { SettingsProvider } from "@/contexts/settings-context";
 import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
 import TenantExitIntentPopup from "@/components/store/tenant/TenantExitIntentPopup";
+import AbHeroTest from "@/components/store/tenant/AbHeroTest";
 import RotatingAnnouncementBar from "@/components/store/tenant/RotatingAnnouncementBar";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import TenantAnalytics from "@/components/store/TenantAnalytics";
@@ -212,6 +213,9 @@ async function loadPageData(slug: string) {
     navExtraLinks: Array.isArray(st?.["navExtraLinks"]) ? (st["navExtraLinks"] as Array<{ label: string; url: string }>) : [],
     // Lote J (Brandon 2026-06-27): peso de fuente de títulos.
     headingWeight: typeof st?.["headingWeight"] === "number" ? (st["headingWeight"] as number) : undefined,
+    // Lote P (Brandon 2026-06-28): A/B test del hero.
+    abTestEnabled: st?.["abTestEnabled"] === true,
+    heroVariantB: (st?.["heroVariantB"] && typeof st["heroVariantB"] === "object" && !Array.isArray(st["heroVariantB"]) ? st["heroVariantB"] : {}) as { heroTitle?: string; heroSubtitle?: string },
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
@@ -780,6 +784,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
         showBadges={editorTheme.heroShowBadges}
         inlineText={editorTheme.inlineText}
       />
+      {/* Lote P: A/B test del hero (variante B de título/subtítulo) — Brandon 2026-06-28. */}
+      {editorTheme.abTestEnabled && (editorTheme.heroVariantB?.heroTitle || editorTheme.heroVariantB?.heroSubtitle) && (
+        <AbHeroTest slug={tenant.slug} variantB={editorTheme.heroVariantB} />
+      )}
 
       {/* ═══ Cuerpo reordenable (Brandon 2026-06-26, page builder Fase 2):
           trust, promos, featured, info se renderizan en el orden de

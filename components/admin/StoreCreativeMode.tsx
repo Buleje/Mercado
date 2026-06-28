@@ -2676,6 +2676,20 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     setPbSelected(null);
   }, [closeTour]);
 
+  // #13 A/B test (Lote P): reporte de resultados del hero.
+  const [abStats, setAbStats] = useState<{ A: { views: number; clicks: number }; B: { views: number; clicks: number } } | null>(null);
+  const [abLoading, setAbLoading] = useState(false);
+  const loadAbStats = useCallback(async () => {
+    setAbLoading(true);
+    try {
+      const res = await fetch(`/api/store-page/ab-stats?slug=${encodeURIComponent(tenantSlug)}&_=${Date.now()}`, { cache: "no-store" });
+      const json = await res.json().catch((err) => { console.warn("[ab-stats] no-JSON", err); return null; });
+      if (res.ok && json?.stats) setAbStats(json.stats);
+    } finally {
+      setAbLoading(false);
+    }
+  }, [tenantSlug]);
+
   // #16 Atajos de teclado (Lote H, Brandon 2026-06-27). Capture + stopImmediate
   // para preempt el shell admin (que usa teclas sueltas para navegar tabs).
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -3473,6 +3487,43 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <p className={LABEL_CLASS}>Segundo botón (CTA)</p>
                   <input className={INPUT_CLASS} value={draft.heroCta2Label ?? ""} onChange={(e) => patch("heroCta2Label", e.target.value)} placeholder="Texto · ej. Ver el menú" maxLength={30} />
                   <input className={INPUT_CLASS} value={draft.heroCta2Url ?? ""} onChange={(e) => patch("heroCta2Url", e.target.value)} placeholder="Link · /t/mi-tienda/tienda o https://…" />
+                </div>
+
+                {/* #13 A/B test del hero (Lote P) */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className={LABEL_CLASS}>A/B Test del título</p>
+                      <p className="text-[length:var(--ts-2xs)] text-gray-500">Mostrá 2 versiones 50/50 y mirá cuál convierte mejor.</p>
+                    </div>
+                    <Toggle checked={draft.abTestEnabled ?? false} onChange={(v) => patch("abTestEnabled", v)} />
+                  </div>
+                  {draft.abTestEnabled && (
+                    <>
+                      <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Variante B</p>
+                      <input className={INPUT_CLASS} value={draft.heroVariantB?.heroTitle ?? ""} onChange={(e) => patch("heroVariantB", { ...(draft.heroVariantB ?? {}), heroTitle: e.target.value })} placeholder="Título alternativo (B)" maxLength={80} />
+                      <input className={INPUT_CLASS} value={draft.heroVariantB?.heroSubtitle ?? ""} onChange={(e) => patch("heroVariantB", { ...(draft.heroVariantB ?? {}), heroSubtitle: e.target.value })} placeholder="Subtítulo alternativo (B)" maxLength={140} />
+                      <button type="button" onClick={loadAbStats} disabled={abLoading} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white disabled:opacity-50">
+                        {abLoading ? "Cargando…" : "Ver resultados"}
+                      </button>
+                      {abStats && (
+                        <div className="grid grid-cols-2 gap-2 text-center">
+                          {(["A", "B"] as const).map((v) => {
+                            const s = abStats[v];
+                            const ctr = s.views > 0 ? Math.round((s.clicks / s.views) * 100) : 0;
+                            const win = abStats.A.views > 0 && abStats.B.views > 0 && ((v === "A" && abStats.A.clicks / Math.max(1, abStats.A.views) >= abStats.B.clicks / Math.max(1, abStats.B.views)) || (v === "B" && abStats.B.clicks / Math.max(1, abStats.B.views) > abStats.A.clicks / Math.max(1, abStats.A.views)));
+                            return (
+                              <div key={v} className={cn("rounded-md border p-2", win ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10" : "border-white/10 bg-white/[0.03]")}>
+                                <p className="text-xs font-bold text-white">Variante {v}{win ? " 🏆" : ""}</p>
+                                <p className="text-[length:var(--ts-2xs)] text-gray-400">{s.views} vistas · {s.clicks} clicks</p>
+                                <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">CTR {ctr}%</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </>
             )}
