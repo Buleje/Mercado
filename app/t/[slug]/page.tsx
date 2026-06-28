@@ -28,6 +28,7 @@ import TenantExitIntentPopup from "@/components/store/tenant/TenantExitIntentPop
 import AbHeroTest from "@/components/store/tenant/AbHeroTest";
 import TenantPushOptIn from "@/components/store/tenant/TenantPushOptIn";
 import SectionViewTracker from "@/components/store/tenant/SectionViewTracker";
+import CustomCursor from "@/components/store/tenant/CustomCursor";
 import RotatingAnnouncementBar from "@/components/store/tenant/RotatingAnnouncementBar";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import TenantAnalytics from "@/components/store/TenantAnalytics";
@@ -221,6 +222,10 @@ async function loadPageData(slug: string) {
     // Lote Q (Brandon 2026-06-28): push opt-in.
     pushOptInEnabled: st?.["pushOptInEnabled"] === true,
     pushOptInMessage: pickStr("pushOptInMessage"),
+    // Lote U (Brandon 2026-06-28): SEO schema, transición, cursor.
+    schemaLocalBusiness: st?.["schemaLocalBusiness"] === true,
+    pageTransition: (["fade", "slide", "blur"].includes(st?.["pageTransition"] as string) ? (st!["pageTransition"] as string) : "none") as "none" | "fade" | "slide" | "blur",
+    customCursor: (["dot", "ring"].includes(st?.["customCursor"] as string) ? (st!["customCursor"] as string) : "none") as "none" | "dot" | "ring",
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
@@ -597,9 +602,26 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
     : undefined;
 
   return (
-    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme" data-store-chrome="tenant" style={{ ...(brandTokenVars ?? {}), ...(editorTheme.pageBgColor ? ({ "--surface-canvas": editorTheme.pageBgColor } as React.CSSProperties) : {}) }}>
+    <main className="min-h-screen bg-[var(--surface-canvas)] tenant-theme" data-store-chrome="tenant" data-pt={editorTheme.pageTransition !== "none" ? editorTheme.pageTransition : undefined} style={{ ...(brandTokenVars ?? {}), ...(editorTheme.pageBgColor ? ({ "--surface-canvas": editorTheme.pageBgColor } as React.CSSProperties) : {}), ...(editorTheme.pageTransition !== "none" ? { animation: `buleje-pt-${editorTheme.pageTransition} .45s ease both` } : {}) }}>
       {/* Anuncios rotativos (Lote C) — barra superior con N mensajes. */}
       {editorTheme.announcements.length > 0 && <RotatingAnnouncementBar messages={editorTheme.announcements} intervalMs={(editorTheme.announcementInterval ?? 4) * 1000} />}
+      {/* Lote U #6.2: datos estructurados LocalBusiness para Google */}
+      {editorTheme.schemaLocalBusiness && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            name: displayName,
+            url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe"}/t/${tenant.slug}`,
+            ...(customization.whatsappPhone || tenant.ownerPhone ? { telephone: customization.whatsappPhone ?? tenant.ownerPhone } : {}),
+            priceRange: "$$",
+            areaServed: "Perú",
+          }) }}
+        />
+      )}
+      {/* Lote U #7.2: cursor de marca */}
+      {editorTheme.customCursor !== "none" && <CustomCursor mode={editorTheme.customCursor} />}
       {/* CSS dinamico generado a partir de los design tokens del tenant.
           Sobreescribe el theme de Buleje solo en el subarbol .tenant-theme. */}
       <style dangerouslySetInnerHTML={{ __html: tokensToCssBlock(designTokens) }} />
@@ -635,6 +657,10 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* Keyframes de animación de entrada por sección (Brandon 2026-06-27 · #4).
           @media reduced-motion las desactiva (a11y). */}
       <style dangerouslySetInnerHTML={{ __html: "@keyframes buleje-fade{from{opacity:0}to{opacity:1}}@keyframes buleje-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}@keyframes buleje-zoom{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}@media (prefers-reduced-motion: reduce){[data-pb]{animation:none !important}}" }} />
+      {/* Lote U #7.3: transición de entrada de la página */}
+      {editorTheme.pageTransition !== "none" && (
+        <style dangerouslySetInnerHTML={{ __html: "@keyframes buleje-pt-fade{from{opacity:0}to{opacity:1}}@keyframes buleje-pt-slide{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}@keyframes buleje-pt-blur{from{opacity:0;filter:blur(10px)}to{opacity:1;filter:none}}@media (prefers-reduced-motion: reduce){[data-pt]{animation:none !important}}" }} />
+      )}
 
       {/* Google Fonts loader — carga solo la fuente que el tenant eligio.
           PERF 2026-05-24: preconnect evita ~200-400ms de DNS+TCP+TLS a Google

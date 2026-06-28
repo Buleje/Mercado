@@ -4327,6 +4327,21 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <span className="text-xs text-gray-200">Animar secciones al scrollear (fade + slide)</span>
                   <Toggle checked={draft.animateOnScroll ?? false} onChange={(v) => patch("animateOnScroll", v)} />
                 </div>
+                {/* #7.3 Transición al navegar entre páginas */}
+                <StylePicker label="Transición al navegar" value={draft.pageTransition ?? "none"} onChange={(v) => patch("pageTransition", v)} cols={4}
+                  options={[
+                    { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-gray-400" /> },
+                    { value: "fade", label: "Fade", preview: <Sparkles className="h-4 w-4 text-gray-300" /> },
+                    { value: "slide", label: "Slide", preview: <ArrowLeft className="h-4 w-4 text-gray-300" /> },
+                    { value: "blur", label: "Blur", preview: <Sparkles className="h-4 w-4 text-gray-400 blur-[1px]" /> },
+                  ]} />
+                {/* #7.2 Cursor personalizado */}
+                <StylePicker label="Cursor del visitante" value={draft.customCursor ?? "none"} onChange={(v) => patch("customCursor", v)} cols={3}
+                  options={[
+                    { value: "none", label: "Normal", preview: <MousePointer className="h-4 w-4 text-gray-400" /> },
+                    { value: "dot", label: "Punto", preview: <span className="h-2 w-2 rounded-full bg-gray-300" /> },
+                    { value: "ring", label: "Anillo", preview: <span className="h-4 w-4 rounded-full border-2 border-gray-300" /> },
+                  ]} />
               </>
             )}
 
@@ -4625,6 +4640,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <Field label="Facebook Pixel ID" labelClassName={LABEL_CLASS}>
                   <input className={INPUT_CLASS} value={draft.pixelId} onChange={(e) => patch("pixelId", e.target.value)} />
                 </Field>
+                {/* #6.2 Datos estructurados para Google */}
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
+                  <div className="min-w-0">
+                    <span className="text-xs text-gray-200">Datos para Google (negocio local)</span>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Schema LocalBusiness: ayuda a salir mejor en búsquedas</p>
+                  </div>
+                  <Toggle checked={draft.schemaLocalBusiness ?? false} onChange={(v) => patch("schemaLocalBusiness", v)} />
+                </div>
                 <div className="space-y-1.5">
                   <p className={LABEL_CLASS}>Favicon</p>
                   <div className="dark max-w-[110px]">
