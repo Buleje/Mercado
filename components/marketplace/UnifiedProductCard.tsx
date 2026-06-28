@@ -99,7 +99,7 @@ function ProductImageFallback({ name, category }: { name?: string | null; catego
           {name}
         </p>
       )}
-      <p className="mt-1 text-[10px] font-medium text-[var(--text-tertiary)]">
+      <p className="mt-1 text-xs font-medium text-[var(--text-tertiary)]">
         Sin foto
       </p>
     </div>
@@ -635,7 +635,7 @@ export default function UnifiedProductCard({
             todos los breakpoints) — no duplicar. */}
         {!isCompact && product.discount != null && product.discount > 0 && (
           <span
-            className="sm:hidden absolute top-1.5 left-1.5 z-10 inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)] shadow-sm"
+            className="sm:hidden absolute top-1.5 left-1.5 z-10 inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black tabular-nums bg-[var(--accent-600,var(--accent))] text-[var(--surface-canvas)] shadow-sm"
             aria-label={`${product.discount}% de descuento`}
           >
             -{product.discount}%
