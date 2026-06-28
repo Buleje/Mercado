@@ -136,6 +136,9 @@ export interface StoreTheme {
   // Lote P (Brandon 2026-06-28): A/B test del hero (variante B de título/subtítulo).
   abTestEnabled: boolean;
   heroVariantB: { heroTitle?: string; heroSubtitle?: string };
+  // Lote Q (Brandon 2026-06-28): opt-in de notificaciones push en el storefront.
+  pushOptInEnabled: boolean;
+  pushOptInMessage: string;
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
@@ -294,6 +297,8 @@ const DEFAULT_THEME: StoreTheme = {
   headingWeight: 0,
   abTestEnabled: false,
   heroVariantB: {},
+  pushOptInEnabled: false,
+  pushOptInMessage: "Recibí nuestras ofertas y novedades",
   textStyles: {},
   countdownEnabled: false,
   countdownTitle: "¡Oferta por tiempo limitado!",

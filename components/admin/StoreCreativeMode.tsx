@@ -4294,6 +4294,20 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   </>
                 )}
 
+                {/* #8 Notificaciones push opt-in */}
+                <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-[var(--text-tertiary)]">Notificaciones push</span>
+                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Invitá a tus visitantes a recibir ofertas por el navegador</p>
+                  </div>
+                  <Toggle checked={draft.pushOptInEnabled ?? false} onChange={(v) => patch("pushOptInEnabled", v)} />
+                </div>
+                {draft.pushOptInEnabled && (
+                  <Field label="Mensaje de la invitación" labelClassName={LABEL_CLASS}>
+                    <input className={INPUT_CLASS} value={draft.pushOptInMessage ?? ""} onChange={(e) => patch("pushOptInMessage", e.target.value)} maxLength={90} placeholder="Recibí nuestras ofertas y novedades" />
+                  </Field>
+                )}
+
                 {/* #8 Widget de chat flotante (posición + burbuja) */}
                 <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-300">Botón de chat (WhatsApp)</p>

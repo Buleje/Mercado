@@ -26,6 +26,7 @@ import PreviewLiveTheme from "@/components/store/PreviewLiveTheme";
 import TenantWelcomePopup from "@/components/store/TenantWelcomePopup";
 import TenantExitIntentPopup from "@/components/store/tenant/TenantExitIntentPopup";
 import AbHeroTest from "@/components/store/tenant/AbHeroTest";
+import TenantPushOptIn from "@/components/store/tenant/TenantPushOptIn";
 import RotatingAnnouncementBar from "@/components/store/tenant/RotatingAnnouncementBar";
 import StorefrontEditOverlay from "@/components/store/StorefrontEditOverlay";
 import TenantAnalytics from "@/components/store/TenantAnalytics";
@@ -216,6 +217,9 @@ async function loadPageData(slug: string) {
     // Lote P (Brandon 2026-06-28): A/B test del hero.
     abTestEnabled: st?.["abTestEnabled"] === true,
     heroVariantB: (st?.["heroVariantB"] && typeof st["heroVariantB"] === "object" && !Array.isArray(st["heroVariantB"]) ? st["heroVariantB"] : {}) as { heroTitle?: string; heroSubtitle?: string },
+    // Lote Q (Brandon 2026-06-28): push opt-in.
+    pushOptInEnabled: st?.["pushOptInEnabled"] === true,
+    pushOptInMessage: pickStr("pushOptInMessage"),
     borderRadius: typeof st?.["borderRadius"] === "number" ? (st["borderRadius"] as number) : undefined,
     buttonStyle: pickStr("buttonStyle"),
     cardStyle: pickStr("cardStyle"),
@@ -1356,6 +1360,11 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
           ctaHref={`/t/${tenant.slug}/tienda`}
           storageKey={`buleje-welcome-${tenant.slug}`}
         />
+      )}
+
+      {/* Push opt-in (Lote Q) — solo si el dueño lo activó y hay VAPID key. */}
+      {editorTheme.pushOptInEnabled && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && (
+        <TenantPushOptIn slug={tenant.slug} vapidKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} message={editorTheme.pushOptInMessage} />
       )}
 
       {/* Exit-intent popup (Lote C): cupón de último momento al intentar salir. */}
