@@ -1173,15 +1173,41 @@ function CustomSectionEditor({
   textStyles,
   onTextStyle,
   onBack,
+  tenantSlug,
+  storeName,
 }: {
   section: Section;
   onPatch: (dataPatch: Record<string, unknown>) => void;
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; italic?: boolean; upper?: boolean }>;
   onTextStyle: (field: string, partial: Record<string, unknown>) => void;
   onBack: () => void;
+  tenantSlug: string;
+  storeName?: string;
 }) {
   const d = section.data as Record<string, unknown>;
   const label = CUSTOM_SECTION_LABELS[section.type] ?? "Sección";
+  // #11 Generar contenido con IA (about/faq/benefits/how-to-order).
+  const AI_TYPES = new Set(["about", "faq", "benefits", "how-to-order"]);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState<string | null>(null);
+  const generateWithAi = async () => {
+    setAiBusy(true);
+    setAiErr(null);
+    try {
+      const res = await fetch("/api/store-page/ai-content", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
+        body: JSON.stringify({ sectionType: section.type, storeName, rubro: label }),
+      });
+      const json = await res.json().catch((err) => { console.warn("[ai-content] respuesta no-JSON", err); return null; });
+      if (!res.ok || !json?.data) { setAiErr(json?.error ?? "No se pudo generar. Probá de nuevo."); return; }
+      onPatch(json.data as Record<string, unknown>);
+    } catch {
+      setAiErr("Falló la conexión con la IA.");
+    } finally {
+      setAiBusy(false);
+    }
+  };
   const images = Array.isArray((d as { images?: unknown }).images)
     ? ((d as { images: Array<{ url: string; alt?: string; caption?: string }> }).images)
     : null;
@@ -1197,6 +1223,22 @@ function CustomSectionEditor({
         </div>
         <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--data-success-500)]/15 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]">Solo esta</span>
       </div>
+
+      {/* #11 Generar contenido con IA */}
+      {AI_TYPES.has(section.type) && (
+        <div className="space-y-1.5">
+          <button
+            type="button"
+            onClick={generateWithAi}
+            disabled={aiBusy}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent-soft)]/40 bg-[var(--accent-soft)]/10 px-3 py-2 text-xs font-bold text-[var(--accent-soft)] transition-colors hover:bg-[var(--accent-soft)]/20 disabled:opacity-50"
+          >
+            <Sparkles className={cn("h-3.5 w-3.5", aiBusy && "animate-pulse")} />
+            {aiBusy ? "Generando…" : "Generar contenido con IA"}
+          </button>
+          {aiErr && <p className="text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error-500)]">{aiErr}</p>}
+        </div>
+      )}
 
       <SectionCard icon={Type} title="Texto" hint="Editá acá o doble-click sobre el texto en el preview">
         {typeof d.eyebrow === "string" && (
@@ -2971,6 +3013,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     textStyles={(draft.textStyles ?? {}) as Record<string, { size?: number; bold?: boolean; color?: string; italic?: boolean; upper?: boolean }>}
                     onTextStyle={patchTextStyle}
                     onBack={() => setPbSelected(null)}
+                    tenantSlug={tenantSlug}
+                    storeName={draft.storeName}
                   />
                 );
               })()
