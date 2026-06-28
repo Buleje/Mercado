@@ -1925,7 +1925,9 @@ export default function POSView() {
                 "grid gap-1.5",
                 expanded
                   ? "grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8"
-                  : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-5"
+                  : // En phone 2 columnas: con 3 las cards quedaban a ~106px y los
+                    // nombres se apretaban a 2 líneas con clamp. 2-col = más legible.
+                    "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-5"
               )}>
                 {filtered.map(p => {
                   const inCart = cart.find(i => i.product.id === p.id);

@@ -264,7 +264,9 @@ export default function AdminTabBar({
                 dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-primary ring-offset-1",
               )}
             >
-              {draggable && <GripVertical className="h-3 w-3 shrink-0 opacity-30" />}
+              {/* El handle de reorden por drag solo aplica en desktop (en touch
+                  el drag de sub-tabs no es un gesto usable y el ⋮⋮ es ruido). */}
+              {draggable && <GripVertical className="hidden lg:inline-block h-3 w-3 shrink-0 opacity-30" />}
               {Icon && <Icon className="h-4 w-4 shrink-0 sm:h-3.5 sm:w-3.5" />}
               <span>{tab.shortLabel || tab.label}</span>
               {tab.badge != null && (

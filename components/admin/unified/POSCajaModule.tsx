@@ -350,12 +350,15 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
         }
       >
 
-      {/* ── Mobile Cerrar/Abrir Turno button — fixed at bottom ───────── */}
-      <div className="sm:hidden fixed bottom-16 right-4 z-40">
+      {/* ── Mobile Cerrar/Abrir Turno button — fixed at bottom ───────────
+          Posicionado POR ENCIMA del bottom-nav (~72px + safe-area): antes con
+          bottom-16 (64px) quedaba detrás del nav (z-50) y tapaba cards sin
+          elevación. Sombra lg para separarlo del contenido que scrollea debajo. */}
+      <div className="sm:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom)+12px)] right-4 z-40">
         {turnoAbierto ? (
           <button
             onClick={handleOpenCloseModal}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] shadow-[var(--shadow-lg)] transition-colors flex items-center gap-1.5"
           >
             <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" />
             Cerrar Turno
@@ -363,7 +366,7 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
         ) : (
           <button
             onClick={() => setSub("turnos")}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-[var(--shadow-lg)] transition-colors flex items-center gap-1.5"
           >
             Abrir Turno
           </button>

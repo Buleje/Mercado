@@ -638,11 +638,11 @@ export function OrdersKanban({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Mobile: segmented control. Grid 2×2 fijo: 4 columnas con labels largos
-          en mayúsculas no caben en una sola fila ni en phone (~390px) ni en el
-          rango md–lg (768–1023px) donde el sidebar ya ocupa 260px. 2×2 es
-          robusto en todo el rango <lg. */}
-      <div className="lg:hidden grid grid-cols-2 gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
+      {/* Mobile: segmented control. Grid 2×2 en phone/tablet angosto (4 labels
+          largos en mayúsculas no caben en 1 fila con poco ancho), y 4-en-fila
+          desde 900px donde sí hay espacio aun con el sidebar (260px) presente.
+          A <900px el contenido útil queda <640px y 4 columnas se superpondrían. */}
+      <div className="lg:hidden grid grid-cols-2 min-[900px]:grid-cols-4 gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
         {COLUMNS.map((col) => {
           const count = columnsData[col.id].length;
           const isActive = mobileColumn === col.id;
