@@ -411,18 +411,79 @@ const PAGE_TEMPLATES: PageTemplate[] = [
   },
 ];
 
+// Lote L #1: color picker visual HSL. Conversión hex↔HSL.
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec((hex || "").trim());
+  let r = 0, g = 0, b = 0;
+  if (m) { const n = parseInt(m[1], 16); r = ((n >> 16) & 255) / 255; g = ((n >> 8) & 255) / 255; b = (n & 255) / 255; }
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0; const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+function hslToHex(h: number, s: number, l: number): string {
+  const sn = s / 100, ln = l / 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = sn * Math.min(ln, 1 - ln);
+  const f = (n: number) => ln - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const toHex = (x: number) => Math.round(x * 255).toString(16).padStart(2, "0");
+  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
+
+/** HslPopover — sliders Hue/Saturación/Luz + hex. Emite hex en cada cambio. */
+function HslPopover({ value, onChange, onClose }: { value: string; onChange: (hex: string) => void; onClose: () => void }) {
+  const init = hexToHsl(value);
+  const [h, setH] = useState(init.h);
+  const [s, setS] = useState(init.s);
+  const [l, setL] = useState(init.l);
+  const emit = (nh: number, ns: number, nl: number) => onChange(hslToHex(nh, ns, nl));
+  const hex = hslToHex(h, s, l);
+  const row = (lbl: string, val: number, max: number, set: (n: number) => void, grad: string, onSet: (n: number) => void) => (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-[length:var(--ts-2xs)] text-gray-300"><span>{lbl}</span><span className="font-bold tabular-nums text-[var(--accent-soft)]">{val}{lbl === "Tono" ? "°" : "%"}</span></div>
+      <input type="range" min={0} max={max} value={val} onChange={(e) => { const n = Number(e.target.value); set(n); onSet(n); }} className="h-3 w-full cursor-pointer appearance-none rounded-full" style={{ background: grad }} aria-label={lbl} />
+    </div>
+  );
+  return (
+    <div className="absolute left-0 top-full z-30 mt-1.5 w-56 rounded-xl border border-white/15 bg-[#1b1e25] p-3 shadow-2xl" onMouseLeave={onClose}>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="h-7 w-7 rounded-md border border-white/20" style={{ background: hex }} />
+        <input value={hex} onChange={(e) => { const v = e.target.value; if (/^#[0-9a-fA-F]{6}$/.test(v)) { const c = hexToHsl(v); setH(c.h); setS(c.s); setL(c.l); onChange(v); } }} className={cn(INPUT_CLASS, "flex-1")} maxLength={7} aria-label="Hex" />
+      </div>
+      <div className="space-y-2">
+        {row("Tono", h, 360, setH, "linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)", (n) => emit(n, s, l))}
+        {row("Saturación", s, 100, setS, `linear-gradient(to right, ${hslToHex(h, 0, l)}, ${hslToHex(h, 100, l)})`, (n) => emit(h, n, l))}
+        {row("Luz", l, 100, setL, `linear-gradient(to right, #000, ${hslToHex(h, s, 50)}, #fff)`, (n) => emit(h, s, n))}
+      </div>
+    </div>
+  );
+}
+
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   // El <input type="color"> SOLO acepta hex; si el valor es una CSS var
   // (var(--color-primary) = teal de marca) caía a algo inválido → el picker
   // nativo mostraba negro. Fallback al hex real de la marca para que muestre bien.
   const safe = /^#[0-9A-Fa-f]{6}$/.test(value) ? value : "#00A0A0";
+  const [hslOpen, setHslOpen] = useState(false);
   return (
     <div className="space-y-2">
       <Field label={label} labelClassName={LABEL_CLASS}>
         {(id) => (
-          <div className="flex items-center gap-2">
+          <div className="relative flex items-center gap-2">
             <input type="color" value={safe} onChange={(e) => onChange(e.target.value)} className="h-9 w-10 rounded-lg border border-white/10 bg-white/[0.04] p-0.5 cursor-pointer" aria-label={`Color picker ${label}`} />
             <input id={id} value={value} onChange={(e) => onChange(e.target.value)} maxLength={7} className={INPUT_CLASS} />
+            {/* Lote L: picker visual HSL */}
+            <button type="button" onClick={() => setHslOpen((o) => !o)} className={cn("inline-flex h-9 shrink-0 items-center justify-center rounded-lg border px-2 transition-colors", hslOpen ? "border-[var(--accent-soft)] text-[var(--accent-soft)]" : "border-white/10 text-gray-400 hover:text-white")} title="Ajuste fino HSL" aria-label="Abrir picker HSL">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </button>
+            {hslOpen && <HslPopover value={safe} onChange={onChange} onClose={() => setHslOpen(false)} />}
           </div>
         )}
       </Field>
