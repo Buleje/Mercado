@@ -1923,6 +1923,39 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
   }, [savedAt, nowTick]);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutoSavedRef = useRef<string>("");
+
+  // #3.1 Autoguardado de borrador en localStorage (anti-pérdida si se cierra el tab).
+  const draftKey = `buleje-cm-draft-${tenantSlug}`;
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+  const [pendingRestore, setPendingRestore] = useState<{ theme: StoreTheme; ts: number } | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { theme?: StoreTheme; ts?: number };
+      if (parsed?.theme && parsed.ts && JSON.stringify(parsed.theme) !== JSON.stringify(initialTheme)) {
+        setPendingRestore({ theme: parsed.theme, ts: parsed.ts });
+      }
+    } catch (err) { console.debug("[cm-draft] read", err); }
+    // Solo al montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (JSON.stringify(draft) === JSON.stringify(initialTheme)) return; // sin cambios reales
+    const id = setTimeout(() => {
+      try { localStorage.setItem(draftKey, JSON.stringify({ theme: draft, ts: Date.now() })); setDraftSavedAt(Date.now()); }
+      catch (err) { console.debug("[cm-draft] write", err); }
+    }, 1500);
+    return () => clearTimeout(id);
+  }, [draft, draftKey, initialTheme]);
+  const draftSavedLabel = useMemo(() => {
+    void nowTick;
+    if (draftSavedAt == null) return null;
+    const diff = Math.max(0, Math.floor((Date.now() - draftSavedAt) / 1000));
+    if (diff < 5) return "Borrador guardado";
+    if (diff < 60) return `Borrador · hace ${diff}s`;
+    return `Borrador · hace ${Math.floor(diff / 60)} min`;
+  }, [draftSavedAt, nowTick]);
   // Última firma "no-en-vivo" reflejada en el iframe (ver reloadSignature).
   const reloadSigRef = useRef<string>(reloadSignature(initialTheme));
   useEffect(() => {
@@ -2670,10 +2703,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         { theme: draft, savedAt: new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) },
         ...prev.slice(0, 4),
       ]);
+      // #3.1 Publicado → el borrador local ya no es "sin publicar".
+      try { localStorage.removeItem(draftKey); } catch (err) { console.debug("[cm-draft] clear", err); }
+      setDraftSavedAt(null);
     } finally {
       setSaving(false);
     }
-  }, [draft, onApplyTheme]);
+  }, [draft, onApplyTheme, draftKey]);
 
   // #17 Onboarding guiado (Lote K). Auto en el 1er uso (localStorage), reabrible.
   const [tourStep, setTourStep] = useState<number | null>(null);
@@ -3006,11 +3042,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             )}
           </div>
 
-          {/* #10 Indicador de autoguardado */}
+          {/* #10 Indicador de guardado (publicado) */}
           {savedLabel && (
             <span data-testid="autosave-indicator" className="hidden items-center gap-1 px-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] lg:inline-flex" title="Tus cambios se guardan solos">
               <Check className="h-3.5 w-3.5" />
               {savedLabel}
+            </span>
+          )}
+          {/* #3.1 Indicador de borrador local (sin publicar aún) */}
+          {!savedLabel && draftSavedLabel && (
+            <span className="hidden items-center gap-1 px-2 text-[length:var(--ts-2xs)] font-medium text-gray-400 lg:inline-flex" title="Guardamos un borrador en este navegador por si se cierra">
+              <span className="h-1.5 w-1.5 rounded-full bg-gray-500" />
+              {draftSavedLabel}
             </span>
           )}
 
@@ -3067,6 +3110,30 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           </button>
         </div>
       </header>
+
+      {/* #3.1 Banner de restauración de borrador sin publicar */}
+      {pendingRestore && (
+        <div className="flex items-center gap-3 border-b border-[var(--accent-soft)]/30 bg-[var(--accent-soft)]/[0.08] px-4 py-2">
+          <Clock className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" />
+          <p className="min-w-0 flex-1 text-xs text-gray-200">
+            Tenemos cambios sin publicar de un borrador anterior. ¿Restaurar o descartar?
+          </p>
+          <button
+            type="button"
+            onClick={() => { pushChange(pendingRestore.theme); setPendingRestore(null); }}
+            className="shrink-0 rounded-lg bg-[var(--accent-soft)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white transition-opacity hover:opacity-90"
+          >
+            Restaurar
+          </button>
+          <button
+            type="button"
+            onClick={() => { try { localStorage.removeItem(draftKey); } catch (err) { console.debug("[cm-draft] discard", err); } setPendingRestore(null); }}
+            className="shrink-0 rounded-lg px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-gray-400 transition-colors hover:text-white"
+          >
+            Descartar
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-1 min-h-0">
         {/* #7.4 Modo Focus: botón flotante para volver */}
