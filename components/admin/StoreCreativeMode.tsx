@@ -4664,6 +4664,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   </div>
                   <Toggle checked={draft.schemaLocalBusiness ?? false} onChange={(v) => patch("schemaLocalBusiness", v)} />
                 </div>
+                {/* #6.1 SEO del catálogo (meta por página) */}
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+                  <p className={LABEL_CLASS}>SEO de la página de catálogo</p>
+                  <input className={INPUT_CLASS} value={draft.catalogMetaTitle ?? ""} onChange={(e) => patch("catalogMetaTitle", e.target.value)} placeholder="Título en Google (ej. Pollos a la brasa en…)" maxLength={70} />
+                  <input className={INPUT_CLASS} value={draft.catalogMetaDescription ?? ""} onChange={(e) => patch("catalogMetaDescription", e.target.value)} placeholder="Descripción para Google (máx ~155)" maxLength={160} />
+                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Vacío = usa el título y descripción por defecto.</p>
+                </div>
                 <div className="space-y-1.5">
                   <p className={LABEL_CLASS}>Favicon</p>
                   <div className="dark max-w-[110px]">

@@ -143,6 +143,9 @@ export interface StoreTheme {
   schemaLocalBusiness: boolean;
   pageTransition: "none" | "fade" | "slide" | "blur";
   customCursor: "none" | "dot" | "ring";
+  // Lote W (Brandon 2026-06-28): meta del catálogo (SEO por página).
+  catalogMetaTitle: string;
+  catalogMetaDescription: string;
   // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
   // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
   textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
@@ -306,6 +309,8 @@ const DEFAULT_THEME: StoreTheme = {
   schemaLocalBusiness: false,
   pageTransition: "none",
   customCursor: "none",
+  catalogMetaTitle: "",
+  catalogMetaDescription: "",
   textStyles: {},
   countdownEnabled: false,
   countdownTitle: "¡Oferta por tiempo limitado!",
