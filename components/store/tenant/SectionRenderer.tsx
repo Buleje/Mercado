@@ -28,6 +28,7 @@ import {
 } from "@buleje/design-system/icons";
 import type { Section, AboutSection, HoursSection, PaymentSection, HowToOrderSection, FaqSection, BenefitsSection, GallerySection, ImageTextSection, CtaSection, VideoSection, MapSection, LogosSection, CountdownSection, TeamSection, SocialSection, CategoriesSection } from "@/lib/store-sections-types";
 import CountdownBanner from "@/components/store/tenant/CountdownBanner";
+import RichText from "@/components/store/tenant/RichText";
 
 interface RenderProps {
   section: Section;
@@ -325,9 +326,7 @@ function AboutBlock({ section, primary }: { section: AboutSection; primary: stri
           <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight mb-4">
             {title}
           </h2>
-          <p data-live={`customText:${section.id}:body`} className="text-base text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
-            {body}
-          </p>
+          <RichText text={body} className="space-y-2 text-base text-[var(--text-secondary)] leading-relaxed" />
         </div>
         {imageUrl && (
           <div className="rounded-2xl overflow-hidden aspect-[4/3] bg-[var(--surface-sunken)] relative">
@@ -556,7 +555,7 @@ function FaqBlock({ section, primary }: { section: FaqSection; primary: string }
           {items.map((item, i) => (
             <div key={i} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
               <p className="font-bold text-[var(--text-primary)]">{item.question}</p>
-              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">{item.answer}</p>
+              <RichText text={item.answer} className="mt-2 space-y-1.5 text-sm text-[var(--text-secondary)] leading-relaxed" />
             </div>
           ))}
         </div>
@@ -574,9 +573,7 @@ function FaqBlock({ section, primary }: { section: FaqSection; primary: string }
                 strokeWidth={2}
               />
             </summary>
-            <p className="mt-3 text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
-              {item.answer}
-            </p>
+            <RichText text={item.answer} className="mt-3 space-y-1.5 text-sm text-[var(--text-secondary)] leading-relaxed" />
           </details>
         ))}
       </div>
@@ -716,9 +713,7 @@ function ImageTextBlock({ section, primary, accent }: { section: ImageTextSectio
             <h2 data-live={`customText:${section.id}:title`} className={`font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight leading-[1.05] mb-5 ${onColor ? "text-white" : "text-[var(--text-primary)]"}`}>
               {title}
             </h2>
-            <p data-live={`customText:${section.id}:body`} className={`text-base sm:text-lg leading-relaxed whitespace-pre-wrap mb-7 ${onColor ? "text-white/85" : "text-[var(--text-secondary)]"}`}>
-              {body}
-            </p>
+            <RichText text={body} className={`space-y-2 text-base sm:text-lg leading-relaxed mb-7 ${onColor ? "text-white/85" : "text-[var(--text-secondary)]"}`} />
             {ctaLabel && ctaUrl && (
               <a
                 href={ctaUrl}

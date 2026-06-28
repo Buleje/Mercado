@@ -1263,7 +1263,16 @@ function CustomSectionEditor({
         {typeof d.body === "string" && (
           <div className="space-y-1.5">
             <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Texto</p>
-            <textarea className={cn(INPUT_CLASS, "resize-none")} rows={4} value={d.body as string} onChange={(e) => onPatch({ body: e.target.value })} maxLength={1000} />
+            <textarea className={cn(INPUT_CLASS, "resize-none")} rows={5} value={d.body as string} onChange={(e) => onPatch({ body: e.target.value })} maxLength={1500} />
+            {/* #4 Formato markdown-lite: listas, links, negrita */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {([["• Lista", "\n- "], ["1. Numerada", "\n1. "], ["Link", "[texto](https://)"], ["Negrita", "**texto**"]] as const).map(([lbl, ins]) => (
+                <button key={lbl} type="button" onClick={() => onPatch({ body: `${(d.body as string) || ""}${ins}` })} className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[length:var(--ts-2xs)] font-semibold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                  {lbl}
+                </button>
+              ))}
+            </div>
+            <p className="text-[length:var(--ts-2xs)] text-gray-500">Tip: <code>- </code> para viñetas, <code>[texto](link)</code> para enlaces, <code>**negrita**</code>.</p>
           </div>
         )}
       </SectionCard>
