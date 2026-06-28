@@ -1737,13 +1737,13 @@ export default function POSView() {
               />
               <button
                 onClick={() => setShowScanner(true)}
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors"
                 title="Escanear codigo de barras"
               >
                 <ScanBarcode className="h-4 w-4 text-primary" /> <span className="hidden sm:inline">Escanear</span>
               </button>
               <label
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors cursor-pointer"
                 title="Escanear producto con camara"
               >
                 <Camera className="h-4 w-4 text-primary" aria-hidden /> <span className="hidden sm:inline">Foto</span>
@@ -1778,7 +1778,7 @@ export default function POSView() {
               <div className="relative">
                 <button
                   onClick={() => setShowMoreTools(v => !v)}
-                  className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+                  className="flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 max-sm:min-h-[44px] rounded-lg transition-colors"
                   title="Opciones del POS"
                 >
                   <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Opciones</span>
@@ -2029,7 +2029,7 @@ export default function POSView() {
                 <button
                   onClick={enqueueClient}
                   disabled={clientQueues.length >= 5}
-                  className="text-xs font-bold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="inline-flex items-center text-xs font-bold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] px-1.5 max-sm:min-h-[40px] rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   title="Guardar carrito y atender siguiente cliente"
                 >
                   +Siguiente
