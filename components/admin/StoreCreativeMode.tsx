@@ -411,6 +411,30 @@ const PAGE_TEMPLATES: PageTemplate[] = [
   },
 ];
 
+// Lote O #5: miniatura sintética de una versión del historial. Mock del "look"
+// (hero + colores + tipografía + botón) — sin screenshot/dep, identifica la versión.
+function VersionThumbnail({ theme }: { theme: StoreTheme }) {
+  const dark = !!theme.darkModeDefault;
+  const heroBg = theme.heroGradientFrom && theme.heroGradientTo
+    ? `linear-gradient(${theme.heroGradientAngle ?? 135}deg, ${theme.heroGradientFrom}, ${theme.heroGradientTo})`
+    : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})`;
+  const btnRadius = theme.buttonStyle === "pill" ? 999 : theme.buttonStyle === "square" ? 2 : 7;
+  return (
+    <div className="overflow-hidden rounded-md border border-white/10" aria-hidden style={{ background: dark ? "#0f172a" : "#ffffff" }}>
+      <div className="flex flex-col gap-1 px-2 py-1.5" style={{ background: heroBg }}>
+        <span className="h-1.5 w-2/3 rounded-full bg-white/85" />
+        <span className="h-1 w-1/2 rounded-full bg-white/55" />
+        <span className="mt-0.5 h-2 w-9 bg-white" style={{ borderRadius: btnRadius }} />
+      </div>
+      <div className="flex gap-1 p-1.5">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="h-5 flex-1 rounded-sm border" style={{ background: dark ? "#1e293b" : "#f1f5f9", borderColor: dark ? "#334155" : "#e2e8f0" }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Lote L #1: color picker visual HSL. Conversión hex↔HSL.
 function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const m = /^#?([0-9a-fA-F]{6})$/.exec((hex || "").trim());
@@ -4445,6 +4469,8 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           Restaurar
                         </button>
                       </div>
+                      {/* #5 Miniatura sintética de la versión */}
+                      <VersionThumbnail theme={snap.theme} />
                       <div className="flex items-center gap-2">
                         <div className="flex gap-1">
                           <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: snap.theme.primaryColor }} />
