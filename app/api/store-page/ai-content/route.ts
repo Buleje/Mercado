@@ -28,7 +28,7 @@ const Input = z.object({
 
 // Schema de salida por tipo de sección.
 const OUT = {
-  about: z.object({ title: z.string().min(2).max(60), body: z.string().min(20).max(800) }),
+  about: z.object({ title: z.string().min(2).max(80), body: z.string().min(20).max(1500) }),
   faq: z.object({ items: z.array(z.object({ question: z.string().min(4).max(120), answer: z.string().min(4).max(400) })).min(3).max(6) }),
   benefits: z.object({ items: z.array(z.object({ icon: z.enum(BENEFIT_ICONS), title: z.string().min(2).max(40), description: z.string().min(4).max(140) })).min(3).max(5) }),
   "how-to-order": z.object({ subtitle: z.string().max(140).optional(), steps: z.array(z.object({ title: z.string().min(2).max(40), description: z.string().min(4).max(160) })).min(3).max(5) }),
