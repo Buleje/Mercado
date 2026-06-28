@@ -327,12 +327,16 @@ function AdminPage() {
         data-dark-fallback
         className={cn(
         "flex flex-col min-h-screen transition-[margin] duration-[var(--dur-base)]",
-        presentationMode ? "sm:ml-0"
-          : focusMode ? "sm:ml-16"
-          : sidebarCompact ? "sm:ml-[60px]"
+        /* El margin debe alinearse con el breakpoint REAL del sidebar fixed
+           (`hidden md:flex` → aparece en md/768px). Antes usaba `sm:` (640px),
+           reservando 260px de gutter fantasma en el rango 640–767px donde el
+           sidebar aún no existe → contenido empujado y aplastado en tablets. */
+        presentationMode ? "md:ml-0"
+          : focusMode ? "md:ml-16"
+          : sidebarCompact ? "md:ml-[60px]"
           /* configMode: sidebar (260px) + config panel (400px) = 660px */
-          : sidebarConfigMode ? "sm:ml-[660px]"
-          : "sm:ml-[260px]",
+          : sidebarConfigMode ? "md:ml-[660px]"
+          : "md:ml-[260px]",
       )}>
         {/* ADR-087: alertas operativas — adentro del shell para respetar
             el margin del sidebar fixed (260px / 60px compact / 660px config).

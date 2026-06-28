@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * OrdersKanban — 3 columnas operativas (Por confirmar / Preparando / En camino).
+ * OrdersKanban — 4 columnas operativas (Por confirmar / Confirmado / Preparando / En camino).
  *
  * Reemplaza la lista vertical larga por un cockpit Kanban que muestra el flujo
  * de trabajo en paralelo. Cada columna tiene:
  *   - Header con label, contador y monto total de la columna
  *   - Cards compactas con cliente, total, motorizado (si hay) y 1 acción primaria
  *
- * En mobile colapsa a tabs horizontales (segmented control).
+ * En mobile colapsa a un segmented control (grid 2×2 en pantallas chicas).
  *
  * Tipografía: estándar admin (text-base/text-xl font-extrabold), sin italic.
  */
@@ -638,8 +638,11 @@ export function OrdersKanban({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Mobile: segmented control */}
-      <div className="lg:hidden flex items-center gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
+      {/* Mobile: segmented control. Grid 2×2 fijo: 4 columnas con labels largos
+          en mayúsculas no caben en una sola fila ni en phone (~390px) ni en el
+          rango md–lg (768–1023px) donde el sidebar ya ocupa 260px. 2×2 es
+          robusto en todo el rango <lg. */}
+      <div className="lg:hidden grid grid-cols-2 gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
         {COLUMNS.map((col) => {
           const count = columnsData[col.id].length;
           const isActive = mobileColumn === col.id;
@@ -649,7 +652,7 @@ export function OrdersKanban({
               type="button"
               onClick={() => setMobileColumn(col.id)}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
+                "w-full inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
                 isActive
                   ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
