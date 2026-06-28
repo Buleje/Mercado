@@ -160,11 +160,52 @@ model Product {
   sponsoredBoosts     SponsoredBoost[]
   pageOverrides       TenantPageProductOverride[]
 
+  // ── Dropshipping (ADR-298) — aditivo, default off ─────────────────
+  isDropship         Boolean @default(false) // el proveedor despacha directo al cliente
+  dropshipSupplierId String? // FK lógica a Supplier.id (proveedor que cumple)
+  supplierSku        String? // SKU del producto en el proveedor
+  supplierUrl        String? // link del producto en el proveedor
+
   // CLEANUP P2: redundante con @@index([tenantId, active]) y @@index([tenantId, category, active]) abajo
   // @@index([tenantId])
   @@index([tenantId, active])
   @@index([tenantId, category, active])
   @@index([barcode])
+  @@index([tenantId, isDropship])
+}
+
+// ─── Dropshipping fulfillment (ADR-298) ──────────────────
+// Un registro por PROVEEDOR por ORDEN. Cuando entra un pedido pagado en una
+// tienda con dropshipEnabled, se agrupan los ítems dropship por proveedor y se
+// crea este fulfillment. El proveedor despacha directo al cliente.
+model DropshipFulfillment {
+  id         String   @id @default(cuid())
+  tenantId   String
+  orderId    String
+  supplierId String? // Supplier.id (null si el producto no tenía proveedor asignado)
+  status     String   @default("pending") // pending|forwarded|confirmed|shipped|delivered|cancelled
+  itemsJson  String // snapshot: [{ productId, name, qty, unitCost, supplierSku }]
+  costTotal  Decimal? @db.Decimal(12, 2) // suma de costos al proveedor
+
+  // Snapshot de envío (dirección del cliente al momento del pedido)
+  shipName      String?
+  shipPhone     String?
+  shipLocation  String?
+  shipReference String?
+
+  // Tracking / referencia del proveedor
+  supplierOrderRef String?
+  carrier          String?
+  trackingNumber   String?
+  trackingUrl      String?
+  notifiedAt       DateTime? // cuándo se avisó al proveedor
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([orderId])
+  @@index([tenantId, supplierId])
 }
 
 model ProductImage {
@@ -724,6 +765,9 @@ model Settings {
   // Expand puro nullable — zero-downtime, sin backfill required.
   loyaltyRulesJson   String? // JSON: { pointsPerSol, minOrderAmount, multiplier, ... }
   loyaltyRewardsJson String? // JSON: array de rewards { id, label, costPoints, description, active }
+
+  // ── Dropshipping (ADR-298) — flag per-tenant, default off ──
+  dropshipEnabled Boolean @default(false) // activa el fulfillment automático al proveedor
 }
 
 // ─── Declaraciones tributarias (tracker SUNAT) ──────────

@@ -49,6 +49,7 @@ import {
   Leaf,
   Megaphone,
   ClipboardList,
+  Truck,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -291,6 +292,14 @@ export const MODULE_INFO: Partial<
     desc: "Notas de turno y recordatorios tipo sticky.",
     tip: "Deja anotado lo importante para el siguiente turno.",
   },
+  // ── Dropshipping (ADR-298) ──
+  dropship: {
+    icon: Truck,
+    iconColor: "text-[var(--accent)]",
+    priority: "high",
+    desc: "Envíos al proveedor automáticos cuando se paga un pedido (el proveedor despacha al cliente).",
+    tip: "Para tiendas dropshipping: vinculá productos a proveedores y trackeá los envíos.",
+  },
   // ── Recetas (vertical comida — restaurante) ──
   recetas: {
     icon: ChefHat,
@@ -374,8 +383,12 @@ export const BASIC_MODULES: TabCategory[] = [
     id: "compras",
     label: "Compras",
     icon: PackagePlus,
+    // "dropship" se auto-oculta por el filtro vertical: solo aparece en tiendas
+    // dropshipping (vertical "otro", que lo tiene en enabled). El gate semántico
+    // real es Settings.dropshipEnabled (el módulo lo respeta). ADR-298.
     tabs: [
       "compras",
+      "dropship",
     ],
   },
 

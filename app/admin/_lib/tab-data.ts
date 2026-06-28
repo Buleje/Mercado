@@ -75,6 +75,7 @@ export const ALL_TABS = [
   { id: "recetas" as Tab,             label: "Recetas",             icon: ChefHat },
   { id: "productos" as Tab,           label: "Promociones & Ofertas", icon: BadgePercent },
   { id: "compras" as Tab,             label: "Compras",             icon: PackagePlus },
+  { id: "dropship" as Tab,            label: "Dropshipping",        icon: Truck },
   { id: "plata" as Tab,               label: "Mi Plata",            icon: Wallet },
   { id: "clientes" as Tab,            label: "Mis Clientes",        icon: Heart },
   { id: "leads-funnel" as Tab,        label: "Funnel de Leads",     icon: UserPlus },

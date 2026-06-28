@@ -240,6 +240,7 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     "compras",
     "contratos",
     "devoluciones-proveedor",
+    "dropship",
     // Documentos SUNAT
     "cotizaciones",
     "guias-remision",

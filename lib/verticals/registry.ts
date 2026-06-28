@@ -301,6 +301,8 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "mi-perfil",
         "support-inbox",
         "plan",
+        "compras",
+        "dropship", // ADR-298 — tiendas dropshipping (gate real = Settings.dropshipEnabled)
       ],
       featured: [],
       hidden: [],

@@ -32,6 +32,7 @@ export type Tab =
   // Módulos nuevos
   | "auditoria"
   | "devoluciones-proveedor"
+  | "dropship"
   | "tesoreria"
   | "promociones"
   | "scoring"
@@ -114,6 +115,7 @@ export const VALID_TABS: readonly Tab[] = [
   "puntos",
   "tareas",
   "notas",
+  "dropship",
   "forecasting",
   "marketplace",
   "delivery-partners",

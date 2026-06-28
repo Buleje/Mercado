@@ -56,6 +56,7 @@ const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified
 // Fiados/Préstamos/Adelantos/Activos consolidados como sub-tabs de FinanzasModule
 // (ver TabRouter dispatch más abajo — todos renderean <FinanzasModule initialTab=...>).
 const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
+const DropshipModule            = dynamic(() => import("@/components/admin/unified/DropshipModule"),     { loading: TabSpinner });
 // ADR-124 — Especialización forestal CTP
 const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/forestal/CTPLibroOperaciones"), { loading: TabSpinner });
 // ADR-125 — Especialización forestal Títulos Habilitantes (LO-TH)
@@ -246,6 +247,7 @@ export function TabRouter({
   if (tab === "cacao-acopio") return <CacaoAcopio />;
   if (tab === "scoring")   return <FinanzasModule key="scoring" initialTab="scoring" />;
   if (tab === "devoluciones-proveedor") return <ComprasModule key="devoluciones-proveedor" initialTab="devoluciones" />;
+  if (tab === "dropship") return <DropshipModule />;
 
   // ── Documentos comerciales & SUNAT (hub consolidado — 6 sub-tabs) ──
   if (tab === "cotizaciones")   return <DocumentosHubModule key="cotizaciones" initialTab="cotizaciones" />;

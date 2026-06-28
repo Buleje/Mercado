@@ -23,6 +23,7 @@ import { notifyOwnerNewOrder } from "@/lib/whatsapp-order-notify";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { checkAndIssueCoupons } from "@/lib/coupons/auto-coupon-triggers";
 import { logger } from "@/lib/logger";
+import { DropshipDB } from "./dropship.db";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -532,7 +533,24 @@ export const OrdersDB = {
       if (!existing) return null;
       return tx.order.update({ where: { id, tenantId }, data, include: { items: true } });
     });
-    return row ? mapOrder(row) : null;
+    const mapped = row ? mapOrder(row) : null;
+
+    // ── Dropshipping (ADR-298) ──────────────────────────────────────────
+    // Al confirmar un pedido en una tienda con dropship activado, crear el
+    // fulfillment al proveedor. FIRE-AND-FORGET: nunca rompe el flujo de la
+    // orden (si falla, se loguea y queda para reenvío manual).
+    if (mapped && patch.status === "confirmado") {
+      void (async () => {
+        if (await DropshipDB.isEnabled(tenantId)) {
+          const n = await DropshipDB.createFulfillmentsFromOrder(tenantId, id);
+          if (n > 0) logger.info("[dropship] fulfillments creados", { tenantId, orderId: id, n });
+        }
+      })().catch((err) =>
+        logger.error("[dropship] fallo al crear fulfillment", { tenantId, orderId: id, error: String(err) }),
+      );
+    }
+
+    return mapped;
   },
   /**
    * Delete an order scoped to the given tenant.
