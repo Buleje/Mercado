@@ -55,6 +55,7 @@ import {
   Keyboard,
   MousePointer,
   Eye,
+  AlertTriangle,
 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import ImageUpload from "./ImageUpload";
@@ -437,6 +438,24 @@ function VersionThumbnail({ theme }: { theme: StoreTheme }) {
 }
 
 // Lote L #1: color picker visual HSL. Conversión hex↔HSL.
+// #1.1 Contraste WCAG: ratio entre dos colores hex (1..21). Solo hex (#rrggbb).
+function relLuminance(hex: string): number | null {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec((hex || "").trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+}
+function contrastRatio(a: string, b: string): number | null {
+  const la = relLuminance(a), lb = relLuminance(b);
+  if (la === null || lb === null) return null;
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const m = /^#?([0-9a-fA-F]{6})$/.exec((hex || "").trim());
   let r = 0, g = 0, b = 0;
@@ -2706,6 +2725,33 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     }
   }, [tenantSlug, customSections]);
 
+  // #7.4 Modo Focus: oculta los sidebars, deja solo la preview. (Escape sale —
+  // integrado en el handler de atajos de abajo, que usa capture para preempt el shell.)
+  const [focusMode, setFocusMode] = useState(false);
+
+  // #1.1 Recomendaciones de diseño en tiempo real (contraste, largo de título, hero).
+  const designTips = useMemo(() => {
+    const tips: Array<{ level: "warn" | "info"; text: string }> = [];
+    const cr = contrastRatio(draft.primaryColor, "#ffffff");
+    if (cr !== null && cr < 4.5) tips.push({ level: "warn", text: `Bajo contraste: texto blanco sobre tu color primario (${cr.toFixed(1)}:1) cuesta leer en móvil. Apuntá a 4.5:1.` });
+    const words = (draft.heroTitle || "").trim().split(/\s+/).filter(Boolean).length;
+    if (words > 8) tips.push({ level: "info", text: `Tu título del hero tiene ${words} palabras. Los títulos cortos (≤8) convierten mejor.` });
+    if (!draft.heroImage && !draft.heroVideoUrl) tips.push({ level: "info", text: "El hero no tiene imagen ni video de fondo. Un fondo visual capta más atención." });
+    if (!draft.logo) tips.push({ level: "info", text: "Falta tu logo. Subilo en Identidad para verte profesional." });
+    return tips;
+  }, [draft.primaryColor, draft.heroTitle, draft.heroImage, draft.heroVideoUrl, draft.logo]);
+
+  // #1.3 Score de completitud por panel (para los dots del sidebar).
+  const panelScore = useCallback((id: CreativePanel): { done: number; total: number } | null => {
+    switch (id) {
+      case "identidad": return { done: [draft.storeName, draft.logo, draft.description].filter(Boolean).length, total: 3 };
+      case "hero": return { done: [draft.heroTitle, draft.heroSubtitle, draft.heroImage || draft.heroVideoUrl].filter(Boolean).length, total: 3 };
+      case "contacto": return { done: [draft.whatsapp, draft.phone].filter(Boolean).length, total: 2 };
+      case "secciones": return { done: customSections.length > 0 ? 1 : 0, total: 1 };
+      default: return null;
+    }
+  }, [draft.storeName, draft.logo, draft.description, draft.heroTitle, draft.heroSubtitle, draft.heroImage, draft.heroVideoUrl, draft.whatsapp, draft.phone, customSections.length]);
+
   // #16 Atajos de teclado (Lote H, Brandon 2026-06-27). Capture + stopImmediate
   // para preempt el shell admin (que usa teclas sueltas para navegar tabs).
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -2722,6 +2768,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       if (mod && (k === "y" || (k === "z" && e.shiftKey))) { take(); handleRedo(); return; }
       if (mod && k === "p") { take(); window.open(`/t/${tenantSlug}?preview=true`, "_blank", "noopener"); return; }
       if (mod && /^[1-9]$/.test(e.key)) { take(); const id = PANEL_ORDER[Number(e.key) - 1]; if (id) { setPanel(id); setPbSelected(null); } return; }
+      if (e.key === "Escape" && focusMode) { take(); setFocusMode(false); return; } // #7.4 salir de Focus primero
       if (typing || mod) return; // teclas sueltas: no en inputs ni con otro modificador
       if (e.key === "Escape") { take(); setShowShortcuts(false); setPbSelected(null); return; }
       if (e.key === "?") { take(); setShowShortcuts((s) => !s); return; }
@@ -2731,7 +2778,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [handleApply, handleUndo, handleRedo, tenantSlug]);
+  }, [handleApply, handleUndo, handleRedo, tenantSlug, focusMode]);
 
 
   const fontFamily = useMemo(() => {
@@ -2987,6 +3034,16 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           >
             <Keyboard className="h-3.5 w-3.5" />
           </button>
+          {/* #7.4 Modo Focus */}
+          <button
+            type="button"
+            onClick={() => setFocusMode(true)}
+            className="hidden p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors lg:inline-flex"
+            title="Modo Focus: solo la preview (Esc para salir)"
+            aria-label="Activar modo Focus"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+          </button>
 
           <a
             href={`/t/${tenantSlug}?preview=true`}
@@ -3012,7 +3069,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
       </header>
 
       <div className="flex flex-1 min-h-0">
+        {/* #7.4 Modo Focus: botón flotante para volver */}
+        {focusMode && (
+          <button type="button" onClick={() => setFocusMode(false)} className="fixed left-1/2 top-3 z-[115] -translate-x-1/2 rounded-full bg-[#16181d] px-4 py-1.5 text-xs font-bold text-white shadow-2xl ring-1 ring-white/10 transition-opacity hover:opacity-90">
+            Salir de Focus · Esc
+          </button>
+        )}
         {/* Rail de navegación — solo la lista de secciones (delgado). */}
+        {!focusMode && (
         <aside className="w-56 bg-[#0e0f13] border-r border-white/5 overflow-y-auto shrink-0">
           <nav className="p-3 space-y-1">
             <p className="px-2 pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Configuración</p>
@@ -3036,21 +3100,47 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       active ? "text-[var(--data-success-500)]" : "text-gray-500",
                     )}
                   />
-                  {item.label}
+                  <span className="flex-1 truncate">{item.label}</span>
+                  {/* #1.3 Score de completitud por panel */}
+                  {(() => {
+                    const sc = panelScore(item.id);
+                    if (!sc) return null;
+                    return (
+                      <span className="flex shrink-0 items-center gap-0.5" title={`${sc.done}/${sc.total} configurado`} aria-label={`${sc.done} de ${sc.total} configurado`}>
+                        {Array.from({ length: sc.total }).map((_, i) => (
+                          <span key={i} className={cn("h-1.5 w-1.5 rounded-full", i < sc.done ? "bg-[var(--data-success-500)]" : "bg-white/15")} />
+                        ))}
+                      </span>
+                    );
+                  })()}
                 </button>
               );
             })}
           </nav>
         </aside>
+        )}
 
         {/* Panel LATERAL de opciones de la sección activa — abre al lado del rail,
             no debajo (Brandon 2026-06-08). */}
+        {!focusMode && (
         <aside className="w-80 bg-[#0c0d10] border-r border-white/5 overflow-y-auto shrink-0">
           <div className="sticky top-0 z-10 border-b border-white/5 bg-[#0c0d10]/90 px-4 py-3 backdrop-blur">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Personalizar</p>
             <p className="text-sm font-semibold text-white">{panelItems.find((p) => p.id === panel)?.label ?? "Sección"}</p>
           </div>
           <div className="p-4 space-y-3">
+            {/* #1.1 Recomendaciones de diseño en tiempo real */}
+            {designTips.length > 0 && (
+              <div className="space-y-1.5 rounded-xl border border-[var(--accent-soft)]/30 bg-[var(--accent-soft)]/[0.07] p-2.5">
+                <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]"><Sparkles className="h-3.5 w-3.5" /> Sugerencias ({designTips.length})</p>
+                {designTips.map((t, i) => (
+                  <p key={i} className={cn("flex items-start gap-1.5 text-[length:var(--ts-2xs)] leading-snug", t.level === "warn" ? "text-[var(--data-warning-500)]" : "text-gray-300")}>
+                    {t.level === "warn" ? <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" /> : <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-[var(--accent-soft)]" />}
+                    <span>{t.text}</span>
+                  </p>
+                ))}
+              </div>
+            )}
             {pbSelected === "cards" ? (
               <CardDesignEditor
                 value={(draft.cardDesign ?? {}) as { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string }}
@@ -4592,6 +4682,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             )}
           </div>
         </aside>
+        )}
 
         <main className="flex-1 bg-linear-to-br from-gray-950 to-gray-900 flex items-start justify-center p-6 overflow-auto">
           {livePreview ? (
