@@ -148,6 +148,8 @@ export interface ImageTextSection extends SectionBase {
     imageAlt?: string;
     /** Lado de la imagen — left | right | top | bottom (Lote I). */
     imagePosition: "left" | "right" | "top" | "bottom";
+    /** Proporción imagen/texto en layout horizontal (Lote V #2.4). Default 50/50. */
+    imageRatio?: "30/70" | "40/60" | "50/50" | "60/40" | "70/30";
     /** Fondo del bloque — claro | marca (gradiente primary→accent) | oscuro. */
     background?: "light" | "brand" | "dark";
     /** Etiqueta superior (eyebrow) editable. */

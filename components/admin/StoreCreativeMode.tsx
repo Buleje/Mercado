@@ -1481,6 +1481,22 @@ function CustomSectionEditor({
               { value: "bottom", label: "Abajo", preview: <span className="text-xs font-bold text-gray-300">↓</span> },
             ]}
           />
+          {/* #2.4 Proporción de columnas (solo si la imagen va al lado) */}
+          {(d.imagePosition === "left" || d.imagePosition === "right") && (
+            <StylePicker
+              label="Proporción imagen / texto"
+              cols={3}
+              value={(d.imageRatio as string) ?? "50/50"}
+              onChange={(v) => onPatch({ imageRatio: v })}
+              options={[
+                { value: "30/70", label: "30/70", preview: <span className="text-[length:var(--ts-2xs)] font-bold text-gray-300">▮▮▮▯▯▯▯</span> },
+                { value: "40/60", label: "40/60", preview: <span className="text-[length:var(--ts-2xs)] font-bold text-gray-300">▮▮▮▯▯▯</span> },
+                { value: "50/50", label: "50/50", preview: <span className="text-[length:var(--ts-2xs)] font-bold text-gray-300">▮▮▮▯▯▯</span> },
+                { value: "60/40", label: "60/40", preview: <span className="text-[length:var(--ts-2xs)] font-bold text-gray-300">▮▮▮▮▯▯</span> },
+                { value: "70/30", label: "70/30", preview: <span className="text-[length:var(--ts-2xs)] font-bold text-gray-300">▮▮▮▮▮▯▯</span> },
+              ]}
+            />
+          )}
         </SectionCard>
       )}
       {section.type === "faq" && (
@@ -4811,12 +4827,26 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     Borrador
                   </span>
                 )}
-                <PreviewBrowserFrame
-                  url={`/t/${tenantSlug}?preview=true`}
-                  iframeKey={iframeKey}
-                  src={`/t/${tenantSlug}?preview=true`}
-                  title="Vista previa en vivo"
-                />
+                {/* #4.2 Frame de dispositivo real en móvil/tablet */}
+                {(() => {
+                  const frameEl = (
+                    <PreviewBrowserFrame
+                      url={`/t/${tenantSlug}?preview=true`}
+                      iframeKey={iframeKey}
+                      src={`/t/${tenantSlug}?preview=true`}
+                      title="Vista previa en vivo"
+                    />
+                  );
+                  const deviceFrame = !splitPreview && customWidth === null && (viewport === "mobile" || viewport === "tablet");
+                  if (!deviceFrame) return frameEl;
+                  const isMobile = viewport === "mobile";
+                  return (
+                    <div className={cn("relative w-full bg-gray-900 shadow-2xl ring-1 ring-white/10", isMobile ? "rounded-[2.75rem] p-3" : "rounded-[2rem] p-3.5")}>
+                      {isMobile && <div className="absolute left-1/2 top-3 z-10 h-5 w-28 -translate-x-1/2 rounded-b-2xl bg-gray-900" aria-hidden />}
+                      <div className={cn("overflow-hidden", isMobile ? "rounded-[2rem]" : "rounded-[1.25rem]")}>{frameEl}</div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           ) : (

@@ -678,15 +678,25 @@ function ImageTextBlock({ section, primary, accent }: { section: ImageTextSectio
 
   // Lote I: posición de la imagen — left/right (lado) o top/bottom (vertical).
   const vertical = imagePosition === "top" || imagePosition === "bottom";
+  // Lote V #2.4: proporción de columnas (solo horizontal); 50/50 = default Tailwind.
+  const ratio = section.data.imageRatio;
+  const customRatio = !vertical && ratio && ratio !== "50/50";
+  let ratioCols: string | undefined;
+  if (customRatio) {
+    const [imgPct, textPct] = ratio.split("/");
+    ratioCols = imagePosition === "right" ? `${textPct}% ${imgPct}%` : `${imgPct}% ${textPct}%`;
+  }
   const gridClass = vertical
     ? "grid-cols-1 gap-8 max-w-3xl mx-auto text-center"
-    : "grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center";
+    : customRatio
+      ? "grid-cols-1 lg:[grid-template-columns:var(--it-cols)] gap-8 lg:gap-14 items-center"
+      : "grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center";
   const imageOrder = imagePosition === "right" || imagePosition === "bottom" ? "lg:order-2 order-2" : "";
 
   return (
     <section className={`w-full ${outerClass}`} style={outerStyle}>
       <div className="max-w-6xl mx-auto px-4 py-14 sm:py-20">
-        <div className={`grid ${gridClass}`}>
+        <div className={`grid ${gridClass}`} style={ratioCols ? ({ "--it-cols": ratioCols } as React.CSSProperties) : undefined}>
           {/* Imagen — con glow de realce detrás */}
           <div className={`relative ${imageOrder}`}>
             <div
