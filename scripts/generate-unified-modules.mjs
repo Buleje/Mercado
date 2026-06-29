@@ -164,21 +164,12 @@ const modules = [
       ["anomalias", "Anomalías"],
     ],
   },
-  {
-    name: "VentasMarketingModule",
-    imports: [
-      ["MarketingAutomationTab", "@/components/admin/MarketingAutomationTab"],
-      ["SalesForecastTab", "@/components/admin/SalesForecastTab"],
-      ["ConversionMetricsTab", "@/components/admin/ConversionMetricsTab"],
-      ["ReferralTab", "@/components/admin/ReferralTab"],
-    ],
-    tabs: [
-      ["marketing", "Automatización"],
-      ["forecast", "Forecast Ventas"],
-      ["metricas", "Métricas"],
-      ["referidos", "Referidos"],
-    ],
-  },
+  // VentasMarketingModule: recipe OBSOLETO removido (2026-06-28). La
+  // consolidación real pasó por CrecimientoHubModule (MarketingAutomationTab) y
+  // AnalisisHubModule (ForecastingDashboard); SalesForecastTab/ConversionMetricsTab/
+  // ReferralTab quedaron huérfanos y se borraron. Este script ya no es
+  // source-of-truth (los unified se editan a mano), pero se limpia la receta
+  // para no referenciar archivos inexistentes.
   {
     name: "CRMClientesModule",
     imports: [
