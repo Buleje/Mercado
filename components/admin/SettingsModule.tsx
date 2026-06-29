@@ -48,6 +48,14 @@ type SectionId = "business" | "security" | "system" | "sales" | "inventory"
   | "audit" | "backup" | "modules" | "shortcuts" | "subscription" | "storefront"
   | "team" | "nav-defaults" | "sidebar-order" | "tutorial";
 
+// Setup guiado — orden de prioridad para una bodega: primero lo que la deja
+// VENDER y COBRAR, después lo administrativo. El "próximo paso" del overview
+// toma la primera sección de esta lista que aún no esté al 100%.
+const SETUP_PRIORITY: SectionId[] = [
+  "business", "cash", "delivery", "sales", "notifications",
+  "integrations", "inventory", "appearance", "security",
+];
+
 // Categoría visible para el panel "Reordenar barra lateral".
 // Compat con CategoryItem de components/admin/SidebarReorderPanel.tsx.
 type ReorderCategory = { id: string; label: string };
@@ -701,6 +709,12 @@ export default function SettingsModule({
   const overallCompletion = useMemo(() => {
     const vals = Object.values(sectionCompletion);
     return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+  }, [sectionCompletion]);
+
+  // Próximo paso del setup guiado: 1ª sección prioritaria aún incompleta.
+  const nextStep = useMemo(() => {
+    const id = SETUP_PRIORITY.find((s) => (sectionCompletion[s] ?? 0) < 100);
+    return id ? SECTION_META.find((m) => m.id === id) ?? null : null;
   }, [sectionCompletion]);
 
   // ── Render loading state ────────────────────────────────────────────────────
@@ -1891,6 +1905,32 @@ export default function SettingsModule({
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
+            {/* Setup guiado — próximo paso accionable (1 click abre la sección) */}
+            {nextStep && (
+              <button
+                type="button"
+                onClick={() => { setActiveSection(nextStep.id); setShowOverview(false); setSearchQuery(""); }}
+                className="group w-full flex items-center gap-4 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 p-4 mb-5 text-left transition-colors"
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  {nextStep.icon}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-primary">
+                    Próximo paso · {overallCompletion}% completo
+                  </span>
+                  <span className="block text-base font-bold text-[var(--text-primary)] truncate">
+                    Configurá: {nextStep.title}
+                  </span>
+                  <span className="block text-xs text-[var(--text-secondary)] truncate">{nextStep.desc}</span>
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-extrabold text-primary">
+                  Completar
+                  <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                </span>
+              </button>
+            )}
+
             {/* Quick stats bar */}
             <div className="grid grid-cols-3 gap-3 mb-5">
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 text-center">
