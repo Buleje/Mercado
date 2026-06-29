@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     // el costo real basado en tokens (delta = corrección a la baja en Upstash
     // sigue siendo válida porque INCR es atómico aunque acumule estimación + real).
     const ESTIMATED_COST_USD = 0.0008;
-    if (!await aiCostGuard.canSpend(resolvedTenantId, ESTIMATED_COST_USD, "free")) {
+    if (!await aiCostGuard.canSpend(resolvedTenantId, ESTIMATED_COST_USD)) {
       return Response.json(
         { error: "AI quota exceeded for this tenant. Upgrade your plan or try again next month." },
         { status: 429 },

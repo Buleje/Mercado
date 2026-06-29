@@ -47,7 +47,7 @@ export async function recommendHandler(
   classification: Classification,
 ): Promise<ActionResult> {
   // F2 AI-COST: smartModel recomendación → guard antes de llamar
-  if (!await aiCostGuard.canSpend(ctx.tenantId, RECOMMEND_COST_USD, "free")) {
+  if (!await aiCostGuard.canSpend(ctx.tenantId, RECOMMEND_COST_USD)) {
     logger.warn("[recommend-handler] presupuesto agotado", {
       tenantId: ctx.tenantId.slice(-6),
     });

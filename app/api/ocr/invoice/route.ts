@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   // Cost guard por tenant — si excede el budget mensual, rechaza con 429
-  const canSpend = await aiCostGuard.canSpend(auth.tenantId, OCR_COST_USD, "free");
+  const canSpend = await aiCostGuard.canSpend(auth.tenantId, OCR_COST_USD);
   if (!canSpend) {
     logger.warn("[ocr-invoice] presupuesto AI excedido", { tenantId: auth.tenantId.slice(-6) });
     return NextResponse.json(

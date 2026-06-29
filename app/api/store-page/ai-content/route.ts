@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
   }
   const { sectionType, storeName, rubro } = parsed.data;
 
-  if (!(await aiCostGuard.canSpend(auth.tenantId, 0.001, "free"))) {
+  if (!(await aiCostGuard.canSpend(auth.tenantId, 0.001))) {
     return NextResponse.json(
       { error: "Llegaste al límite mensual de generaciones con IA. Actualizá tu plan o esperá el próximo mes." },
       { status: 429 },
