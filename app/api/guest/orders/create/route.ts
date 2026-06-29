@@ -80,8 +80,10 @@ export async function POST(req: NextRequest) {
   const itemsSig = createHash("sha256")
     .update(
       JSON.stringify(
+        // Solo productId+quantity: unitPrice del cliente se ignora (el precio es
+        // del backend), así que no debe influir en la dedup.
         data.items
-          .map((i) => [i.productId, i.quantity, i.unitPrice])
+          .map((i) => [i.productId, i.quantity])
           .sort((a, b) => a[0] - b[0]),
       ),
     )
@@ -112,7 +114,14 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 7. Resolver names + units reales de productos (regla #6: nombres del backend).
+  // 7. Resolver PRECIOS + names + units REALES desde DB.
+  //
+  // CRITICAL FIX 2026-06-28 (money-integrity): antes el subtotal y el precio
+  // persistido salían de `item.unitPrice` (controlado por el cliente) — un guest
+  // anónimo podía postear unitPrice=0.01 y la orden se guardaba a ese precio,
+  // corrompiendo el ledger/COGS/SUNAT (viola regla #6). Ahora se replica el
+  // patrón serverPriceMap/HOTFIX-001 de /api/orders: el precio autoritativo es
+  // Product.price (misma fuente que el checkout autenticado), keyed por productId.
   const productIds = data.items.map((i) => i.productId);
   const tx = prismaForTenant(tenantId);
   const productRows = await tx.product.findMany({
@@ -121,9 +130,23 @@ export async function POST(req: NextRequest) {
   });
   const productMap = new Map(productRows.map((p) => [p.id, p]));
 
-  // 8. Totales backend (regla #6 — nunca confiar en cliente).
+  // Rechazar si algún producto no existe / no pertenece a este tenant: evita
+  // persistir ítems a precio 0 (o cross-tenant) en vez de cobrar lo real.
+  const missingIds = productIds.filter((id) => !productMap.has(id));
+  if (missingIds.length > 0) {
+    return NextResponse.json(
+      { error: "Uno o más productos no están disponibles en esta tienda" },
+      { status: 404 },
+    );
+  }
+
+  // Precio del servidor (DB), NUNCA el del cliente.
+  const serverUnitPrice = (productId: number): number =>
+    Number(productMap.get(productId)?.price ?? 0);
+
+  // 8. Totales backend desde precios de DB (regla #6 — nunca confiar en cliente).
   const subtotal = data.items.reduce(
-    (sum, item) => sum + item.unitPrice * item.quantity,
+    (sum, item) => sum + serverUnitPrice(item.productId) * item.quantity,
     0,
   );
   const deliveryFee = 3.5;
@@ -183,7 +206,7 @@ export async function POST(req: NextRequest) {
             return {
               productId: item.productId,
               name: p?.name ?? `Producto ${item.productId}`,
-              price: item.unitPrice,
+              price: serverUnitPrice(item.productId), // DB, no el del cliente
               quantity: item.quantity,
               unit: p?.unit ?? "unidad",
             };
