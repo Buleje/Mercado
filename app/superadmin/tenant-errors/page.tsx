@@ -35,7 +35,7 @@ export default async function TenantErrorsPage() {
               <ShieldAlert className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.75} aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+              <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Soporte
               </p>
               <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
