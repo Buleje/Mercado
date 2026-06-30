@@ -11,6 +11,9 @@ import {
   FileText,
   Trash2,
   ArrowLeft,
+  ScanLine,
+  Sparkles,
+  Archive,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocument } from "@/lib/types/documents";
@@ -26,6 +29,9 @@ import DocumentShareModal from "./DocumentShareModal";
 import DocumentVersionsModal from "./DocumentVersionsModal";
 import DocumentActivityModal from "./DocumentActivityModal";
 import DocumentTrashView from "./DocumentTrashView";
+import DocumentTemplatesModal from "./DocumentTemplatesModal";
+import DocumentSignModal from "./DocumentSignModal";
+import DocumentPreviewModal from "./DocumentPreviewModal";
 import BulkActionBar from "./BulkActionBar";
 
 export default function SuperAdminDocumentsModule() {
@@ -54,6 +60,11 @@ export default function SuperAdminDocumentsModule() {
     reloadTrash,
     restore,
     purge,
+    scanUpload,
+    exporting,
+    exportZip,
+    bulkTag,
+    bulkFavorite,
   } = useSuperAdminDocuments();
 
   const [search, setSearch] = useState("");
@@ -69,11 +80,15 @@ export default function SuperAdminDocumentsModule() {
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<DbDocument | null>(null);
+  const [preview, setPreview] = useState<DbDocument | null>(null);
   const [sharing, setSharing] = useState<DbDocument | null>(null);
   const [versioning, setVersioning] = useState<DbDocument | null>(null);
   const [activityDoc, setActivityDoc] = useState<DbDocument | null>(null);
+  const [signing, setSigning] = useState<DbDocument | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scanInputRef = useRef<HTMLInputElement>(null);
 
   const stats = useMemo(() => computeStats(docs), [docs]);
 
@@ -197,6 +212,22 @@ export default function SuperAdminDocumentsModule() {
     [selected, bulkMove, clearSelection],
   );
 
+  const bulkTagTo = useCallback(async () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    const tag = prompt("Etiqueta para los documentos seleccionados:");
+    if (!tag || !tag.trim()) return;
+    await bulkTag(ids, tag.trim());
+    clearSelection();
+  }, [selected, bulkTag, clearSelection]);
+
+  const bulkFavoriteTo = useCallback(async () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    await bulkFavorite(ids, true);
+    clearSelection();
+  }, [selected, bulkFavorite, clearSelection]);
+
   const toggleSelecting = useCallback(() => {
     setSelecting((s) => {
       if (s) setSelected(new Set());
@@ -219,14 +250,45 @@ export default function SuperAdminDocumentsModule() {
             Repositorio privado del superadmin — almacená todos tus documentos de plataforma.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setTemplatesOpen(true)}
+            className="flex items-center gap-2 px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+          >
+            <Sparkles className="h-5 w-5" />
+            <span className="hidden sm:inline">Plantilla</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => scanInputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-2 px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+          >
+            <ScanLine className="h-5 w-5" />
+            <span className="hidden sm:inline">Escanear</span>
+          </button>
           <button
             type="button"
             onClick={openTrash}
             className="flex items-center gap-2 px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
           >
             <Trash2 className="h-5 w-5" />
-            Papelera
+            <span className="hidden sm:inline">Papelera</span>
+          </button>
+          <button
+            type="button"
+            onClick={exportZip}
+            disabled={exporting}
+            title="Descargar todo el vault en un ZIP"
+            className="flex items-center gap-2 px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+          >
+            {exporting ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Archive className="h-5 w-5" />
+            )}
+            <span className="hidden sm:inline">Exportar</span>
           </button>
           <button
             type="button"
@@ -249,6 +311,17 @@ export default function SuperAdminDocumentsModule() {
           className="hidden"
           onChange={(e) => {
             if (e.target.files) upload(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={scanInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) scanUpload(f);
             e.target.value = "";
           }}
         />
@@ -364,6 +437,8 @@ export default function SuperAdminDocumentsModule() {
               onSelectAll={selectAll}
               onDownload={bulkDownload}
               onMove={bulkMoveTo}
+              onTag={bulkTagTo}
+              onFavorite={bulkFavoriteTo}
               onDelete={bulkDelete}
               onClear={clearSelection}
             />
@@ -403,10 +478,12 @@ export default function SuperAdminDocumentsModule() {
                   selected={selected.has(d.id)}
                   onToggleSelect={toggleSelect}
                   onToggleFavorite={toggleFavorite}
+                  onPreview={setPreview}
                   onEdit={setEditing}
                   onShare={setSharing}
                   onVersions={setVersioning}
                   onActivity={setActivityDoc}
+                  onSign={setSigning}
                   onDownload={download}
                   onRemove={handleRemove}
                 />
@@ -425,10 +502,12 @@ export default function SuperAdminDocumentsModule() {
                     onToggleSelect={toggleSelect}
                     onToggleFavorite={toggleFavorite}
                     onChangeCategory={changeCategory}
+                    onPreview={setPreview}
                     onEdit={setEditing}
                     onShare={setSharing}
                     onVersions={setVersioning}
                     onActivity={setActivityDoc}
+                    onSign={setSigning}
                     onDownload={download}
                     onRemove={handleRemove}
                   />
@@ -442,6 +521,7 @@ export default function SuperAdminDocumentsModule() {
       {editing && (
         <DocumentEditModal doc={editing} onClose={() => setEditing(null)} onSave={saveMeta} />
       )}
+      {preview && <DocumentPreviewModal doc={preview} onClose={() => setPreview(null)} />}
       {sharing && <DocumentShareModal doc={sharing} onClose={() => setSharing(null)} />}
       {versioning && (
         <DocumentVersionsModal
@@ -452,6 +532,12 @@ export default function SuperAdminDocumentsModule() {
       )}
       {activityDoc && (
         <DocumentActivityModal doc={activityDoc} onClose={() => setActivityDoc(null)} />
+      )}
+      {signing && (
+        <DocumentSignModal doc={signing} onClose={() => setSigning(null)} onSigned={reload} />
+      )}
+      {templatesOpen && (
+        <DocumentTemplatesModal onClose={() => setTemplatesOpen(false)} onGenerated={reload} />
       )}
     </div>
   );

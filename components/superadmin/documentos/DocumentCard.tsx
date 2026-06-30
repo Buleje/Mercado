@@ -24,10 +24,12 @@ interface Props {
   selected: boolean;
   onToggleSelect: (id: string) => void;
   onToggleFavorite: (doc: DbDocument) => void;
+  onPreview: (doc: DbDocument) => void;
   onEdit: (doc: DbDocument) => void;
   onShare: (doc: DbDocument) => void;
   onVersions: (doc: DbDocument) => void;
   onActivity: (doc: DbDocument) => void;
+  onSign: (doc: DbDocument) => void;
   onDownload: (doc: DbDocument) => void;
   onRemove: (doc: DbDocument) => void;
 }
@@ -58,10 +60,12 @@ export default function DocumentCard({
   selected,
   onToggleSelect,
   onToggleFavorite,
+  onPreview,
   onEdit,
   onShare,
   onVersions,
   onActivity,
+  onSign,
   onDownload,
   onRemove,
 }: Props) {
@@ -81,7 +85,7 @@ export default function DocumentCard({
       {/* Thumbnail */}
       <button
         type="button"
-        onClick={() => (selecting ? onToggleSelect(doc.id) : onEdit(doc))}
+        onClick={() => (selecting ? onToggleSelect(doc.id) : onPreview(doc))}
         className="relative h-32 w-full flex items-center justify-center bg-[var(--surface-sunken)] overflow-hidden"
       >
         {preview ? (
@@ -167,10 +171,12 @@ export default function DocumentCard({
               doc={doc}
               busy={busy}
               size="sm"
+              onPreview={onPreview}
               onEdit={onEdit}
               onShare={onShare}
               onVersions={onVersions}
               onActivity={onActivity}
+              onSign={onSign}
               onRemove={onRemove}
             />
           </div>

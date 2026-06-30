@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
   MoreVertical,
+  Eye,
   Pencil,
   Share2,
   History,
   Activity,
   Trash2,
+  PenTool,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocument } from "@/lib/types/documents";
@@ -17,10 +19,12 @@ interface Props {
   busy?: boolean;
   /** "sm" para la card (compacto), "md" para la fila. */
   size?: "sm" | "md";
+  onPreview: (doc: DbDocument) => void;
   onEdit: (doc: DbDocument) => void;
   onShare: (doc: DbDocument) => void;
   onVersions: (doc: DbDocument) => void;
   onActivity: (doc: DbDocument) => void;
+  onSign?: (doc: DbDocument) => void;
   onRemove: (doc: DbDocument) => void;
 }
 
@@ -33,10 +37,12 @@ export default function DocumentActionsMenu({
   doc,
   busy,
   size = "md",
+  onPreview,
   onEdit,
   onShare,
   onVersions,
   onActivity,
+  onSign,
   onRemove,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -60,9 +66,13 @@ export default function DocumentActionsMenu({
   const iconSz = size === "sm" ? "h-4 w-4" : "h-5 w-5";
 
   const items: { key: string; label: string; Icon: typeof Pencil; onClick: () => void; danger?: boolean }[] = [
+    { key: "preview", label: "Vista previa", Icon: Eye, onClick: pick(onPreview) },
     { key: "edit", label: "Editar", Icon: Pencil, onClick: pick(onEdit) },
     { key: "share", label: "Compartir por link", Icon: Share2, onClick: pick(onShare) },
     { key: "versions", label: "Versiones", Icon: History, onClick: pick(onVersions) },
+    ...(onSign && doc.mimeType === "application/pdf"
+      ? [{ key: "sign", label: "Firmar", Icon: PenTool, onClick: pick(onSign) }]
+      : []),
     { key: "activity", label: "Actividad", Icon: Activity, onClick: pick(onActivity) },
     { key: "remove", label: "Borrar", Icon: Trash2, onClick: pick(onRemove), danger: true },
   ];

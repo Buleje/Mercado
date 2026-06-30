@@ -43,6 +43,11 @@ export interface UseSuperAdminDocuments {
   reloadTrash: () => Promise<void>;
   restore: (doc: DbDocument) => Promise<void>;
   purge: (doc: DbDocument) => Promise<void>;
+  scanUpload: (file: File) => Promise<void>;
+  exporting: boolean;
+  exportZip: () => Promise<void>;
+  bulkTag: (ids: string[], tag: string) => Promise<void>;
+  bulkFavorite: (ids: string[], favorite: boolean) => Promise<void>;
 }
 
 function uploadErrorLabel(name: string, code: string | undefined): string {
@@ -61,6 +66,7 @@ export function useSuperAdminDocuments(): UseSuperAdminDocuments {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [trash, setTrash] = useState<DbDocument[]>([]);
   const [trashLoading, setTrashLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -328,6 +334,103 @@ export function useSuperAdminDocuments(): UseSuperAdminDocuments {
     }
   }, []);
 
+  const scanUpload = useCallback(
+    async (file: File) => {
+      setUploading(true);
+      setError(null);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch(`${API}/scan`, { method: "POST", headers: csrfHeaders({}), body: fd });
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          setError(
+            data.error === "mime_not_allowed"
+              ? "Para escanear, subí una imagen (foto del documento)."
+              : "No se pudo escanear el documento.",
+          );
+        }
+        await reload();
+      } catch (err) {
+        console.error("[sa-documents] scan failed", err);
+        setError("No se pudo escanear el documento.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [reload],
+  );
+
+  const bulkTag = useCallback(
+    async (ids: string[], tag: string) => {
+      if (!ids.length || !tag.trim()) return;
+      try {
+        const res = await fetch(`${API}/bulk`, {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ action: "tag", ids, tag: tag.trim() }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await reload();
+      } catch (err) {
+        console.error("[sa-documents] bulk tag failed", err);
+        setError("No se pudieron etiquetar los documentos.");
+      }
+    },
+    [reload],
+  );
+
+  const bulkFavorite = useCallback(
+    async (ids: string[], favorite: boolean) => {
+      if (!ids.length) return;
+      setDocs((prev) => prev.map((d) => (ids.includes(d.id) ? { ...d, favorite } : d)));
+      try {
+        const res = await fetch(`${API}/bulk`, {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ action: "favorite", ids, favorite }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        console.error("[sa-documents] bulk favorite failed", err);
+        setError("No se pudo actualizar favoritos.");
+        await reload();
+      }
+    },
+    [reload],
+  );
+
+  const exportZip = useCallback(async () => {
+    setExporting(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API}/export`, { headers: csrfHeaders({}) });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(
+          data.error === "empty"
+            ? "No hay documentos para exportar."
+            : "No se pudo exportar el vault.",
+        );
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "vault-superadmin.zip";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("[sa-documents] export failed", err);
+      setError("No se pudo exportar el vault.");
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
   return {
     docs,
     loading,
@@ -354,5 +457,10 @@ export function useSuperAdminDocuments(): UseSuperAdminDocuments {
     reloadTrash,
     restore,
     purge,
+    scanUpload,
+    exporting,
+    exportZip,
+    bulkTag,
+    bulkFavorite,
   };
 }

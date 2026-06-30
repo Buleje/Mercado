@@ -24,10 +24,12 @@ interface Props {
   onToggleSelect: (id: string) => void;
   onToggleFavorite: (doc: DbDocument) => void;
   onChangeCategory: (doc: DbDocument, category: string) => void;
+  onPreview: (doc: DbDocument) => void;
   onEdit: (doc: DbDocument) => void;
   onShare: (doc: DbDocument) => void;
   onVersions: (doc: DbDocument) => void;
   onActivity: (doc: DbDocument) => void;
+  onSign: (doc: DbDocument) => void;
   onDownload: (doc: DbDocument) => void;
   onRemove: (doc: DbDocument) => void;
 }
@@ -40,10 +42,12 @@ export default function DocumentRow({
   onToggleSelect,
   onToggleFavorite,
   onChangeCategory,
+  onPreview,
   onEdit,
   onShare,
   onVersions,
   onActivity,
+  onSign,
   onDownload,
   onRemove,
 }: Props) {
@@ -159,10 +163,12 @@ export default function DocumentRow({
         doc={doc}
         busy={busy}
         size="md"
+        onPreview={onPreview}
         onEdit={onEdit}
         onShare={onShare}
         onVersions={onVersions}
         onActivity={onActivity}
+        onSign={onSign}
         onRemove={onRemove}
       />
     </li>

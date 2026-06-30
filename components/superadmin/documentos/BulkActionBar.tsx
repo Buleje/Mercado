@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Trash2, X, CheckSquare, FolderOpen } from "@buleje/design-system/icons";
+import { Download, Trash2, X, CheckSquare, FolderOpen, Tag, Star } from "@buleje/design-system/icons";
 import type { DbDocumentFolder } from "@/lib/types/documents";
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
   onSelectAll: () => void;
   onDownload: () => void;
   onMove: (folderId: string | null) => void;
+  onTag: () => void;
+  onFavorite: () => void;
   onDelete: () => void;
   onClear: () => void;
 }
@@ -22,6 +24,8 @@ export default function BulkActionBar({
   onSelectAll,
   onDownload,
   onMove,
+  onTag,
+  onFavorite,
   onDelete,
   onClear,
 }: Props) {
@@ -65,6 +69,20 @@ export default function BulkActionBar({
           </select>
         </div>
 
+        <button
+          type="button"
+          onClick={onFavorite}
+          className="flex items-center gap-2 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-[var(--data-warning-500)] hover:border-[var(--data-warning-500)] transition-colors"
+        >
+          <Star className="h-4 w-4" /> Favorito
+        </button>
+        <button
+          type="button"
+          onClick={onTag}
+          className="flex items-center gap-2 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors"
+        >
+          <Tag className="h-4 w-4" /> Etiquetar
+        </button>
         <button
           type="button"
           onClick={onDownload}
