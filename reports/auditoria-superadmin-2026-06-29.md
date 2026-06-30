@@ -14,9 +14,11 @@
 | `00a7f399` | #5 cache executive (getOrSet, key por rango) |
 | (verif.) | #6 "lint no cubre superadmin" → REFUTADO (ya lo cubre; los 50 colores existen porque es warn-only) |
 | `d4f31aff` (storefront) | 3 XSS: storeTheme colors, customFontUrl, navLinks javascript: |
+| `16f97edd` (storefront) | doble-gasto de puntos de fidelidad (TOCTOU) — guard atómico + test de la race |
+| `6ccaaa46` (marketplace) | orden mayorista + comisión a S/0 con precio base ≤ 0 → 422 |
 
 **Pendiente (priorizado):**
-1. #1 churn N+1 + #2 growth `date_trunc` + #12 analytics — rewrites de query (necesitan before/after de datos).
+1. ~~#2 growth `date_trunc`~~ → **cacheado** (`acb73b36`). ⚠️ El rewrite a `date_trunc('month')` se VERIFICÓ con datos reales y **corrompe** (shift de 1 mes por timezone, 17/17 celdas) — NO re-intentar sin alinear el TZ del bucketing. #1 churn N+1 → diferido (cache rompería los `Decimal/BigInt` del health-score bajo Redis; necesita map a JSON-plano). #12 analytics → cacheable, pendiente.
 2. #6 ~1369 colores hardcodeados + #17 `text-[10px]`×83 — migración DS multi-archivo (typography-enforcer / dark-mode-auditor).
 3. #7 CSRF en mutaciones superadmin · #18 paginar tenants · #20 executive omite suspendidos · #22 broadcast cap 500 silencioso.
 
