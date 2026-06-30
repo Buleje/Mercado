@@ -15,6 +15,7 @@ const PatchBody = z.object({
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   favorite: z.boolean().optional(),
   expiresAt: z.string().nullable().optional(),
+  restore: z.boolean().optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -31,13 +32,23 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const doc = await DocumentsDB.getById(SUPERADMIN_DOCS_TENANT, id);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-    const signedUrl = await getSignedUrl(doc.storagePath);
+    // preview=1 → thumbnail inline en la vista grid (NO cuenta como "view" en el audit).
+    // download=1 → fuerza Content-Disposition: attachment con el nombre del documento.
+    const preview = req.nextUrl.searchParams.get("preview") === "1";
+    const forceDownload = req.nextUrl.searchParams.get("download") === "1";
+    const signedUrl = await getSignedUrl(
+      doc.storagePath,
+      undefined,
+      forceDownload ? { download: doc.name } : undefined,
+    );
 
-    DocumentsDB.log(SUPERADMIN_DOCS_TENANT, {
-      documentId: id,
-      actorId: auth.username,
-      action: "view",
-    }).catch((err) => logger.warn("sa-documents.audit.view_fail", { err: String(err) }));
+    if (!preview) {
+      DocumentsDB.log(SUPERADMIN_DOCS_TENANT, {
+        documentId: id,
+        actorId: auth.username,
+        action: forceDownload ? "download" : "view",
+      }).catch((err) => logger.warn("sa-documents.audit.view_fail", { err: String(err) }));
+    }
 
     return NextResponse.json({ document: doc, signedUrl });
   } catch (e) {
@@ -63,6 +74,20 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         { error: "invalid_body", issues: parsed.error.issues },
         { status: 400 },
       );
+    }
+
+    // Restaurar desde la papelera (deletedAt → null). Va antes del getById,
+    // que excluye soft-deleted.
+    if (parsed.data.restore) {
+      const ok = await DocumentsDB.restore(SUPERADMIN_DOCS_TENANT, id);
+      if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      DocumentsDB.log(SUPERADMIN_DOCS_TENANT, {
+        documentId: id,
+        actorId: auth.username,
+        action: "restore",
+      }).catch((err) => logger.warn("sa-documents.audit.restore_fail", { err: String(err) }));
+      const restored = await DocumentsDB.getById(SUPERADMIN_DOCS_TENANT, id);
+      return NextResponse.json({ document: restored });
     }
 
     const before = await DocumentsDB.getById(SUPERADMIN_DOCS_TENANT, id);

@@ -26,6 +26,7 @@ const ListQuery = z.object({
   q: z.string().optional(),
   favorite: z.enum(["1", "0", "true", "false"]).optional(),
   expiring: z.coerce.number().int().min(1).max(365).optional(),
+  deleted: z.enum(["1", "0"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -43,6 +44,12 @@ export async function GET(req: NextRequest) {
     );
   }
   const f = parsed.data;
+
+  // Papelera: solo documentos soft-deleted (deletedAt != null).
+  if (f.deleted === "1") {
+    const all = await DocumentsDB.list(SUPERADMIN_DOCS_TENANT, { includeDeleted: true });
+    return NextResponse.json({ documents: all.filter((d) => d.deletedAt) });
+  }
 
   if (f.expiring) {
     const expiring = await DocumentsDB.listExpiring(SUPERADMIN_DOCS_TENANT, f.expiring);

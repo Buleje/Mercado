@@ -56,10 +56,11 @@ export async function deleteFromStorage(paths: string[]): Promise<void> {
 
 export async function getSignedUrl(
   path: string,
-  ttlSeconds = SIGNED_URL_TTL_SECONDS
+  ttlSeconds = SIGNED_URL_TTL_SECONDS,
+  opts?: { download?: boolean | string }
 ): Promise<string | null> {
   const sb = getSupabaseAdmin();
-  const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(path, ttlSeconds);
+  const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(path, ttlSeconds, opts);
   if (error || !data?.signedUrl) {
     logger.warn("documents.storage.signed_url_fail", { path, error: error?.message });
     return null;
