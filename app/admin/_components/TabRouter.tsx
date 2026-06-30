@@ -36,6 +36,7 @@ const CRMClientesModule       = dynamic(() => import("@/components/admin/unified
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
 // Crecimiento (Marketing & Fidelización) — Ola 1: Campañas + Puntos consolidados
 const CrecimientoHubModule    = dynamic(() => import("@/components/admin/unified/CrecimientoHubModule"),    { loading: TabSpinner });
+const SalesChannelsTab        = dynamic(() => import("@/components/admin/tabs/SalesChannelsTab"),           { loading: TabSpinner });
 // Equipo (tareas + notas) — huérfanos montados
 const EquipoHubModule         = dynamic(() => import("@/components/admin/unified/EquipoHubModule"),         { loading: TabSpinner });
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
@@ -294,6 +295,7 @@ export function TabRouter({
   // suscripciones, lives) que antes vivían enterrados como sub-tabs del Marketplace.
   if (tab === "campanas") return <CrecimientoHubModule key="campanas" initialTab="campanas" />;
   if (tab === "puntos")   return <CrecimientoHubModule key="puntos" initialTab="puntos" />;
+  if (tab === "canales")  return <SalesChannelsTab key="canales" />;
 
   // ── Equipo (tareas + notas) ──
   if (tab === "tareas") return <EquipoHubModule key="tareas" initialTab="tareas" />;

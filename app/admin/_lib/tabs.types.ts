@@ -41,6 +41,7 @@ export type Tab =
   // Crecimiento (Marketing & Fidelización) — Ola 1
   | "campanas"
   | "puntos"
+  | "canales"               // Canales de venta social (TikTok Shop + Meta)
   // Equipo (tareas + notas) — huérfanos montados
   | "tareas"
   | "notas"
@@ -113,6 +114,7 @@ export const VALID_TABS: readonly Tab[] = [
   "metas-logros",
   "campanas",
   "puntos",
+  "canales",
   "tareas",
   "notas",
   "dropship",

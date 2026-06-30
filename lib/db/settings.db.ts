@@ -11,6 +11,7 @@ import {
   type StoreMode,
   type NavLinkItem,
 } from "./misc.db";
+import { parseSalesChannels, type SalesChannelsConfig } from "@/lib/types/sales-channels";
 
 // ── JSON parse helper ─────────────────────────────────────────────────────────
 function safeJson<T>(raw: string | null | undefined, fallback?: T): T | undefined {
@@ -484,5 +485,15 @@ export const SettingsDB = {
       data: { storeThemeJson: JSON.stringify(merged) },
     });
     invalidateByPrefix(`settings:${tenantId}`);
+  },
+
+  /** Config de canales de venta social (TikTok + Meta), guardada en storeTheme.salesChannels. */
+  async getSalesChannels(tenantId: string): Promise<SalesChannelsConfig> {
+    const theme = await this.getStoreThemeJson(tenantId);
+    return parseSalesChannels(theme?.salesChannels);
+  },
+
+  async setSalesChannels(tenantId: string, config: SalesChannelsConfig): Promise<void> {
+    await this.patchStoreThemeJson(tenantId, { salesChannels: config });
   },
 };

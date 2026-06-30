@@ -277,6 +277,13 @@ export const MODULE_INFO: Partial<
     desc: "Programa de puntos y fidelización: acumulación, canje y reglas.",
     tip: "Premia a tus clientes frecuentes para que compren más seguido.",
   },
+  canales: {
+    icon: Radio,
+    iconColor: "text-[var(--accent)]",
+    priority: "medium",
+    desc: "Canales de venta social: conectá TikTok Shop y Meta (Facebook + Instagram).",
+    tip: "Pegá tus Pixel IDs y los eventos se activan en tu tienda para optimizar anuncios.",
+  },
   // ── Equipo ──
   tareas: {
     icon: ClipboardList,
@@ -436,6 +443,7 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "campanas",
       "puntos",
+      "canales",
       "gift-cards-admin",
       "socio-members",
       "subscriptions",

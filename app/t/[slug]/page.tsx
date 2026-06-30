@@ -253,8 +253,10 @@ async function loadPageData(slug: string) {
     chatBubbleText: pickStr("chatBubbleText"),
     footerText: pickStr("footerText"),
     // Analytics por tenant (Brandon 2026-06-26): GA4 + Meta Pixel del comerciante.
+    // tiktokPixelId: Canales de venta (Brandon 2026-06-30).
     analyticsId: pickStr("analyticsId"),
     pixelId: pickStr("pixelId"),
+    tiktokPixelId: pickStr("tiktokPixelId"),
     // Variantes + controles del hero (Brandon 2026-06-26, page builder Fase 4).
     heroVariant: pickStr("heroVariant"),
     heroOverlay: typeof st?.["heroOverlay"] === "number" ? (st["heroOverlay"] as number) : undefined,
@@ -708,7 +710,11 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       {/* GA4 + Meta Pixel del comerciante (Brandon 2026-06-26) — solo en la tienda
           pública, NUNCA en preview (no contaminar las métricas con el dueño editando). */}
       {!isPreview && (
-        <TenantAnalytics gaId={editorTheme.analyticsId} pixelId={editorTheme.pixelId} />
+        <TenantAnalytics
+          gaId={editorTheme.analyticsId}
+          pixelId={editorTheme.pixelId}
+          tiktokPixelId={editorTheme.tiktokPixelId}
+        />
       )}
 
       {/* Preview EN VIVO: escucha al editor y aplica tokens sin recargar. */}

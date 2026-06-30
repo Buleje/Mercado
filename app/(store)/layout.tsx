@@ -56,7 +56,9 @@ import {
   GTMNoScript,
   MicrosoftClarity,
   MetaPixel,
+  TikTokPixel,
 } from "@/components/Analytics";
+import { parseSalesChannels } from "@/lib/types/sales-channels";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 
 // ── Metadata dinámica desde la DB ─────────────────────────────────────────────
@@ -167,8 +169,21 @@ async function StoreLayoutContent({
     typeof storeTheme?.freeShippingThreshold === "number" ? storeTheme.freeShippingThreshold : 99;
   const showFreeShipBar = isTenant && tenantFeatures.includes("shipping");
 
+  // Canales de venta social (Pixel IDs del tenant). En la tienda individual se
+  // usa el pixel del comercio; en el marketplace MetaPixel cae al pixel global (env).
+  const salesChannels = parseSalesChannels(
+    (storeTheme as Record<string, unknown> | undefined)?.salesChannels,
+  );
+  const metaPixelId =
+    isTenant && salesChannels.meta.pixelId ? salesChannels.meta.pixelId : undefined;
+  const tiktokPixelId =
+    isTenant && salesChannels.tiktok.pixelId ? salesChannels.tiktok.pixelId : undefined;
+
   return (
-    <StoreProviders tenantSlug={tenantId}>
+    <>
+      <MetaPixel pixelId={metaPixelId} />
+      <TikTokPixel pixelId={tiktokPixelId} />
+      <StoreProviders tenantSlug={tenantId}>
       <MotionProvider>
         {/* QuickAddProvider envuelve toda la tienda — al click en producto
             se abre el drawer en lugar de navegar a una PDP.
@@ -254,6 +269,7 @@ async function StoreLayoutContent({
         </QuickAddProvider>
       </MotionProvider>
     </StoreProviders>
+    </>
   );
 }
 
@@ -268,7 +284,8 @@ export default function StoreLayout({
       <GoogleAnalytics />
       <GoogleTagManager />
       <MicrosoftClarity />
-      <MetaPixel />
+      {/* MetaPixel/TikTokPixel se montan dentro de StoreLayoutContent con el
+          Pixel ID del tenant (Canales de venta) — el global cae al env. */}
       {/* Skip-link WCAG 2.4.1 — ADR-075 tokens DS, sin colores hardcodeados. */}
       <SkipLink />
       <Suspense fallback={null}>
