@@ -78,10 +78,13 @@ export async function PATCH(
       data: {
         action: body.active !== undefined ? (body.active ? "tenant_reactivated" : "tenant_suspended") : "plan_changed",
         entity: "tenant",
-        entityId: slug,
+        // [AUDIT FIX] usar el CUID canónico, no el slug. Antes guardaba el slug
+        // → el audit trail quedaba desfasado del resto de rutas superadmin (que
+        // usan tenant.id) y no joineaba contra Tenant.id.
+        entityId: tenant.id,
         detail: details.join(", "),
         user: `superadmin:${session.username}`,
-        tenantId: slug,
+        tenantId: tenant.id,
       },
     }).catch((err) => logger.error("[superadmin/tenants/[slug]] operation failed", { error: String(err) }));
 

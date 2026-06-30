@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 import { logger } from "@/lib/logger";
 
 /**
@@ -42,6 +43,12 @@ export interface FeatureAdoptionResult {
 }
 
 export async function getFeatureAdoption(): Promise<FeatureAdoptionResult> {
+  "use cache";
+  // [PERF] Cache server-side: escaneaba TODO ActivityLog (distinct tenantId,entity)
+  // en CADA carga del dashboard (route no-store). Cacheamos 10min (stale 30min) —
+  // la adopción de funciones no cambia minuto a minuto. Invalidable vía cacheTag.
+  cacheLife({ revalidate: 600, stale: 1800 });
+  cacheTag("superadmin:feature-adoption");
   try {
     const [tenants, pairs] = await Promise.all([
       prisma.tenant.findMany({ where: { active: true }, select: { id: true, name: true, slug: true } }),

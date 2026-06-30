@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 import { logger } from "@/lib/logger";
 
 /**
@@ -21,6 +22,13 @@ export interface CohortResult {
 }
 
 export async function getCohortRetention(): Promise<CohortResult> {
+  "use cache";
+  // [PERF] Cache server-side: este endpoint superadmin escaneaba TODO ActivityLog
+  // (DISTINCT tenantId,mes) en CADA carga del dashboard (route no-store). El
+  // resultado no cambia minuto a minuto → cacheamos 10min (stale 30min). Mismo
+  // cómputo, sin re-scan por request. Invalidable vía cacheTag "superadmin:cohorts".
+  cacheLife({ revalidate: 600, stale: 1800 });
+  cacheTag("superadmin:cohorts");
   try {
     const [tenants, activity] = await Promise.all([
       prisma.tenant.findMany({ select: { id: true, createdAt: true } }),
