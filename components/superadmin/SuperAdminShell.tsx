@@ -1908,46 +1908,6 @@ function NavGroupsAccordion({
 
   return (
     <div className="space-y-1.5">
-      {/* Accesos directos (Brandon): ver tiendas + buscador de módulos (CommandPalette). */}
-      <p
-        className={[
-          "px-2.5 pt-1 pb-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
-          labelClass,
-        ].join(" ")}
-      >
-        Accesos directos
-      </p>
-      <Link
-        href="/superadmin/stores"
-        onClick={onItemClick}
-        className={[
-          "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
-          itemIdle,
-        ].join(" ")}
-      >
-        <span className="shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px] text-[#60a5fa]">
-          <Store className="w-5 h-5 shrink-0" />
-        </span>
-        <span className="flex-1 truncate">Ver tiendas</span>
-      </Link>
-      <button
-        type="button"
-        onClick={() => {
-          onItemClick?.();
-          window.dispatchEvent(new Event("superadmin:open-command-palette"));
-        }}
-        className={[
-          "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
-          itemIdle,
-        ].join(" ")}
-      >
-        <span className="shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px] text-[#22d3ee]">
-          <Search className="w-5 h-5 shrink-0" />
-        </span>
-        <span className="flex-1 text-left truncate">Buscar módulos</span>
-        <kbd className="shrink-0 text-[length:var(--ts-2xs)] font-mono opacity-60">⌘K</kbd>
-      </button>
-      <div className="h-2" aria-hidden />
       {groups.map((group) => {
         const items = group.items.filter((it) => visibleHrefs.has(it.href));
         if (items.length === 0) return null;
