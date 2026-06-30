@@ -42,7 +42,6 @@ import {
   Truck,
   TrendingUp,
   ChefHat,
-  ClipboardCheck,
   Boxes,
   AlertOctagon,
   FileText,
@@ -67,7 +66,14 @@ interface NavItem {
   href: string;
 }
 
-type NavGroupId = "inicio" | "tiendas" | "marketplace" | "finanzas" | "diseno" | "operaciones" | "sistema";
+type NavGroupId =
+  | "inicio"
+  | "tiendas"
+  | "marketplace"
+  | "finanzas"
+  | "diseno"
+  | "operaciones"
+  | "sistema";
 
 interface NavGroupDef {
   id: NavGroupId;
@@ -115,14 +121,47 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Inicio",
     icon: <Home className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Dashboard",          icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"      },
-      { label: "Chat",               icon: <MessageSquare   className="w-5 h-5 shrink-0" />, href: "/superadmin/chat"           },
-      { label: "Comunicados",        icon: <Megaphone       className="w-5 h-5 shrink-0" />, href: "/superadmin/comunicados"    },
-      { label: "Soporte",            icon: <Inbox           className="w-5 h-5 shrink-0" />, href: "/superadmin/support"        },
-      { label: "Alertas",            icon: <Bell            className="w-5 h-5 shrink-0" />, href: "/superadmin/alerts"         },
-      { label: "Rescate",            icon: <HeartHandshake  className="w-5 h-5 shrink-0" />, href: "/superadmin/rescue"         },
-      { label: "Centro de control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
-      { label: "Actividad",          icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"       },
+      {
+        label: "Dashboard",
+        icon: <LayoutDashboard className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/dashboard",
+      },
+      {
+        label: "Chat",
+        icon: <MessageSquare className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/chat",
+      },
+      {
+        label: "Comunicados",
+        icon: <Megaphone className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/comunicados",
+      },
+      {
+        label: "Soporte",
+        icon: <Inbox className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/support",
+      },
+      { label: "Alertas", icon: <Bell className="w-5 h-5 shrink-0" />, href: "/superadmin/alerts" },
+      {
+        label: "Rescate",
+        icon: <HeartHandshake className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/rescue",
+      },
+      {
+        label: "Centro de control",
+        icon: <Gauge className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/control-center",
+      },
+      {
+        label: "Actividad",
+        icon: <Activity className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/activity",
+      },
+      {
+        label: "Mis documentos",
+        icon: <FileText className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/documentos",
+      },
     ],
   },
   {
@@ -133,9 +172,21 @@ const NAV_GROUPS: NavGroupDef[] = [
     // Activación + Integraciones + Mapa + Especializaciones = 1 módulo con
     // tabs (SuperAdminModuleTabs). Pedidos y Repartidores quedan separados.
     items: [
-      { label: "Tenants",      icon: <Building2   className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"      },
-      { label: "Pedidos",      icon: <ShoppingBag className="w-5 h-5 shrink-0" />, href: "/superadmin/orders"       },
-      { label: "Repartidores", icon: <Truck       className="w-5 h-5 shrink-0" />, href: "/superadmin/repartidores" },
+      {
+        label: "Tenants",
+        icon: <Building2 className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/tenants",
+      },
+      {
+        label: "Pedidos",
+        icon: <ShoppingBag className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/orders",
+      },
+      {
+        label: "Repartidores",
+        icon: <Truck className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/repartidores",
+      },
     ],
   },
   {
@@ -143,10 +194,26 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Marketplace",
     icon: <Store className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Marketplace",            icon: <Store     className="w-5 h-5 shrink-0" />, href: "/superadmin/marketplace"         },
-      { label: "Solicitudes vendedores", icon: <FileCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-applications" },
-      { label: "Salud de vendors",       icon: <HeartPulse className="w-5 h-5 shrink-0" />, href: "/superadmin/vendor-health"      },
-      { label: "Tiendas publicadas",     icon: <Boxes     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"              },
+      {
+        label: "Marketplace",
+        icon: <Store className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/marketplace",
+      },
+      {
+        label: "Solicitudes vendedores",
+        icon: <FileCheck className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/vendor-applications",
+      },
+      {
+        label: "Salud de vendors",
+        icon: <HeartPulse className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/vendor-health",
+      },
+      {
+        label: "Tiendas publicadas",
+        icon: <Boxes className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/stores",
+      },
     ],
   },
   {
@@ -156,7 +223,11 @@ const NAV_GROUPS: NavGroupDef[] = [
     // Consolidado 2026-06-17: 1 módulo con tabs internos (Billing · Pagos
     // pendientes · Pagos Yape). La barra SuperAdminModuleTabs unifica las 3.
     items: [
-      { label: "Finanzas", icon: <Wallet className="w-5 h-5 shrink-0" />, href: "/superadmin/billing" },
+      {
+        label: "Finanzas",
+        icon: <Wallet className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/billing",
+      },
     ],
   },
   {
@@ -164,13 +235,41 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Diseño",
     icon: <Palette className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Centro de diseño",      icon: <Palette   className="w-5 h-5 shrink-0" />, href: "/superadmin/design-system"   },
-      { label: "Plantilla del admin",   icon: <Layers    className="w-5 h-5 shrink-0" />, href: "/superadmin/plantilla"       },
-      { label: "Marca",                 icon: <Sparkles  className="w-5 h-5 shrink-0" />, href: "/superadmin/marca"           },
-      { label: "Banners",               icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banners"         },
-      { label: "Banco de imágenes",     icon: <ImageIcon className="w-5 h-5 shrink-0" />, href: "/superadmin/banco-imagenes"  },
-      { label: "Catálogo de variantes", icon: <BookOpen  className="w-5 h-5 shrink-0" />, href: "/superadmin/variant-catalog" },
-      { label: "Recetario",             icon: <ChefHat   className="w-5 h-5 shrink-0" />, href: "/superadmin/recetario"       },
+      {
+        label: "Centro de diseño",
+        icon: <Palette className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/design-system",
+      },
+      {
+        label: "Plantilla del admin",
+        icon: <Layers className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/plantilla",
+      },
+      {
+        label: "Marca",
+        icon: <Sparkles className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/marca",
+      },
+      {
+        label: "Banners",
+        icon: <ImageIcon className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/banners",
+      },
+      {
+        label: "Banco de imágenes",
+        icon: <ImageIcon className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/banco-imagenes",
+      },
+      {
+        label: "Catálogo de variantes",
+        icon: <BookOpen className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/variant-catalog",
+      },
+      {
+        label: "Recetario",
+        icon: <ChefHat className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/recetario",
+      },
     ],
   },
   {
@@ -178,15 +277,51 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Operaciones",
     icon: <BarChart3 className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Automatizaciones", icon: <Webhook       className="w-5 h-5 shrink-0" />, href: "/superadmin/automations" },
-      { label: "Inteligencia de Barrio", icon: <Activity className="w-5 h-5 shrink-0" />, href: "/superadmin/intelligence" },
-      { label: "Analytics",     icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics" },
-      { label: "Adopción funciones", icon: <TrendingUp className="w-5 h-5 shrink-0" />, href: "/superadmin/feature-adoption" },
-      { label: "Cohortes & retención", icon: <Layers   className="w-5 h-5 shrink-0" />, href: "/superadmin/cohorts" },
-      { label: "Salud sistema", icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"    },
-      { label: "SLO & budgets", icon: <TrendingUp      className="w-5 h-5 shrink-0" />, href: "/superadmin/slo"       },
-      { label: "Dead-letter",   icon: <AlertOctagon    className="w-5 h-5 shrink-0" />, href: "/superadmin/dlq"       },
-      { label: "Errores negocios", icon: <ShieldAlert          className="w-5 h-5 shrink-0" />, href: "/superadmin/tenant-errors" },
+      {
+        label: "Automatizaciones",
+        icon: <Webhook className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/automations",
+      },
+      {
+        label: "Inteligencia de Barrio",
+        icon: <Activity className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/intelligence",
+      },
+      {
+        label: "Analytics",
+        icon: <BarChart3 className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/analytics",
+      },
+      {
+        label: "Adopción funciones",
+        icon: <TrendingUp className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/feature-adoption",
+      },
+      {
+        label: "Cohortes & retención",
+        icon: <Layers className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/cohorts",
+      },
+      {
+        label: "Salud sistema",
+        icon: <HeartPulse className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/health",
+      },
+      {
+        label: "SLO & budgets",
+        icon: <TrendingUp className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/slo",
+      },
+      {
+        label: "Dead-letter",
+        icon: <AlertOctagon className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/dlq",
+      },
+      {
+        label: "Errores negocios",
+        icon: <ShieldAlert className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/tenant-errors",
+      },
       // Brandon 2026-05-21 audit fix #4: "Setup score" eliminado del nav.
       // El page hace redirect("/superadmin/dashboard") (módulo eliminado por
       // decisión de producto), así que enlazarlo confunde al user.
@@ -197,12 +332,28 @@ const NAV_GROUPS: NavGroupDef[] = [
     label: "Sistema",
     icon: <Server className="w-4 h-4 shrink-0" />,
     items: [
-      { label: "Seguridad", icon: <ShieldCheck className="w-5 h-5 shrink-0" />, href: "/superadmin/security" },
-      { label: "Ley 29733", icon: <Scale      className="w-5 h-5 shrink-0" />, href: "/superadmin/compliance" },
-      { label: "Auditoría",  icon: <History    className="w-5 h-5 shrink-0" />, href: "/superadmin/audit-log" },
+      {
+        label: "Seguridad",
+        icon: <ShieldCheck className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/security",
+      },
+      {
+        label: "Ley 29733",
+        icon: <Scale className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/compliance",
+      },
+      {
+        label: "Auditoría",
+        icon: <History className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/audit-log",
+      },
       // Consolidado 2026-06-17: Settings + Configuración = 1 módulo con tabs
       // (Plataforma · Integraciones & Flags) vía SuperAdminModuleTabs.
-      { label: "Ajustes", icon: <Settings className="w-5 h-5 shrink-0" />, href: "/superadmin/settings" },
+      {
+        label: "Ajustes",
+        icon: <Settings className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/settings",
+      },
       // Brandon 2026-05-21 audit fix #4: "Sitemap" y "Roadmap" eliminados del nav.
       // Ambos hacen redirect("/superadmin/dashboard") (módulos eliminados).
     ],
@@ -217,60 +368,63 @@ const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 // admin de negocio). Paleta del proyecto: teal de marca + acentos legibles sobre
 // el slate near-black. Sin naranja/ámbar (constraint de marca).
 const GROUP_ICON_COLOR: Record<NavGroupId, string> = {
-  inicio:      "text-[#5eead4]", // teal de marca
-  tiendas:     "text-[#60a5fa]", // azul
+  inicio: "text-[#5eead4]", // teal de marca
+  tiendas: "text-[#60a5fa]", // azul
   marketplace: "text-[#a78bfa]", // violeta
-  finanzas:    "text-[#34d399]", // verde (dinero)
-  diseno:      "text-[#fb7185]", // coral/rosa (creatividad)
+  finanzas: "text-[#34d399]", // verde (dinero)
+  diseno: "text-[#fb7185]", // coral/rosa (creatividad)
   operaciones: "text-[#22d3ee]", // cian
-  sistema:     "text-[#94a3b8]", // slate neutro
+  sistema: "text-[#94a3b8]", // slate neutro
 };
 
 // Title + section (breadcrumb sutil del topbar ejecutivo). El section se
 // muestra como prefijo gris, el title como heading H1 del topbar.
 type PageMeta = { title: string; section: string };
 const PAGE_META: Record<string, PageMeta> = {
-  "/superadmin":                  { title: "Dashboard",          section: "Inicio" },
-  "/superadmin/dashboard":        { title: "Dashboard",          section: "Inicio" },
-  "/superadmin/chat":             { title: "Chat",               section: "Inicio" },
-  "/superadmin/control-center":   { title: "Centro de control",  section: "Inicio" },
-  "/superadmin/activity":         { title: "Actividad",          section: "Inicio" },
+  "/superadmin": { title: "Dashboard", section: "Inicio" },
+  "/superadmin/dashboard": { title: "Dashboard", section: "Inicio" },
+  "/superadmin/chat": { title: "Chat", section: "Inicio" },
+  "/superadmin/control-center": { title: "Centro de control", section: "Inicio" },
+  "/superadmin/activity": { title: "Actividad", section: "Inicio" },
 
-  "/superadmin/tenants":          { title: "Tenants",            section: "Tiendas" },
-  "/superadmin/orders":           { title: "Pedidos",            section: "Tiendas" },
-  "/superadmin/repartidores":     { title: "Repartidores",       section: "Tiendas" },
+  "/superadmin/tenants": { title: "Tenants", section: "Tiendas" },
+  "/superadmin/orders": { title: "Pedidos", section: "Tiendas" },
+  "/superadmin/repartidores": { title: "Repartidores", section: "Tiendas" },
 
-  "/superadmin/marketplace":              { title: "Marketplace",            section: "Marketplace" },
-  "/superadmin/marketplace/suppliers":    { title: "Proveedores",            section: "Marketplace" },
-  "/superadmin/marketplace/category-images": { title: "Imágenes de categorías", section: "Marketplace" },
-  "/superadmin/vendor-applications":       { title: "Solicitudes",            section: "Marketplace" },
-  "/superadmin/vendor-health":            { title: "Salud de vendors",       section: "Marketplace" },
-  "/superadmin/stores":                   { title: "Tiendas publicadas",     section: "Marketplace" },
+  "/superadmin/marketplace": { title: "Marketplace", section: "Marketplace" },
+  "/superadmin/marketplace/suppliers": { title: "Proveedores", section: "Marketplace" },
+  "/superadmin/marketplace/category-images": {
+    title: "Imágenes de categorías",
+    section: "Marketplace",
+  },
+  "/superadmin/vendor-applications": { title: "Solicitudes", section: "Marketplace" },
+  "/superadmin/vendor-health": { title: "Salud de vendors", section: "Marketplace" },
+  "/superadmin/stores": { title: "Tiendas publicadas", section: "Marketplace" },
 
-  "/superadmin/pagos-pendientes": { title: "Pagos pendientes",   section: "Finanzas" },
-  "/superadmin/pagos-yape":       { title: "Pagos Yape (IA)",    section: "Finanzas" },
-  "/superadmin/billing":          { title: "Billing & Stripe",   section: "Finanzas" },
+  "/superadmin/pagos-pendientes": { title: "Pagos pendientes", section: "Finanzas" },
+  "/superadmin/pagos-yape": { title: "Pagos Yape (IA)", section: "Finanzas" },
+  "/superadmin/billing": { title: "Billing & Stripe", section: "Finanzas" },
 
-  "/superadmin/design-system":    { title: "Centro de diseño",       section: "Diseño" },
-  "/superadmin/plantilla":        { title: "Plantilla del admin",    section: "Diseño" },
-  "/superadmin/marca":            { title: "Marca de la plataforma", section: "Diseño" },
-  "/superadmin/banners":          { title: "Banners",                section: "Diseño" },
-  "/superadmin/banco-imagenes":   { title: "Banco de imágenes",      section: "Diseño" },
-  "/superadmin/variant-catalog":  { title: "Catálogo de variantes",  section: "Diseño" },
-  "/superadmin/recetario":        { title: "Recetario",              section: "Diseño" },
+  "/superadmin/design-system": { title: "Centro de diseño", section: "Diseño" },
+  "/superadmin/plantilla": { title: "Plantilla del admin", section: "Diseño" },
+  "/superadmin/marca": { title: "Marca de la plataforma", section: "Diseño" },
+  "/superadmin/banners": { title: "Banners", section: "Diseño" },
+  "/superadmin/banco-imagenes": { title: "Banco de imágenes", section: "Diseño" },
+  "/superadmin/variant-catalog": { title: "Catálogo de variantes", section: "Diseño" },
+  "/superadmin/recetario": { title: "Recetario", section: "Diseño" },
 
   "/superadmin/intelligence": { title: "Inteligencia de Barrio", section: "Operaciones" },
-  "/superadmin/analytics":  { title: "Analytics",     section: "Operaciones" },
-  "/superadmin/health":     { title: "Salud sistema", section: "Operaciones" },
-  "/superadmin/slo":        { title: "SLO & budgets", section: "Operaciones" },
-  "/superadmin/dlq":        { title: "Dead-letter queue", section: "Operaciones" },
-  "/superadmin/setup":      { title: "Setup score",   section: "Operaciones" },
+  "/superadmin/analytics": { title: "Analytics", section: "Operaciones" },
+  "/superadmin/health": { title: "Salud sistema", section: "Operaciones" },
+  "/superadmin/slo": { title: "SLO & budgets", section: "Operaciones" },
+  "/superadmin/dlq": { title: "Dead-letter queue", section: "Operaciones" },
+  "/superadmin/setup": { title: "Setup score", section: "Operaciones" },
 
-  "/superadmin/security":      { title: "Seguridad",     section: "Sistema" },
+  "/superadmin/security": { title: "Seguridad", section: "Sistema" },
   "/superadmin/configuracion": { title: "Configuración", section: "Sistema" },
-  "/superadmin/settings":      { title: "Settings",      section: "Sistema" },
-  "/superadmin/sitemap":       { title: "Sitemap",       section: "Sistema" },
-  "/superadmin/roadmap":       { title: "Roadmap",       section: "Sistema" },
+  "/superadmin/settings": { title: "Settings", section: "Sistema" },
+  "/superadmin/sitemap": { title: "Sitemap", section: "Sistema" },
+  "/superadmin/roadmap": { title: "Roadmap", section: "Sistema" },
 };
 
 const STORAGE_KEY_HIDDEN = "superadmin-nav-hidden";
@@ -315,10 +469,18 @@ function loadNavConfig(): { hidden: Set<string>; order: string[]; visual: Sideba
     const hidden = new Set<string>(hiddenRaw ? JSON.parse(hiddenRaw) : []);
     const order: string[] = orderRaw ? JSON.parse(orderRaw) : [];
     const visual: SidebarVisualPrefs = {
-      theme: (localStorage.getItem(STORAGE_KEY_THEME) as SidebarVisualPrefs["theme"]) ?? DEFAULT_VISUAL.theme,
-      accent: (localStorage.getItem(STORAGE_KEY_ACCENT) as SidebarVisualPrefs["accent"]) ?? DEFAULT_VISUAL.accent,
-      density: (localStorage.getItem(STORAGE_KEY_DENSITY) as SidebarVisualPrefs["density"]) ?? DEFAULT_VISUAL.density,
-      iconStyle: (localStorage.getItem(STORAGE_KEY_ICON_STYLE) as SidebarVisualPrefs["iconStyle"]) ?? DEFAULT_VISUAL.iconStyle,
+      theme:
+        (localStorage.getItem(STORAGE_KEY_THEME) as SidebarVisualPrefs["theme"]) ??
+        DEFAULT_VISUAL.theme,
+      accent:
+        (localStorage.getItem(STORAGE_KEY_ACCENT) as SidebarVisualPrefs["accent"]) ??
+        DEFAULT_VISUAL.accent,
+      density:
+        (localStorage.getItem(STORAGE_KEY_DENSITY) as SidebarVisualPrefs["density"]) ??
+        DEFAULT_VISUAL.density,
+      iconStyle:
+        (localStorage.getItem(STORAGE_KEY_ICON_STYLE) as SidebarVisualPrefs["iconStyle"]) ??
+        DEFAULT_VISUAL.iconStyle,
     };
     return { hidden, order, visual };
   } catch {
@@ -360,7 +522,7 @@ function useTheme() {
       setDark(isDark);
       document.documentElement.classList.toggle("dark", isDark);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggle = () => {
@@ -384,8 +546,7 @@ function ImpersonationBanner({ slug, onClear }: { slug: string; onClear: () => v
       className="fixed top-0 inset-x-0 z-50 bg-[var(--data-warning-500)] text-[var(--text-inverse)] text-xs font-semibold flex items-center justify-center gap-3 py-2 px-4"
     >
       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-      Estás viendo como:{" "}
-      <span className="font-mono bg-black/20 px-1.5 py-0.5 rounded">{slug}</span>
+      Estás viendo como: <span className="font-mono bg-black/20 px-1.5 py-0.5 rounded">{slug}</span>
       <button type="button" onClick={onClear} className="ml-2 underline hover:no-underline">
         Salir
       </button>
@@ -464,10 +625,6 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     root.style.setProperty("--accent-600", hex);
   }, [visual.accent]);
 
-  // Densidad: padding/altura de los items del sidebar.
-  const navItemPadding =
-    visual.density === "compact" ? "px-2.5 py-1.5" : visual.density === "spacious" ? "px-3 py-3" : "px-3 py-2";
-
   // Theme "buleje" — identidad de marca real, sidebar branded slate-deep + teal vibrante.
   // IMPORTANTE: cristal/shaded ahora COMPARTEN el render con buleje — los users que
   // tenían cristal o shaded guardado en localStorage ven el nuevo look automáticamente,
@@ -478,18 +635,16 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // texto gris (--text-secondary) → era lo que dejaba el sidebar gris pese a
   // los cambios de blanco. Solo el tema claro queda con la rama no-oscura.
   const isBuleje =
-    visual.theme === "buleje" || visual.theme === "cristal" ||
-    visual.theme === "shaded" || visual.theme === "dark";
+    visual.theme === "buleje" ||
+    visual.theme === "cristal" ||
+    visual.theme === "shaded" ||
+    visual.theme === "dark";
 
   const sidebarBgClass = isBuleje
     ? // Slate near-black + border teal hairline + text-white.
       "bg-[linear-gradient(180deg,#060d13_0%,#030a0f_50%,#02080c_100%)] border-r border-[rgba(0,160,160,0.18)] text-white shadow-[inset_-1px_0_0_rgba(0,160,160,0.06)]"
     : "bg-[var(--surface-canvas)] border-r border-[var(--rule-base)]";
 
-  // Override de clases para items cuando es theme buleje — paleta cohesiva, contraste AAA.
-  const navItemActiveClass = isBuleje
-    ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
-    : "bg-[var(--accent-soft)] text-[var(--accent)]";
   const navItemIdleClass = isBuleje
     ? "text-white/75 hover:bg-white/[0.06] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
@@ -499,19 +654,14 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // Logo = círculo BLANCO con la marca Buleje en teal (referencia Brandon
   // 2026-06-16: "redondo con fondo blanco", igual que el admin). Sin ámbar.
   const logoBoxClass = "bg-white text-[#00A0A0] shadow-md ring-1 ring-black/[0.06]";
-  const logoLabelClass = isBuleje
-    ? "text-white"
-    : "text-white dark:text-white drop-shadow-sm";
-  const logoSubLabelClass = isBuleje
-    ? "text-[#5eead4]"
-    : "text-teal-300 dark:text-teal-300";
+  const logoLabelClass = isBuleje ? "text-white" : "text-white dark:text-white drop-shadow-sm";
+  const logoSubLabelClass = isBuleje ? "text-[#5eead4]" : "text-teal-300 dark:text-teal-300";
   const logoBorderClass = isBuleje ? "border-white/[0.08]" : "border-white/[0.10]";
   const collapseBtnClass = isBuleje
     ? "text-white/85 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]";
 
-  const iconClassName =
-    visual.iconStyle === "monochrome" ? "opacity-70 grayscale" : "";
+  const iconClassName = visual.iconStyle === "monochrome" ? "opacity-70 grayscale" : "";
 
   // ── Header ejecutivo ──────────────────────────────────────────────────────
   // El header oscurece junto con el sidebar cuando el tema es integral-oscuro
@@ -548,7 +698,8 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   useEffect(() => {
     if (freshToken) {
       import("@/app/superadmin/actions").then(({ rotatePlatformCookie }) =>
-        rotatePlatformCookie(freshToken).catch(() => {})
+        // best-effort: si la rotación falla, el token actual sigue siendo válido.
+        rotatePlatformCookie(freshToken).catch((err) => void err),
       );
     }
   }, [freshToken]);
@@ -607,7 +758,10 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       }
     };
     const timer = setInterval(check, 2 * 60 * 1000); // cada 2 min
-    return () => { active = false; clearInterval(timer); };
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
   }, []);
 
   // Inactivity timeout — auto-logout after 30 min without interaction
@@ -632,7 +786,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // Escape cierra el slide-over de configuración (click-fuera ya lo cierra).
   useEffect(() => {
     if (!configOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setConfigOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfigOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [configOpen]);
@@ -662,7 +818,10 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       : { title: "Superadmin", section: "Plataforma" });
 
   return (
-    <div data-area="superadmin" className="superadmin-shell min-h-screen flex bg-[var(--surface-canvas)]">
+    <div
+      data-area="superadmin"
+      className="superadmin-shell min-h-screen flex bg-[var(--surface-canvas)]"
+    >
       {/* Global Command Palette (Ctrl+K / Cmd+K) */}
       <CommandPalette
         onToggleTheme={toggle}
@@ -671,15 +830,19 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       />
 
       {/* Impersonation Banner */}
-      {impersonating && (
-        <ImpersonationBanner slug={impersonating} onClear={clearImpersonation} />
-      )}
+      {impersonating && <ImpersonationBanner slug={impersonating} onClear={clearImpersonation} />}
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="Cerrar menú"
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
           onClick={() => setMobileOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" || e.key === "Enter") setMobileOpen(false);
+          }}
         />
       )}
 
@@ -705,7 +868,12 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             collapsed ? "justify-center" : "",
           ].join(" ")}
         >
-          <div className={["w-9 h-9 rounded-full flex items-center justify-center shrink-0", logoBoxClass].join(" ")}>
+          <div
+            className={[
+              "w-9 h-9 rounded-full flex items-center justify-center shrink-0",
+              logoBoxClass,
+            ].join(" ")}
+          >
             <BulejeMark size={20} strokeWidth={1.75} />
           </div>
           {!collapsed && (
@@ -713,7 +881,11 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               <div className={["text-base font-extrabold leading-none", logoLabelClass].join(" ")}>
                 Buleje
               </div>
-              <div className={["text-xs font-semibold leading-none mt-1.5", logoSubLabelClass].join(" ")}>
+              <div
+                className={["text-xs font-semibold leading-none mt-1.5", logoSubLabelClass].join(
+                  " ",
+                )}
+              >
                 Platform admin
               </div>
             </div>
@@ -837,7 +1009,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 <span
                   className={[
                     "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                    isBuleje ? "bg-[rgba(0,160,160,0.2)] text-[#5eead4]" : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                    isBuleje
+                      ? "bg-[rgba(0,160,160,0.2)] text-[#5eead4]"
+                      : "bg-[var(--accent-soft)] text-[var(--accent)]",
                   ].join(" ")}
                 >
                   <Sparkles className="h-4 w-4" strokeWidth={2.25} />
@@ -863,7 +1037,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 <kbd
                   className={[
                     "inline-flex shrink-0 items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold font-mono tabular-nums",
-                    isBuleje ? "border-white/15 bg-white/[0.06] text-white/55" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
+                    isBuleje
+                      ? "border-white/15 bg-white/[0.06] text-white/55"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
                   ].join(" ")}
                 >
                   <span className="text-sm leading-none">⌘</span>K
@@ -874,7 +1050,12 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         )}
 
         {/* ── Footer: links + configurar + compactar (1:1 con el admin de negocio) ── */}
-        <div className={["shrink-0 px-2 py-3 border-t space-y-0.5 hidden md:block", logoBorderClass].join(" ")}>
+        <div
+          className={[
+            "shrink-0 px-2 py-3 border-t space-y-0.5 hidden md:block",
+            logoBorderClass,
+          ].join(" ")}
+        >
           {/* Ver tiendas (lista pública, nueva pestaña) */}
           <Link
             href="/tiendas"
@@ -943,16 +1124,36 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           ].join(" ")}
         >
           {/* Logo */}
-          <div className={["flex items-center justify-between px-4 py-5 border-b shrink-0", logoBorderClass].join(" ")}>
+          <div
+            className={[
+              "flex items-center justify-between px-4 py-5 border-b shrink-0",
+              logoBorderClass,
+            ].join(" ")}
+          >
             <div className="flex items-center gap-3">
-              <div className={["w-9 h-9 rounded-full flex items-center justify-center shrink-0", logoBoxClass].join(" ")}>
+              <div
+                className={[
+                  "w-9 h-9 rounded-full flex items-center justify-center shrink-0",
+                  logoBoxClass,
+                ].join(" ")}
+              >
                 <BulejeMark size={20} strokeWidth={1.75} />
               </div>
               <div>
-                <div className={["text-sm font-black tracking-tight leading-none", logoLabelClass].join(" ")}>
+                <div
+                  className={[
+                    "text-sm font-black tracking-tight leading-none",
+                    logoLabelClass,
+                  ].join(" ")}
+                >
                   Buleje
                 </div>
-                <div className={["text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mt-1", logoSubLabelClass].join(" ")}>
+                <div
+                  className={[
+                    "text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] mt-1",
+                    logoSubLabelClass,
+                  ].join(" ")}
+                >
                   Platform
                 </div>
               </div>
@@ -960,7 +1161,12 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className={["p-1 rounded transition-colors", isBuleje ? "text-white/55 hover:text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"].join(" ")}
+              className={[
+                "p-1 rounded transition-colors",
+                isBuleje
+                  ? "text-white/55 hover:text-white"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+              ].join(" ")}
             >
               <X className="w-4 h-4" />
             </button>
@@ -976,7 +1182,12 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus-within:border-[var(--brand-ink)]",
               ].join(" ")}
             >
-              <Search className={["h-4 w-4 shrink-0", isBuleje ? "text-white/60" : "text-[var(--text-tertiary)]"].join(" ")} />
+              <Search
+                className={[
+                  "h-4 w-4 shrink-0",
+                  isBuleje ? "text-white/60" : "text-[var(--text-tertiary)]",
+                ].join(" ")}
+              />
               <input
                 type="text"
                 value={navSearch}
@@ -985,7 +1196,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 aria-label="Buscar módulos"
                 className={[
                   "w-full bg-transparent text-sm font-medium outline-none",
-                  isBuleje ? "text-white placeholder:text-white/40" : "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+                  isBuleje
+                    ? "text-white placeholder:text-white/40"
+                    : "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
                 ].join(" ")}
               />
               {navSearch && (
@@ -993,7 +1206,12 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   type="button"
                   onClick={() => setNavSearch("")}
                   aria-label="Limpiar"
-                  className={["rounded-full p-0.5 transition-colors", isBuleje ? "text-white/50 hover:text-white" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"].join(" ")}
+                  className={[
+                    "rounded-full p-0.5 transition-colors",
+                    isBuleje
+                      ? "text-white/50 hover:text-white"
+                      : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+                  ].join(" ")}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -1014,7 +1232,12 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               alertCount={alertCount}
             />
             {isSearching && !hasSearchResults && (
-              <div className={["mt-6 px-3 text-center text-sm", isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]"].join(" ")}>
+              <div
+                className={[
+                  "mt-6 px-3 text-center text-sm",
+                  isBuleje ? "text-white/55" : "text-[var(--text-tertiary)]",
+                ].join(" ")}
+              >
                 Sin resultados para &quot;{navSearch}&quot;
               </div>
             )}
@@ -1036,7 +1259,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             nuevo containing block para position:fixed en descendientes — eso
             atrapaba el drawer de notificaciones dentro del header. Usamos
             fondo opaco con sombra inferior para separar visualmente del main. */}
-        <header className={`sticky top-0 z-20 border-b shrink-0 shadow-sm transition-colors duration-[var(--dur-base)] ${headerClass}`}>
+        <header
+          className={`sticky top-0 z-20 border-b shrink-0 shadow-sm transition-colors duration-[var(--dur-base)] ${headerClass}`}
+        >
           <div className="flex items-center justify-between px-4 sm:px-6 h-16 gap-3">
             {/* Izquierda — hamburger mobile + breadcrumb ejecutivo.
                 flex-1 + min-w-0 para que el title pueda crecer todo lo posible
@@ -1051,10 +1276,14 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 <Menu className="w-5 h-5" />
               </button>
               <div className="flex flex-col min-w-0 leading-tight shrink-0">
-                <span className={`text-xs font-semibold uppercase tracking-[var(--tracking-eyebrow)] truncate ${headerSectionClass}`}>
+                <span
+                  className={`text-xs font-semibold uppercase tracking-[var(--tracking-eyebrow)] truncate ${headerSectionClass}`}
+                >
                   {pageMeta.section}
                 </span>
-                <h1 className={`text-base sm:text-lg font-bold truncate -mt-0.5 ${headerTitleClass}`}>
+                <h1
+                  className={`text-base sm:text-lg font-bold truncate -mt-0.5 ${headerTitleClass}`}
+                >
                   {pageMeta.title}
                 </h1>
               </div>
@@ -1072,11 +1301,17 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 aria-label="Buscar (atajo Ctrl+K)"
                 className={`group hidden sm:flex items-center gap-2.5 h-10 flex-1 max-w-md px-3.5 ml-2 rounded-xl border cursor-pointer transition-colors ${headerPillClass}`}
               >
-                <Search className={`h-4 w-4 shrink-0 transition-colors group-hover:text-[var(--accent)] ${headerPillTextClass}`} />
-                <span className={`flex-1 text-left text-sm font-medium truncate transition-colors ${headerPillTextClass}`}>
+                <Search
+                  className={`h-4 w-4 shrink-0 transition-colors group-hover:text-[var(--accent)] ${headerPillTextClass}`}
+                />
+                <span
+                  className={`flex-1 text-left text-sm font-medium truncate transition-colors ${headerPillTextClass}`}
+                >
                   Buscar tiendas, módulos…
                 </span>
-                <kbd className={`inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border ${headerKbdClass}`}>
+                <kbd
+                  className={`inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border ${headerKbdClass}`}
+                >
                   <span className="text-base leading-none">⌘</span>K
                 </kbd>
               </button>
@@ -1086,7 +1321,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 shrink-0 para que no se comprima; gap-1 compacto. */}
             <div className="flex items-center gap-1 shrink-0">
               {/* Chip de usuario — solo desktop, truncate corto */}
-              <div className={`hidden lg:inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border text-xs font-semibold ${headerChipClass}`}>
+              <div
+                className={`hidden lg:inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border text-xs font-semibold ${headerChipClass}`}
+              >
                 <div className="w-5 h-5 rounded-full bg-[var(--accent)] flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-3 h-3 text-white" />
                 </div>
@@ -1146,8 +1383,12 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
               <div className="min-w-0">
-                <h2 className="text-base font-bold text-[var(--text-primary)] truncate">Configurar barra lateral</h2>
-                <p className="text-xs text-[var(--text-tertiary)] truncate">Tema, presets, orden y visibilidad</p>
+                <h2 className="text-base font-bold text-[var(--text-primary)] truncate">
+                  Configurar barra lateral
+                </h2>
+                <p className="text-xs text-[var(--text-tertiary)] truncate">
+                  Tema, presets, orden y visibilidad
+                </p>
               </div>
               <button
                 type="button"
@@ -1254,12 +1495,17 @@ function NavGroupsFlyout({
 
   // Cleanup timer on unmount
   useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   // Reposicionar el flyout a la altura del header del grupo hovered.
   useEffect(() => {
-    if (!hoveredId) { setPosition(null); return; }
+    if (!hoveredId) {
+      setPosition(null);
+      return;
+    }
     const el = refs.current[hoveredId];
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -1267,7 +1513,9 @@ function NavGroupsFlyout({
   }, [hoveredId]);
 
   // Cerrar el flyout al cambiar de ruta (después de que el usuario navega).
-  useEffect(() => { setHoveredId(null); }, [pathname]);
+  useEffect(() => {
+    setHoveredId(null);
+  }, [pathname]);
 
   // Densidad afecta padding vertical del header (compact / normal / spacious).
   const headerPad =
@@ -1283,7 +1531,7 @@ function NavGroupsFlyout({
   const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
 
   const sidebarWidth = sidebarCollapsed ? 64 : 240;
-  const hoveredGroup = hoveredId ? groups.find((g) => g.id === hoveredId) ?? null : null;
+  const hoveredGroup = hoveredId ? (groups.find((g) => g.id === hoveredId) ?? null) : null;
   const hoveredVisibleItems = hoveredGroup?.items.filter((it) => visibleHrefs.has(it.href)) ?? [];
 
   // 2026-05-28 — Modo búsqueda: cuando hay query activa, en lugar de
@@ -1344,14 +1592,18 @@ function NavGroupsFlyout({
         if (groupItems.length === 0) return null;
 
         const hasActive = groupItems.some(
-          (it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
+          (it) =>
+            pathname === it.href ||
+            (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
         );
         const isHovered = hoveredId === group.id;
 
         return (
           <button
             key={group.id}
-            ref={(el) => { refs.current[group.id] = el; }}
+            ref={(el) => {
+              refs.current[group.id] = el;
+            }}
             type="button"
             onMouseEnter={() => open(group.id)}
             onMouseLeave={close}
@@ -1371,7 +1623,7 @@ function NavGroupsFlyout({
               headerPad,
               sidebarCollapsed ? "justify-center" : "",
               "text-sm font-semibold",
-              hasActive ? headerActiveClass : (isHovered ? headerActiveClass : headerIdleClass),
+              hasActive ? headerActiveClass : isHovered ? headerActiveClass : headerIdleClass,
             ].join(" ")}
             title={sidebarCollapsed ? group.label : undefined}
           >
@@ -1387,7 +1639,11 @@ function NavGroupsFlyout({
                     isBuleje
                       ? "bg-white/[0.08] text-white/55 group-hover/nav:text-white/80"
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-hover/nav:text-[var(--text-secondary)]",
-                    hasActive ? (isBuleje ? "bg-[#14C2C2]/20 text-[#5eead4]" : "bg-[var(--accent)]/15 text-[var(--accent)]") : "",
+                    hasActive
+                      ? isBuleje
+                        ? "bg-[#14C2C2]/20 text-[#5eead4]"
+                        : "bg-[var(--accent)]/15 text-[var(--accent)]"
+                      : "",
                   ].join(" ")}
                   aria-hidden
                 >
@@ -1482,6 +1738,7 @@ function SuperAdminFlyout({
   return (
     <div
       role="menu"
+      tabIndex={-1}
       aria-label={group.label}
       style={{ position: "fixed", top: position.top - 4, left, zIndex: 100 }}
       onMouseEnter={onMouseEnter}
@@ -1496,7 +1753,12 @@ function SuperAdminFlyout({
     >
       {/* Header del flyout — etiqueta del grupo. text-xs uppercase es OK aquí
           porque solo es un label informativo; el peso visual está en los items. */}
-      <div className={["px-4 pt-1.5 pb-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]", headerLabelClass].join(" ")}>
+      <div
+        className={[
+          "px-4 pt-1.5 pb-2 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)]",
+          headerLabelClass,
+        ].join(" ")}
+      >
         {group.label}
       </div>
       <div className="space-y-0.5 px-1.5">
@@ -1562,9 +1824,14 @@ function NavGroupsAccordion({
   forceExpandAll = false,
   alertCount = 0,
 }: NavGroupsAccordionProps) {
-  const activeGroupId = groups.find((g) =>
-    g.items.some((it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href))),
-  )?.id ?? "inicio";
+  const activeGroupId =
+    groups.find((g) =>
+      g.items.some(
+        (it) =>
+          pathname === it.href ||
+          (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
+      ),
+    )?.id ?? "inicio";
   // Brandon 2026-06-17: acordeón SINGLE-OPEN — solo la sección activa (o la que
   // el usuario abra) queda expandida; las demás se minimizan. Una a la vez.
   const [expanded, setExpanded] = useState<Set<NavGroupId>>(() => new Set([activeGroupId]));
@@ -1603,15 +1870,25 @@ function NavGroupsAccordion({
   const cancelCloseFlyout = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
   };
-  useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
+  useEffect(
+    () => () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    },
+    [],
+  );
   useEffect(() => {
-    if (!hoveredId) { setFlyoutTop(null); return; }
+    if (!hoveredId) {
+      setFlyoutTop(null);
+      return;
+    }
     const el = headerRefs.current[hoveredId];
     if (!el) return;
     setFlyoutTop({ top: el.getBoundingClientRect().top });
   }, [hoveredId]);
-  useEffect(() => { setHoveredId(null); }, [pathname]);
-  const hoveredGroup = hoveredId ? groups.find((g) => g.id === hoveredId) ?? null : null;
+  useEffect(() => {
+    setHoveredId(null);
+  }, [pathname]);
+  const hoveredGroup = hoveredId ? (groups.find((g) => g.id === hoveredId) ?? null) : null;
   const hoveredItems = hoveredGroup?.items.filter((it) => visibleHrefs.has(it.href)) ?? [];
 
   // Item activo: pill teal (marca) más nítida — barra lateral 3px + ring interno
@@ -1631,13 +1908,55 @@ function NavGroupsAccordion({
 
   return (
     <div className="space-y-1.5">
+      {/* Accesos directos (Brandon): ver tiendas + buscador de módulos (CommandPalette). */}
+      <p
+        className={[
+          "px-2.5 pt-1 pb-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)]",
+          labelClass,
+        ].join(" ")}
+      >
+        Accesos directos
+      </p>
+      <Link
+        href="/superadmin/stores"
+        onClick={onItemClick}
+        className={[
+          "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+          itemIdle,
+        ].join(" ")}
+      >
+        <span className="shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px] text-[#60a5fa]">
+          <Store className="w-5 h-5 shrink-0" />
+        </span>
+        <span className="flex-1 truncate">Ver tiendas</span>
+      </Link>
+      <button
+        type="button"
+        onClick={() => {
+          onItemClick?.();
+          window.dispatchEvent(new Event("superadmin:open-command-palette"));
+        }}
+        className={[
+          "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+          itemIdle,
+        ].join(" ")}
+      >
+        <span className="shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px] text-[#22d3ee]">
+          <Search className="w-5 h-5 shrink-0" />
+        </span>
+        <span className="flex-1 text-left truncate">Buscar módulos</span>
+        <kbd className="shrink-0 text-[length:var(--ts-2xs)] font-mono opacity-60">⌘K</kbd>
+      </button>
+      <div className="h-2" aria-hidden />
       {groups.map((group) => {
         const items = group.items.filter((it) => visibleHrefs.has(it.href));
         if (items.length === 0) return null;
         const isOpen = effectiveExpanded.has(group.id);
         const panelId = `m-nav-group-${group.id}`;
         const groupHasActive = items.some(
-          (it) => pathname === it.href || (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
+          (it) =>
+            pathname === it.href ||
+            (it.href !== "/superadmin/dashboard" && pathname.startsWith(it.href)),
         );
         const iconColor = GROUP_ICON_COLOR[group.id];
         const groupShowsAlertBadge = alertCount > 0 && items.some((it) => it.href === ALERTS_HREF);
@@ -1660,10 +1979,15 @@ function NavGroupsAccordion({
                 active ? itemActive : itemIdle,
               ].join(" ")}
             >
-              <span className={["shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]", iconColor].join(" ")}>{item.icon}</span>
+              <span className={["shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]", iconColor].join(" ")}>
+                {item.icon}
+              </span>
               <span className="flex-1 truncate">{item.label}</span>
               {active && (
-                <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
+                <span
+                  className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")}
+                  aria-hidden
+                />
               )}
             </Link>
           );
@@ -1674,7 +1998,9 @@ function NavGroupsAccordion({
             {/* Categoría = icono a color + label normal-case + chevron. Compacta. */}
             <button
               type="button"
-              ref={(el) => { headerRefs.current[group.id] = el; }}
+              ref={(el) => {
+                headerRefs.current[group.id] = el;
+              }}
               onClick={() => toggle(group.id)}
               onMouseEnter={() => openFlyout(group.id)}
               onMouseLeave={closeFlyout}
@@ -1688,12 +2014,17 @@ function NavGroupsAccordion({
                 labelClass,
               ].join(" ")}
             >
-              <span className={["shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]", iconColor].join(" ")}>{group.icon}</span>
+              <span className={["shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]", iconColor].join(" ")}>
+                {group.icon}
+              </span>
               <span className="flex-1 text-left truncate">{group.label}</span>
               {!isOpen && groupShowsAlertBadge ? (
                 <AlertCountBadge count={alertCount} />
               ) : groupHasActive && !isOpen ? (
-                <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
+                <span
+                  className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")}
+                  aria-hidden
+                />
               ) : null}
               <ChevronDown
                 className={[
@@ -1706,7 +2037,10 @@ function NavGroupsAccordion({
               // Sub-enlaces indentados con guía vertical (ref. admin de negocio):
               // más chicos, icono w-4 monocromo, alineados bajo el icono de la
               // categoría. Brandon 2026-06-19.
-              <div id={panelId} className="mt-1 mb-1.5 ml-[1.15rem] pl-3 border-l border-white/[0.08] space-y-1">
+              <div
+                id={panelId}
+                className="mt-1 mb-1.5 ml-[1.15rem] pl-3 border-l border-white/[0.08] space-y-1"
+              >
                 {items.map((item) => {
                   const active =
                     pathname === item.href ||
@@ -1722,12 +2056,17 @@ function NavGroupsAccordion({
                         active ? itemActive : itemIdle,
                       ].join(" ")}
                     >
-                      <span className="shrink-0 opacity-90 [&_svg]:w-4 [&_svg]:h-4">{item.icon}</span>
+                      <span className="shrink-0 opacity-90 [&_svg]:w-4 [&_svg]:h-4">
+                        {item.icon}
+                      </span>
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.href === ALERTS_HREF && alertCount > 0 ? (
                         <AlertCountBadge count={alertCount} />
                       ) : active ? (
-                        <span className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")} aria-hidden />
+                        <span
+                          className={["w-1.5 h-1.5 rounded-full shrink-0", dotClass].join(" ")}
+                          aria-hidden
+                        />
                       ) : null}
                     </Link>
                   );
@@ -1748,7 +2087,11 @@ function NavGroupsAccordion({
           left={240}
           pathname={pathname}
           isBuleje={isBuleje}
-          onItemClick={() => { cancelCloseFlyout(); setHoveredId(null); onItemClick(); }}
+          onItemClick={() => {
+            cancelCloseFlyout();
+            setHoveredId(null);
+            onItemClick();
+          }}
           onMouseEnter={cancelCloseFlyout}
           onMouseLeave={closeFlyout}
         />
