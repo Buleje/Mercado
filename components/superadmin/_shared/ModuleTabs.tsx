@@ -37,6 +37,10 @@ import {
   Scale,
   History,
   FileCheck,
+  Store,
+  Sparkles,
+  Palette,
+  Image as ImageIcon,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -135,4 +139,20 @@ export const SEGURIDAD_TABS: ModuleTab[] = [
 export const VENDORS_TABS: ModuleTab[] = [
   { label: "Solicitudes", href: "/superadmin/vendor-applications", icon: FileCheck },
   { label: "Salud de vendors", href: "/superadmin/vendor-health", icon: HeartPulse },
+];
+
+export const MARKETPLACE_TABS: ModuleTab[] = [
+  { label: "Resumen", href: "/superadmin/marketplace", icon: Store },
+  { label: "Tiendas", href: "/superadmin/stores", icon: Boxes },
+];
+
+export const MARCA_TABS: ModuleTab[] = [
+  { label: "Marca", href: "/superadmin/marca", icon: Sparkles },
+  { label: "Banners", href: "/superadmin/banners", icon: ImageIcon },
+  { label: "Banco de imágenes", href: "/superadmin/banco-imagenes", icon: ImageIcon },
+];
+
+export const DISENO_TABS: ModuleTab[] = [
+  { label: "Centro de diseño", href: "/superadmin/design-system", icon: Palette },
+  { label: "Plantilla del admin", href: "/superadmin/plantilla", icon: Layers },
 ];

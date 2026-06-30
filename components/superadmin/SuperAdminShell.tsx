@@ -28,9 +28,7 @@ import {
   Gauge,
   HeartPulse,
   FileCheck,
-  ImageIcon,
   Sparkles,
-  Layers,
   Sliders,
   BookOpen,
   Palette,
@@ -41,7 +39,6 @@ import {
   Store,
   Truck,
   ChefHat,
-  Boxes,
   FileText,
   Search,
   Bell,
@@ -186,11 +183,6 @@ const NAV_GROUPS: NavGroupDef[] = [
         icon: <FileCheck className="w-5 h-5 shrink-0" />,
         href: "/superadmin/vendor-applications",
       },
-      {
-        label: "Tiendas marketplace",
-        icon: <Boxes className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/stores",
-      },
     ],
   },
   {
@@ -218,24 +210,9 @@ const NAV_GROUPS: NavGroupDef[] = [
         href: "/superadmin/design-system",
       },
       {
-        label: "Plantilla del admin",
-        icon: <Layers className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/plantilla",
-      },
-      {
-        label: "Marca",
+        label: "Marca & contenido",
         icon: <Sparkles className="w-5 h-5 shrink-0" />,
         href: "/superadmin/marca",
-      },
-      {
-        label: "Banners",
-        icon: <ImageIcon className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/banners",
-      },
-      {
-        label: "Banco de imágenes",
-        icon: <ImageIcon className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/banco-imagenes",
       },
       {
         label: "Catálogo de variantes",
