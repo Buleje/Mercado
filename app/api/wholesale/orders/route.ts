@@ -126,6 +126,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // #4 money-integrity (audit-verificado 2026-06-29): rechazar productos cuyo
+    // precio base autoritativo sea <= 0 (p.ej. StoreProduct.retailPrice=0 sin
+    // wholesalePrice → Number(null ?? 0)=0). Sin precio válido, la orden y su
+    // comisión se persistirían a S/0. `!(v > 0)` cubre 0, negativos y NaN.
+    const zeroPriced = items
+      .filter((i) => !((basePriceMap.get(i.productId) ?? 0) > 0))
+      .map((i) => i.productId);
+    if (zeroPriced.length > 0) {
+      return NextResponse.json(
+        { error: "Uno o más productos no tienen precio mayorista válido configurado", productIds: zeroPriced },
+        { status: 422 },
+      );
+    }
+
     // Calcular items con descuento por volumen aplicado — server-side, base de DB.
     const resolvedItems = items.map((item) => {
       const tiers           = tiersMap.get(item.productId) ?? [];
