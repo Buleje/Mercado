@@ -9,7 +9,7 @@ import {
   SUPERADMIN_CONTENT,
 } from "@/lib/superadmin-layout";
 import { RescueQueue } from "./RescueQueue";
-import { SuperAdminModuleTabs, RETENCION_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { RetencionTabs } from "@/components/superadmin/_shared/RetencionTabs";
 
 export const metadata = {
   title: "Cola de rescate — Buleje",
@@ -25,7 +25,7 @@ export default async function RescuePage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={RETENCION_TABS} />
+      <RetencionTabs />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start gap-3 min-w-0">

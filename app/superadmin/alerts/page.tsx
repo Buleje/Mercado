@@ -31,7 +31,7 @@ import {
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
-import { SuperAdminModuleTabs, RETENCION_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { RetencionTabs } from "@/components/superadmin/_shared/RetencionTabs";
 
 type Severity = "critical" | "warning" | "info";
 type AlertStateInfo = { status: string; snoozedUntil: string | null } | null;
@@ -178,7 +178,7 @@ export default function AlertsPage() {
 
   return (
     <>
-      <SuperAdminModuleTabs tabs={RETENCION_TABS} />
+      <RetencionTabs />
       <AdminTabShell
         info={{
           what: "Junta las señales que necesitan tu atención ahora: churn, fallos de pago, caídas de uso y tiendas inactivas, en todas las tiendas.",

@@ -11,6 +11,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import {
   Receipt,
   CreditCard,
@@ -50,10 +51,17 @@ export interface ModuleTab {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** Contador opcional (ej. nº de alertas, solicitudes pendientes). 0/undefined = sin badge. */
+  badge?: number;
 }
 
 export function SuperAdminModuleTabs({ tabs }: { tabs: ModuleTab[] }) {
   const pathname = usePathname();
+  const activeRef = useRef<HTMLAnchorElement>(null);
+  // En hubs con varias tabs (mobile/narrow), traer la tab activa a la vista.
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [pathname]);
   return (
     // Minimalista: fila flush a la izquierda (sin padding propio — hereda el del
     // <main>, así alinea con el título de abajo) + regla fina inferior para
@@ -62,11 +70,12 @@ export function SuperAdminModuleTabs({ tabs }: { tabs: ModuleTab[] }) {
       className="-mt-1 mb-4 flex items-center gap-0.5 overflow-x-auto border-b border-[var(--rule-soft)] pb-2"
       aria-label="Secciones del módulo"
     >
-      {tabs.map(({ label, href, icon: Icon }) => {
+      {tabs.map(({ label, href, icon: Icon, badge }) => {
         const active = pathname === href;
         return (
           <Link
             key={href}
+            ref={active ? activeRef : undefined}
             href={href}
             aria-current={active ? "page" : undefined}
             className={[
@@ -78,6 +87,19 @@ export function SuperAdminModuleTabs({ tabs }: { tabs: ModuleTab[] }) {
           >
             <Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
             {label}
+            {typeof badge === "number" && badge > 0 && (
+              <span
+                className={[
+                  "ml-0.5 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums",
+                  active
+                    ? "bg-white/25 text-white"
+                    : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                ].join(" ")}
+                aria-label={`${badge} pendientes`}
+              >
+                {badge > 99 ? "99+" : badge}
+              </span>
+            )}
           </Link>
         );
       })}
