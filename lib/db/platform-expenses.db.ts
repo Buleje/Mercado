@@ -11,7 +11,8 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 
 // Tipo de cambio aprox para normalizar KPIs (muchas facturas son en USD:
 // Vercel, Supabase, Anthropic). Solo para agregados; el monto original se preserva.
-const USD_TO_PEN = 3.75;
+// Exportado para que la UI muestre con qué cambio se normalizó (transparencia).
+export const USD_TO_PEN = 3.75;
 
 export const EXPENSE_CATEGORIES = [
   "infra",
@@ -174,6 +175,44 @@ export const PlatformExpensesDB = {
       },
     });
     return mapRow(row);
+  },
+
+  async update(
+    id: string,
+    data: {
+      concept: string;
+      category: string;
+      amount: number;
+      currency: string;
+      date?: Date;
+      recurring: boolean;
+      period: string;
+      vendor: string;
+      notes: string;
+    },
+  ): Promise<PlatformExpenseRow | null> {
+    // Tabla global de plataforma (sin tenantId); edición por id (PK). updateMany
+    // evita el throw P2025 si el gasto ya no existe → devolvemos null y el route
+    // responde 404 controlado.
+    /* eslint-disable no-restricted-syntax -- PlatformExpense es global de plataforma, sin tenantId por diseño */
+    const res = await prisma.platformExpense.updateMany({
+      where: { id },
+      data: {
+        concept: data.concept,
+        category: data.category,
+        amount: data.amount,
+        currency: data.currency,
+        ...(data.date ? { date: data.date } : {}),
+        recurring: data.recurring,
+        period: data.period,
+        vendor: data.vendor,
+        notes: data.notes,
+      },
+    });
+    /* eslint-enable no-restricted-syntax */
+    if (res.count === 0) return null;
+    const row = await prisma.platformExpense.findFirst({ where: { id } });
+    return row ? mapRow(row) : null;
   },
 
   async remove(id: string): Promise<void> {
