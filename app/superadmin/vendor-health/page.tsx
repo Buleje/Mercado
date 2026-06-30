@@ -3,7 +3,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { VendorHealthDashboard } from "@/components/superadmin/vendor-health/VendorHealthDashboard";
 import { VendorPipelinePanel } from "@/components/superadmin/vendor-health/VendorPipelinePanel";
 import { HeartPulse } from "@buleje/design-system/icons";
-import { SuperAdminModuleTabs, VENDORS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { VendorsTabs } from "@/components/superadmin/_shared/VendorsTabs";
 import {
   SUPERADMIN_PAGE,
   SUPERADMIN_HERO,
@@ -23,7 +23,7 @@ export default async function VendorHealthPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
-      <SuperAdminModuleTabs tabs={VENDORS_TABS} />
+      <VendorsTabs />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start gap-3 min-w-0">

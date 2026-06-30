@@ -1,10 +1,10 @@
 import VendorApplicationsModule from "@/components/superadmin/VendorApplicationsModule";
-import { SuperAdminModuleTabs, VENDORS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
+import { VendorsTabs } from "@/components/superadmin/_shared/VendorsTabs";
 
 export default function VendorApplicationsPage() {
   return (
     <>
-      <SuperAdminModuleTabs tabs={VENDORS_TABS} />
+      <VendorsTabs />
       <VendorApplicationsModule />
     </>
   );
