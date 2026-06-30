@@ -9,6 +9,7 @@ import {
   SUPERADMIN_CONTENT,
 } from "@/lib/superadmin-layout";
 import { TenantErrorsConsole } from "./TenantErrorsConsole";
+import { SuperAdminModuleTabs, SALUD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 export const metadata = {
   title: "Errores en vivo de los negocios — Buleje",
@@ -26,6 +27,7 @@ export default async function TenantErrorsPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={SALUD_TABS} />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start gap-3 min-w-0">
@@ -47,8 +49,8 @@ export default async function TenantErrorsPage() {
                 />
               </h1>
               <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                Errores del panel admin de los negocios, agrupados por negocio. Entrá a
-                reproducir, contactá al dueño o marcá resuelto.
+                Errores del panel admin de los negocios, agrupados por negocio. Entrá a reproducir,
+                contactá al dueño o marcá resuelto.
               </p>
             </div>
           </div>

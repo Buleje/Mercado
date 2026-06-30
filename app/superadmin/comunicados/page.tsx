@@ -9,6 +9,10 @@ import {
   SUPERADMIN_CONTENT,
 } from "@/lib/superadmin-layout";
 import { ComunicadosComposer } from "./ComunicadosComposer";
+import {
+  SuperAdminModuleTabs,
+  COMUNICACION_TABS,
+} from "@/components/superadmin/_shared/ModuleTabs";
 
 export const metadata = {
   title: "Comunicados — Buleje",
@@ -24,6 +28,7 @@ export default async function ComunicadosPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={COMUNICACION_TABS} />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start gap-3 min-w-0">

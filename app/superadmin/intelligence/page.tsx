@@ -2,6 +2,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import IntelligenceClient from "./IntelligenceClient";
+import { SuperAdminModuleTabs, ANALYTICS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 export const metadata: Metadata = {
   title: "Inteligencia de Barrio — Buleje Platform",
@@ -13,6 +14,7 @@ export default async function IntelligencePage() {
 
   return (
     <div className="max-w-[1400px] mx-auto">
+      <SuperAdminModuleTabs tabs={ANALYTICS_TABS} />
       {/* El client renderiza header + secciones con datos del endpoint */}
       <IntelligenceClient />
     </div>

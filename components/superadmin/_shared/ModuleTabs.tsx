@@ -24,6 +24,19 @@ import {
   Cable,
   MapPin,
   Boxes,
+  BarChart3,
+  Activity,
+  Layers,
+  HeartPulse,
+  AlertOctagon,
+  ShieldAlert,
+  MessageSquare,
+  Megaphone,
+  Inbox,
+  ShieldCheck,
+  Scale,
+  History,
+  FileCheck,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -87,4 +100,39 @@ export const TENANTS_TABS: ModuleTab[] = [
   { label: "Integraciones", href: "/superadmin/tenants/integrations", icon: Cable },
   { label: "Mapa", href: "/superadmin/tenants/map", icon: MapPin },
   { label: "Especializaciones", href: "/superadmin/specializations", icon: Boxes },
+];
+
+// Consolidación 2026 (Brandon): clusters de rutas hermanas unificados en módulos
+// con tabs. El nav muestra UNA entrada por cluster; las demás rutas siguen vivas
+// como tabs (deep-link intacto).
+
+export const ANALYTICS_TABS: ModuleTab[] = [
+  { label: "Analytics", href: "/superadmin/analytics", icon: BarChart3 },
+  { label: "Adopción", href: "/superadmin/feature-adoption", icon: TrendingUp },
+  { label: "Cohortes", href: "/superadmin/cohorts", icon: Layers },
+  { label: "Inteligencia de Barrio", href: "/superadmin/intelligence", icon: Activity },
+];
+
+export const SALUD_TABS: ModuleTab[] = [
+  { label: "Salud", href: "/superadmin/health", icon: HeartPulse },
+  { label: "SLO & budgets", href: "/superadmin/slo", icon: TrendingUp },
+  { label: "Dead-letter", href: "/superadmin/dlq", icon: AlertOctagon },
+  { label: "Errores negocios", href: "/superadmin/tenant-errors", icon: ShieldAlert },
+];
+
+export const COMUNICACION_TABS: ModuleTab[] = [
+  { label: "Chat", href: "/superadmin/chat", icon: MessageSquare },
+  { label: "Comunicados", href: "/superadmin/comunicados", icon: Megaphone },
+  { label: "Soporte", href: "/superadmin/support", icon: Inbox },
+];
+
+export const SEGURIDAD_TABS: ModuleTab[] = [
+  { label: "Seguridad", href: "/superadmin/security", icon: ShieldCheck },
+  { label: "Ley 29733", href: "/superadmin/compliance", icon: Scale },
+  { label: "Auditoría", href: "/superadmin/audit-log", icon: History },
+];
+
+export const VENDORS_TABS: ModuleTab[] = [
+  { label: "Solicitudes", href: "/superadmin/vendor-applications", icon: FileCheck },
+  { label: "Salud de vendors", href: "/superadmin/vendor-health", icon: HeartPulse },
 ];

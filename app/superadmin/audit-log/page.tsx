@@ -9,6 +9,7 @@ import {
   SUPERADMIN_CONTENT,
 } from "@/lib/superadmin-layout";
 import { AuditLogConsole } from "./AuditLogConsole";
+import { SuperAdminModuleTabs, SEGURIDAD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 export const metadata = {
   title: "Auditoría del superadmin — Buleje",
@@ -24,6 +25,7 @@ export default async function AuditLogPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={SEGURIDAD_TABS} />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start gap-3 min-w-0">

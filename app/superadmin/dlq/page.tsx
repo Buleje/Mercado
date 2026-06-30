@@ -8,6 +8,7 @@ import { getDeadLetterDashboard } from "@/lib/db/dlq.db";
 import { DLQExport } from "./DLQExport";
 import { DLQEvents } from "./DLQEvents";
 import { SUPERADMIN_PAGE, SUPERADMIN_HERO, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
+import { SuperAdminModuleTabs, SALUD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 // Next 16 (CLAUDE.md #4): NO usar `force-dynamic`. Dejamos sin "use cache"
 // para que el RSC re-renderice a cada request (panel ops, datos frescos).
@@ -30,6 +31,7 @@ export default async function DLQDashboardPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={SALUD_TABS} />
       {/* Hero canónico (lib/superadmin-layout) — barra surface-raised + border-b,
           igual que marca/billing/marketplace. Antes dlq tenía un header inline
           plano que rompía la continuidad visual al cambiar de tab. */}
@@ -41,12 +43,17 @@ export default async function DLQDashboardPage() {
             </p>
             <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none inline-flex items-center gap-2 flex-wrap">
               Dead Letter Queue
-            
-            <InfoTip side="bottom" title="Dead Letter Queue" what="Lista los jobs en segundo plano que fallaron tras varios reintentos (envíos, webhooks, colas)." affects="Solo monitoreo interno. Un job acá significa que algo no se completó y conviene reintentarlo." example="Si falla el email de bienvenida 3 veces, cae acá para reintentarlo o investigar." />
-          </h1>
+              <InfoTip
+                side="bottom"
+                title="Dead Letter Queue"
+                what="Lista los jobs en segundo plano que fallaron tras varios reintentos (envíos, webhooks, colas)."
+                affects="Solo monitoreo interno. Un job acá significa que algo no se completó y conviene reintentarlo."
+                example="Si falla el email de bienvenida 3 veces, cae acá para reintentarlo o investigar."
+              />
+            </h1>
             <p className="mt-2 max-w-2xl text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
-              Eventos, crons y webhooks que fallaron y no se autoreintentaron.
-              Investigá si los contadores crecen sostenidamente.
+              Eventos, crons y webhooks que fallaron y no se autoreintentaron. Investigá si los
+              contadores crecen sostenidamente.
             </p>
           </div>
           <Link
@@ -104,14 +111,7 @@ async function DLQBody() {
     <>
       <div className="flex justify-end">
         <DLQExport
-          headers={[
-            "Categoría",
-            "Identificador",
-            "Detalle",
-            "Intentos",
-            "Fecha",
-            "Error",
-          ]}
+          headers={["Categoría", "Identificador", "Detalle", "Intentos", "Fecha", "Error"]}
           rows={csvRows}
         />
       </div>
@@ -144,9 +144,7 @@ async function DLQBody() {
       {/* Crons fallidos */}
       <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
         <header className="px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50">
-          <h2 className="text-lg font-black text-[var(--text-primary)]">
-            Crons fallidos
-          </h2>
+          <h2 className="text-lg font-black text-[var(--text-primary)]">Crons fallidos</h2>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mt-0.5">
             Jobs cron que llegaron a max-attempts y se rindieron.
           </p>
@@ -169,10 +167,18 @@ async function DLQBody() {
             <tbody>
               {crons.map((c) => (
                 <tr key={c.id} className="border-t border-[var(--rule-soft)]">
-                  <Td><span className="font-bold">{c.jobName}</span></Td>
-                  <Td><span className="tabular-nums">{c.attempts}</span></Td>
+                  <Td>
+                    <span className="font-bold">{c.jobName}</span>
+                  </Td>
+                  <Td>
+                    <span className="tabular-nums">{c.attempts}</span>
+                  </Td>
                   <Td>{timeAgo(c.createdAt)}</Td>
-                  <Td><span className="text-[var(--data-error-500)] truncate block max-w-xs">{c.error.slice(0, 80)}</span></Td>
+                  <Td>
+                    <span className="text-[var(--data-error-500)] truncate block max-w-xs">
+                      {c.error.slice(0, 80)}
+                    </span>
+                  </Td>
                 </tr>
               ))}
             </tbody>
@@ -187,7 +193,8 @@ async function DLQBody() {
             Mercado Pago webhooks pendientes
           </h2>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mt-0.5">
-            IPNs registrados pero no marcados como procesados. El cron /api/cron/mp-webhook-replay los reintenta cada día a las 4:13 AM.
+            IPNs registrados pero no marcados como procesados. El cron /api/cron/mp-webhook-replay
+            los reintenta cada día a las 4:13 AM.
           </p>
         </header>
         {mpWebhooks.length === 0 ? (
@@ -209,11 +216,21 @@ async function DLQBody() {
             <tbody>
               {mpWebhooks.map((w) => (
                 <tr key={w.id} className="border-t border-[var(--rule-soft)]">
-                  <Td><code className="text-[length:var(--ts-2xs)]">{w.stripeId.replace(/^mpmkt_/, "")}</code></Td>
+                  <Td>
+                    <code className="text-[length:var(--ts-2xs)]">
+                      {w.stripeId.replace(/^mpmkt_/, "")}
+                    </code>
+                  </Td>
                   <Td>{w.eventType}</Td>
-                  <Td><span className="tabular-nums">{w.attempts}</span></Td>
+                  <Td>
+                    <span className="tabular-nums">{w.attempts}</span>
+                  </Td>
                   <Td>{timeAgo(w.createdAt)}</Td>
-                  <Td><span className="text-[var(--data-error-500)] truncate block max-w-xs">{(w.lastError ?? "").slice(0, 80) || "—"}</span></Td>
+                  <Td>
+                    <span className="text-[var(--data-error-500)] truncate block max-w-xs">
+                      {(w.lastError ?? "").slice(0, 80) || "—"}
+                    </span>
+                  </Td>
                 </tr>
               ))}
             </tbody>
@@ -245,7 +262,17 @@ function DLQSkeleton() {
   );
 }
 
-function StatCard({ label, value, warn, critical }: { label: string; value: number; warn: boolean; critical: boolean }) {
+function StatCard({
+  label,
+  value,
+  warn,
+  critical,
+}: {
+  label: string;
+  value: number;
+  warn: boolean;
+  critical: boolean;
+}) {
   return (
     <div
       className={`rounded-2xl border-2 p-4 ${
@@ -259,9 +286,7 @@ function StatCard({ label, value, warn, critical }: { label: string; value: numb
       <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         {label}
       </p>
-      <p className="mt-1 text-3xl font-black tabular-nums text-[var(--text-primary)]">
-        {value}
-      </p>
+      <p className="mt-1 text-3xl font-black tabular-nums text-[var(--text-primary)]">{value}</p>
     </div>
   );
 }

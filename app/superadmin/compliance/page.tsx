@@ -9,6 +9,7 @@ import {
   SUPERADMIN_CONTENT,
 } from "@/lib/superadmin-layout";
 import { ComplianceAuditConsole } from "./ComplianceAuditConsole";
+import { SuperAdminModuleTabs, SEGURIDAD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 export const metadata = {
   title: "Auditoría Ley 29733 — Buleje",
@@ -24,6 +25,7 @@ export default async function CompliancePage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={SEGURIDAD_TABS} />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start gap-3 min-w-0">
@@ -45,7 +47,8 @@ export default async function CompliancePage() {
                 />
               </h1>
               <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-                Quién tocó qué dato personal, cuándo y desde dónde. Evidencia de cumplimiento, exportable.
+                Quién tocó qué dato personal, cuándo y desde dónde. Evidencia de cumplimiento,
+                exportable.
               </p>
             </div>
           </div>

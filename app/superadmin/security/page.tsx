@@ -34,14 +34,9 @@ import { VulnerabilitiesTab } from "@/components/superadmin/security/Vulnerabili
 import { ComplianceTab } from "@/components/superadmin/security/ComplianceTab";
 import { AuditLogTab } from "@/components/superadmin/security/AuditLogTab";
 import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
+import { SuperAdminModuleTabs, SEGURIDAD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
-type TabKey =
-  | "overview"
-  | "auth"
-  | "permissions"
-  | "vulnerabilities"
-  | "compliance"
-  | "audit";
+type TabKey = "overview" | "auth" | "permissions" | "vulnerabilities" | "compliance" | "audit";
 
 interface TabDef {
   key: TabKey;
@@ -92,6 +87,7 @@ export default function SecurityCenterPage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={SEGURIDAD_TABS} />
       <SecurityHero
         lastScanLabel={fmtRelativeFromMs(lastRefreshMs)}
         status="healthy"

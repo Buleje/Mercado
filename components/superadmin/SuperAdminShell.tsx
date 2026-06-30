@@ -40,20 +40,13 @@ import {
   MessageSquare,
   Store,
   Truck,
-  TrendingUp,
   ChefHat,
   Boxes,
-  AlertOctagon,
   FileText,
   Search,
-  Inbox,
   Bell,
   Webhook,
-  ShieldAlert,
   HeartHandshake,
-  Scale,
-  History,
-  Megaphone,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -126,19 +119,9 @@ const NAV_GROUPS: NavGroupDef[] = [
         href: "/superadmin/dashboard",
       },
       {
-        label: "Chat",
+        label: "Comunicación",
         icon: <MessageSquare className="w-5 h-5 shrink-0" />,
         href: "/superadmin/chat",
-      },
-      {
-        label: "Comunicados",
-        icon: <Megaphone className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/comunicados",
-      },
-      {
-        label: "Soporte",
-        icon: <Inbox className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/support",
       },
       { label: "Alertas", icon: <Bell className="w-5 h-5 shrink-0" />, href: "/superadmin/alerts" },
       {
@@ -172,7 +155,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     // tabs (SuperAdminModuleTabs). Pedidos y Repartidores quedan separados.
     items: [
       {
-        label: "Tenants",
+        label: "Negocios",
         icon: <Building2 className="w-5 h-5 shrink-0" />,
         href: "/superadmin/tenants",
       },
@@ -199,17 +182,12 @@ const NAV_GROUPS: NavGroupDef[] = [
         href: "/superadmin/marketplace",
       },
       {
-        label: "Solicitudes vendedores",
+        label: "Vendors",
         icon: <FileCheck className="w-5 h-5 shrink-0" />,
         href: "/superadmin/vendor-applications",
       },
       {
-        label: "Salud de vendors",
-        icon: <HeartPulse className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/vendor-health",
-      },
-      {
-        label: "Tiendas publicadas",
+        label: "Tiendas marketplace",
         icon: <Boxes className="w-5 h-5 shrink-0" />,
         href: "/superadmin/stores",
       },
@@ -282,44 +260,14 @@ const NAV_GROUPS: NavGroupDef[] = [
         href: "/superadmin/automations",
       },
       {
-        label: "Inteligencia de Barrio",
-        icon: <Activity className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/intelligence",
-      },
-      {
         label: "Analytics",
         icon: <BarChart3 className="w-5 h-5 shrink-0" />,
         href: "/superadmin/analytics",
       },
       {
-        label: "Adopción funciones",
-        icon: <TrendingUp className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/feature-adoption",
-      },
-      {
-        label: "Cohortes & retención",
-        icon: <Layers className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/cohorts",
-      },
-      {
-        label: "Salud sistema",
+        label: "Salud del sistema",
         icon: <HeartPulse className="w-5 h-5 shrink-0" />,
         href: "/superadmin/health",
-      },
-      {
-        label: "SLO & budgets",
-        icon: <TrendingUp className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/slo",
-      },
-      {
-        label: "Dead-letter",
-        icon: <AlertOctagon className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/dlq",
-      },
-      {
-        label: "Errores negocios",
-        icon: <ShieldAlert className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/tenant-errors",
       },
       // Brandon 2026-05-21 audit fix #4: "Setup score" eliminado del nav.
       // El page hace redirect("/superadmin/dashboard") (módulo eliminado por
@@ -335,16 +283,6 @@ const NAV_GROUPS: NavGroupDef[] = [
         label: "Seguridad",
         icon: <ShieldCheck className="w-5 h-5 shrink-0" />,
         href: "/superadmin/security",
-      },
-      {
-        label: "Ley 29733",
-        icon: <Scale className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/compliance",
-      },
-      {
-        label: "Auditoría",
-        icon: <History className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/audit-log",
       },
       // Consolidado 2026-06-17: Settings + Configuración = 1 módulo con tabs
       // (Plataforma · Integraciones & Flags) vía SuperAdminModuleTabs.
