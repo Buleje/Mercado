@@ -4,6 +4,8 @@
 
 **Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa.
 
+**Cierre proactivo (DEFAULT, Brandon 2026-06-29):** al terminar CASI SIEMPRE una tarea, cerrá ofreciendo **sugerencias con OPCIONES para elegir** — features nuevas, mejoras a páginas/módulos ya creados, mejoras de alto impacto, y "continuar con la siguiente ronda". Usá `AskUserQuestion` (multiSelect cuando aplique) con 2-4 opciones concretas + 1 recomendada. No cierres en seco salvo que Brandon diga "para acá" o sea un paso intermedio de una tarea en curso.
+
 ---
 
 ## 1. Contexto de negocio
