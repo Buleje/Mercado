@@ -49,7 +49,6 @@ import {
   Inbox,
   Bell,
   Webhook,
-  Globe,
   ShieldAlert,
   HeartHandshake,
   Scale,
@@ -985,70 +984,6 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           )}
         </nav>
 
-        {/* Tarjeta de contexto — llena el vacío del nav (acordeón single-open) y
-            ofrece el atajo del buscador global (⌘K → CommandPalette). Solo
-            desktop expandido. Pulido fino 2026-06-19. */}
-        {!collapsed && (
-          <div className="shrink-0 px-2 pb-1 hidden md:block">
-            <button
-              type="button"
-              onClick={() =>
-                window.dispatchEvent(
-                  new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }),
-                )
-              }
-              aria-label="Buscar cualquier cosa (atajo Ctrl+K)"
-              className={[
-                "group w-full rounded-xl border p-2.5 text-left transition-colors",
-                isBuleje
-                  ? "border-[rgba(0,160,160,0.22)] bg-[rgba(0,160,160,0.07)] hover:bg-[rgba(0,160,160,0.13)]"
-                  : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-raised)]",
-              ].join(" ")}
-            >
-              <div className="flex items-center gap-2.5">
-                <span
-                  className={[
-                    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                    isBuleje
-                      ? "bg-[rgba(0,160,160,0.2)] text-[#5eead4]"
-                      : "bg-[var(--accent-soft)] text-[var(--accent)]",
-                  ].join(" ")}
-                >
-                  <Sparkles className="h-4 w-4" strokeWidth={2.25} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={[
-                      "text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] leading-none",
-                      isBuleje ? "text-white/50" : "text-[var(--text-tertiary)]",
-                    ].join(" ")}
-                  >
-                    Acceso rápido
-                  </p>
-                  <p
-                    className={[
-                      "text-sm font-semibold truncate leading-tight mt-1",
-                      isBuleje ? "text-white/90" : "text-[var(--text-primary)]",
-                    ].join(" ")}
-                  >
-                    Buscar cualquier cosa
-                  </p>
-                </div>
-                <kbd
-                  className={[
-                    "inline-flex shrink-0 items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold font-mono tabular-nums",
-                    isBuleje
-                      ? "border-white/15 bg-white/[0.06] text-white/55"
-                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
-                  ].join(" ")}
-                >
-                  <span className="text-sm leading-none">⌘</span>K
-                </kbd>
-              </div>
-            </button>
-          </div>
-        )}
-
         {/* ── Footer: links + configurar + compactar (1:1 con el admin de negocio) ── */}
         <div
           className={[
@@ -1056,22 +991,6 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             logoBorderClass,
           ].join(" ")}
         >
-          {/* Ver tiendas (lista pública, nueva pestaña) */}
-          <Link
-            href="/tiendas"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Abre la lista de tiendas en una pestaña nueva"
-            className={[
-              "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
-              navItemIdleClass,
-              collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
-            ].join(" ")}
-          >
-            <Globe className="h-[18px] w-[18px] shrink-0" />
-            {!collapsed && <span className="truncate">Ver tiendas ↗</span>}
-          </Link>
-
           {/* Configurar barra lateral — abre el panel (presets/tema/orden/visibilidad) */}
           <button
             type="button"
