@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendSuperAdminAlert } from "@/lib/mailer-superadmin";
+import { SUPERADMIN_DOCS_TENANT } from "@/lib/documents/superadmin-vault";
 import { logger } from "@/lib/logger";
 
 /**
@@ -43,6 +45,28 @@ export const GET = withCronAuth("documentos-vencimiento", async () => {
     const dias = diasRestantes(masUrgente.expiresAt);
     const cuando =
       dias < 0 ? "ya vencido" : dias === 0 ? "vence HOY" : dias === 1 ? "vence mañana" : `vence en ${dias} días`;
+
+    // Vault del superadmin: no es un Tenant real (sin ownerPhone) → email directo
+    // al superadmin con la URL correcta, en vez de WhatsApp + notificación de tenant.
+    if (tenantId === SUPERADMIN_DOCS_TENANT) {
+      try {
+        await sendSuperAdminAlert({
+          subject: n === 1 ? "Documento por vencer" : `${n} documentos por vencer`,
+          title: n === 1 ? "Tenés un documento por vencer" : `Tenés ${n} documentos por vencer`,
+          items: docs.slice(0, 8).map((d) => ({
+            label: d.name,
+            value: diasRestantes(d.expiresAt) < 0 ? "vencido" : `en ${diasRestantes(d.expiresAt)}d`,
+          })),
+          actionUrl: "/superadmin/documentos",
+          actionLabel: "Ver documentos",
+        });
+        await DocumentsDB.markExpiryReminderSent(tenantId, docs.map((d) => d.id));
+        tenantsNotificados += 1;
+      } catch (err) {
+        logger.error("[cron/documentos-vencimiento] superadmin failed", { err: String(err) });
+      }
+      continue;
+    }
 
     try {
       // 1) Notificación admin persistente (reaparece vía dedup window)
