@@ -33,6 +33,7 @@ import {
   BookOpen,
   Palette,
   Wallet,
+  Receipt,
   Server,
   Home,
   MessageSquare,
@@ -195,6 +196,11 @@ const NAV_GROUPS: NavGroupDef[] = [
         icon: <Wallet className="w-5 h-5 shrink-0" />,
         href: "/superadmin/billing",
       },
+      {
+        label: "Gastos",
+        icon: <Receipt className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/gastos",
+      },
     ],
   },
   {
@@ -316,6 +322,7 @@ const PAGE_META: Record<string, PageMeta> = {
   "/superadmin/pagos-pendientes": { title: "Pagos pendientes", section: "Finanzas" },
   "/superadmin/pagos-yape": { title: "Pagos Yape (IA)", section: "Finanzas" },
   "/superadmin/billing": { title: "Billing & Stripe", section: "Finanzas" },
+  "/superadmin/gastos": { title: "Gastos de plataforma", section: "Finanzas" },
 
   "/superadmin/design-system": { title: "Centro de diseño", section: "Diseño" },
   "/superadmin/plantilla": { title: "Plantilla del admin", section: "Diseño" },

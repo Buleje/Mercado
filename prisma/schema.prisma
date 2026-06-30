@@ -1241,6 +1241,29 @@ model Expense {
   @@index([tenantId])
 }
 
+// ─── Gastos de PLATAFORMA (superadmin, Brandon 2026-06-30) ───────────────────
+// Distinto de Expense (que es por-tenant): esto son los gastos REALES de Buleje
+// como SaaS — facturas de infra (Vercel/Supabase), mensajería (Twilio), IA
+// (Anthropic/OpenAI), pagos (fees Stripe/MP), personal, marketing. Global, sin
+// tenantId. Se compara contra el costo de infra ESTIMADO (lib/cost-tracking).
+model PlatformExpense {
+  id        String   @id @default(cuid())
+  concept   String // "Vercel Pro", "Twilio SMS", "Sueldo dev"
+  category  String // infra | mensajeria | ia | pagos | personal | marketing | otros
+  amount    Decimal  @db.Decimal(12, 2)
+  currency  String   @default("PEN") // PEN | USD
+  date      DateTime @default(now())
+  recurring Boolean  @default(false)
+  period    String   @default("") // mensual | anual (si recurring)
+  vendor    String   @default("")
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([date])
+}
+
 // ─── Product Bundles (Combos) ───────────────────────────
 model Bundle {
   id          String   @id @default(cuid())
