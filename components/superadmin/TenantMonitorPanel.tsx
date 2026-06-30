@@ -47,15 +47,41 @@ type HealthResponse = {
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const OVERALL_STATUS = {
-  healthy:  { icon: CheckCircle,    color: "text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)]", border: "border-[var(--data-success-500)]", label: "Sistema Saludable" },
-  warning:  { icon: AlertTriangle,  color: "text-[#0d9488]",   bg: "bg-[#0d9488]",   border: "border-[#0d9488]",   label: "Advertencias Detectadas" },
-  critical: { icon: XCircle,        color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)]",     border: "border-[var(--data-error-500)]",     label: "Problemas Críticos" },
+  healthy: {
+    icon: CheckCircle,
+    color: "text-[var(--data-success-500)]",
+    bg: "bg-[var(--data-success-50)]",
+    border: "border-[var(--data-success-500)]",
+    label: "Sistema Saludable",
+  },
+  warning: {
+    icon: AlertTriangle,
+    color: "text-[#0d9488]",
+    bg: "bg-[#0d9488]",
+    border: "border-[#0d9488]",
+    label: "Advertencias Detectadas",
+  },
+  critical: {
+    icon: XCircle,
+    color: "text-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-50)]",
+    border: "border-[var(--data-error-500)]",
+    label: "Problemas Críticos",
+  },
 };
 
 const TENANT_STATUS = {
-  healthy:  { dot: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)]" },
-  warning:  { dot: "bg-[#0d9488]",   text: "text-[#0d9488]",   bg: "bg-[#0d9488]" },
-  critical: { dot: "bg-[var(--data-error-500)]",     text: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)]" },
+  healthy: {
+    dot: "bg-[var(--data-success-500)]",
+    text: "text-[var(--data-success-500)]",
+    bg: "bg-[var(--data-success-50)]",
+  },
+  warning: { dot: "bg-[#0d9488]", text: "text-[#0d9488]", bg: "bg-[#0d9488]" },
+  critical: {
+    dot: "bg-[var(--data-error-500)]",
+    text: "text-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-50)]",
+  },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -71,11 +97,11 @@ function fmtDate(iso: string) {
 function Skeleton() {
   return (
     <div className="space-y-6 animate-pulse p-6">
-      <div className="h-24 bg-gray-100 rounded-xl" />
-      <div className="h-40 bg-gray-100 rounded-xl" />
+      <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl" />
+      <div className="h-40 bg-gray-100 dark:bg-gray-800 rounded-xl" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-48 bg-gray-100 rounded-xl" />
+          <div key={i} className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl" />
         ))}
       </div>
     </div>
@@ -149,16 +175,19 @@ export default function TenantMonitorPanel() {
           <div className="flex items-center gap-3">
             <StatusIcon className={`h-8 w-8 ${statusCfg.color}`} />
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{statusCfg.label}</h2>
-              <p className="text-sm text-gray-600">
-                Última verificación: {fmtDate(data.checkedAt)} · {data.tenants.length} tiendas monitoreadas
+              <h2 className="text-lg font-bold text-gray-900 dark:text-[var(--text-primary)]">
+                {statusCfg.label}
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-[var(--text-secondary)]">
+                Última verificación: {fmtDate(data.checkedAt)} · {data.tenants.length} tiendas
+                monitoreadas
               </p>
             </div>
           </div>
           <button
             onClick={() => void load(true)}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-[var(--rule-base)] hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             Actualizar
@@ -167,10 +196,12 @@ export default function TenantMonitorPanel() {
       </div>
 
       {/* ── Global Isolation Tests ── */}
-      <div className="rounded-xl bg-white border border-[var(--rule-base)] p-5">
+      <div className="rounded-xl bg-white dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] p-5">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="h-5 w-5 text-[var(--accent)]" />
-          <h3 className="text-base font-bold text-gray-900">Pruebas de Aislamiento Global</h3>
+          <h3 className="text-base font-bold text-gray-900 dark:text-[var(--text-primary)]">
+            Pruebas de Aislamiento Global
+          </h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {data.isolationTests.map((test, i) => (
@@ -188,9 +219,13 @@ export default function TenantMonitorPanel() {
                 ) : (
                   <XCircle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
                 )}
-                <span className="text-sm font-semibold text-gray-900">{test.name}</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)]">
+                  {test.name}
+                </span>
               </div>
-              <p className="text-xs text-gray-600 ml-6">{test.detail}</p>
+              <p className="text-xs text-gray-600 dark:text-[var(--text-secondary)] ml-6">
+                {test.detail}
+              </p>
             </div>
           ))}
         </div>
@@ -231,8 +266,10 @@ export default function TenantMonitorPanel() {
       {/* ── Per-Tenant Cards ── */}
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <Activity className="h-5 w-5 text-gray-700" />
-          <h3 className="text-base font-bold text-gray-900">Estado por Tienda</h3>
+          <Activity className="h-5 w-5 text-gray-700 dark:text-[var(--text-secondary)]" />
+          <h3 className="text-base font-bold text-gray-900 dark:text-[var(--text-primary)]">
+            Estado por Tienda
+          </h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.tenants.map((tenant) => (
@@ -268,13 +305,17 @@ function StatCard({
 }) {
   const c = STAT_COLORS[color] ?? STAT_COLORS.teal;
   return (
-    <div className="rounded-xl bg-white border border-[var(--rule-base)] p-4">
+    <div className="rounded-xl bg-white dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] p-4">
       <div className={`inline-flex p-2 rounded-lg ${c} mb-2`}>
         <Icon className="h-4 w-4" />
       </div>
-      <p className="text-2xl font-bold text-gray-900">{value.toLocaleString("es-PE")}</p>
-      <p className="text-xs font-semibold text-gray-700">{label}</p>
-      <p className="text-xs text-gray-500">{sub}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-[var(--text-primary)]">
+        {value.toLocaleString("es-PE")}
+      </p>
+      <p className="text-xs font-semibold text-gray-700 dark:text-[var(--text-secondary)]">
+        {label}
+      </p>
+      <p className="text-xs text-gray-500 dark:text-[var(--text-tertiary)]">{sub}</p>
     </div>
   );
 }
@@ -283,37 +324,60 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
   const cfg = TENANT_STATUS[tenant.status];
 
   return (
-    <div className="rounded-xl bg-white border border-[var(--rule-base)] p-4 hover:shadow-md transition-shadow">
+    <div className="rounded-xl bg-white dark:bg-[var(--surface-raised)] border border-[var(--rule-base)] p-4 hover:shadow-md transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className={`h-3 w-3 rounded-full ${cfg.dot}`} />
-          <h4 className="font-bold text-gray-900 text-sm">{tenant.name}</h4>
+          <h4 className="font-bold text-gray-900 dark:text-[var(--text-primary)] text-sm">
+            {tenant.name}
+          </h4>
         </div>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
-          {tenant.status === "healthy" ? "Saludable" : tenant.status === "warning" ? "Advertencia" : "Crítico"}
+          {tenant.status === "healthy"
+            ? "Saludable"
+            : tenant.status === "warning"
+              ? "Advertencia"
+              : "Crítico"}
         </span>
       </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="text-center">
-          <p className="text-lg font-bold text-gray-900">{tenant.stats.products}</p>
-          <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase tracking-wide">Productos</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-[var(--text-primary)]">
+            {tenant.stats.products}
+          </p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-[var(--text-tertiary)] uppercase tracking-wide">
+            Productos
+          </p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-bold text-gray-900">{tenant.stats.orders}</p>
-          <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase tracking-wide">Pedidos</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-[var(--text-primary)]">
+            {tenant.stats.orders}
+          </p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-[var(--text-tertiary)] uppercase tracking-wide">
+            Pedidos
+          </p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-bold text-gray-900">{tenant.stats.customers}</p>
-          <p className="text-[length:var(--ts-2xs)] text-gray-500 uppercase tracking-wide">Clientes</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-[var(--text-primary)]">
+            {tenant.stats.customers}
+          </p>
+          <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-[var(--text-tertiary)] uppercase tracking-wide">
+            Clientes
+          </p>
         </div>
       </div>
 
       {/* Activity */}
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-3 pb-3 border-b border-[var(--rule-soft)]">
-        <span>Pedidos 24h: <strong className="text-gray-700">{tenant.stats.ordersLast24h}</strong></span>
+      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-[var(--text-tertiary)] mb-3 pb-3 border-b border-[var(--rule-soft)]">
+        <span>
+          Pedidos 24h:{" "}
+          <strong className="text-gray-700 dark:text-[var(--text-secondary)]">
+            {tenant.stats.ordersLast24h}
+          </strong>
+        </span>
         <span className="text-gray-400">slug: {tenant.slug}</span>
       </div>
 
@@ -326,7 +390,9 @@ function TenantCard({ tenant }: { tenant: TenantHealth }) {
             ) : (
               <XCircle className="h-3 w-3 text-[var(--data-error-500)] shrink-0" />
             )}
-            <span className="text-xs text-gray-600 truncate">{check.detail}</span>
+            <span className="text-xs text-gray-600 dark:text-[var(--text-secondary)] truncate">
+              {check.detail}
+            </span>
           </div>
         ))}
       </div>

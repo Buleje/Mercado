@@ -355,7 +355,9 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     <Pencil className="w-4 h-4" />
                   </button>
                 </h2>
-                <p className="text-gray-500 text-xs mt-1 font-mono">{t.slug}</p>
+                <p className="text-gray-500 dark:text-[var(--text-tertiary)] text-xs mt-1 font-mono">
+                  {t.slug}
+                </p>
                 {t.ownerEmail && (
                   <p className="text-[var(--text-tertiary)] text-xs mt-0.5 truncate">
                     {t.ownerEmail}
@@ -444,7 +446,9 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 text-center"
                   >
                     <div className={`text-lg font-bold ${color}`}>{value}</div>
-                    <div className="text-gray-500 text-[length:var(--ts-xs)] mt-0.5">{label}</div>
+                    <div className="text-gray-500 dark:text-[var(--text-tertiary)] text-[length:var(--ts-xs)] mt-0.5">
+                      {label}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -482,7 +486,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       Marketplace
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-gray-500"}`}
+                      className={`px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-[var(--text-secondary)]"}`}
                     >
                       {storeInfo.isPublished ? "Publicada" : "No publicada"}
                     </span>

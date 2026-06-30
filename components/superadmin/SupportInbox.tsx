@@ -132,9 +132,23 @@ const MOCK_TICKETS: SupportTicket[] = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: typeof Inbox }> = {
-  open: { label: "Abierto", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]", icon: Mail },
-  in_progress: { label: "En progreso", color: "bg-[#0d9488] text-[#0d9488] dark:bg-[#0d9488]/30 dark:text-[#0d9488]", icon: Clock },
-  closed: { label: "Cerrado", color: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]", icon: CheckCircle2 },
+  open: {
+    label: "Abierto",
+    color:
+      "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
+    icon: Mail,
+  },
+  in_progress: {
+    label: "En progreso",
+    color: "bg-[#0d9488] text-[#0d9488] dark:bg-[#0d9488]/30 dark:text-[#0d9488]",
+    icon: Clock,
+  },
+  closed: {
+    label: "Cerrado",
+    color:
+      "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
+    icon: CheckCircle2,
+  },
 };
 
 const PRIORITY_COLOR: Record<TicketPriority, string> = {
@@ -181,7 +195,9 @@ export default function SupportInbox() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const selected = tickets.find((t) => t.id === selectedId) ?? null;
@@ -238,30 +254,28 @@ export default function SupportInbox() {
   }, [reply, selectedId]);
 
   const handleStatusChange = useCallback((ticketId: string, status: TicketStatus) => {
-    setTickets((prev) =>
-      prev.map((t) => (t.id === ticketId ? { ...t, status } : t)),
-    );
+    setTickets((prev) => prev.map((t) => (t.id === ticketId ? { ...t, status } : t)));
     // Fire-and-forget API call
     fetch(`/api/superadmin/support/${ticketId}/status`, {
       method: "PATCH",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ status }),
-    }).catch(() => {});
+    }).catch((e) => void e); // best-effort: el cambio de estado optimista ya se aplicó local
   }, []);
 
   if (loading) {
-    return (
-      <LoadingState />
-    );
+    return <LoadingState />;
   }
 
   return (
     <div className="flex flex-col lg:flex-row gap-0 h-[600px] bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
       {/* Ticket list (Gmail style) */}
-      <div className={cn(
-        "flex flex-col border-r border-[var(--rule-base)] dark:border-[var(--rule-base)]",
-        selected ? "hidden lg:flex lg:w-96" : "w-full",
-      )}>
+      <div
+        className={cn(
+          "flex flex-col border-r border-[var(--rule-base)] dark:border-[var(--rule-base)]",
+          selected ? "hidden lg:flex lg:w-96" : "w-full",
+        )}
+      >
         {/* Header + filters */}
         <div className="p-3 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2">
           <div className="flex items-center gap-2">
@@ -321,12 +335,14 @@ export default function SupportInbox() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <AlertTriangle className={cn("w-3 h-3 shrink-0", PRIORITY_COLOR[ticket.priority])} />
+                        <AlertTriangle
+                          className={cn("w-3 h-3 shrink-0", PRIORITY_COLOR[ticket.priority])}
+                        />
                         <p className="text-xs font-bold text-[var(--text-primary)] truncate">
                           {ticket.subject}
                         </p>
                       </div>
-                      <p className="text-[length:var(--ts-2xs)] text-gray-500 mt-0.5 truncate">
+                      <p className="text-[length:var(--ts-2xs)] text-gray-500 dark:text-[var(--text-tertiary)] mt-0.5 truncate">
                         {ticket.tenantName} — {ticket.senderEmail}
                       </p>
                       <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-0.5 truncate">
@@ -334,8 +350,15 @@ export default function SupportInbox() {
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className="text-[length:var(--ts-2xs)] text-gray-400">{timeAgo(ticket.createdAt)}</span>
-                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", statusCfg.color)}>
+                      <span className="text-[length:var(--ts-2xs)] text-gray-400">
+                        {timeAgo(ticket.createdAt)}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full",
+                          statusCfg.color,
+                        )}
+                      >
                         {statusCfg.label}
                       </span>
                     </div>
@@ -354,11 +377,10 @@ export default function SupportInbox() {
           <div className="p-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-bold text-sm text-[var(--text-primary)]">
-                  {selected.subject}
-                </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {selected.tenantName} &bull; {selected.senderEmail} &bull; {timeAgo(selected.createdAt)}
+                <h3 className="font-bold text-sm text-[var(--text-primary)]">{selected.subject}</h3>
+                <p className="text-xs text-gray-500 dark:text-[var(--text-tertiary)] mt-0.5">
+                  {selected.tenantName} &bull; {selected.senderEmail} &bull;{" "}
+                  {timeAgo(selected.createdAt)}
                 </p>
               </div>
               <button
@@ -412,7 +434,8 @@ export default function SupportInbox() {
                   {msg.body}
                 </p>
                 <p className="text-[length:var(--ts-2xs)] text-gray-400 mt-1.5">
-                  {msg.from === "support" ? "Soporte" : selected.tenantName} &bull; {timeAgo(msg.createdAt)}
+                  {msg.from === "support" ? "Soporte" : selected.tenantName} &bull;{" "}
+                  {timeAgo(msg.createdAt)}
                 </p>
               </div>
             ))}
@@ -439,7 +462,11 @@ export default function SupportInbox() {
                 disabled={!reply.trim() || sending}
                 className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
               >
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
