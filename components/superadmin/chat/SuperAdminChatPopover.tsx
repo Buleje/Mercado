@@ -49,8 +49,8 @@ export default function SuperAdminChatPopover() {
       const d = await r.json();
       setUnread(d.unread ?? 0);
       setConversations(d.conversations ?? []);
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error("[sa-chat] popover poll failed", err);
     }
   }, []);
 

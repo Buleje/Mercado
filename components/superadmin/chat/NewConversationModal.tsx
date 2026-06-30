@@ -60,7 +60,8 @@ export function NewConversationModal({ onClose, onCreated }: { onClose: () => vo
       if (!r.ok) throw new Error("error");
       const data = await r.json();
       onCreated(data.conversation.id);
-    } catch {
+    } catch (err) {
+      console.error("[sa-chat] create conversation failed", err);
       setErr("No se pudo crear la conversación");
       setCreating(false);
     }
@@ -108,7 +109,7 @@ export function NewConversationModal({ onClose, onCreated }: { onClose: () => vo
               <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder="Primer mensaje (opcional)…" className="w-full resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
             </>
           )}
-          {err && <p className="text-sm font-semibold text-[var(--data-error-600,#dc2626)]">{err}</p>}
+          {err && <p className="text-sm font-semibold text-[var(--data-error-600)]">{err}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
           <button onClick={onClose} className="rounded-xl px-4 h-10 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>

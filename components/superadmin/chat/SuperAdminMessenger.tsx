@@ -82,7 +82,8 @@ export default function SuperAdminMessenger() {
       if (!r.ok) throw new Error("fetch");
       const data = await r.json();
       setConversations(data.conversations ?? []);
-    } catch {
+    } catch (err) {
+      console.error("[sa-chat] load conversations failed", err);
       setError("No se pudieron cargar las conversaciones");
     } finally {
       setLoadingList(false);
@@ -107,7 +108,8 @@ export default function SuperAdminMessenger() {
       setConversations((prev) =>
         prev.map((c) => (c.id === id ? { ...c, unreadForPlatform: 0 } : c)),
       );
-    } catch {
+    } catch (err) {
+      console.error("[sa-chat] open conversation failed", err);
       setError("No se pudo abrir la conversación");
     } finally {
       setLoadingThread(false);
@@ -174,7 +176,8 @@ export default function SuperAdminMessenger() {
       setMessages((prev) => [...prev, data.message]);
       setText("");
       if (!internalNote) void loadConversations();
-    } catch {
+    } catch (err) {
+      console.error("[sa-chat] send message failed", err);
       setError("No se pudo enviar el mensaje");
     } finally {
       setSending(false);
@@ -225,7 +228,8 @@ export default function SuperAdminMessenger() {
       } else {
         setText(data.result);
       }
-    } catch {
+    } catch (err) {
+      console.error("[sa-chat] ai reply failed", err);
       setError("La IA no respondió");
     } finally {
       setAiBusy(false);
@@ -244,7 +248,8 @@ export default function SuperAdminMessenger() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(patch),
       });
-    } catch {
+    } catch (err) {
+      console.error("[sa-chat] status change failed", err);
       void loadConversations();
     }
   };
@@ -413,9 +418,9 @@ export default function SuperAdminMessenger() {
                     return (
                       <div
                         key={m.id}
-                        className="mx-auto max-w-[80%] rounded-lg border border-[#0d9488] bg-[#0d9488] dark:bg-teal-950/30 px-3 py-2"
+                        className="mx-auto max-w-[80%] rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2"
                       >
-                        <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#0d9488] dark:text-teal-300">
+                        <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--accent)]">
                           <StickyNote className="h-3 w-3" /> Nota interna · {m.senderName}
                         </p>
                         <p className="mt-1 text-sm text-[var(--text-primary)] whitespace-pre-wrap">
@@ -531,7 +536,7 @@ export default function SuperAdminMessenger() {
                 </div>
                 <button
                   onClick={() => setInternalNote((v) => !v)}
-                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-xs font-bold transition-colors ${internalNote ? "bg-[#0d9488] text-[#0d9488]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-xs font-bold transition-colors ${internalNote ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
                 >
                   <StickyNote className="h-3.5 w-3.5" /> {internalNote ? "Nota interna" : "Mensaje"}
                 </button>
@@ -552,7 +557,7 @@ export default function SuperAdminMessenger() {
                       ? "Nota interna (solo la ve el equipo)…"
                       : `Escribile a ${selected.tenantName}…`
                   }
-                  className={`flex-1 resize-none rounded-xl border-2 px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors ${internalNote ? "border-[#0d9488] bg-[#0d9488] dark:bg-teal-950/20" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus:border-[var(--accent)]"}`}
+                  className={`flex-1 resize-none rounded-xl border-2 px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors ${internalNote ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus:border-[var(--accent)]"}`}
                 />
                 <button
                   onClick={handleSend}
@@ -572,7 +577,7 @@ export default function SuperAdminMessenger() {
       </section>
 
       {error && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl bg-[var(--data-error-600,#dc2626)] px-4 py-2.5 text-sm font-bold text-white shadow-lg">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 py-2.5 text-sm font-bold text-white shadow-lg">
           <AlertCircle className="h-4 w-4" /> {error}
           <button onClick={() => setError(null)} className="ml-2">
             <Check className="h-4 w-4" />

@@ -62,7 +62,8 @@ export function BroadcastModal({ onClose, onSent }: { onClose: () => void; onSen
       const data = await r.json();
       setCount(data.count ?? 0);
       setSample(data.sample ?? []);
-    } catch {
+    } catch (err) {
+      console.error("[sa-chat] broadcast preview failed", err);
       setCount(null);
     }
   }, [status, plan]);
@@ -163,7 +164,7 @@ export function BroadcastModal({ onClose, onSent }: { onClose: () => void; onSen
               <p className="whitespace-pre-wrap text-sm text-[var(--text-primary)]">{preview}</p>
             </div>
           )}
-          {err && <p className="text-sm font-semibold text-[var(--data-error-600,#dc2626)]">{err}</p>}
+          {err && <p className="text-sm font-semibold text-[var(--data-error-600)]">{err}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
           <button onClick={onClose} className="rounded-xl px-4 h-10 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
