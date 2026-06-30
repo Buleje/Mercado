@@ -43,7 +43,6 @@ import {
   Search,
   Bell,
   Webhook,
-  HeartHandshake,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 
@@ -120,11 +119,10 @@ const NAV_GROUPS: NavGroupDef[] = [
         icon: <MessageSquare className="w-5 h-5 shrink-0" />,
         href: "/superadmin/chat",
       },
-      { label: "Alertas", icon: <Bell className="w-5 h-5 shrink-0" />, href: "/superadmin/alerts" },
       {
-        label: "Rescate",
-        icon: <HeartHandshake className="w-5 h-5 shrink-0" />,
-        href: "/superadmin/rescue",
+        label: "Retención",
+        icon: <Bell className="w-5 h-5 shrink-0" />,
+        href: "/superadmin/alerts",
       },
       {
         label: "Centro de control",

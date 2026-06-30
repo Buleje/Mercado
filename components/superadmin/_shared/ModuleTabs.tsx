@@ -41,6 +41,8 @@ import {
   Sparkles,
   Palette,
   Image as ImageIcon,
+  Bell,
+  HeartHandshake,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
@@ -155,4 +157,9 @@ export const MARCA_TABS: ModuleTab[] = [
 export const DISENO_TABS: ModuleTab[] = [
   { label: "Centro de diseño", href: "/superadmin/design-system", icon: Palette },
   { label: "Plantilla del admin", href: "/superadmin/plantilla", icon: Layers },
+];
+
+export const RETENCION_TABS: ModuleTab[] = [
+  { label: "Alertas", href: "/superadmin/alerts", icon: Bell },
+  { label: "Rescate", href: "/superadmin/rescue", icon: HeartHandshake },
 ];
