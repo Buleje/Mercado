@@ -3,9 +3,20 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Eye, EyeOff, Percent, Globe, RefreshCw, Check, X,
-  ShoppingBag, Star, Crown, Palette, Image as ImageIcon,
-  ToggleRight, GripVertical,
+  Eye,
+  EyeOff,
+  Percent,
+  Globe,
+  RefreshCw,
+  Check,
+  X,
+  ShoppingBag,
+  Star,
+  Crown,
+  Palette,
+  Image as ImageIcon,
+  ToggleRight,
+  GripVertical,
 } from "@buleje/design-system/icons";
 import { PlanBadge } from "@/components/superadmin/_shared/SABadge";
 import { TableSkeleton } from "@/components/superadmin/_shared/SASkeleton";
@@ -94,7 +105,9 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
         <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Eye className="w-4 h-4 text-[var(--data-success-500)]" />
           Tiendas visibles en el Marketplace
-          <span className="ml-auto text-xs font-normal text-gray-400">{published.length} tiendas</span>
+          <span className="ml-auto text-xs font-normal text-gray-400">
+            {published.length} tiendas
+          </span>
         </h3>
 
         {published.length === 0 ? (
@@ -115,7 +128,13 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                 {/* Logo */}
                 <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                   {store.logo ? (
-                    <Image src={store.logo} alt={store.name} width={40} height={40} className="object-cover" />
+                    <Image
+                      src={store.logo}
+                      alt={store.name}
+                      width={40}
+                      height={40}
+                      className="object-cover"
+                    />
                   ) : (
                     <ShoppingBag className="w-5 h-5 text-primary" />
                   )}
@@ -128,7 +147,9 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                       {store.name}
                     </span>
                     {i === 0 && <Crown className="w-3.5 h-3.5 text-[#0d9488]" />}
-                    <PlanBadge plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
+                    <PlanBadge
+                      plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"}
+                    />
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-xs text-gray-400 capitalize">{store.category}</span>
@@ -141,11 +162,13 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
 
                 {/* Nivel de visibilidad en /tiendas (beneficio por plan) */}
                 <div className="shrink-0 hidden md:flex items-center gap-0.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
-                  {([
-                    { key: "standard", label: "Estándar" },
-                    { key: "featured", label: "Destacada" },
-                    { key: "premium", label: "Premium" },
-                  ] as const).map((t) => {
+                  {(
+                    [
+                      { key: "standard", label: "Estándar" },
+                      { key: "featured", label: "Destacada" },
+                      { key: "premium", label: "Premium" },
+                    ] as const
+                  ).map((t) => {
                     const active = (store.displayTier ?? "standard") === t.key;
                     return (
                       <button
@@ -153,7 +176,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                         onClick={() => void setDisplayTier(store, t.key)}
                         disabled={saving === store.id}
                         title={`Nivel: ${t.label}`}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors disabled:opacity-40 ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 ${
                           active
                             ? "bg-[var(--accent)] text-white shadow-sm"
                             : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
@@ -181,7 +204,6 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                           if (e.key === "Enter") void saveCommission(store.id);
                           if (e.key === "Escape") setEditCommission(null);
                         }}
-                        autoFocus
                       />
                       <span className="text-xs text-gray-400">%</span>
                       <button
@@ -238,7 +260,9 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
           <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
             <EyeOff className="w-4 h-4 text-gray-400" />
             Tiendas ocultas
-            <span className="ml-auto text-xs font-normal text-gray-400">{hidden.length} tiendas</span>
+            <span className="ml-auto text-xs font-normal text-gray-400">
+              {hidden.length} tiendas
+            </span>
           </h3>
 
           <div className="space-y-3">
@@ -307,7 +331,9 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
               <ImageIcon className="w-4 h-4 text-gray-400" />
-              <span className="text-xs font-semibold text-[var(--text-secondary)]">Hero Banner</span>
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                Hero Banner
+              </span>
             </div>
             <p className="text-xs text-gray-400">
               El banner grande que se muestra arriba del marketplace
@@ -345,7 +371,9 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
           <div className="rounded-xl border border-[var(--rule-base)] p-4 bg-gray-50/50 dark:bg-gray-800/30">
             <div className="flex items-center gap-2 mb-2">
               <ToggleRight className="w-4 h-4 text-[var(--data-success-500)]" />
-              <span className="text-xs font-semibold text-[var(--text-secondary)]">Visibilidad</span>
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                Visibilidad
+              </span>
             </div>
             <p className="text-xs text-gray-400">
               Controla qué tiendas aparecen en el marketplace con los botones Publicar/Ocultar

@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  MessageSquare, Send, Loader2, ArrowLeft, ExternalLink, X, Megaphone,
+  MessageSquare,
+  Send,
+  Loader2,
+  ArrowLeft,
+  ExternalLink,
+  X,
+  Megaphone,
 } from "@buleje/design-system/icons";
 import type { PlatformConversation, PlatformMessage } from "./types";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -36,7 +42,9 @@ export default function SuperAdminChatPopover() {
 
   const refreshUnread = useCallback(async () => {
     try {
-      const r = await fetch("/api/superadmin/chat/conversations?status=open", { credentials: "include" });
+      const r = await fetch("/api/superadmin/chat/conversations?status=open", {
+        credentials: "include",
+      });
       if (!r.ok) return;
       const d = await r.json();
       setUnread(d.unread ?? 0);
@@ -46,7 +54,9 @@ export default function SuperAdminChatPopover() {
     }
   }, []);
 
-  useEffect(() => { void refreshUnread(); }, [refreshUnread]);
+  useEffect(() => {
+    void refreshUnread();
+  }, [refreshUnread]);
 
   // Click-outside + Escape
   useEffect(() => {
@@ -57,11 +67,18 @@ export default function SuperAdminChatPopover() {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); window.removeEventListener("keydown", onKey); };
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
-  useEffect(() => { if (open) void refreshUnread(); }, [open, refreshUnread]);
-  useEffect(() => { endRef.current?.scrollIntoView(); }, [messages]);
+  useEffect(() => {
+    if (open) void refreshUnread();
+  }, [open, refreshUnread]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView();
+  }, [messages]);
 
   const openThread = async (id: string) => {
     setSelectedId(id);
@@ -71,7 +88,9 @@ export default function SuperAdminChatPopover() {
       const r = await fetch(`/api/superadmin/chat/conversations/${id}`, { credentials: "include" });
       const d = await r.json();
       setMessages(d.messages ?? []);
-      setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadForPlatform: 0 } : c)));
+      setConversations((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, unreadForPlatform: 0 } : c)),
+      );
       void refreshUnread();
     } finally {
       setLoading(false);
@@ -89,7 +108,11 @@ export default function SuperAdminChatPopover() {
         body: JSON.stringify({ body: text.trim() }),
       });
       const d = await r.json();
-      if (r.ok) { setMessages((prev) => [...prev, d.message]); setText(""); void refreshUnread(); }
+      if (r.ok) {
+        setMessages((prev) => [...prev, d.message]);
+        setText("");
+        void refreshUnread();
+      }
     } finally {
       setSending(false);
     }
@@ -108,7 +131,7 @@ export default function SuperAdminChatPopover() {
       >
         <MessageSquare className="w-5 h-5" />
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white tabular-nums">
+          <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-xs font-black text-white tabular-nums">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -119,8 +142,12 @@ export default function SuperAdminChatPopover() {
           {/* Header */}
           <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-base)] px-4 py-3">
             {selected ? (
-              <button onClick={() => setSelectedId(null)} className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
-                <ArrowLeft className="h-4 w-4" /> <span className="truncate max-w-[180px]">{selected.tenantName}</span>
+              <button
+                onClick={() => setSelectedId(null)}
+                className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]"
+              >
+                <ArrowLeft className="h-4 w-4" />{" "}
+                <span className="truncate max-w-[180px]">{selected.tenantName}</span>
               </button>
             ) : (
               <span className="flex items-center gap-2 text-sm font-extrabold text-[var(--text-primary)]">
@@ -128,10 +155,19 @@ export default function SuperAdminChatPopover() {
               </span>
             )}
             <div className="flex items-center gap-1">
-              <Link href="/superadmin/chat" onClick={() => setOpen(false)} className="inline-flex items-center gap-1 rounded-lg px-2 h-7 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)]">
+              <Link
+                href="/superadmin/chat"
+                onClick={() => setOpen(false)}
+                className="inline-flex items-center gap-1 rounded-lg px-2 h-7 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+              >
                 Ver todo <ExternalLink className="h-3 w-3" />
               </Link>
-              <button onClick={() => setOpen(false)} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
 
@@ -142,19 +178,38 @@ export default function SuperAdminChatPopover() {
                 <div className="flex flex-col items-center gap-2 p-8 text-center text-[var(--text-tertiary)]">
                   <MessageSquare className="h-7 w-7" strokeWidth={1.5} />
                   <p className="text-sm font-medium">Sin conversaciones</p>
-                  <Link href="/superadmin/chat" onClick={() => setOpen(false)} className="text-sm font-bold text-[var(--accent)]">Iniciar una</Link>
+                  <Link
+                    href="/superadmin/chat"
+                    onClick={() => setOpen(false)}
+                    className="text-sm font-bold text-[var(--accent)]"
+                  >
+                    Iniciar una
+                  </Link>
                 </div>
               ) : (
                 conversations.map((c) => (
-                  <button key={c.id} onClick={() => openThread(c.id)} className="w-full border-b border-[var(--rule-soft)] px-4 py-2.5 text-left hover:bg-[var(--surface-sunken)] transition-colors">
+                  <button
+                    key={c.id}
+                    onClick={() => openThread(c.id)}
+                    className="w-full border-b border-[var(--rule-soft)] px-4 py-2.5 text-left hover:bg-[var(--surface-sunken)] transition-colors"
+                  >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-bold text-[var(--text-primary)]">{c.tenantName}</span>
-                      <span className="shrink-0 text-[10px] font-semibold text-[var(--text-tertiary)]">{ago(c.lastMessageAt)}</span>
+                      <span className="truncate text-sm font-bold text-[var(--text-primary)]">
+                        {c.tenantName}
+                      </span>
+                      <span className="shrink-0 text-xs font-semibold text-[var(--text-tertiary)]">
+                        {ago(c.lastMessageAt)}
+                      </span>
                     </div>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
-                      <span className="truncate text-xs text-[var(--text-secondary)]">{c.lastSenderType === "platform" ? "Vos: " : ""}{c.lastMessageText ?? "—"}</span>
+                      <span className="truncate text-xs text-[var(--text-secondary)]">
+                        {c.lastSenderType === "platform" ? "Vos: " : ""}
+                        {c.lastMessageText ?? "—"}
+                      </span>
                       {c.unreadForPlatform > 0 && (
-                        <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-black text-white">{c.unreadForPlatform}</span>
+                        <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--accent)] px-1 text-xs font-black text-white">
+                          {c.unreadForPlatform}
+                        </span>
                       )}
                     </div>
                   </button>
@@ -168,19 +223,30 @@ export default function SuperAdminChatPopover() {
                 {loading ? (
                   <p className="text-center text-xs text-[var(--text-tertiary)]">Cargando…</p>
                 ) : (
-                  messages.filter((m) => !m.isInternalNote).map((m) => {
-                    const mine = m.senderType === "platform";
-                    return (
-                      <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[80%] rounded-2xl px-3 py-1.5 ${mine ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]"}`}>
-                          {m.messageType === "broadcast" && (
-                            <p className={`mb-0.5 flex items-center gap-1 text-[9px] font-black uppercase ${mine ? "text-white/80" : "text-[var(--accent)]"}`}><Megaphone className="h-2.5 w-2.5" /> Anuncio</p>
-                          )}
-                          <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>
+                  messages
+                    .filter((m) => !m.isInternalNote)
+                    .map((m) => {
+                      const mine = m.senderType === "platform";
+                      return (
+                        <div
+                          key={m.id}
+                          className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-2xl px-3 py-1.5 ${mine ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]"}`}
+                          >
+                            {m.messageType === "broadcast" && (
+                              <p
+                                className={`mb-0.5 flex items-center gap-1 text-xs font-black uppercase ${mine ? "text-white/80" : "text-[var(--accent)]"}`}
+                              >
+                                <Megaphone className="h-2.5 w-2.5" /> Anuncio
+                              </p>
+                            )}
+                            <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })
                 )}
                 <div ref={endRef} />
               </div>
@@ -188,13 +254,26 @@ export default function SuperAdminChatPopover() {
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
                   rows={1}
                   placeholder={`Escribile a ${selected.tenantName}…`}
                   className="flex-1 resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
-                <button onClick={send} disabled={sending || !text.trim()} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-40">
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                <button
+                  onClick={send}
+                  disabled={sending || !text.trim()}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-40"
+                >
+                  {sending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </>

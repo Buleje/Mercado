@@ -78,8 +78,7 @@ export function TierLegend() {
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
       <p className="text-sm font-extrabold text-[var(--text-primary)]">
-        Niveles de visibilidad en{" "}
-        <span className="text-[var(--accent)]">/tiendas</span>
+        Niveles de visibilidad en <span className="text-[var(--accent)]">/tiendas</span>
       </p>
       <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
         Así se verá la tienda según el nivel que le asignes. Ideal para premiar planes más altos.
@@ -91,7 +90,7 @@ export function TierLegend() {
             <div key={t.key} className="min-w-0">
               <Mock />
               <p className="mt-2 text-xs font-bold text-[var(--text-primary)]">{t.label}</p>
-              <p className="text-[11px] leading-tight text-[var(--text-tertiary)]">{t.desc}</p>
+              <p className="text-xs leading-tight text-[var(--text-tertiary)]">{t.desc}</p>
             </div>
           );
         })}
@@ -112,7 +111,7 @@ export function TierSelector({
   busy?: boolean;
   size?: "sm" | "md";
 }) {
-  const pad = size === "md" ? "px-3 py-1.5 text-xs" : "px-2 py-1 text-[11px]";
+  const pad = size === "md" ? "px-3 py-1.5 text-xs" : "px-2 py-1 text-xs";
   return (
     <div className="inline-flex items-center gap-0.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
       {TIER_OPTS.map((t) => {

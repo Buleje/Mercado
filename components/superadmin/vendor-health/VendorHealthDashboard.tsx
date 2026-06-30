@@ -114,9 +114,7 @@ function csvCell(v: string | number | null | undefined): string {
 function exportAlertsCSV(alerts: SummaryAlert[]) {
   const headers = ["VendorId", "TenantSlug", "Kind", "Detail"];
   const rows = alerts.map((a) => [a.vendorId, a.tenantSlug ?? "", a.kind, a.detail]);
-  const csv =
-    "﻿" +
-    [headers, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const csv = "﻿" + [headers, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -140,13 +138,7 @@ function HealthRing({ score }: { score: number }) {
         : { stroke: "stroke-rose-500", text: "text-rose-600 dark:text-rose-400" };
   return (
     <div className="relative inline-flex items-center justify-center shrink-0">
-      <svg
-        width="128"
-        height="128"
-        viewBox="0 0 128 128"
-        className="-rotate-90"
-        aria-hidden
-      >
+      <svg width="128" height="128" viewBox="0 0 128 128" className="-rotate-90" aria-hidden>
         <circle
           cx="64"
           cy="64"
@@ -168,10 +160,8 @@ function HealthRing({ score }: { score: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-3xl font-extrabold tabular-nums", tone.text)}>
-          {score}
-        </span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className={cn("text-3xl font-extrabold tabular-nums", tone.text)}>{score}</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           /100
         </span>
       </div>
@@ -243,9 +233,7 @@ export function VendorHealthDashboard() {
 
   const [searchRaw, setSearchRaw] = useState("");
   const [search, setSearch] = useState("");
-  const [kindFilter, setKindFilter] = useState<SummaryAlert["kind"] | "all">(
-    "all",
-  );
+  const [kindFilter, setKindFilter] = useState<SummaryAlert["kind"] | "all">("all");
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastId = useRef(1);
@@ -259,28 +247,25 @@ export function VendorHealthDashboard() {
   }, []);
 
   // ── Fetch summary ────────────────────────────────────────────────────
-  const fetchSummary = useCallback(
-    async (silent = false) => {
-      if (!silent) setLoading(true);
-      setRefreshing(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/superadmin/vendor-health", {
-          credentials: "include",
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as VendorHealthResponse;
-        setData(json);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error de red");
-      } finally {
-        if (!silent) setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [],
-  );
+  const fetchSummary = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/superadmin/vendor-health", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as VendorHealthResponse;
+      setData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error de red");
+    } finally {
+      if (!silent) setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     void fetchSummary();
@@ -303,8 +288,7 @@ export function VendorHealthDashboard() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
-      const inField =
-        tag === "input" || tag === "textarea" || tag === "select";
+      const inField = tag === "input" || tag === "textarea" || tag === "select";
       if (e.key === "Escape" && !inField) {
         setSearchRaw("");
         setKindFilter("all");
@@ -349,10 +333,7 @@ export function VendorHealthDashboard() {
       pushToast("Grace limpiado", "success");
       await fetchSummary(true);
     } catch (err) {
-      pushToast(
-        `Error: ${err instanceof Error ? err.message : "red"}`,
-        "error",
-      );
+      pushToast(`Error: ${err instanceof Error ? err.message : "red"}`, "error");
     } finally {
       setClearingTenant(null);
     }
@@ -374,19 +355,13 @@ export function VendorHealthDashboard() {
         const body = (await res.json().catch(() => ({}))) as {
           error?: string;
         };
-        pushToast(
-          body.error ?? `Error: HTTP ${res.status}`,
-          "error",
-        );
+        pushToast(body.error ?? `Error: HTTP ${res.status}`, "error");
         return;
       }
       pushToast("Cron disparado · refrescando en 5s", "success");
       setTimeout(() => fetchSummary(true), 5000);
     } catch (err) {
-      pushToast(
-        `Error: ${err instanceof Error ? err.message : "red"}`,
-        "error",
-      );
+      pushToast(`Error: ${err instanceof Error ? err.message : "red"}`, "error");
     } finally {
       setTriggering(false);
     }
@@ -436,9 +411,7 @@ export function VendorHealthDashboard() {
           <AlertTriangle className="h-5 w-5" aria-hidden />
           No se pudo cargar la salud de vendors
         </p>
-        <p className="mt-1 text-sm text-rose-600 dark:text-rose-300/80">
-          {error}
-        </p>
+        <p className="mt-1 text-sm text-rose-600 dark:text-rose-300/80">{error}</p>
         <button
           type="button"
           onClick={() => fetchSummary()}
@@ -469,10 +442,7 @@ export function VendorHealthDashboard() {
         />
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-8 text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
-            <Clock
-              className="h-7 w-7 text-[var(--text-tertiary)]"
-              aria-hidden
-            />
+            <Clock className="h-7 w-7 text-[var(--text-tertiary)]" aria-hidden />
           </div>
           <p className="text-base font-extrabold text-[var(--text-primary)]">
             Esperando primer run del cron
@@ -506,11 +476,7 @@ export function VendorHealthDashboard() {
         setAutoRefresh={setAutoRefresh}
         onRefresh={() => fetchSummary()}
         onTrigger={triggerCron}
-        onExport={
-          summary.alerts.length > 0
-            ? () => exportAlertsCSV(summary.alerts)
-            : undefined
-        }
+        onExport={summary.alerts.length > 0 ? () => exportAlertsCSV(summary.alerts) : undefined}
       />
 
       {/* ── Stale banner ─────────────────────────────────── */}
@@ -525,12 +491,10 @@ export function VendorHealthDashboard() {
           />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-teal-900 dark:text-teal-100">
-              Último run hace {Math.round(ageMinutes / 60)}h — el cron debería
-              correr cada 24h.
+              Último run hace {Math.round(ageMinutes / 60)}h — el cron debería correr cada 24h.
             </p>
             <p className="text-xs text-teal-800 dark:text-teal-200 mt-0.5">
-              Disparalo manualmente o revisá{" "}
-              <code className="font-mono">/api/cron/health</code>.
+              Disparalo manualmente o revisá <code className="font-mono">/api/cron/health</code>.
             </p>
           </div>
         </div>
@@ -552,8 +516,8 @@ export function VendorHealthDashboard() {
                   : "Acción urgente"}
             </h2>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
-              {summary.total - summary.alerts.length} de {summary.total} vendors
-              activos sin alertas RENIEC/SUNAT.
+              {summary.total - summary.alerts.length} de {summary.total} vendors activos sin alertas
+              RENIEC/SUNAT.
             </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-[var(--text-tertiary)]">
               <span className="inline-flex items-center gap-1.5">
@@ -627,14 +591,9 @@ export function VendorHealthDashboard() {
                     : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40",
                 )}
               >
-                <span
-                  className={cn("h-2 w-2 rounded-full", KIND_DOT[kind])}
-                  aria-hidden
-                />
+                <span className={cn("h-2 w-2 rounded-full", KIND_DOT[kind])} aria-hidden />
                 {KIND_LABEL[kind]}
-                <span className="ml-1 tabular-nums text-[var(--text-tertiary)]">
-                  {count}
-                </span>
+                <span className="ml-1 tabular-nums text-[var(--text-tertiary)]">{count}</span>
               </button>
             );
           })}
@@ -706,10 +665,7 @@ export function VendorHealthDashboard() {
                   className="flex items-start gap-3 p-3 sm:p-3.5 hover:bg-[var(--surface-sunken)]/50 transition-colors"
                 >
                   <span
-                    className={cn(
-                      "h-2.5 w-2.5 rounded-full mt-2 shrink-0",
-                      KIND_DOT[a.kind],
-                    )}
+                    className={cn("h-2.5 w-2.5 rounded-full mt-2 shrink-0", KIND_DOT[a.kind])}
                     aria-hidden
                   />
                   <div className="flex-1 min-w-0">
@@ -757,10 +713,7 @@ export function VendorHealthDashboard() {
                 const untilDate = new Date(g.until);
                 const daysLeft = Math.max(
                   0,
-                  Math.ceil(
-                    (untilDate.getTime() - Date.now()) /
-                      (24 * 60 * 60 * 1000),
-                  ),
+                  Math.ceil((untilDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
                 );
                 const urgent = daysLeft <= 2;
                 return (
@@ -809,8 +762,7 @@ export function VendorHealthDashboard() {
                           </p>
                         )}
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
-                          Reconocido por{" "}
-                          <span className="font-bold">{g.acknowledgedBy}</span>
+                          Reconocido por <span className="font-bold">{g.acknowledgedBy}</span>
                           {g.tenantSlug && (
                             <>
                               {" · "}

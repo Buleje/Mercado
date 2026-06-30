@@ -16,11 +16,7 @@
 
 import { useState } from "react";
 import type { LucideIcon } from "@buleje/design-system/icons";
-import {
-  ArrowUpRight,
-  Check,
-  Copy,
-} from "@buleje/design-system/icons";
+import { ArrowUpRight, Check, Copy } from "@buleje/design-system/icons";
 import { cn } from "@buleje/design-system";
 import type { PlatformHealthStatus } from "@/lib/superadmin/platform-health";
 
@@ -42,7 +38,10 @@ export interface PlatformCardProps {
   category?: string;
 }
 
-const STATUS_META: Record<PlatformHealthStatus, { label: string; dot: string; bg: string; text: string }> = {
+const STATUS_META: Record<
+  PlatformHealthStatus,
+  { label: string; dot: string; bg: string; text: string }
+> = {
   operational: {
     label: "Operativo",
     dot: "bg-[var(--data-success-500)]",
@@ -70,13 +69,15 @@ const STATUS_META: Record<PlatformHealthStatus, { label: string; dot: string; bg
 };
 
 const TONE_GRADIENT: Record<NonNullable<PlatformCardProps["tone"]>, string> = {
-  teal:    "from-teal-500/15 to-cyan-500/5 text-teal-600 dark:text-teal-300 ring-teal-500/30",
-  violet:  "from-violet-500/15 to-purple-500/5 text-violet-600 dark:text-violet-300 ring-violet-500/30",
-  amber:   "from-teal-500/15 to-teal-500/5 text-teal-600 dark:text-teal-300 ring-teal-500/30",
-  sky:     "from-sky-500/15 to-blue-500/5 text-sky-600 dark:text-sky-300 ring-sky-500/30",
-  rose:    "from-rose-500/15 to-pink-500/5 text-rose-600 dark:text-rose-300 ring-rose-500/30",
-  emerald: "from-emerald-500/15 to-green-500/5 text-emerald-600 dark:text-emerald-300 ring-emerald-500/30",
-  slate:   "from-slate-500/15 to-zinc-500/5 text-slate-600 dark:text-slate-300 ring-slate-500/30",
+  teal: "from-teal-500/15 to-cyan-500/5 text-teal-600 dark:text-teal-300 ring-teal-500/30",
+  violet:
+    "from-violet-500/15 to-purple-500/5 text-violet-600 dark:text-violet-300 ring-violet-500/30",
+  amber: "from-teal-500/15 to-teal-500/5 text-teal-600 dark:text-teal-300 ring-teal-500/30",
+  sky: "from-sky-500/15 to-blue-500/5 text-sky-600 dark:text-sky-300 ring-sky-500/30",
+  rose: "from-rose-500/15 to-pink-500/5 text-rose-600 dark:text-rose-300 ring-rose-500/30",
+  emerald:
+    "from-emerald-500/15 to-green-500/5 text-emerald-600 dark:text-emerald-300 ring-emerald-500/30",
+  slate: "from-slate-500/15 to-zinc-500/5 text-slate-600 dark:text-slate-300 ring-slate-500/30",
 };
 
 export function PlatformCard({
@@ -130,13 +131,16 @@ export function PlatformCard({
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider",
             statusMeta.bg,
             statusMeta.text,
           )}
           aria-label={statusMeta.label}
         >
-          <span className={cn("h-1.5 w-1.5 rounded-full animate-pulse", statusMeta.dot)} aria-hidden />
+          <span
+            className={cn("h-1.5 w-1.5 rounded-full animate-pulse", statusMeta.dot)}
+            aria-hidden
+          />
           {statusMeta.label}
         </span>
       </header>
@@ -144,13 +148,11 @@ export function PlatformCard({
       {/* Nombre + categoría + descripción */}
       <div className="min-w-0">
         {category && (
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
             {category}
           </p>
         )}
-        <h3 className="text-[15px] font-bold text-[var(--text-primary)] leading-tight">
-          {name}
-        </h3>
+        <h3 className="text-[15px] font-bold text-[var(--text-primary)] leading-tight">{name}</h3>
         <p className="mt-1 text-[13px] text-[var(--text-secondary)] leading-snug line-clamp-2">
           {description}
         </p>
@@ -158,7 +160,7 @@ export function PlatformCard({
 
       {/* URL pill + copy + arrow */}
       <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-[var(--rule-soft)]">
-        <code className="truncate font-mono text-[11px] font-semibold text-[var(--text-tertiary)]">
+        <code className="truncate font-mono text-xs font-semibold text-[var(--text-tertiary)]">
           {href}
         </code>
         <div className="flex items-center gap-1 shrink-0">

@@ -3,12 +3,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Search, Send, Sparkles, Megaphone, Plus, StickyNote, Loader2,
-  MessageSquare, ChevronDown, Check, FileText, AlertCircle,
+  Search,
+  Send,
+  Sparkles,
+  Megaphone,
+  Plus,
+  StickyNote,
+  Loader2,
+  MessageSquare,
+  ChevronDown,
+  Check,
+  FileText,
+  AlertCircle,
 } from "@buleje/design-system/icons";
 import {
-  type PlatformConversation, type PlatformMessage, type PlatformConvStatus,
-  type PlatformPriority, PRIORITY_META, QUICK_TEMPLATES,
+  type PlatformConversation,
+  type PlatformMessage,
+  type PlatformConvStatus,
+  type PlatformPriority,
+  PRIORITY_META,
+  QUICK_TEMPLATES,
 } from "./types";
 import { BroadcastModal } from "./BroadcastModal";
 import { NewConversationModal } from "./NewConversationModal";
@@ -62,7 +76,9 @@ export default function SuperAdminMessenger() {
     if (statusTab !== "all") params.set("status", statusTab);
     if (search.trim()) params.set("search", search.trim());
     try {
-      const r = await fetch(`/api/superadmin/chat/conversations?${params}`, { credentials: "include" });
+      const r = await fetch(`/api/superadmin/chat/conversations?${params}`, {
+        credentials: "include",
+      });
       if (!r.ok) throw new Error("fetch");
       const data = await r.json();
       setConversations(data.conversations ?? []);
@@ -88,7 +104,9 @@ export default function SuperAdminMessenger() {
       const data = await r.json();
       setMessages(data.messages ?? []);
       // Reflejar leído en la lista sin refetch completo.
-      setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unreadForPlatform: 0 } : c)));
+      setConversations((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, unreadForPlatform: 0 } : c)),
+      );
     } catch {
       setError("No se pudo abrir la conversación");
     } finally {
@@ -172,7 +190,12 @@ export default function SuperAdminMessenger() {
         method: "POST",
         credentials: "include",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ mode, conversationId: selectedId, text: mode === "tone" ? text : undefined, tone }),
+        body: JSON.stringify({
+          mode,
+          conversationId: selectedId,
+          text: mode === "tone" ? text : undefined,
+          tone,
+        }),
       });
       const data = await r.json();
       if (!r.ok) {
@@ -183,10 +206,20 @@ export default function SuperAdminMessenger() {
         setMessages((prev) => [
           ...prev,
           {
-            id: `ai-${Date.now()}`, conversationId: selectedId, tenantId: "", senderType: "system",
-            senderName: "Resumen IA", senderId: null, body: data.result, messageType: "system_event",
-            attachmentUrl: null, isInternalNote: true, metadataJson: null, readByPlatformAt: null,
-            readByTenantAt: null, createdAt: new Date().toISOString(),
+            id: `ai-${Date.now()}`,
+            conversationId: selectedId,
+            tenantId: "",
+            senderType: "system",
+            senderName: "Resumen IA",
+            senderId: null,
+            body: data.result,
+            messageType: "system_event",
+            attachmentUrl: null,
+            isInternalNote: true,
+            metadataJson: null,
+            readByPlatformAt: null,
+            readByTenantAt: null,
+            createdAt: new Date().toISOString(),
           },
         ]);
       } else {
@@ -199,7 +232,9 @@ export default function SuperAdminMessenger() {
     }
   };
 
-  const patchConversation = async (patch: Partial<{ status: PlatformConvStatus; priority: PlatformPriority; labels: string[] }>) => {
+  const patchConversation = async (
+    patch: Partial<{ status: PlatformConvStatus; priority: PlatformPriority; labels: string[] }>,
+  ) => {
     if (!selectedId) return;
     setConversations((prev) => prev.map((c) => (c.id === selectedId ? { ...c, ...patch } : c)));
     try {
@@ -266,7 +301,12 @@ export default function SuperAdminMessenger() {
             <div className="flex flex-col items-center gap-2 p-8 text-center text-[var(--text-tertiary)]">
               <MessageSquare className="h-8 w-8" strokeWidth={1.5} />
               <p className="text-sm font-medium">No hay conversaciones</p>
-              <button onClick={() => setShowNew(true)} className="text-sm font-bold text-[var(--accent)]">Iniciar una</button>
+              <button
+                onClick={() => setShowNew(true)}
+                className="text-sm font-bold text-[var(--accent)]"
+              >
+                Iniciar una
+              </button>
             </div>
           ) : (
             conversations.map((c) => (
@@ -277,17 +317,24 @@ export default function SuperAdminMessenger() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-1.5 min-w-0">
-                    <span className={`h-2 w-2 shrink-0 rounded-full ${PRIORITY_META[c.priority].dot}`} />
-                    <span className="truncate text-sm font-bold text-[var(--text-primary)]">{c.tenantName}</span>
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${PRIORITY_META[c.priority].dot}`}
+                    />
+                    <span className="truncate text-sm font-bold text-[var(--text-primary)]">
+                      {c.tenantName}
+                    </span>
                   </span>
-                  <span className="shrink-0 text-[10px] font-semibold text-[var(--text-tertiary)] tabular-nums">{timeAgo(c.lastMessageAt)}</span>
+                  <span className="shrink-0 text-xs font-semibold text-[var(--text-tertiary)] tabular-nums">
+                    {timeAgo(c.lastMessageAt)}
+                  </span>
                 </div>
                 <div className="mt-0.5 flex items-center justify-between gap-2">
                   <span className="truncate text-xs text-[var(--text-secondary)]">
-                    {c.lastSenderType === "platform" ? "Vos: " : ""}{c.lastMessageText ?? c.subject ?? "Sin mensajes"}
+                    {c.lastSenderType === "platform" ? "Vos: " : ""}
+                    {c.lastMessageText ?? c.subject ?? "Sin mensajes"}
                   </span>
                   {c.unreadForPlatform > 0 && (
-                    <span className="shrink-0 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[10px] font-black text-white tabular-nums">
+                    <span className="shrink-0 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-xs font-black text-white tabular-nums">
                       {c.unreadForPlatform}
                     </span>
                   )}
@@ -295,7 +342,12 @@ export default function SuperAdminMessenger() {
                 {c.labels.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1">
                     {c.labels.slice(0, 3).map((l) => (
-                      <span key={l} className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)]">{l}</span>
+                      <span
+                        key={l}
+                        className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs font-semibold text-[var(--text-secondary)]"
+                      >
+                        {l}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -317,13 +369,19 @@ export default function SuperAdminMessenger() {
             {/* Header del hilo + triage */}
             <header className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
               <div className="min-w-0">
-                <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{selected.tenantName}</p>
-                <p className="truncate text-xs text-[var(--text-tertiary)]">{selected.subject ?? "Conversación de plataforma"}</p>
+                <p className="truncate text-base font-extrabold text-[var(--text-primary)]">
+                  {selected.tenantName}
+                </p>
+                <p className="truncate text-xs text-[var(--text-tertiary)]">
+                  {selected.subject ?? "Conversación de plataforma"}
+                </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <select
                   value={selected.priority}
-                  onChange={(e) => patchConversation({ priority: e.target.value as PlatformPriority })}
+                  onChange={(e) =>
+                    patchConversation({ priority: e.target.value as PlatformPriority })
+                  }
                   className="h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
                 >
                   <option value="high">Prioridad alta</option>
@@ -332,7 +390,9 @@ export default function SuperAdminMessenger() {
                 </select>
                 <select
                   value={selected.status}
-                  onChange={(e) => patchConversation({ status: e.target.value as PlatformConvStatus })}
+                  onChange={(e) =>
+                    patchConversation({ status: e.target.value as PlatformConvStatus })
+                  }
                   className="h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
                 >
                   <option value="open">Abierta</option>
@@ -351,24 +411,37 @@ export default function SuperAdminMessenger() {
                   const mine = m.senderType === "platform";
                   if (m.isInternalNote) {
                     return (
-                      <div key={m.id} className="mx-auto max-w-[80%] rounded-lg border border-[#0d9488] bg-[#0d9488] dark:bg-teal-950/30 px-3 py-2">
-                        <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#0d9488] dark:text-teal-300">
+                      <div
+                        key={m.id}
+                        className="mx-auto max-w-[80%] rounded-lg border border-[#0d9488] bg-[#0d9488] dark:bg-teal-950/30 px-3 py-2"
+                      >
+                        <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#0d9488] dark:text-teal-300">
                           <StickyNote className="h-3 w-3" /> Nota interna · {m.senderName}
                         </p>
-                        <p className="mt-1 text-sm text-[var(--text-primary)] whitespace-pre-wrap">{m.body}</p>
+                        <p className="mt-1 text-sm text-[var(--text-primary)] whitespace-pre-wrap">
+                          {m.body}
+                        </p>
                       </div>
                     );
                   }
                   return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[72%] rounded-2xl px-3.5 py-2 ${mine ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]"}`}>
+                      <div
+                        className={`max-w-[72%] rounded-2xl px-3.5 py-2 ${mine ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]"}`}
+                      >
                         {m.messageType === "broadcast" && (
-                          <p className={`mb-0.5 flex items-center gap-1 text-[10px] font-black uppercase ${mine ? "text-white/80" : "text-[var(--accent)]"}`}>
+                          <p
+                            className={`mb-0.5 flex items-center gap-1 text-xs font-black uppercase ${mine ? "text-white/80" : "text-[var(--accent)]"}`}
+                          >
                             <Megaphone className="h-3 w-3" /> Anuncio
                           </p>
                         )}
                         <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>
-                        <p className={`mt-1 text-[10px] tabular-nums ${mine ? "text-white/70" : "text-[var(--text-tertiary)]"}`}>{timeAgo(m.createdAt)}</p>
+                        <p
+                          className={`mt-1 text-xs tabular-nums ${mine ? "text-white/70" : "text-[var(--text-tertiary)]"}`}
+                        >
+                          {timeAgo(m.createdAt)}
+                        </p>
                       </div>
                     </div>
                   );
@@ -381,35 +454,85 @@ export default function SuperAdminMessenger() {
             <div className="border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
               <div className="mb-2 flex items-center gap-2">
                 <div className="relative">
-                  <button onClick={() => setShowTemplates((v) => !v)} className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 h-8 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]">
-                    <FileText className="h-3.5 w-3.5" /> Plantillas <ChevronDown className="h-3 w-3" />
+                  <button
+                    onClick={() => setShowTemplates((v) => !v)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 h-8 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> Plantillas{" "}
+                    <ChevronDown className="h-3 w-3" />
                   </button>
                   {showTemplates && (
                     <div className="absolute bottom-full left-0 mb-1 w-64 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-lg p-1 z-20">
                       {QUICK_TEMPLATES.map((t) => (
-                        <button key={t.label} onClick={() => { setText(resolveTemplate(t.body)); setShowTemplates(false); }} className="block w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-[var(--surface-sunken)]">
+                        <button
+                          key={t.label}
+                          onClick={() => {
+                            setText(resolveTemplate(t.body));
+                            setShowTemplates(false);
+                          }}
+                          className="block w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-[var(--surface-sunken)]"
+                        >
                           <span className="font-bold text-[var(--text-primary)]">{t.label}</span>
-                          <span className="block truncate text-xs text-[var(--text-tertiary)]">{t.body}</span>
+                          <span className="block truncate text-xs text-[var(--text-tertiary)]">
+                            {t.body}
+                          </span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
                 <div className="relative">
-                  <button onClick={() => setShowAi((v) => !v)} disabled={aiBusy} className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-2.5 h-8 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15 disabled:opacity-60">
-                    {aiBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} IA <ChevronDown className="h-3 w-3" />
+                  <button
+                    onClick={() => setShowAi((v) => !v)}
+                    disabled={aiBusy}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-2.5 h-8 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15 disabled:opacity-60"
+                  >
+                    {aiBusy ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}{" "}
+                    IA <ChevronDown className="h-3 w-3" />
                   </button>
                   {showAi && (
                     <div className="absolute bottom-full left-0 mb-1 w-52 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-lg p-1 z-20">
-                      <button onClick={() => runAi("draft")} className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]">✨ Redactar respuesta</button>
-                      <button onClick={() => runAi("summary")} className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]">📋 Resumir hilo</button>
-                      <button onClick={() => runAi("tone", "formal")} className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]">Tono: formal</button>
-                      <button onClick={() => runAi("tone", "cercano")} className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]">Tono: cercano</button>
-                      <button onClick={() => runAi("tone", "breve")} className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]">Tono: breve</button>
+                      <button
+                        onClick={() => runAi("draft")}
+                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                      >
+                        ✨ Redactar respuesta
+                      </button>
+                      <button
+                        onClick={() => runAi("summary")}
+                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                      >
+                        📋 Resumir hilo
+                      </button>
+                      <button
+                        onClick={() => runAi("tone", "formal")}
+                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                      >
+                        Tono: formal
+                      </button>
+                      <button
+                        onClick={() => runAi("tone", "cercano")}
+                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                      >
+                        Tono: cercano
+                      </button>
+                      <button
+                        onClick={() => runAi("tone", "breve")}
+                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                      >
+                        Tono: breve
+                      </button>
                     </div>
                   )}
                 </div>
-                <button onClick={() => setInternalNote((v) => !v)} className={`inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-xs font-bold transition-colors ${internalNote ? "bg-[#0d9488] text-[#0d9488]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+                <button
+                  onClick={() => setInternalNote((v) => !v)}
+                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 h-8 text-xs font-bold transition-colors ${internalNote ? "bg-[#0d9488] text-[#0d9488]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                >
                   <StickyNote className="h-3.5 w-3.5" /> {internalNote ? "Nota interna" : "Mensaje"}
                 </button>
               </div>
@@ -417,13 +540,30 @@ export default function SuperAdminMessenger() {
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
                   rows={2}
-                  placeholder={internalNote ? "Nota interna (solo la ve el equipo)…" : `Escribile a ${selected.tenantName}…`}
+                  placeholder={
+                    internalNote
+                      ? "Nota interna (solo la ve el equipo)…"
+                      : `Escribile a ${selected.tenantName}…`
+                  }
                   className={`flex-1 resize-none rounded-xl border-2 px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors ${internalNote ? "border-[#0d9488] bg-[#0d9488] dark:bg-teal-950/20" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] focus:border-[var(--accent)]"}`}
                 />
-                <button onClick={handleSend} disabled={sending || !text.trim()} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-40 transition-opacity">
-                  {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                <button
+                  onClick={handleSend}
+                  disabled={sending || !text.trim()}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
+                >
+                  {sending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -434,12 +574,31 @@ export default function SuperAdminMessenger() {
       {error && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl bg-[var(--data-error-600,#dc2626)] px-4 py-2.5 text-sm font-bold text-white shadow-lg">
           <AlertCircle className="h-4 w-4" /> {error}
-          <button onClick={() => setError(null)} className="ml-2"><Check className="h-4 w-4" /></button>
+          <button onClick={() => setError(null)} className="ml-2">
+            <Check className="h-4 w-4" />
+          </button>
         </div>
       )}
 
-      {showBroadcast && <BroadcastModal onClose={() => setShowBroadcast(false)} onSent={() => { setShowBroadcast(false); void loadConversations(); }} />}
-      {showNew && <NewConversationModal onClose={() => setShowNew(false)} onCreated={(id) => { setShowNew(false); void loadConversations(); openConversation(id); }} />}
+      {showBroadcast && (
+        <BroadcastModal
+          onClose={() => setShowBroadcast(false)}
+          onSent={() => {
+            setShowBroadcast(false);
+            void loadConversations();
+          }}
+        />
+      )}
+      {showNew && (
+        <NewConversationModal
+          onClose={() => setShowNew(false)}
+          onCreated={(id) => {
+            setShowNew(false);
+            void loadConversations();
+            openConversation(id);
+          }}
+        />
+      )}
     </div>
   );
 }

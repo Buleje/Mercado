@@ -14,8 +14,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Layers, Loader2, RotateCcw, Lock, Sparkles, CheckCircle2, XCircle,
-  Search, Zap, Eye,
+  Layers,
+  Loader2,
+  RotateCcw,
+  Lock,
+  Sparkles,
+  CheckCircle2,
+  XCircle,
+  Search,
+  Zap,
+  Eye,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import type { TenantRow } from "@/lib/superadmin-types";
@@ -80,7 +88,9 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [tenant.slug]);
 
   /** Visible heredado de la plantilla global (sin override del tenant). */
@@ -183,16 +193,13 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
           Object.entries(overrides).map(([id, visible]) => [id, { visible }]),
         ),
       };
-      const res = await fetchSuperadmin(
-        `/api/superadmin/tenants/${tenant.slug}/module-overrides`,
-        {
-          method: "PUT",
-          headers: csrfHeaders({ "content-type": "application/json" }),
-          body: JSON.stringify(body),
-        },
-      );
+      const res = await fetchSuperadmin(`/api/superadmin/tenants/${tenant.slug}/module-overrides`, {
+        method: "PUT",
+        headers: csrfHeaders({ "content-type": "application/json" }),
+        body: JSON.stringify(body),
+      });
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        const data = (await res.json().catch((e) => (void e, null))) as { error?: string } | null;
         setError(data?.error ?? `Error HTTP ${res.status}`);
         return;
       }
@@ -223,9 +230,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] px-3 py-1 text-sm font-bold text-[var(--text-secondary)]">
               <Layers className="h-4 w-4" />
-              {overrideCount === 0
-                ? "Hereda plantilla"
-                : `${overrideCount} a medida`}
+              {overrideCount === 0 ? "Hereda plantilla" : `${overrideCount} a medida`}
             </span>
             <span className="flex-1" />
             <button
@@ -240,7 +245,8 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
             </button>
           </div>
           <p className="text-xs text-[var(--text-tertiary)]">
-            El plan {TIER_LABEL[tenantTier]} es el techo: lo que esté fuera del plan no aparece aunque se fuerce. Los cambios pisan la plantilla global solo para esta tienda.
+            El plan {TIER_LABEL[tenantTier]} es el techo: lo que esté fuera del plan no aparece
+            aunque se fuerce. Los cambios pisan la plantilla global solo para esta tienda.
           </p>
           {/* Buscador — hay ~45 módulos, encontrarlos por nombre es más rápido */}
           <div className="relative">
@@ -269,100 +275,106 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
           <div className="space-y-4">
             {grouped.length === 0 && (
               <div className="rounded-xl border-2 border-dashed border-[var(--rule-base)] py-10 text-center">
-                <p className="text-sm font-bold text-[var(--text-primary)]">Sin módulos que coincidan</p>
-                <p className="mt-1 text-xs text-[var(--text-tertiary)]">Probá otro término de búsqueda.</p>
+                <p className="text-sm font-bold text-[var(--text-primary)]">
+                  Sin módulos que coincidan
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                  Probá otro término de búsqueda.
+                </p>
               </div>
             )}
             {grouped.map(([category, mods]) => {
-              const catVisible = mods.filter((m) => (draft[m.id] ?? inheritedVisible[m.id]) && isInPlan(m.id)).length;
+              const catVisible = mods.filter(
+                (m) => (draft[m.id] ?? inheritedVisible[m.id]) && isInPlan(m.id),
+              ).length;
               return (
-              <div key={category}>
-                <p className="mb-1.5 flex items-baseline gap-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  {category}
-                  <span className="font-bold tabular-nums normal-case tracking-normal text-[var(--text-tertiary)]/70">
-                    {catVisible}/{mods.length} visibles
-                  </span>
-                </p>
-                <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                  {mods.map((m) => {
-                    const inherited = inheritedVisible[m.id];
-                    const hasOverride = m.id in draft;
-                    const effective = draft[m.id] ?? inherited;
-                    const isSpec = SPEC_GATED_MODULE_IDS.has(m.id);
-                    const inPlan = isSpec || planIncludesTab(tenantTier, m.id as Tab);
-                    const minTier = !inPlan ? minTierForTab(m.id as Tab) : null;
-                    return (
-                      <div
-                        key={m.id}
-                        className={`flex items-center gap-3 px-3 py-2.5 ${!inPlan ? "opacity-50" : ""}`}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate text-sm font-bold text-[var(--text-primary)]">
-                              {globalTpl?.overrides[m.id]?.label || m.defaultLabel}
-                            </span>
-                            {isSpec && (
-                              <span
-                                className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--accent)]"
-                                title="Requiere especialización activa en el tenant"
-                              >
-                                <Sparkles className="h-3 w-3" /> Spec
+                <div key={category}>
+                  <p className="mb-1.5 flex items-baseline gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    {category}
+                    <span className="font-bold tabular-nums normal-case tracking-normal text-[var(--text-tertiary)]/70">
+                      {catVisible}/{mods.length} visibles
+                    </span>
+                  </p>
+                  <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                    {mods.map((m) => {
+                      const inherited = inheritedVisible[m.id];
+                      const hasOverride = m.id in draft;
+                      const effective = draft[m.id] ?? inherited;
+                      const isSpec = SPEC_GATED_MODULE_IDS.has(m.id);
+                      const inPlan = isSpec || planIncludesTab(tenantTier, m.id as Tab);
+                      const minTier = !inPlan ? minTierForTab(m.id as Tab) : null;
+                      return (
+                        <div
+                          key={m.id}
+                          className={`flex items-center gap-3 px-3 py-2.5 ${!inPlan ? "opacity-50" : ""}`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate text-sm font-bold text-[var(--text-primary)]">
+                                {globalTpl?.overrides[m.id]?.label || m.defaultLabel}
                               </span>
-                            )}
-                            {!inPlan && minTier && (
-                              <span
-                                className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--text-tertiary)]"
-                                title={`El plan ${TIER_LABEL[tenantTier]} no incluye este módulo`}
-                              >
-                                <Lock className="h-3 w-3" /> Requiere {TIER_LABEL[minTier]}
-                              </span>
-                            )}
-                            {hasOverride && (
-                              <span className="inline-flex items-center rounded-full bg-teal-500/15 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">
-                                A medida
-                              </span>
-                            )}
+                              {isSpec && (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-xs font-bold text-[var(--accent)]"
+                                  title="Requiere especialización activa en el tenant"
+                                >
+                                  <Sparkles className="h-3 w-3" /> Spec
+                                </span>
+                              )}
+                              {!inPlan && minTier && (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs font-bold text-[var(--text-tertiary)]"
+                                  title={`El plan ${TIER_LABEL[tenantTier]} no incluye este módulo`}
+                                >
+                                  <Lock className="h-3 w-3" /> Requiere {TIER_LABEL[minTier]}
+                                </span>
+                              )}
+                              {hasOverride && (
+                                <span className="inline-flex items-center rounded-full bg-teal-500/15 px-1.5 py-0.5 text-xs font-bold text-teal-700 dark:text-teal-300">
+                                  A medida
+                                </span>
+                              )}
+                            </div>
+                            <p className="truncate text-xs text-[var(--text-tertiary)]">
+                              {hasOverride
+                                ? `Forzado ${effective ? "visible" : "oculto"} para esta tienda (plantilla: ${inherited ? "visible" : "oculto"})`
+                                : `Heredado de plantilla: ${inherited ? "visible" : "oculto"}`}
+                            </p>
                           </div>
-                          <p className="truncate text-xs text-[var(--text-tertiary)]">
-                            {hasOverride
-                              ? `Forzado ${effective ? "visible" : "oculto"} para esta tienda (plantilla: ${inherited ? "visible" : "oculto"})`
-                              : `Heredado de plantilla: ${inherited ? "visible" : "oculto"}`}
-                          </p>
-                        </div>
-                        {hasOverride && (
+                          {hasOverride && (
+                            <button
+                              type="button"
+                              onClick={() => restoreOne(m.id)}
+                              title="Volver a heredar de la plantilla"
+                              aria-label={`Restaurar ${m.defaultLabel} a la plantilla`}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={() => restoreOne(m.id)}
-                            title="Volver a heredar de la plantilla"
-                            aria-label={`Restaurar ${m.defaultLabel} a la plantilla`}
-                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={effective}
-                          aria-label={`${m.defaultLabel}: ${effective ? "visible" : "oculto"}`}
-                          disabled={!inPlan}
-                          onClick={() => toggle(m.id)}
-                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed ${
-                            effective ? "bg-[var(--accent)]" : "bg-[var(--rule-strong)]"
-                          }`}
-                        >
-                          <span
-                            aria-hidden
-                            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
-                              effective ? "left-[22px]" : "left-0.5"
+                            role="switch"
+                            aria-checked={effective}
+                            aria-label={`${m.defaultLabel}: ${effective ? "visible" : "oculto"}`}
+                            disabled={!inPlan}
+                            onClick={() => toggle(m.id)}
+                            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed ${
+                              effective ? "bg-[var(--accent)]" : "bg-[var(--rule-strong)]"
                             }`}
-                          />
-                        </button>
-                      </div>
-                    );
-                  })}
+                          >
+                            <span
+                              aria-hidden
+                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                                effective ? "left-[22px]" : "left-0.5"
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
               );
             })}
           </div>
@@ -396,7 +408,11 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
             disabled={saving || loading}
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2 text-sm font-extrabold text-white shadow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
             Guardar
           </button>
         </div>

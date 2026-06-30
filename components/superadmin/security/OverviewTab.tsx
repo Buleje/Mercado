@@ -28,13 +28,7 @@
 
 import { SAMetricCard } from "@/components/superadmin/_shared/SAMetricCard";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
-import {
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -168,9 +162,7 @@ function csvCell(v: string | number | null | undefined): string {
 function exportEventsCSV(events: SecurityEvent[]) {
   const headers = ["ID", "Action", "Detail", "IP", "CreatedAt"];
   const data = events.map((e) => [e.id, e.action, e.detail, e.ipAddress ?? "", e.createdAt]);
-  const csv =
-    "﻿" +
-    [headers, ...data].map((r) => r.map(csvCell).join(",")).join("\r\n");
+  const csv = "﻿" + [headers, ...data].map((r) => r.map(csvCell).join(",")).join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -187,9 +179,7 @@ function computeHealth(p: PostureResponse["data"]): number {
   if (p.loginsFailed24h > 10) score -= Math.min((p.loginsFailed24h - 10) * 2, 20);
   if (p.ipsBlocked > 0) score -= Math.min(p.ipsBlocked * 3, 15);
   const totpPct =
-    p.totpCoverage.total === 0
-      ? 100
-      : (p.totpCoverage.enrolled / p.totpCoverage.total) * 100;
+    p.totpCoverage.total === 0 ? 100 : (p.totpCoverage.enrolled / p.totpCoverage.total) * 100;
   if (totpPct < 100) score -= Math.round((100 - totpPct) * 0.35);
   return Math.max(0, Math.min(100, score));
 }
@@ -209,15 +199,29 @@ function HealthRing({ score }: { score: number }) {
   return (
     <div className="relative inline-flex items-center justify-center shrink-0">
       <svg width="88" height="88" viewBox="0 0 88 88" className="-rotate-90" aria-hidden>
-        <circle cx="44" cy="44" r={radius} fill="none" strokeWidth="8"
-          className="stroke-[var(--rule-soft)]" />
-        <circle cx="44" cy="44" r={radius} fill="none" strokeWidth="8"
-          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-          className={cn(tone.stroke, "transition-all duration-700")} />
+        <circle
+          cx="44"
+          cy="44"
+          r={radius}
+          fill="none"
+          strokeWidth="8"
+          className="stroke-[var(--rule-soft)]"
+        />
+        <circle
+          cx="44"
+          cy="44"
+          r={radius}
+          fill="none"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className={cn(tone.stroke, "transition-all duration-700")}
+        />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={cn("text-xl font-extrabold tabular-nums", tone.text)}>{score}</span>
-        <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           /100
         </span>
       </div>
@@ -245,7 +249,9 @@ function LoginSparkline({
   const stepX = w / Math.max(1, series.length - 1);
   const yFor = (v: number) => h - (v / max) * h;
   const path = (key: "failed" | "succeeded") =>
-    series.map((s, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(1)} ${yFor(s[key]).toFixed(1)}`).join(" ");
+    series
+      .map((s, i) => `${i === 0 ? "M" : "L"} ${(i * stepX).toFixed(1)} ${yFor(s[key]).toFixed(1)}`)
+      .join(" ");
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-12">
@@ -441,9 +447,7 @@ export function OverviewTab() {
         <div className="flex items-start gap-3 text-rose-700 dark:text-rose-300">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
-            <p className="font-display text-base font-extrabold">
-              No se pudo cargar el panel
-            </p>
+            <p className="font-display text-base font-extrabold">No se pudo cargar el panel</p>
             <p className="text-sm opacity-80 mt-0.5">{error}</p>
             <button
               onClick={() => reload()}
@@ -544,9 +548,7 @@ export function OverviewTab() {
                   ? "Atención requerida"
                   : "Acción urgente"}
             </h3>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">
-              Vulns · logins · TOTP · IPs
-            </p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">Vulns · logins · TOTP · IPs</p>
           </div>
         </div>
 
@@ -680,7 +682,10 @@ export function OverviewTab() {
           ) : (
             <ul className="divide-y divide-[var(--rule-soft)] max-h-[480px] overflow-y-auto">
               {filteredEvents.map((ev) => {
-                const meta = ACTION_META[ev.action] ?? { severity: "info" as Severity, title: ev.action };
+                const meta = ACTION_META[ev.action] ?? {
+                  severity: "info" as Severity,
+                  title: ev.action,
+                };
                 const sev = SEVERITY_META[meta.severity];
                 const Icon = sev.icon;
                 return (
@@ -688,14 +693,14 @@ export function OverviewTab() {
                     key={ev.id}
                     className="group flex items-start gap-3 px-5 py-3 transition hover:bg-[var(--surface-sunken)]/50"
                   >
-                    <span className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border shrink-0 ${sev.cls}`}>
+                    <span
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border shrink-0 ${sev.cls}`}
+                    >
                       <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-bold text-sm text-[var(--text-primary)]">
-                          {meta.title}
-                        </p>
+                        <p className="font-bold text-sm text-[var(--text-primary)]">{meta.title}</p>
                         <span
                           className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${sev.cls}`}
                         >
@@ -703,9 +708,7 @@ export function OverviewTab() {
                           {sev.label}
                         </span>
                       </div>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                        {ev.detail}
-                      </p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{ev.detail}</p>
                       {ev.ipAddress && (
                         <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           <Globe className="h-2.5 w-2.5" aria-hidden />
@@ -749,7 +752,11 @@ export function OverviewTab() {
               <div
                 className={cn(
                   "h-full rounded-full transition-all",
-                  totpPct === 100 ? "bg-emerald-500" : totpPct >= 50 ? "bg-teal-500" : "bg-rose-500",
+                  totpPct === 100
+                    ? "bg-emerald-500"
+                    : totpPct >= 50
+                      ? "bg-teal-500"
+                      : "bg-rose-500",
                 )}
                 style={{ width: `${totpPct}%` }}
                 aria-hidden
@@ -869,7 +876,6 @@ export function OverviewTab() {
 
 /* ───────────────────────── components ───────────────────────── */
 
-
 function PostureCheck({
   icon: Icon,
   label,
@@ -911,7 +917,9 @@ function PostureCheck({
           <p className="text-xs text-[var(--text-tertiary)]">{detail}</p>
         </div>
       </div>
-      <span className={`inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}>
+      <span
+        className={`inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${meta.cls}`}
+      >
         <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
         {meta.txt}
       </span>
