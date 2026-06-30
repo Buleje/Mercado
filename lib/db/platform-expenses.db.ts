@@ -42,10 +42,14 @@ export interface PlatformExpenseSummary {
   count: number;
   recurringCount: number;
   monthlyRunRatePen: number; // recurrentes normalizados a mes + únicos de este mes
+  prevMonthRunRatePen: number; // recurrentes + únicos del mes anterior (para comparar)
   recurringMonthlyPen: number; // solo recurrentes, normalizado a mes
   thisMonthOneTimePen: number; // gastos únicos con fecha en el mes actual
   byCategory: { category: string; amountPen: number }[]; // run-rate mensual por categoría
+  trend: { label: string; totalPen: number }[]; // últimos 6 meses (recurrente + únicos)
 }
+
+const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 function toPen(amount: number, currency: string): number {
   return currency === "USD" ? Math.round(amount * USD_TO_PEN * 100) / 100 : amount;
@@ -94,38 +98,54 @@ export const PlatformExpensesDB = {
   async summary(): Promise<PlatformExpenseSummary> {
     const rows = await this.list();
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const thisKey = monthKey(now);
+    const prevKey = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 
     const catMap = new Map<string, number>();
+    const oneTimeByMonth = new Map<string, number>();
     let recurringMonthlyPen = 0;
-    let thisMonthOneTimePen = 0;
     let recurringCount = 0;
 
     for (const r of rows) {
-      let monthlyPen = 0;
       if (r.recurring) {
         recurringCount += 1;
-        monthlyPen = monthlyize(r.amountPen, r.period);
-        recurringMonthlyPen += monthlyPen;
-      } else if (new Date(r.date) >= monthStart) {
-        monthlyPen = r.amountPen;
-        thisMonthOneTimePen += monthlyPen;
-      }
-      if (monthlyPen > 0) {
-        catMap.set(r.category, (catMap.get(r.category) ?? 0) + monthlyPen);
+        const m = monthlyize(r.amountPen, r.period);
+        recurringMonthlyPen += m;
+        catMap.set(r.category, (catMap.get(r.category) ?? 0) + m);
+      } else {
+        const k = monthKey(new Date(r.date));
+        oneTimeByMonth.set(k, (oneTimeByMonth.get(k) ?? 0) + r.amountPen);
+        if (k === thisKey) catMap.set(r.category, (catMap.get(r.category) ?? 0) + r.amountPen);
       }
     }
 
     const round = (n: number) => Math.round(n * 100) / 100;
+    const thisMonthOneTimePen = oneTimeByMonth.get(thisKey) ?? 0;
+    const prevMonthOneTimePen = oneTimeByMonth.get(prevKey) ?? 0;
+
+    // Tendencia: últimos 6 meses = recurrente (constante) + únicos de cada mes.
+    const trend: { label: string; totalPen: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      trend.push({
+        label: MONTHS_ES[d.getMonth()],
+        totalPen: round(recurringMonthlyPen + (oneTimeByMonth.get(monthKey(d)) ?? 0)),
+      });
+    }
+
     return {
       count: rows.length,
       recurringCount,
       monthlyRunRatePen: round(recurringMonthlyPen + thisMonthOneTimePen),
+      prevMonthRunRatePen: round(recurringMonthlyPen + prevMonthOneTimePen),
       recurringMonthlyPen: round(recurringMonthlyPen),
       thisMonthOneTimePen: round(thisMonthOneTimePen),
       byCategory: Array.from(catMap.entries())
         .map(([category, amountPen]) => ({ category, amountPen: round(amountPen) }))
         .sort((a, b) => b.amountPen - a.amountPen),
+      trend,
     };
   },
 

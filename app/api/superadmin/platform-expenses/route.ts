@@ -4,7 +4,10 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { PlatformExpensesDB, EXPENSE_CATEGORIES } from "@/lib/db/platform-expenses.db";
+import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { logger } from "@/lib/logger";
+
+const BUDGET_KEY = "gastos.monthlyBudgetPen";
 
 /**
  * /api/superadmin/platform-expenses — gastos REALES de plataforma (Buleje SaaS).
@@ -33,12 +36,13 @@ export async function GET(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   try {
-    const [expenses, summary] = await Promise.all([
+    const [expenses, summary, budget] = await Promise.all([
       PlatformExpensesDB.list(),
       PlatformExpensesDB.summary(),
+      PlatformSettingsDB.get<number>(BUDGET_KEY),
     ]);
     return NextResponse.json(
-      { expenses, summary, generatedAt: new Date().toISOString() },
+      { expenses, summary, budgetPen: budget ?? null, generatedAt: new Date().toISOString() },
       { headers: NO_STORE },
     );
   } catch (e) {
@@ -76,6 +80,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ expense: row }, { headers: NO_STORE });
   } catch (e) {
     logger.error("[superadmin/platform-expenses] POST", {
+      err: e instanceof Error ? e.message : String(e),
+    });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}
+
+// PUT: fija el presupuesto mensual (tope en PEN) para la alerta de sobregasto.
+const BudgetSchema = z.object({ budgetPen: z.number().min(0).max(10_000_000).nullable() });
+
+export async function PUT(req: NextRequest) {
+  if (!validateSuperadminCsrf(req)) return csrfForbiddenResponse();
+  const auth = await requirePlatformAPI(req);
+  if (auth instanceof NextResponse) return auth;
+
+  const parsed = BudgetSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+
+  try {
+    await PlatformSettingsDB.set(BUDGET_KEY, parsed.data.budgetPen, "superadmin");
+    return NextResponse.json({ budgetPen: parsed.data.budgetPen }, { headers: NO_STORE });
+  } catch (e) {
+    logger.error("[superadmin/platform-expenses] PUT", {
       err: e instanceof Error ? e.message : String(e),
     });
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
