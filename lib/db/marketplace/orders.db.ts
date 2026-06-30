@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
-import { CouponsDB } from "@/lib/db/coupons.db";
 import { CommissionsDB } from "@/lib/db/commissions.db";
 import { PTS_PER_SOL } from "@/lib/loyalty-constants";
 import { type DbMarketplaceOrder, type DbVendorDashboard } from "./types";
@@ -440,13 +439,26 @@ export const MarketplaceOrdersDB = {
         }
       }
 
-      // F1: decrementar loyalty points del customer
+      // F1: decrementar loyalty points del customer.
+      // Guard atómico `loyaltyPoints: { gte: redeemPoints }` (igual que stock en
+      // 336 y el re-check de cupón en 428): cierra la ventana TOCTOU entre el
+      // check pre-tx (~225, fuera de la transacción) y este decrement. Sin él,
+      // dos órdenes concurrentes del mismo cliente podían gastar los mismos
+      // puntos dos veces y/o dejar el saldo negativo. count===0 ⇒ rollback de
+      // toda la orden (stock, comisión, order create).
       if (redeemPoints > 0 && params.customerPhone) {
-         
-        await tx.customer.updateMany({
-          where: { phone: params.customerPhone, tenantId: store.tenantId },
+
+        const updPts = await tx.customer.updateMany({
+          where: {
+            phone:         params.customerPhone,
+            tenantId:      store.tenantId,
+            loyaltyPoints: { gte: redeemPoints },
+          },
           data:  { loyaltyPoints: { decrement: redeemPoints } },
         });
+        if (updPts.count === 0) {
+          throw new Error("Puntos de fidelidad insuficientes");
+        }
       }
     });
 

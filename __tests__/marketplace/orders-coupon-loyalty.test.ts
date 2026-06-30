@@ -282,15 +282,43 @@ describe("MarketplaceOrdersDB.createFromCart — loyalty points", () => {
       },
       commissionLedger: { create:     vi.fn().mockResolvedValue({}) },
       coupon:           { update: vi.fn(), findUnique: vi.fn() },
-      customer:         { updateMany: vi.fn().mockResolvedValue({}) },
+      customer:         { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     };
     await txArg(tx);
+    // El decrement ahora lleva guard atómico `loyaltyPoints: { gte }` (anti-TOCTOU):
+    // solo descuenta si el saldo alcanza, dentro de la $transaction.
     expect(tx.customer.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { phone: "999888777", tenantId: "tenant-1" },
+        where: { phone: "999888777", tenantId: "tenant-1", loyaltyPoints: { gte: 100 } },
         data:  { loyaltyPoints: { decrement: 100 } },
       })
     );
+  });
+
+  it("TOCTOU: decrement atómico devuelve count=0 (race perdida) → rollback de la orden", async () => {
+    // El check pre-tx pasa (saldo 200 ≥ 100) pero entre el check y el decrement
+    // otra orden concurrente gastó los puntos → el updateMany con guard
+    // `loyaltyPoints: { gte }` afecta 0 filas. Debe throwear y revertir todo.
+    mockCustomerFindFirst.mockResolvedValue({ phone: "999888777", loyaltyPoints: 200 });
+
+    await MarketplaceOrdersDB.createFromCart({
+      ...COMMON_PARAMS,
+      loyaltyRedeemPoints: 100,
+    });
+
+    const txArg = mockTransaction.mock.calls[0][0];
+    const tx = {
+      product:          {
+        findFirst:  vi.fn().mockResolvedValue({ stock: 10 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      order:            { create: vi.fn().mockResolvedValue({}), count: vi.fn().mockResolvedValue(0) },
+      commissionLedger: { create: vi.fn().mockResolvedValue({}) },
+      coupon:           { update: vi.fn(), findUnique: vi.fn() },
+      // Race perdida: el saldo ya no alcanza al momento del decrement atómico.
+      customer:         { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
+    };
+    await expect(txArg(tx)).rejects.toThrow("Puntos de fidelidad insuficientes");
   });
 
   it("redimir > balance disponible → lanza 'Puntos de fidelidad insuficientes'", async () => {
