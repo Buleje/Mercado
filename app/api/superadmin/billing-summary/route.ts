@@ -199,7 +199,10 @@ export async function GET(req: NextRequest) {
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
-      take: 1000,
+      // [KPI FIX] Sin cap: MRR/ARR/counts/byPlan se computan sobre TODOS los
+      // tenants. Antes `take:1000` subcontaba el revenue si había >1000. La
+      // tabla Tenant es la base de clientes (no transaccional) → findMany lean
+      // es barato. El array de DETALLE sí se acota abajo (tenants: slice).
     });
 
     const rows: TenantBillingRow[] = tenants.map((t) => {
@@ -307,7 +310,8 @@ export async function GET(req: NextRequest) {
       byIndustry,
       upcoming7d,
       trials,
-      tenants: rows,
+      // Detalle acotado para el payload; los KPIs de arriba ya son sobre TODOS.
+      tenants: rows.slice(0, 1000),
     };
 
     logger.info("[billing-summary] generated", {
