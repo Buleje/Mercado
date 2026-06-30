@@ -124,8 +124,11 @@ export default function StorefrontNavbar({
           {/* Lote I: links extra del dueño (Instagram, WhatsApp, etc.). */}
           {(extraLinks ?? []).filter((l) => l.label?.trim() && l.url?.trim()).map((l, i) => {
             const ext = /^https?:\/\//.test(l.url);
+            // [SECURITY] allowlist de esquema: solo http(s) externo o ruta interna;
+            // bloquea `javascript:`/`data:` (XSS vía href de link del dueño).
+            const safeHref = ext || l.url.startsWith("/") ? l.url : "#";
             return (
-              <a key={i} href={l.url} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined} className={linkCls(false)}>
+              <a key={i} href={safeHref} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined} className={linkCls(false)}>
                 {l.label}
               </a>
             );

@@ -19,6 +19,34 @@ import {
 // [SECURITY] Defense-in-depth: validar formato slug antes de findUnique.
 const TENANT_SLUG_RE = /^[a-z0-9-]{2,40}$/i;
 
+// [SECURITY] Sanea el blob storeTheme ANTES de persistir. La validación hex de
+// los colores top-level (más abajo) NO cubre storeTheme.* — pero /t/[slug]
+// renderiza esos colores y customFontUrl crudos en un <style>. El render ya
+// sanea (lib/store-design-tokens.ts:sanitizeCssColor + safeCustomFontUrl en la
+// page), pero acá descartamos el valor inválido en el WRITE para no persistir
+// payloads de inyección (stored XSS / CSS-injection). Valor inválido → se omite
+// y el merge conserva el valor previo válido.
+const STORE_THEME_COLOR_KEYS = [
+  "primaryColor", "secondaryColor", "accentColor", "backgroundColor", "textColor",
+  "heroGradientFrom", "heroGradientTo", "pageBgColor", "navbarBgColor", "navbarTextColor",
+];
+const SAFE_THEME_COLOR_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\([\d.,%\s]+\)|hsla?\([\d.,%\s]+\)|[a-zA-Z]{1,30})$/;
+const SAFE_THEME_FONT_URL_RE = /^https:\/\/[^\s"'()<>;]+\.(woff2?|ttf|otf)(\?[^\s"'()<>;]*)?$/i;
+function sanitizeStoreThemeInput(theme: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...theme };
+  for (const k of STORE_THEME_COLOR_KEYS) {
+    const val = out[k];
+    if (typeof val === "string" && val.trim() !== "" && !SAFE_THEME_COLOR_RE.test(val.trim())) {
+      delete out[k];
+    }
+  }
+  const fu = out.customFontUrl;
+  if (typeof fu === "string" && fu.trim() !== "" && !SAFE_THEME_FONT_URL_RE.test(fu.trim())) {
+    delete out.customFontUrl;
+  }
+  return out;
+}
+
 // [SECURITY 2026-06-13] Campos de configuración INTERNA que solo el panel admin
 // (sesión autenticada) necesita. El GET público (storefront, recibos, botón WA)
 // NO debe exponerlos — son útiles para reconocimiento (límites de plan, infra
@@ -152,7 +180,7 @@ export async function PUT(req: NextRequest) {
     // Mantenemos los campos existentes y aplicamos solo lo que llega.
     if (body.storeTheme && Object.keys(body).length === 1) {
       try {
-        const merged = { ...(current.storeTheme ?? {}), ...body.storeTheme };
+        const merged = { ...(current.storeTheme ?? {}), ...sanitizeStoreThemeInput(body.storeTheme as Record<string, unknown>) };
         await upsertStoreThemeJson(tenantId, merged as Record<string, unknown>);
         // CRÍTICO: invalidar cache de SettingsDB (TTL 60s) — sino la storefront
         // sirve datos viejos hasta que expire. Bug detectado al testear que los
@@ -286,7 +314,7 @@ export async function PUT(req: NextRequest) {
       // borraba logo / storeName / colores / hero del row. Detectado tras
       // guardar visibilidad de secciones — la tienda perdia branding completo.
       ...(body.storeTheme !== undefined && {
-        storeTheme: { ...(current.storeTheme ?? {}), ...body.storeTheme },
+        storeTheme: { ...(current.storeTheme ?? {}), ...sanitizeStoreThemeInput(body.storeTheme as Record<string, unknown>) },
       }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");

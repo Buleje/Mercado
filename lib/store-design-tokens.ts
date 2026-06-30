@@ -347,17 +347,32 @@ const DENSITY_MAP: Record<Density, { padY: string; gap: string }> = {
   spacious: { padY: "5rem", gap: "2.5rem" },
 };
 
+/**
+ * [SECURITY] Sanea un color que se interpola CRUDO en un `<style>` del storefront
+ * público (`app/t/[slug]/page.tsx` → tokensToCssBlock). El write-path de
+ * /api/settings solo valida los colores top-level con regex hex; los de
+ * `storeTheme.*` (que /t SÍ renderiza) se mergean sin validar, así que un dueño
+ * malicioso podía guardar `primaryColor: "red}</style><script>…"` y romper el
+ * bloque `<style>` (stored XSS en dev / CSS-injection + HTML-breakout en prod).
+ * Este es el ÚNICO chokepoint por donde TODOS los colores entran al CSS: aceptamos
+ * solo hex / rgb()/rgba() / hsl()/hsla() / keyword; cualquier otra cosa → fallback.
+ */
+const SAFE_CSS_COLOR = /^(#[0-9a-fA-F]{3,8}|rgba?\([\d.,%\s]+\)|hsla?\([\d.,%\s]+\)|[a-zA-Z]{1,30})$/;
+export function sanitizeCssColor(v: unknown, fallback: string): string {
+  return typeof v === "string" && SAFE_CSS_COLOR.test(v.trim()) ? v.trim() : fallback;
+}
+
 /** Devuelve un objeto con CSS vars listo para inyectar como `style`. */
 export function tokensToCssVars(tokens: DesignTokens): Record<string, string> {
   const heading = HEADING_SIZE_MAP[tokens.headingSize];
   const density = DENSITY_MAP[tokens.density];
   return {
     "--tenant-font":        FONT_FAMILIES[tokens.fontFamily].stack,
-    "--tenant-primary":     tokens.primaryColor,
-    "--tenant-secondary":   tokens.secondaryColor,
-    "--tenant-accent":      tokens.accentColor,
-    "--tenant-bg":          tokens.backgroundColor,
-    "--tenant-text":        tokens.textColor,
+    "--tenant-primary":     sanitizeCssColor(tokens.primaryColor, "#00A0A0"),
+    "--tenant-secondary":   sanitizeCssColor(tokens.secondaryColor, "#FF6B5B"),
+    "--tenant-accent":      sanitizeCssColor(tokens.accentColor, "#00A0A0"),
+    "--tenant-bg":          sanitizeCssColor(tokens.backgroundColor, "#ffffff"),
+    "--tenant-text":        sanitizeCssColor(tokens.textColor, "#0f172a"),
     "--tenant-radius":      RADIUS_MAP[tokens.borderRadius],
     "--tenant-shadow":      SHADOW_MAP[tokens.shadowStyle],
     "--tenant-h1":          heading.h1,

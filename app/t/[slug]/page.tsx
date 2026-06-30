@@ -549,7 +549,13 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
   const bodyLabel = editorBodyFont ? editorBodyFont.label : null;
   // Fuente personalizada (Lote F): URL hosteada → @font-face. Se aplica a títulos
   // y/o cuerpo según customFontTarget. Tiene prioridad como 1ª familia del stack.
-  const customFontActive = Boolean(editorTheme.customFontUrl) && editorTheme.customFontTarget !== "none" && editorTheme.customFontTarget !== "";
+  // [SECURITY] customFontUrl se interpola en `url("...")` dentro de un <style> raw.
+  // El `.replace(/"/g,"")` viejo NO frena `</style>`/`)` (stored XSS / breakout).
+  // Aceptamos solo https a un archivo de fuente, sin chars que rompan el CSS.
+  const safeCustomFontUrl = /^https:\/\/[^\s"'()<>;]+\.(woff2?|ttf|otf)(\?[^\s"'()<>;]*)?$/i.test((editorTheme.customFontUrl ?? "").trim())
+    ? (editorTheme.customFontUrl as string).trim()
+    : "";
+  const customFontActive = Boolean(safeCustomFontUrl) && editorTheme.customFontTarget !== "none" && editorTheme.customFontTarget !== "";
   let headingStack = fontStack;
   if (customFontActive) {
     const cf = `"BulejeCustomFont"`;
@@ -652,7 +658,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
       <style dangerouslySetInnerHTML={{ __html: `.tenant-theme{--tenant-font:${bodyStack};--font-display-family:${headingStack};${btnRadius ? `--tenant-btn-radius:${btnRadius};` : ""}}` }} />
       {/* Fuente personalizada del dueño (Lote F) — @font-face desde URL hosteada. */}
       {customFontActive && (
-        <style dangerouslySetInnerHTML={{ __html: `@font-face{font-family:"BulejeCustomFont";src:url("${(editorTheme.customFontUrl ?? "").replace(/"/g, "")}");font-display:swap;}` }} />
+        <style dangerouslySetInnerHTML={{ __html: `@font-face{font-family:"BulejeCustomFont";src:url("${safeCustomFontUrl}");font-display:swap;}` }} />
       )}
       {/* Keyframes de animación de entrada por sección (Brandon 2026-06-27 · #4).
           @media reduced-motion las desactiva (a11y). */}
