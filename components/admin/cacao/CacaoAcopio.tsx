@@ -16,9 +16,14 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { GRADO_LABEL, CACAO_VARIEDADES, type CacaoGrado } from "@/lib/cacao/cacao-quality";
+import { useModuleTabs } from "@/contexts/module-tabs-context";
 import {
-  CACAO_VIEW_GROUPS, CACAO_VIEW_PARAM, DEFAULT_CACAO_VIEW, isCacaoView, type CacaoView,
+  CACAO_VIEWS, CACAO_VIEW_GROUPS, CACAO_VIEW_PARAM, DEFAULT_CACAO_VIEW, isCacaoView, type CacaoView,
 } from "@/lib/cacao/cacao-views";
+
+// Sub-tabs + metadatos que el módulo publica al sidebar del admin (sub-sidebar).
+const CACAO_SUBTABS = CACAO_VIEWS.map((v) => ({ id: v.key, label: v.label, icon: v.icon }));
+const CACAO_MODULE_META = { label: "Cacao", icon: Leaf };
 import CacaoLoteForm from "./CacaoLoteForm";
 import CacaoBeneficio from "./CacaoBeneficio";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
@@ -84,18 +89,22 @@ export default function CacaoAcopio() {
     window.history.replaceState(null, "", url.toString());
   }, []);
 
-  // Deep-link inicial: leer ?cacaoView= tras montar (evita hydration mismatch).
-  // El sidebar del admin navega a una sub-vista disparando el evento cacao:navigate.
+  const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
+
+  // Al montar: deep-link inicial (?cacaoView=, en effect para evitar hydration
+  // mismatch) + registrar el handler de navegación que dispara el sidebar.
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get(CACAO_VIEW_PARAM);
     if (isCacaoView(fromUrl)) setView(fromUrl);
-    const onNav = (e: Event) => {
-      const v = (e as CustomEvent<string>).detail;
-      if (isCacaoView(v)) setView(v);
-    };
-    window.addEventListener("cacao:navigate", onNav);
-    return () => window.removeEventListener("cacao:navigate", onNav);
+    registerOnChange((id) => { if (isCacaoView(id)) selectView(id); });
+    return () => clearSubTabs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Publicar los sub-tabs al sidebar y mantener sincronizada la vista activa.
+  useEffect(() => {
+    registerSubTabs(CACAO_SUBTABS, view, CACAO_MODULE_META);
+  }, [view, registerSubTabs]);
 
   async function annul() {
     if (!annulId || annulReason.trim().length < 3) return;

@@ -39,6 +39,8 @@ const TrialCountdownBannerLoader = dynamic(
 );
 import AdminAlertsBanner from "@/components/admin/AdminAlertsBanner";
 import { AdminNavigation } from "./_components/AdminNavigation";
+import { AdminSubSidebar } from "@/components/admin/layout/AdminSubSidebar";
+import { useModuleTabs } from "@/contexts/module-tabs-context";
 import { AdminMainContent } from "./_components/AdminMainContent";
 
 // ── Deferred chrome (sessions 4-7) ─────────────────────────────────────────────
@@ -234,6 +236,17 @@ function AdminPage() {
   const effectiveFocusMode = focusMode;
   const mainSidebarWidth = effectiveFocusMode ? 64 : 260; // px
 
+  // Sub-nav de MÓDULO (ej. las 8 vistas de Cacao) publicado vía ModuleTabsContext.
+  // Distinto del sub-sidebar por categoría de arriba: acá el módulo activo publica
+  // sus sub-vistas internas y se muestran en un aside secundario. Solo aparece si
+  // un módulo registró >1 sub-tab (hoy: Cacao); el resto no se ve afectado.
+  const {
+    subTabs: moduleSubTabs, activeSubTab: moduleActiveSubTab, moduleMeta, setActiveSubTab: setModuleSubTab,
+  } = useModuleTabs();
+  const hasModuleSubNav =
+    moduleSubTabs.length > 1 && !!moduleMeta && !focusMode && !presentationMode && !sidebarConfigMode;
+  const moduleSubNavLeft = sidebarCompact ? 60 : 260;
+
   // Keyboard: Arrow Up/Down navigate sub-tabs, Escape closes sub-sidebar
   React.useEffect(() => {
     if (!hasSubSidebar || subSidebarTabs.length === 0) return;
@@ -323,6 +336,20 @@ function AdminPage() {
         }}
       />
 
+      {/* Sub-sidebar de módulo (Cacao → 8 sub-vistas). Se auto-oculta si el módulo
+          activo no publicó sub-tabs (AdminSubSidebar devuelve null con ≤1). */}
+      {hasModuleSubNav && moduleMeta && (
+        <AdminSubSidebar
+          categoryLabel={moduleMeta.label}
+          categoryIcon={moduleMeta.icon}
+          tabs={moduleSubTabs.map((t) => ({ id: t.id, label: t.label, icon: t.icon ?? moduleMeta.icon }))}
+          activeTab={moduleActiveSubTab}
+          onTabChange={setModuleSubTab}
+          onBack={() => navigateTab("inicio" as Tab)}
+          mainSidebarWidth={moduleSubNavLeft}
+        />
+      )}
+
       <div
         data-dark-fallback
         className={cn(
@@ -333,9 +360,11 @@ function AdminPage() {
            sidebar aún no existe → contenido empujado y aplastado en tablets. */
         presentationMode ? "md:ml-0"
           : focusMode ? "md:ml-16"
-          : sidebarCompact ? "md:ml-[60px]"
+          /* +192px (w-48 del AdminSubSidebar) cuando un módulo publica sub-nav (Cacao) */
+          : sidebarCompact ? (hasModuleSubNav ? "md:ml-[252px]" : "md:ml-[60px]")
           /* configMode: sidebar (260px) + config panel (400px) = 660px */
           : sidebarConfigMode ? "md:ml-[660px]"
+          : hasModuleSubNav ? "md:ml-[452px]"
           : "md:ml-[260px]",
       )}>
         {/* ADR-087: alertas operativas — adentro del shell para respetar
