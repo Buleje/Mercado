@@ -78,6 +78,16 @@ const n2 = (v: number | null) =>
   v == null
     ? "—"
     : v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function relTime(iso: string | null): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60_000);
+  if (min < 1) return "recién";
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(diff / 3.6e6);
+  if (h < 24) return `hace ${h} h`;
+  return `hace ${Math.floor(h / 24)} días`;
+}
 const ESTADO: Record<string, { label: string; cls: string }> = {
   fermentando: {
     label: "Fermentando",
@@ -90,6 +100,10 @@ export default function CacaoInventario() {
   const [inv, setInv] = useState<Inv | null>(null);
   const [ajustes, setAjustes] = useState<Ajuste[]>([]);
   const [precioIntlKg, setPrecioIntlKg] = useState<number | null>(null);
+  const [precioMeta, setPrecioMeta] = useState<{ at: string | null; stale: boolean }>({
+    at: null,
+    stale: false,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAjuste, setShowAjuste] = useState(false);
@@ -114,6 +128,7 @@ export default function CacaoInventario() {
       if (rm && rm.ok) {
         const m = await rm.json();
         setPrecioIntlKg(m?.pricePenPerKg ?? null);
+        setPrecioMeta({ at: m?.generatedAt ?? null, stale: !!m?.stale });
       }
       if (ra && ra.ok) setAjustes((await ra.json()).ajustes ?? []);
     } catch (e) {
@@ -169,18 +184,28 @@ export default function CacaoInventario() {
       : null;
 
   function exportCsv() {
-    const rows = [["Tipo", "Clave", "Kg seco"]];
-    inv!.porVariedad.forEach((v) => rows.push(["Variedad", v.variedad, n2(v.kg)]));
+    const rows: string[][] = [];
+    // Resumen de valorización arriba del desglose.
+    rows.push(["Resumen", "Valor", ""]);
+    rows.push(["Cacao seco disponible (kg)", Number(inv!.kgSecoDisponible).toFixed(2), ""]);
+    rows.push(["Valor a costo (S/)", Number(inv!.valorEstimado).toFixed(2), ""]);
+    rows.push(["Precio intl. (S/ por kg)", precioIntlKg != null ? Number(precioIntlKg).toFixed(2) : "n/d", ""]);
+    rows.push(["Valor a precio intl. (S/)", valorMercado != null ? Number(valorMercado).toFixed(2) : "n/d", ""]);
+    rows.push(["Ganancia potencial (S/)", ganancia != null ? Number(ganancia).toFixed(2) : "n/d", ""]);
+    rows.push(["", "", ""]);
+    rows.push(["Tipo", "Clave", "Kg seco"]);
+    inv!.porVariedad.forEach((v) => rows.push(["Variedad", v.variedad, Number(v.kg).toFixed(2)]));
     inv!.porGrado.forEach((g) =>
       rows.push([
         "Grado",
         g.grado === "sin_clasificar"
           ? "Sin clasificar"
           : (GRADO_LABEL[g.grado as CacaoGrado] ?? g.grado),
-        n2(g.kg),
+        Number(g.kg).toFixed(2),
       ]),
     );
-    const csv = "﻿" + rows.map((r) => r.join(",")).join("\n");
+    const esc = (v: string) => (/[",\n;]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const csv = "﻿" + rows.map((r) => r.map(esc).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a");
     a.href = url;
@@ -232,7 +257,7 @@ export default function CacaoInventario() {
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <p>
             Stock bajo el mínimo: <b>{n2(inv.kgSecoDisponible)} kg</b> disponibles &lt; mínimo de{" "}
-            <b>{n2(inv.stockMinimoKg)} kg</b>. Considerá acopiar o terminar beneficios en proceso.
+            <b>{n2(inv.stockMinimoKg)} kg</b>. Considera acopiar o terminar beneficios en proceso.
           </p>
         </div>
       )}
@@ -255,7 +280,7 @@ export default function CacaoInventario() {
           value={`S/ ${n2(inv.valorEstimado)}`}
           subValue={
             inv.precioRefProm > 0
-              ? `S/ ${inv.precioRefProm.toFixed(2)}/kg acopio`
+              ? `S/ ${Number(inv.precioRefProm).toFixed(2)}/kg acopio`
               : "sin precio ref."
           }
           icon={Coins}
@@ -264,9 +289,19 @@ export default function CacaoInventario() {
         <StatCard
           label="Valor a precio intl."
           value={valorMercado != null ? `S/ ${n2(valorMercado)}` : "—"}
-          subValue={precioIntlKg != null ? `S/ ${precioIntlKg.toFixed(2)}/kg ICE` : "mercado n/d"}
+          subValue={
+            precioIntlKg != null
+              ? `S/ ${precioIntlKg.toFixed(2)}/kg ICE${
+                  precioMeta.stale
+                    ? " · desactualizado"
+                    : precioMeta.at
+                      ? ` · ${relTime(precioMeta.at)}`
+                      : ""
+                }`
+              : "mercado n/d"
+          }
           icon={Globe}
-          emphasis="neutral"
+          emphasis={precioMeta.stale ? "warning" : "neutral"}
         />
         <StatCard
           label="Ganancia potencial"
@@ -286,7 +321,7 @@ export default function CacaoInventario() {
         <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-4 text-sm">
           <Banknote className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
           <p className="text-[var(--text-secondary)]">
-            Tenés <b className="text-[var(--text-primary)]">{n2(inv.kgSecoDisponible)} kg</b> de
+            Tienes <b className="text-[var(--text-primary)]">{n2(inv.kgSecoDisponible)} kg</b> de
             cacao seco. Te costaron{" "}
             <b className="text-[var(--text-primary)]">S/ {n2(inv.valorEstimado)}</b> y al precio
             internacional de hoy valen{" "}
@@ -304,6 +339,12 @@ export default function CacaoInventario() {
                 </b>{" "}
                 (antes de flete, merma y comisión).
               </>
+            )}
+            {precioMeta.at && (
+              <span className="text-[var(--text-tertiary)]">
+                {" "}
+                Precio ICE {precioMeta.stale ? "desactualizado" : relTime(precioMeta.at)}.
+              </span>
             )}
           </p>
         </div>
@@ -349,12 +390,14 @@ export default function CacaoInventario() {
           ) : (
             (() => {
               const max = Math.max(...inv.porVariedad.map((v) => v.kg), 1);
+              const total = inv.porVariedad.reduce((a, v) => a + v.kg, 0);
               return inv.porVariedad.map((v) => (
                 <Bar
                   key={v.variedad}
                   label={v.variedad}
                   value={v.kg}
                   max={max}
+                  total={total}
                   color="var(--accent)"
                 />
               ));
@@ -367,6 +410,7 @@ export default function CacaoInventario() {
           ) : (
             (() => {
               const max = Math.max(...inv.porGrado.map((g) => g.kg), 1);
+              const total = inv.porGrado.reduce((a, g) => a + g.kg, 0);
               return inv.porGrado.map((g) => {
                 const gg = g.grado as CacaoGrado;
                 const color =
@@ -379,7 +423,9 @@ export default function CacaoInventario() {
                         : "var(--data-error-500)";
                 const label =
                   g.grado === "sin_clasificar" ? "Sin clasificar" : (GRADO_LABEL[gg] ?? g.grado);
-                return <Bar key={g.grado} label={label} value={g.kg} max={max} color={color} />;
+                return (
+                  <Bar key={g.grado} label={label} value={g.kg} max={max} total={total} color={color} />
+                );
               });
             })()
           )}
@@ -461,7 +507,7 @@ export default function CacaoInventario() {
         )}
         {ajustes.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">
-            Sin ajustes. Registrá mermas físicas, muestras, pérdidas o correcciones que no salen de
+            Sin ajustes. Registra mermas físicas, muestras, pérdidas o correcciones que no salen de
             una venta.
           </p>
         ) : (
@@ -530,10 +576,14 @@ function Panel({
 }) {
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+      <div
+        role="heading"
+        aria-level={3}
+        className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"
+      >
         <Icon className="h-4 w-4 text-[var(--accent)]" />
         {title}
-      </h3>
+      </div>
       <div className="space-y-2">{children}</div>
     </div>
   );
@@ -543,19 +593,25 @@ function Bar({
   value,
   max,
   color,
+  total,
 }: {
   label: string;
   value: number;
   max: number;
   color: string;
+  total?: number;
 }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  const share = total && total > 0 ? Math.round((value / total) * 100) : null;
   return (
     <div>
       <div className="mb-1 flex justify-between text-sm">
         <span className="text-[var(--text-secondary)]">{label}</span>
         <span className="font-mono tabular-nums text-[var(--text-primary)]">
           {value.toFixed(2)} kg
+          {share != null && (
+            <span className="ml-1 text-[var(--text-tertiary)]">· {share}%</span>
+          )}
         </span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
