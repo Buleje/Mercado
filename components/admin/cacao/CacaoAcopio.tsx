@@ -2,18 +2,23 @@
 
 /**
  * CacaoAcopio — Módulo admin de Acopio & Beneficio de Cacao (ADR-128).
- * Gating: spec:agricola:cacao-acopio. Sub-vistas: Acopio · Productores · Resumen.
+ * Gating: spec:agricola:cacao-acopio. 8 sub-vistas agrupadas en 3 familias
+ * (Operación · Gestión · Inteligencia, ver lib/cacao/cacao-views); la sub-vista
+ * activa se deep-linkea vía ?cacaoView= para navegar desde el sidebar.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Leaf, Plus, RefreshCw, Search, Users, Scale, Coins, PackageCheck, AlertCircle, X as XIcon, BarChart3, Droplets,
-  Warehouse, Download, Filter, Newspaper, Sparkles, AlertTriangle,
+  Leaf, Plus, RefreshCw, Search, Scale, Coins, PackageCheck, AlertCircle,
+  Download, Filter, AlertTriangle,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { GRADO_LABEL, CACAO_VARIEDADES, type CacaoGrado } from "@/lib/cacao/cacao-quality";
+import {
+  CACAO_VIEW_GROUPS, CACAO_VIEW_PARAM, DEFAULT_CACAO_VIEW, isCacaoView, type CacaoView,
+} from "@/lib/cacao/cacao-views";
 import CacaoLoteForm from "./CacaoLoteForm";
 import CacaoBeneficio from "./CacaoBeneficio";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
@@ -24,7 +29,6 @@ import CacaoInventario from "./CacaoInventario";
 import CacaoProductores from "./CacaoProductores";
 import CacaoVentas from "./CacaoVentas";
 
-type View = "acopio" | "beneficio" | "inventario" | "ventas" | "productores" | "resumen" | "mercado" | "asesor";
 interface Lote {
   id: string; loteCode: string; fecha: string; productorNombre: string | null; variedad: string | null;
   tipoGrano: string; pesoKg: string; humedadPct: string | null; precioPorKg: string | null; totalPagado: string | null;
@@ -33,19 +37,9 @@ interface Lote {
 
 const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
 const n2 = (v: string | number | null) => (v == null ? "—" : Number(v).toFixed(2));
-const VIEWS: { key: View; label: string; icon: typeof Leaf; hint: string }[] = [
-  { key: "acopio", label: "Acopio", icon: PackageCheck, hint: "Lotes recibidos" },
-  { key: "beneficio", label: "Beneficio", icon: Droplets, hint: "Fermentación + secado" },
-  { key: "inventario", label: "Inventario", icon: Warehouse, hint: "Cacao seco" },
-  { key: "ventas", label: "Ventas", icon: Coins, hint: "Cacao vendido" },
-  { key: "productores", label: "Productores", icon: Users, hint: "Proveedores" },
-  { key: "resumen", label: "Resumen", icon: BarChart3, hint: "KPIs de campaña" },
-  { key: "mercado", label: "Mercado", icon: Newspaper, hint: "Precios y noticias" },
-  { key: "asesor", label: "Asesor", icon: Sparkles, hint: "¿Vender o aguantar?" },
-];
 
 export default function CacaoAcopio() {
-  const [view, setView] = useState<View>("acopio");
+  const [view, setView] = useState<CacaoView>(DEFAULT_CACAO_VIEW);
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +55,7 @@ export default function CacaoAcopio() {
   const [fTo, setFTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const load = useCallback(async (v: View, fOverride?: { variedad?: string; grado?: string; from?: string; to?: string }) => {
+  const load = useCallback(async (v: CacaoView, fOverride?: { variedad?: string; grado?: string; from?: string; to?: string }) => {
     // Solo "acopio" se renderiza inline; el resto son componentes self-fetch.
     if (v !== "acopio") { setLoading(false); return; } // ventas/inventario/etc. self-fetch
     setLoading(true); setError(null);
@@ -80,6 +74,28 @@ export default function CacaoAcopio() {
     finally { setLoading(false); }
   }, [search, fVariedad, fGrado, fFrom, fTo]);
   useEffect(() => { load(view); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [view]);
+
+  // Cambia de sub-vista y persiste en la URL (?cacaoView=) para deep-link/refresh.
+  const selectView = useCallback((v: CacaoView) => {
+    setView(v);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set(CACAO_VIEW_PARAM, v);
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+
+  // Deep-link inicial: leer ?cacaoView= tras montar (evita hydration mismatch).
+  // El sidebar del admin navega a una sub-vista disparando el evento cacao:navigate.
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get(CACAO_VIEW_PARAM);
+    if (isCacaoView(fromUrl)) setView(fromUrl);
+    const onNav = (e: Event) => {
+      const v = (e as CustomEvent<string>).detail;
+      if (isCacaoView(v)) setView(v);
+    };
+    window.addEventListener("cacao:navigate", onNav);
+    return () => window.removeEventListener("cacao:navigate", onNav);
+  }, []);
 
   async function annul() {
     if (!annulId || annulReason.trim().length < 3) return;
@@ -125,16 +141,29 @@ export default function CacaoAcopio() {
         )}
       </AdminModuleHeader>
 
-      {/* Sub-tabs */}
-      <div className="flex gap-2 overflow-x-auto border-b-2 border-[var(--rule-soft)] pb-px [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap">
-        {VIEWS.map((v) => {
-          const Icon = v.icon; const active = view === v.key;
-          return (
-            <button key={v.key} type="button" onClick={() => setView(v.key)} className={`inline-flex shrink-0 items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition ${active ? "border-[var(--accent)] text-[var(--accent)]" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
-              <Icon className="h-4 w-4" /><span>{v.label}</span><span className="hidden text-xs font-normal text-[var(--text-tertiary)] sm:inline">· {v.hint}</span>
-            </button>
-          );
-        })}
+      {/* Sub-nav agrupado en 3 familias (Operación · Gestión · Inteligencia) para
+          no acumular 8 pestañas planas en una sola. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b-2 border-[var(--rule-soft)] pb-3">
+        {CACAO_VIEW_GROUPS.map((group, gi) => (
+          <div key={group.id} className="flex items-center gap-1.5">
+            {gi > 0 && <span className="mr-2.5 hidden h-6 w-px bg-[var(--rule-base)] sm:block" aria-hidden />}
+            <span className="mr-1 hidden text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] lg:inline">{group.label}</span>
+            {group.views.map((v) => {
+              const Icon = v.icon; const active = view === v.key;
+              return (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => selectView(v.key)}
+                  title={v.hint}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-bold transition ${active ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"}`}
+                >
+                  <Icon className="h-4 w-4" /><span>{v.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
