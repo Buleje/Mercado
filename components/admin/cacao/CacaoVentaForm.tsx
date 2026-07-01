@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Search,
   Leaf,
+  PackageCheck,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -32,8 +33,9 @@ interface LotePick {
   loteCode: string;
   variedad: string | null;
   grado: string | null;
-  pesoKg: string;
-  tipoGrano: string;
+  secoKg: number;
+  vendidoKg: number;
+  remanenteKg: number;
 }
 
 interface Props {
@@ -81,7 +83,8 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
   }, []);
   const loadLotes = useCallback(async () => {
     try {
-      const r = await fetch("/api/admin/cacao?view=lotes", { credentials: "include" });
+      // Solo lotes con stock seco vendible + su remanente (seco − ya vendido).
+      const r = await fetch("/api/admin/cacao?view=lotes-vendibles", { credentials: "include" });
       if (r.ok) setLotes((await r.json()).lotes ?? []);
     } catch {
       /* picker opcional */
@@ -124,13 +127,22 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
   );
   const pago = cacaoEstadoPago(total, montoCobrado ? Number(montoCobrado) : 0);
   const excede = disponible != null && Number(pesoKg) > disponible;
+  // Remanente del lote seleccionado: freno duro (no se puede vender más de lo que
+  // queda en ese lote). El backend igual lo valida; esto previene el intento.
+  const selLote = loteId ? (lotes.find((l) => l.id === loteId) ?? null) : null;
+  const loteRemanente = selLote?.remanenteKg ?? null;
+  const excedeLote = loteRemanente != null && Number(pesoKg) > loteRemanente + 0.001;
   const needsFx = moneda === "USD";
   const isValid = Number(pesoKg) > 0 && (!needsFx || Number(tipoCambio) > 0);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (submitting || !isValid) {
-      if (!isValid)
+    if (submitting || !isValid || excedeLote) {
+      if (excedeLote)
+        setError(
+          `El peso supera el remanente vendible del lote (${loteRemanente!.toFixed(2)} kg). Reducí el peso o elegí otro lote.`,
+        );
+      else if (!isValid)
         setError(
           needsFx && !(Number(tipoCambio) > 0)
             ? "Ingresá el tipo de cambio (USD→PEN)."
@@ -308,7 +320,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                               {l.loteCode}
                             </span>{" "}
                             <span className="text-xs text-[var(--text-tertiary)]">
-                              {l.variedad ?? "—"} · {Number(l.pesoKg).toFixed(0)} kg
+                              {l.variedad ?? "—"} · {l.remanenteKg.toFixed(0)} kg disp.
                             </span>
                           </span>
                           {l.grado && (
@@ -478,6 +490,24 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                   stock disponible. Revisá el peso o registrá más acopio/beneficio.
                 </div>
               )}
+              {selLote && loteRemanente != null && (
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <PackageCheck className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <span className="text-[var(--text-secondary)]">
+                    Remanente del lote{" "}
+                    <span className="font-mono font-bold text-[var(--text-primary)]">
+                      {selLote.loteCode}
+                    </span>
+                    : <b className="text-[var(--text-primary)]">{loteRemanente.toFixed(2)} kg</b>
+                  </span>
+                </div>
+              )}
+              {excedeLote && (
+                <div className="mt-2 flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-300)] bg-[var(--data-error-50)] p-2.5 text-xs text-[var(--data-error-700)]">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> El peso supera el remanente
+                  vendible del lote. No se puede registrar hasta corregirlo.
+                </div>
+              )}
               <p className="mt-3 text-xs text-[var(--text-tertiary)]">
                 Al registrar, se descuenta del inventario de cacao seco disponible.
               </p>
@@ -497,7 +527,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
           <button
             type="submit"
             form="cacao-venta-form"
-            disabled={!isValid || submitting}
+            disabled={!isValid || excedeLote || submitting}
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? (

@@ -71,3 +71,29 @@ describe("cacaoAdvisor — métricas y checklist", () => {
     expect(r.metrics.volatilidad).toBeGreaterThan(0);
   });
 });
+
+describe("cacaoAdvisor — sentimiento de noticias (ES + EN)", () => {
+  const withNews = (titles: string[]) =>
+    cacaoAdvisor({ value: 6000, changePct: 0, ...RANGE, series: flat(6000), news: titles.map((title) => ({ title })) });
+
+  it("clasifica titulares ALCISTAS en inglés (shortage/drought/rally)", () => {
+    const r = withNews([
+      "Cocoa prices surge on West Africa drought",
+      "Global cocoa shortage deepens as supply tightens",
+      "Cocoa rally continues, prices jump to record high",
+      "Cocoa prices fall on bumper crop", // 1 bajista
+    ]);
+    expect(r.news?.senal).toBe("alcista");
+    expect(r.news?.alcista).toBeGreaterThanOrEqual(3);
+  });
+
+  it("clasifica titulares BAJISTAS en inglés (surplus/oversupply/plunge)", () => {
+    const r = withNews([
+      "Cocoa prices plunge on global oversupply",
+      "Cocoa drops sharply as surplus grows",
+      "Cocoa slumps on bumper crop and weak demand",
+    ]);
+    expect(r.news?.senal).toBe("bajista");
+    expect(r.news?.bajista).toBeGreaterThanOrEqual(3);
+  });
+});

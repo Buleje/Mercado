@@ -230,6 +230,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         lotes: await CacaoDB.availableLotesForBeneficio(g.auth.tenantId),
       });
+    if (view === "lotes-vendibles")
+      return NextResponse.json({ lotes: await CacaoDB.lotesVendibles(g.auth.tenantId) });
     if (view === "ajustes")
       return NextResponse.json({ ajustes: await CacaoDB.listAjustes(g.auth.tenantId) });
     if (view === "alerts") return NextResponse.json(await CacaoDB.alerts(g.auth.tenantId));
@@ -360,6 +362,20 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = String(err instanceof Error ? err.message : err);
     const code = (err as { code?: string })?.code;
+    if (msg === "venta_excede_lote") {
+      const remanente = (err as { remanente?: number })?.remanente;
+      return NextResponse.json(
+        {
+          error: "venta_excede_lote",
+          remanente,
+          message:
+            remanente != null
+              ? `La venta excede el stock del lote. Quedan ${remanente.toFixed(2)} kg vendibles en ese lote.`
+              : "La venta excede el stock vendible del lote.",
+        },
+        { status: 400 },
+      );
+    }
     if (msg.includes("ventas_no_disponible") || code === "P2021" || /does not exist/i.test(msg)) {
       return NextResponse.json(
         {

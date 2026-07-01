@@ -875,9 +875,14 @@ export class CacaoDB {
         () =>
           prisma.cacaoVenta.findMany({
             where: { tenantId, deletedAt: null, status: "registrado" },
-            select: { pesoKg: true, totalPen: true },
+            select: { pesoKg: true, totalPen: true, variedad: true, grado: true },
           }),
-        [] as { pesoKg: Prisma.Decimal | null; totalPen: Prisma.Decimal | null }[],
+        [] as {
+          pesoKg: Prisma.Decimal | null;
+          totalPen: Prisma.Decimal | null;
+          variedad: string | null;
+          grado: string | null;
+        }[],
       ),
       prisma.cacaoAjusteInventario.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
@@ -976,8 +981,16 @@ export class CacaoDB {
     let kgVendido = 0,
       ingresosVenta = 0;
     for (const v of ventas) {
-      kgVendido += Number(v.pesoKg ?? 0);
+      const kg = Number(v.pesoKg ?? 0);
+      kgVendido += kg;
       ingresosVenta += Number(v.totalPen ?? 0);
+      // Descontar la venta del desglose por variedad/grado (best-effort, mismo
+      // guard que los ajustes) para que las barras de stock reconcilien con el
+      // KPI "disponible" y no sobre-declaren stock tras vender.
+      const vv = v.variedad || "—";
+      const vg = v.grado || "sin_clasificar";
+      if (porVariedad[vv] != null) porVariedad[vv] = r2(Math.max(0, porVariedad[vv] - kg));
+      if (porGrado[vg] != null) porGrado[vg] = r2(Math.max(0, porGrado[vg] - kg));
     }
 
     // Ajustes manuales: signo +1 suma, −1 resta. Impactan el disponible y los desgloses.
@@ -1214,6 +1227,85 @@ export class CacaoDB {
     );
   }
 
+  /**
+   * Kg secos VENDIBLES que quedan en un lote = producido seco − ya vendido contra
+   * ese lote. Producido = pesoSecoKg de sus beneficios terminados, o el pesoKg si
+   * el lote se acopió ya seco. Devuelve null si el lote no existe (no bloquear).
+   */
+  static async loteRemanenteVenta(tenantId: string, loteId: string): Promise<number | null> {
+    if (!tenantId || !loteId) return null;
+    const lote = await prisma.cacaoLote.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+      select: { tipoGrano: true, pesoKg: true },
+    });
+    if (!lote) return null;
+    const benef = await prisma.cacaoBeneficio.findMany({
+      where: { tenantId, loteId, deletedAt: null, status: "registrado", estado: "terminado" },
+      select: { pesoSecoKg: true },
+    });
+    let seco = benef.reduce((a, b) => a + (b.pesoSecoKg != null ? Number(b.pesoSecoKg) : 0), 0);
+    if (seco <= 0 && lote.tipoGrano === "seco") seco = Number(lote.pesoKg ?? 0);
+    const vendidas = await safeVenta(
+      () =>
+        prisma.cacaoVenta.findMany({
+          where: { tenantId, loteId, deletedAt: null, status: "registrado" },
+          select: { pesoKg: true },
+        }),
+      [] as { pesoKg: Prisma.Decimal | null }[],
+    );
+    const vendido = vendidas.reduce((a, v) => a + Number(v.pesoKg ?? 0), 0);
+    return Math.round(Math.max(0, seco - vendido) * 100) / 100;
+  }
+
+  /** Lotes con stock seco vendible + su remanente, para el selector de ventas. */
+  static async lotesVendibles(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    const [lotes, beneficios, ventas] = await Promise.all([
+      prisma.cacaoLote.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado" },
+        select: { id: true, loteCode: true, variedad: true, grado: true, tipoGrano: true, pesoKg: true },
+      }),
+      prisma.cacaoBeneficio.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado", estado: "terminado" },
+        select: { loteId: true, pesoSecoKg: true },
+      }),
+      safeVenta(
+        () =>
+          prisma.cacaoVenta.findMany({
+            where: { tenantId, deletedAt: null, status: "registrado", loteId: { not: null } },
+            select: { loteId: true, pesoKg: true },
+          }),
+        [] as { loteId: string | null; pesoKg: Prisma.Decimal | null }[],
+      ),
+    ]);
+    const secoByLote = new Map<string, number>();
+    for (const b of beneficios)
+      if (b.loteId && b.pesoSecoKg != null)
+        secoByLote.set(b.loteId, (secoByLote.get(b.loteId) ?? 0) + Number(b.pesoSecoKg));
+    const vendidoByLote = new Map<string, number>();
+    for (const v of ventas)
+      if (v.loteId)
+        vendidoByLote.set(v.loteId, (vendidoByLote.get(v.loteId) ?? 0) + Number(v.pesoKg ?? 0));
+    const out = lotes
+      .map((l) => {
+        const seco = secoByLote.get(l.id) ?? (l.tipoGrano === "seco" ? Number(l.pesoKg ?? 0) : 0);
+        const vendido = vendidoByLote.get(l.id) ?? 0;
+        return {
+          id: l.id,
+          loteCode: l.loteCode,
+          variedad: l.variedad,
+          grado: l.grado,
+          secoKg: r2(seco),
+          vendidoKg: r2(vendido),
+          remanenteKg: r2(Math.max(0, seco - vendido)),
+        };
+      })
+      .filter((l) => l.secoKg > 0)
+      .sort((a, b) => b.remanenteKg - a.remanenteKg);
+    return out;
+  }
+
   static async createVenta(tenantId: string, input: VentaInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!(prisma as { cacaoVenta?: unknown }).cacaoVenta) throw new Error("ventas_no_disponible");
@@ -1242,6 +1334,17 @@ export class CacaoDB {
       });
       if (lote) loteCode = lote.loteCode;
       else loteId = null; // lote inexistente → no vincular
+    }
+    // Anti-sobreventa: una venta vinculada a un lote no puede exceder su remanente
+    // vendible (seco producido − ya vendido contra ese lote). Freno server-side
+    // autoritativo; la UI lo previene pero el backend es el que decide.
+    if (loteId) {
+      const remanente = await CacaoDB.loteRemanenteVenta(tenantId, loteId);
+      if (remanente != null && Number(input.pesoKg) > remanente + 0.001) {
+        const e = new Error("venta_excede_lote") as Error & { remanente?: number };
+        e.remanente = remanente;
+        throw e;
+      }
     }
     // Estado de pago derivado de lo cobrado vs. total en soles.
     const { estado: estadoPago } = cacaoEstadoPago(totalPen, n(input.montoCobrado));

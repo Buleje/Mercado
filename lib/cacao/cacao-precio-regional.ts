@@ -29,8 +29,20 @@ const FACTOR = {
 const BABA_YIELD = 0.4;
 /** Premio del fino de aroma bien fermentado sobre el bulk (coop/export/chacra). */
 const FINO_PREMIUM = 0.12;
-/** Banda de incertidumbre del estimado (±%). */
-const RANGO_PCT = 0.07;
+/**
+ * Banda de incertidumbre por plaza (±fracción). Crece cuanto MÁS abajo en la
+ * cadena está la plaza: el precio en chacra depende de flete, comprador del día
+ * y cantidad de intermediarios, así que es mucho más incierto que el FOB. Bandas
+ * anchas a propósito — esto es un estimado grueso, no una cotización.
+ */
+const BANDA_PCT: Record<CacaoPlazaId, number> = {
+  internacional: 0.03,
+  fob: 0.07,
+  lima: 0.1,
+  acopio: 0.13,
+  "chacra-cc": 0.16,
+  "baba-cc": 0.2,
+};
 
 export type CacaoPlazaId = "internacional" | "fob" | "lima" | "acopio" | "chacra-cc" | "baba-cc";
 
@@ -54,7 +66,10 @@ export interface CacaoPreciosRegionales {
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-const rango = (v: number): [number, number] => [r2(v * (1 - RANGO_PCT)), r2(v * (1 + RANGO_PCT))];
+const rango = (v: number, pct: number): [number, number] => [
+  r2(v * (1 - pct)),
+  r2(v * (1 + pct)),
+];
 
 /**
  * Estima los precios por plaza a partir de la referencia internacional en S//kg
@@ -90,7 +105,7 @@ export function estimarPreciosRegionales(
     zona,
     estado,
     solKg: r2(valor),
-    rango: rango(valor),
+    rango: rango(valor, BANDA_PCT[id]),
     pctRef: Math.round((valor / ref) * 100),
     destacar,
     nota,
@@ -106,7 +121,7 @@ export function estimarPreciosRegionales(
     mk("acopio", "Acopio regional (Oxapampa / Pucallpa)", "Selva Central", "seco", acopio, false,
       "Acopiador intermedio de la región; paga rápido pero menos que Lima."),
     mk("chacra-cc", "Ciudad Constitución — en chacra (seco)", "Ciudad Constitución", "seco", chacra, true,
-      "Lo que recibe el productor por grano seco en CC. Lejos del puerto = más flete y más intermediarios."),
+      "Estimado grueso de lo que recibe el productor en CC. NO es una cotización — el precio real lo pone tu comprador según humedad, calidad y flete del día."),
     mk("baba-cc", "Ciudad Constitución — en baba (fresco)", "Ciudad Constitución", "baba", baba, true,
       "Cacao fresco sin fermentar/secar. ~2,5 kg de baba hacen 1 kg seco."),
   ];
@@ -116,8 +131,9 @@ export function estimarPreciosRegionales(
     finoAroma,
     plazas,
     disclaimer:
-      "Estimado: parte del precio internacional de hoy y aplica los descuentos típicos de la cadena " +
-      "(flete, secado, márgenes). El precio real cambia por calidad, humedad, fermentación y comprador.",
+      "Estimado MUY aproximado — no es una cotización. Parte del precio internacional de hoy y aplica " +
+      "descuentos típicos de la cadena (flete, secado, márgenes), así que puede desviarse bastante del " +
+      "precio real, que depende de calidad, humedad, fermentación y del comprador. Verificá con tu comprador.",
   };
 }
 
