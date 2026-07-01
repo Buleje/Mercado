@@ -13,7 +13,7 @@ export function TrendChart({
   trend,
   budgetPen,
 }: {
-  trend: { label: string; totalPen: number }[];
+  trend: { label: string; totalPen: number; real: boolean }[];
   budgetPen: number | null;
 }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -23,6 +23,7 @@ export function TrendChart({
 
   const max = Math.max(1, ...trend.map((t) => t.totalPen), budgetPen ?? 0);
   const budgetPct = budgetPen && budgetPen > 0 ? (budgetPen / max) * 100 : null;
+  const anyReal = trend.some((t) => t.real);
 
   return (
     <div>
@@ -50,13 +51,13 @@ export function TrendChart({
               <div className="relative flex w-full flex-1 items-end">
                 {hover === i && (
                   <div className="absolute -top-7 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--text-primary)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--surface-1)] shadow">
-                    {fmtPen(t.totalPen)}
+                    {fmtPen(t.totalPen)}{!t.real && " · est."}
                   </div>
                 )}
                 <div
                   className={`w-full rounded-t transition-opacity ${
                     over ? "bg-[var(--data-error-500,#ef4444)]" : "bg-[var(--accent)]"
-                  } ${hover === i ? "opacity-100" : "opacity-90"}`}
+                  } ${!t.real ? "opacity-40" : hover === i ? "opacity-100" : "opacity-90"}`}
                   style={{ height: `${Math.max(4, (t.totalPen / max) * 100)}%` }}
                 />
               </div>
@@ -65,6 +66,16 @@ export function TrendChart({
           );
         })}
       </div>
+      {anyReal && (
+        <div className="mt-2 flex items-center gap-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-3 rounded-sm bg-[var(--accent)]" /> cierre real
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-3 rounded-sm bg-[var(--accent)] opacity-40" /> estimado / en curso
+          </span>
+        </div>
+      )}
     </div>
   );
 }

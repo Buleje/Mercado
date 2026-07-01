@@ -11,7 +11,8 @@ export type Expense = {
 export type Summary = {
   count: number; recurringCount: number; monthlyRunRatePen: number; prevMonthRunRatePen: number;
   recurringMonthlyPen: number; thisMonthOneTimePen: number;
-  byCategory: { category: string; amountPen: number }[]; trend: { label: string; totalPen: number }[];
+  byCategory: { category: string; amountPen: number }[];
+  trend: { label: string; totalPen: number; real: boolean }[];
 };
 export type TenantCost = {
   tenantId: string; tenantName: string; plan: string;

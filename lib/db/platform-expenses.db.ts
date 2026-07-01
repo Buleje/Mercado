@@ -16,6 +16,11 @@ import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 // defecto/fallback. La UI muestra con qué cambio se normalizó (transparencia).
 export const DEFAULT_USD_TO_PEN = 3.75;
 const FX_KEY = "gastos.usdToPen";
+const HISTORY_KEY = "gastos.history";
+const MAX_HISTORY_MONTHS = 24;
+
+const monthKeyOf = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 /** @deprecated usar getFxRate()/DEFAULT_USD_TO_PEN — se mantiene por compat. */
 export const USD_TO_PEN = DEFAULT_USD_TO_PEN;
 
@@ -52,8 +57,14 @@ export interface PlatformExpenseSummary {
   recurringMonthlyPen: number; // solo recurrentes, normalizado a mes
   thisMonthOneTimePen: number; // gastos únicos con fecha en el mes actual
   byCategory: { category: string; amountPen: number }[]; // run-rate mensual por categoría
-  trend: { label: string; totalPen: number }[]; // últimos 6 meses (recurrente + únicos)
+  // últimos 6 meses. `real` = viene de un cierre mensual congelado (snapshot);
+  // false = estimado desde el recurrente de hoy (o mes en curso).
+  trend: { label: string; totalPen: number; real: boolean }[];
 }
+
+/** Cierre mensual congelado de gasto (para historial real, no proyectado). */
+export type ExpenseSnapshot = { totalPen: number; byCategory: Record<string, number> };
+export type ExpenseHistory = Record<string, ExpenseSnapshot>; // key = "YYYY-MM"
 
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -109,6 +120,34 @@ export const PlatformExpensesDB = {
     await PlatformSettingsDB.set(FX_KEY, rate, "superadmin");
   },
 
+  /** Cierres mensuales congelados de gasto (historial real). */
+  async getHistory(): Promise<ExpenseHistory> {
+    const v = await PlatformSettingsDB.get<ExpenseHistory>(HISTORY_KEY);
+    return v && typeof v === "object" ? v : {};
+  },
+
+  /**
+   * Congela el gasto del MES EN CURSO en el historial (para que meses pasados
+   * dejen de proyectarse desde el recurrente de hoy). Idempotente: reescribe la
+   * entrada del mes actual con el run-rate vigente; los meses pasados no se tocan.
+   * Se llama tras cada alta/edición/baja. Poda a los últimos MAX_HISTORY_MONTHS.
+   */
+  async recordCurrentMonthSnapshot(): Promise<void> {
+    const s = await this.summary();
+    const history = await this.getHistory();
+    const thisKey = monthKeyOf(new Date());
+    history[thisKey] = {
+      totalPen: s.monthlyRunRatePen,
+      byCategory: Object.fromEntries(s.byCategory.map((c) => [c.category, c.amountPen])),
+    };
+    const pruned: ExpenseHistory = Object.fromEntries(
+      Object.entries(history)
+        .sort(([a], [b]) => (a < b ? 1 : -1))
+        .slice(0, MAX_HISTORY_MONTHS),
+    );
+    await PlatformSettingsDB.set(HISTORY_KEY, pruned, "superadmin");
+  },
+
   async list(fxRate?: number): Promise<PlatformExpenseRow[]> {
     const fx = fxRate ?? (await this.getFxRate());
     const rows = await prisma.platformExpense.findMany({ orderBy: { date: "desc" } });
@@ -116,11 +155,10 @@ export const PlatformExpensesDB = {
   },
 
   async summary(): Promise<PlatformExpenseSummary> {
-    const fx = await this.getFxRate();
+    const [fx, history] = await Promise.all([this.getFxRate(), this.getHistory()]);
     const rows = await this.list(fx);
     const now = new Date();
-    const monthKey = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthKey = monthKeyOf;
     const thisKey = monthKey(now);
     const prevKey = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 
@@ -146,13 +184,19 @@ export const PlatformExpensesDB = {
     const thisMonthOneTimePen = oneTimeByMonth.get(thisKey) ?? 0;
     const prevMonthOneTimePen = oneTimeByMonth.get(prevKey) ?? 0;
 
-    // Tendencia: últimos 6 meses = recurrente (constante) + únicos de cada mes.
-    const trend: { label: string; totalPen: number }[] = [];
+    // Tendencia últimos 6 meses. Mes con cierre congelado (snapshot) → valor real;
+    // mes en curso o sin cierre → estimado (recurrente de hoy + únicos de ese mes).
+    const trend: { label: string; totalPen: number; real: boolean }[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = monthKey(d);
+      const snap = key !== thisKey ? history[key] : undefined;
       trend.push({
         label: MONTHS_ES[d.getMonth()],
-        totalPen: round(recurringMonthlyPen + (oneTimeByMonth.get(monthKey(d)) ?? 0)),
+        totalPen: snap
+          ? round(snap.totalPen)
+          : round(recurringMonthlyPen + (oneTimeByMonth.get(key) ?? 0)),
+        real: Boolean(snap),
       });
     }
 

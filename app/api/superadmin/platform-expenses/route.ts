@@ -19,6 +19,13 @@ const BUDGET_BY_CAT_KEY = "gastos.budgetByCategoryPen";
 const NO_STORE = { "Cache-Control": "no-store" } as const;
 const CATEGORIES = EXPENSE_CATEGORIES as readonly [string, ...string[]];
 
+/** Congela el gasto del mes en curso tras una mutación, sin bloquear la respuesta. */
+function snapshotFireAndForget(): Promise<void> {
+  return PlatformExpensesDB.recordCurrentMonthSnapshot().catch((err) =>
+    logger.error("[superadmin/platform-expenses] snapshot", { error: String(err) }),
+  );
+}
+
 const CreateSchema = z.object({
   concept: z.string().trim().min(1).max(120),
   category: z.enum(CATEGORIES),
@@ -87,6 +94,7 @@ export async function POST(req: NextRequest) {
       vendor: d.vendor,
       notes: d.notes,
     });
+    void snapshotFireAndForget();
     return NextResponse.json({ expense: row }, { headers: NO_STORE });
   } catch (e) {
     logger.error("[superadmin/platform-expenses] POST", {
@@ -169,6 +177,7 @@ export async function PATCH(req: NextRequest) {
       notes: d.notes,
     });
     if (!row) return NextResponse.json({ error: "Gasto no encontrado" }, { status: 404 });
+    void snapshotFireAndForget();
     return NextResponse.json({ expense: row }, { headers: NO_STORE });
   } catch (e) {
     logger.error("[superadmin/platform-expenses] PATCH", {
@@ -188,6 +197,7 @@ export async function DELETE(req: NextRequest) {
 
   try {
     await PlatformExpensesDB.remove(parsed.data.id);
+    void snapshotFireAndForget();
     return NextResponse.json({ ok: true }, { headers: NO_STORE });
   } catch (e) {
     logger.error("[superadmin/platform-expenses] DELETE", {
