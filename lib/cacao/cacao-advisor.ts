@@ -280,6 +280,20 @@ export function classifyNewsSentiment(title: string): "alcista" | "bajista" | "n
   return "neutral";
 }
 
+/** Palabras clave (con polaridad) que dispararon la clasificación de un titular. */
+export function newsKeywords(title: string): { word: string; pol: "alcista" | "bajista" }[] {
+  const t = title ?? "";
+  const out: { word: string; pol: "alcista" | "bajista" }[] = [];
+  const seen = new Set<string>();
+  const grab = (re: RegExp, pol: "alcista" | "bajista") => {
+    const m = t.match(new RegExp(re.source, "gi"));
+    if (m) for (const w of m) { const k = w.toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push({ word: w, pol }); } }
+  };
+  grab(NEWS_ALCISTA, "alcista");
+  grab(NEWS_BAJISTA, "bajista");
+  return out;
+}
+
 /** Señal de sentimiento de los titulares (keywords deterministas, sin IA). */
 function analyzeNews(news: { title: string }[] | undefined): AdvisorNews | null {
   if (!news || news.length === 0) return null;

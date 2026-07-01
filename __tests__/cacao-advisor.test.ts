@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cacaoAdvisor, classifyNewsSentiment, type AdvisorPriceInput } from "@/lib/cacao/cacao-advisor";
+import { cacaoAdvisor, classifyNewsSentiment, newsKeywords, type AdvisorPriceInput } from "@/lib/cacao/cacao-advisor";
 
 /** Asesor determinístico "¿vender o aguantar?" (ADR-128). Núcleo sin IA. */
 
@@ -137,6 +137,17 @@ describe("cacaoAdvisor — MACD, cruce de medias y dirección compuesta", () => 
     expect(r.tecnico.macdHist ?? 0).toBeLessThan(0);
     expect(r.tecnico.emaCruce).toBe("death");
     expect(r.direccion.probabilidadSuba).toBeLessThan(50);
+  });
+});
+
+describe("newsKeywords — palabras que disparan la clasificación", () => {
+  it("devuelve keywords con polaridad (ES/EN)", () => {
+    const k = newsKeywords("Escasez y sequía disparan el precio; drought hits harvest");
+    const words = k.map((x) => x.word.toLowerCase());
+    expect(words).toContain("escasez");
+    expect(words).toContain("drought");
+    expect(k.every((x) => x.pol === "alcista")).toBe(true);
+    expect(newsKeywords("Perú exportó cacao fino").length).toBe(0);
   });
 });
 

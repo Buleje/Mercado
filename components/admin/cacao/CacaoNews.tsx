@@ -9,14 +9,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Newspaper, RefreshCw, Globe, ExternalLink, AlertCircle, Coins, ArrowUpRight,
-  TrendingUp, TrendingDown, Minus, Search,
+  TrendingUp, TrendingDown, Minus, Search, Sparkles, MapPin, MessageCircle,
 } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
-import { classifyNewsSentiment } from "@/lib/cacao/cacao-advisor";
+import { classifyNewsSentiment, newsKeywords } from "@/lib/cacao/cacao-advisor";
+import { shareCacaoText } from "@/lib/cacao/cacao-print";
 
 interface NewsItem { title: string; source: string | null; link: string; pubDate: string | null }
 type Sent = "alcista" | "bajista" | "neutral";
-type Filter = "todas" | "alcistas" | "bajistas" | "recientes";
+type Filter = "todas" | "peru" | "alcistas" | "bajistas" | "recientes";
+
+/** Detecta noticias de Perú / zona local del acopiador. */
+const PERU_RE = /(per[uú]|pucallpa|ucayali|san mart[ií]n|jun[ií]n|hu[aá]nuco|amazon[ao]s|midagri|senasa|devida|vraem|tocache|cacao peruano|fino de aroma|selva central)/i;
+const esPeruNews = (n: { title: string; source: string | null }) => PERU_RE.test(`${n.title} ${n.source ?? ""}`);
+/** Qué implica el sesgo de noticias para el precio. */
+const IMPACTO: Record<Sent | "mixto", string> = {
+  alcista: "El sesgo de las noticias apunta a una SUBA del precio (escasez / problemas de oferta).",
+  bajista: "El sesgo de las noticias apunta a una BAJA del precio (más oferta / demanda floja).",
+  mixto: "Las noticias están mezcladas — sin una dirección clara del precio por ahora.",
+  neutral: "Sin señales fuertes en las noticias sobre la dirección del precio.",
+};
 
 function relTime(iso: string | null): string {
   if (!iso) return "";
@@ -44,6 +56,7 @@ const GROUP_LABEL: Record<"hoy" | "semana" | "antes", string> = {
 };
 const FILTERS: { v: Filter; label: string }[] = [
   { v: "todas", label: "Todas" },
+  { v: "peru", label: "Perú" },
   { v: "alcistas", label: "Alcistas" },
   { v: "bajistas", label: "Bajistas" },
   { v: "recientes", label: "Recientes" },
@@ -56,6 +69,20 @@ export default function CacaoNews() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("todas");
+  const [digest, setDigest] = useState<string | null>(null);
+  const [digestLoading, setDigestLoading] = useState(true);
+
+  // Resumen IA del día (endpoint aparte, progressive — no bloquea el feed).
+  useEffect(() => {
+    let alive = true;
+    setDigestLoading(true);
+    fetch("/api/admin/cacao/news-digest", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive) setDigest(d?.digest ?? null); })
+      .catch((err) => { console.warn("[cacao] resumen IA de noticias no disponible", err); })
+      .finally(() => { if (alive) setDigestLoading(false); });
+    return () => { alive = false; };
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -70,9 +97,14 @@ export default function CacaoNews() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  // Clasificar + resumen de sentimiento (sesgo general).
+  // Clasificar + keywords + origen (Perú/Mundo) por titular.
   const items = useMemo(
-    () => (news ?? []).map((n) => ({ ...n, sent: classifyNewsSentiment(n.title) as Sent })),
+    () => (news ?? []).map((n) => ({
+      ...n,
+      sent: classifyNewsSentiment(n.title) as Sent,
+      keywords: newsKeywords(n.title),
+      peru: esPeruNews(n),
+    })),
     [news],
   );
   const resumen = useMemo(() => {
@@ -89,6 +121,7 @@ export default function CacaoNews() {
     const recienteLimite = Date.now() - 48 * 3.6e6;
     const filtrado = items.filter((n) => {
       if (q && !(`${n.title} ${n.source ?? ""}`.toLowerCase().includes(q))) return false;
+      if (filter === "peru") return n.peru;
       if (filter === "alcistas") return n.sent === "alcista";
       if (filter === "bajistas") return n.sent === "bajista";
       if (filter === "recientes") return n.pubDate != null && new Date(n.pubDate).getTime() >= recienteLimite;
@@ -118,6 +151,18 @@ export default function CacaoNews() {
         <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
       </div>
 
+      {/* Resumen IA del día */}
+      {(digest || digestLoading) && (
+        <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-4">
+          <h3 className="mb-1.5 flex items-center gap-2 text-sm font-bold text-[var(--accent)]"><Sparkles className="h-4 w-4" /> Resumen del día</h3>
+          {digest ? (
+            <p className="text-sm leading-relaxed text-[var(--text-primary)]">{digest}</p>
+          ) : (
+            <p className="text-sm text-[var(--text-tertiary)]">{digestLoading ? "Analizando los titulares de hoy…" : "Resumen no disponible ahora."}</p>
+          )}
+        </div>
+      )}
+
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudieron cargar las noticias:</strong> {error}</div></div>}
 
       {loading && !news && <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando noticias del cacao…</p></div>}
@@ -138,6 +183,14 @@ export default function CacaoNews() {
                 </span>
               </span>
             </div>
+          )}
+
+          {/* Impacto en el precio del sesgo de noticias */}
+          {items.length > 0 && (
+            <p className="flex items-start gap-2 px-1 text-sm text-[var(--text-secondary)]">
+              {resumen.sesgo === "alcista" ? <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success-600)]" /> : resumen.sesgo === "bajista" ? <TrendingDown className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-error-600)]" /> : <Minus className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />}
+              {IMPACTO[resumen.sesgo]}
+            </p>
           )}
 
           {/* Buscador + filtros */}
@@ -172,17 +225,25 @@ export default function CacaoNews() {
                       {grupos.byGroup[g].map((n, i) => {
                         const meta = SENT_META[n.sent];
                         return (
-                          <li key={`${g}-${i}`}>
-                            <a href={n.link} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-3 px-5 py-3.5 transition hover:bg-[var(--surface-sunken)]">
+                          <li key={`${g}-${i}`} className="flex items-stretch">
+                            <a href={n.link} target="_blank" rel="noopener noreferrer" className="group flex min-w-0 flex-1 items-start gap-3 px-5 py-3.5 transition hover:bg-[var(--surface-sunken)]">
                               <span className={`mt-0.5 inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-[length:var(--ts-2xs)] font-bold ${meta.cls}`} title={`Sesgo ${meta.label.toLowerCase()}`}>
                                 <meta.Icon className="h-3 w-3" />{meta.label}
                               </span>
                               <span className="min-w-0 flex-1">
-                                <span className="block text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)]">{n.title}</span>
-                                <span className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]"><Globe className="h-3 w-3" />{n.source ?? "Fuente"}{n.pubDate ? ` · ${relTime(n.pubDate)}` : ""}</span>
+                                <span className="block text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)]"><Highlight text={n.title} keywords={n.keywords} /></span>
+                                <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+                                  <Globe className="h-3 w-3" />{n.source ?? "Fuente"}{n.pubDate ? ` · ${relTime(n.pubDate)}` : ""}
+                                  <span className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${n.peru ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+                                    {n.peru ? <><MapPin className="h-2.5 w-2.5" />Perú</> : "Mundo"}
+                                  </span>
+                                </span>
                               </span>
                               <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] opacity-0 transition group-hover:opacity-100" />
                             </a>
+                            <button type="button" onClick={() => shareCacaoText("Noticia del cacao", `${n.title}\n${n.link}`)} title="Compartir por WhatsApp" aria-label="Compartir noticia" className="flex shrink-0 items-center px-3 text-[var(--text-tertiary)] hover:bg-[var(--data-success-50)] hover:text-[var(--data-success-700)]">
+                              <MessageCircle className="h-4 w-4" />
+                            </button>
                           </li>
                         );
                       })}
@@ -207,6 +268,23 @@ export default function CacaoNews() {
   );
 }
 
+function Highlight({ text, keywords }: { text: string; keywords: { word: string; pol: "alcista" | "bajista" }[] }) {
+  if (!keywords.length) return <>{text}</>;
+  const pat = keywords.map((k) => k.word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const parts = text.split(new RegExp(`(${pat})`, "gi"));
+  return (
+    <>
+      {parts.map((p, i) => {
+        const kw = keywords.find((k) => k.word.toLowerCase() === p.toLowerCase());
+        return kw ? (
+          <mark key={i} className={`bg-transparent px-0.5 font-bold ${kw.pol === "alcista" ? "text-[var(--data-success-700)]" : "text-[var(--data-error-700)]"}`}>{p}</mark>
+        ) : (
+          <span key={i}>{p}</span>
+        );
+      })}
+    </>
+  );
+}
 function SentChip({ sent, count }: { sent: Sent; count: number }) {
   const meta = SENT_META[sent];
   return (
