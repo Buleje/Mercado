@@ -55,6 +55,23 @@ export interface AdvisorTecnico {
   resistencia: number | null; // techo reciente (USD/t)
   drawdownPct: number | null; // % por debajo del máximo de 52 sem (0 = en el máximo)
   trendR2: number | null; // 0-1: qué tan limpia/lineal es la tendencia
+  macdHist: number | null; // histograma MACD (>0 alcista, <0 bajista)
+  macdCruce: "alcista" | "bajista" | null; // cruce reciente de MACD
+  emaCruce: "golden" | "death" | null; // EMA 12 vs 26
+  divergencia: "alcista" | "bajista" | null; // divergencia RSI/precio
+}
+/** Un factor del veredicto direccional compuesto. */
+export interface AdvisorFactor {
+  nombre: string;
+  voto: "suba" | "baja" | "neutral";
+  peso: number;
+  detalle: string;
+}
+/** Veredicto direccional: probabilidad de suba integrando todos los factores. */
+export interface AdvisorDireccion {
+  probabilidadSuba: number; // 0-100
+  sesgo: "suba" | "baja" | "lateral";
+  factores: AdvisorFactor[];
 }
 /** Estacionalidad mensual (según los últimos 12 meses de la serie). */
 export interface AdvisorEstacional {
@@ -87,6 +104,7 @@ export interface AdvisorResult {
   news: AdvisorNews | null;
   tecnico: AdvisorTecnico; // indicadores técnicos
   estacionalidad: AdvisorEstacional | null; // patrón mensual (si hay datos con fecha)
+  direccion: AdvisorDireccion; // veredicto direccional compuesto (suba/baja)
 }
 
 function pctChange(arr: number[], n: number): number | null {
@@ -143,6 +161,47 @@ function linregR2(closes: number[], n = 30): number | null {
   if (sxx === 0 || syy === 0) return null;
   const r = sxy / Math.sqrt(sxx * syy);
   return Math.round(r * r * 100) / 100;
+}
+
+/** Serie de EMA (media móvil exponencial) de un periodo. */
+function emaSeries(closes: number[], period: number): number[] {
+  if (!closes.length) return [];
+  const k = 2 / (period + 1);
+  const out = [closes[0]];
+  for (let i = 1; i < closes.length; i++) out.push(closes[i] * k + out[i - 1] * (1 - k));
+  return out;
+}
+
+/** MACD (12/26/9): histograma + cruce reciente (alcista/bajista). */
+function macd(closes: number[]): { hist: number; cruce: "alcista" | "bajista" | null } | null {
+  if (closes.length < 35) return null;
+  const e12 = emaSeries(closes, 12), e26 = emaSeries(closes, 26);
+  const macdLine = closes.map((_, i) => e12[i] - e26[i]);
+  const sig = emaSeries(macdLine, 9);
+  const n = closes.length - 1;
+  const hist = macdLine[n] - sig[n];
+  const prev = macdLine[n - 1] - sig[n - 1];
+  const cruce = prev <= 0 && hist > 0 ? "alcista" : prev >= 0 && hist < 0 ? "bajista" : null;
+  return { hist: Math.round(hist * 100) / 100, cruce };
+}
+
+/** Cruce de EMA 12/26: golden (12>26, alcista) / death (12<26, bajista). */
+function emaCross(closes: number[]): "golden" | "death" | null {
+  if (closes.length < 26) return null;
+  const e12 = emaSeries(closes, 12), e26 = emaSeries(closes, 26);
+  const n = closes.length - 1;
+  return e12[n] > e26[n] ? "golden" : e12[n] < e26[n] ? "death" : null;
+}
+
+/** Divergencia RSI/precio: precio sube pero momentum baja (bajista) o viceversa. */
+function rsiDivergence(closes: number[]): "alcista" | "bajista" | null {
+  if (closes.length < 30) return null;
+  const rNow = rsi(closes), rPrev = rsi(closes.slice(0, -10));
+  if (rNow == null || rPrev == null) return null;
+  const pNow = closes[closes.length - 1], pPrev = closes[closes.length - 11];
+  if (pNow > pPrev * 1.005 && rNow < rPrev - 3) return "bajista"; // precio ↑, momentum ↓
+  if (pNow < pPrev * 0.995 && rNow > rPrev + 3) return "alcista"; // precio ↓, momentum ↑
+  return null;
 }
 
 /** Estacionalidad mensual: promedio de cada mes vs. promedio anual (serie con timestamps). */
@@ -243,6 +302,66 @@ const DONDE: AdvisorDonde[] = [
   { canal: "Mercado / intermediario local (Pucallpa)", nota: "pago rápido pero precio menor" },
 ];
 
+/**
+ * Veredicto direccional compuesto: integra tendencia, MACD, cruce de medias, RSI,
+ * divergencia, Bollinger, posición 52s, noticias y estacionalidad en una única
+ * probabilidad de suba, con el desglose de qué vota cada factor (transparente).
+ */
+function direccionCompuesta(x: {
+  trend30: number | null;
+  rsiVal: number | null;
+  boll: { pctB: number | null } | null;
+  pos52: number | null;
+  macdHist: number | null;
+  emaCr: "golden" | "death" | null;
+  diverg: "alcista" | "bajista" | null;
+  news: AdvisorNews | null;
+  estacionalidad: AdvisorEstacional | null;
+}): AdvisorDireccion {
+  const factores: AdvisorFactor[] = [];
+  let net = 0, maxW = 0;
+  const add = (nombre: string, voto: "suba" | "baja" | "neutral", peso: number, detalle: string) => {
+    factores.push({ nombre, voto, peso, detalle });
+    maxW += peso;
+    net += voto === "suba" ? peso : voto === "baja" ? -peso : 0;
+  };
+  if (x.trend30 != null)
+    add("Tendencia (mes)", x.trend30 > 2 ? "suba" : x.trend30 < -2 ? "baja" : "neutral", 2, `${x.trend30 > 0 ? "+" : ""}${x.trend30}% en el mes`);
+  if (x.macdHist != null)
+    add("MACD", x.macdHist > 0 ? "suba" : x.macdHist < 0 ? "baja" : "neutral", 2, `histograma ${x.macdHist > 0 ? "positivo" : "negativo"} (${x.macdHist})`);
+  if (x.emaCr)
+    add("Cruce de medias", x.emaCr === "golden" ? "suba" : "baja", 1.5, x.emaCr === "golden" ? "EMA12 sobre EMA26 (golden cross)" : "EMA12 bajo EMA26 (death cross)");
+  if (x.rsiVal != null) {
+    const voto = x.rsiVal >= 70 ? "baja" : x.rsiVal <= 30 ? "suba" : x.rsiVal >= 55 ? "suba" : x.rsiVal <= 45 ? "baja" : "neutral";
+    const det = x.rsiVal >= 70 ? `RSI ${x.rsiVal}: sobrecompra (riesgo de corrección)` : x.rsiVal <= 30 ? `RSI ${x.rsiVal}: sobreventa (posible rebote)` : `RSI ${x.rsiVal}`;
+    add("Momentum (RSI)", voto, 1, det);
+  }
+  if (x.diverg)
+    add("Divergencia RSI/precio", x.diverg === "alcista" ? "suba" : "baja", 1.5, x.diverg === "bajista" ? "precio sube pero el momentum baja" : "precio baja pero el momentum sube");
+  if (x.boll?.pctB != null) {
+    const voto = x.boll.pctB >= 90 ? "baja" : x.boll.pctB <= 10 ? "suba" : "neutral";
+    if (voto !== "neutral") add("Bollinger %B", voto, 1, `%B ${x.boll.pctB} (${voto === "baja" ? "extendido al alza" : "extendido a la baja"})`);
+  }
+  if (x.pos52 != null) {
+    const voto = x.pos52 >= 85 ? "baja" : x.pos52 <= 15 ? "suba" : "neutral";
+    if (voto !== "neutral") add("Posición 52 sem", voto, 1, `${x.pos52}% del rango anual (${voto === "baja" ? "caro" : "barato"})`);
+  }
+  if (x.news && (x.news.senal === "alcista" || x.news.senal === "bajista"))
+    add("Noticias", x.news.senal === "alcista" ? "suba" : "baja", 1, `sesgo ${x.news.senal}`);
+  if (x.estacionalidad) {
+    const cur = x.estacionalidad.porMes.find((m) => m.mes === x.estacionalidad!.mesActual)?.idxPct;
+    const next = x.estacionalidad.porMes.find((m) => m.mes === (x.estacionalidad!.mesActual + 1) % 12)?.idxPct;
+    if (cur != null && next != null) {
+      const voto = next > cur + 1 ? "suba" : next < cur - 1 ? "baja" : "neutral";
+      if (voto !== "neutral") add("Estacionalidad", voto, 1, `el mes próximo suele estar ${next > cur ? "más alto" : "más bajo"}`);
+    }
+  }
+  const prob = Math.max(5, Math.min(95, Math.round(50 + (maxW ? net / maxW : 0) * 50)));
+  const sesgo: AdvisorDireccion["sesgo"] = prob >= 58 ? "suba" : prob <= 42 ? "baja" : "lateral";
+  factores.sort((a, b) => b.peso - a.peso);
+  return { probabilidadSuba: prob, sesgo, factores };
+}
+
 export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   const closes = (p.series ?? []).map((x) => x.c).filter((c) => typeof c === "number" && c > 0);
   const pos52 = p.weekHigh52 != null && p.weekLow52 != null && p.weekHigh52 > p.weekLow52
@@ -265,6 +384,9 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   const drawdownPct =
     p.weekHigh52 != null && p.weekHigh52 > 0 ? round1(((p.value - p.weekHigh52) / p.weekHigh52) * 100) : null;
   const trendR2 = closes.length ? linregR2(closes, 30) : null;
+  const macdRes = macd(closes);
+  const emaCr = emaCross(closes);
+  const diverg = rsiDivergence(closes);
   const tecnico: AdvisorTecnico = {
     rsi: rsiVal,
     rsiZona,
@@ -275,6 +397,10 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
     resistencia,
     drawdownPct,
     trendR2,
+    macdHist: macdRes?.hist ?? null,
+    macdCruce: macdRes?.cruce ?? null,
+    emaCruce: emaCr,
+    divergencia: diverg,
   };
   const estacionalidad = seasonality(p.series ?? []);
 
@@ -286,6 +412,12 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
 
   // Señal de noticias (sentimiento de titulares).
   const news = analyzeNews(p.news);
+
+  // Veredicto direccional compuesto (integra todo, ya con news disponible).
+  const direccion = direccionCompuesta({
+    trend30, rsiVal, boll, pos52, macdHist: macdRes?.hist ?? null,
+    emaCr, diverg, news, estacionalidad,
+  });
 
   const high = pos52 != null && pos52 >= 65;
   const low = pos52 != null && pos52 <= 35;
@@ -311,6 +443,10 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
     const d = estacionalidad.desviacionPct;
     motivos.push(`Estacionalidad: ${mesNombre(estacionalidad.mesActual)} suele estar ${d > 0 ? "+" : ""}${d}% ${d >= 0 ? "sobre" : "bajo"} el promedio del año (últimos 12 meses).`);
   }
+  if (macdRes?.cruce === "alcista") motivos.push("MACD cruzó al alza: el momentum gira a favor de la suba.");
+  else if (macdRes?.cruce === "bajista") motivos.push("MACD cruzó a la baja: el momentum gira a favor de la caída.");
+  if (diverg === "bajista") motivos.push("Divergencia bajista: el precio sube pero el impulso se debilita — la tendencia puede girar.");
+  else if (diverg === "alcista") motivos.push("Divergencia alcista: el precio baja pero el impulso mejora — posible piso.");
 
   if (high && !falling) { signal = "vender"; fuerza = rising ? "fuerte" : "moderada"; }
   else if (high && falling) { signal = "vender"; fuerza = "moderada"; }
@@ -398,5 +534,5 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   if (signal === "neutral") confianza = Math.min(confianza, 45);
   confianza = Math.max(15, Math.min(95, confianza));
 
-  return { signal, fuerza, confianza, titulo, resumen, motivos, cuando, donde: DONDE, riesgos, compra, metrics, forecast, news, tecnico, estacionalidad };
+  return { signal, fuerza, confianza, titulo, resumen, motivos, cuando, donde: DONDE, riesgos, compra, metrics, forecast, news, tecnico, estacionalidad, direccion };
 }

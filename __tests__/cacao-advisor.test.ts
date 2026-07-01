@@ -121,6 +121,25 @@ describe("cacaoAdvisor — indicadores técnicos y estacionalidad", () => {
   });
 });
 
+describe("cacaoAdvisor — MACD, cruce de medias y dirección compuesta", () => {
+  it("alza sostenida → MACD alcista, golden cross y probabilidad de suba", () => {
+    const r = cacaoAdvisor({ value: 6000, changePct: 0, ...RANGE, series: linear(3000, 6000, 60) });
+    expect(r.tecnico.macdHist ?? 0).toBeGreaterThan(0);
+    expect(r.tecnico.emaCruce).toBe("golden");
+    expect(r.direccion.probabilidadSuba).toBeGreaterThan(50);
+    expect(r.direccion.factores.length).toBeGreaterThanOrEqual(3);
+    // la probabilidad de baja es el complemento
+    expect(100 - r.direccion.probabilidadSuba).toBeLessThan(50);
+  });
+
+  it("baja sostenida → MACD bajista, death cross y probabilidad de baja", () => {
+    const r = cacaoAdvisor({ value: 3000, changePct: 0, ...RANGE, series: linear(6000, 3000, 60) });
+    expect(r.tecnico.macdHist ?? 0).toBeLessThan(0);
+    expect(r.tecnico.emaCruce).toBe("death");
+    expect(r.direccion.probabilidadSuba).toBeLessThan(50);
+  });
+});
+
 describe("classifyNewsSentiment — sentimiento por titular", () => {
   it("clasifica ES/EN alcista, bajista y neutral", () => {
     expect(classifyNewsSentiment("Escasez dispara el precio del cacao a récord")).toBe("alcista");

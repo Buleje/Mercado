@@ -7,10 +7,11 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import {
-  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins, LineChart, Newspaper, Gauge, Calendar, Activity, Bell, Printer, MessageCircle,
+  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins, LineChart, Newspaper, Gauge, Calendar, Activity, Bell, Printer, MessageCircle, Download,
 } from "@buleje/design-system/icons";
 import { mesNombre, type AdvisorResult } from "@/lib/cacao/cacao-advisor";
 import { printCacaoAsesor, asesorTexto } from "@/lib/cacao/cacao-asesor-informe";
+import { downloadCacaoAsesorPDF } from "@/lib/cacao/cacao-asesor-pdf";
 import { shareCacaoText } from "@/lib/cacao/cacao-print";
 
 type Advisor = AdvisorResult;
@@ -27,6 +28,19 @@ export default function CacaoAsesor() {
   const [data, setData] = useState<Resp | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
+
+  async function descargarPDF() {
+    if (!data?.advisor) return;
+    setPdfBusy(true);
+    try {
+      await downloadCacaoAsesorPDF(data.advisor, data.local ?? null, data.narrative ?? null);
+    } catch (e) {
+      setError(`No se pudo generar el PDF: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setPdfBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -50,7 +64,8 @@ export default function CacaoAsesor() {
         <div className="flex shrink-0 items-center gap-2">
           {a && (
             <>
-              <button type="button" onClick={() => printCacaoAsesor(a, data?.local ?? null, data?.narrative ?? null)} title="Informe imprimible / PDF" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" /><span className="hidden sm:inline">Informe</span></button>
+              <button type="button" onClick={descargarPDF} disabled={pdfBusy} title="Descargar PDF" className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60">{pdfBusy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}<span className="hidden sm:inline">PDF</span></button>
+              <button type="button" onClick={() => printCacaoAsesor(a, data?.local ?? null, data?.narrative ?? null)} title="Informe imprimible" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" /><span className="hidden sm:inline">Imprimir</span></button>
               <button type="button" onClick={() => shareCacaoText("Asesor de cacao", asesorTexto(a, data?.local ?? null))} title="Compartir por WhatsApp" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--data-success-400)] px-3 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]"><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Compartir</span></button>
             </>
           )}
@@ -103,6 +118,39 @@ export default function CacaoAsesor() {
             </div>
           </div>
 
+          {/* Dirección probable (score compuesto) */}
+          {a.direccion && (
+            <Card icon={Activity} title="Dirección probable del precio">
+              <div className="mb-3">
+                <div className="mb-1 flex items-center justify-between text-xs font-bold">
+                  <span className="text-[var(--data-success-700)]">↑ Suba {a.direccion.probabilidadSuba}%</span>
+                  <span className="uppercase tracking-wider text-[var(--text-tertiary)]">
+                    {a.direccion.sesgo === "suba" ? "sesgo alcista" : a.direccion.sesgo === "baja" ? "sesgo bajista" : "lateral"}
+                  </span>
+                  <span className="text-[var(--data-error-700)]">Baja {100 - a.direccion.probabilidadSuba}% ↓</span>
+                </div>
+                <div className="flex h-3 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                  <div style={{ width: `${a.direccion.probabilidadSuba}%`, background: "var(--data-success-500)" }} />
+                  <div style={{ width: `${100 - a.direccion.probabilidadSuba}%`, background: "var(--data-error-400)" }} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                {a.direccion.factores.map((f, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5 text-xs">
+                    <span className="flex items-center gap-2">
+                      <VoteBadge voto={f.voto} />
+                      <span className="font-bold text-[var(--text-primary)]">{f.nombre}</span>
+                    </span>
+                    <span className="text-right text-[var(--text-tertiary)]">{f.detalle}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                Consenso ponderado de {a.direccion.factores.length} factores técnicos y fundamentales. No es garantía — es la probabilidad que sugieren los datos.
+              </p>
+            </Card>
+          )}
+
           {/* Narrativa IA */}
           <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-5">
             <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--accent)]"><Sparkles className="h-4 w-4" /> Lectura de la IA</h3>
@@ -146,6 +194,15 @@ export default function CacaoAsesor() {
               )}
               {a.tecnico.drawdownPct != null && (
                 <Reading>Está a <b>{Math.abs(a.tecnico.drawdownPct)}%</b> de su máximo de 52 semanas.</Reading>
+              )}
+              {a.tecnico.macdHist != null && (
+                <Reading><b>MACD</b>: histograma {a.tecnico.macdHist > 0 ? "positivo (momentum alcista)" : "negativo (momentum bajista)"}{a.tecnico.macdCruce ? ` · cruce ${a.tecnico.macdCruce} reciente` : ""}.</Reading>
+              )}
+              {a.tecnico.emaCruce && (
+                <Reading>Cruce de medias: <b>{a.tecnico.emaCruce === "golden" ? "golden cross (alcista)" : "death cross (bajista)"}</b> (EMA 12 vs 26).</Reading>
+              )}
+              {a.tecnico.divergencia && (
+                <Reading>Divergencia <b>{a.tecnico.divergencia}</b>: {a.tecnico.divergencia === "bajista" ? "el precio sube pero el impulso se debilita — puede girar a la baja." : "el precio baja pero el impulso mejora — posible piso."}</Reading>
               )}
             </ul>
           </Card>
@@ -294,6 +351,19 @@ function Card({ icon: Icon, title, children }: { icon: typeof MapPin; title: str
       <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" /> {title}</h3>
       {children}
     </div>
+  );
+}
+function VoteBadge({ voto }: { voto: "suba" | "baja" | "neutral" }) {
+  const meta =
+    voto === "suba"
+      ? { Icon: TrendingUp, cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)]" }
+      : voto === "baja"
+        ? { Icon: TrendingDown, cls: "bg-[var(--data-error-100)] text-[var(--data-error-700)]" }
+        : { Icon: Minus, cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" };
+  return (
+    <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${meta.cls}`}>
+      <meta.Icon className="h-3 w-3" />
+    </span>
   );
 }
 function Reading({ children }: { children: React.ReactNode }) {
