@@ -117,6 +117,16 @@ const NEWS_ALCISTA =
 const NEWS_BAJISTA =
   /(baja|bajó|cae|ca[ií]da|desplom|superávit|superavit|sobreoferta|cosecha récord|corrección|m[íi]nimo|abarata|presión a la baja|debilita|surplus|oversupply|glut|bumper crop|record harvest|falls?|drop|plunge|slump|decline|lower|eases?|correction|weaken)/i;
 
+/** Sentimiento de UN titular (alcista/bajista/neutral). Client-safe, sin IA. */
+export function classifyNewsSentiment(title: string): "alcista" | "bajista" | "neutral" {
+  const t = title ?? "";
+  const up = NEWS_ALCISTA.test(t),
+    down = NEWS_BAJISTA.test(t);
+  if (up && !down) return "alcista";
+  if (down && !up) return "bajista";
+  return "neutral";
+}
+
 /** Señal de sentimiento de los titulares (keywords deterministas, sin IA). */
 function analyzeNews(news: { title: string }[] | undefined): AdvisorNews | null {
   if (!news || news.length === 0) return null;

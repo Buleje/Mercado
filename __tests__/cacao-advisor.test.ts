@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cacaoAdvisor, type AdvisorPriceInput } from "@/lib/cacao/cacao-advisor";
+import { cacaoAdvisor, classifyNewsSentiment, type AdvisorPriceInput } from "@/lib/cacao/cacao-advisor";
 
 /** Asesor determinístico "¿vender o aguantar?" (ADR-128). Núcleo sin IA. */
 
@@ -96,6 +96,16 @@ describe("cacaoAdvisor — consciente del stock/margen del acopiador", () => {
       local: { stockKg: 0, miPrecioKg: null, refKg: 13, spreadPct: null },
     });
     expect(r.motivos.some((m) => m.includes("próxima compra"))).toBe(true);
+  });
+});
+
+describe("classifyNewsSentiment — sentimiento por titular", () => {
+  it("clasifica ES/EN alcista, bajista y neutral", () => {
+    expect(classifyNewsSentiment("Escasez dispara el precio del cacao a récord")).toBe("alcista");
+    expect(classifyNewsSentiment("Cocoa surges on West Africa drought")).toBe("alcista");
+    expect(classifyNewsSentiment("Cocoa prices plunge on global oversupply")).toBe("bajista");
+    expect(classifyNewsSentiment("Sobreoferta hunde el precio del cacao")).toBe("bajista");
+    expect(classifyNewsSentiment("Perú exportó más cacao fino este año")).toBe("neutral");
   });
 });
 

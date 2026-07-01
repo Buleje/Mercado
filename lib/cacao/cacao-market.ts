@@ -39,12 +39,15 @@ export interface CacaoMarket {
   generatedAt: string;
   stale?: boolean; // true = el precio viene del último valor conocido (fuente caída)
   staleAt?: string | null; // ISO de cuándo se obtuvo ese último precio
+  newsStale?: boolean; // true = las noticias vienen del último feed conocido
+  newsStaleAt?: string | null; // ISO de ese último feed
 }
 
 let cache: { at: number; data: CacaoMarket } | null = null;
 // Último precio conocido (para degradar con gracia si la fuente cae). In-memory:
 // se pierde en cold start serverless, pero cubre caídas transitorias de la fuente.
 let lastGood: { price: CacaoPrice; usdPen: number | null; pricePenPerKg: number | null; at: number } | null = null;
+let lastGoodNews: { news: CacaoNewsItem[]; at: number } | null = null;
 
 async function safeFetch(url: string, timeoutMs = 9000): Promise<Response | null> {
   try {
@@ -164,19 +167,25 @@ export async function getCacaoMarket(force = false): Promise<CacaoMarket> {
   const pricePenPerKg =
     price && usdPen ? Math.round((price.value / 1000) * usdPen * 100) / 100 : null;
   if (price) lastGood = { price, usdPen, pricePenPerKg, at: Date.now() };
-  // Fuente caída (price=null) pero hay último conocido → degradar con gracia.
-  const data: CacaoMarket =
-    !price && lastGood
-      ? {
-          price: lastGood.price,
-          usdPen: lastGood.usdPen,
-          pricePenPerKg: lastGood.pricePenPerKg,
-          news,
-          generatedAt: new Date().toISOString(),
-          stale: true,
-          staleAt: new Date(lastGood.at).toISOString(),
-        }
-      : { price, usdPen, pricePenPerKg, news, generatedAt: new Date().toISOString(), stale: false, staleAt: null };
+  // Noticias: si el feed vuelve vacío (fuente caída) y hay último conocido, usarlo.
+  if (news.length > 0) lastGoodNews = { news, at: Date.now() };
+  const newsStale = news.length === 0 && !!lastGoodNews;
+  const effNews = newsStale ? lastGoodNews!.news : news;
+  const newsStaleAt = newsStale ? new Date(lastGoodNews!.at).toISOString() : null;
+  // Precio: fuente caída (price=null) pero hay último conocido → degradar con gracia.
+  const priceStale = !price && !!lastGood;
+  const src = priceStale ? lastGood! : null;
+  const data: CacaoMarket = {
+    price: src ? src.price : price,
+    usdPen: src ? src.usdPen : usdPen,
+    pricePenPerKg: src ? src.pricePenPerKg : pricePenPerKg,
+    news: effNews,
+    generatedAt: new Date().toISOString(),
+    stale: priceStale,
+    staleAt: priceStale ? new Date(lastGood!.at).toISOString() : null,
+    newsStale,
+    newsStaleAt,
+  };
   cache = { at: Date.now(), data };
   return data;
 }
