@@ -9,6 +9,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import {
   cacaoAjusteSigno,
   cacaoBeneficioAlerta,
+  type CacaoBeneficioAlerta,
   cacaoEstadoPago,
   cacaoFermentationIndex,
   cacaoGrade,
@@ -910,6 +911,10 @@ export class CacaoDB {
       pesoHumedoKg: number;
       secoProyectado: number;
       diasEnProceso: number;
+      // Días en la ETAPA actual (no total) + nivel de alerta — misma fuente que
+      // el tab Beneficio y la campana, para que las tres vistas coincidan.
+      diasEnEtapa: number;
+      alerta: CacaoBeneficioAlerta;
     }[] = [];
 
     for (const b of beneficios) {
@@ -924,6 +929,13 @@ export class CacaoDB {
         const proy = cacaoProyeccionSeco(h);
         kgSecoProyectado += proy;
         const start = b.fermInicio ?? b.secInicio ?? b.createdAt;
+        // Etapa actual: para "secando" cuentan los días desde secInicio, no desde
+        // que empezó a fermentar — así el umbral (7d ferm / 12d secado) aplica bien.
+        const etapaStart =
+          b.estado === "secando" ? (b.secInicio ?? b.createdAt) : (b.fermInicio ?? b.createdAt);
+        const diasEnEtapa = etapaStart
+          ? Math.max(0, Math.floor((now - new Date(etapaStart).getTime()) / 86400000))
+          : 0;
         enProceso.push({
           loteCode: b.loteCode ?? lote?.loteCode ?? null,
           estado: b.estado,
@@ -932,6 +944,8 @@ export class CacaoDB {
           diasEnProceso: start
             ? Math.max(0, Math.floor((now - new Date(start).getTime()) / 86400000))
             : 0,
+          diasEnEtapa,
+          alerta: cacaoBeneficioAlerta(b.estado, diasEnEtapa).nivel,
         });
       }
       const rend = cacaoRendimiento(

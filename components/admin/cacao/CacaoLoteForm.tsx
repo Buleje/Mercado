@@ -338,7 +338,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                       className={`${I} font-mono tabular-nums`}
                     />
                   </Field>
-                  <Field label="Humedad (%)" hint={humOk === false ? "⚠ sobre 7%" : "meta ≤ 7%"}>
+                  <Field label="Humedad (%)" hint={humOk === false ? "sobre 7% (alto)" : "meta ≤ 7%"}>
                     <input
                       type="number"
                       step="0.1"

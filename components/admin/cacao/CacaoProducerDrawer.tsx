@@ -17,6 +17,7 @@ import {
   PackageCheck,
   MapPin,
   Phone,
+  MessageCircle,
   Award,
   Power,
   Printer,
@@ -275,7 +276,7 @@ export default function CacaoProducerDrawer({
                       label="Altitud"
                       value={producer.altitudMsnm != null ? `${producer.altitudMsnm} msnm` : "—"}
                     />
-                    <PRow icon={Phone} label="Teléfono" value={producer.telefono ?? "—"} />
+                    <PhoneRow phone={producer.telefono} nombre={producer.nombre} />
                     <PRow
                       icon={Award}
                       label="Certificación"
@@ -497,6 +498,49 @@ function PRow({ icon: Icon, label, value }: { icon: typeof Users; label: string;
         <Icon className="h-3.5 w-3.5" /> {label}
       </span>
       <span className="font-medium text-[var(--text-primary)]">{value}</span>
+    </div>
+  );
+}
+/** Normaliza un teléfono peruano a solo dígitos con prefijo país 51 para wa.me. */
+function waDigits(phone: string): string {
+  const d = phone.replace(/\D/g, "");
+  if (d.startsWith("51")) return d;
+  if (d.length === 9 && d.startsWith("9")) return `51${d}`;
+  return d;
+}
+/** Fila de teléfono con accesos directos a WhatsApp (canal primario) y llamada. */
+function PhoneRow({ phone, nombre }: { phone: string | null; nombre: string }) {
+  if (!phone?.trim()) return <PRow icon={Phone} label="Teléfono" value="—" />;
+  const wa = waDigits(phone);
+  const msg = encodeURIComponent(`Hola ${nombre}, te escribo de la acopiadora de cacao.`);
+  return (
+    <div className="flex items-center justify-between gap-3 py-0.5">
+      <span className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
+        <Phone className="h-3.5 w-3.5" /> Teléfono
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="font-medium text-[var(--text-primary)]">{phone}</span>
+        <a
+          href={`https://wa.me/${wa}?text=${msg}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title="Escribir por WhatsApp"
+          aria-label={`Escribir a ${nombre} por WhatsApp`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border-2 border-[var(--data-success-500)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]"
+        >
+          <MessageCircle className="h-4 w-4" />
+        </a>
+        <a
+          href={`tel:${phone.replace(/\s/g, "")}`}
+          onClick={(e) => e.stopPropagation()}
+          title="Llamar"
+          aria-label={`Llamar a ${nombre}`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+        >
+          <Phone className="h-4 w-4" />
+        </a>
+      </span>
     </div>
   );
 }

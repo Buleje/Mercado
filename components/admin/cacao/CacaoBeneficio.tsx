@@ -14,7 +14,6 @@ import {
   Download,
   AlertCircle,
   AlertTriangle,
-  Beaker,
   Sun,
   Scale,
   TrendingUp,
@@ -86,7 +85,7 @@ const FILTERS: { v: string; label: string }[] = [
   { v: "fermentando", label: "Fermentando" },
   { v: "secando", label: "Secando" },
   { v: "terminado", label: "Terminado" },
-  { v: "atencion", label: "⚠ Atención" },
+  { v: "atencion", label: "Atención" },
 ];
 
 export default function CacaoBeneficio() {
@@ -335,8 +334,9 @@ export default function CacaoBeneficio() {
               key={f.v}
               type="button"
               onClick={() => setFilter(f.v)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${filter === f.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+              className={`inline-flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition ${filter === f.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
             >
+              {f.v === "atencion" && <AlertTriangle className="h-3.5 w-3.5" />}
               {f.label}
             </button>
           ))}

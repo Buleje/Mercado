@@ -101,8 +101,13 @@ function projectForecast(value: number, slope: number, volPct: number | null, di
   };
 }
 
-const NEWS_ALCISTA = /(récord|record|sube|subió|subir|alza|dispara|escasez|sequ[íi]a|d[ée]ficit|plaga|hongo|enferm|caída de la oferta|m[áa]ximo|encarece|repunt|tension)/i;
-const NEWS_BAJISTA = /(baja|bajó|cae|ca[ií]da|desplom|superávit|superavit|sobreoferta|cosecha récord|corrección|m[íi]nimo|abarata|presión a la baja|debilita)/i;
+// Titulares alcistas (precio sube): oferta cae / demanda sube. Incluye inglés
+// porque el feed trae titulares globales ("cocoa price market") de ICE/Londres.
+const NEWS_ALCISTA =
+  /(récord|record|sube|subió|subir|alza|dispara|escasez|sequ[íi]a|d[ée]ficit|plaga|hongo|enferm|caída de la oferta|m[áa]ximo|encarece|repunt|tension|shortage|drought|deficit|disease|blight|crop failure|rally|surge|soar|jump|rise|rises|rising|higher|tight supply|supply cut|swollen shoot|frost|el niño)/i;
+// Titulares bajistas (precio baja): sobreoferta / demanda cae.
+const NEWS_BAJISTA =
+  /(baja|bajó|cae|ca[ií]da|desplom|superávit|superavit|sobreoferta|cosecha récord|corrección|m[íi]nimo|abarata|presión a la baja|debilita|surplus|oversupply|glut|bumper crop|record harvest|falls?|drop|plunge|slump|decline|lower|eases?|correction|weaken)/i;
 
 /** Señal de sentimiento de los titulares (keywords deterministas, sin IA). */
 function analyzeNews(news: { title: string }[] | undefined): AdvisorNews | null {

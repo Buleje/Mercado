@@ -375,8 +375,13 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Acciones rutinarias del día a día que el almacenero SÍ puede cerrar (avanzar
+// beneficio = secar/terminar, registrar cobro de venta). El resto — anulaciones,
+// config del módulo y edición del padrón — queda restringido a admin/owner.
+const ALMACENERO_PATCH_ACTIONS = new Set(["advance_beneficio", "pago_venta"]);
+
 export async function PATCH(req: NextRequest) {
-  const g = await guard(req, ["admin", "owner"]);
+  const g = await guard(req, ["admin", "almacenero", "owner"]);
   if (g.res) return g.res;
   let body: unknown;
   try {
@@ -390,6 +395,14 @@ export async function PATCH(req: NextRequest) {
       { error: "validation_error", issues: parsed.error.issues },
       { status: 400 },
     );
+  // Gate por acción: el almacenero solo puede las rutinarias; las destructivas/
+  // administrativas exigen admin u owner.
+  if (g.auth.role === "almacenero" && !ALMACENERO_PATCH_ACTIONS.has(parsed.data.action)) {
+    return NextResponse.json(
+      { error: "forbidden", message: "Esta acción requiere un administrador." },
+      { status: 403 },
+    );
+  }
   try {
     if (parsed.data.action === "annul_lote") {
       return NextResponse.json({

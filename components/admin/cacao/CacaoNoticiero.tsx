@@ -51,10 +51,11 @@ export default function CacaoNoticiero() {
   // y en "a cuánto se vende". null = precio de hoy (en vivo).
   const [sel, setSel] = useState<{ usd: number; t: number } | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     setLoading(true); setError(null);
     try {
-      const r = await fetch("/api/admin/cacao/market", { credentials: "include" });
+      // force salta el cache de 20 min del server (botón Actualizar); el mount usa cache.
+      const r = await fetch(`/api/admin/cacao/market${force ? "?force=1" : ""}`, { credentials: "include" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? `HTTP ${r.status}`);
       setData(await r.json());
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
@@ -102,7 +103,7 @@ export default function CacaoNoticiero() {
             Precio internacional, conversión a soles y noticias. Datos: ICE (Yahoo Finance) + Google Noticias{p ? ` · ${relTime(p.asOf) || "recién"}` : ""}.
           </p>
         </div>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+        <button type="button" onClick={() => load(true)} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo cargar el mercado:</strong> {error}</div></div>}

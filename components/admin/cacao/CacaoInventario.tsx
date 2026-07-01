@@ -59,6 +59,8 @@ interface Inv {
     pesoHumedoKg: number;
     secoProyectado: number;
     diasEnProceso: number;
+    diasEnEtapa: number;
+    alerta: "ok" | "atencion" | "urgente";
   }[];
 }
 interface Ajuste {
@@ -391,7 +393,7 @@ export default function CacaoInventario() {
                 label: p.estado,
                 cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
               };
-              const alerta = p.diasEnProceso >= 12;
+              const alerta = p.alerta !== "ok";
               return (
                 <div
                   key={(p.loteCode ?? "") + i}
@@ -413,22 +415,26 @@ export default function CacaoInventario() {
                       <b className="text-[var(--text-primary)]">~{n2(p.secoProyectado)} kg</b> seco
                     </span>
                     <span
-                      className={
-                        alerta
-                          ? "font-bold text-[var(--data-warning-700)]"
-                          : "text-[var(--text-tertiary)]"
-                      }
+                      className={`inline-flex items-center gap-1 ${
+                        p.alerta === "urgente"
+                          ? "font-bold text-[var(--data-error-600)]"
+                          : alerta
+                            ? "font-bold text-[var(--data-warning-700)]"
+                            : "text-[var(--text-tertiary)]"
+                      }`}
                     >
-                      {p.diasEnProceso}d{alerta ? " ⚠" : ""}
+                      {p.diasEnEtapa}d
+                      {alerta && <AlertTriangle className="h-3.5 w-3.5" />}
                     </span>
                   </span>
                 </div>
               );
             })}
-            {inv.enProceso.some((p) => p.diasEnProceso >= 12) && (
-              <p className="pt-1 text-xs text-[var(--data-warning-700)]">
-                ⚠ Lotes con 12+ días en proceso — revisá que el secado avance (riesgo de
-                moho/humedad).
+            {inv.enProceso.some((p) => p.alerta !== "ok") && (
+              <p className="flex items-center gap-1.5 pt-1 text-sm text-[var(--data-warning-700)]">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                Lotes pasados de tiempo en su etapa — revisá fermentación (&gt;7d) o secado (&gt;12d):
+                riesgo de sobre-fermentación o moho.
               </p>
             )}
           </div>

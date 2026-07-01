@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Users, Plus, Search, RefreshCw, Coins, Scale, Award, Download, AlertCircle, PackageCheck, Trophy,
+  Users, Plus, Search, RefreshCw, Coins, Scale, Award, Download, AlertCircle, Trophy,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import CacaoProducerForm from "./CacaoProducerForm";
@@ -19,7 +19,6 @@ interface Producer {
   id: string; codigo: string | null; nombre: string; dni: string | null; sector: string | null;
   parcelaHa: string | null; variedad: string | null; certificacion: string | null; status: string; stats: PStats;
 }
-interface Summary { total: number; conCompras: number; totalKg: number; totalPagado: number; top: { nombre: string; kg: number; pagado: number } | null }
 
 const n2 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
@@ -32,7 +31,6 @@ const SORTS: { v: Sort; label: string }[] = [
 
 export default function CacaoProductores() {
   const [producers, setProducers] = useState<Producer[]>([]);
-  const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -48,7 +46,7 @@ export default function CacaoProductores() {
       const r = await fetch(`/api/admin/cacao?view=producers-stats${includeInactive ? "&all=1" : ""}`, { credentials: "include" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const d = await r.json();
-      setProducers(d.producers ?? []); setSummary(d.summary ?? null);
+      setProducers(d.producers ?? []);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [includeInactive]);
@@ -65,6 +63,20 @@ export default function CacaoProductores() {
     return list;
   }, [producers, search, sort]);
 
+  // KPIs derivados de lo que se ve (respeta búsqueda/filtro), no del total global
+  // del server — así el header no contradice la lista filtrada.
+  const kpis = useMemo(() => {
+    const conCompras = view.filter((p) => p.stats.lotes > 0);
+    const totalKg = conCompras.reduce((a, p) => a + p.stats.kg, 0);
+    const totalPagado = conCompras.reduce((a, p) => a + p.stats.pagado, 0);
+    const top = conCompras.reduce<{ nombre: string; pagado: number } | null>(
+      (best, p) =>
+        !best || p.stats.pagado > best.pagado ? { nombre: p.nombre, pagado: p.stats.pagado } : best,
+      null,
+    );
+    return { total: view.length, conCompras: conCompras.length, totalKg, totalPagado, top };
+  }, [view]);
+
   function exportCsv() {
     const head = ["Codigo", "Nombre", "DNI", "Sector", "Variedad", "Certificacion", "Estado", "Kg comprados", "Pagado", "Lotes", "Lotes Grado I", "Ultima compra"];
     const esc = (v: unknown) => { const s = String(v ?? ""); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -79,10 +91,10 @@ export default function CacaoProductores() {
     <div className="space-y-5">
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Productores" value={String(summary?.total ?? 0)} subValue={`${summary?.conCompras ?? 0} con compras`} icon={Users} emphasis="neutral" />
-        <StatCard label="Kg comprado (total)" value={`${n2(summary?.totalKg ?? 0)} kg`} icon={Scale} emphasis="success" />
-        <StatCard label="Pagado (total)" value={`S/ ${n2(summary?.totalPagado ?? 0)}`} icon={Coins} emphasis="neutral" />
-        <StatCard label="Productor top" value={summary?.top ? `S/ ${n2(summary.top.pagado)}` : "—"} subValue={summary?.top?.nombre ?? "sin compras"} icon={Trophy} emphasis={summary?.top ? "success" : "neutral"} />
+        <StatCard label="Productores" value={String(kpis.total)} subValue={`${kpis.conCompras} con compras`} icon={Users} emphasis="neutral" />
+        <StatCard label="Kg comprado" value={`${n2(kpis.totalKg)} kg`} icon={Scale} emphasis="success" />
+        <StatCard label="Pagado" value={`S/ ${n2(kpis.totalPagado)}`} icon={Coins} emphasis="neutral" />
+        <StatCard label="Productor top" value={kpis.top ? `S/ ${n2(kpis.top.pagado)}` : "—"} subValue={kpis.top?.nombre ?? "sin compras"} icon={Trophy} emphasis={kpis.top ? "success" : "neutral"} />
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
@@ -112,7 +124,7 @@ export default function CacaoProductores() {
           </thead>
           <tbody>
             {view.map((p) => (
-              <tr key={p.id} onClick={() => setDrawerId(p.id)} className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] ${p.status === "inactivo" ? "opacity-50" : ""}`}>
+              <tr key={p.id} role="button" tabIndex={0} aria-label={`Ver ficha de ${p.nombre}`} onClick={() => setDrawerId(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrawerId(p.id); } }} className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:bg-[var(--surface-sunken)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${p.status === "inactivo" ? "opacity-50" : ""}`}>
                 <Td>
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-[var(--text-primary)]">{p.nombre}</span>
