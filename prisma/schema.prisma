@@ -5357,11 +5357,17 @@ model CacaoVenta {
   fecha           DateTime  @default(now())
   compradorNombre String?
   canal           String? // cooperativa | exportador | mercado_local | otro
+  // Trazabilidad: lote(s) de origen de este cacao vendido (app-level, ADR-128 v4).
+  loteId          String? // ref. app-level a CacaoLote (lote principal)
+  loteCode        String? // snapshot del código de lote
   pesoKg          Decimal   @db.Decimal(12, 2) // kg seco vendido
   moneda          String    @default("PEN") // PEN | USD
   precioPorKg     Decimal?  @db.Decimal(10, 2) // en `moneda`
   tipoCambio      Decimal?  @db.Decimal(8, 4) // USD→PEN si moneda=USD
   totalPen        Decimal?  @db.Decimal(14, 2) // computado en soles
+  // Seguimiento de pago (anticipo/saldo, ADR-128 v4)
+  montoCobrado    Decimal?  @db.Decimal(14, 2) // soles cobrados hasta ahora (anticipo + abonos)
+  estadoPago      String    @default("pendiente") // pendiente | parcial | pagado
   esFob           Boolean   @default(false) // exportación FOB
   variedad        String?
   grado           String?
@@ -5375,7 +5381,62 @@ model CacaoVenta {
 
   @@index([tenantId, fecha(sort: Desc)])
   @@index([tenantId, status])
+  @@index([tenantId, loteId])
   @@index([deletedAt])
+}
+
+/// Ajuste manual de inventario de cacao seco (ADR-128 v4): mermas físicas,
+/// muestras, pérdidas o correcciones. Impacta el stock disponible en inventory().
+/// `cantidadKg` siempre positivo; el signo lo determina `tipo`.
+model CacaoAjusteInventario {
+  id            String    @id @default(cuid())
+  tenantId      String
+  fecha         DateTime  @default(now())
+  tipo          String // merma | muestra | perdida | ajuste_pos | ajuste_neg
+  cantidadKg    Decimal   @db.Decimal(12, 2)
+  variedad      String?
+  grado         String?
+  motivo        String
+  observaciones String?
+  status        String    @default("registrado") // registrado | anulado
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([tenantId, fecha(sort: Desc)])
+  @@index([deletedAt])
+}
+
+/// Bitácora diaria de fermentación de un beneficio (ADR-128 v4): temperatura,
+/// volteo y (opcional) pH de la masa por día. Permite el control fino que pide
+/// la NTP 208.040 más allá de los agregados guardados en CacaoBeneficio.
+model CacaoFermentacionRegistro {
+  id          String   @id @default(cuid())
+  tenantId    String
+  beneficioId String
+  dia         Int // día 1, 2, 3… de fermentación
+  fecha       DateTime @default(now())
+  tempC       Decimal? @db.Decimal(5, 2)
+  volteo      Boolean  @default(false)
+  phMasa      Decimal? @db.Decimal(4, 2)
+  notas       String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, beneficioId])
+}
+
+/// Configuración de alertas del módulo Cacao por tenant (ADR-128 v4). Un registro
+/// por tenant (tenantId = PK). Umbrales que disparan alertas en la UI + el cron.
+model CacaoConfig {
+  tenantId          String   @id
+  precioAlertaPenKg Decimal? @db.Decimal(10, 2) // avisar si la ref. de mercado supera S//kg
+  stockMinimoKg     Decimal? @db.Decimal(12, 2) // avisar si el stock disponible baja de esto
+  fermDiasAlerta    Int      @default(7) // días en fermentación que disparan atención
+  humedadMaxPct     Decimal  @default(7.5) @db.Decimal(5, 2) // humedad meta (NTP ≤ 7.5%)
+  updatedAt         DateTime @updatedAt
+  updatedBy         String?
 }
 
 /// Libro de Reclamaciones Virtual (ADR-129). Platform-level: el Libro es de la
