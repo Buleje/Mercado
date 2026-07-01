@@ -72,6 +72,33 @@ describe("cacaoAdvisor — métricas y checklist", () => {
   });
 });
 
+describe("cacaoAdvisor — consciente del stock/margen del acopiador", () => {
+  it("mercado NEUTRAL + buen margen con stock → inclina a VENDER y lo justifica", () => {
+    const r = cacaoAdvisor({
+      value: 6000, changePct: 0, ...RANGE, series: flat(6000),
+      local: { stockKg: 800, miPrecioKg: 10, refKg: 13, spreadPct: 30 },
+    });
+    expect(r.signal).toBe("vender");
+    expect(r.motivos.some((m) => m.includes("800 kg") && m.includes("margen"))).toBe(true);
+  });
+
+  it("margen NEGATIVO (referencia bajo tu costo) → agrega riesgo de pérdida", () => {
+    const r = cacaoAdvisor({
+      value: 6000, changePct: 0, ...RANGE, series: flat(6000),
+      local: { stockKg: 500, miPrecioKg: 15, refKg: 12, spreadPct: -20 },
+    });
+    expect(r.riesgos.some((x) => x.includes("DEBAJO de tu costo"))).toBe(true);
+  });
+
+  it("sin stock → aclara que la señal aplica a la próxima compra", () => {
+    const r = cacaoAdvisor({
+      value: 6000, changePct: 0, ...RANGE, series: flat(6000),
+      local: { stockKg: 0, miPrecioKg: null, refKg: 13, spreadPct: null },
+    });
+    expect(r.motivos.some((m) => m.includes("próxima compra"))).toBe(true);
+  });
+});
+
 describe("cacaoAdvisor — sentimiento de noticias (ES + EN)", () => {
   const withNews = (titles: string[]) =>
     cacaoAdvisor({ value: 6000, changePct: 0, ...RANGE, series: flat(6000), news: titles.map((title) => ({ title })) });

@@ -176,6 +176,16 @@ async function guard(req: NextRequest, roles: ("admin" | "almacenero" | "owner")
   return { auth };
 }
 
+/** Rango de campaña (from/to) desde los query params, ignorando fechas inválidas. */
+function parseCacaoRange(sp: URLSearchParams): { from?: Date; to?: Date } {
+  const rf = sp.get("from") ? new Date(sp.get("from")!) : undefined;
+  const rt = sp.get("to") ? new Date(sp.get("to")!) : undefined;
+  return {
+    from: rf && !isNaN(rf.getTime()) ? rf : undefined,
+    to: rt && !isNaN(rt.getTime()) ? rt : undefined,
+  };
+}
+
 export async function GET(req: NextRequest) {
   const g = await guard(req, ["admin", "almacenero", "owner"]);
   if (g.res) return g.res;
@@ -210,11 +220,16 @@ export async function GET(req: NextRequest) {
       if (!detail) return NextResponse.json({ error: "not_found" }, { status: 404 });
       return NextResponse.json(detail);
     }
-    if (view === "stats") return NextResponse.json({ stats: await CacaoDB.stats(g.auth.tenantId) });
+    if (view === "stats")
+      return NextResponse.json({
+        stats: await CacaoDB.stats(g.auth.tenantId, parseCacaoRange(sp)),
+      });
     if (view === "inventory")
       return NextResponse.json({ inventory: await CacaoDB.inventory(g.auth.tenantId) });
     if (view === "trends")
-      return NextResponse.json({ trends: await CacaoDB.trends(g.auth.tenantId) });
+      return NextResponse.json({
+        trends: await CacaoDB.trends(g.auth.tenantId, parseCacaoRange(sp)),
+      });
     if (view === "precio-historico")
       return NextResponse.json({ serie: await CacaoDB.precioHistorico(g.auth.tenantId) });
     if (view === "beneficios")
@@ -367,6 +382,18 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = String(err instanceof Error ? err.message : err);
     const code = (err as { code?: string })?.code;
+    if (msg === "producer_dni_duplicado") {
+      const existente = (err as { existente?: string })?.existente;
+      return NextResponse.json(
+        {
+          error: "producer_dni_duplicado",
+          message: existente
+            ? `Ya existe un productor con ese DNI: ${existente}. Revisá el padrón antes de duplicarlo.`
+            : "Ya existe un productor con ese DNI.",
+        },
+        { status: 409 },
+      );
+    }
     if (msg === "venta_excede_lote") {
       const remanente = (err as { remanente?: number })?.remanente;
       return NextResponse.json(

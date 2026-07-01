@@ -12,7 +12,7 @@ import {
 import type { AdvisorResult } from "@/lib/cacao/cacao-advisor";
 
 type Advisor = AdvisorResult;
-interface Local { miPrecioKg: number | null; kg: number; lotes: number; refKg: number | null; spreadPct: number | null }
+interface Local { miPrecioKg: number | null; kg: number; lotes: number; refKg: number | null; spreadPct: number | null; stockKg: number }
 interface Resp { advisor: Advisor | null; narrative: string | null; local?: Local; generatedAt?: string }
 
 const SIGNAL = {
@@ -142,7 +142,10 @@ export default function CacaoAsesor() {
 
           {/* Tu precio vs mercado */}
           {data?.local && (
-            <Card icon={Coins} title="Tu precio de compra vs. el mercado">
+            <Card
+              icon={Coins}
+              title={`Tu precio de compra vs. el mercado${data.local.stockKg > 0 ? ` · ${data.local.stockKg} kg en stock` : ""}`}
+            >
               {data.local.miPrecioKg != null && data.local.refKg != null ? (
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="rounded-xl bg-[var(--surface-sunken)] px-4 py-2.5 text-center">

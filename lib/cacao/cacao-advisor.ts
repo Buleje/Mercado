@@ -13,6 +13,14 @@ export interface AdvisorPriceInput {
   weekLow52: number | null;
   series?: { c: number }[]; // cierres diarios (1 año) para tendencia/volatilidad
   news?: { title: string }[]; // titulares para la señal de sentimiento
+  // Contexto del acopiador: personaliza la señal según SU stock y margen, no solo
+  // el mercado. Sin esto la recomendación es genérica de mercado.
+  local?: {
+    stockKg: number; // kg seco DISPONIBLE ahora
+    miPrecioKg: number | null; // costo promedio de compra (S//kg seco)
+    refKg: number | null; // referencia internacional (S//kg seco)
+    spreadPct: number | null; // (ref − costo)/costo × 100 = margen bruto sobre tu costo
+  };
 }
 
 export type AdvisorAction = "vender" | "aguantar" | "neutral";
@@ -177,6 +185,28 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   else if (falling) { signal = "aguantar"; fuerza = "moderada"; }
   else { signal = "neutral"; fuerza = "leve"; }
 
+  // Contexto del acopiador (stock + margen sobre su costo): ajusta la señal de
+  // mercado a SU situación. Un buen margen con stock listo empuja a asegurar; un
+  // spread negativo advierte que vender hoy realiza pérdida.
+  const local = p.local;
+  let localMotivo: string | null = null;
+  let localRiesgo: string | null = null;
+  if (local && local.stockKg > 0 && local.spreadPct != null && local.miPrecioKg != null) {
+    if (local.spreadPct >= 15) {
+      localMotivo = `Tenés ${local.stockKg} kg en stock con ~${local.spreadPct}% de margen sobre tu costo (S/ ${local.miPrecioKg}/kg): buena ventana para asegurar ganancia.`;
+      if (signal === "neutral" && !falling) { signal = "vender"; fuerza = "leve"; }
+      else if (signal === "vender" && fuerza === "leve") fuerza = "moderada";
+    } else if (local.spreadPct < 0) {
+      localRiesgo = `La referencia está ${Math.abs(local.spreadPct)}% por DEBAJO de tu costo de compra (S/ ${local.miPrecioKg}/kg): vender ahora realiza pérdida. Si tu caja aguanta, esperá una recuperación.`;
+      if (signal === "vender") fuerza = fuerza === "fuerte" ? "moderada" : "leve";
+    } else {
+      localMotivo = `Tenés ${local.stockKg} kg en stock, con margen ajustado (~${local.spreadPct}% sobre tu costo) — vendé por partes.`;
+    }
+  } else if (local && local.stockKg <= 0) {
+    localMotivo = "No tenés stock seco disponible: la señal aplica a tu próxima compra/acopio.";
+  }
+  if (localMotivo) motivos.push(localMotivo);
+
   const titulo = signal === "vender"
     ? (fuerza === "fuerte" ? "Buen momento para VENDER tu cacao seco" : "Inclínate a VENDER")
     : signal === "aguantar"
@@ -200,6 +230,7 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   if (signal === "aguantar") riesgos.push("Aguantar tiene costo: el cacao mal guardado gana humedad y pierde grado/precio.");
   if (signal === "vender" && falling) riesgos.push("Viene cayendo: no te demores, podría seguir bajando.");
   riesgos.push("El precio internacional es referencia; tu precio en chacra/FOB suele ir por debajo (flete + margen del comprador).");
+  if (localRiesgo) riesgos.push(localRiesgo);
 
   if (news && ((signal === "vender" && news.senal === "alcista") || (signal === "aguantar" && news.senal === "bajista"))) {
     riesgos.push(`Las noticias apuntan al lado contrario (sesgo ${news.senal}) — señal menos firme, seguila de cerca.`);

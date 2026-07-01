@@ -35,19 +35,50 @@ const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const mesLabel = (m: string) => { const [y, mm] = m.split("-"); return `${MESES[Number(mm) - 1] ?? mm} ${(y ?? "").slice(2)}`; };
 
+/** Presets de campaña → rango ISO {from,to} para no mezclar años/campañas. */
+const RANGO_OPCIONES: { v: string; label: string }[] = [
+  { v: "all", label: "Toda la historia" },
+  { v: "year", label: "Este año" },
+  { v: "prev", label: "Año pasado" },
+  { v: "90d", label: "Últimos 90 días" },
+];
+function rangoADatos(r: string): { from?: string; to?: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  if (r === "year") return { from: new Date(Date.UTC(y, 0, 1)).toISOString() };
+  if (r === "prev")
+    return {
+      from: new Date(Date.UTC(y - 1, 0, 1)).toISOString(),
+      to: new Date(Date.UTC(y - 1, 11, 31, 23, 59, 59)).toISOString(),
+    };
+  if (r === "90d") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 90);
+    return { from: d.toISOString() };
+  }
+  return {};
+}
+
 export default function CacaoResumen() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [trends, setTrends] = useState<Trends | null>(null);
   const [inv, setInv] = useState<Inventory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rango, setRango] = useState<string>("all");
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
+      const { from, to } = rangoADatos(rango);
+      const qs = new URLSearchParams();
+      if (from) qs.set("from", from);
+      if (to) qs.set("to", to);
+      const q = qs.toString() ? `&${qs}` : "";
       const [rs, rt, ri] = await Promise.all([
-        fetch("/api/admin/cacao?view=stats", { credentials: "include" }),
-        fetch("/api/admin/cacao?view=trends", { credentials: "include" }),
+        fetch(`/api/admin/cacao?view=stats${q}`, { credentials: "include" }),
+        fetch(`/api/admin/cacao?view=trends${q}`, { credentials: "include" }),
+        // Inventario = stock ACTUAL, no se filtra por campaña.
         fetch("/api/admin/cacao?view=inventory", { credentials: "include" }),
       ]);
       if (!rs.ok) throw new Error(`HTTP ${rs.status}`);
@@ -56,7 +87,7 @@ export default function CacaoResumen() {
       setInv(ri.ok ? (await ri.json()).inventory ?? null : null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
-  }, []);
+  }, [rango]);
   useEffect(() => { load(); }, [load]);
 
   if (loading && !stats) return <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando resumen…</p></div>;
@@ -72,6 +103,16 @@ export default function CacaoResumen() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><Calendar className="h-4 w-4 text-[var(--text-tertiary)]" /><span className="font-medium">{periodo}</span></div>
         <div className="flex items-center gap-2">
+          <select
+            value={rango}
+            onChange={(e) => setRango(e.target.value)}
+            aria-label="Campaña / rango"
+            className="h-10 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          >
+            {RANGO_OPCIONES.map((o) => (
+              <option key={o.v} value={o.v}>{o.label}</option>
+            ))}
+          </select>
           <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
           <button type="button" onClick={() => printCacaoReporte(stats, trends)} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" />Imprimir reporte</button>
         </div>

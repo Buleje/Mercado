@@ -25,6 +25,17 @@ const dec = (v: number | string | null | undefined) =>
   v === null || v === undefined || v === "" ? null : new Prisma.Decimal(v);
 const n = (v: number | string | null | undefined) => (v == null || v === "" ? null : Number(v));
 
+/** Filtro de rango de fechas (campaña) para el `where` de lotes. Vacío = todo. */
+function cacaoFechaWhere(range?: { from?: Date; to?: Date }): { fecha?: Prisma.DateTimeFilter } {
+  if (!range?.from && !range?.to) return {};
+  return {
+    fecha: {
+      ...(range.from ? { gte: range.from } : {}),
+      ...(range.to ? { lte: range.to } : {}),
+    },
+  };
+}
+
 /**
  * Lee de CacaoVenta tolerando que la tabla aún no exista (drift pre-deploy) o
  * que el cliente Prisma en memoria sea anterior al modelo (server sin reiniciar).
@@ -174,15 +185,30 @@ export class CacaoDB {
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
     let codigo = input.codigo?.trim() || null;
     if (!codigo) {
-      const count = await prisma.cacaoProducer.count({ where: { tenantId, deletedAt: null } });
+      // Contar TODOS (incl. soft-deleted) para no regenerar un código ya usado.
+      const count = await prisma.cacaoProducer.count({ where: { tenantId } });
       codigo = `P-${String(count + 1).padStart(3, "0")}`;
+    }
+    // Guard anti-duplicado por DNI: un padrón sucio parte el historial/deuda del
+    // productor en dos fichas. El nombre puede repetirse legítimamente, el DNI no.
+    const dni = input.dni?.trim() || null;
+    if (dni) {
+      const dup = await prisma.cacaoProducer.findFirst({
+        where: { tenantId, dni, deletedAt: null },
+        select: { nombre: true, codigo: true },
+      });
+      if (dup) {
+        const e = new Error("producer_dni_duplicado") as Error & { existente?: string };
+        e.existente = `${dup.nombre}${dup.codigo ? ` (${dup.codigo})` : ""}`;
+        throw e;
+      }
     }
     const p = await prisma.cacaoProducer.create({
       data: {
         tenantId,
         codigo,
         nombre: input.nombre.trim(),
-        dni: input.dni?.trim() || null,
+        dni,
         sector: input.sector?.trim() || null,
         parcelaHa: dec(input.parcelaHa),
         variedad: input.variedad?.trim() || null,
@@ -491,11 +517,12 @@ export class CacaoDB {
   }
 
   /** Resumen: kg acopiados, valor pagado, calidad, distribución por variedad/grado. */
-  static async stats(tenantId: string) {
+  static async stats(tenantId: string, range?: { from?: Date; to?: Date }) {
     if (!tenantId) throw new Error("tenantId is required");
+    const fechaFilter = cacaoFechaWhere(range);
     const [lotes, productoresActivos] = await Promise.all([
       prisma.cacaoLote.findMany({
-        where: { tenantId, deletedAt: null, status: "registrado" },
+        where: { tenantId, deletedAt: null, status: "registrado", ...fechaFilter },
         select: {
           pesoKg: true,
           totalPagado: true,
@@ -1089,10 +1116,10 @@ export class CacaoDB {
   }
 
   // ─── Tendencias para el dashboard ────────────────────────────────────
-  static async trends(tenantId: string) {
+  static async trends(tenantId: string, range?: { from?: Date; to?: Date }) {
     if (!tenantId) throw new Error("tenantId is required");
     const lotes = await prisma.cacaoLote.findMany({
-      where: { tenantId, deletedAt: null, status: "registrado" },
+      where: { tenantId, deletedAt: null, status: "registrado", ...cacaoFechaWhere(range) },
       orderBy: { fecha: "asc" },
       take: 2000,
       select: {
