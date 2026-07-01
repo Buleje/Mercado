@@ -11,7 +11,7 @@ export interface AdvisorPriceInput {
   changePct: number | null; // diario
   weekHigh52: number | null;
   weekLow52: number | null;
-  series?: { c: number }[]; // cierres diarios (1 año) para tendencia/volatilidad
+  series?: { c: number; t?: number }[]; // cierres diarios (1 año); t (epoch ms) opcional → estacionalidad
   news?: { title: string }[]; // titulares para la señal de sentimiento
   // Contexto del acopiador: personaliza la señal según SU stock y margen, no solo
   // el mercado. Sin esto la recomendación es genérica de mercado.
@@ -43,6 +43,27 @@ export interface AdvisorNews {
 }
 
 export interface AdvisorDonde { canal: string; nota: string }
+
+/** Indicadores técnicos (análisis de trading estándar). */
+export interface AdvisorTecnico {
+  rsi: number | null; // 0-100 (momentum). >70 sobrecompra, <30 sobreventa
+  rsiZona: "sobrecompra" | "sobreventa" | "neutral" | null;
+  bollingerPctB: number | null; // 0-100: posición del precio dentro de las bandas
+  bollingerUpper: number | null;
+  bollingerLower: number | null;
+  soporte: number | null; // piso reciente (USD/t)
+  resistencia: number | null; // techo reciente (USD/t)
+  drawdownPct: number | null; // % por debajo del máximo de 52 sem (0 = en el máximo)
+  trendR2: number | null; // 0-1: qué tan limpia/lineal es la tendencia
+}
+/** Estacionalidad mensual (según los últimos 12 meses de la serie). */
+export interface AdvisorEstacional {
+  mesActual: number; // 0-11
+  desviacionPct: number | null; // este mes vs. promedio anual
+  mejorMes: number; // mes con precio promedio más alto del año
+  peorMes: number; // mes con precio promedio más bajo
+  porMes: { mes: number; idxPct: number }[]; // índice de cada mes vs promedio
+}
 export interface AdvisorResult {
   signal: AdvisorAction;
   fuerza: "fuerte" | "moderada" | "leve";
@@ -64,6 +85,8 @@ export interface AdvisorResult {
   };
   forecast: AdvisorForecast[]; // horizontes 7 y 30 días (vacío si faltan datos)
   news: AdvisorNews | null;
+  tecnico: AdvisorTecnico; // indicadores técnicos
+  estacionalidad: AdvisorEstacional | null; // patrón mensual (si hay datos con fecha)
 }
 
 function pctChange(arr: number[], n: number): number | null {
@@ -80,6 +103,77 @@ function volatility(arr: number[], n = 30): number | null {
   return round1(Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length) * 100);
 }
 const round1 = (n: number) => Math.round(n * 10) / 10;
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+export const mesNombre = (m: number) => MESES[m] ?? String(m);
+
+/** RSI (Relative Strength Index) — momentum 0-100. >70 sobrecompra, <30 sobreventa. */
+function rsi(closes: number[], period = 14): number | null {
+  if (closes.length < period + 1) return null;
+  const s = closes.slice(-(period + 1));
+  let gains = 0, losses = 0;
+  for (let i = 1; i < s.length; i++) {
+    const d = s[i] - s[i - 1];
+    if (d >= 0) gains += d; else losses -= d;
+  }
+  const avgL = losses / period;
+  if (avgL === 0) return 100;
+  return Math.round(100 - 100 / (1 + gains / period / avgL));
+}
+
+/** Bandas de Bollinger: media ± k·σ (period). %B = posición del precio en la banda (0-100). */
+function bollinger(closes: number[], value: number, period = 20, k = 2) {
+  if (closes.length < period) return null;
+  const s = closes.slice(-period);
+  const mid = s.reduce((a, b) => a + b, 0) / period;
+  const sd = Math.sqrt(s.reduce((a, b) => a + (b - mid) ** 2, 0) / period);
+  const upper = mid + k * sd, lower = mid - k * sd;
+  const pctB = upper > lower ? Math.round(((value - lower) / (upper - lower)) * 100) : null;
+  return { mid: Math.round(mid), upper: Math.round(upper), lower: Math.round(lower), pctB };
+}
+
+/** R² de la regresión lineal de los últimos n cierres (0-1): linealidad/calidad de la tendencia. */
+function linregR2(closes: number[], n = 30): number | null {
+  const s = closes.slice(-n);
+  if (s.length < 5) return null;
+  const N = s.length;
+  const mx = (N - 1) / 2;
+  const my = s.reduce((a, b) => a + b, 0) / N;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < N; i++) { sxy += (i - mx) * (s[i] - my); sxx += (i - mx) ** 2; syy += (s[i] - my) ** 2; }
+  if (sxx === 0 || syy === 0) return null;
+  const r = sxy / Math.sqrt(sxx * syy);
+  return Math.round(r * r * 100) / 100;
+}
+
+/** Estacionalidad mensual: promedio de cada mes vs. promedio anual (serie con timestamps). */
+function seasonality(series: { c: number; t?: number }[]): AdvisorEstacional | null {
+  const withT = series.filter((p): p is { c: number; t: number } => typeof p.t === "number" && p.c > 0);
+  if (withT.length < 60) return null;
+  const byMonth = new Map<number, { sum: number; n: number }>();
+  let sum = 0;
+  for (const p of withT) {
+    const m = new Date(p.t).getUTCMonth();
+    const cur = byMonth.get(m) ?? { sum: 0, n: 0 };
+    cur.sum += p.c; cur.n++;
+    byMonth.set(m, cur);
+    sum += p.c;
+  }
+  if (byMonth.size < 4) return null;
+  const avg = sum / withT.length;
+  const porMes = [...byMonth.entries()]
+    .map(([mes, v]) => ({ mes, idxPct: Math.round(((v.sum / v.n - avg) / avg) * 1000) / 10 }))
+    .sort((a, b) => a.mes - b.mes);
+  const mesActual = new Date(withT[withT.length - 1].t).getUTCMonth();
+  const mejor = porMes.reduce((a, b) => (b.idxPct > a.idxPct ? b : a));
+  const peor = porMes.reduce((a, b) => (b.idxPct < a.idxPct ? b : a));
+  return {
+    mesActual,
+    desviacionPct: porMes.find((x) => x.mes === mesActual)?.idxPct ?? null,
+    mejorMes: mejor.mes,
+    peorMes: peor.mes,
+    porMes,
+  };
+}
 
 /** Pendiente diaria por mínimos cuadrados sobre los últimos `n` cierres (USD/día). */
 function linregSlope(arr: number[], n = 30): number | null {
@@ -160,6 +254,30 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   const velocidadDia = trend7 != null ? round1(trend7 / 5) : null; // %/día en la última semana
   const metrics = { pos52, trend7, trend30, trend90, velocidadDia, volatilidad: vol };
 
+  // ── Indicadores técnicos (análisis de trading) ──
+  const rsiVal = rsi(closes);
+  const rsiZona: AdvisorTecnico["rsiZona"] =
+    rsiVal == null ? null : rsiVal >= 70 ? "sobrecompra" : rsiVal <= 30 ? "sobreventa" : "neutral";
+  const boll = bollinger(closes, p.value);
+  const recientes = closes.slice(-60);
+  const soporte = recientes.length ? Math.round(Math.min(...recientes)) : null;
+  const resistencia = recientes.length ? Math.round(Math.max(...recientes)) : null;
+  const drawdownPct =
+    p.weekHigh52 != null && p.weekHigh52 > 0 ? round1(((p.value - p.weekHigh52) / p.weekHigh52) * 100) : null;
+  const trendR2 = closes.length ? linregR2(closes, 30) : null;
+  const tecnico: AdvisorTecnico = {
+    rsi: rsiVal,
+    rsiZona,
+    bollingerPctB: boll?.pctB ?? null,
+    bollingerUpper: boll?.upper ?? null,
+    bollingerLower: boll?.lower ?? null,
+    soporte,
+    resistencia,
+    drawdownPct,
+    trendR2,
+  };
+  const estacionalidad = seasonality(p.series ?? []);
+
   // Proyección lineal (regresión sobre 30 días) con banda de volatilidad.
   const slope = closes.length ? linregSlope(closes, 30) : null;
   const forecast: AdvisorForecast[] = slope != null && p.value > 0
@@ -186,6 +304,13 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   if (vol != null) motivos.push(`Volatilidad ${vol}%/día ${nervioso ? "(mercado nervioso)" : "(mercado tranquilo)"}.`);
   if (forecast.length) { const f = forecast[1]; motivos.push(`Si sigue la tendencia, en ~30 días rondaría USD ${f.mid}/t (${f.pct > 0 ? "+" : ""}${f.pct}%, rango ${f.low}–${f.high}).`); }
   if (news && news.senal !== "neutral") motivos.push(`Noticias con sesgo ${news.senal} (${news.alcista} alcistas / ${news.bajista} bajistas de ${news.total}).`);
+  if (rsiVal != null && rsiZona === "sobrecompra") motivos.push(`RSI ${rsiVal} = sobrecompra: subió rápido y podría corregir — favorece asegurar/vender.`);
+  else if (rsiVal != null && rsiZona === "sobreventa") motivos.push(`RSI ${rsiVal} = sobreventa: cayó fuerte y suele rebotar — favorece aguantar/acopiar.`);
+  if (trendR2 != null && trendR2 >= 0.6) motivos.push(`Tendencia limpia (R² ${trendR2}): el movimiento es sostenido, no ruido.`);
+  if (estacionalidad && estacionalidad.desviacionPct != null) {
+    const d = estacionalidad.desviacionPct;
+    motivos.push(`Estacionalidad: ${mesNombre(estacionalidad.mesActual)} suele estar ${d > 0 ? "+" : ""}${d}% ${d >= 0 ? "sobre" : "bajo"} el promedio del año (últimos 12 meses).`);
+  }
 
   if (high && !falling) { signal = "vender"; fuerza = rising ? "fuerte" : "moderada"; }
   else if (high && falling) { signal = "vender"; fuerza = "moderada"; }
@@ -252,18 +377,26 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
       ? "Para ACOPIAR: precio alto = cuidá tu margen, los productores pedirán más por kg."
       : "Para ACOPIAR: precio en zona media, condiciones normales de compra.";
 
-  // Confianza: qué tan alineadas están las señales (tendencias + posición + noticias).
-  let confianza = 50;
-  if (trend7 != null && trend30 != null && trend7 !== 0 && Math.sign(trend7) === Math.sign(trend30)) confianza += 15;
-  if (trend30 != null && trend90 != null && trend30 !== 0 && Math.sign(trend30) === Math.sign(trend90)) confianza += 10;
-  if (high || low) confianza += 10;
+  // Confianza rigurosa: pondera acuerdo entre horizontes, calidad de la tendencia
+  // (R²), confirmación de posición/RSI, alineación de noticias y penaliza volatilidad.
+  const sameSign = (x: number | null, y: number | null) =>
+    x != null && y != null && x !== 0 && Math.sign(x) === Math.sign(y);
+  let confianza = 45;
+  if (sameSign(trend7, trend30)) confianza += 8;
+  if (sameSign(trend30, trend90)) confianza += 8;
+  if (trendR2 != null) confianza += Math.round(trendR2 * 14); // tendencia limpia = más confianza
+  if ((signal === "vender" && high) || (signal === "aguantar" && low)) confianza += 10;
+  if (rsiVal != null) {
+    if ((signal === "vender" && rsiVal >= 65) || (signal === "aguantar" && rsiVal <= 35)) confianza += 8;
+    else if ((signal === "vender" && rsiVal <= 35) || (signal === "aguantar" && rsiVal >= 65)) confianza -= 10;
+  }
   if (news && news.senal !== "neutral" && news.senal !== "mixta") {
     const alinea = (signal === "aguantar" && news.senal === "alcista") || (signal === "vender" && news.senal === "bajista");
-    confianza += alinea ? 10 : -10;
+    confianza += alinea ? 8 : -8;
   }
-  if (nervioso) confianza -= 15;
+  if (nervioso) confianza -= 12;
   if (signal === "neutral") confianza = Math.min(confianza, 45);
-  confianza = Math.max(20, Math.min(95, confianza));
+  confianza = Math.max(15, Math.min(95, confianza));
 
-  return { signal, fuerza, confianza, titulo, resumen, motivos, cuando, donde: DONDE, riesgos, compra, metrics, forecast, news };
+  return { signal, fuerza, confianza, titulo, resumen, motivos, cuando, donde: DONDE, riesgos, compra, metrics, forecast, news, tecnico, estacionalidad };
 }

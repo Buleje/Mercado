@@ -7,9 +7,11 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import {
-  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins, LineChart, Newspaper, Gauge,
+  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins, LineChart, Newspaper, Gauge, Calendar, Activity, Bell, Printer, MessageCircle,
 } from "@buleje/design-system/icons";
-import type { AdvisorResult } from "@/lib/cacao/cacao-advisor";
+import { mesNombre, type AdvisorResult } from "@/lib/cacao/cacao-advisor";
+import { printCacaoAsesor, asesorTexto } from "@/lib/cacao/cacao-asesor-informe";
+import { shareCacaoText } from "@/lib/cacao/cacao-print";
 
 type Advisor = AdvisorResult;
 interface Local { miPrecioKg: number | null; kg: number; lotes: number; refKg: number | null; spreadPct: number | null; stockKg: number }
@@ -44,8 +46,16 @@ export default function CacaoAsesor() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--text-tertiary)]">Analiza precio, tendencia a 3 meses/mes/semana, velocidad, proyección y sesgo de noticias para decir cuándo vender o aguantar. La señal y la proyección se calculan; el resumen lo redacta la IA.</p>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+        <p className="text-sm text-[var(--text-tertiary)]">Analiza precio, tendencia, velocidad, indicadores técnicos (RSI, Bollinger, soporte/resistencia), estacionalidad, proyección y noticias para decir cuándo vender o aguantar. Se calcula todo; el resumen lo redacta la IA.</p>
+        <div className="flex shrink-0 items-center gap-2">
+          {a && (
+            <>
+              <button type="button" onClick={() => printCacaoAsesor(a, data?.local ?? null, data?.narrative ?? null)} title="Informe imprimible / PDF" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" /><span className="hidden sm:inline">Informe</span></button>
+              <button type="button" onClick={() => shareCacaoText("Asesor de cacao", asesorTexto(a, data?.local ?? null))} title="Compartir por WhatsApp" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--data-success-400)] px-3 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]"><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Compartir</span></button>
+            </>
+          )}
+          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+        </div>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo cargar el asesor:</strong> {error}</div></div>}
@@ -53,6 +63,20 @@ export default function CacaoAsesor() {
 
       {a && (
         <>
+          {/* Notificación: señal fuerte + stock disponible */}
+          {a.fuerza === "fuerte" && a.signal !== "neutral" && (data?.local?.stockKg ?? 0) > 0 && (
+            <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-4">
+              <Bell className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
+              <div className="text-sm leading-relaxed text-[var(--text-primary)]">
+                <b>Notificación:</b> señal {a.signal === "vender" ? "FUERTE de VENTA" : "FUERTE de AGUANTAR"} con{" "}
+                <b>{data?.local?.stockKg} kg</b> en stock.{" "}
+                {a.signal === "vender"
+                  ? "Buena ventana para asegurar ganancia — considerá vender por partes."
+                  : "Conviene esperar la recuperación; revisá el mercado esta semana."}
+              </div>
+            </div>
+          )}
+
           {/* Señal grande */}
           <div className="overflow-hidden rounded-2xl border-2" style={{ borderColor: cfg.ring, background: cfg.soft }}>
             <div className="flex items-start gap-4 p-5">
@@ -98,6 +122,57 @@ export default function CacaoAsesor() {
             <MetricChip label="Velocidad" value={a.metrics.velocidadDia != null ? `${a.metrics.velocidadDia > 0 ? "+" : ""}${a.metrics.velocidadDia}%/d` : "—"} Icon={trendIcon(a.metrics.velocidadDia)} tone={a.metrics.velocidadDia} />
             <MetricChip label="Volatilidad" value={a.metrics.volatilidad != null ? `${a.metrics.volatilidad}%` : "—"} />
           </div>
+
+          {/* Indicadores técnicos */}
+          <Card icon={Activity} title="Indicadores técnicos">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              <MetricChip label="RSI (14)" value={a.tecnico.rsi != null ? String(a.tecnico.rsi) : "—"} tone={a.tecnico.rsi == null ? null : a.tecnico.rsi >= 70 ? -1 : a.tecnico.rsi <= 30 ? 1 : 0} />
+              <MetricChip label="Bollinger %B" value={a.tecnico.bollingerPctB != null ? `${a.tecnico.bollingerPctB}%` : "—"} />
+              <MetricChip label="Soporte" value={a.tecnico.soporte != null ? a.tecnico.soporte.toLocaleString("es-PE") : "—"} />
+              <MetricChip label="Resistencia" value={a.tecnico.resistencia != null ? a.tecnico.resistencia.toLocaleString("es-PE") : "—"} />
+              <MetricChip label="Drawdown 52s" value={a.tecnico.drawdownPct != null ? `${a.tecnico.drawdownPct}%` : "—"} tone={a.tecnico.drawdownPct} />
+            </div>
+            <ul className="mt-3 space-y-1.5 text-xs text-[var(--text-secondary)]">
+              {a.tecnico.rsiZona && a.tecnico.rsiZona !== "neutral" && (
+                <Reading>
+                  <b>RSI {a.tecnico.rsi}</b>: {a.tecnico.rsiZona === "sobrecompra" ? "sobrecompra — subió rápido, puede corregir (favorece asegurar/vender)." : "sobreventa — cayó fuerte, suele rebotar (favorece aguantar/acopiar)."}
+                </Reading>
+              )}
+              {a.tecnico.soporte != null && a.tecnico.resistencia != null && (
+                <Reading>Vendé cerca del techo (<b>USD {a.tecnico.resistencia.toLocaleString("es-PE")}</b>) y acopiá cerca del piso (<b>USD {a.tecnico.soporte.toLocaleString("es-PE")}</b>).</Reading>
+              )}
+              {a.tecnico.trendR2 != null && (
+                <Reading>Tendencia {a.tecnico.trendR2 >= 0.6 ? "limpia y sostenida" : "ruidosa / poco definida"} (R² {a.tecnico.trendR2}).</Reading>
+              )}
+              {a.tecnico.drawdownPct != null && (
+                <Reading>Está a <b>{Math.abs(a.tecnico.drawdownPct)}%</b> de su máximo de 52 semanas.</Reading>
+              )}
+            </ul>
+          </Card>
+
+          {/* Estacionalidad */}
+          {a.estacionalidad && a.estacionalidad.desviacionPct != null && (
+            <Card icon={Calendar} title="Estacionalidad (últimos 12 meses)">
+              <p className="text-sm text-[var(--text-secondary)]">
+                En <b className="text-[var(--text-primary)]">{mesNombre(a.estacionalidad.mesActual)}</b>, el cacao suele estar{" "}
+                <b style={{ color: a.estacionalidad.desviacionPct >= 0 ? "var(--data-success-700)" : "var(--data-error-700)" }}>
+                  {a.estacionalidad.desviacionPct > 0 ? "+" : ""}{a.estacionalidad.desviacionPct}%
+                </b>{" "}
+                {a.estacionalidad.desviacionPct >= 0 ? "sobre" : "bajo"} el promedio del año.
+              </p>
+              <div className="mt-3 flex items-end gap-1">
+                {a.estacionalidad.porMes.map((m) => (
+                  <div key={m.mes} className="flex flex-1 flex-col items-center gap-1" title={`${mesNombre(m.mes)}: ${m.idxPct > 0 ? "+" : ""}${m.idxPct}%`}>
+                    <div className="w-full rounded-t" style={{ height: `${Math.min(44, Math.abs(m.idxPct) * 3 + 4)}px`, background: m.idxPct >= 0 ? "var(--data-success-400)" : "var(--data-error-400)", opacity: m.mes === a.estacionalidad!.mesActual ? 1 : 0.45 }} />
+                    <span className="text-[length:var(--ts-2xs)] uppercase text-[var(--text-tertiary)]">{mesNombre(m.mes).slice(0, 1)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                Mes más caro: <b>{mesNombre(a.estacionalidad.mejorMes)}</b> · más barato: <b>{mesNombre(a.estacionalidad.peorMes)}</b>. Basado en los últimos 12 meses (no es climatología multi-año).
+              </p>
+            </Card>
+          )}
 
           {/* Proyección + Señal de noticias */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -219,6 +294,14 @@ function Card({ icon: Icon, title, children }: { icon: typeof MapPin; title: str
       <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" /> {title}</h3>
       {children}
     </div>
+  );
+}
+function Reading({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex gap-2">
+      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--accent)]" />
+      <span>{children}</span>
+    </li>
   );
 }
 function MetricChip({ label, value, Icon, tone }: { label: string; value: string; Icon?: typeof Minus; tone?: number | null }) {

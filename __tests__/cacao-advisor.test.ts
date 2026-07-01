@@ -99,6 +99,28 @@ describe("cacaoAdvisor — consciente del stock/margen del acopiador", () => {
   });
 });
 
+describe("cacaoAdvisor — indicadores técnicos y estacionalidad", () => {
+  it("serie en alza fuerte → RSI sobrecompra y R² alto", () => {
+    const r = cacaoAdvisor({ value: 6000, changePct: 0, ...RANGE, series: linear(3000, 6000) });
+    expect(r.tecnico.rsiZona).toBe("sobrecompra");
+    expect(r.tecnico.trendR2).toBeGreaterThan(0.8);
+    expect(r.tecnico.soporte ?? 0).toBeLessThanOrEqual(r.tecnico.resistencia ?? Infinity);
+  });
+
+  it("drawdown negativo cuando el precio está por debajo del máximo de 52 sem", () => {
+    const r = cacaoAdvisor({ value: 6000, changePct: 0, weekHigh52: 10000, weekLow52: 2800, series: flat(6000) });
+    expect(r.tecnico.drawdownPct).toBeLessThan(0);
+  });
+
+  it("estacionalidad se calcula desde una serie con timestamps", () => {
+    const base = Date.UTC(2026, 0, 1);
+    const s = Array.from({ length: 120 }, (_, i) => ({ c: 4000 + i * 10, t: base + i * 86_400_000 }));
+    const r = cacaoAdvisor({ value: 5200, changePct: 0, ...RANGE, series: s });
+    expect(r.estacionalidad).not.toBeNull();
+    expect(r.estacionalidad?.porMes.length ?? 0).toBeGreaterThanOrEqual(4);
+  });
+});
+
 describe("classifyNewsSentiment — sentimiento por titular", () => {
   it("clasifica ES/EN alcista, bajista y neutral", () => {
     expect(classifyNewsSentiment("Escasez dispara el precio del cacao a récord")).toBe("alcista");
