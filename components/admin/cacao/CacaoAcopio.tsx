@@ -19,12 +19,22 @@ import {
   Download,
   Filter,
   AlertTriangle,
+  Wallet,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { GRADO_LABEL, CACAO_VARIEDADES, type CacaoGrado } from "@/lib/cacao/cacao-quality";
+import {
+  GRADO_LABEL,
+  CACAO_VARIEDADES,
+  ESTADO_PAGO_LABEL,
+  type CacaoGrado,
+  type CacaoEstadoPago,
+} from "@/lib/cacao/cacao-quality";
 import {
   CACAO_VIEW_GROUPS,
   CACAO_VIEW_PARAM,
@@ -56,11 +66,28 @@ interface Lote {
   humedadPct: string | null;
   precioPorKg: string | null;
   totalPagado: string | null;
+  montoPagado: string | null;
+  estadoPago: string;
   indiceFermentacion: string | null;
   grado: string | null;
   status: string;
   annulledReason: string | null;
 }
+
+/** Saldo que aún se le debe al productor por un lote (liquidación − abonado). */
+const saldoDe = (l: Lote) => Math.max(0, Number(l.totalPagado ?? 0) - Number(l.montoPagado ?? 0));
+const tienePendiente = (l: Lote) => l.estadoPago !== "pagado" && saldoDe(l) > 0;
+
+/** Filtros rápidos client-side sobre los lotes ya cargados. */
+type Quick = "todos" | "saldo" | "sin_vincular" | "grado1" | "humedo";
+type SortKey = "fecha" | "pesoKg" | "totalPagado";
+const QUICK_CHIPS: { key: Quick; label: string }[] = [
+  { key: "todos", label: "Todos" },
+  { key: "saldo", label: "Con saldo" },
+  { key: "sin_vincular", label: "Sin vincular" },
+  { key: "grado1", label: "Grado I" },
+  { key: "humedo", label: "Húmedo" },
+];
 
 const fdate = (iso: string) => {
   try {
@@ -92,6 +119,9 @@ export default function CacaoAcopio() {
   const [fFrom, setFFrom] = useState("");
   const [fTo, setFTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  // Refinamiento client-side sobre los lotes ya cargados (chips + orden).
+  const [quick, setQuick] = useState<Quick>("todos");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "fecha", dir: "desc" });
 
   const load = useCallback(
     async (
@@ -175,10 +205,52 @@ export default function CacaoAcopio() {
   const kpis = useMemo(() => {
     const reg = lotes.filter((l) => l.status === "registrado");
     const kg = reg.reduce((a, l) => a + Number(l.pesoKg ?? 0), 0);
-    const valor = reg.reduce((a, l) => a + Number(l.totalPagado ?? 0), 0);
+    const liquidacion = reg.reduce((a, l) => a + Number(l.totalPagado ?? 0), 0);
+    const abonado = reg.reduce((a, l) => a + Number(l.montoPagado ?? 0), 0);
+    const porPagar = reg.reduce((a, l) => a + (l.estadoPago !== "pagado" ? saldoDe(l) : 0), 0);
+    const nPorPagar = reg.filter(tienePendiente).length;
     const gradoI = reg.filter((l) => l.grado === "I").length;
-    return { count: reg.length, kg, valor, gradoI };
+    return { count: reg.length, kg, liquidacion, abonado, porPagar, nPorPagar, gradoI };
   }, [lotes]);
+
+  // Contadores para los chips rápidos (sobre el set cargado, registrados).
+  const quickCounts = useMemo(() => {
+    const reg = lotes.filter((l) => l.status === "registrado");
+    return {
+      todos: reg.length,
+      saldo: reg.filter(tienePendiente).length,
+      sin_vincular: reg.filter((l) => l.productorNombre && !l.productorId).length,
+      grado1: reg.filter((l) => l.grado === "I").length,
+      humedo: reg.filter((l) => l.tipoGrano === "humedo").length,
+    };
+  }, [lotes]);
+
+  // Filas visibles: chip rápido + orden por columna (client-side, sin refetch).
+  const rows = useMemo(() => {
+    let r = lotes;
+    if (quick === "saldo") r = r.filter(tienePendiente);
+    else if (quick === "sin_vincular") r = r.filter((l) => l.productorNombre && !l.productorId);
+    else if (quick === "grado1") r = r.filter((l) => l.grado === "I");
+    else if (quick === "humedo") r = r.filter((l) => l.tipoGrano === "humedo");
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const val = (l: Lote) =>
+      sort.key === "fecha" ? new Date(l.fecha).getTime() : Number(l[sort.key] ?? 0);
+    return [...r].sort((a, b) => (val(a) - val(b)) * dir);
+  }, [lotes, quick, sort]);
+
+  // Totales del set visible (pie de tabla).
+  const rowTotals = useMemo(
+    () => ({
+      kg: rows.reduce((a, l) => a + Number(l.pesoKg ?? 0), 0),
+      liquidacion: rows.reduce((a, l) => a + Number(l.totalPagado ?? 0), 0),
+      saldo: rows.reduce((a, l) => a + saldoDe(l), 0),
+    }),
+    [rows],
+  );
+
+  const toggleSort = useCallback((key: SortKey) => {
+    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
+  }, []);
 
   function exportCsv() {
     const head = [
@@ -192,7 +264,10 @@ export default function CacaoAcopio() {
       "Indice ferm %",
       "Grado",
       "Precio/kg",
-      "Total pagado",
+      "Liquidación",
+      "Abonado",
+      "Saldo",
+      "Estado pago",
       "Estado",
     ];
     const esc = (v: unknown) => {
@@ -212,6 +287,9 @@ export default function CacaoAcopio() {
         l.grado ?? "",
         l.precioPorKg ?? "",
         l.totalPagado ?? "",
+        l.montoPagado ?? "",
+        l.totalPagado ? saldoDe(l).toFixed(2) : "",
+        ESTADO_PAGO_LABEL[l.estadoPago as CacaoEstadoPago] ?? l.estadoPago,
         l.status,
       ]
         .map(esc)
@@ -306,6 +384,7 @@ export default function CacaoAcopio() {
             <StatCard
               label="Lotes acopiados"
               value={String(kpis.count)}
+              subValue={kpis.gradoI > 0 ? `${kpis.gradoI} de Grado I` : undefined}
               icon={PackageCheck}
               emphasis="neutral"
             />
@@ -316,17 +395,22 @@ export default function CacaoAcopio() {
               emphasis="success"
             />
             <StatCard
-              label="Pagado a productores"
-              value={`S/ ${n2(kpis.valor)}`}
+              label="Liquidación total"
+              value={`S/ ${n2(kpis.liquidacion)}`}
+              subValue={`S/ ${n2(kpis.abonado)} abonado`}
               icon={Coins}
               emphasis="neutral"
             />
             <StatCard
-              label="Lotes Grado I"
-              value={String(kpis.gradoI)}
-              subValue="mejor calidad"
-              icon={Leaf}
-              emphasis={kpis.gradoI > 0 ? "success" : "neutral"}
+              label="Por pagar a productores"
+              value={`S/ ${n2(kpis.porPagar)}`}
+              subValue={
+                kpis.nPorPagar > 0
+                  ? `${kpis.nPorPagar} lote${kpis.nPorPagar === 1 ? "" : "s"} pendiente${kpis.nPorPagar === 1 ? "" : "s"}`
+                  : "todo al día"
+              }
+              icon={Wallet}
+              emphasis={kpis.porPagar > 0 ? "warning" : "success"}
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -443,23 +527,48 @@ export default function CacaoAcopio() {
               </div>
             </div>
           )}
+          {/* Chips de filtro rápido (client-side sobre el set cargado). */}
+          {lotes.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {QUICK_CHIPS.map((c) => {
+                const count = quickCounts[c.key];
+                if (c.key !== "todos" && count === 0) return null;
+                const active = quick === c.key;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setQuick(c.key)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-bold transition ${active ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                  >
+                    {c.label}
+                    <span
+                      className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[length:var(--ts-2xs)] ${active ? "bg-white/25 text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
             <table className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
                   <Th>Lote</Th>
-                  <Th className="hidden sm:table-cell">Fecha</Th>
+                  <SortTh label="Fecha" col="fecha" sort={sort} onSort={toggleSort} className="hidden sm:table-cell" />
                   <Th>Productor</Th>
                   <Th className="hidden md:table-cell">Variedad</Th>
-                  <Th className="text-right">Peso (kg)</Th>
+                  <SortTh label="Peso (kg)" col="pesoKg" sort={sort} onSort={toggleSort} align="right" />
                   <Th className="hidden text-right sm:table-cell">Humedad</Th>
                   <Th className="hidden md:table-cell">Grado</Th>
-                  <Th className="text-right">Pagado</Th>
+                  <SortTh label="Liquidación" col="totalPagado" sort={sort} onSort={toggleSort} align="right" />
                   <Th className="text-right">Acción</Th>
                 </tr>
               </thead>
               <tbody>
-                {lotes.map((l) => {
+                {rows.map((l) => {
                   const annul = l.status === "anulado";
                   return (
                     <tr
@@ -514,8 +623,13 @@ export default function CacaoAcopio() {
                       <Td className="hidden md:table-cell">
                         <GradoBadge grado={l.grado} />
                       </Td>
-                      <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                        {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
+                      <Td className="text-right">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                            {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
+                          </span>
+                          {l.totalPagado && <PagoBadge estado={l.estadoPago} saldo={saldoDe(l)} />}
+                        </div>
                       </Td>
                       <Td className="text-right">
                         {annul ? (
@@ -538,15 +652,45 @@ export default function CacaoAcopio() {
                   );
                 })}
               </tbody>
+              {rows.length > 0 && (
+                <tfoot>
+                  <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
+                    <Td className="font-bold text-[var(--text-secondary)]">
+                      Total · {rows.length} lote{rows.length === 1 ? "" : "s"}
+                    </Td>
+                    <Td className="hidden sm:table-cell" />
+                    <Td />
+                    <Td className="hidden md:table-cell" />
+                    <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                      {n2(rowTotals.kg)}
+                    </Td>
+                    <Td className="hidden sm:table-cell" />
+                    <Td className="hidden md:table-cell" />
+                    <Td className="text-right">
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                          S/ {n2(rowTotals.liquidacion)}
+                        </span>
+                        {rowTotals.saldo > 0 && (
+                          <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+                            S/ {n2(rowTotals.saldo)} por pagar
+                          </span>
+                        )}
+                      </div>
+                    </Td>
+                    <Td />
+                  </tr>
+                </tfoot>
+              )}
             </table>
             <EmptyOrLoading
               loading={loading}
-              empty={lotes.length === 0}
+              empty={rows.length === 0}
               icon={PackageCheck}
               msg="Empezá tu libro de acopio"
               hint="Registrá el primer lote de cacao: peso, calidad (prueba de corte) y liquidación al productor — todo se calcula al vuelo."
               cta={{ label: "Registrar primer lote", onClick: () => setShowLote(true) }}
-              searchActive={!!search.trim() || activeFilters > 0}
+              searchActive={!!search.trim() || activeFilters > 0 || quick !== "todos"}
             />
           </div>
         </>
@@ -599,9 +743,9 @@ export default function CacaoAcopio() {
                 <AlertTriangle className="h-6 w-6" />
               </span>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">
+                <div role="heading" aria-level={3} className="text-base font-bold text-[var(--text-primary)]">
                   Anular lote {lotes.find((l) => l.id === annulId)?.loteCode ?? ""}
-                </h3>
+                </div>
                 <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                   El lote queda marcado como anulado y sale de los totales.{" "}
                   <strong className="text-[var(--text-secondary)]">No se borra</strong> — queda con
@@ -659,8 +803,58 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
     </th>
   );
 }
-function Td({ children, className }: { children: React.ReactNode; className?: string }) {
+function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
+}
+function SortTh({
+  label,
+  col,
+  sort,
+  onSort,
+  align,
+  className,
+}: {
+  label: string;
+  col: SortKey;
+  sort: { key: SortKey; dir: "asc" | "desc" };
+  onSort: (k: SortKey) => void;
+  align?: "right";
+  className?: string;
+}) {
+  const active = sort.key === col;
+  const Icon = active ? (sort.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  return (
+    <th className={`px-4 py-3 ${align === "right" ? "text-right" : ""} ${className ?? ""}`}>
+      <button
+        type="button"
+        onClick={() => onSort(col)}
+        className={`inline-flex items-center gap-1 font-bold ${align === "right" ? "flex-row-reverse" : ""} ${active ? "text-[var(--accent)]" : "text-[var(--text-primary)] hover:text-[var(--accent)]"}`}
+        aria-label={`Ordenar por ${label}`}
+      >
+        {label}
+        <Icon className={`h-3.5 w-3.5 ${active ? "" : "opacity-40"}`} />
+      </button>
+    </th>
+  );
+}
+function PagoBadge({ estado, saldo }: { estado: string; saldo: number }) {
+  const cls =
+    estado === "pagado"
+      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+      : estado === "parcial"
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+        : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]";
+  const label = ESTADO_PAGO_LABEL[estado as CacaoEstadoPago] ?? estado;
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={`rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${cls}`}>{label}</span>
+      {estado !== "pagado" && saldo > 0 && (
+        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+          debe S/ {saldo.toFixed(2)}
+        </span>
+      )}
+    </span>
+  );
 }
 function SearchBar({
   value,
