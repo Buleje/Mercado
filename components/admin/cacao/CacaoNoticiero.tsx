@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, CardTitle } from "@buleje/design-system";
 import {
   Newspaper, RefreshCw, TrendingUp, TrendingDown, Minus, ExternalLink, AlertCircle, Coins, Globe, ArrowUpRight, Activity,
 } from "@buleje/design-system/icons";
@@ -74,7 +74,7 @@ export default function CacaoNoticiero() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Agrícola · Mercado</p>
@@ -103,28 +103,29 @@ export default function CacaoNoticiero() {
           <div className="lg:col-span-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             {p ? (
               <>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {/* Precio mundial (referencia ICE) */}
+                {/* HERO: referencia local en soles — el número que le importa al productor */}
+                <div className="rounded-xl bg-[var(--accent-soft)] p-4">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">Referencia local · grano seco</p>
+                  <div className="mt-1 flex flex-wrap items-end gap-2">
+                    <span className="font-mono text-4xl font-extrabold leading-none tabular-nums text-[var(--accent)]">S/ {data.pricePenPerKg != null ? data.pricePenPerKg.toFixed(2) : "—"}</span>
+                    <span className="mb-1.5 text-sm font-bold text-[var(--text-secondary)]">/ kg</span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-[var(--text-secondary)]">Convertido del precio ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD. En chacra suele cerrarse algo por debajo (flete + margen del acopiador).</p>
+                </div>
+
+                {/* Contexto internacional */}
+                <div className="mt-4 flex flex-wrap items-end gap-3">
                   <div>
                     <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mundo · ICE New York</p>
-                    <div className="mt-1 flex flex-wrap items-end gap-2">
-                      <span className="font-mono text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">USD {fmt(p.value)}</span>
-                      <span className="mb-1 text-xs text-[var(--text-tertiary)]">/ tonelada</span>
-                      <span className={`mb-0.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
-                        {up ? <TrendingUp className="h-4 w-4" /> : down ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                        {p.changePct != null ? `${up ? "+" : ""}${p.changePct}%` : "—"}
-                      </span>
+                    <div className="mt-0.5 flex flex-wrap items-end gap-2">
+                      <span className="font-mono text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">USD {fmt(p.value)}</span>
+                      <span className="mb-0.5 text-xs text-[var(--text-tertiary)]">/ tonelada</span>
                     </div>
                   </div>
-                  {/* Referencia local en soles — lo que le importa al productor */}
-                  <div className="sm:border-l sm:border-[var(--rule-soft)] sm:pl-4">
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Referencia local · grano seco</p>
-                    <div className="mt-1 flex flex-wrap items-end gap-2">
-                      <span className="font-mono text-3xl font-extrabold tabular-nums text-[var(--accent)]">S/ {data.pricePenPerKg != null ? data.pricePenPerKg.toFixed(2) : "—"}</span>
-                      <span className="mb-1 text-xs text-[var(--text-tertiary)]">/ kg</span>
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">Del precio ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD. En chacra suele ir algo por debajo (flete + margen).</p>
-                  </div>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+                    {up ? <TrendingUp className="h-4 w-4" /> : down ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                    {p.changePct != null ? `${up ? "+" : ""}${p.changePct}% hoy` : "—"}
+                  </span>
                 </div>
 
                 {/* Rango 52 semanas */}
@@ -147,8 +148,8 @@ export default function CacaoNoticiero() {
           </div>
 
           {/* Análisis */}
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-5">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><TrendingUp className="h-4 w-4 text-[var(--accent)]" /> Lectura de mercado</h3>
+          <div className="rounded-2xl border-2 border-l-[6px] border-[var(--rule-base)] border-l-[var(--accent)] bg-[var(--surface-canvas)]/40 p-5">
+            <CardTitle className="mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[var(--accent)]" /> Lectura de mercado</CardTitle>
             {insights.length ? <ul className="space-y-2.5 text-sm text-[var(--text-secondary)]">{insights.map((s, i) => <li key={i} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />{s}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">Sin datos de precio para analizar.</p>}
           </div>
         </div>
@@ -167,7 +168,7 @@ export default function CacaoNoticiero() {
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="flex items-center gap-2 border-b-2 border-[var(--rule-soft)] px-5 py-3">
             <Newspaper className="h-4 w-4 text-[var(--accent)]" />
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Noticias del cacao</h3>
+            <CardTitle>Noticias del cacao</CardTitle>
             <span className="text-xs text-[var(--text-tertiary)]">· Perú y mundo</span>
           </div>
           {data.news.length === 0 ? (
