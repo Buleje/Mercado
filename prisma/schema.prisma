@@ -5279,7 +5279,12 @@ model CacaoLote {
   // Liquidación al productor
   precioPorKg Decimal? @db.Decimal(10, 2)
   premioPorKg Decimal? @db.Decimal(10, 2) // premio por calidad / fino de aroma
-  totalPagado Decimal? @db.Decimal(14, 2) // (precio + premio) × pesoKg
+  totalPagado Decimal? @db.Decimal(14, 2) // monto DEBIDO al productor: (precio + premio) × pesoKg
+
+  // Seguimiento de pago al productor (anticipo/saldo). totalPagado = lo debido;
+  // montoPagado = lo efectivamente abonado; saldo = debido − pagado (computado).
+  montoPagado Decimal? @db.Decimal(14, 2) // soles pagados al productor (adelanto + abonos)
+  estadoPago  String   @default("pendiente") // pendiente | parcial | pagado
 
   // Prueba de corte (NTP-ISO 1114) — % sobre granos evaluados
   cutGranos          Int? // n° de granos evaluados

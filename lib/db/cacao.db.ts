@@ -597,17 +597,21 @@ export class CacaoDB {
         grado: true,
         indiceFermentacion: true,
         totalPagado: true,
+        montoPagado: true,
+        estadoPago: true,
       },
     });
     const r2 = (x: number) => Math.round(x * 100) / 100;
     let totalKg = 0,
       totalPagado = 0,
+      montoPagado = 0,
       idxSum = 0,
       idxN = 0;
     const gradoCounts: Record<string, number> = {};
     for (const l of lotes) {
       totalKg += Number(l.pesoKg ?? 0);
       totalPagado += Number(l.totalPagado ?? 0);
+      montoPagado += Number(l.montoPagado ?? 0);
       if (l.indiceFermentacion != null) {
         idxSum += Number(l.indiceFermentacion);
         idxN++;
@@ -621,12 +625,48 @@ export class CacaoDB {
       agg: {
         loteCount: lotes.length,
         totalKg: r2(totalKg),
+        // totalPagado = monto DEBIDO (liquidación); montoPagado = abonado; saldo = deuda.
         totalPagado: r2(totalPagado),
+        montoPagado: r2(montoPagado),
+        saldo: r2(Math.max(0, totalPagado - montoPagado)),
         avgIndice: idxN ? Math.round((idxSum / idxN) * 10) / 10 : null,
         gradoCounts,
         lastFecha: lotes[0]?.fecha ?? null,
       },
     };
+  }
+
+  /**
+   * Registra un abono al productor sobre un lote (adelanto o saldo). Espeja
+   * registrarPagoVenta: acumula lo pagado y deriva estadoPago vs. lo DEBIDO
+   * (lote.totalPagado). Solo admin/owner lo dispara (salida de caja).
+   */
+  static async registrarPagoAcopio(
+    tenantId: string,
+    id: string,
+    montoPagado: number | string | null,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lote = await prisma.cacaoLote.findFirst({
+      where: { id, tenantId, deletedAt: null, status: "registrado" },
+      select: { totalPagado: true },
+    });
+    if (!lote) throw new Error("lote_not_found");
+    const pagado = Math.max(0, n(montoPagado) ?? 0);
+    const { estado } = cacaoEstadoPago(
+      lote.totalPagado == null ? null : Number(lote.totalPagado),
+      pagado,
+    );
+    const l = await prisma.cacaoLote.update({
+      where: { id, tenantId } satisfies Prisma.CacaoLoteWhereUniqueInput,
+      data: { montoPagado: dec(pagado), estadoPago: estado },
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
+    return l;
   }
 
   // ─── Productores + agregados de compra (analítica de proveedores) ────
@@ -639,13 +679,21 @@ export class CacaoDB {
       this.listProducers(tenantId, filters),
       prisma.cacaoLote.findMany({
         where: { tenantId, deletedAt: null, status: "registrado", productorId: { not: null } },
-        select: { productorId: true, pesoKg: true, totalPagado: true, fecha: true, grado: true },
+        select: {
+          productorId: true,
+          pesoKg: true,
+          totalPagado: true,
+          montoPagado: true,
+          fecha: true,
+          grado: true,
+        },
       }),
     ]);
     const r2 = (x: number) => Math.round(x * 100) / 100;
     type Agg = {
       kg: number;
-      pagado: number;
+      pagado: number; // monto DEBIDO acumulado (liquidación)
+      abonado: number; // efectivamente pagado
       lotes: number;
       lastFecha: Date | null;
       gradoI: number;
@@ -656,12 +704,14 @@ export class CacaoDB {
       const a = agg.get(l.productorId) ?? {
         kg: 0,
         pagado: 0,
+        abonado: 0,
         lotes: 0,
         lastFecha: null,
         gradoI: 0,
       };
       a.kg += Number(l.pesoKg ?? 0);
       a.pagado += Number(l.totalPagado ?? 0);
+      a.abonado += Number(l.montoPagado ?? 0);
       a.lotes++;
       if (l.grado === "I") a.gradoI++;
       const f = new Date(l.fecha);
@@ -675,6 +725,8 @@ export class CacaoDB {
         stats: {
           kg: r2(a?.kg ?? 0),
           pagado: r2(a?.pagado ?? 0),
+          abonado: r2(a?.abonado ?? 0),
+          saldo: r2(Math.max(0, (a?.pagado ?? 0) - (a?.abonado ?? 0))),
           lotes: a?.lotes ?? 0,
           lastFecha: a?.lastFecha ? a.lastFecha.toISOString() : null,
           gradoI: a?.gradoI ?? 0,
@@ -1621,7 +1673,7 @@ export class CacaoDB {
    */
   static async alerts(tenantId: string) {
     if (!tenantId) throw new Error("tenantId is required");
-    const [config, beneficios, lotes, inv, ventas] = await Promise.all([
+    const [config, beneficios, lotes, inv, ventas, pagosProductor] = await Promise.all([
       this.getConfig(tenantId),
       prisma.cacaoBeneficio.findMany({
         where: {
@@ -1662,6 +1714,16 @@ export class CacaoDB {
           compradorNombre: string | null;
         }[],
       ),
+      prisma.cacaoLote.findMany({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: "registrado",
+          productorId: { not: null },
+          estadoPago: { in: ["pendiente", "parcial"] },
+        },
+        select: { loteCode: true, totalPagado: true, montoPagado: true, productorNombre: true },
+      }),
     ]);
     const now = Date.now();
     const days = (from: Date | null) =>
@@ -1735,6 +1797,29 @@ export class CacaoDB {
         title: `Cobros pendientes: S/ ${Math.round(saldoTotal * 100) / 100}`,
         detail: `${ventas.length} venta(s) con saldo por cobrar.`,
         view: "ventas",
+      });
+    }
+    // 5. Saldos por pagar a productores (deuda del acopiador)
+    let deudaTotal = 0,
+      lotesConDeuda = 0;
+    for (const l of pagosProductor) {
+      const { saldo } = cacaoEstadoPago(
+        l.totalPagado == null ? null : Number(l.totalPagado),
+        l.montoPagado == null ? null : Number(l.montoPagado),
+      );
+      if (saldo > 0) {
+        deudaTotal += saldo;
+        lotesConDeuda++;
+      }
+    }
+    if (deudaTotal > 0) {
+      alerts.push({
+        id: "deuda-productores",
+        tipo: "pago",
+        severity: "atencion",
+        title: `Por pagar a productores: S/ ${Math.round(deudaTotal * 100) / 100}`,
+        detail: `${lotesConDeuda} lote(s) con saldo pendiente de liquidar al productor.`,
+        view: "productores",
       });
     }
     const order = { urgente: 0, atencion: 1, info: 2 } as const;

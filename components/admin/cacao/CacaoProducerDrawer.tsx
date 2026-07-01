@@ -21,6 +21,8 @@ import {
   Award,
   Power,
   Printer,
+  AlertTriangle,
+  HandCoins,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -57,11 +59,15 @@ interface LoteRow {
   grado: string | null;
   indiceFermentacion: string | null;
   totalPagado: string | null;
+  montoPagado: string | null;
+  estadoPago: string;
 }
 interface Agg {
   loteCount: number;
   totalKg: number;
-  totalPagado: number;
+  totalPagado: number; // monto DEBIDO (liquidación)
+  montoPagado: number; // abonado al productor
+  saldo: number; // debido − pagado
   avgIndice: number | null;
   gradoCounts: Record<string, number>;
   lastFecha: string | null;
@@ -102,6 +108,9 @@ export default function CacaoProducerDrawer({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Partial<Producer>>({});
+  // Registro de pago al productor (estado de cuenta, ADR-302)
+  const [payLote, setPayLote] = useState<LoteRow | null>(null);
+  const [payMonto, setPayMonto] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -147,6 +156,38 @@ export default function CacaoProducerDrawer({
     }
   }
 
+  // Registra el monto pagado ACUMULADO (adelanto + abonos) sobre un lote.
+  async function registrarPago() {
+    if (!payLote) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/cacao", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({
+          action: "pago_acopio",
+          id: payLote.id,
+          montoPagado: payMonto === "" ? 0 : Number(payMonto),
+        }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      setPayLote(null);
+      setPayMonto("");
+      await load();
+      onChanged?.();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Saldo por lote (debido − pagado), para la lista y el badge de estado.
+  const loteSaldo = (l: LoteRow) =>
+    Math.max(0, Number(l.totalPagado ?? 0) - Number(l.montoPagado ?? 0));
+
   async function saveEdit() {
     await patch({
       nombre: form.nombre,
@@ -166,6 +207,7 @@ export default function CacaoProducerDrawer({
   const inactive = producer?.status === "inactivo";
 
   return (
+    <>
     <AdminModal open onClose={onClose} variant="side" hideCloseButton className="!max-w-[480px]">
       <div className="flex h-full max-h-screen flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
@@ -211,8 +253,37 @@ export default function CacaoProducerDrawer({
               <div className="grid grid-cols-3 gap-2">
                 <KStat icon={PackageCheck} label="Lotes" value={String(agg?.loteCount ?? 0)} />
                 <KStat icon={Scale} label="Kg comprados" value={n2(agg?.totalKg ?? 0)} />
-                <KStat icon={Coins} label="Pagado" value={`S/ ${n2(agg?.totalPagado ?? 0)}`} />
+                <KStat icon={Coins} label="A pagar" value={`S/ ${n2(agg?.totalPagado ?? 0)}`} />
               </div>
+
+              {/* Estado de cuenta con el productor (deuda / abonado / saldo) */}
+              {agg && agg.totalPagado > 0 && (
+                <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Estado de cuenta
+                    </span>
+                    {agg.saldo > 0 ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]">
+                        <AlertTriangle className="h-3 w-3" /> Debés S/ {n2(agg.saldo)}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-900)]">
+                        <Check className="h-3 w-3" /> Al día
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <AcctCell label="Debido" value={`S/ ${n2(agg.totalPagado)}`} />
+                    <AcctCell label="Pagado" value={`S/ ${n2(agg.montoPagado)}`} tone="success" />
+                    <AcctCell
+                      label="Saldo"
+                      value={`S/ ${n2(agg.saldo)}`}
+                      tone={agg.saldo > 0 ? "warning" : "muted"}
+                    />
+                  </div>
+                </div>
+              )}
               {agg && (agg.avgIndice != null || Object.keys(agg.gradoCounts).length > 0) && (
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   {agg.avgIndice != null && (
@@ -391,32 +462,61 @@ export default function CacaoProducerDrawer({
                       Sin lotes registrados.
                     </p>
                   ) : (
-                    lotes.map((l) => (
-                      <button
-                        key={l.id}
-                        type="button"
-                        onClick={() => onOpenLote?.(l.id)}
-                        className="flex w-full items-center justify-between gap-3 border-b border-[var(--rule-soft)] px-3 py-2.5 text-left last:border-0 hover:bg-[var(--surface-sunken)]"
-                      >
-                        <span className="min-w-0">
-                          <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
-                            {l.loteCode}
-                          </span>
-                          <span className="ml-2 text-xs text-[var(--text-tertiary)]">
-                            {fdate(l.fecha)}
-                          </span>
-                        </span>
-                        <span className="flex shrink-0 items-center gap-2">
-                          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-                            {n2(l.pesoKg)} kg
-                          </span>
-                          <GradoMini grado={l.grado} />
-                          <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
-                            {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
-                          </span>
-                        </span>
-                      </button>
-                    ))
+                    lotes.map((l) => {
+                      const debido = Number(l.totalPagado ?? 0);
+                      const saldo = loteSaldo(l);
+                      return (
+                        <div
+                          key={l.id}
+                          className="flex items-center gap-2 border-b border-[var(--rule-soft)] px-3 py-2.5 last:border-0 hover:bg-[var(--surface-sunken)]"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => onOpenLote?.(l.id)}
+                            className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                          >
+                            <span className="min-w-0">
+                              <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
+                                {l.loteCode}
+                              </span>
+                              <span className="ml-2 text-xs text-[var(--text-tertiary)]">
+                                {fdate(l.fecha)}
+                              </span>
+                            </span>
+                            <span className="flex shrink-0 items-center gap-2">
+                              <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                                {n2(l.pesoKg)} kg
+                              </span>
+                              <GradoMini grado={l.grado} />
+                              <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
+                                {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
+                              </span>
+                            </span>
+                          </button>
+                          {debido > 0 &&
+                            (saldo > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPayLote(l);
+                                  setPayMonto(String(debido));
+                                }}
+                                title={`Saldo S/ ${n2(saldo)}`}
+                                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--data-warning-400)] bg-[var(--data-warning-50)] px-2 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)] hover:brightness-95"
+                              >
+                                <HandCoins className="h-3.5 w-3.5" /> Pagar
+                              </button>
+                            ) : (
+                              <span
+                                title="Pagado"
+                                className="inline-flex h-8 shrink-0 items-center gap-1 px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"
+                              >
+                                <Check className="h-3.5 w-3.5" /> Pagado
+                              </span>
+                            ))}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -475,6 +575,90 @@ export default function CacaoProducerDrawer({
         )}
       </div>
     </AdminModal>
+
+    {payLote && (
+      <AdminModal open onClose={() => setPayLote(null)} variant="centered-sm" hideCloseButton>
+        <div className="bg-[var(--surface-raised)] p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <HandCoins className="h-6 w-6" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-[var(--text-primary)]">
+                Registrar pago — lote {payLote.loteCode}
+              </h3>
+              <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
+                Debido S/ {n2(payLote.totalPagado)} · pagado S/ {n2(payLote.montoPagado)} · saldo S/{" "}
+                {n2(loteSaldo(payLote))}
+              </p>
+            </div>
+          </div>
+          <label className="mt-4 block">
+            <span className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
+              Monto pagado acumulado (adelanto + abonos)
+            </span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={payMonto}
+              onChange={(e) => setPayMonto(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !saving) registrarPago();
+              }}
+              className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            />
+            <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
+              Es el total pagado, no solo el abono de hoy. Igual o mayor al debido = liquidado.
+            </span>
+          </label>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPayLote(null)}
+              className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={registrarPago}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Guardar pago
+            </button>
+          </div>
+        </div>
+      </AdminModal>
+    )}
+    </>
+  );
+}
+
+function AcctCell({
+  label,
+  value,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  tone?: "success" | "warning" | "muted";
+}) {
+  const color =
+    tone === "success"
+      ? "text-[var(--data-success-700)]"
+      : tone === "warning"
+        ? "text-[var(--data-warning-700)]"
+        : "text-[var(--text-primary)]";
+  return (
+    <div className="rounded-lg bg-[var(--surface-raised)] px-2 py-1.5">
+      <div className={`font-mono text-sm font-extrabold tabular-nums ${color}`}>{value}</div>
+      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        {label}
+      </div>
+    </div>
   );
 }
 

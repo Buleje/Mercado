@@ -7,14 +7,14 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Users, Plus, Search, RefreshCw, Coins, Scale, Award, Download, AlertCircle, Trophy,
+  Users, Plus, Search, RefreshCw, Coins, Scale, Award, Download, AlertCircle, Trophy, AlertTriangle,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import CacaoProducerForm from "./CacaoProducerForm";
 import CacaoProducerDrawer from "./CacaoProducerDrawer";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 
-interface PStats { kg: number; pagado: number; lotes: number; lastFecha: string | null; gradoI: number }
+interface PStats { kg: number; pagado: number; abonado: number; saldo: number; lotes: number; lastFecha: string | null; gradoI: number }
 interface Producer {
   id: string; codigo: string | null; nombre: string; dni: string | null; sector: string | null;
   parcelaHa: string | null; variedad: string | null; certificacion: string | null; status: string; stats: PStats;
@@ -69,18 +69,19 @@ export default function CacaoProductores() {
     const conCompras = view.filter((p) => p.stats.lotes > 0);
     const totalKg = conCompras.reduce((a, p) => a + p.stats.kg, 0);
     const totalPagado = conCompras.reduce((a, p) => a + p.stats.pagado, 0);
+    const totalSaldo = conCompras.reduce((a, p) => a + p.stats.saldo, 0);
     const top = conCompras.reduce<{ nombre: string; pagado: number } | null>(
       (best, p) =>
         !best || p.stats.pagado > best.pagado ? { nombre: p.nombre, pagado: p.stats.pagado } : best,
       null,
     );
-    return { total: view.length, conCompras: conCompras.length, totalKg, totalPagado, top };
+    return { total: view.length, conCompras: conCompras.length, totalKg, totalPagado, totalSaldo, top };
   }, [view]);
 
   function exportCsv() {
-    const head = ["Codigo", "Nombre", "DNI", "Sector", "Variedad", "Certificacion", "Estado", "Kg comprados", "Pagado", "Lotes", "Lotes Grado I", "Ultima compra"];
+    const head = ["Codigo", "Nombre", "DNI", "Sector", "Variedad", "Certificacion", "Estado", "Kg comprados", "A pagar", "Abonado", "Saldo", "Lotes", "Lotes Grado I", "Ultima compra"];
     const esc = (v: unknown) => { const s = String(v ?? ""); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-    const rows = view.map((p) => [p.codigo, p.nombre, p.dni, p.sector, p.variedad, p.certificacion, p.status, n2(p.stats.kg), n2(p.stats.pagado), p.stats.lotes, p.stats.gradoI, p.stats.lastFecha ? p.stats.lastFecha.slice(0, 10) : ""].map(esc).join(","));
+    const rows = view.map((p) => [p.codigo, p.nombre, p.dni, p.sector, p.variedad, p.certificacion, p.status, n2(p.stats.kg), n2(p.stats.pagado), n2(p.stats.abonado), n2(p.stats.saldo), p.stats.lotes, p.stats.gradoI, p.stats.lastFecha ? p.stats.lastFecha.slice(0, 10) : ""].map(esc).join(","));
     const csv = "﻿" + [head.join(","), ...rows].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a"); a.href = url; a.download = `cacao-productores-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -93,7 +94,7 @@ export default function CacaoProductores() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Productores" value={String(kpis.total)} subValue={`${kpis.conCompras} con compras`} icon={Users} emphasis="neutral" />
         <StatCard label="Kg comprado" value={`${n2(kpis.totalKg)} kg`} icon={Scale} emphasis="success" />
-        <StatCard label="Pagado" value={`S/ ${n2(kpis.totalPagado)}`} icon={Coins} emphasis="neutral" />
+        <StatCard label="A pagar" value={`S/ ${n2(kpis.totalPagado)}`} subValue={kpis.totalSaldo > 0 ? `debés S/ ${n2(kpis.totalSaldo)}` : "al día"} icon={Coins} emphasis={kpis.totalSaldo > 0 ? "warning" : "success"} />
         <StatCard label="Productor top" value={kpis.top ? `S/ ${n2(kpis.top.pagado)}` : "—"} subValue={kpis.top?.nombre ?? "sin compras"} icon={Trophy} emphasis={kpis.top ? "success" : "neutral"} />
       </div>
 
@@ -118,7 +119,7 @@ export default function CacaoProductores() {
         <table className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
-              <Th>Productor</Th><Th>Sector</Th><Th className="text-right">Kg comprados</Th><Th className="text-right">Pagado</Th>
+              <Th>Productor</Th><Th>Sector</Th><Th className="text-right">Kg comprados</Th><Th className="text-right">A pagar</Th>
               <Th className="text-right">Lotes</Th><Th className="text-right">Calidad I</Th><Th className="text-right">Última</Th>
             </tr>
           </thead>
@@ -126,9 +127,10 @@ export default function CacaoProductores() {
             {view.map((p) => (
               <tr key={p.id} role="button" tabIndex={0} aria-label={`Ver ficha de ${p.nombre}`} onClick={() => setDrawerId(p.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrawerId(p.id); } }} className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] focus:outline-none focus-visible:bg-[var(--surface-sunken)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] ${p.status === "inactivo" ? "opacity-50" : ""}`}>
                 <Td>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-[var(--text-primary)]">{p.nombre}</span>
                     {p.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[p.certificacion] ?? p.certificacion}</span>}
+                    {p.stats.saldo > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]"><AlertTriangle className="h-3 w-3" />Debés S/ {n2(p.stats.saldo)}</span>}
                   </div>
                   <span className="text-xs text-[var(--text-tertiary)]"><span className="font-mono">{p.codigo ?? "—"}</span>{p.variedad ? ` · ${p.variedad}` : ""}{p.status === "inactivo" ? " · inactivo" : ""}</span>
                 </Td>

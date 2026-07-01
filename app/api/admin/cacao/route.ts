@@ -140,6 +140,11 @@ const patchSchema = z.discriminatedUnion("action", [
     montoCobrado: z.coerce.number().min(0).max(99_999_999),
   }),
   z.object({
+    action: z.literal("pago_acopio"),
+    id: z.string().trim().min(1),
+    montoPagado: z.coerce.number().min(0).max(99_999_999),
+  }),
+  z.object({
     action: z.literal("annul_ajuste"),
     id: z.string().trim().min(1),
     reason: z.string().trim().max(500).optional(),
@@ -469,6 +474,24 @@ export async function PATCH(req: NextRequest) {
         if (String(e instanceof Error ? e.message : e) === "venta_not_found")
           return NextResponse.json(
             { error: "venta_not_found", message: "No se encontró la venta." },
+            { status: 404 },
+          );
+        throw e;
+      }
+    }
+    if (parsed.data.action === "pago_acopio") {
+      try {
+        return NextResponse.json({
+          lote: await CacaoDB.registrarPagoAcopio(
+            g.auth.tenantId,
+            parsed.data.id,
+            parsed.data.montoPagado,
+          ),
+        });
+      } catch (e) {
+        if (String(e instanceof Error ? e.message : e) === "lote_not_found")
+          return NextResponse.json(
+            { error: "lote_not_found", message: "No se encontró el lote." },
             { status: 404 },
           );
         throw e;
