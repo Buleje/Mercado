@@ -1,34 +1,38 @@
-# SESSION HANDOFF — 2026-06-25
+# SESSION HANDOFF — 2026-07-01
 
-Branch: `audit/storefront-mejoras-verificadas-2026-06-15`. **4 commits nuevos (no pusheado).**
+Branch: `audit/storefront-mejoras-verificadas-2026-06-15` (local, **sin pushear**). 17 commits esta sesión (16 feat/refactor + 1 revert).
 
-## ✅ Commiteado y verificado esta sesión
-- `316b0412` — nav/sub-nav del marketplace **claros** + StoreLogosMarquee blanco + **PDP sin barra lateral** + grillas "También compraron"/"Explora tus gustos" = grilla densa del home (related 4→12).
-- `5fed12e2` — **Modo Creativo · preview en vivo**: texto del hero (data-live), modo oscuro (toggle clase), **sin flash** (iframe recarga solo si cambia algo no-en-vivo). Fixes: color picker hex fallback, preset duplicado, grid horario roto (comas Tailwind), label secciones, dead code `activeViewport`, logs en catches.
-- `0fbe0aa6` — nombre de tienda **en vivo** en el header (`StorefrontNavbar`).
-- `113195ec` — **Plantillas completas**: 3→8 looks (Clásico/Fresco/Premium/Minimal/Cálido/Selva/Océano/Dulce) con vibe + colores + fuente + modo + radio + estilo botón; `applyTemplate` aplica radio+botón; card con descripción + chips.
-- `c5e5345e` — **Subir imágenes (click/arrastra)** logo (Identidad), hero, favicon (Avanzado) reusando `ImageUpload` envuelto en `.dark`; Identidad mejorada (logo arriba + placeholders).
-- `755d34ce` — **Banner de imagen full-width** arriba de la tienda: campo `announcementImage` en StoreTheme + dropzone en Modo Creativo > Secciones + render en `app/t/[slug]` entre nav y hero. Verificado e2e.
-- `234f08bb` — **Imagen por sección**: campo `sectionImages` (map sección→URL) en StoreTheme; dropzone por cada sección activa en Modo Creativo > Secciones (excepto hero/announcement); render en `app/t/[slug]` como banda full-width por sección (entre trust e info y el catálogo). Verificado e2e (Categorias → banda en /t).
+## ⚠️ PENDIENTE #1 — Verificación visual (bloqueada para mí)
+Casi todo lo de **admin/cacao** se hizo **sin poder verlo renderizado**: el admin redirige el tab `cacao-acopio → inicio` en sesión impersonada (spec `spec:agricola:cacao-acopio` SÍ está on para el tenant BLAS, pero `allowedTabs` de la sesión impersonada no lo incluye). **Brandon tiene acceso real** → debe verificar en:
+`http://localhost:3000/t/inversiones-agroforestales-blas-sociedad-anonima/admin?tab=cacao-acopio&cacaoView=mercado`
+Chequear: hero local S//kg grande, **gráfico clickeable** (tocar punto → fija precio en hero + "a cuánto se vende" + botón "Volver a hoy"), "a cuánto se vende" compacto (1 línea/plaza), pestaña **Noticias** aparte, sub-nav sin textos de grupo.
 
-Arquitectura live-preview: `StoreCreativeMode.postLiveTheme` → postMessage {vars, fontLabel, darkMode, text} → `components/store/PreviewLiveTheme.tsx` (CSS vars + font + clase dark + textContent de `[data-live]`). data-live actuales: heroTitle, heroSubtitle (en `app/t/[slug]/page.tsx`), storeName (en `StorefrontNavbar`).
+## ✅ GASTOS superadmin — suite financiera completa (9 commits, verificado E2E autenticado)
+`/superadmin/gastos`. Auth para verificar: cookie de plataforma UA-bound + addCookies en Playwright ([[superadmin-visual-qa-auth]]).
+- `f6e570ee` P&L (MRR vs gasto → utilidad/margen/break-even) + editar + presupuesto por categoría + búsqueda/agrupar + rediseño.
+- `04f6e175` tipo de cambio USD→PEN editable.
+- `e76dff7d` historial mensual real (snapshots congelados en `PlatformSettings`).
+- `c2386a36` cron mensual de cierre (`/api/cron/expense-month-close`, `vercel.json` `20 5 1 * *`).
+- `2ffac989` exportar P&L a PDF (jsPDF).
+- `a9606f45` alertas de sobregasto por email (cron `superadmin-alerts` + `checkOverspend` con dedup).
+- `cff24de7` historial mensual navegable en tabla expandible.
+- `1e95ca5b` + `4bf6a12d` formato canónico (AdminTabShell + SuperadminChartCard) + 4 pestañas + fix de tokens de storefront que causaban "bordes negros" (`--surface-1/2/border` → `--surface-sunken/rule-base/rule-soft`).
 
-## ✅ Hecho 2026-06-25 (cont.) — Estilos UI + Automatización
-- `e872d7c5` — **Estilos UI con pickers visuales**: 7 dropdowns → tarjetas con mini-preview (helper `StylePicker` module-level en StoreCreativeMode); **`cartStyle` OCULTO** (control muerto). **Automatización**: panel agrupado (campos solo si enabled) + vista previa del popup. **Popup de bienvenida FUNCIONAL**: nuevo `components/store/TenantWelcomePopup.tsx` (dismissable X/click-fuera/Escape, localStorage, siempre visible en `?preview=true`) renderizado en `app/t/[slug]` cuando `welcomePopupEnabled`; **`footerText` wireado** en el footer. editorTheme lee welcomePopup*/footerText. Verificado e2e (pickers + popup renderiza en /t).
+## ✅ RESCUE superadmin (1 commit)
+`f078c1f5` `/superadmin/rescue` alineado al formato canónico (AdminTabShell + SuperadminChartCard). El hero vive en `RescueQueue` (client) porque AdminTabShell necesita `icon` (no serializable desde el server component de page.tsx).
 
-## 🔜 PRÓXIMA SESIÓN — INICIATIVA GRANDE: Page Builder (tipo WordPress/Elementor)
-**Brandon quiere convertir Modo Creativo en page builder visual** (click-para-editar, arrastrar-reordenar en vivo, profesional y completo). **Spec completo + arquitectura + 4 fases + gotchas → `docs/PAGE_BUILDER_PLAN.md`.** Arrancar con `/clear` + ese archivo + `/goal`. Fase 1+2 = 80% del feel. CAVEAT clave: `/t` tiene el orden de secciones hardcodeado → hay que hacerlo data-driven por `sections` ANTES del drag/drop.
+## ✅ CACAO admin (módulo BLAS agroforestal) — 6 commits + 1 revert
+- `c681db40` **Parte A** (Brandon OK): las 8 sub-vistas del tab Cacao agrupadas en 3 familias (Operación/Gestión/Inteligencia) con sub-nav; deep-link `?cacaoView=`. Config: `lib/cacao/cacao-views.ts`.
+- `39de4430` **Parte B** sub-sidebar de módulo → **REVERTIDA** (`b315eeb3`, a Brandon no le gustó). NOTA: `ModuleTabsContext` + `AdminSubSidebar` existen pero quedaron **sin cablear** (infra a medias); si se retoma, cablear con blast-radius contenido (solo el módulo que registre subTabs).
+- **Vista Mercado** (`CacaoNoticiero`): `2c5cca71` header "En vivo" + hero dual → `62b11c91` pase integral (precio local como hero, headings DS) → `609e08da` pestaña **Noticias** aparte (`CacaoNews`), gráfico ANTES de "a cuánto se vende", sub-nav sin labels de grupo → `584f28b3` "a cuánto se vende" compacto (1 línea/plaza) + **gráfico interactivo** (`onPointSelect` en CacaoPriceChart → escala S//kg local por precioPunto/precioHoy).
 
-### Menor (cuando se quiera): controles muertos restantes en Modo Creativo
-1. **Google Analytics + Meta Pixel** (analyticsId/pixelId muertos por-tenant) → inyectar `<Script>` GA4 + FB Pixel en `/t` (patrón `components/Analytics.tsx`). Alto valor marketing.
-2. Opcional: heroCTA/heroBadge (el hero de `/t` no los renderiza; sí TiendaHero del marketplace).
+## ⚠️ Dirty NO míos (pre-existían al iniciar)
+`.claude/hooks/*`, `.claude/settings.json`, `.gitignore`, `app/api/admin/store-customizer/`, `reports/*.png`, `setup-ibkr-mcp.sh`, `test-ibkr-login.sh`, MEMORIA/handoff previos. Revisar con Brandon.
 
-Sweep funcional restante (browser, qaadmin→mi-pollo): paneles automatización/avanzado/historial, viewports tablet/móvil, undo/redo, split, snapshots.
+## ▶️ Próxima ronda
+1. **Verificar cacao visualmente** (arriba) y ajustar según feedback.
+2. Superadmin pendiente del sweep: compliance, automations, banners (1511 LOC).
+3. Abrir PR del branch (17 commits).
+4. Gastos: si querés más, quedan ideas (FX histórico, comparador de meses).
 
-## Gotchas
-- **Commit que toca admin/store/app-t → `dangerouslyDisableSandbox`** (hook `tsx` → EPERM bajo sandbox → falso "Design token violations"). Ver [[reference_commit_sandbox_tsx_eperm]]. Commits solo-marketplace pasan sandboxed. tsc gate ~2min → `run_in_background`.
-- Auto-save (2s) del Modo Creativo **persiste** a la tienda real. mi-pollo quedó con "Selva Tropical" aplicado por testing (válido, no roto).
-- Cerrar Playwright antes de tsc (RAM; mem-guard bloquea Edit/Bash <500MB libre).
-
-## Pausado
-- OpenClaw VPS Hostinger (srv1774463.hstgr.cloud): modelo `llama-3.2-3b-instruct:free` falla ×50 "before producing content"; gateway sano. Pendiente SSH.
+Gates en TODOS los commits: tsc 0 · eslint 0. Datos de prueba (gastos/settings/impersonación) **limpiados** en cada verificación.
