@@ -164,9 +164,28 @@ export function useGastos() {
     [load],
   );
 
+  const saveFxRate = useCallback(
+    async (usdToPen: number) => {
+      setBusy(true);
+      setErr(null);
+      try {
+        await fetch(EXPENSES_URL, {
+          method: "PUT",
+          credentials: "include",
+          headers: csrfHeaders(JSON_HEADERS),
+          body: JSON.stringify({ usdToPen }),
+        });
+        await load();
+      } finally {
+        setBusy(false);
+      }
+    },
+    [load],
+  );
+
   return {
     expenses, summary, costs, budget, budgetByCategory, fxRate, mrrPen, payingTenants,
     loading, busy, err, setErr, load,
-    addExpense, updateExpense, removeExpense, saveBudget, saveBudgetByCategory,
+    addExpense, updateExpense, removeExpense, saveBudget, saveBudgetByCategory, saveFxRate,
   };
 }

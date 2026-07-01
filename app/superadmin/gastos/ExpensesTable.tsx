@@ -9,7 +9,7 @@
 import { useMemo, useState } from "react";
 import {
   Server, MessageSquare, Sparkles, CreditCard, Users, Megaphone, MoreHorizontal,
-  Search, ArrowUpDown, Layers, Pencil, Trash2,
+  Search, ArrowUpDown, Layers, Pencil, Trash2, DollarSign,
 } from "@buleje/design-system/icons";
 import { CAT_META, fmtPen, fmtUsd, type Expense } from "./gastos-helpers";
 
@@ -77,7 +77,7 @@ function Row({
 }
 
 export function ExpensesTable({
-  expenses, loading, busy, fxRate, onEdit, onDelete,
+  expenses, loading, busy, fxRate, onEdit, onDelete, onSaveFx,
 }: {
   expenses: Expense[];
   loading: boolean;
@@ -85,6 +85,7 @@ export function ExpensesTable({
   fxRate: number;
   onEdit: (x: Expense) => void;
   onDelete: (id: string) => void;
+  onSaveFx: (rate: number) => void;
 }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
@@ -199,11 +200,50 @@ export function ExpensesTable({
         </table>
       </div>
 
-      {hasUsd && (
-        <p className="text-sm text-[var(--text-tertiary)]">
-          Los montos en USD se normalizan a PEN al cambio S/ {fxRate.toFixed(2)} para los totales mensuales.
-        </p>
+      <FxRateEditor fxRate={fxRate} busy={busy} hasUsd={hasUsd} onSaveFx={onSaveFx} />
+    </div>
+  );
+}
+
+/** Editor inline del tipo de cambio USD→PEN con el que se normalizan los totales. */
+function FxRateEditor({
+  fxRate, busy, hasUsd, onSaveFx,
+}: {
+  fxRate: number; busy: boolean; hasUsd: boolean; onSaveFx: (rate: number) => void;
+}) {
+  const [draft, setDraft] = useState(fxRate.toFixed(2));
+  // Re-sembrar si cambia la tasa persistida (tras guardar / recargar).
+  const [seed, setSeed] = useState(fxRate);
+  if (seed !== fxRate) {
+    setSeed(fxRate);
+    setDraft(fxRate.toFixed(2));
+  }
+
+  const n = Number(draft);
+  const dirty = Number.isFinite(n) && n > 0 && Math.abs(n - fxRate) > 1e-9;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-tertiary)]">
+      <DollarSign className="h-4 w-4" />
+      <span>Cambio USD→S/:</span>
+      <input
+        className="h-9 w-20 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-right tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+        type="number"
+        step="0.01"
+        min="0.5"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+      />
+      {dirty && (
+        <button
+          onClick={() => onSaveFx(Math.round(n * 100) / 100)}
+          disabled={busy}
+          className="h-9 rounded-lg bg-[var(--accent)] px-3 text-sm font-bold text-[var(--accent-contrast,#fff)] disabled:opacity-50"
+        >
+          Guardar
+        </button>
       )}
+      {hasUsd && <span>· así se normalizan los montos en USD para los totales mensuales.</span>}
     </div>
   );
 }

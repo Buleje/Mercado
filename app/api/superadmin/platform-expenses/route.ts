@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
-import { PlatformExpensesDB, EXPENSE_CATEGORIES, USD_TO_PEN } from "@/lib/db/platform-expenses.db";
+import { PlatformExpensesDB, EXPENSE_CATEGORIES } from "@/lib/db/platform-expenses.db";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { logger } from "@/lib/logger";
 
@@ -37,11 +37,12 @@ export async function GET(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   try {
-    const [expenses, summary, budget, budgetByCategory] = await Promise.all([
+    const [expenses, summary, budget, budgetByCategory, fxRate] = await Promise.all([
       PlatformExpensesDB.list(),
       PlatformExpensesDB.summary(),
       PlatformSettingsDB.get<number>(BUDGET_KEY),
       PlatformSettingsDB.get<Record<string, number>>(BUDGET_BY_CAT_KEY),
+      PlatformExpensesDB.getFxRate(),
     ]);
     return NextResponse.json(
       {
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
         summary,
         budgetPen: budget ?? null,
         budgetByCategory: budgetByCategory ?? {},
-        fxRate: USD_TO_PEN,
+        fxRate,
         generatedAt: new Date().toISOString(),
       },
       { headers: NO_STORE },
@@ -101,6 +102,8 @@ export async function POST(req: NextRequest) {
 const BudgetSchema = z.object({
   budgetPen: z.number().min(0).max(10_000_000).nullable().optional(),
   budgetByCategory: z.record(z.string(), z.number().min(0).max(10_000_000)).optional(),
+  // Tipo de cambio USD→PEN: bounds sanos (el sol nunca ha estado fuera de ~2..6).
+  usdToPen: z.number().min(0.5).max(20).optional(),
 });
 
 export async function PUT(req: NextRequest) {
@@ -112,9 +115,12 @@ export async function PUT(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
 
   try {
-    const { budgetPen, budgetByCategory } = parsed.data;
+    const { budgetPen, budgetByCategory, usdToPen } = parsed.data;
     if (budgetPen !== undefined) {
       await PlatformSettingsDB.set(BUDGET_KEY, budgetPen, "superadmin");
+    }
+    if (usdToPen !== undefined) {
+      await PlatformExpensesDB.setFxRate(usdToPen);
     }
     if (budgetByCategory !== undefined) {
       // Solo categorías conocidas y topes > 0; descartar el resto para no

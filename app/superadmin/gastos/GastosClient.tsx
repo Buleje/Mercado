@@ -150,6 +150,7 @@ export default function GastosClient() {
               fxRate={g.fxRate}
               onEdit={(x) => setEditing(x)}
               onDelete={(id) => void g.removeExpense(id)}
+              onSaveFx={(rate) => void g.saveFxRate(rate)}
             />
           </div>
         </div>

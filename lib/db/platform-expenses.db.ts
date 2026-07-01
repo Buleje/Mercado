@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 
 /**
  * PlatformExpensesDB — gastos REALES de plataforma (Buleje SaaS), distinto de
@@ -9,10 +10,14 @@ import { toNumOrZero } from "@/lib/decimal-utils";
  * infra ESTIMADO (lib/cost-tracking). Brandon 2026-06-30.
  */
 
-// Tipo de cambio aprox para normalizar KPIs (muchas facturas son en USD:
+// Tipo de cambio USD→PEN para normalizar KPIs (muchas facturas son en USD:
 // Vercel, Supabase, Anthropic). Solo para agregados; el monto original se preserva.
-// Exportado para que la UI muestre con qué cambio se normalizó (transparencia).
-export const USD_TO_PEN = 3.75;
+// Editable desde la UI y persistido en PlatformSettings; este es el valor por
+// defecto/fallback. La UI muestra con qué cambio se normalizó (transparencia).
+export const DEFAULT_USD_TO_PEN = 3.75;
+const FX_KEY = "gastos.usdToPen";
+/** @deprecated usar getFxRate()/DEFAULT_USD_TO_PEN — se mantiene por compat. */
+export const USD_TO_PEN = DEFAULT_USD_TO_PEN;
 
 export const EXPENSE_CATEGORIES = [
   "infra",
@@ -52,8 +57,8 @@ export interface PlatformExpenseSummary {
 
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-function toPen(amount: number, currency: string): number {
-  return currency === "USD" ? Math.round(amount * USD_TO_PEN * 100) / 100 : amount;
+function toPen(amount: number, currency: string, fxRate: number): number {
+  return currency === "USD" ? Math.round(amount * fxRate * 100) / 100 : amount;
 }
 
 /** Normaliza un gasto recurrente a su costo MENSUAL (anual → /12). */
@@ -62,18 +67,21 @@ function monthlyize(amountPen: number, period: string): number {
   return amountPen; // mensual o vacío = se asume mensual
 }
 
-function mapRow(r: {
-  id: string;
-  concept: string;
-  category: string;
-  amount: Parameters<typeof toNumOrZero>[0];
-  currency: string;
-  date: Date;
-  recurring: boolean;
-  period: string;
-  vendor: string;
-  notes: string;
-}): PlatformExpenseRow {
+function mapRow(
+  r: {
+    id: string;
+    concept: string;
+    category: string;
+    amount: Parameters<typeof toNumOrZero>[0];
+    currency: string;
+    date: Date;
+    recurring: boolean;
+    period: string;
+    vendor: string;
+    notes: string;
+  },
+  fxRate: number,
+): PlatformExpenseRow {
   const amount = toNumOrZero(r.amount);
   return {
     id: r.id,
@@ -81,7 +89,7 @@ function mapRow(r: {
     category: r.category,
     amount,
     currency: r.currency,
-    amountPen: toPen(amount, r.currency),
+    amountPen: toPen(amount, r.currency, fxRate),
     date: r.date.toISOString(),
     recurring: r.recurring,
     period: r.period,
@@ -91,13 +99,25 @@ function mapRow(r: {
 }
 
 export const PlatformExpensesDB = {
-  async list(): Promise<PlatformExpenseRow[]> {
+  /** Tipo de cambio USD→PEN vigente (persistido en settings, con fallback al default). */
+  async getFxRate(): Promise<number> {
+    const v = await PlatformSettingsDB.get<number>(FX_KEY);
+    return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : DEFAULT_USD_TO_PEN;
+  },
+
+  async setFxRate(rate: number): Promise<void> {
+    await PlatformSettingsDB.set(FX_KEY, rate, "superadmin");
+  },
+
+  async list(fxRate?: number): Promise<PlatformExpenseRow[]> {
+    const fx = fxRate ?? (await this.getFxRate());
     const rows = await prisma.platformExpense.findMany({ orderBy: { date: "desc" } });
-    return rows.map(mapRow);
+    return rows.map((r) => mapRow(r, fx));
   },
 
   async summary(): Promise<PlatformExpenseSummary> {
-    const rows = await this.list();
+    const fx = await this.getFxRate();
+    const rows = await this.list(fx);
     const now = new Date();
     const monthKey = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -174,7 +194,7 @@ export const PlatformExpensesDB = {
         notes: data.notes,
       },
     });
-    return mapRow(row);
+    return mapRow(row, await this.getFxRate());
   },
 
   async update(
@@ -212,7 +232,7 @@ export const PlatformExpensesDB = {
     /* eslint-enable no-restricted-syntax */
     if (res.count === 0) return null;
     const row = await prisma.platformExpense.findFirst({ where: { id } });
-    return row ? mapRow(row) : null;
+    return row ? mapRow(row, await this.getFxRate()) : null;
   },
 
   async remove(id: string): Promise<void> {
