@@ -127,25 +127,59 @@ export const PlatformExpensesDB = {
   },
 
   /**
-   * Congela el gasto del MES EN CURSO en el historial (para que meses pasados
-   * dejen de proyectarse desde el recurrente de hoy). Idempotente: reescribe la
-   * entrada del mes actual con el run-rate vigente; los meses pasados no se tocan.
-   * Se llama tras cada alta/edición/baja. Poda a los últimos MAX_HISTORY_MONTHS.
+   * Gasto de un mes concreto = recurrente (siempre cuenta) + únicos con fecha en
+   * ese mes, por categoría. Misma fórmula que la tendencia de summary(); es lo que
+   * se congela como cierre del mes.
    */
-  async recordCurrentMonthSnapshot(): Promise<void> {
-    const s = await this.summary();
+  async monthTotals(monthKey: string): Promise<ExpenseSnapshot> {
+    const rows = await this.list();
+    const round = (n: number) => Math.round(n * 100) / 100;
+    const cat = new Map<string, number>();
+    for (const r of rows) {
+      const v = r.recurring
+        ? monthlyize(r.amountPen, r.period)
+        : monthKeyOf(new Date(r.date)) === monthKey
+          ? r.amountPen
+          : 0;
+      if (v > 0) cat.set(r.category, (cat.get(r.category) ?? 0) + v);
+    }
+    let total = 0;
+    const byCategory: Record<string, number> = {};
+    for (const [k, v] of cat) {
+      byCategory[k] = round(v);
+      total += v;
+    }
+    return { totalPen: round(total), byCategory };
+  },
+
+  /**
+   * Congela el gasto de `monthKey` en el historial (para que ese mes deje de
+   * proyectarse desde el recurrente de hoy). Idempotente: reescribe esa entrada;
+   * los demás meses no se tocan. Poda a los últimos MAX_HISTORY_MONTHS.
+   */
+  async recordSnapshot(monthKey: string): Promise<void> {
+    const snap = await this.monthTotals(monthKey);
     const history = await this.getHistory();
-    const thisKey = monthKeyOf(new Date());
-    history[thisKey] = {
-      totalPen: s.monthlyRunRatePen,
-      byCategory: Object.fromEntries(s.byCategory.map((c) => [c.category, c.amountPen])),
-    };
+    history[monthKey] = snap;
     const pruned: ExpenseHistory = Object.fromEntries(
       Object.entries(history)
         .sort(([a], [b]) => (a < b ? 1 : -1))
         .slice(0, MAX_HISTORY_MONTHS),
     );
     await PlatformSettingsDB.set(HISTORY_KEY, pruned, "superadmin");
+  },
+
+  /** Congela el MES EN CURSO. Se llama tras cada alta/edición/baja. */
+  async recordCurrentMonthSnapshot(): Promise<void> {
+    await this.recordSnapshot(monthKeyOf(new Date()));
+  },
+
+  /** Congela el MES ANTERIOR (cron mensual del día 1). Devuelve el mes cerrado. */
+  async closePreviousMonth(): Promise<string> {
+    const now = new Date();
+    const key = monthKeyOf(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    await this.recordSnapshot(key);
+    return key;
   },
 
   async list(fxRate?: number): Promise<PlatformExpenseRow[]> {
