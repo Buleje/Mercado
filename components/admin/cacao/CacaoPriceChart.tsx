@@ -8,7 +8,7 @@
  * para leer el precio en la moneda y el eslabón que le importa al acopiador.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from "recharts";
 import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown, Activity } from "@buleje/design-system/icons";
 import { CHACRA_CC_SECO_FACTOR } from "@/lib/cacao/cacao-precio-regional";
 
@@ -35,24 +35,42 @@ export default function CacaoPriceChart({
 }) {
   const [range, setRange] = useState<string>("3M");
   const [unit, setUnit] = useState<Unit>("usd");
+  const [showMA, setShowMA] = useState(false);
+  const [showForecast, setShowForecast] = useState(false);
+  const [show52, setShow52] = useState(false);
   const canSol = typeof usdPen === "number" && usdPen > 0;
   const isSol = unit === "sol" && canSol;
   const dec = isSol ? 2 : 0;
   const money = (v: number | null) => (isSol ? `S/ ${fmt(v, 2)}` : `USD ${fmt(v, 0)}`);
   const suffix = isSol ? "/kg" : "/t";
 
+  const dayLabel = (t: number) =>
+    new Date(t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" });
+
   const view = useMemo(() => {
     const days = RANGES.find((r) => r.key === range)?.days ?? 90;
     // factor de conversión a S//kg en chacra CC: (USD/t ÷ 1000) × FX × factor chacra.
     const factor = isSol && usdPen ? (usdPen / 1000) * CHACRA_CC_SECO_FACTOR : 1;
-    const data = series.slice(-Math.min(days, series.length)).map((p) => ({ t: p.t, c: p.c * factor, usd: p.c }));
+    const fullUnit = series.map((p) => p.c * factor); // serie completa (1 año) en la unidad
+    // SMA sobre la serie COMPLETA → el inicio de la ventana usa datos previos.
+    const smaAt = (w: number, i: number) => {
+      if (i < w - 1) return null;
+      let s = 0;
+      for (let j = i - w + 1; j <= i; j++) s += fullUnit[j];
+      return s / w;
+    };
+    const startIdx = Math.max(0, series.length - Math.min(days, series.length));
+    const data = series.slice(startIdx).map((p, k) => {
+      const gi = startIdx + k;
+      return { t: p.t, c: p.c * factor, usd: p.c, sma7: smaAt(7, gi), sma30: smaAt(30, gi) };
+    });
     if (data.length < 2) return null;
     const closes = data.map((p) => p.c);
     const first = closes[0], last = closes[closes.length - 1];
     const max = Math.max(...closes), min = Math.min(...closes);
     const avg = closes.reduce((a, b) => a + b, 0) / closes.length;
     const variacion = ((last - first) / first) * 100;
-    // volatilidad: desviación estándar de los retornos diarios (%) — invariante a la unidad
+    // volatilidad: desviación estándar de los retornos diarios — fracción y %.
     const rets: number[] = [];
     let up = 0, down = 0;
     for (let i = 1; i < closes.length; i++) {
@@ -61,19 +79,49 @@ export default function CacaoPriceChart({
       if (closes[i] > closes[i - 1]) up++; else if (closes[i] < closes[i - 1]) down++;
     }
     const meanR = rets.reduce((a, b) => a + b, 0) / (rets.length || 1);
-    const vol = Math.sqrt(rets.reduce((a, b) => a + (b - meanR) ** 2, 0) / (rets.length || 1)) * 100;
+    const volFrac = Math.sqrt(rets.reduce((a, b) => a + (b - meanR) ** 2, 0) / (rets.length || 1));
+    const vol = volFrac * 100;
+    // 52 semanas = serie completa (1 año)
+    const week52High = Math.max(...fullUnit), week52Low = Math.min(...fullUnit);
+    // máx/mín del período (para los marcadores)
+    const maxIdx = closes.indexOf(max), minIdx = closes.indexOf(min);
+    // Proyección: regresión lineal sobre la ventana + banda de volatilidad (√t).
+    const nWin = closes.length;
+    const mx = (nWin - 1) / 2;
+    let num = 0, den = 0;
+    for (let i = 0; i < nWin; i++) { num += (i - mx) * (closes[i] - avg); den += (i - mx) ** 2; }
+    const slope = den ? num / den : 0;
+    const lastT = data[data.length - 1].t;
+    const dayMs = nWin > 1 ? (lastT - data[0].t) / (nWin - 1) : 86_400_000;
+    const forecast = Array.from({ length: 30 }, (_, k) => {
+      const step = k + 1;
+      const mid = last + slope * step;
+      const band = last * volFrac * Math.sqrt(step);
+      return { t: lastT + step * dayMs, label: dayLabel(lastT + step * dayMs), fc: Math.max(0, mid), fcLo: Math.max(0, mid - band), fcHi: mid + band };
+    });
+    const chartData = data.map((p) => ({ ...p, label: dayLabel(p.t) }));
+    // Datos a renderizar: si hay proyección, ancla el último punto real y concatena.
+    const renderData = showForecast
+      ? [...chartData.map((p, i) => (i === chartData.length - 1 ? { ...p, fc: p.c, fcLo: p.c, fcHi: p.c } : p)), ...forecast]
+      : chartData;
+    // Dominio Y: base + overlays visibles (52sem / proyección) para que no se salgan.
     const span = max - min;
     const pad = isSol ? Math.max(0.15, span * 0.12) : Math.max(50, span * 0.1);
-    const yDomain: [number, number] = [Math.max(0, min - pad), max + pad];
-    const chartData = data.map((p) => ({ t: p.t, c: p.c, usd: p.usd, label: new Date(p.t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }) }));
-    return { chartData, first, last, max, min, avg, variacion, vol, up, down, n: data.length, yDomain };
-  }, [series, range, isSol, usdPen]);
+    let ylo = min - pad, yhi = max + pad;
+    if (show52) { ylo = Math.min(ylo, week52Low); yhi = Math.max(yhi, week52High); }
+    if (showForecast) {
+      ylo = Math.min(ylo, ...forecast.map((f) => f.fcLo));
+      yhi = Math.max(yhi, ...forecast.map((f) => f.fcHi));
+    }
+    const yDomain: [number, number] = [Math.max(0, ylo), yhi];
+    return { chartData, renderData, first, last, max, min, avg, variacion, vol, up, down, n: data.length, yDomain, week52High, week52Low, maxPoint: chartData[maxIdx], minPoint: chartData[minIdx] };
+  }, [series, range, isSol, usdPen, show52, showForecast]);
 
   const up = (view?.variacion ?? 0) > 0, down = (view?.variacion ?? 0) < 0;
   // Recharts pinta el SVG con valores concretos: resolvemos los tokens del DS a
   // su color real (las CSS var() no resuelven confiable como atributo SVG).
   const rootRef = useRef<HTMLDivElement>(null);
-  const [palette, setPalette] = useState({ up: "#00A0A0", down: "#ef4444", neutral: "#9ca3af", accent: "#00A0A0" });
+  const [palette, setPalette] = useState({ up: "#00A0A0", down: "#ef4444", neutral: "#9ca3af", accent: "#00A0A0", ma1: "#0ea5e9", ma2: "#f59e0b" });
   useEffect(() => {
     const cs = getComputedStyle(rootRef.current ?? document.body);
     const pick = (names: string[], fb: string) => { for (const n of names) { const v = cs.getPropertyValue(n).trim(); if (v) return v; } return fb; };
@@ -82,6 +130,8 @@ export default function CacaoPriceChart({
       down: pick(["--data-error-500", "--color-danger"], "#ef4444"),
       neutral: pick(["--text-tertiary"], "#9ca3af"),
       accent: pick(["--accent"], "#00A0A0"),
+      ma1: pick(["--data-info-500", "--data-info-600"], "#0ea5e9"),
+      ma2: pick(["--data-warning-500", "--data-warning-600"], "#f59e0b"),
     });
   }, []);
   const color = up ? palette.up : down ? palette.down : palette.neutral;
@@ -106,6 +156,11 @@ export default function CacaoPriceChart({
               <button key={r.key} type="button" onClick={() => setRange(r.key)} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${range === r.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{r.key}</button>
             ))}
           </div>
+          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+            <OverlayToggle active={showMA} onClick={() => setShowMA((v) => !v)} label="MM" title="Medias móviles 7 y 30 días" />
+            <OverlayToggle active={showForecast} onClick={() => setShowForecast((v) => !v)} label="Proy." title="Proyección a 30 días (regresión + banda)" />
+            <OverlayToggle active={show52} onClick={() => setShow52((v) => !v)} label="52sem" title="Máximo y mínimo de 52 semanas" />
+          </div>
         </div>
       </div>
 
@@ -127,13 +182,14 @@ export default function CacaoPriceChart({
           )}
           <ResponsiveContainer width="100%" height={240} minWidth={0}>
             <AreaChart
-              data={view.chartData}
+              data={view.renderData}
               margin={{ top: 5, right: 8, left: 0, bottom: 0 }}
               style={onPointSelect ? { cursor: "pointer" } : undefined}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onClick={((e: any) => {
                 const pl = e?.activePayload?.[0]?.payload;
-                if (pl && onPointSelect) onPointSelect(pl.usd as number, pl.t as number);
+                // Ignorar clicks sobre los puntos de proyección (no tienen precio real).
+                if (pl && pl.usd != null && onPointSelect) onPointSelect(pl.usd as number, pl.t as number);
               }) as never}
             >
               <defs>
@@ -147,12 +203,25 @@ export default function CacaoPriceChart({
               <YAxis domain={view.yDomain} tick={{ fontSize: 10 }} width={isSol ? 44 : 48} tickFormatter={(v: number) => fmt(v, dec)} stroke="rgba(107,114,128,0.4)" />
               <Tooltip
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={((v: number) => [`${money(Number(v))}${suffix}`, "Precio"]) as any}
+                formatter={((v: number, name: string) => [`${money(Number(v))}${suffix}`, name]) as any}
                 contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule-base)", background: "var(--surface-raised)", color: "var(--text-primary)", fontSize: "12px" }}
               />
               <ReferenceLine y={view.avg} stroke="var(--text-tertiary)" strokeDasharray="4 4" strokeOpacity={0.5} />
+              {show52 && (
+                <>
+                  <ReferenceLine y={view.week52High} stroke={palette.down} strokeDasharray="2 3" strokeOpacity={0.6} label={{ value: `máx 52s ${money(view.week52High)}`, position: "insideTopLeft", fontSize: 9, fill: palette.down }} />
+                  <ReferenceLine y={view.week52Low} stroke={palette.up} strokeDasharray="2 3" strokeOpacity={0.6} label={{ value: `mín 52s ${money(view.week52Low)}`, position: "insideBottomLeft", fontSize: 9, fill: palette.up }} />
+                </>
+              )}
               {selLabel && <ReferenceLine x={selLabel} stroke={palette.accent} strokeWidth={2} />}
-              <Area type="monotone" dataKey="c" stroke={color} strokeWidth={2} fill="url(#cacaoPriceGrad)" dot={false} activeDot={{ r: 5, fill: palette.accent }} />
+              <Area type="monotone" dataKey="c" name="Precio" stroke={color} strokeWidth={2} fill="url(#cacaoPriceGrad)" dot={false} activeDot={{ r: 5, fill: palette.accent }} />
+              {showMA && <Line type="monotone" dataKey="sma7" name="MM 7" stroke={palette.ma1} strokeWidth={1.5} dot={false} connectNulls />}
+              {showMA && <Line type="monotone" dataKey="sma30" name="MM 30" stroke={palette.ma2} strokeWidth={1.5} dot={false} connectNulls />}
+              {showForecast && <Line type="monotone" dataKey="fcHi" name="Proy. alta" stroke={palette.accent} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.5} dot={false} connectNulls />}
+              {showForecast && <Line type="monotone" dataKey="fcLo" name="Proy. baja" stroke={palette.accent} strokeWidth={1} strokeDasharray="2 3" strokeOpacity={0.5} dot={false} connectNulls />}
+              {showForecast && <Line type="monotone" dataKey="fc" name="Proyección" stroke={palette.accent} strokeWidth={2} strokeDasharray="5 4" dot={false} connectNulls />}
+              {view.maxPoint && <ReferenceDot x={view.maxPoint.label} y={view.max} r={4} fill={palette.up} stroke="var(--surface-raised)" strokeWidth={1.5} label={{ value: money(view.max), position: "top", fontSize: 9, fill: palette.up }} />}
+              {view.minPoint && <ReferenceDot x={view.minPoint.label} y={view.min} r={4} fill={palette.down} stroke="var(--surface-raised)" strokeWidth={1.5} label={{ value: money(view.min), position: "bottom", fontSize: 9, fill: palette.down }} />}
             </AreaChart>
           </ResponsiveContainer>
 
@@ -170,6 +239,19 @@ export default function CacaoPriceChart({
   );
 }
 
+function OverlayToggle({ active, onClick, label, title }: { active: boolean; onClick: () => void; label: string; title: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-pressed={active}
+      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${active ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+    >
+      {label}
+    </button>
+  );
+}
 function Metric({ label, value, hint, arrows }: { label: string; value: string; hint?: string; arrows?: boolean }) {
   return (
     <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-center">

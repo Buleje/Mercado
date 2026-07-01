@@ -30,7 +30,7 @@ interface Price {
   spark: number[]; series: { t: number; c: number }[];
 }
 interface NewsItem { title: string; source: string | null; link: string; pubDate: string | null }
-interface Market { price: Price | null; usdPen: number | null; pricePenPerKg: number | null; news: NewsItem[]; generatedAt: string }
+interface Market { price: Price | null; usdPen: number | null; pricePenPerKg: number | null; news: NewsItem[]; generatedAt: string; stale?: boolean; staleAt?: string | null }
 
 const fmt = (v: number | null, d = 0) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d }));
 function relTime(iso: string | null): string {
@@ -115,11 +115,19 @@ export default function CacaoNoticiero() {
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Agrícola · Mercado</p>
           <SectionTitle className="mt-0.5 flex items-center gap-2">
             Mercado del cacao
-            {p && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-900)]">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--data-success-600)]" /> En vivo
-              </span>
-            )}
+            {p &&
+              (data?.stale ? (
+                <span
+                  title={data.staleAt ? `Último dato: ${relTime(data.staleAt)}` : "Fuente no disponible"}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-900)]"
+                >
+                  <AlertCircle className="h-3 w-3" /> Desactualizado
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-900)]">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--data-success-600)]" /> En vivo
+                </span>
+              ))}
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
             Precio internacional, conversión a soles y noticias. Datos: ICE (Yahoo Finance) + Google Noticias{p ? ` · ${relTime(p.asOf) || "recién"}` : ""}.
@@ -150,9 +158,16 @@ export default function CacaoNoticiero() {
                       </button>
                     )}
                   </div>
-                  <div className="mt-1 flex flex-wrap items-end gap-2">
-                    <span className="font-mono text-4xl font-extrabold leading-none tabular-nums text-[var(--accent)]">S/ {effPen != null ? effPen.toFixed(2) : "—"}</span>
-                    <span className="mb-1.5 text-sm font-bold text-[var(--text-secondary)]">/ kg</span>
+                  <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
+                    <div className="flex flex-wrap items-end gap-2">
+                      <span className="font-mono text-4xl font-extrabold leading-none tabular-nums text-[var(--accent)]">S/ {effPen != null ? effPen.toFixed(2) : "—"}</span>
+                      <span className="mb-1.5 text-sm font-bold text-[var(--text-secondary)]">/ kg</span>
+                    </div>
+                    {!sel && p.spark && p.spark.length > 1 && (
+                      <div className="mb-0.5" title="Tendencia reciente del precio ICE">
+                        <Sparkline data={p.spark} />
+                      </div>
+                    )}
                   </div>
                   <p className="mt-1.5 text-xs text-[var(--text-secondary)]">Convertido del precio ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD. En chacra suele cerrarse algo por debajo (flete + margen del acopiador).</p>
                 </div>
@@ -221,6 +236,28 @@ export default function CacaoNoticiero() {
   );
 }
 
+/** Sparkline SVG liviano (sin recharts) para el hero — tendencia reciente del ICE. */
+function Sparkline({ data }: { data: number[] }) {
+  if (!data || data.length < 2) return null;
+  const w = 132, h = 34;
+  const min = Math.min(...data), max = Math.max(...data), span = max - min || 1;
+  const pts = data
+    .map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / span) * h}`)
+    .join(" ");
+  const upTrend = data[data.length - 1] >= data[0];
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="overflow-visible">
+      <polyline
+        points={pts}
+        fill="none"
+        strokeWidth={1.75}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        style={{ stroke: upTrend ? "var(--data-success-500)" : "var(--data-error-500)" }}
+      />
+    </svg>
+  );
+}
 function Cell({ label, value }: { label: string; value: string }) {
   return <div><div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</div><div className="mt-0.5 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{value}</div></div>;
 }

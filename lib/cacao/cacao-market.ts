@@ -37,9 +37,14 @@ export interface CacaoMarket {
   pricePenPerKg: number | null; // referencia: S/ por kg seco (precio/1000 * fx)
   news: CacaoNewsItem[];
   generatedAt: string;
+  stale?: boolean; // true = el precio viene del último valor conocido (fuente caída)
+  staleAt?: string | null; // ISO de cuándo se obtuvo ese último precio
 }
 
 let cache: { at: number; data: CacaoMarket } | null = null;
+// Último precio conocido (para degradar con gracia si la fuente cae). In-memory:
+// se pierde en cold start serverless, pero cubre caídas transitorias de la fuente.
+let lastGood: { price: CacaoPrice; usdPen: number | null; pricePenPerKg: number | null; at: number } | null = null;
 
 async function safeFetch(url: string, timeoutMs = 9000): Promise<Response | null> {
   try {
@@ -158,7 +163,20 @@ export async function getCacaoMarket(force = false): Promise<CacaoMarket> {
   const [price, usdPen, news] = await Promise.all([fetchCocoaPrice(), fetchUsdPen(), fetchNews()]);
   const pricePenPerKg =
     price && usdPen ? Math.round((price.value / 1000) * usdPen * 100) / 100 : null;
-  const data: CacaoMarket = { price, usdPen, pricePenPerKg, news, generatedAt: new Date().toISOString() };
+  if (price) lastGood = { price, usdPen, pricePenPerKg, at: Date.now() };
+  // Fuente caída (price=null) pero hay último conocido → degradar con gracia.
+  const data: CacaoMarket =
+    !price && lastGood
+      ? {
+          price: lastGood.price,
+          usdPen: lastGood.usdPen,
+          pricePenPerKg: lastGood.pricePenPerKg,
+          news,
+          generatedAt: new Date().toISOString(),
+          stale: true,
+          staleAt: new Date(lastGood.at).toISOString(),
+        }
+      : { price, usdPen, pricePenPerKg, news, generatedAt: new Date().toISOString(), stale: false, staleAt: null };
   cache = { at: Date.now(), data };
   return data;
 }
