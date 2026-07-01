@@ -47,6 +47,9 @@ export default function CacaoNoticiero() {
   const [data, setData] = useState<Market | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Punto del gráfico seleccionado (click): fija ese precio histórico en los KPIs
+  // y en "a cuánto se vende". null = precio de hoy (en vivo).
+  const [sel, setSel] = useState<{ usd: number; t: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -72,6 +75,15 @@ export default function CacaoNoticiero() {
     if (pos52 != null) insights.push(pos52 >= 80 ? `Cerca de su máximo de 52 semanas (USD ${fmt(p.weekHigh52)}/t) — precios altos para el productor.` : pos52 <= 20 ? `Cerca de su mínimo de 52 semanas (USD ${fmt(p.weekLow52)}/t) — momento de compra barata.` : `En la zona media de su rango anual (${pos52}% entre mín y máx de 52 sem).`);
     if (data?.pricePenPerKg != null) insights.push(`Referencia internacional ≈ S/ ${data.pricePenPerKg.toFixed(2)}/kg seco (FX S/ ${data?.usdPen?.toFixed(2)}/USD). Tu precio en chacra suele ir por debajo (flete + margen).`);
   }
+
+  // Precio efectivo: el del punto del gráfico seleccionado, o el de hoy. El local
+  // se escala por la razón de precios (selUsd / hoyUsd) sobre el S//kg de hoy.
+  const baseUsd = p?.value ?? null;
+  const effUsd = sel?.usd ?? baseUsd;
+  const effPen = sel && baseUsd && baseUsd > 0 && data?.pricePenPerKg != null
+    ? (data.pricePenPerKg * sel.usd) / baseUsd
+    : (data?.pricePenPerKg ?? null);
+  const selDate = sel ? new Date(sel.t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : null;
 
   return (
     <div className="space-y-6">
@@ -105,9 +117,18 @@ export default function CacaoNoticiero() {
               <>
                 {/* HERO: referencia local en soles — el número que le importa al productor */}
                 <div className="rounded-xl bg-[var(--accent-soft)] p-4">
-                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">Referencia local · grano seco</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                      {sel ? `Precio del ${selDate}` : "Referencia local · grano seco"}
+                    </p>
+                    {sel && (
+                      <button type="button" onClick={() => setSel(null)} className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-raised)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95">
+                        <RefreshCw className="h-3 w-3" /> Volver a hoy
+                      </button>
+                    )}
+                  </div>
                   <div className="mt-1 flex flex-wrap items-end gap-2">
-                    <span className="font-mono text-4xl font-extrabold leading-none tabular-nums text-[var(--accent)]">S/ {data.pricePenPerKg != null ? data.pricePenPerKg.toFixed(2) : "—"}</span>
+                    <span className="font-mono text-4xl font-extrabold leading-none tabular-nums text-[var(--accent)]">S/ {effPen != null ? effPen.toFixed(2) : "—"}</span>
                     <span className="mb-1.5 text-sm font-bold text-[var(--text-secondary)]">/ kg</span>
                   </div>
                   <p className="mt-1.5 text-xs text-[var(--text-secondary)]">Convertido del precio ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD. En chacra suele cerrarse algo por debajo (flete + margen del acopiador).</p>
@@ -118,14 +139,16 @@ export default function CacaoNoticiero() {
                   <div>
                     <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mundo · ICE New York</p>
                     <div className="mt-0.5 flex flex-wrap items-end gap-2">
-                      <span className="font-mono text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">USD {fmt(p.value)}</span>
+                      <span className="font-mono text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">USD {fmt(effUsd)}</span>
                       <span className="mb-0.5 text-xs text-[var(--text-tertiary)]">/ tonelada</span>
                     </div>
                   </div>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
-                    {up ? <TrendingUp className="h-4 w-4" /> : down ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-                    {p.changePct != null ? `${up ? "+" : ""}${p.changePct}% hoy` : "—"}
-                  </span>
+                  {!sel && (
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+                      {up ? <TrendingUp className="h-4 w-4" /> : down ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                      {p.changePct != null ? `${up ? "+" : ""}${p.changePct}% hoy` : "—"}
+                    </span>
+                  )}
                 </div>
 
                 {/* Rango 52 semanas */}
@@ -155,11 +178,20 @@ export default function CacaoNoticiero() {
         </div>
       )}
 
-      {/* Flujo de precio (gráfico) — primero */}
-      {p?.series && p.series.length > 1 && <CacaoPriceChart series={p.series} usdPen={data?.usdPen ?? null} />}
+      {/* Flujo de precio (gráfico interactivo) — primero. Click en un punto fija ese
+          precio histórico en el hero y en "a cuánto se vende". */}
+      {p?.series && p.series.length > 1 && (
+        <CacaoPriceChart
+          series={p.series}
+          usdPen={data?.usdPen ?? null}
+          onPointSelect={(usd, t) => setSel({ usd, t })}
+          selectedT={sel?.t ?? null}
+        />
+      )}
 
-      {/* A cuánto se vende por plaza — compacto, debajo del gráfico */}
-      {data && <CacaoPreciosRegionales refSolKg={data.pricePenPerKg} usdPen={data.usdPen} />}
+      {/* A cuánto se vende por plaza — compacto, debajo del gráfico. Refleja el
+          precio efectivo (hoy o el punto seleccionado). */}
+      {data && <CacaoPreciosRegionales refSolKg={effPen} usdPen={data.usdPen} />}
 
       <CacaoMiPrecio marketRefSolKg={data?.pricePenPerKg ?? null} />
     </div>

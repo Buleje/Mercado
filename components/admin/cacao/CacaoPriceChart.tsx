@@ -20,7 +20,19 @@ type Unit = "usd" | "sol";
 
 const fmt = (v: number | null, d = 0) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d }));
 
-export default function CacaoPriceChart({ series, usdPen = null }: { series: PricePoint[]; usdPen?: number | null }) {
+export default function CacaoPriceChart({
+  series,
+  usdPen = null,
+  onPointSelect,
+  selectedT = null,
+}: {
+  series: PricePoint[];
+  usdPen?: number | null;
+  /** Click en un punto del gráfico → devuelve el USD/t y el timestamp de ese día. */
+  onPointSelect?: (usdPerTonne: number, t: number) => void;
+  /** Timestamp del punto seleccionado (para marcarlo). null = ninguno. */
+  selectedT?: number | null;
+}) {
   const [range, setRange] = useState<string>("3M");
   const [unit, setUnit] = useState<Unit>("usd");
   const canSol = typeof usdPen === "number" && usdPen > 0;
@@ -33,7 +45,7 @@ export default function CacaoPriceChart({ series, usdPen = null }: { series: Pri
     const days = RANGES.find((r) => r.key === range)?.days ?? 90;
     // factor de conversión a S//kg en chacra CC: (USD/t ÷ 1000) × FX × factor chacra.
     const factor = isSol && usdPen ? (usdPen / 1000) * CHACRA_CC_SECO_FACTOR : 1;
-    const data = series.slice(-Math.min(days, series.length)).map((p) => ({ t: p.t, c: p.c * factor }));
+    const data = series.slice(-Math.min(days, series.length)).map((p) => ({ t: p.t, c: p.c * factor, usd: p.c }));
     if (data.length < 2) return null;
     const closes = data.map((p) => p.c);
     const first = closes[0], last = closes[closes.length - 1];
@@ -53,7 +65,7 @@ export default function CacaoPriceChart({ series, usdPen = null }: { series: Pri
     const span = max - min;
     const pad = isSol ? Math.max(0.15, span * 0.12) : Math.max(50, span * 0.1);
     const yDomain: [number, number] = [Math.max(0, min - pad), max + pad];
-    const chartData = data.map((p) => ({ t: p.t, c: p.c, label: new Date(p.t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }) }));
+    const chartData = data.map((p) => ({ t: p.t, c: p.c, usd: p.usd, label: new Date(p.t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }) }));
     return { chartData, first, last, max, min, avg, variacion, vol, up, down, n: data.length, yDomain };
   }, [series, range, isSol, usdPen]);
 
@@ -61,7 +73,7 @@ export default function CacaoPriceChart({ series, usdPen = null }: { series: Pri
   // Recharts pinta el SVG con valores concretos: resolvemos los tokens del DS a
   // su color real (las CSS var() no resuelven confiable como atributo SVG).
   const rootRef = useRef<HTMLDivElement>(null);
-  const [palette, setPalette] = useState({ up: "#00A0A0", down: "#ef4444", neutral: "#9ca3af" });
+  const [palette, setPalette] = useState({ up: "#00A0A0", down: "#ef4444", neutral: "#9ca3af", accent: "#00A0A0" });
   useEffect(() => {
     const cs = getComputedStyle(rootRef.current ?? document.body);
     const pick = (names: string[], fb: string) => { for (const n of names) { const v = cs.getPropertyValue(n).trim(); if (v) return v; } return fb; };
@@ -69,9 +81,11 @@ export default function CacaoPriceChart({ series, usdPen = null }: { series: Pri
       up: pick(["--data-success-500", "--data-success-600"], "#00A0A0"),
       down: pick(["--data-error-500", "--color-danger"], "#ef4444"),
       neutral: pick(["--text-tertiary"], "#9ca3af"),
+      accent: pick(["--accent"], "#00A0A0"),
     });
   }, []);
   const color = up ? palette.up : down ? palette.down : palette.neutral;
+  const selLabel = selectedT != null ? view?.chartData.find((d) => d.t === selectedT)?.label ?? null : null;
 
   return (
     <div ref={rootRef} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
@@ -108,8 +122,20 @@ export default function CacaoPriceChart({ series, usdPen = null }: { series: Pri
             {isSol && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">estimado en chacra CC</span>}
           </div>
 
+          {onPointSelect && (
+            <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Tocá un punto del gráfico para fijar ese precio en los indicadores de arriba.</p>
+          )}
           <ResponsiveContainer width="100%" height={240} minWidth={0}>
-            <AreaChart data={view.chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={view.chartData}
+              margin={{ top: 5, right: 8, left: 0, bottom: 0 }}
+              style={onPointSelect ? { cursor: "pointer" } : undefined}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onClick={((e: any) => {
+                const pl = e?.activePayload?.[0]?.payload;
+                if (pl && onPointSelect) onPointSelect(pl.usd as number, pl.t as number);
+              }) as never}
+            >
               <defs>
                 <linearGradient id="cacaoPriceGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={color} stopOpacity={0.28} />
@@ -125,7 +151,8 @@ export default function CacaoPriceChart({ series, usdPen = null }: { series: Pri
                 contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule-base)", background: "var(--surface-raised)", color: "var(--text-primary)", fontSize: "12px" }}
               />
               <ReferenceLine y={view.avg} stroke="var(--text-tertiary)" strokeDasharray="4 4" strokeOpacity={0.5} />
-              <Area type="monotone" dataKey="c" stroke={color} strokeWidth={2} fill="url(#cacaoPriceGrad)" dot={false} activeDot={{ r: 4, fill: color }} />
+              {selLabel && <ReferenceLine x={selLabel} stroke={palette.accent} strokeWidth={2} />}
+              <Area type="monotone" dataKey="c" stroke={color} strokeWidth={2} fill="url(#cacaoPriceGrad)" dot={false} activeDot={{ r: 5, fill: palette.accent }} />
             </AreaChart>
           </ResponsiveContainer>
 
