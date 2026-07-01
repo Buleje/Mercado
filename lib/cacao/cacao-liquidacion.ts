@@ -5,6 +5,7 @@
  * Mismo lenguaje visual que cacao-reporte.ts (verde #166534, tabular-nums).
  */
 import { ESTADO_PAGO_LABEL, type CacaoEstadoPago } from "./cacao-quality";
+import { openPrintable } from "./cacao-print";
 
 const esc = (s: unknown) =>
   String(s ?? "").replace(
@@ -48,12 +49,7 @@ const HEAD_STYLE = `
   @media print{body{padding:0}@page{margin:14mm}}`;
 
 function openPrint(html: string) {
-  if (typeof window === "undefined") return;
-  const w = window.open("", "_blank", "width=860,height=900");
-  if (!w) return;
-  w.document.write(html);
-  w.document.close();
-  w.focus();
+  openPrintable(html);
 }
 
 export interface VentaReporteRow {

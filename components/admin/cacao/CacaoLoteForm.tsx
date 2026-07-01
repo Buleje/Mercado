@@ -18,6 +18,8 @@ import {
   Users,
   Droplets,
   AlertTriangle,
+  WifiOff,
+  RotateCcw,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -46,9 +48,15 @@ interface Props {
 const I =
   "w-full h-11 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20 placeholder:text-[var(--text-tertiary)]";
 
+// El acopio se registra en el campo, con señal mala. Si falla la red al guardar,
+// el lote se persiste como borrador local para no perder los datos capturados.
+const DRAFT_KEY = "cacao-lote-draft-v1";
+
 export default function CacaoLoteForm({ onClose, onSaved }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [online, setOnline] = useState(true);
+  const [pendingDraft, setPendingDraft] = useState(false);
 
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
   const [productorId, setProductorId] = useState<string | null>(null);
@@ -84,6 +92,24 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
   useEffect(() => {
     loadProducers();
   }, [loadProducers]);
+
+  // Estado de conexión + detección de borrador pendiente de un guardado fallido.
+  useEffect(() => {
+    if (typeof navigator !== "undefined") setOnline(navigator.onLine);
+    try {
+      setPendingDraft(!!localStorage.getItem(DRAFT_KEY));
+    } catch {
+      /* localStorage puede no estar disponible */
+    }
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = pq.trim().toLowerCase();
@@ -127,32 +153,30 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
 
   const isValid = Number(pesoKg) > 0;
 
-  async function submit(e: React.FormEvent, keepOpen = false) {
-    e.preventDefault();
-    if (submitting || !isValid) {
-      if (!isValid) setError("Ingresá el peso en kg.");
-      return;
-    }
+  function buildPayload() {
+    return {
+      fecha: new Date(fecha).toISOString(),
+      productorId,
+      productorNombre: productorNombre.trim() || null,
+      variedad: variedad || null,
+      tipoGrano,
+      pesoKg: Number(pesoKg),
+      humedadPct: humedadPct ? Number(humedadPct) : null,
+      precioPorKg: precioPorKg ? Number(precioPorKg) : null,
+      premioPorKg: premioPorKg ? Number(premioPorKg) : null,
+      cutGranos: cutGranos ? Number(cutGranos) : null,
+      pctBienFermentado: cut.pctBienFermentado,
+      pctVioleta: cut.pctVioleta,
+      pctPizarroso: cut.pctPizarroso,
+      pctMohoso: cut.pctMohoso,
+      observaciones: observaciones.trim() || null,
+    };
+  }
+
+  async function sendLote(payload: Record<string, unknown>, keepOpen: boolean) {
     setSubmitting(true);
     setError(null);
     try {
-      const payload = {
-        fecha: new Date(fecha).toISOString(),
-        productorId,
-        productorNombre: productorNombre.trim() || null,
-        variedad: variedad || null,
-        tipoGrano,
-        pesoKg: Number(pesoKg),
-        humedadPct: humedadPct ? Number(humedadPct) : null,
-        precioPorKg: precioPorKg ? Number(precioPorKg) : null,
-        premioPorKg: premioPorKg ? Number(premioPorKg) : null,
-        cutGranos: cutGranos ? Number(cutGranos) : null,
-        pctBienFermentado: cut.pctBienFermentado,
-        pctVioleta: cut.pctVioleta,
-        pctPizarroso: cut.pctPizarroso,
-        pctMohoso: cut.pctMohoso,
-        observaciones: observaciones.trim() || null,
-      };
       const r = await fetch("/api/admin/cacao?type=lote", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
@@ -160,6 +184,12 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
         body: JSON.stringify(payload),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        /* localStorage best-effort */
+      }
+      setPendingDraft(false);
       if (keepOpen) {
         setPesoKg("");
         setHumedadPct("");
@@ -173,9 +203,50 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
         onSaved({ keepOpen: true });
       } else onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // Fallo de RED (no de servidor) → guardar borrador para no perder el acopio.
+      const isNetwork =
+        err instanceof TypeError || (typeof navigator !== "undefined" && !navigator.onLine);
+      if (isNetwork) {
+        try {
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+          setPendingDraft(true);
+        } catch {
+          /* localStorage best-effort */
+        }
+        setError(
+          "Sin conexión: guardamos el lote como borrador en este dispositivo. Reintentá cuando vuelva la señal.",
+        );
+      } else {
+        setError(err instanceof Error ? err.message : String(err));
+      }
       setSubmitting(false);
     }
+  }
+
+  async function submit(e: React.FormEvent, keepOpen = false) {
+    e.preventDefault();
+    if (submitting || !isValid) {
+      if (!isValid) setError("Ingresá el peso en kg.");
+      return;
+    }
+    await sendLote(buildPayload(), keepOpen);
+  }
+
+  function retryDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) sendLote(JSON.parse(raw), false);
+    } catch {
+      setError("No se pudo leer el borrador guardado.");
+    }
+  }
+  function discardDraft() {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* localStorage best-effort */
+    }
+    setPendingDraft(false);
   }
 
   return (
@@ -209,6 +280,38 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
           <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]">
             {/* ── Columna formulario ── */}
             <form id="cacao-lote-form" onSubmit={submit} className="space-y-5 px-5 py-5">
+              {!online && (
+                <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-300)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-900)]">
+                  <WifiOff className="h-4 w-4 shrink-0" />
+                  Sin conexión. Podés seguir cargando; si al guardar falla la red, el lote queda como
+                  borrador y lo reintentás.
+                </div>
+              )}
+              {pendingDraft && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--text-primary)]">
+                  <span className="flex items-center gap-2 font-medium">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+                    Hay un lote sin guardar de un intento anterior.
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={retryDraft}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" /> Reintentar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={discardDraft}
+                      className="inline-flex h-9 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                    >
+                      Descartar
+                    </button>
+                  </span>
+                </div>
+              )}
               {error && (
                 <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
                   {error}

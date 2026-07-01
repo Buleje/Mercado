@@ -448,12 +448,12 @@ export default function CacaoAcopio() {
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
                   <Th>Lote</Th>
-                  <Th>Fecha</Th>
+                  <Th className="hidden sm:table-cell">Fecha</Th>
                   <Th>Productor</Th>
-                  <Th>Variedad</Th>
+                  <Th className="hidden md:table-cell">Variedad</Th>
                   <Th className="text-right">Peso (kg)</Th>
-                  <Th className="text-right">Humedad</Th>
-                  <Th>Grado</Th>
+                  <Th className="hidden text-right sm:table-cell">Humedad</Th>
+                  <Th className="hidden md:table-cell">Grado</Th>
                   <Th className="text-right">Pagado</Th>
                   <Th className="text-right">Acción</Th>
                 </tr>
@@ -468,7 +468,7 @@ export default function CacaoAcopio() {
                       className={`cursor-pointer border-t border-[var(--rule-soft)] transition hover:bg-[var(--surface-sunken)] ${annul ? "opacity-50" : ""}`}
                     >
                       <Td>
-                        <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
+                        <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
                           {l.loteCode}
                         </span>
                         {annul && (
@@ -477,7 +477,9 @@ export default function CacaoAcopio() {
                           </span>
                         )}
                       </Td>
-                      <Td className="text-[var(--text-secondary)]">{fdate(l.fecha)}</Td>
+                      <Td className="hidden text-[var(--text-secondary)] sm:table-cell">
+                        {fdate(l.fecha)}
+                      </Td>
                       <Td className="font-medium text-[var(--text-primary)]">
                         {l.productorNombre ?? "—"}
                         {l.productorNombre && !l.productorId && (
@@ -489,7 +491,7 @@ export default function CacaoAcopio() {
                           </span>
                         )}
                       </Td>
-                      <Td className="text-[var(--text-secondary)]">
+                      <Td className="hidden text-[var(--text-secondary)] md:table-cell">
                         {l.variedad ?? "—"}{" "}
                         <span className="text-xs text-[var(--text-tertiary)]">
                           {l.tipoGrano === "humedo" ? "(húmedo)" : ""}
@@ -498,7 +500,7 @@ export default function CacaoAcopio() {
                       <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                         {n2(l.pesoKg)}
                       </Td>
-                      <Td className="text-right font-mono tabular-nums">
+                      <Td className="hidden text-right font-mono tabular-nums sm:table-cell">
                         <span
                           className={
                             l.humedadPct && Number(l.humedadPct) > 7
@@ -509,7 +511,7 @@ export default function CacaoAcopio() {
                           {l.humedadPct ? `${Number(l.humedadPct).toFixed(1)}%` : "—"}
                         </span>
                       </Td>
-                      <Td>
+                      <Td className="hidden md:table-cell">
                         <GradoBadge grado={l.grado} />
                       </Td>
                       <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">

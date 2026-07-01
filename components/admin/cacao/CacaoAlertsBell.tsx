@@ -52,7 +52,10 @@ export default function CacaoAlertsBell({ onNavigate }: { onNavigate: (view: Cac
     try {
       const [ra, rm] = await Promise.all([
         fetch("/api/admin/cacao?view=alerts", { credentials: "include" }),
-        fetch("/api/admin/cacao/market", { credentials: "include" }).catch(() => null),
+        fetch("/api/admin/cacao/market", { credentials: "include" }).catch((err) => {
+          console.warn("[cacao] campana: precio de mercado no disponible", err);
+          return null;
+        }),
       ]);
       if (ra.ok) {
         const d = await ra.json();

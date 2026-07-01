@@ -33,6 +33,7 @@ import {
   type CacaoGrado,
 } from "@/lib/cacao/cacao-quality";
 import { printCacaoLiquidacion } from "@/lib/cacao/cacao-liquidacion";
+import { shareCacaoText } from "@/lib/cacao/cacao-print";
 
 interface Producer {
   id: string;
@@ -535,6 +536,26 @@ export default function CacaoProducerDrawer({
               <Power className="h-4 w-4" /> {inactive ? "Activar" : "Desactivar"}
             </button>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!producer || !agg}
+                onClick={() => {
+                  if (!producer || !agg) return;
+                  const t = [
+                    `*Estado de cuenta — ${producer.nombre}*`,
+                    `Kg comprados: ${n2(agg.totalKg)} kg`,
+                    `A pagar: S/ ${n2(agg.totalPagado)}`,
+                    `Pagado: S/ ${n2(agg.montoPagado)}`,
+                    `Saldo: S/ ${n2(agg.saldo)}`,
+                    `Lotes: ${agg.loteCount}`,
+                  ].join("\n");
+                  shareCacaoText(`Estado de cuenta — ${producer.nombre}`, t);
+                }}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-400)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Compartir
+              </button>
               <button
                 type="button"
                 disabled={lotes.length === 0}

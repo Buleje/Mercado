@@ -100,8 +100,14 @@ export default function CacaoInventario() {
     try {
       const [ri, rm, ra] = await Promise.all([
         fetch("/api/admin/cacao?view=inventory", { credentials: "include" }),
-        fetch("/api/admin/cacao/market", { credentials: "include" }).catch(() => null),
-        fetch("/api/admin/cacao?view=ajustes", { credentials: "include" }).catch(() => null),
+        fetch("/api/admin/cacao/market", { credentials: "include" }).catch((err) => {
+          console.warn("[cacao] inventario: precio de mercado no disponible", err);
+          return null;
+        }),
+        fetch("/api/admin/cacao?view=ajustes", { credentials: "include" }).catch((err) => {
+          console.warn("[cacao] inventario: ajustes no disponibles", err);
+          return null;
+        }),
       ]);
       if (!ri.ok) throw new Error(`HTTP ${ri.status}`);
       setInv((await ri.json()).inventory ?? null);
