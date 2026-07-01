@@ -18,7 +18,13 @@ const mesLabel = (m: string) => { const [y, mm] = m.split("-"); return `${MESES[
 const sol = (v: number | null, d = 2) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d }));
 const lastOf = (serie: Punto[], k: "precioCompra" | "precioVenta") => { for (let i = serie.length - 1; i >= 0; i--) { const v = serie[i][k]; if (v != null) return v; } return null; };
 
-export default function CacaoMiPrecio({ marketRefSolKg = null }: { marketRefSolKg?: number | null }) {
+export default function CacaoMiPrecio({
+  marketRefSolKg = null,
+  marketMensual = [],
+}: {
+  marketRefSolKg?: number | null;
+  marketMensual?: { mes: string; solKg: number }[];
+}) {
   const [serie, setSerie] = useState<Punto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -53,19 +59,25 @@ export default function CacaoMiPrecio({ marketRefSolKg = null }: { marketRefSolK
     const compra = lastOf(serie, "precioCompra");
     const venta = lastOf(serie, "precioVenta");
     const margen = compra != null && venta != null && compra > 0 ? ((venta - compra) / compra) * 100 : null;
-    const chartData = serie.map((p) => ({ ...p, label: mesLabel(p.mes) }));
+    // Mercado por MES (matcheado a cada punto) vs. una línea plana de hoy.
+    const mMap = new Map(marketMensual.map((m) => [m.mes, m.solKg]));
+    const chartData = serie.map((p) => ({ ...p, label: mesLabel(p.mes), precioMercado: mMap.get(p.mes) ?? null }));
     const hasVenta = serie.some((p) => p.precioVenta != null);
-    // Dominio Y que incluye compra, venta Y la referencia de mercado, con padding
-    // para que la línea punteada del mercado siempre quede visible.
+    const hasMercadoMensual = chartData.some((p) => p.precioMercado != null);
+    // Dominio Y que incluye compra, venta y el mercado (mensual o plano), con padding.
     const vals: number[] = [];
-    for (const p of serie) { if (p.precioCompra != null) vals.push(p.precioCompra); if (p.precioVenta != null) vals.push(p.precioVenta); }
-    if (marketRefSolKg != null) vals.push(marketRefSolKg);
+    for (const p of chartData) {
+      if (p.precioCompra != null) vals.push(p.precioCompra);
+      if (p.precioVenta != null) vals.push(p.precioVenta);
+      if (p.precioMercado != null) vals.push(p.precioMercado);
+    }
+    if (marketRefSolKg != null && !hasMercadoMensual) vals.push(marketRefSolKg);
     const lo = vals.length ? Math.min(...vals) : 0;
     const hi = vals.length ? Math.max(...vals) : 1;
     const pad = Math.max(0.5, (hi - lo) * 0.12);
     const yDomain: [number, number] = [Math.max(0, Math.floor(lo - pad)), Math.ceil(hi + pad)];
-    return { compra, venta, margen, chartData, hasVenta, yDomain };
-  }, [serie, marketRefSolKg]);
+    return { compra, venta, margen, chartData, hasVenta, hasMercadoMensual, yDomain };
+  }, [serie, marketRefSolKg, marketMensual]);
 
   return (
     <div ref={rootRef} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
@@ -104,7 +116,11 @@ export default function CacaoMiPrecio({ marketRefSolKg = null }: { marketRefSolK
                 contentStyle={{ borderRadius: "12px", border: "1px solid var(--rule-base)", background: "var(--surface-raised)", color: "var(--text-primary)", fontSize: "12px" }}
               />
               <Legend wrapperStyle={{ fontSize: "11px" }} />
-              {marketRefSolKg != null && <ReferenceLine y={marketRefSolKg} stroke={palette.market} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "Mercado", position: "insideTopRight", fontSize: 10, fill: palette.market }} />}
+              {stats.hasMercadoMensual ? (
+                <Line type="monotone" dataKey="precioMercado" name="Mercado" stroke={palette.market} strokeWidth={1.5} strokeDasharray="4 4" strokeOpacity={0.85} connectNulls dot={false} />
+              ) : (
+                marketRefSolKg != null && <ReferenceLine y={marketRefSolKg} stroke={palette.market} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "Mercado", position: "insideTopRight", fontSize: 10, fill: palette.market }} />
+              )}
               <Line type="monotone" dataKey="precioCompra" name="Compra" stroke={palette.compra} strokeWidth={2} connectNulls dot={{ r: 3 }} activeDot={{ r: 5 }} />
               {stats.hasVenta && <Line type="monotone" dataKey="precioVenta" name="Venta" stroke={palette.venta} strokeWidth={2} connectNulls dot={{ r: 3 }} activeDot={{ r: 5 }} />}
             </LineChart>

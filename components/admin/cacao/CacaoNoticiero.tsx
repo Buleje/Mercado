@@ -5,7 +5,7 @@
  * Precio ICE en vivo + conversión a S//kg + análisis computado (sin IA, sin
  * alucinación) + feed de noticias (Google News) + enlaces de referencia.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { SectionTitle, CardTitle } from "@buleje/design-system";
 import {
@@ -85,6 +85,28 @@ export default function CacaoNoticiero() {
     ? (data.pricePenPerKg * sel.usd) / baseUsd
     : (data?.pricePenPerKg ?? null);
   const selDate = sel ? new Date(sel.t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : null;
+
+  // Referencia de mercado MENSUAL (ICE→S//kg) desde la serie de 1 año que ya trae
+  // getCacaoMarket. Permite comparar cada compra contra el mercado de SU mes (no
+  // una línea plana de hoy). FX = el actual (no hay histórico de tipo de cambio).
+  const marketMensual = useMemo(() => {
+    const s = data?.price?.series;
+    const fx = data?.usdPen;
+    if (!s || !fx) return [];
+    const byMonth = new Map<string, { sum: number; n: number }>();
+    for (const pt of s) {
+      const d = new Date(pt.t);
+      const mes = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      const cur = byMonth.get(mes) ?? { sum: 0, n: 0 };
+      cur.sum += pt.c;
+      cur.n++;
+      byMonth.set(mes, cur);
+    }
+    return Array.from(byMonth.entries()).map(([mes, v]) => ({
+      mes,
+      solKg: Math.round(((v.sum / v.n / 1000) * fx) * 100) / 100,
+    }));
+  }, [data?.price?.series, data?.usdPen]);
 
   return (
     <div className="space-y-6">
@@ -194,7 +216,7 @@ export default function CacaoNoticiero() {
           precio efectivo (hoy o el punto seleccionado). */}
       {data && <CacaoPreciosRegionales refSolKg={effPen} usdPen={data.usdPen} />}
 
-      <CacaoMiPrecio marketRefSolKg={data?.pricePenPerKg ?? null} />
+      <CacaoMiPrecio marketRefSolKg={data?.pricePenPerKg ?? null} marketMensual={marketMensual} />
     </div>
   );
 }
