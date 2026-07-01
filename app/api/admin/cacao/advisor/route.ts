@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
       weekHigh52: market.price.weekHigh52,
       weekLow52: market.price.weekLow52,
       series: market.price.series,
+      news: market.news?.map((n) => ({ title: n.title })) ?? [],
     });
 
     // Comparación: mi precio de compra (seco) vs referencia internacional S//kg.
@@ -67,11 +68,13 @@ export async function GET(req: NextRequest) {
         `Datos del cacao hoy:\n` +
         `- Precio ICE: USD ${market.price.value}/t (${market.price.changePct ?? 0}% hoy)\n` +
         `- Posición en rango 52 sem: ${m.pos52 ?? "?"}%\n` +
-        `- Tendencia ~mes: ${m.trend30 ?? "?"}% · semana: ${m.trend7 ?? "?"}% · volatilidad: ${m.volatilidad ?? "?"}%/día\n` +
+        `- Tendencia: 3 meses ${m.trend90 ?? "?"}% · mes ${m.trend30 ?? "?"}% · semana ${m.trend7 ?? "?"}% (${m.velocidadDia ?? "?"}%/día) · volatilidad ${m.volatilidad ?? "?"}%/día\n` +
+        (advisor.forecast?.[1] ? `- Proyección lineal a 30 días: USD ${advisor.forecast[1].mid}/t (${advisor.forecast[1].pct}%, rango ${advisor.forecast[1].low}–${advisor.forecast[1].high})\n` : "") +
+        (advisor.news ? `- Sesgo de noticias: ${advisor.news.senal} (${advisor.news.alcista} alcistas / ${advisor.news.bajista} bajistas)\n` : "") +
         (market.pricePenPerKg ? `- Referencia ≈ S/ ${market.pricePenPerKg}/kg seco\n` : "") +
-        `- Señal calculada: ${advisor.signal.toUpperCase()} (${advisor.fuerza})\n\n` +
+        `- Señal calculada: ${advisor.signal.toUpperCase()} (${advisor.fuerza}, confianza ${advisor.confianza}%)\n\n` +
         `Titulares recientes:\n${titulares || "(sin titulares)"}\n\n` +
-        `Explica en 2-3 oraciones qué está pasando con el cacao y qué le conviene hacer al acopiador (vender, aguantar, acopiar). No repitas los números crudos, interprétalos.`;
+        `Explica en 2-3 oraciones qué está pasando con el cacao, hacia dónde apunta la tendencia/proyección y qué le conviene hacer al acopiador (vender, aguantar, acopiar) y en qué ventana de tiempo. No repitas los números crudos, interprétalos.`;
 
       const res = await callLLM("cheap", {
         messages: [{ role: "system", content: system }, { role: "user", content: user }],

@@ -7,15 +7,11 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import {
-  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins,
+  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins, LineChart, Newspaper, Gauge,
 } from "@buleje/design-system/icons";
+import type { AdvisorResult } from "@/lib/cacao/cacao-advisor";
 
-interface Donde { canal: string; nota: string }
-interface Advisor {
-  signal: "vender" | "aguantar" | "neutral"; fuerza: "fuerte" | "moderada" | "leve";
-  titulo: string; resumen: string; motivos: string[]; cuando: string; donde: Donde[]; riesgos: string[]; compra: string;
-  metrics: { pos52: number | null; trend30: number | null; trend7: number | null; volatilidad: number | null };
-}
+type Advisor = AdvisorResult;
 interface Local { miPrecioKg: number | null; kg: number; lotes: number; refKg: number | null; spreadPct: number | null }
 interface Resp { advisor: Advisor | null; narrative: string | null; local?: Local; generatedAt?: string }
 
@@ -48,7 +44,7 @@ export default function CacaoAsesor() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--text-tertiary)]">Recomendación basada en el precio internacional real, su tendencia y las noticias. La señal se calcula; el resumen lo redacta la IA.</p>
+        <p className="text-sm text-[var(--text-tertiary)]">Analiza precio, tendencia a 3 meses/mes/semana, velocidad, proyección y sesgo de noticias para decir cuándo vender o aguantar. La señal y la proyección se calculan; el resumen lo redacta la IA.</p>
         <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
       </div>
 
@@ -70,6 +66,15 @@ export default function CacaoAsesor() {
                 </div>
                 <h2 className="mt-0.5 text-xl font-extrabold" style={{ color: cfg.text }}>{a.titulo}</h2>
                 <p className="mt-1.5 text-sm leading-relaxed" style={{ color: cfg.text }}>{a.resumen}</p>
+                {typeof a.confianza === "number" && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Gauge className="h-3.5 w-3.5 shrink-0" style={{ color: cfg.accent }} />
+                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider" style={{ color: cfg.accent }}>Confianza {a.confianza}%</span>
+                    <div className="h-2 max-w-[160px] flex-1 overflow-hidden rounded-full" style={{ background: "var(--surface-raised)" }}>
+                      <div className="h-full rounded-full" style={{ width: `${a.confianza}%`, background: cfg.ring }} />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -84,12 +89,55 @@ export default function CacaoAsesor() {
             )}
           </div>
 
-          {/* Métricas */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {/* Métricas — perspectiva de velocidad y ventana temporal */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <MetricChip label="En rango 52 sem" value={a.metrics.pos52 != null ? `${a.metrics.pos52}%` : "—"} />
-            <MetricChip label="Tendencia mes" value={a.metrics.trend30 != null ? `${a.metrics.trend30 > 0 ? "+" : ""}${a.metrics.trend30}%` : "—"} Icon={trendIcon(a.metrics.trend30)} tone={a.metrics.trend30} />
-            <MetricChip label="Tendencia semana" value={a.metrics.trend7 != null ? `${a.metrics.trend7 > 0 ? "+" : ""}${a.metrics.trend7}%` : "—"} Icon={trendIcon(a.metrics.trend7)} tone={a.metrics.trend7} />
+            <MetricChip label="Semana" value={a.metrics.trend7 != null ? `${a.metrics.trend7 > 0 ? "+" : ""}${a.metrics.trend7}%` : "—"} Icon={trendIcon(a.metrics.trend7)} tone={a.metrics.trend7} />
+            <MetricChip label="Mes" value={a.metrics.trend30 != null ? `${a.metrics.trend30 > 0 ? "+" : ""}${a.metrics.trend30}%` : "—"} Icon={trendIcon(a.metrics.trend30)} tone={a.metrics.trend30} />
+            <MetricChip label="3 meses" value={a.metrics.trend90 != null ? `${a.metrics.trend90 > 0 ? "+" : ""}${a.metrics.trend90}%` : "—"} Icon={trendIcon(a.metrics.trend90)} tone={a.metrics.trend90} />
+            <MetricChip label="Velocidad" value={a.metrics.velocidadDia != null ? `${a.metrics.velocidadDia > 0 ? "+" : ""}${a.metrics.velocidadDia}%/d` : "—"} Icon={trendIcon(a.metrics.velocidadDia)} tone={a.metrics.velocidadDia} />
             <MetricChip label="Volatilidad" value={a.metrics.volatilidad != null ? `${a.metrics.volatilidad}%` : "—"} />
+          </div>
+
+          {/* Proyección + Señal de noticias */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {a.forecast && a.forecast.length > 0 && (
+              <Card icon={LineChart} title="Proyección (si sigue la tendencia)">
+                <div className="space-y-2.5">
+                  {a.forecast.map((f) => (
+                    <div key={f.dias} className="flex items-center gap-3">
+                      <span className="w-20 shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">En {f.dias} días</span>
+                      <span className="font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">USD {f.mid.toLocaleString("es-PE")}</span>
+                      <span className={`text-sm font-bold ${f.pct > 0 ? "text-[var(--data-success-700)]" : f.pct < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-tertiary)]"}`}>{f.pct > 0 ? "+" : ""}{f.pct}%</span>
+                      <span className="ml-auto text-xs text-[var(--text-tertiary)]">rango {f.low.toLocaleString("es-PE")}–{f.high.toLocaleString("es-PE")}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-[length:var(--ts-2xs)] leading-relaxed text-[var(--text-tertiary)]">Extrapolación lineal de la tendencia reciente con banda por volatilidad. NO es una predicción garantizada — el mercado real puede moverse distinto.</p>
+              </Card>
+            )}
+            {a.news && (
+              <Card icon={Newspaper} title="Señal de las noticias">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${
+                    a.news.senal === "alcista" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+                      : a.news.senal === "bajista" ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+                    {a.news.senal === "alcista" ? <TrendingUp className="h-4 w-4" /> : a.news.senal === "bajista" ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                    Sesgo {a.news.senal}
+                  </span>
+                  <span className="text-xs text-[var(--text-tertiary)]">{a.news.alcista} alcistas · {a.news.bajista} bajistas · {a.news.total} titulares</span>
+                </div>
+                {a.news.destacados.length > 0 && (
+                  <ul className="mt-3 space-y-1.5">
+                    {a.news.destacados.map((t, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-[var(--text-secondary)]"><span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-[var(--accent)]" />{t}</li>
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Sesgo estimado por palabras clave de los titulares (escasez/sequía = alcista, sobreoferta/cosecha = bajista).</p>
+              </Card>
+            )}
           </div>
 
           {/* Tu precio vs mercado */}
