@@ -112,6 +112,10 @@ export default function CacaoAcopio() {
   const [showLote, setShowLote] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
+  // Registro de pago al productor desde el libro (estado de cuenta, ADR-302).
+  const [payId, setPayId] = useState<string | null>(null);
+  const [payMonto, setPayMonto] = useState("");
+  const [paying, setPaying] = useState(false);
   const [loteDrawerId, setLoteDrawerId] = useState<string | null>(null);
   // Filtros de acopio (task #4)
   const [fVariedad, setFVariedad] = useState("");
@@ -201,6 +205,38 @@ export default function CacaoAcopio() {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
+
+  // Registra el monto ACUMULADO abonado al productor (adelanto + abonos) sobre un
+  // lote. Mismo contrato que el drawer del productor: el backend deriva estadoPago.
+  async function pagar() {
+    if (!payId) return;
+    const monto = payMonto === "" ? 0 : Number(payMonto);
+    if (!Number.isFinite(monto) || monto < 0) return;
+    setPaying(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/cacao", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ action: "pago_acopio", id: payId, montoPagado: monto }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      setPayId(null);
+      setPayMonto("");
+      load("acopio");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPaying(false);
+    }
+  }
+
+  // Abre el modal de pago precargando lo ya abonado (el input es el total acumulado).
+  const openPay = useCallback((l: Lote) => {
+    setPayId(l.id);
+    setPayMonto(l.montoPagado != null && Number(l.montoPagado) > 0 ? String(Number(l.montoPagado)) : "");
+  }, []);
 
   const kpis = useMemo(() => {
     const reg = lotes.filter((l) => l.status === "registrado");
@@ -635,17 +671,32 @@ export default function CacaoAcopio() {
                         {annul ? (
                           <span className="text-xs text-[var(--text-tertiary)]">—</span>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAnnulId(l.id);
-                              setAnnulReason("");
-                            }}
-                            className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
-                          >
-                            Anular
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {tienePendiente(l) && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openPay(l);
+                                }}
+                                className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-xs font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
+                              >
+                                <Wallet className="h-3.5 w-3.5" />
+                                Pagar
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAnnulId(l.id);
+                                setAnnulReason("");
+                              }}
+                              className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
+                            >
+                              Anular
+                            </button>
+                          </div>
                         )}
                       </Td>
                     </tr>
@@ -792,6 +843,112 @@ export default function CacaoAcopio() {
           </div>
         </AdminModal>
       )}
+
+      {payId &&
+        (() => {
+          const l = lotes.find((x) => x.id === payId);
+          if (!l) return null;
+          const debido = Number(l.totalPagado ?? 0);
+          const montoNum = payMonto === "" ? 0 : Number(payMonto);
+          const saldoLive = Math.max(0, debido - (Number.isFinite(montoNum) ? montoNum : 0));
+          const invalido = !Number.isFinite(montoNum) || montoNum < 0;
+          return (
+            <AdminModal open onClose={() => setPayId(null)} variant="centered-sm" hideCloseButton>
+              <div className="bg-[var(--surface-raised)] p-5">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-600)]">
+                    <Wallet className="h-6 w-6" />
+                  </span>
+                  <div className="min-w-0">
+                    <div role="heading" aria-level={3} className="text-base font-bold text-[var(--text-primary)]">
+                      Registrar pago · {l.loteCode}
+                    </div>
+                    <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
+                      {l.productorNombre ?? "Productor sin vincular"} — anota cuánto le pagaste por
+                      este lote.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3 text-center">
+                  <div>
+                    <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Debido
+                    </span>
+                    <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
+                      S/ {n2(debido)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Abonado
+                    </span>
+                    <span className="font-mono text-sm font-bold tabular-nums text-[var(--data-success-700)]">
+                      S/ {n2(montoNum)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                      Saldo
+                    </span>
+                    <span
+                      className={`font-mono text-sm font-bold tabular-nums ${saldoLive > 0 ? "text-[var(--data-warning-700)]" : "text-[var(--data-success-700)]"}`}
+                    >
+                      S/ {n2(saldoLive)}
+                    </span>
+                  </div>
+                </div>
+
+                <label className="mt-4 block">
+                  <span className="mb-1.5 flex items-center justify-between text-sm font-medium text-[var(--text-primary)]">
+                    Total abonado al productor (S/)
+                    <button
+                      type="button"
+                      onClick={() => setPayMonto(String(debido))}
+                      className="text-xs font-bold text-[var(--accent)] hover:underline"
+                    >
+                      Pagar todo (S/ {n2(debido)})
+                    </button>
+                  </span>
+                  <input
+                    autoFocus
+                    inputMode="decimal"
+                    value={payMonto}
+                    onChange={(e) => setPayMonto(e.target.value.replace(/[^0-9.]/g, ""))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !invalido && !paying) pagar();
+                    }}
+                    placeholder="0.00"
+                    className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
+                  />
+                  <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
+                    Es el total acumulado pagado por este lote (adelanto + abonos), no solo el último
+                    abono.
+                  </span>
+                </label>
+
+                <div className="mt-5 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPayId(null)}
+                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={invalido || paying}
+                    onClick={pagar}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    {paying ? "Guardando…" : "Registrar pago"}
+                  </button>
+                </div>
+              </div>
+            </AdminModal>
+          );
+        })()}
     </div>
   );
 }
