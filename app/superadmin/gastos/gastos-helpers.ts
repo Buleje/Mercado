@@ -65,9 +65,9 @@ export function computePnl(
   };
 }
 
-/** Clase compartida de inputs/selects (h-12, border-2, tokens DS). */
+/** Clase compartida de inputs/selects (h-12, tokens superadmin dark). */
 export const INPUT_CLASS =
-  "h-12 w-full rounded-lg border-2 border-[var(--surface-border)] bg-[var(--surface-1)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] outline-none";
+  "h-12 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] outline-none";
 
 export const CAT_KEYS = [
   "infra", "mensajeria", "ia", "pagos", "personal", "marketing", "otros",

@@ -26,7 +26,7 @@ export function CategoryDonut({ data }: { data: { category: string; amountPen: n
     <div className="flex flex-wrap items-center gap-5">
       <div className="relative h-36 w-36 shrink-0">
         <div className="h-36 w-36 rounded-full" style={{ background: `conic-gradient(${stops})` }} />
-        <div className="absolute inset-[20%] flex flex-col items-center justify-center rounded-full bg-[var(--surface-1)] text-center">
+        <div className="absolute inset-[20%] flex flex-col items-center justify-center rounded-full bg-[var(--surface-raised)] text-center">
           <span className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">Total/mes</span>
           <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{fmtPen(total)}</span>
         </div>

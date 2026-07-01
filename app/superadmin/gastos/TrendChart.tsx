@@ -50,7 +50,7 @@ export function TrendChart({
             >
               <div className="relative flex w-full flex-1 items-end">
                 {hover === i && (
-                  <div className="absolute -top-7 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--text-primary)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--surface-1)] shadow">
+                  <div className="absolute -top-7 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--text-primary)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--surface-raised)] shadow">
                     {fmtPen(t.totalPen)}{!t.real && " · est."}
                   </div>
                 )}

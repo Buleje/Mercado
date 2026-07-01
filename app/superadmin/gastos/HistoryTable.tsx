@@ -80,7 +80,7 @@ export function HistoryTable({ history }: { history: HistoryMonth[] }) {
                                 <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: CAT_META[c.category]?.color ?? "#94a3b8" }} />
                                 {CAT_META[c.category]?.label ?? c.category}
                               </span>
-                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--surface-raised)]">
+                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--rule-base)]">
                                 <div
                                   className="h-full rounded-full"
                                   style={{ width: `${catTotal > 0 ? (c.amountPen / catTotal) * 100 : 0}%`, background: CAT_META[c.category]?.color ?? "#94a3b8" }}

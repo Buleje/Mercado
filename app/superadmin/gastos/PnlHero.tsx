@@ -81,7 +81,7 @@ function Bar({ label, value, scale, color }: { label: string; value: number; sca
         <span className="text-sm font-bold text-[var(--text-secondary)]">{label}</span>
         <span className="tabular-nums text-sm font-extrabold text-[var(--text-primary)]">{fmtPen(value)}</span>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+      <div className="h-2.5 overflow-hidden rounded-full bg-[var(--rule-base)]">
         <div className="h-full rounded-full" style={{ width: `${Math.max(2, (value / scale) * 100)}%`, background: color }} />
       </div>
     </div>

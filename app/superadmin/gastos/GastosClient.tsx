@@ -11,6 +11,7 @@
 import { useMemo, useState } from "react";
 import {
   Wallet, Server, TrendingUp, TrendingDown, Building2, Download, RefreshCw, DollarSign, FileText,
+  LayoutDashboard, Receipt, History, type LucideIcon,
 } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
@@ -29,9 +30,17 @@ import { HistoryTable } from "./HistoryTable";
 const TOOL =
   "inline-flex items-center gap-1.5 rounded-lg bg-[var(--surface-sunken)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
 
+type TabId = "resumen" | "registro" | "historial" | "costos";
+const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
+  { id: "resumen", label: "Resumen", icon: LayoutDashboard },
+  { id: "registro", label: "Registro", icon: Receipt },
+  { id: "historial", label: "Historial", icon: History },
+  { id: "costos", label: "Costos por tienda", icon: Server },
+];
+
 export default function GastosClient() {
   const g = useGastos();
-  const [tab, setTab] = useState<"reales" | "costos">("reales");
+  const [tab, setTab] = useState<TabId>("resumen");
   const [editing, setEditing] = useState<Expense | null>(null);
 
   const runRate = g.summary?.monthlyRunRatePen ?? 0;
@@ -89,62 +98,24 @@ export default function GastosClient() {
         </div>
       }
     >
-      {/* P&L: ¿gana o pierde la plataforma? */}
-      <PnlHero mrrPen={g.mrrPen} runRatePen={runRate} payingTenants={g.payingTenants} />
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <SAKpiCard
-          label="Gasto real / mes"
-          value={fmtPen(runRate)}
-          icon={Wallet}
-          tone={g.budget !== null && g.budget > 0 && runRate > g.budget ? "bad" : "default"}
-          sub={delta === null ? `${g.summary?.count ?? 0} gastos` : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta).toFixed(0)}% vs mes ant.`}
-        />
-        <SAKpiCard label="Ingresos (MRR)" value={fmtPen(g.mrrPen)} icon={DollarSign} tone="good" sub={`${g.payingTenants} tiendas que pagan`} />
-        <SAKpiCard label="Costo infra estimado" value={fmtPen(g.costs?.totalMonthlyCost ?? 0)} icon={Server} sub={`${g.costs?.tenants.length ?? 0} tiendas`} />
-        <SAKpiCard
-          label="Margen bruto prom."
-          value={`${(g.costs?.avgGrossMargin ?? 0).toFixed(0)}%`}
-          icon={(g.costs?.avgGrossMargin ?? 0) >= 0 ? TrendingUp : TrendingDown}
-          tone={(g.costs?.avgGrossMargin ?? 0) >= 50 ? "good" : (g.costs?.avgGrossMargin ?? 0) >= 0 ? "warn" : "bad"}
-        />
-      </div>
-
-      {/* Presupuesto global + por categoría */}
-      <SuperadminChartCard
-        kicker="Control"
-        title="Presupuesto mensual"
-        description="Tope global y por categoría; te avisamos por email al cruzar un tope."
-        density="compact"
-      >
-        <BudgetPanel
-          budget={g.budget}
-          budgetByCategory={g.budgetByCategory}
-          runRatePen={runRate}
-          byCategory={g.summary?.byCategory ?? []}
-          busy={g.busy}
-          onSaveBudget={(v) => void g.saveBudget(v)}
-          onSaveBudgetByCategory={(next) => void g.saveBudgetByCategory(next)}
-        />
-      </SuperadminChartCard>
-
-      {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-2">
-        {(["reales", "costos"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`rounded-lg px-4 py-2 text-sm font-bold transition ${
-              tab === t
-                ? "bg-[var(--accent)] text-[var(--accent-contrast,#fff)]"
-                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            }`}
-          >
-            {t === "reales" ? "Gastos reales" : "Costos por tienda"}
-          </button>
-        ))}
-        {tab === "reales" && g.expenses.length > 0 && (
+      {/* Tab bar segmentado (mismo patrón de pestañas del panel) */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="inline-flex flex-wrap gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-bold transition ${
+                tab === id
+                  ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <Icon className="h-4 w-4" /> {label}
+            </button>
+          ))}
+        </div>
+        {tab === "registro" && g.expenses.length > 0 && (
           <button onClick={downloadCSV} className={TOOL}>
             <Download className="h-4 w-4" /> CSV
           </button>
@@ -155,7 +126,50 @@ export default function GastosClient() {
         <p className="rounded-lg bg-[var(--data-error-500)]/10 px-3 py-2 text-sm text-[var(--data-error-600,#dc2626)]">{g.err}</p>
       )}
 
-      {tab === "reales" ? (
+      {/* ── Resumen: salud financiera ─────────────────────────────────────── */}
+      {tab === "resumen" && (
+        <>
+          <PnlHero mrrPen={g.mrrPen} runRatePen={runRate} payingTenants={g.payingTenants} />
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <SAKpiCard
+              label="Gasto real / mes"
+              value={fmtPen(runRate)}
+              icon={Wallet}
+              tone={g.budget !== null && g.budget > 0 && runRate > g.budget ? "bad" : "default"}
+              sub={delta === null ? `${g.summary?.count ?? 0} gastos` : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta).toFixed(0)}% vs mes ant.`}
+            />
+            <SAKpiCard label="Ingresos (MRR)" value={fmtPen(g.mrrPen)} icon={DollarSign} tone="good" sub={`${g.payingTenants} tiendas que pagan`} />
+            <SAKpiCard label="Costo infra estimado" value={fmtPen(g.costs?.totalMonthlyCost ?? 0)} icon={Server} sub={`${g.costs?.tenants.length ?? 0} tiendas`} />
+            <SAKpiCard
+              label="Margen bruto prom."
+              value={`${(g.costs?.avgGrossMargin ?? 0).toFixed(0)}%`}
+              icon={(g.costs?.avgGrossMargin ?? 0) >= 0 ? TrendingUp : TrendingDown}
+              tone={(g.costs?.avgGrossMargin ?? 0) >= 50 ? "good" : (g.costs?.avgGrossMargin ?? 0) >= 0 ? "warn" : "bad"}
+            />
+          </div>
+
+          <SuperadminChartCard
+            kicker="Control"
+            title="Presupuesto mensual"
+            description="Tope global y por categoría; te avisamos por email al cruzar un tope."
+            density="compact"
+          >
+            <BudgetPanel
+              budget={g.budget}
+              budgetByCategory={g.budgetByCategory}
+              runRatePen={runRate}
+              byCategory={g.summary?.byCategory ?? []}
+              busy={g.busy}
+              onSaveBudget={(v) => void g.saveBudget(v)}
+              onSaveBudgetByCategory={(next) => void g.saveBudgetByCategory(next)}
+            />
+          </SuperadminChartCard>
+        </>
+      )}
+
+      {/* ── Registro: alta/edición + distribución ─────────────────────────── */}
+      {tab === "registro" && (
         <>
           <div className="grid gap-5 lg:grid-cols-3">
             <div className="lg:col-span-1">
@@ -192,17 +206,23 @@ export default function GastosClient() {
               onSaveFx={(rate) => void g.saveFxRate(rate)}
             />
           </SuperadminChartCard>
-
-          <SuperadminChartCard
-            kicker="Evolución"
-            title="Historial mensual"
-            description="Cierre real congelado por mes; expandí un mes para ver el desglose por categoría."
-            density="compact"
-          >
-            <HistoryTable history={g.history} />
-          </SuperadminChartCard>
         </>
-      ) : (
+      )}
+
+      {/* ── Historial mensual ─────────────────────────────────────────────── */}
+      {tab === "historial" && (
+        <SuperadminChartCard
+          kicker="Evolución"
+          title="Historial mensual"
+          description="Cierre real congelado por mes; expandí un mes para ver el desglose por categoría."
+          density="compact"
+        >
+          <HistoryTable history={g.history} />
+        </SuperadminChartCard>
+      )}
+
+      {/* ── Costos de infra por tienda ────────────────────────────────────── */}
+      {tab === "costos" && (
         <SuperadminChartCard
           title="Costos por tienda"
           description="Infra estimada (storage · compute · IA) y margen bruto por tienda."

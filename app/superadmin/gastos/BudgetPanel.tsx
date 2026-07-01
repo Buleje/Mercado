@@ -111,7 +111,7 @@ export function BudgetPanel({
                   <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: CAT_META[k].color }} />
                   {CAT_META[k].label}
                 </span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--rule-base)]">
                   {cap > 0 && (
                     <div
                       className="h-full rounded-full"
@@ -123,7 +123,7 @@ export function BudgetPanel({
                   {fmtPen(spent)}
                 </span>
                 <input
-                  className="h-10 w-24 shrink-0 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-1,var(--surface-raised))] px-2 text-right text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+                  className="h-10 w-24 shrink-0 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-right text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
                   type="number"
                   min="0"
                   step="10"

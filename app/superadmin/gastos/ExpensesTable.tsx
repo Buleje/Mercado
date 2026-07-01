@@ -21,7 +21,7 @@ const CAT_ICONS: Record<string, typeof Server> = {
 type SortKey = "amount" | "concept" | "category";
 
 const CHIP =
-  "inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--surface-border)] bg-[var(--surface-1)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
+  "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
 
 function MoneyCell({ x }: { x: Expense }) {
   return (
@@ -39,7 +39,7 @@ function Row({
 }) {
   const Icon = CAT_ICONS[x.category] ?? MoreHorizontal;
   return (
-    <tr className="border-t border-[var(--surface-border)]">
+    <tr className="border-t border-[var(--rule-soft)]">
       <td className="p-2">
         <span className="font-bold text-[var(--text-primary)]">{x.concept}</span>
         {x.recurring && <span className="ml-1.5 text-sm text-[var(--text-tertiary)]">· {x.period || "mensual"}</span>}
@@ -57,7 +57,7 @@ function Row({
           <button
             onClick={() => onEdit(x)}
             disabled={busy}
-            className="rounded p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            className="rounded p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
             aria-label="Editar"
           >
             <Pencil className="h-4 w-4" />
@@ -141,13 +141,13 @@ export function ExpensesTable({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar concepto o proveedor…"
-            className="h-12 w-full rounded-lg border-2 border-[var(--surface-border)] bg-[var(--surface-1)] pl-9 pr-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+            className="h-12 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] pl-9 pr-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
           />
         </div>
         <select
           value={cat}
           onChange={(e) => setCat(e.target.value)}
-          className="h-12 rounded-lg border-2 border-[var(--surface-border)] bg-[var(--surface-1)] px-3 text-sm font-bold text-[var(--text-secondary)] focus:border-[var(--accent)] outline-none"
+          className="h-12 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-secondary)] focus:border-[var(--accent)] outline-none"
         >
           <option value="all">Todas las categorías</option>
           {cats.map((c) => (
@@ -167,9 +167,9 @@ export function ExpensesTable({
       </div>
 
       {/* Tabla */}
-      <div className="overflow-hidden rounded-xl border-2 border-[var(--surface-border)]">
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-soft)]">
         <table className="w-full text-sm">
-          <thead className="bg-[var(--surface-2)] text-left text-sm font-bold text-[var(--text-tertiary)]">
+          <thead className="bg-[var(--surface-sunken)] text-left text-sm font-bold text-[var(--text-tertiary)]">
             <tr>
               <th className="p-2">Concepto</th>
               <th className="p-2">Categoría</th>
@@ -227,7 +227,7 @@ function FxRateEditor({
       <DollarSign className="h-4 w-4" />
       <span>Cambio USD→S/:</span>
       <input
-        className="h-9 w-20 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2 text-right tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+        className="h-9 w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-right tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
         type="number"
         step="0.01"
         min="0.5"
@@ -257,7 +257,7 @@ function FragmentGroup({
   const Icon = CAT_ICONS[category] ?? MoreHorizontal;
   return (
     <>
-      <tr className="border-t border-[var(--surface-border)] bg-[var(--surface-2)]/50">
+      <tr className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50">
         <td colSpan={3} className="p-2">
           <span className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--text-primary)]">
             <Icon className="h-4 w-4" /> {CAT_META[category]?.label ?? category}
