@@ -30,7 +30,7 @@ export interface CacaoPrice {
   spark: number[]; // cierres recientes para sparkline (compat)
   series: PricePoint[]; // 1 año de cierres diarios para el gráfico de flujo
 }
-export interface CacaoNewsItem { title: string; source: string | null; link: string; pubDate: string | null }
+export interface CacaoNewsItem { title: string; source: string | null; link: string; pubDate: string | null; origen?: "pe" | "world" }
 export interface CacaoMarket {
   price: CacaoPrice | null;
   usdPen: number | null; // soles por dólar
@@ -126,7 +126,7 @@ function decodeEntities(s: string): string {
     .trim();
 }
 
-function parseRss(xml: string, max: number): CacaoNewsItem[] {
+function parseRss(xml: string, max: number, origen: "pe" | "world"): CacaoNewsItem[] {
   const items: CacaoNewsItem[] = [];
   const blocks = xml.match(/<item>[\s\S]*?<\/item>/g) ?? [];
   for (const b of blocks.slice(0, max)) {
@@ -140,6 +140,7 @@ function parseRss(xml: string, max: number): CacaoNewsItem[] {
       link: decodeEntities(link),
       source: source ? decodeEntities(source) : null,
       pubDate: pub ? new Date(decodeEntities(pub)).toISOString() : null,
+      origen,
     });
   }
   return items;
@@ -151,11 +152,11 @@ async function fetchNews(): Promise<CacaoNewsItem[]> {
     safeFetch(q("cacao Perú precio OR exportación OR cosecha")),
     safeFetch(q("precio cacao mundial OR cocoa price market")),
   ]);
-  const local = a ? parseRss(await a.text(), 8) : [];
-  const global = b ? parseRss(await b.text(), 6) : [];
-  // dedupe por título y ordenar por fecha desc
+  const local = a ? parseRss(await a.text(), 8, "pe") : [];
+  const global = b ? parseRss(await b.text(), 6, "world") : [];
+  // dedupe por título; el origen "pe" (query local) tiene prioridad sobre "world".
   const seen = new Set<string>();
-  return [...local, ...global]
+  return [...local, ...global] // local primero → gana el origen "pe" en duplicados
     .filter((n) => { const k = n.title.toLowerCase().slice(0, 60); if (seen.has(k)) return false; seen.add(k); return true; })
     .sort((x, y) => (y.pubDate ?? "").localeCompare(x.pubDate ?? ""))
     .slice(0, 12);
