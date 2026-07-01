@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { SectionTitle, CardTitle } from "@buleje/design-system";
 import {
-  Newspaper, RefreshCw, TrendingUp, TrendingDown, Minus, ExternalLink, AlertCircle, Coins, Globe, ArrowUpRight, Activity,
+  RefreshCw, TrendingUp, TrendingDown, Minus, AlertCircle, Activity,
 } from "@buleje/design-system/icons";
 // Escalera de precios por plaza (sin recharts → import eager, liviano)
 import CacaoPreciosRegionales from "./CacaoPreciosRegionales";
@@ -155,57 +155,17 @@ export default function CacaoNoticiero() {
         </div>
       )}
 
-      {/* A cuánto se vende en soles por plaza (CC vs Lima vs mundo) */}
-      {data && <CacaoPreciosRegionales refSolKg={data.pricePenPerKg} usdPen={data.usdPen} />}
-
-      {/* Flujo de precio + analítica de movimiento */}
+      {/* Flujo de precio (gráfico) — primero */}
       {p?.series && p.series.length > 1 && <CacaoPriceChart series={p.series} usdPen={data?.usdPen ?? null} />}
 
+      {/* A cuánto se vende por plaza — compacto, debajo del gráfico */}
+      {data && <CacaoPreciosRegionales refSolKg={data.pricePenPerKg} usdPen={data.usdPen} />}
+
       <CacaoMiPrecio marketRefSolKg={data?.pricePenPerKg ?? null} />
-
-      {/* Noticias */}
-      {data && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <div className="flex items-center gap-2 border-b-2 border-[var(--rule-soft)] px-5 py-3">
-            <Newspaper className="h-4 w-4 text-[var(--accent)]" />
-            <CardTitle>Noticias del cacao</CardTitle>
-            <span className="text-xs text-[var(--text-tertiary)]">· Perú y mundo</span>
-          </div>
-          {data.news.length === 0 ? (
-            <p className="p-8 text-center text-sm text-[var(--text-tertiary)]">Sin noticias disponibles ahora.</p>
-          ) : (
-            <ul className="divide-y divide-[var(--rule-soft)]">
-              {data.news.map((n, i) => (
-                <li key={i}>
-                  <a href={n.link} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-3 px-5 py-3.5 transition hover:bg-[var(--surface-sunken)]">
-                    <Globe className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)]">{n.title}</span>
-                      <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">{n.source ?? "Fuente"}{n.pubDate ? ` · ${relTime(n.pubDate)}` : ""}</span>
-                    </span>
-                    <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] opacity-0 transition group-hover:opacity-100" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* Referencias */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
-        <Coins className="h-3.5 w-3.5" /> Fuentes oficiales:
-        <RefLink href="https://www.icco.org/statistics/" label="ICCO (precios diarios)" />
-        <RefLink href="https://www.investing.com/commodities/us-cocoa" label="Investing — Cocoa" />
-        <RefLink href="https://www.gob.pe/midagri" label="MIDAGRI Perú" />
-      </div>
     </div>
   );
 }
 
 function Cell({ label, value }: { label: string; value: string }) {
   return <div><div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</div><div className="mt-0.5 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{value}</div></div>;
-}
-function RefLink({ href, label }: { href: string; label: string }) {
-  return <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1 font-medium text-[var(--text-secondary)] hover:text-[var(--accent)]">{label}<ArrowUpRight className="h-3 w-3" /></a>;
 }

@@ -23,6 +23,7 @@ import CacaoLoteForm from "./CacaoLoteForm";
 import CacaoBeneficio from "./CacaoBeneficio";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoNoticiero from "./CacaoNoticiero";
+import CacaoNews from "./CacaoNews";
 import CacaoAsesor from "./CacaoAsesor";
 import CacaoResumen from "./CacaoResumen";
 import CacaoInventario from "./CacaoInventario";
@@ -147,7 +148,6 @@ export default function CacaoAcopio() {
         {CACAO_VIEW_GROUPS.map((group, gi) => (
           <div key={group.id} className="flex items-center gap-1.5">
             {gi > 0 && <span className="mr-2.5 hidden h-6 w-px bg-[var(--rule-base)] sm:block" aria-hidden />}
-            <span className="mr-1 hidden text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] lg:inline">{group.label}</span>
             {group.views.map((v) => {
               const Icon = v.icon; const active = view === v.key;
               return (
@@ -240,8 +240,11 @@ export default function CacaoAcopio() {
       {/* RESUMEN — dashboard de campaña (componente propio, self-fetch) */}
       {view === "resumen" && <CacaoResumen />}
 
-      {/* MERCADO / NOTICIERO */}
+      {/* MERCADO (precio en vivo) */}
       {view === "mercado" && <CacaoNoticiero />}
+
+      {/* NOTICIAS (feed separado) */}
+      {view === "noticias" && <CacaoNews />}
 
       {/* ASESOR */}
       {view === "asesor" && <CacaoAsesor />}
