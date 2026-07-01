@@ -412,7 +412,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                     <option value="II">Grado II</option>
                   </select>
                 </Field>
-                <Field label="Anticipo cobrado S/" hint="dejá vacío = pendiente">
+                <Field label="Anticipo cobrado S/" hint="deja vacío = pendiente">
                   <input
                     type="number"
                     step="0.01"

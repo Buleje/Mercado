@@ -150,7 +150,7 @@ export default function CacaoProductores() {
           search ? <div className="p-12 text-center text-[var(--text-tertiary)]"><Search className="mx-auto mb-3 h-10 w-10 opacity-30" /><p className="text-base font-medium">Sin resultados para tu búsqueda.</p></div>
           : <div className="p-12 text-center text-[var(--text-tertiary)]">
               <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Users className="h-7 w-7" /></span>
-              <p className="text-base font-bold text-[var(--text-primary)]">Aún no tenés productores</p>
+              <p className="text-base font-bold text-[var(--text-primary)]">Aún no tienes productores</p>
               <p className="mx-auto mt-1 max-w-sm text-sm">Registrá a tus proveedores para vincularlos a los lotes y ver su historial de compras y calidad.</p>
               <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Agregar productor</button>
             </div>

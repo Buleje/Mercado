@@ -33,7 +33,7 @@ export interface AdvisorForecast {
   high: number;
   pct: number; // variación proyectada vs hoy
 }
-export type NewsBias = "alcista" | "bajista" | "mixta" | "neutral";
+export type NewsBias = "alcista" | "bajista" | "mixto" | "neutral";
 export interface AdvisorNews {
   total: number;
   alcista: number;
@@ -121,6 +121,7 @@ function volatility(arr: number[], n = 30): number | null {
   return round1(Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length) * 100);
 }
 const round1 = (n: number) => Math.round(n * 10) / 10;
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 export const mesNombre = (m: number) => MESES[m] ?? String(m);
 
@@ -134,7 +135,7 @@ function rsi(closes: number[], period = 14): number | null {
     if (d >= 0) gains += d; else losses -= d;
   }
   const avgL = losses / period;
-  if (avgL === 0) return 100;
+  if (avgL === 0) return gains === 0 ? 50 : 100; // plano = neutral; solo subas = 100
   return Math.round(100 - 100 / (1 + gains / period / avgL));
 }
 
@@ -306,7 +307,7 @@ function analyzeNews(news: { title: string }[] | undefined): AdvisorNews | null 
     else if (down && !up) { bajista++; if (destacados.length < 3) destacados.push(t); }
   }
   const senal: NewsBias =
-    alcista > bajista + 1 ? "alcista" : bajista > alcista + 1 ? "bajista" : alcista === 0 && bajista === 0 ? "neutral" : "mixta";
+    alcista > bajista + 1 ? "alcista" : bajista > alcista + 1 ? "bajista" : alcista === 0 && bajista === 0 ? "neutral" : "mixto";
   return { total: news.length, alcista, bajista, senal, destacados };
 }
 
@@ -438,21 +439,35 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   const rising = (trend7 ?? 0) > 3 || (trend30 ?? 0) > 6;
   const falling = (trend7 ?? 0) < -3 || (trend30 ?? 0) < -6;
   const nervioso = (vol ?? 0) >= 3;
+  // Estado de corto plazo (para que la señal NO contradiga los indicadores):
+  const overbought = rsiVal != null && rsiVal >= 70;
+  const oversold = rsiVal != null && rsiVal <= 30;
+  const strongUp = (trend30 ?? 0) >= 10 || (trend90 ?? 0) >= 25;
+  const strongDown = (trend30 ?? 0) <= -10 || (trend90 ?? 0) <= -25;
+  const dd = tecnico.drawdownPct; // negativo = por debajo del máx 52 sem
+  // "Barato en el año pero caliente/sobrecomprado ahora" (viene de un techo mayor).
+  const rallyCaliente = overbought && (rising || strongUp) && !strongDown;
 
   let signal: AdvisorAction = "neutral";
   let fuerza: AdvisorResult["fuerza"] = "leve";
   const motivos: string[] = [];
 
-  if (pos52 != null) motivos.push(high ? `Precio en la parte ALTA de su rango anual (${pos52}% entre mín y máx 52 sem).` : low ? `Precio en la parte BAJA de su rango anual (${pos52}%).` : `Precio en zona media del año (${pos52}%).`);
+  if (pos52 != null) {
+    const ddTxt = low && dd != null && dd < -8 ? ` — aún ${Math.abs(dd)}% por debajo de su máximo del año, pero mira la tendencia reciente` : "";
+    motivos.push(high ? `Precio en la parte ALTA de su rango anual (${pos52}%).` : low ? `Precio en la parte baja de su rango de 52 semanas (${pos52}%)${ddTxt}.` : `Precio en zona media de su rango anual (${pos52}%).`);
+  }
   if (trend90 != null) motivos.push(`Últimos ~3 meses: ${trend90 > 0 ? "+" : ""}${trend90}%.`);
   if (trend30 != null) motivos.push(`Últimas ~4 semanas: ${trend30 > 0 ? "+" : ""}${trend30}% (${velocidadDia != null ? `${velocidadDia > 0 ? "+" : ""}${velocidadDia}%/día esta semana` : "—"}).`);
   if (trend7 != null) motivos.push(`Última semana: ${trend7 > 0 ? "+" : ""}${trend7}%.`);
   if (vol != null) motivos.push(`Volatilidad ${vol}%/día ${nervioso ? "(mercado nervioso)" : "(mercado tranquilo)"}.`);
-  if (forecast.length) { const f = forecast[1]; motivos.push(`Si sigue la tendencia, en ~30 días rondaría USD ${f.mid}/t (${f.pct > 0 ? "+" : ""}${f.pct}%, rango ${f.low}–${f.high}).`); }
-  if (news && news.senal !== "neutral") motivos.push(`Noticias con sesgo ${news.senal} (${news.alcista} alcistas / ${news.bajista} bajistas de ${news.total}).`);
+  if (forecast.length) { const f = forecast[1]; motivos.push(`Si sigue la tendencia, en ~30 días rondaría USD ${f.mid.toLocaleString("es-PE")}/t (${f.pct > 0 ? "+" : ""}${f.pct}%, rango ${f.low.toLocaleString("es-PE")}–${f.high.toLocaleString("es-PE")}).`); }
+  if (news && news.senal !== "neutral") {
+    const neu = Math.max(0, news.total - news.alcista - news.bajista);
+    motivos.push(`Noticias con sesgo ${news.senal} (${plural(news.alcista, "alcista")} · ${plural(news.bajista, "bajista")} · ${neu} neutrales de ${news.total}).`);
+  }
   if (rsiVal != null && rsiZona === "sobrecompra") motivos.push(`RSI ${rsiVal} = sobrecompra: subió rápido y podría corregir — favorece asegurar/vender.`);
   else if (rsiVal != null && rsiZona === "sobreventa") motivos.push(`RSI ${rsiVal} = sobreventa: cayó fuerte y suele rebotar — favorece aguantar/acopiar.`);
-  if (trendR2 != null && trendR2 >= 0.6) motivos.push(`Tendencia limpia (R² ${trendR2}): el movimiento es sostenido, no ruido.`);
+  if (trendR2 != null) motivos.push(trendR2 >= 0.6 ? `Tendencia limpia (R² ${trendR2}): el movimiento es sostenido, no ruido.` : `Tendencia poco definida (R² ${trendR2}): la proyección es menos confiable — toma la banda con cautela.`);
   if (estacionalidad && estacionalidad.desviacionPct != null) {
     const d = estacionalidad.desviacionPct;
     motivos.push(`Estacionalidad: ${mesNombre(estacionalidad.mesActual)} suele estar ${d > 0 ? "+" : ""}${d}% ${d >= 0 ? "sobre" : "bajo"} el promedio del año (últimos 12 meses).`);
@@ -462,9 +477,13 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   if (diverg === "bajista") motivos.push("Divergencia bajista: el precio sube pero el impulso se debilita — la tendencia puede girar.");
   else if (diverg === "alcista") motivos.push("Divergencia alcista: el precio baja pero el impulso mejora — posible piso.");
 
-  if (high && !falling) { signal = "vender"; fuerza = rising ? "fuerte" : "moderada"; }
+  // Decisión coherente con los indicadores: un rally sobrecomprado manda VENDER
+  // aunque pos52 sea baja (viene de un máximo mucho mayor); no dice "está barato".
+  if (rallyCaliente) { signal = "vender"; fuerza = "fuerte"; }
+  else if (high && !falling) { signal = "vender"; fuerza = rising ? "fuerte" : "moderada"; }
   else if (high && falling) { signal = "vender"; fuerza = "moderada"; }
-  else if (low && falling) { signal = "aguantar"; fuerza = "fuerte"; }
+  else if (low && (falling || oversold) && !strongUp) { signal = "aguantar"; fuerza = "fuerte"; }
+  else if (low && strongUp) { signal = "vender"; fuerza = "moderada"; } // se recupera con fuerza
   else if (low) { signal = "aguantar"; fuerza = "moderada"; }
   else if (rising) { signal = "vender"; fuerza = "leve"; }
   else if (falling) { signal = "aguantar"; fuerza = "moderada"; }
@@ -478,17 +497,17 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   let localRiesgo: string | null = null;
   if (local && local.stockKg > 0 && local.spreadPct != null && local.miPrecioKg != null) {
     if (local.spreadPct >= 15) {
-      localMotivo = `Tenés ${local.stockKg} kg en stock con ~${local.spreadPct}% de margen sobre tu costo (S/ ${local.miPrecioKg}/kg): buena ventana para asegurar ganancia.`;
+      localMotivo = `Tienes ${local.stockKg} kg en stock con ~${local.spreadPct}% de margen sobre tu costo (S/ ${local.miPrecioKg}/kg): buena ventana para asegurar ganancia.`;
       if (signal === "neutral" && !falling) { signal = "vender"; fuerza = "leve"; }
       else if (signal === "vender" && fuerza === "leve") fuerza = "moderada";
     } else if (local.spreadPct < 0) {
-      localRiesgo = `La referencia está ${Math.abs(local.spreadPct)}% por DEBAJO de tu costo de compra (S/ ${local.miPrecioKg}/kg): vender ahora realiza pérdida. Si tu caja aguanta, esperá una recuperación.`;
+      localRiesgo = `La referencia está ${Math.abs(local.spreadPct)}% por DEBAJO de tu costo de compra (S/ ${local.miPrecioKg}/kg): vender ahora realiza pérdida. Si tu caja aguanta, espera una recuperación.`;
       if (signal === "vender") fuerza = fuerza === "fuerte" ? "moderada" : "leve";
     } else {
-      localMotivo = `Tenés ${local.stockKg} kg en stock, con margen ajustado (~${local.spreadPct}% sobre tu costo) — vendé por partes.`;
+      localMotivo = `Tienes ${local.stockKg} kg en stock, con margen ajustado (~${local.spreadPct}% sobre tu costo) — vende por partes.`;
     }
   } else if (local && local.stockKg <= 0) {
-    localMotivo = "No tenés stock seco disponible: la señal aplica a tu próxima compra/acopio.";
+    localMotivo = "No tienes stock seco disponible: la señal aplica a tu próxima compra/acopio.";
   }
   if (localMotivo) motivos.push(localMotivo);
 
@@ -496,35 +515,39 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
     ? (fuerza === "fuerte" ? "Buen momento para VENDER tu cacao seco" : "Inclínate a VENDER")
     : signal === "aguantar"
       ? (fuerza === "fuerte" ? "Mejor AGUANTAR — no vendas barato" : "Inclínate a AGUANTAR")
-      : "Momento NEUTRAL — vendé según tu caja";
+      : "Momento NEUTRAL — vende según tu caja";
 
   const resumen = signal === "vender"
-    ? `El precio internacional está ${high ? "alto" : "subiendo"}${rising ? " y con impulso" : ""}. Si tenés stock seco listo, es buena ventana para vender y asegurar margen.`
+    ? rallyCaliente
+      ? `El precio subió fuerte (${trend90 != null ? `+${trend90}% en 3 meses` : "con impulso"}) y está sobrecomprado (RSI ${rsiVal}).${low && dd != null && dd < -8 ? ` Sigue por debajo de su máximo del año, pero` : ""} es buena ventana para asegurar la ganancia del repunte antes de una posible corrección.`
+      : `El precio internacional está ${high ? "alto" : "subiendo"}${rising ? " y con impulso" : ""}. Si tienes stock seco listo, es buena ventana para vender y asegurar margen.`
     : signal === "aguantar"
-      ? `El precio está ${low ? "bajo" : "cayendo"}${nervioso ? " y el mercado está nervioso" : ""}. Vender ahora te deja poco; si podés cubrir tu caja, conviene esperar una recuperación.`
-      : `El precio no muestra una señal clara. Vendé lo que necesites para tu flujo de caja y guardá el resto esperando mejor precio.`;
+      ? `El precio está ${low && !strongUp ? "en la parte baja de su rango" : "cayendo"}${nervioso ? " y el mercado está nervioso" : ""}. Vender ahora te deja poco; si puedes cubrir tu caja, conviene esperar una recuperación.`
+      : `El precio no muestra una señal clara. Vende lo que necesites para tu flujo de caja y guarda el resto esperando mejor precio.`;
 
+  const objetivo = tecnico.resistencia != null ? `hacia su resistencia (USD ${tecnico.resistencia.toLocaleString("es-PE")}/t)` : p.weekHigh52 ? "hacia su máximo del año" : "";
   const cuando = signal === "vender"
-    ? (rising ? "Esta semana, sin esperar demasiado — el impulso puede frenarse." : "En los próximos días, aprovechando el nivel actual.")
+    ? (rising || rallyCaliente ? "Esta semana, sin esperar demasiado — el impulso puede frenarse." : "En los próximos días, aprovechando el nivel actual.")
     : signal === "aguantar"
-      ? `Esperá señales de recuperación${p.weekHigh52 ? ` (idealmente que se acerque a USD ${Math.round((p.value + (p.weekHigh52 - p.value) * 0.4))}/t)` : ""}; revisá el mercado cada semana.`
+      ? `Espera señales de recuperación${objetivo ? ` (${objetivo})` : ""}; revisa el mercado cada semana.`
       : "Según tu necesidad de caja; no hay urgencia.";
 
   const riesgos: string[] = [];
-  if (nervioso) riesgos.push(`Mercado volátil (±${vol}%/día): vendé en partes para no arriesgar todo a un solo día.`);
+  if (nervioso) riesgos.push(`Mercado volátil (±${vol}%/día): vende en partes para no arriesgar todo a un solo día.`);
   if (signal === "aguantar") riesgos.push("Aguantar tiene costo: el cacao mal guardado gana humedad y pierde grado/precio.");
   if (signal === "vender" && falling) riesgos.push("Viene cayendo: no te demores, podría seguir bajando.");
+  if (rallyCaliente) riesgos.push(`En sobrecompra (RSI ${rsiVal}) el precio puede corregir de golpe — no esperes el techo exacto, vende por partes.`);
   riesgos.push("El precio internacional es referencia; tu precio en chacra/FOB suele ir por debajo (flete + margen del comprador).");
   if (localRiesgo) riesgos.push(localRiesgo);
 
   if (news && ((signal === "vender" && news.senal === "alcista") || (signal === "aguantar" && news.senal === "bajista"))) {
-    riesgos.push(`Las noticias apuntan al lado contrario (sesgo ${news.senal}) — señal menos firme, seguila de cerca.`);
+    riesgos.push(`Las noticias apuntan al lado contrario (sesgo ${news.senal}) — señal menos firme, síguela de cerca.`);
   }
 
   const compra = low || (pos52 != null && pos52 <= 40)
     ? "Para ACOPIAR: precio bajo = buena oportunidad de comprar barato a tus productores (y vender cuando suba)."
     : high
-      ? "Para ACOPIAR: precio alto = cuidá tu margen, los productores pedirán más por kg."
+      ? "Para ACOPIAR: precio alto = cuida tu margen, los productores pedirán más por kg."
       : "Para ACOPIAR: precio en zona media, condiciones normales de compra.";
 
   // Confianza rigurosa: pondera acuerdo entre horizontes, calidad de la tendencia
@@ -540,7 +563,7 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
     if ((signal === "vender" && rsiVal >= 65) || (signal === "aguantar" && rsiVal <= 35)) confianza += 8;
     else if ((signal === "vender" && rsiVal <= 35) || (signal === "aguantar" && rsiVal >= 65)) confianza -= 10;
   }
-  if (news && news.senal !== "neutral" && news.senal !== "mixta") {
+  if (news && news.senal !== "neutral" && news.senal !== "mixto") {
     const alinea = (signal === "aguantar" && news.senal === "alcista") || (signal === "vender" && news.senal === "bajista");
     confianza += alinea ? 8 : -8;
   }

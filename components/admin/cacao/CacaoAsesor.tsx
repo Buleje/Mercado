@@ -24,6 +24,13 @@ const SIGNAL = {
   neutral: { label: "NEUTRAL", Icon: Minus, ring: "var(--rule-strong)", soft: "var(--surface-sunken)", text: "var(--text-primary)", accent: "var(--text-secondary)" },
 } as const;
 
+function relTime(iso: string): string {
+  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3.6e6);
+  if (h < 1) return "hace minutos";
+  if (h < 24) return `hace ${h} h`;
+  return `hace ${Math.floor(h / 24)} d`;
+}
+
 export default function CacaoAsesor() {
   const [data, setData] = useState<Resp | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,7 +67,15 @@ export default function CacaoAsesor() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--text-tertiary)]">Analiza precio, tendencia, velocidad, indicadores técnicos (RSI, Bollinger, soporte/resistencia), estacionalidad, proyección y noticias para decir cuándo vender o aguantar. Se calcula todo; el resumen lo redacta la IA.</p>
+        <div className="min-w-0">
+          <p className="text-sm text-[var(--text-tertiary)]">Analiza precio, tendencia, velocidad, indicadores técnicos (RSI, Bollinger, soporte/resistencia), estacionalidad, proyección y noticias para decir cuándo vender o aguantar. Se calcula todo; el resumen lo redacta la IA.</p>
+          {a && (
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+              <Clock className="h-3 w-3" /> Precio internacional: <b className="text-[var(--text-secondary)]">ICE (Yahoo Finance)</b>
+              {data?.generatedAt ? ` · actualizado ${relTime(data.generatedAt)}` : ""}
+            </p>
+          )}
+        </div>
         <div className="flex shrink-0 items-center gap-2">
           {a && (
             <>
@@ -87,7 +102,7 @@ export default function CacaoAsesor() {
                 <b>{data?.local?.stockKg} kg</b> en stock.{" "}
                 {a.signal === "vender"
                   ? "Buena ventana para asegurar ganancia — considerá vender por partes."
-                  : "Conviene esperar la recuperación; revisá el mercado esta semana."}
+                  : "Conviene esperar la recuperación; revisa el mercado esta semana."}
               </div>
             </div>
           )}
@@ -106,8 +121,8 @@ export default function CacaoAsesor() {
                 <h2 className="mt-0.5 text-xl font-extrabold" style={{ color: cfg.text }}>{a.titulo}</h2>
                 <p className="mt-1.5 text-sm leading-relaxed" style={{ color: cfg.text }}>{a.resumen}</p>
                 {typeof a.confianza === "number" && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <Gauge className="h-3.5 w-3.5 shrink-0" style={{ color: cfg.accent }} />
+                  <div className="mt-3 flex items-center gap-2" title="Qué tan alineadas están las señales entre sí: acuerdo de las tendencias (semana/mes/3 meses), calidad de la tendencia (R²), confirmación del RSI y de las noticias, menos la volatilidad. Más alto = las señales apuntan al mismo lado.">
+                    <Gauge className="h-3.5 w-3.5 shrink-0 cursor-help" style={{ color: cfg.accent }} />
                     <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider" style={{ color: cfg.accent }}>Confianza {a.confianza}%</span>
                     <div className="h-2 max-w-[160px] flex-1 overflow-hidden rounded-full" style={{ background: "var(--surface-raised)" }}>
                       <div className="h-full rounded-full" style={{ width: `${a.confianza}%`, background: cfg.ring }} />
@@ -121,8 +136,8 @@ export default function CacaoAsesor() {
           {/* Dirección probable (score compuesto) */}
           {a.direccion && (
             <Card icon={Activity} title="Dirección probable del precio">
-              <div className="mb-3">
-                <div className="mb-1 flex items-center justify-between text-xs font-bold">
+              <div className="mb-3" title="Probabilidad de que el precio suba, según el voto ponderado de todos los factores de abajo (tendencia, MACD, cruce de medias, RSI, divergencia, Bollinger, posición 52s, noticias y estacionalidad). No es garantía: es hacia dónde se inclinan los datos.">
+                <div className="mb-1 flex cursor-help items-center justify-between text-xs font-bold">
                   <span className="text-[var(--data-success-700)]">↑ Suba {a.direccion.probabilidadSuba}%</span>
                   <span className="uppercase tracking-wider text-[var(--text-tertiary)]">
                     {a.direccion.sesgo === "suba" ? "sesgo alcista" : a.direccion.sesgo === "baja" ? "sesgo bajista" : "lateral"}
@@ -146,7 +161,7 @@ export default function CacaoAsesor() {
                 ))}
               </div>
               <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                Consenso ponderado de {a.direccion.factores.length} factores técnicos y fundamentales. No es garantía — es la probabilidad que sugieren los datos.
+                Consenso ponderado de {a.direccion.factores.length} factores técnicos y fundamentales.
               </p>
             </Card>
           )}
@@ -163,7 +178,7 @@ export default function CacaoAsesor() {
 
           {/* Métricas — perspectiva de velocidad y ventana temporal */}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            <MetricChip label="En rango 52 sem" value={a.metrics.pos52 != null ? `${a.metrics.pos52}%` : "—"} />
+            <MetricChip label="En rango 52 sem" value={a.metrics.pos52 != null ? `${a.metrics.pos52}%` : "—"} title={`Dónde está el precio entre su mínimo y máximo del último año.${a.tecnico.drawdownPct != null ? ` Está ${Math.abs(a.tecnico.drawdownPct)}% por debajo del máximo del año — por eso puede estar "bajo en el rango" aunque haya subido fuerte.` : ""}`} />
             <MetricChip label="Semana" value={a.metrics.trend7 != null ? `${a.metrics.trend7 > 0 ? "+" : ""}${a.metrics.trend7}%` : "—"} Icon={trendIcon(a.metrics.trend7)} tone={a.metrics.trend7} />
             <MetricChip label="Mes" value={a.metrics.trend30 != null ? `${a.metrics.trend30 > 0 ? "+" : ""}${a.metrics.trend30}%` : "—"} Icon={trendIcon(a.metrics.trend30)} tone={a.metrics.trend30} />
             <MetricChip label="3 meses" value={a.metrics.trend90 != null ? `${a.metrics.trend90 > 0 ? "+" : ""}${a.metrics.trend90}%` : "—"} Icon={trendIcon(a.metrics.trend90)} tone={a.metrics.trend90} />
@@ -174,11 +189,11 @@ export default function CacaoAsesor() {
           {/* Indicadores técnicos */}
           <Card icon={Activity} title="Indicadores técnicos">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-              <MetricChip label="RSI (14)" value={a.tecnico.rsi != null ? String(a.tecnico.rsi) : "—"} tone={a.tecnico.rsi == null ? null : a.tecnico.rsi >= 70 ? -1 : a.tecnico.rsi <= 30 ? 1 : 0} />
-              <MetricChip label="Bollinger %B" value={a.tecnico.bollingerPctB != null ? `${a.tecnico.bollingerPctB}%` : "—"} />
-              <MetricChip label="Soporte" value={a.tecnico.soporte != null ? a.tecnico.soporte.toLocaleString("es-PE") : "—"} />
-              <MetricChip label="Resistencia" value={a.tecnico.resistencia != null ? a.tecnico.resistencia.toLocaleString("es-PE") : "—"} />
-              <MetricChip label="Drawdown 52s" value={a.tecnico.drawdownPct != null ? `${a.tecnico.drawdownPct}%` : "—"} tone={a.tecnico.drawdownPct} />
+              <MetricChip label="RSI (14)" value={a.tecnico.rsi != null ? String(a.tecnico.rsi) : "—"} tone={a.tecnico.rsi == null ? null : a.tecnico.rsi >= 70 ? -1 : a.tecnico.rsi <= 30 ? 1 : 0} title="Fuerza del movimiento (0-100). Arriba de 70 = sobrecompra (subió muy rápido, puede corregir); abajo de 30 = sobreventa (cayó fuerte, puede rebotar)." />
+              <MetricChip label="Bollinger %B" value={a.tecnico.bollingerPctB != null ? `${a.tecnico.bollingerPctB}%` : "—"} title="Posición del precio dentro de sus bandas de volatilidad (media ± 2 desvíos). Cerca de 100% = pegado al techo de la banda; cerca de 0% = pegado al piso." />
+              <MetricChip label="Soporte" value={a.tecnico.soporte != null ? a.tecnico.soporte.toLocaleString("es-PE") : "—"} title="Piso reciente del precio (USD/t): nivel donde suele frenar las caídas — buena zona para acopiar." />
+              <MetricChip label="Resistencia" value={a.tecnico.resistencia != null ? a.tecnico.resistencia.toLocaleString("es-PE") : "—"} title="Techo reciente del precio (USD/t): nivel donde suele frenar las subas — buena zona para vender." />
+              <MetricChip label="Drawdown 52s" value={a.tecnico.drawdownPct != null ? `${a.tecnico.drawdownPct}%` : "—"} tone={a.tecnico.drawdownPct} title="Cuánto está el precio por debajo de su máximo del último año." />
             </div>
             <ul className="mt-3 space-y-1.5 text-xs text-[var(--text-secondary)]">
               {a.tecnico.rsiZona && a.tecnico.rsiZona !== "neutral" && (
@@ -187,7 +202,7 @@ export default function CacaoAsesor() {
                 </Reading>
               )}
               {a.tecnico.soporte != null && a.tecnico.resistencia != null && (
-                <Reading>Vendé cerca del techo (<b>USD {a.tecnico.resistencia.toLocaleString("es-PE")}</b>) y acopiá cerca del piso (<b>USD {a.tecnico.soporte.toLocaleString("es-PE")}</b>).</Reading>
+                <Reading>Vende cerca del techo (<b>USD {a.tecnico.resistencia.toLocaleString("es-PE")}</b>) y acopia cerca del piso (<b>USD {a.tecnico.soporte.toLocaleString("es-PE")}</b>).</Reading>
               )}
               {a.tecnico.trendR2 != null && (
                 <Reading>Tendencia {a.tecnico.trendR2 >= 0.6 ? "limpia y sostenida" : "ruidosa / poco definida"} (R² {a.tecnico.trendR2}).</Reading>
@@ -217,14 +232,24 @@ export default function CacaoAsesor() {
                 </b>{" "}
                 {a.estacionalidad.desviacionPct >= 0 ? "sobre" : "bajo"} el promedio del año.
               </p>
-              <div className="mt-3 flex items-end gap-1">
-                {a.estacionalidad.porMes.map((m) => (
-                  <div key={m.mes} className="flex flex-1 flex-col items-center gap-1" title={`${mesNombre(m.mes)}: ${m.idxPct > 0 ? "+" : ""}${m.idxPct}%`}>
-                    <div className="w-full rounded-t" style={{ height: `${Math.min(44, Math.abs(m.idxPct) * 3 + 4)}px`, background: m.idxPct >= 0 ? "var(--data-success-400)" : "var(--data-error-400)", opacity: m.mes === a.estacionalidad!.mesActual ? 1 : 0.45 }} />
-                    <span className="text-[length:var(--ts-2xs)] uppercase text-[var(--text-tertiary)]">{mesNombre(m.mes).slice(0, 1)}</span>
+              {(() => {
+                const maxAbs = Math.max(1, ...a.estacionalidad.porMes.map((m) => Math.abs(m.idxPct)));
+                return (
+                  <div className="mt-3 flex h-20 items-end gap-1">
+                    {a.estacionalidad.porMes.map((m) => {
+                      const cur = m.mes === a.estacionalidad!.mesActual;
+                      const h = Math.max(5, Math.round((Math.abs(m.idxPct) / maxAbs) * 56));
+                      return (
+                        <div key={m.mes} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${mesNombre(m.mes)}: ${m.idxPct > 0 ? "+" : ""}${m.idxPct}% vs. promedio`}>
+                          <span className={`text-[length:var(--ts-2xs)] font-bold ${cur ? "text-[var(--text-primary)]" : "text-transparent"}`}>{m.idxPct > 0 ? "+" : ""}{Math.round(m.idxPct)}%</span>
+                          <div className="w-full rounded-t" style={{ height: `${h}px`, background: m.idxPct >= 0 ? "var(--data-success-500)" : "var(--data-error-500)", opacity: cur ? 1 : 0.55, boxShadow: cur ? "0 0 0 2px var(--accent)" : "none" }} />
+                          <span className={`text-[length:var(--ts-2xs)] uppercase ${cur ? "font-bold text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}>{mesNombre(m.mes).slice(0, 1)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
               <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                 Mes más caro: <b>{mesNombre(a.estacionalidad.mejorMes)}</b> · más barato: <b>{mesNombre(a.estacionalidad.peorMes)}</b>. Basado en los últimos 12 meses (no es climatología multi-año).
               </p>
@@ -237,15 +262,18 @@ export default function CacaoAsesor() {
               <Card icon={LineChart} title="Proyección (si sigue la tendencia)">
                 <div className="space-y-2.5">
                   {a.forecast.map((f) => (
-                    <div key={f.dias} className="flex items-center gap-3">
+                    <div key={f.dias} className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                       <span className="w-20 shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">En {f.dias} días</span>
-                      <span className="font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">USD {f.mid.toLocaleString("es-PE")}</span>
+                      <span className="font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">USD {f.mid.toLocaleString("es-PE")}<span className="text-xs font-normal text-[var(--text-tertiary)]">/t</span></span>
+                      {data?.local?.refKg != null && (
+                        <span className="font-mono text-xs text-[var(--text-secondary)]">≈ S/ {(data.local.refKg * (1 + f.pct / 100)).toFixed(2)}/kg</span>
+                      )}
                       <span className={`text-sm font-bold ${f.pct > 0 ? "text-[var(--data-success-700)]" : f.pct < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-tertiary)]"}`}>{f.pct > 0 ? "+" : ""}{f.pct}%</span>
                       <span className="ml-auto text-xs text-[var(--text-tertiary)]">rango {f.low.toLocaleString("es-PE")}–{f.high.toLocaleString("es-PE")}</span>
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-[length:var(--ts-2xs)] leading-relaxed text-[var(--text-tertiary)]">Extrapolación lineal de la tendencia reciente con banda por volatilidad. NO es una predicción garantizada — el mercado real puede moverse distinto.</p>
+                <p className="mt-3 text-[length:var(--ts-2xs)] leading-relaxed text-[var(--text-tertiary)]">Extrapolación lineal de la tendencia reciente con banda por volatilidad{a.tecnico.trendR2 != null && a.tecnico.trendR2 < 0.6 ? ` (R² ${a.tecnico.trendR2}: tendencia poco definida → banda ancha, tómala con cautela)` : ""}.</p>
               </Card>
             )}
             {a.news && (
@@ -258,7 +286,7 @@ export default function CacaoAsesor() {
                     {a.news.senal === "alcista" ? <TrendingUp className="h-4 w-4" /> : a.news.senal === "bajista" ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                     Sesgo {a.news.senal}
                   </span>
-                  <span className="text-xs text-[var(--text-tertiary)]">{a.news.alcista} alcistas · {a.news.bajista} bajistas · {a.news.total} titulares</span>
+                  <span className="text-xs text-[var(--text-tertiary)]">{a.news.alcista} alcista{a.news.alcista === 1 ? "" : "s"} · {a.news.bajista} bajista{a.news.bajista === 1 ? "" : "s"} · {Math.max(0, a.news.total - a.news.alcista - a.news.bajista)} neutrales de {a.news.total}</span>
                 </div>
                 {a.news.destacados.length > 0 && (
                   <ul className="mt-3 space-y-1.5">
@@ -338,7 +366,7 @@ export default function CacaoAsesor() {
             </Card>
           </div>
 
-          <p className="text-center text-xs text-[var(--text-tertiary)]">Orientativo — no es asesoría financiera. Decidí según tu necesidad de caja, calidad de tu lote y compromisos de venta.</p>
+          <p className="text-center text-xs text-[var(--text-tertiary)]">Orientativo — no es asesoría financiera ni una predicción garantizada; el mercado real puede moverse distinto. Decide según tu caja, la calidad de tu lote y tus compromisos de venta.</p>
         </>
       )}
     </div>
@@ -374,10 +402,10 @@ function Reading({ children }: { children: React.ReactNode }) {
     </li>
   );
 }
-function MetricChip({ label, value, Icon, tone }: { label: string; value: string; Icon?: typeof Minus; tone?: number | null }) {
+function MetricChip({ label, value, Icon, tone, title }: { label: string; value: string; Icon?: typeof Minus; tone?: number | null; title?: string }) {
   const color = tone == null ? "var(--text-primary)" : tone > 0 ? "var(--data-success-700)" : tone < 0 ? "var(--data-error-700)" : "var(--text-primary)";
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 px-3 py-2.5 text-center">
+    <div title={title} className={`rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 px-3 py-2.5 text-center${title ? " cursor-help" : ""}`}>
       <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</div>
       <div className="mt-0.5 flex items-center justify-center gap-1 font-mono text-base font-extrabold tabular-nums" style={{ color }}>
         {Icon && <Icon className="h-3.5 w-3.5" />}{value}

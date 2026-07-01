@@ -439,7 +439,7 @@ export default function CacaoInventario() {
             {inv.enProceso.some((p) => p.alerta !== "ok") && (
               <p className="flex items-center gap-1.5 pt-1 text-sm text-[var(--data-warning-700)]">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
-                Lotes pasados de tiempo en su etapa — revisá fermentación (&gt;7d) o secado (&gt;12d):
+                Lotes pasados de tiempo en su etapa — revisa fermentación (&gt;7d) o secado (&gt;12d):
                 riesgo de sobre-fermentación o moho.
               </p>
             )}

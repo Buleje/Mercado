@@ -76,16 +76,19 @@ export async function GET(req: NextRequest) {
       const m = advisor.metrics;
       const system =
         "Eres asesor de mercado de cacao para un acopiador (comprador-vendedor) en Pucallpa, Perú. " +
-        "Hablas claro, directo y en español peruano, sin jerga financiera. " +
+        "Hablas claro y directo, en español peruano con TUTEO (puedes/vende/tienes), NUNCA voseo (podés/vendé/tenés). " +
         "PROHIBIDO inventar cifras: usa SOLO los números que te doy. " +
+        "IMPORTANTE: respeta la RECOMENDACIÓN calculada y sé coherente con los indicadores — NO digas que el precio está 'barato' o 'bajo' si subió fuerte o está sobrecomprado (RSI alto); si está en la parte baja de su rango de 52 semanas pero viene subiendo, explícalo como que aún está lejos de su máximo del año pero con impulso. " +
         "Responde 2-3 oraciones, sin título ni markdown ni comillas.";
+      const t = advisor.tecnico;
       const user =
         `Datos del cacao hoy:\n` +
         `- Precio ICE: USD ${market.price.value}/t (${market.price.changePct ?? 0}% hoy)\n` +
-        `- Posición en rango 52 sem: ${m.pos52 ?? "?"}%\n` +
+        `- Posición en rango 52 sem: ${m.pos52 ?? "?"}% · drawdown vs. máximo del año: ${t.drawdownPct ?? "?"}%\n` +
         `- Tendencia: 3 meses ${m.trend90 ?? "?"}% · mes ${m.trend30 ?? "?"}% · semana ${m.trend7 ?? "?"}% (${m.velocidadDia ?? "?"}%/día) · volatilidad ${m.volatilidad ?? "?"}%/día\n` +
+        `- RSI(14): ${t.rsi ?? "?"}${t.rsiZona && t.rsiZona !== "neutral" ? ` (${t.rsiZona})` : ""} · MACD ${t.macdHist != null ? (t.macdHist > 0 ? "alcista" : "bajista") : "?"} · dirección probable: suba ${advisor.direccion.probabilidadSuba}%\n` +
         (advisor.forecast?.[1] ? `- Proyección lineal a 30 días: USD ${advisor.forecast[1].mid}/t (${advisor.forecast[1].pct}%, rango ${advisor.forecast[1].low}–${advisor.forecast[1].high})\n` : "") +
-        (advisor.news ? `- Sesgo de noticias: ${advisor.news.senal} (${advisor.news.alcista} alcistas / ${advisor.news.bajista} bajistas)\n` : "") +
+        (advisor.news ? `- Sesgo de noticias: ${advisor.news.senal}\n` : "") +
         (market.pricePenPerKg ? `- Referencia ≈ S/ ${market.pricePenPerKg}/kg seco\n` : "") +
         (stockKg > 0
           ? `- TU situación: ${stockKg} kg de cacao seco en stock` +
@@ -93,9 +96,9 @@ export async function GET(req: NextRequest) {
             (margenPct != null ? `, margen ~${margenPct}% sobre tu costo vs. referencia` : "") +
             `\n`
           : `- TU situación: sin stock seco disponible ahora\n`) +
-        `- Señal calculada: ${advisor.signal.toUpperCase()} (${advisor.fuerza}, confianza ${advisor.confianza}%)\n\n` +
+        `- RECOMENDACIÓN calculada (respétala): ${advisor.signal.toUpperCase()} (${advisor.fuerza}, confianza ${advisor.confianza}%)\n\n` +
         `Titulares recientes:\n${titulares || "(sin titulares)"}\n\n` +
-        `Explica en 2-3 oraciones qué está pasando con el cacao y qué le conviene hacer a ESTE acopiador (vender, aguantar, acopiar) y en qué ventana, considerando su stock y su margen sobre el costo (si tiene poco margen o pérdida, sé claro con eso). No repitas los números crudos, interprétalos.`;
+        `Explica en 2-3 oraciones, coherente con la recomendación de arriba, qué está pasando con el cacao y qué le conviene hacer a ESTE acopiador y en qué ventana, considerando su stock y su margen sobre el costo. No repitas los números crudos, interprétalos.`;
 
       const res = await callLLM("cheap", {
         messages: [{ role: "system", content: system }, { role: "user", content: user }],

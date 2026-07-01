@@ -250,13 +250,13 @@ export function cacaoBeneficioAlerta(
     if (d >= FERM_DIAS_MAX + 3)
       return { nivel: "urgente", motivo: `${d} días fermentando — riesgo de sobre-fermentación` };
     if (d > FERM_DIAS_MAX)
-      return { nivel: "atencion", motivo: `${d} días fermentando — revisá el punto y volteá` };
+      return { nivel: "atencion", motivo: `${d} días fermentando — revisa el punto y voltea` };
   }
   if (estado === "secando" && d != null) {
     if (d >= SEC_DIAS_MAX + 6)
       return { nivel: "urgente", motivo: `${d} días secando — riesgo de moho/rancidez` };
     if (d > SEC_DIAS_MAX)
-      return { nivel: "atencion", motivo: `${d} días secando — revisá la humedad para cerrar` };
+      return { nivel: "atencion", motivo: `${d} días secando — revisa la humedad para cerrar` };
   }
   return { nivel: "ok", motivo: "" };
 }

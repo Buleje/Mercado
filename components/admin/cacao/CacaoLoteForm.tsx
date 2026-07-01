@@ -368,7 +368,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                       </div>
                     ) : filtered.length === 0 ? (
                       <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">
-                        Sin productores. Registralos en la pestaña Productores (o dejá el nombre
+                        Sin productores. Regístralos en la pestaña Productores (o deja el nombre
                         libre abajo).
                       </div>
                     ) : (
@@ -505,7 +505,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                     >
                       {cutSum}%{" "}
                       {cutSum > 100
-                        ? "· revisá, pasa de 100"
+                        ? "· revisa, pasa de 100"
                         : cutSum < 95
                           ? "· debería sumar ~100"
                           : "· ok"}

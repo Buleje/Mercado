@@ -36,6 +36,15 @@ describe("cacaoAdvisor — señal", () => {
     expect(r.signal).toBe("neutral");
   });
 
+  it("rally sobrecomprado con pos52 baja → VENDER (coherente, no 'está barato')", () => {
+    // Precio subió fuerte pero sigue lejos de un máximo de 52s mucho mayor.
+    const r = cacaoAdvisor({ value: 4900, changePct: 1, weekHigh52: 9000, weekLow52: 2800, series: linear(3000, 4900, 60) });
+    expect(r.metrics.pos52 ?? 100).toBeLessThanOrEqual(35); // parte baja del rango anual
+    expect(r.tecnico.rsi ?? 0).toBeGreaterThanOrEqual(70); // sobrecomprado
+    expect(r.signal).toBe("vender"); // NO "aguantar porque está bajo"
+    expect(r.resumen.toLowerCase()).not.toContain("está bajo");
+  });
+
   it("sin serie igual da una señal por posición 52sem", () => {
     const r = cacaoAdvisor({ value: 9500, changePct: null, ...RANGE });
     expect(r.signal).toBe("vender");
