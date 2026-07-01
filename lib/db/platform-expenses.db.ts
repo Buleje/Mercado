@@ -18,6 +18,9 @@ export const DEFAULT_USD_TO_PEN = 3.75;
 const FX_KEY = "gastos.usdToPen";
 const HISTORY_KEY = "gastos.history";
 const MAX_HISTORY_MONTHS = 24;
+const BUDGET_KEY = "gastos.monthlyBudgetPen";
+const BUDGET_BY_CAT_KEY = "gastos.budgetByCategoryPen";
+const OVERSPEND_ALERT_KEY = "gastos.overspendAlerted";
 
 const monthKeyOf = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -65,6 +68,15 @@ export interface PlatformExpenseSummary {
 /** Cierre mensual congelado de gasto (para historial real, no proyectado). */
 export type ExpenseSnapshot = { totalPen: number; byCategory: Record<string, number> };
 export type ExpenseHistory = Record<string, ExpenseSnapshot>; // key = "YYYY-MM"
+
+/** Estado de dedup de alertas de sobregasto (para no re-avisar el mismo mes). */
+type OverspendState = { month: string; global: boolean; categories: string[] };
+
+/** Sobregastos NUEVOS (aún no avisados este mes) detectados por checkOverspend. */
+export type OverspendResult = {
+  global: { runRatePen: number; budgetPen: number } | null;
+  categories: { category: string; spentPen: number; budgetPen: number }[];
+};
 
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -118,6 +130,75 @@ export const PlatformExpensesDB = {
 
   async setFxRate(rate: number): Promise<void> {
     await PlatformSettingsDB.set(FX_KEY, rate, "superadmin");
+  },
+
+  // ── Presupuesto (tope global + por categoría) ──────────────────────────────
+  async getBudget(): Promise<number | null> {
+    const v = await PlatformSettingsDB.get<number>(BUDGET_KEY);
+    return typeof v === "number" ? v : null;
+  },
+
+  async setBudget(v: number | null): Promise<void> {
+    await PlatformSettingsDB.set(BUDGET_KEY, v, "superadmin");
+  },
+
+  async getBudgetByCategory(): Promise<Record<string, number>> {
+    const v = await PlatformSettingsDB.get<Record<string, number>>(BUDGET_BY_CAT_KEY);
+    return v && typeof v === "object" ? v : {};
+  },
+
+  /** Guarda solo categorías conocidas con tope > 0 (no ensucia el KV). */
+  async setBudgetByCategory(map: Record<string, number>): Promise<void> {
+    const known = new Set<string>(EXPENSE_CATEGORIES);
+    const clean: Record<string, number> = {};
+    for (const [k, val] of Object.entries(map)) {
+      if (known.has(k) && val > 0) clean[k] = val;
+    }
+    await PlatformSettingsDB.set(BUDGET_BY_CAT_KEY, clean, "superadmin");
+  },
+
+  /**
+   * Detecta sobregasto vs el tope global y los topes por categoría. Devuelve solo
+   * los que NO se avisaron ya este mes (dedup en OVERSPEND_ALERT_KEY) para no
+   * spamear: se avisa al cruzar el tope; si vuelve debajo, se rearma. El cron
+   * `superadmin-alerts` manda el email con lo que esto devuelve.
+   */
+  async checkOverspend(): Promise<OverspendResult> {
+    const [summary, budgetPen, budgetByCat, prev] = await Promise.all([
+      this.summary(),
+      this.getBudget(),
+      this.getBudgetByCategory(),
+      PlatformSettingsDB.get<OverspendState>(OVERSPEND_ALERT_KEY),
+    ]);
+    const month = monthKeyOf(new Date());
+    const state: OverspendState =
+      prev && prev.month === month
+        ? { month, global: prev.global, categories: [...prev.categories] }
+        : { month, global: false, categories: [] };
+
+    const out: OverspendResult = { global: null, categories: [] };
+
+    const runRate = summary.monthlyRunRatePen;
+    const overGlobal = budgetPen !== null && budgetPen > 0 && runRate > budgetPen;
+    if (overGlobal && !state.global) out.global = { runRatePen: runRate, budgetPen: budgetPen! };
+    state.global = overGlobal;
+
+    const spentByCat = new Map(summary.byCategory.map((c) => [c.category, c.amountPen]));
+    const stillOver: string[] = [];
+    for (const [cat, cap] of Object.entries(budgetByCat)) {
+      if (!(cap > 0)) continue;
+      const spent = spentByCat.get(cat) ?? 0;
+      if (spent > cap) {
+        stillOver.push(cat);
+        if (!state.categories.includes(cat)) {
+          out.categories.push({ category: cat, spentPen: spent, budgetPen: cap });
+        }
+      }
+    }
+    state.categories = stillOver;
+
+    await PlatformSettingsDB.set(OVERSPEND_ALERT_KEY, state, "superadmin");
+    return out;
   },
 
   /** Cierres mensuales congelados de gasto (historial real). */

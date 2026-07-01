@@ -92,6 +92,12 @@ export function BudgetPanel({
         </button>
       </div>
 
+      {(budget !== null && budget > 0) || Object.keys(budgetByCategory).length > 0 ? (
+        <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+          Te avisamos por email si el gasto supera un tope (una vez al cruzarlo, sin repetir).
+        </p>
+      ) : null}
+
       {open && (
         <div className="mt-4 space-y-2 border-t border-[var(--rule-soft)] pt-4">
           {CAT_KEYS.map((k) => {

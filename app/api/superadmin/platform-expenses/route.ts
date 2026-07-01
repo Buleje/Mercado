@@ -4,11 +4,7 @@ import { z } from "zod";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { PlatformExpensesDB, EXPENSE_CATEGORIES } from "@/lib/db/platform-expenses.db";
-import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { logger } from "@/lib/logger";
-
-const BUDGET_KEY = "gastos.monthlyBudgetPen";
-const BUDGET_BY_CAT_KEY = "gastos.budgetByCategoryPen";
 
 /**
  * /api/superadmin/platform-expenses — gastos REALES de plataforma (Buleje SaaS).
@@ -47,8 +43,8 @@ export async function GET(req: NextRequest) {
     const [expenses, summary, budget, budgetByCategory, fxRate] = await Promise.all([
       PlatformExpensesDB.list(),
       PlatformExpensesDB.summary(),
-      PlatformSettingsDB.get<number>(BUDGET_KEY),
-      PlatformSettingsDB.get<Record<string, number>>(BUDGET_BY_CAT_KEY),
+      PlatformExpensesDB.getBudget(),
+      PlatformExpensesDB.getBudgetByCategory(),
       PlatformExpensesDB.getFxRate(),
     ]);
     return NextResponse.json(
@@ -124,22 +120,9 @@ export async function PUT(req: NextRequest) {
 
   try {
     const { budgetPen, budgetByCategory, usdToPen } = parsed.data;
-    if (budgetPen !== undefined) {
-      await PlatformSettingsDB.set(BUDGET_KEY, budgetPen, "superadmin");
-    }
-    if (usdToPen !== undefined) {
-      await PlatformExpensesDB.setFxRate(usdToPen);
-    }
-    if (budgetByCategory !== undefined) {
-      // Solo categorías conocidas y topes > 0; descartar el resto para no
-      // ensuciar el KV con claves arbitrarias del cliente.
-      const known = new Set<string>(CATEGORIES);
-      const clean: Record<string, number> = {};
-      for (const [k, v] of Object.entries(budgetByCategory)) {
-        if (known.has(k) && v > 0) clean[k] = v;
-      }
-      await PlatformSettingsDB.set(BUDGET_BY_CAT_KEY, clean, "superadmin");
-    }
+    if (budgetPen !== undefined) await PlatformExpensesDB.setBudget(budgetPen);
+    if (usdToPen !== undefined) await PlatformExpensesDB.setFxRate(usdToPen);
+    if (budgetByCategory !== undefined) await PlatformExpensesDB.setBudgetByCategory(budgetByCategory);
     return NextResponse.json({ ok: true }, { headers: NO_STORE });
   } catch (e) {
     logger.error("[superadmin/platform-expenses] PUT", {
