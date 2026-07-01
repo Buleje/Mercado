@@ -64,7 +64,7 @@ export function ExpenseForm({
         e.preventDefault();
         void submit();
       }}
-      className="space-y-3 rounded-xl border-2 border-[var(--surface-border)] bg-[var(--surface-1)] p-4"
+      className="space-y-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5"
     >
       <p className="flex items-center gap-2 text-sm font-extrabold text-[var(--text-primary)]">
         <Plus className="h-4 w-4" /> {editing ? "Editar gasto" : "Nuevo gasto"}

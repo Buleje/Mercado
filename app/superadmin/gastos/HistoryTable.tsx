@@ -17,20 +17,14 @@ export function HistoryTable({ history }: { history: HistoryMonth[] }) {
   const withData = history.filter((h) => h.totalPen > 0);
   if (withData.length === 0) {
     return (
-      <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
-        <p className="mb-1 text-sm font-extrabold text-[var(--text-primary)]">Historial mensual</p>
-        <p className="text-sm text-[var(--text-tertiary)]">
-          Aún no hay gasto registrado. Los meses se van congelando a medida que registrás gastos.
-        </p>
-      </div>
+      <p className="text-sm text-[var(--text-tertiary)]">
+        Aún no hay gasto registrado. Los meses se van congelando a medida que registrás gastos.
+      </p>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
-      <p className="border-b border-[var(--rule-soft)] p-4 text-sm font-extrabold text-[var(--text-primary)]">
-        Historial mensual
-      </p>
+    <div className="overflow-hidden rounded-lg border border-[var(--rule-soft)]">
       <table className="w-full text-sm">
         <thead className="bg-[var(--surface-sunken)] text-left text-sm font-bold text-[var(--text-tertiary)]">
           <tr>

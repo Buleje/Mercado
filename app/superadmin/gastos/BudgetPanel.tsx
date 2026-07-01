@@ -52,7 +52,7 @@ export function BudgetPanel({
   };
 
   return (
-    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
+    <div>
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm font-bold text-[var(--text-secondary)]">Tope mensual (S/):</span>
         <input

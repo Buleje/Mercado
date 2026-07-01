@@ -13,6 +13,8 @@ import {
   Wallet, Server, TrendingUp, TrendingDown, Building2, Download, RefreshCw, DollarSign, FileText,
 } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
+import { AdminTabShell } from "../_components/_shared";
 import { useGastos } from "./use-gastos";
 import { fmtPen, expensesToCSV, type Expense } from "./gastos-helpers";
 import { generatePnlPDF } from "./pnl-pdf";
@@ -24,7 +26,6 @@ import { TrendChart } from "./TrendChart";
 import { CategoryDonut } from "./CategoryDonut";
 import { HistoryTable } from "./HistoryTable";
 
-const CARD = "rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4";
 const TOOL =
   "inline-flex items-center gap-1.5 rounded-lg bg-[var(--surface-sunken)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
 
@@ -72,7 +73,22 @@ export default function GastosClient() {
   };
 
   return (
-    <div className="space-y-5">
+    <AdminTabShell
+      title="Gastos de plataforma"
+      description="Ingresos vs gasto real, presupuesto, historial y costos de infra por tienda."
+      icon={Wallet}
+      kicker="Plataforma · Finanzas"
+      actions={
+        <div className="flex items-center gap-2">
+          <button onClick={exportPnl} className={TOOL}>
+            <FileText className="h-4 w-4" /> P&L PDF
+          </button>
+          <button onClick={() => void g.load()} disabled={g.busy} className={TOOL}>
+            <RefreshCw className="h-4 w-4" /> Actualizar
+          </button>
+        </div>
+      }
+    >
       {/* P&L: ¿gana o pierde la plataforma? */}
       <PnlHero mrrPen={g.mrrPen} runRatePen={runRate} payingTenants={g.payingTenants} />
 
@@ -96,15 +112,22 @@ export default function GastosClient() {
       </div>
 
       {/* Presupuesto global + por categoría */}
-      <BudgetPanel
-        budget={g.budget}
-        budgetByCategory={g.budgetByCategory}
-        runRatePen={runRate}
-        byCategory={g.summary?.byCategory ?? []}
-        busy={g.busy}
-        onSaveBudget={(v) => void g.saveBudget(v)}
-        onSaveBudgetByCategory={(next) => void g.saveBudgetByCategory(next)}
-      />
+      <SuperadminChartCard
+        kicker="Control"
+        title="Presupuesto mensual"
+        description="Tope global y por categoría; te avisamos por email al cruzar un tope."
+        density="compact"
+      >
+        <BudgetPanel
+          budget={g.budget}
+          budgetByCategory={g.budgetByCategory}
+          runRatePen={runRate}
+          byCategory={g.summary?.byCategory ?? []}
+          busy={g.busy}
+          onSaveBudget={(v) => void g.saveBudget(v)}
+          onSaveBudgetByCategory={(next) => void g.saveBudgetByCategory(next)}
+        />
+      </SuperadminChartCard>
 
       {/* Tabs */}
       <div className="flex flex-wrap items-center gap-2">
@@ -126,12 +149,6 @@ export default function GastosClient() {
             <Download className="h-4 w-4" /> CSV
           </button>
         )}
-        <button onClick={exportPnl} className={TOOL}>
-          <FileText className="h-4 w-4" /> P&L PDF
-        </button>
-        <button onClick={() => void g.load()} disabled={g.busy} className={`${TOOL} ml-auto`}>
-          <RefreshCw className="h-4 w-4" /> Actualizar
-        </button>
       </div>
 
       {g.err && (
@@ -139,28 +156,32 @@ export default function GastosClient() {
       )}
 
       {tab === "reales" ? (
-        <div className="grid gap-5 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <ExpenseForm
-              key={editing?.id ?? "new"}
-              initial={editing ?? undefined}
-              busy={g.busy}
-              onSubmit={onSubmitForm}
-              onCancel={editing ? () => setEditing(null) : undefined}
-            />
+        <>
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="lg:col-span-1">
+              <ExpenseForm
+                key={editing?.id ?? "new"}
+                initial={editing ?? undefined}
+                busy={g.busy}
+                onSubmit={onSubmitForm}
+                onCancel={editing ? () => setEditing(null) : undefined}
+              />
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:col-span-2">
+              <SuperadminChartCard title="Por categoría" density="compact">
+                <CategoryDonut data={g.summary?.byCategory ?? []} />
+              </SuperadminChartCard>
+              <SuperadminChartCard title="Tendencia (6 meses)" density="compact">
+                <TrendChart trend={g.summary?.trend ?? []} budgetPen={g.budget} />
+              </SuperadminChartCard>
+            </div>
           </div>
 
-          <div className="space-y-4 lg:col-span-2">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className={CARD}>
-                <p className="mb-3 text-sm font-extrabold text-[var(--text-primary)]">Por categoría</p>
-                <CategoryDonut data={g.summary?.byCategory ?? []} />
-              </div>
-              <div className={CARD}>
-                <p className="mb-3 text-sm font-extrabold text-[var(--text-primary)]">Tendencia (6 meses)</p>
-                <TrendChart trend={g.summary?.trend ?? []} budgetPen={g.budget} />
-              </div>
-            </div>
+          <SuperadminChartCard
+            title="Gastos reales"
+            description="Facturas y costos recurrentes de la plataforma (Buleje SaaS)."
+            density="compact"
+          >
             <ExpensesTable
               expenses={g.expenses}
               loading={g.loading}
@@ -170,51 +191,65 @@ export default function GastosClient() {
               onDelete={(id) => void g.removeExpense(id)}
               onSaveFx={(rate) => void g.saveFxRate(rate)}
             />
+          </SuperadminChartCard>
+
+          <SuperadminChartCard
+            kicker="Evolución"
+            title="Historial mensual"
+            description="Cierre real congelado por mes; expandí un mes para ver el desglose por categoría."
+            density="compact"
+          >
             <HistoryTable history={g.history} />
-          </div>
-        </div>
+          </SuperadminChartCard>
+        </>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-[var(--rule-soft)]">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--surface-sunken)] text-left text-sm font-bold text-[var(--text-tertiary)]">
-              <tr>
-                <th className="p-2">Tienda</th>
-                <th className="p-2">Plan</th>
-                <th className="p-2 text-right">Storage</th>
-                <th className="p-2 text-right">Compute</th>
-                <th className="p-2 text-right">IA</th>
-                <th className="p-2 text-right">Total</th>
-                <th className="p-2 text-right">Margen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tenants.length === 0 && !g.loading && (
+        <SuperadminChartCard
+          title="Costos por tienda"
+          description="Infra estimada (storage · compute · IA) y margen bruto por tienda."
+          density="compact"
+        >
+          <div className="overflow-hidden rounded-lg border border-[var(--rule-soft)]">
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--surface-sunken)] text-left text-sm font-bold text-[var(--text-tertiary)]">
                 <tr>
-                  <td colSpan={7} className="p-4 text-center text-[var(--text-tertiary)]">Sin datos de costos.</td>
+                  <th className="p-2">Tienda</th>
+                  <th className="p-2">Plan</th>
+                  <th className="p-2 text-right">Storage</th>
+                  <th className="p-2 text-right">Compute</th>
+                  <th className="p-2 text-right">IA</th>
+                  <th className="p-2 text-right">Total</th>
+                  <th className="p-2 text-right">Margen</th>
                 </tr>
-              )}
-              {tenants.map((t) => (
-                <tr key={t.tenantId} className="border-t border-[var(--rule-soft)]">
-                  <td className="p-2">
-                    <span className="inline-flex items-center gap-1.5 font-bold text-[var(--text-primary)]">
-                      <Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />
-                      {t.tenantName}
-                    </span>
-                  </td>
-                  <td className="p-2 text-[var(--text-secondary)]">{t.plan}</td>
-                  <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.storageCost)}</td>
-                  <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.computeCost)}</td>
-                  <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.aiCost)}</td>
-                  <td className="p-2 text-right tabular-nums font-bold text-[var(--text-primary)]">{fmtPen(t.totalCost)}</td>
-                  <td className={`p-2 text-right tabular-nums font-bold ${t.grossMargin >= 0 ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-error-600,#dc2626)]"}`}>
-                    {t.grossMargin.toFixed(0)}%
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {tenants.length === 0 && !g.loading && (
+                  <tr>
+                    <td colSpan={7} className="p-4 text-center text-[var(--text-tertiary)]">Sin datos de costos.</td>
+                  </tr>
+                )}
+                {tenants.map((t) => (
+                  <tr key={t.tenantId} className="border-t border-[var(--rule-soft)]">
+                    <td className="p-2">
+                      <span className="inline-flex items-center gap-1.5 font-bold text-[var(--text-primary)]">
+                        <Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />
+                        {t.tenantName}
+                      </span>
+                    </td>
+                    <td className="p-2 text-[var(--text-secondary)]">{t.plan}</td>
+                    <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.storageCost)}</td>
+                    <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.computeCost)}</td>
+                    <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.aiCost)}</td>
+                    <td className="p-2 text-right tabular-nums font-bold text-[var(--text-primary)]">{fmtPen(t.totalCost)}</td>
+                    <td className={`p-2 text-right tabular-nums font-bold ${t.grossMargin >= 0 ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-error-600,#dc2626)]"}`}>
+                      {t.grossMargin.toFixed(0)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SuperadminChartCard>
       )}
-    </div>
+    </AdminTabShell>
   );
 }
