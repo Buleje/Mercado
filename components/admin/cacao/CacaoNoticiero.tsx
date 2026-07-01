@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { SectionTitle } from "@buleje/design-system";
 import {
   Newspaper, RefreshCw, TrendingUp, TrendingDown, Minus, ExternalLink, AlertCircle, Coins, Globe, ArrowUpRight, Activity,
 } from "@buleje/design-system/icons";
@@ -74,8 +75,21 @@ export default function CacaoNoticiero() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--text-tertiary)]">Precio internacional en vivo, conversión a soles y noticias del cacao. Datos: ICE (Yahoo Finance) + Google Noticias.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Agrícola · Mercado</p>
+          <SectionTitle className="mt-0.5 flex items-center gap-2">
+            Mercado del cacao
+            {p && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-900)]">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--data-success-600)]" /> En vivo
+              </span>
+            )}
+          </SectionTitle>
+          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+            Precio internacional, conversión a soles y noticias. Datos: ICE (Yahoo Finance) + Google Noticias{p ? ` · ${relTime(p.asOf) || "recién"}` : ""}.
+          </p>
+        </div>
         <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
       </div>
 
@@ -89,17 +103,27 @@ export default function CacaoNoticiero() {
           <div className="lg:col-span-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             {p ? (
               <>
-                <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {/* Precio mundial (referencia ICE) */}
                   <div>
-                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Cacao · ICE New York (USD / tonelada)</p>
-                    <div className="mt-1 flex items-end gap-3">
-                      <span className="font-mono text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">{fmt(p.value)}</span>
-                      <span className={`mb-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mundo · ICE New York</p>
+                    <div className="mt-1 flex flex-wrap items-end gap-2">
+                      <span className="font-mono text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">USD {fmt(p.value)}</span>
+                      <span className="mb-1 text-xs text-[var(--text-tertiary)]">/ tonelada</span>
+                      <span className={`mb-0.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
                         {up ? <TrendingUp className="h-4 w-4" /> : down ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                         {p.changePct != null ? `${up ? "+" : ""}${p.changePct}%` : "—"}
                       </span>
                     </div>
-                    {data.pricePenPerKg != null && <p className="mt-1 text-sm text-[var(--text-secondary)]">≈ <b className="text-[var(--text-primary)]">S/ {data.pricePenPerKg.toFixed(2)}/kg</b> seco (referencia internacional)</p>}
+                  </div>
+                  {/* Referencia local en soles — lo que le importa al productor */}
+                  <div className="sm:border-l sm:border-[var(--rule-soft)] sm:pl-4">
+                    <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Referencia local · grano seco</p>
+                    <div className="mt-1 flex flex-wrap items-end gap-2">
+                      <span className="font-mono text-3xl font-extrabold tabular-nums text-[var(--accent)]">S/ {data.pricePenPerKg != null ? data.pricePenPerKg.toFixed(2) : "—"}</span>
+                      <span className="mb-1 text-xs text-[var(--text-tertiary)]">/ kg</span>
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">Del precio ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD. En chacra suele ir algo por debajo (flete + margen).</p>
                   </div>
                 </div>
 
