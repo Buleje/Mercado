@@ -23,6 +23,15 @@ export type CostsData = { totalMonthlyCost: number; avgGrossMargin: number; tena
 /** Tope mensual en PEN por categoría (key = category). 0/ausente = sin tope. */
 export type BudgetByCategory = Record<string, number>;
 
+/** Fila del historial mensual navegable (con desglose por categoría). */
+export type HistoryMonth = {
+  monthKey: string;
+  label: string;
+  totalPen: number;
+  real: boolean;
+  byCategory: { category: string; amountPen: number }[];
+};
+
 /** P&L de la plataforma: ingresos (MRR) vs gasto real mensual. */
 export type Pnl = {
   mrrPen: number;

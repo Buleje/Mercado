@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import type { Expense, Summary, CostsData, BudgetByCategory } from "./gastos-helpers";
+import type { Expense, Summary, CostsData, BudgetByCategory, HistoryMonth } from "./gastos-helpers";
 
 export type ExpenseInput = {
   concept: string;
@@ -30,6 +30,7 @@ export function useGastos() {
   const [costs, setCosts] = useState<CostsData | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
   const [budgetByCategory, setBudgetByCategory] = useState<BudgetByCategory>({});
+  const [history, setHistory] = useState<HistoryMonth[]>([]);
   const [fxRate, setFxRate] = useState<number>(3.75);
   const [mrrPen, setMrrPen] = useState<number>(0);
   const [payingTenants, setPayingTenants] = useState<number>(0);
@@ -50,6 +51,7 @@ export function useGastos() {
         setSummary(j.summary ?? null);
         setBudget(typeof j.budgetPen === "number" ? j.budgetPen : null);
         setBudgetByCategory(j.budgetByCategory ?? {});
+        setHistory(Array.isArray(j.history) ? j.history : []);
         if (typeof j.fxRate === "number") setFxRate(j.fxRate);
       }
       if (b.ok) {
@@ -184,7 +186,7 @@ export function useGastos() {
   );
 
   return {
-    expenses, summary, costs, budget, budgetByCategory, fxRate, mrrPen, payingTenants,
+    expenses, summary, costs, budget, budgetByCategory, history, fxRate, mrrPen, payingTenants,
     loading, busy, err, setErr, load,
     addExpense, updateExpense, removeExpense, saveBudget, saveBudgetByCategory, saveFxRate,
   };

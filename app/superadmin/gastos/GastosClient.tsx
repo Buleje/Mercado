@@ -22,6 +22,7 @@ import { ExpenseForm } from "./ExpenseForm";
 import { ExpensesTable } from "./ExpensesTable";
 import { TrendChart } from "./TrendChart";
 import { CategoryDonut } from "./CategoryDonut";
+import { HistoryTable } from "./HistoryTable";
 
 const CARD = "rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4";
 const TOOL =
@@ -169,6 +170,7 @@ export default function GastosClient() {
               onDelete={(id) => void g.removeExpense(id)}
               onSaveFx={(rate) => void g.saveFxRate(rate)}
             />
+            <HistoryTable history={g.history} />
           </div>
         </div>
       ) : (

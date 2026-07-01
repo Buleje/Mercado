@@ -90,6 +90,31 @@ function monthlyize(amountPen: number, period: string): number {
   return amountPen; // mensual o vacío = se asume mensual
 }
 
+/**
+ * Gasto de `monthKey` a partir de las filas ya mapeadas: recurrente (siempre
+ * cuenta) + únicos con fecha en ese mes, por categoría. Núcleo puro compartido
+ * por monthTotals() y historyTable().
+ */
+function totalsFromRows(rows: PlatformExpenseRow[], monthKey: string): ExpenseSnapshot {
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const cat = new Map<string, number>();
+  for (const r of rows) {
+    const v = r.recurring
+      ? monthlyize(r.amountPen, r.period)
+      : monthKeyOf(new Date(r.date)) === monthKey
+        ? r.amountPen
+        : 0;
+    if (v > 0) cat.set(r.category, (cat.get(r.category) ?? 0) + v);
+  }
+  let total = 0;
+  const byCategory: Record<string, number> = {};
+  for (const [k, v] of cat) {
+    byCategory[k] = round(v);
+    total += v;
+  }
+  return { totalPen: round(total), byCategory };
+}
+
 function mapRow(
   r: {
     id: string;
@@ -209,28 +234,41 @@ export const PlatformExpensesDB = {
 
   /**
    * Gasto de un mes concreto = recurrente (siempre cuenta) + únicos con fecha en
-   * ese mes, por categoría. Misma fórmula que la tendencia de summary(); es lo que
-   * se congela como cierre del mes.
+   * ese mes. Misma fórmula que la tendencia; es lo que se congela como cierre.
    */
   async monthTotals(monthKey: string): Promise<ExpenseSnapshot> {
-    const rows = await this.list();
-    const round = (n: number) => Math.round(n * 100) / 100;
-    const cat = new Map<string, number>();
-    for (const r of rows) {
-      const v = r.recurring
-        ? monthlyize(r.amountPen, r.period)
-        : monthKeyOf(new Date(r.date)) === monthKey
-          ? r.amountPen
-          : 0;
-      if (v > 0) cat.set(r.category, (cat.get(r.category) ?? 0) + v);
+    return totalsFromRows(await this.list(), monthKey);
+  },
+
+  /**
+   * Historial navegable de los últimos `months` meses (más reciente primero):
+   * mes con cierre congelado → valor real; mes en curso o sin cierre → estimado.
+   * Incluye el desglose por categoría de cada mes para la tabla expandible.
+   */
+  async historyTable(months = 12): Promise<
+    { monthKey: string; label: string; totalPen: number; real: boolean; byCategory: { category: string; amountPen: number }[] }[]
+  > {
+    const [fx, history] = await Promise.all([this.getFxRate(), this.getHistory()]);
+    const rows = await this.list(fx);
+    const now = new Date();
+    const thisKey = monthKeyOf(now);
+    const out = [];
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = monthKeyOf(d);
+      const snap = key !== thisKey ? history[key] : undefined;
+      const totals = snap ?? totalsFromRows(rows, key);
+      out.push({
+        monthKey: key,
+        label: `${MONTHS_ES[d.getMonth()]} ${d.getFullYear()}`,
+        totalPen: totals.totalPen,
+        real: Boolean(snap),
+        byCategory: Object.entries(totals.byCategory)
+          .map(([category, amountPen]) => ({ category, amountPen }))
+          .sort((a, b) => b.amountPen - a.amountPen),
+      });
     }
-    let total = 0;
-    const byCategory: Record<string, number> = {};
-    for (const [k, v] of cat) {
-      byCategory[k] = round(v);
-      total += v;
-    }
-    return { totalPen: round(total), byCategory };
+    return out;
   },
 
   /**

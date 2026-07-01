@@ -40,12 +40,13 @@ export async function GET(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
   try {
-    const [expenses, summary, budget, budgetByCategory, fxRate] = await Promise.all([
+    const [expenses, summary, budget, budgetByCategory, fxRate, history] = await Promise.all([
       PlatformExpensesDB.list(),
       PlatformExpensesDB.summary(),
       PlatformExpensesDB.getBudget(),
       PlatformExpensesDB.getBudgetByCategory(),
       PlatformExpensesDB.getFxRate(),
+      PlatformExpensesDB.historyTable(12),
     ]);
     return NextResponse.json(
       {
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
         budgetPen: budget ?? null,
         budgetByCategory: budgetByCategory ?? {},
         fxRate,
+        history,
         generatedAt: new Date().toISOString(),
       },
       { headers: NO_STORE },
