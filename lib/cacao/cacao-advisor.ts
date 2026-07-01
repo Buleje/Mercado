@@ -73,6 +73,26 @@ export interface AdvisorDireccion {
   sesgo: "suba" | "baja" | "lateral";
   factores: AdvisorFactor[];
 }
+/** Un tramo del plan de venta escalonado. */
+export interface AdvisorPlanTramo {
+  pct: number; // % del stock a vender en este tramo
+  kg: number | null; // kg equivalentes (si hay stock)
+  cuando: string; // condición/gatillo
+  precioRef: number | null; // USD/t objetivo (null = a mercado)
+}
+/** Escenario de precio a 30 días. */
+export interface AdvisorEscenario {
+  nombre: "alcista" | "base" | "bajista";
+  prob: number; // 0-100
+  target: number; // USD/t
+  pct: number; // variación vs. precio actual
+}
+/** Factor del desglose de la confianza. */
+export interface AdvisorConfFactor {
+  nombre: string;
+  aporte: number; // puntos +/- que sumó al score
+  detalle: string;
+}
 /** Estacionalidad mensual (según los últimos 12 meses de la serie). */
 export interface AdvisorEstacional {
   mesActual: number; // 0-11
@@ -105,6 +125,10 @@ export interface AdvisorResult {
   tecnico: AdvisorTecnico; // indicadores técnicos
   estacionalidad: AdvisorEstacional | null; // patrón mensual (si hay datos con fecha)
   direccion: AdvisorDireccion; // veredicto direccional compuesto (suba/baja)
+  plan: AdvisorPlanTramo[]; // plan de venta escalonado
+  escenarios: AdvisorEscenario[]; // 3 escenarios de precio a 30 días
+  sensibilidad: string[]; // qué cambiaría la recomendación
+  confianzaFactores: AdvisorConfFactor[]; // desglose del score de confianza
 }
 
 function pctChange(arr: number[], n: number): number | null {
@@ -377,6 +401,75 @@ function direccionCompuesta(x: {
   return { probabilidadSuba: prob, sesgo, factores };
 }
 
+/** Plan de venta escalonado según la señal, su fuerza, el stock y los niveles. */
+function planVentaEscalonado(
+  signal: AdvisorAction,
+  fuerza: AdvisorResult["fuerza"],
+  value: number,
+  resistencia: number | null,
+  stockKg: number,
+): AdvisorPlanTramo[] {
+  const kgOf = (pct: number) => (stockKg > 0 ? Math.round((stockKg * pct) / 100) : null);
+  const px = Math.round(value);
+  if (signal === "vender") {
+    const ahora = fuerza === "fuerte" ? 50 : fuerza === "moderada" ? 40 : 30;
+    if (resistencia != null && resistencia > value) {
+      const medio = 30;
+      return [
+        { pct: ahora, kg: kgOf(ahora), cuando: "Ahora, al precio de mercado", precioRef: px },
+        { pct: medio, kg: kgOf(medio), cuando: "Al tocar la resistencia", precioRef: resistencia },
+        { pct: 100 - ahora - medio, kg: kgOf(100 - ahora - medio), cuando: "Si rompe la resistencia (deja correr)", precioRef: null },
+      ];
+    }
+    return [
+      { pct: ahora, kg: kgOf(ahora), cuando: "Ahora, al precio de mercado", precioRef: px },
+      { pct: 100 - ahora, kg: kgOf(100 - ahora), cuando: "En los próximos días, por partes", precioRef: null },
+    ];
+  }
+  if (signal === "aguantar") {
+    return [
+      { pct: 20, kg: kgOf(20), cuando: "Ahora, solo para cubrir caja", precioRef: px },
+      { pct: 80, kg: kgOf(80), cuando: resistencia != null ? `Cuando se recupere (~USD ${resistencia.toLocaleString("es-PE")})` : "Cuando se recupere el precio", precioRef: resistencia },
+    ];
+  }
+  return [
+    { pct: 50, kg: kgOf(50), cuando: "Según tu necesidad de caja", precioRef: px },
+    { pct: 50, kg: kgOf(50), cuando: "Guarda esperando mejor precio", precioRef: null },
+  ];
+}
+
+/** 3 escenarios de precio a 30 días desde la proyección + la dirección probable. */
+function escenariosPrecio(value: number, f30: AdvisorForecast | null, probSuba: number): AdvisorEscenario[] {
+  if (!f30 || value <= 0) return [];
+  const probAlc = Math.max(5, Math.round(probSuba * 0.5));
+  const probBaj = Math.max(5, Math.round((100 - probSuba) * 0.5));
+  const probBase = Math.max(10, 100 - probAlc - probBaj);
+  const pct = (t: number) => round1(((t - value) / value) * 100);
+  return [
+    { nombre: "alcista", prob: probAlc, target: f30.high, pct: pct(f30.high) },
+    { nombre: "base", prob: probBase, target: f30.mid, pct: pct(f30.mid) },
+    { nombre: "bajista", prob: probBaj, target: f30.low, pct: pct(f30.low) },
+  ];
+}
+
+/** Qué gatillaría un cambio de recomendación (reglas de sensibilidad). */
+function sensibilidadSignal(signal: AdvisorAction, rsiVal: number | null, tecnico: AdvisorTecnico): string[] {
+  const out: string[] = [];
+  const res = tecnico.resistencia != null ? `USD ${tecnico.resistencia.toLocaleString("es-PE")}` : "la resistencia";
+  const sop = tecnico.soporte != null ? `USD ${tecnico.soporte.toLocaleString("es-PE")}` : "el soporte";
+  if (signal === "vender") {
+    if (rsiVal != null && rsiVal >= 70) out.push(`Pasaría a NEUTRAL si el RSI baja de 70 (ahora ${rsiVal}): se enfría la sobrecompra.`);
+    out.push(`Se reforzaría si rompe la resistencia (${res}) con impulso.`);
+    if (tecnico.emaCruce === "golden") out.push("Cambiaría a AGUANTAR si aparece un death cross (EMA 12 por debajo de EMA 26).");
+  } else if (signal === "aguantar") {
+    out.push(`Cambiaría a VENDER si rebota desde el soporte (${sop}) y recupera impulso (RSI y MACD al alza).`);
+    out.push(`Se reforzaría el aguante si pierde el soporte (${sop}): riesgo de caída mayor.`);
+  } else {
+    out.push(`Se definiría a VENDER si supera la resistencia (${res}), o a AGUANTAR si pierde el soporte (${sop}).`);
+  }
+  return out;
+}
+
 export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   const closes = (p.series ?? []).map((x) => x.c).filter((c) => typeof c === "number" && c > 0);
   const pos52 = p.weekHigh52 != null && p.weekLow52 != null && p.weekHigh52 > p.weekLow52
@@ -497,7 +590,7 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
   let localRiesgo: string | null = null;
   if (local && local.stockKg > 0 && local.spreadPct != null && local.miPrecioKg != null) {
     if (local.spreadPct >= 15) {
-      localMotivo = `Tienes ${local.stockKg} kg en stock con ~${local.spreadPct}% de margen sobre tu costo (S/ ${local.miPrecioKg}/kg): buena ventana para asegurar ganancia.`;
+      localMotivo = `Tienes ${local.stockKg} kg en stock con ~${local.spreadPct}% de margen sobre tu costo (S/ ${local.miPrecioKg}/kg): conviene realizar parte de esa ganancia.`;
       if (signal === "neutral" && !falling) { signal = "vender"; fuerza = "leve"; }
       else if (signal === "vender" && fuerza === "leve") fuerza = "moderada";
     } else if (local.spreadPct < 0) {
@@ -550,26 +643,36 @@ export function cacaoAdvisor(p: AdvisorPriceInput): AdvisorResult {
       ? "Para ACOPIAR: precio alto = cuida tu margen, los productores pedirán más por kg."
       : "Para ACOPIAR: precio en zona media, condiciones normales de compra.";
 
-  // Confianza rigurosa: pondera acuerdo entre horizontes, calidad de la tendencia
-  // (R²), confirmación de posición/RSI, alineación de noticias y penaliza volatilidad.
+  // Confianza rigurosa CON desglose: pondera acuerdo de horizontes, calidad de la
+  // tendencia (R²), confirmación de posición/RSI, alineación de noticias, − volatilidad.
   const sameSign = (x: number | null, y: number | null) =>
     x != null && y != null && x !== 0 && Math.sign(x) === Math.sign(y);
+  const confianzaFactores: AdvisorConfFactor[] = [];
   let confianza = 45;
-  if (sameSign(trend7, trend30)) confianza += 8;
-  if (sameSign(trend30, trend90)) confianza += 8;
-  if (trendR2 != null) confianza += Math.round(trendR2 * 14); // tendencia limpia = más confianza
-  if ((signal === "vender" && high) || (signal === "aguantar" && low)) confianza += 10;
+  const addConf = (cond: boolean, aporte: number, nombre: string, detalle: string) => {
+    if (!cond || aporte === 0) return;
+    confianza += aporte;
+    confianzaFactores.push({ nombre, aporte, detalle });
+  };
+  addConf(sameSign(trend7, trend30), 8, "Semana y mes coinciden", "las tendencias de corto plazo van al mismo lado");
+  addConf(sameSign(trend30, trend90), 8, "Mes y 3 meses coinciden", "la tendencia de mediano plazo confirma");
+  if (trendR2 != null) addConf(true, Math.round(trendR2 * 14), "Calidad de tendencia (R²)", `R² ${trendR2}: ${trendR2 >= 0.6 ? "movimiento limpio" : "algo ruidoso"}`);
+  addConf((signal === "vender" && high) || (signal === "aguantar" && low), 10, "Posición en el rango anual", "el nivel confirma la señal");
   if (rsiVal != null) {
-    if ((signal === "vender" && rsiVal >= 65) || (signal === "aguantar" && rsiVal <= 35)) confianza += 8;
-    else if ((signal === "vender" && rsiVal <= 35) || (signal === "aguantar" && rsiVal >= 65)) confianza -= 10;
+    if ((signal === "vender" && rsiVal >= 65) || (signal === "aguantar" && rsiVal <= 35)) addConf(true, 8, "RSI confirma", `RSI ${rsiVal} apoya la recomendación`);
+    else if ((signal === "vender" && rsiVal <= 35) || (signal === "aguantar" && rsiVal >= 65)) addConf(true, -10, "RSI contradice", `RSI ${rsiVal} va en contra`);
   }
   if (news && news.senal !== "neutral" && news.senal !== "mixto") {
     const alinea = (signal === "aguantar" && news.senal === "alcista") || (signal === "vender" && news.senal === "bajista");
-    confianza += alinea ? 8 : -8;
+    addConf(true, alinea ? 8 : -8, alinea ? "Noticias alineadas" : "Noticias en contra", `sesgo ${news.senal}`);
   }
-  if (nervioso) confianza -= 12;
+  addConf(nervioso, -12, "Mercado volátil", `±${vol}%/día resta certeza`);
   if (signal === "neutral") confianza = Math.min(confianza, 45);
   confianza = Math.max(15, Math.min(95, confianza));
 
-  return { signal, fuerza, confianza, titulo, resumen, motivos, cuando, donde: DONDE, riesgos, compra, metrics, forecast, news, tecnico, estacionalidad, direccion };
+  const plan = planVentaEscalonado(signal, fuerza, p.value, tecnico.resistencia, local?.stockKg ?? 0);
+  const escenarios = escenariosPrecio(p.value, forecast[1] ?? null, direccion.probabilidadSuba);
+  const sensibilidad = sensibilidadSignal(signal, rsiVal, tecnico);
+
+  return { signal, fuerza, confianza, titulo, resumen, motivos, cuando, donde: DONDE, riesgos, compra, metrics, forecast, news, tecnico, estacionalidad, direccion, plan, escenarios, sensibilidad, confianzaFactores };
 }

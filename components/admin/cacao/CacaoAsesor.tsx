@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import {
-  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins, LineChart, Newspaper, Gauge, Calendar, Activity, Bell, Printer, MessageCircle, Download,
+  RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus, Sparkles, Clock, MapPin, AlertTriangle, ShoppingCart, ListChecks, Coins, LineChart, Newspaper, Gauge, Calendar, Activity, Bell, Printer, MessageCircle, Download, Layers, Zap, Info,
 } from "@buleje/design-system/icons";
 import { mesNombre, type AdvisorResult } from "@/lib/cacao/cacao-advisor";
 import { printCacaoAsesor, asesorTexto } from "@/lib/cacao/cacao-asesor-informe";
@@ -101,7 +101,7 @@ export default function CacaoAsesor() {
                 <b>Notificación:</b> señal {a.signal === "vender" ? "FUERTE de VENTA" : "FUERTE de AGUANTAR"} con{" "}
                 <b>{data?.local?.stockKg} kg</b> en stock.{" "}
                 {a.signal === "vender"
-                  ? "Buena ventana para asegurar ganancia — considerá vender por partes."
+                  ? "Conviene tomar ganancia del rally; vende por partes para no jugártela a un solo día."
                   : "Conviene esperar la recuperación; revisa el mercado esta semana."}
               </div>
             </div>
@@ -120,6 +120,11 @@ export default function CacaoAsesor() {
                 </div>
                 <h2 className="mt-0.5 text-xl font-extrabold" style={{ color: cfg.text }}>{a.titulo}</h2>
                 <p className="mt-1.5 text-sm leading-relaxed" style={{ color: cfg.text }}>{a.resumen}</p>
+                {a.signal === "vender" && a.metrics.pos52 != null && a.metrics.pos52 <= 40 && (
+                  <p className="mt-1.5 text-xs leading-relaxed" style={{ color: cfg.accent }}>
+                    <b>En claro:</b> está lejos de su récord del año, pero el impulso de corto plazo (tendencia + momentum) favorece tomar ganancia ahora, no esperar.
+                  </p>
+                )}
                 {typeof a.confianza === "number" && (
                   <div className="mt-3 flex items-center gap-2" title="Qué tan alineadas están las señales entre sí: acuerdo de las tendencias (semana/mes/3 meses), calidad de la tendencia (R²), confirmación del RSI y de las noticias, menos la volatilidad. Más alto = las señales apuntan al mismo lado.">
                     <Gauge className="h-3.5 w-3.5 shrink-0 cursor-help" style={{ color: cfg.accent }} />
@@ -160,8 +165,14 @@ export default function CacaoAsesor() {
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                Consenso ponderado de {a.direccion.factores.length} factores técnicos y fundamentales.
+              <p className="mt-2 flex items-start gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                <span className="mt-0.5 shrink-0 cursor-help" title="El % de suba es el voto ponderado de los factores de arriba: cada uno vota suba/baja/neutral y pesa distinto (tendencia y MACD pesan más). No es garantía — es hacia dónde se inclinan los datos."><Info className="h-3 w-3" /></span>
+                <span>
+                  Consenso ponderado de {a.direccion.factores.length} factores técnicos y fundamentales.
+                  {a.tecnico.trendR2 != null && a.tecnico.trendR2 < 0.6 && a.direccion.sesgo !== "lateral"
+                    ? ` La DIRECCIÓN (${a.direccion.sesgo}) es la parte clara; la MAGNITUD del movimiento es incierta (R² ${a.tecnico.trendR2}, tendencia poco definida).`
+                    : ""}
+                </span>
               </p>
             </Card>
           )}
@@ -234,16 +245,24 @@ export default function CacaoAsesor() {
               </p>
               {(() => {
                 const maxAbs = Math.max(1, ...a.estacionalidad.porMes.map((m) => Math.abs(m.idxPct)));
+                const HALF = 32; // px por dirección desde la línea base (0% = promedio)
                 return (
-                  <div className="mt-3 flex h-20 items-end gap-1">
+                  <div className="mt-3 flex items-stretch gap-1">
                     {a.estacionalidad.porMes.map((m) => {
                       const cur = m.mes === a.estacionalidad!.mesActual;
-                      const h = Math.max(5, Math.round((Math.abs(m.idxPct) / maxAbs) * 56));
+                      const h = Math.max(3, Math.round((Math.abs(m.idxPct) / maxAbs) * HALF));
+                      const up = m.idxPct >= 0;
+                      const bar = { opacity: cur ? 1 : 0.5, boxShadow: cur ? "0 0 0 2px var(--accent)" : "none" };
                       return (
-                        <div key={m.mes} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${mesNombre(m.mes)}: ${m.idxPct > 0 ? "+" : ""}${m.idxPct}% vs. promedio`}>
-                          <span className={`text-[length:var(--ts-2xs)] font-bold ${cur ? "text-[var(--text-primary)]" : "text-transparent"}`}>{m.idxPct > 0 ? "+" : ""}{Math.round(m.idxPct)}%</span>
-                          <div className="w-full rounded-t" style={{ height: `${h}px`, background: m.idxPct >= 0 ? "var(--data-success-500)" : "var(--data-error-500)", opacity: cur ? 1 : 0.55, boxShadow: cur ? "0 0 0 2px var(--accent)" : "none" }} />
-                          <span className={`text-[length:var(--ts-2xs)] uppercase ${cur ? "font-bold text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}>{mesNombre(m.mes).slice(0, 1)}</span>
+                        <div key={m.mes} className="flex flex-1 flex-col items-center" title={`${mesNombre(m.mes)}: ${m.idxPct > 0 ? "+" : ""}${m.idxPct}% vs. promedio del año`}>
+                          <div className="flex w-full items-end justify-center" style={{ height: HALF }}>
+                            {up && <div className="w-full rounded-t" style={{ height: h, background: "var(--data-success-500)", ...bar }} />}
+                          </div>
+                          <div className="h-px w-full bg-[var(--rule-base)]" />
+                          <div className="flex w-full items-start justify-center" style={{ height: HALF }}>
+                            {!up && <div className="w-full rounded-b" style={{ height: h, background: "var(--data-error-500)", ...bar }} />}
+                          </div>
+                          <span className={`mt-0.5 text-[length:var(--ts-2xs)] uppercase ${cur ? "font-bold text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}>{mesNombre(m.mes).slice(0, 1)}</span>
                         </div>
                       );
                     })}
@@ -251,7 +270,7 @@ export default function CacaoAsesor() {
                 );
               })()}
               <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                Mes más caro: <b>{mesNombre(a.estacionalidad.mejorMes)}</b> · más barato: <b>{mesNombre(a.estacionalidad.peorMes)}</b>. Basado en los últimos 12 meses (no es climatología multi-año).
+                Línea = promedio del año (0%); barras arriba = más caro, abajo = más barato. Mes más caro: <b>{mesNombre(a.estacionalidad.mejorMes)}</b> · más barato: <b>{mesNombre(a.estacionalidad.peorMes)}</b>. Últimos 12 meses (no es climatología multi-año).
               </p>
             </Card>
           )}
@@ -355,6 +374,67 @@ export default function CacaoAsesor() {
               ))}
             </ul>
           </Card>
+
+          {/* Plan de venta escalonado */}
+          {a.plan && a.plan.length > 0 && (
+            <Card icon={Layers} title={`Plan de venta escalonado${(data?.local?.stockKg ?? 0) > 0 ? ` · ${data!.local!.stockKg} kg en stock` : ""}`}>
+              <ol className="space-y-2">
+                {a.plan.map((t, i) => (
+                  <li key={i} className="flex items-center gap-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-xs font-extrabold text-[var(--accent)]">{i + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <b className="text-[var(--text-primary)]">{t.pct}%{t.kg != null ? ` (${t.kg} kg)` : ""}</b>
+                      <span className="text-[var(--text-secondary)]"> — {t.cuando}</span>
+                    </span>
+                    {t.precioRef != null && <span className="shrink-0 font-mono text-xs font-bold text-[var(--text-tertiary)]">USD {t.precioRef.toLocaleString("es-PE")}</span>}
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vender por tramos evita jugarte todo a un solo día. Ajusta los % a tu necesidad de caja.</p>
+            </Card>
+          )}
+
+          {/* Escenarios a 30 días */}
+          {a.escenarios && a.escenarios.length > 0 && (
+            <Card icon={Activity} title="Escenarios a 30 días">
+              <div className="grid grid-cols-3 gap-2">
+                {a.escenarios.map((e) => {
+                  const c = e.nombre === "alcista" ? "var(--data-success-700)" : e.nombre === "bajista" ? "var(--data-error-700)" : "var(--text-secondary)";
+                  return (
+                    <div key={e.nombre} className="rounded-xl bg-[var(--surface-sunken)] p-3 text-center">
+                      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider" style={{ color: c }}>{e.nombre}</div>
+                      <div className="mt-1 font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">USD {e.target.toLocaleString("es-PE")}</div>
+                      <div className="text-xs font-bold" style={{ color: c }}>{e.pct > 0 ? "+" : ""}{e.pct}%</div>
+                      <div className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">prob. {e.prob}%</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Rango probable a 30 días según la proyección y la dirección. La dirección es más confiable que la magnitud.</p>
+            </Card>
+          )}
+
+          {/* Qué cambiaría + Desglose de confianza */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {a.sensibilidad && a.sensibilidad.length > 0 && (
+              <Card icon={Zap} title="Qué cambiaría la recomendación">
+                <ul className="space-y-2 text-sm text-[var(--text-secondary)]">{a.sensibilidad.map((s, i) => <li key={i} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />{s}</li>)}</ul>
+              </Card>
+            )}
+            {a.confianzaFactores && a.confianzaFactores.length > 0 && (
+              <Card icon={Gauge} title={`Cómo se calcula la confianza (${a.confianza}%)`}>
+                <ul className="space-y-1.5">
+                  {a.confianzaFactores.map((f, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5 text-xs">
+                      <span className="min-w-0"><b className="text-[var(--text-primary)]">{f.nombre}</b> <span className="text-[var(--text-tertiary)]">— {f.detalle}</span></span>
+                      <span className="shrink-0 font-mono font-bold" style={{ color: f.aporte > 0 ? "var(--data-success-700)" : "var(--data-error-700)" }}>{f.aporte > 0 ? "+" : ""}{f.aporte}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Parte de una base de 45 y suma/resta estos aportes (acotado a 15–95%).</p>
+              </Card>
+            )}
+          </div>
 
           {/* Riesgos + Compra */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

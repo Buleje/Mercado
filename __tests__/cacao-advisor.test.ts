@@ -149,6 +149,31 @@ describe("cacaoAdvisor — MACD, cruce de medias y dirección compuesta", () => 
   });
 });
 
+describe("cacaoAdvisor — plan, escenarios, sensibilidad y desglose de confianza", () => {
+  const R = () => cacaoAdvisor({ value: 6000, changePct: 1, ...RANGE, series: linear(3000, 6000, 60), local: { stockKg: 1000, miPrecioKg: 10, refKg: 13, spreadPct: 30 } });
+
+  it("plan de venta escalonado suma 100% y calcula kg desde el stock", () => {
+    const r = R();
+    expect(r.plan.reduce((a, t) => a + t.pct, 0)).toBe(100);
+    expect(r.plan.some((t) => (t.kg ?? 0) > 0)).toBe(true);
+  });
+
+  it("3 escenarios con probabilidades que suman ~100", () => {
+    const r = R();
+    expect(r.escenarios.length).toBe(3);
+    const sum = r.escenarios.reduce((a, e) => a + e.prob, 0);
+    expect(sum).toBeGreaterThanOrEqual(95);
+    expect(sum).toBeLessThanOrEqual(105);
+    expect(r.escenarios.find((e) => e.nombre === "alcista")!.target).toBeGreaterThan(r.escenarios.find((e) => e.nombre === "bajista")!.target);
+  });
+
+  it("sensibilidad y desglose de confianza no vacíos", () => {
+    const r = R();
+    expect(r.sensibilidad.length).toBeGreaterThan(0);
+    expect(r.confianzaFactores.length).toBeGreaterThan(0);
+  });
+});
+
 describe("newsKeywords — palabras que disparan la clasificación", () => {
   it("devuelve keywords con polaridad (ES/EN)", () => {
     const k = newsKeywords("Escasez y sequía disparan el precio; drought hits harvest");
