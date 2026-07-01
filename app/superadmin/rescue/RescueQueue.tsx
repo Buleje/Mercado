@@ -14,8 +14,17 @@ import {
   ExternalLink, CalendarClock, Store,
 } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
+import { AdminTabShell } from "../_components/_shared";
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { csrfHeaders } from "@/lib/csrf-client";
+
+const RESCUE_INFO = {
+  title: "Cola de rescate",
+  what: "Junta los negocios a punto de irse y los ordena por urgencia × valor (riesgo, días sin vender/entrar, trial por vencer, plan). Actuás primero sobre el de arriba.",
+  affects: "Solo el superadmin. Acciones de retención: contactar, impersonar, ver ficha 360 y extender trial (esto último SÍ escribe en la DB).",
+  example: "Una pollería enterprise lleva 49 días sin vender y está crítica → la ves arriba de la cola y la contactás o le extendés el trial antes de perderla.",
+} as const;
 
 type Row = { id: string; name: string; slug: string; plan: string; active: boolean; score: number | null; riskLevel: string; daysSinceLastOrder: number; daysSinceLastLogin: number; trialDaysLeft: number | null; loginsLast7d: number; ordersLast7d: number; reasons: string[]; priority: number };
 type Kpis = { critical: number; high: number; trialsExpiring: number; paidAtRisk: number; total: number };
@@ -72,7 +81,24 @@ export function RescueQueue() {
     return d.queue.filter((r) => r.riskLevel === riskFilter);
   }, [d, riskFilter]);
 
-  if (loading && !d) return <div className="h-64 animate-pulse rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]" />;
+  const refreshBtn = (
+    <button
+      type="button"
+      onClick={() => void load()}
+      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)]/40"
+      title="Actualizar"
+    >
+      <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Actualizar
+    </button>
+  );
+
+  if (loading && !d) {
+    return (
+      <AdminTabShell title="Cola de rescate" description="Atajá al que se va a ir antes de que pase. Priorizado por urgencia y valor." icon={HeartHandshake} kicker="Plataforma · Retención" info={RESCUE_INFO}>
+        <div className="h-64 animate-pulse rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
+      </AdminTabShell>
+    );
+  }
   if (!d) return null;
   const k = d.kpis;
 
@@ -81,7 +107,14 @@ export function RescueQueue() {
   );
 
   return (
-    <div className="space-y-4">
+    <AdminTabShell
+      title="Cola de rescate"
+      description="Atajá al que se va a ir antes de que pase. Priorizado por urgencia y valor."
+      icon={HeartHandshake}
+      kicker="Plataforma · Retención"
+      info={RESCUE_INFO}
+      actions={refreshBtn}
+    >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <SAKpiCard icon={AlertTriangle} label="Crítico" value={k.critical} sub="se van ya" tone={k.critical > 0 ? "bad" : "good"} />
         <SAKpiCard icon={HeartHandshake} label="En riesgo alto" value={k.high} tone={k.high > 0 ? "warn" : "good"} />
@@ -90,22 +123,14 @@ export function RescueQueue() {
         <SAKpiCard icon={Store} label="En la cola" value={k.total} sub="negocios a rescatar" />
       </div>
 
-      <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-        <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]"><HeartHandshake className="h-4 w-4" strokeWidth={1.75} aria-hidden /></span>
-            <div>
-              <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">Cola de rescate</h3>
-              <p className="text-xs text-[var(--text-tertiary)]">Priorizada por urgencia × valor · actuá primero sobre el de arriba · auto 30s</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {toast && <span className="hidden sm:inline text-xs font-bold text-[var(--accent)]">{toast}</span>}
-            <button type="button" onClick={() => void load()} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)]/40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /></button>
-          </div>
-        </header>
-
-        <div className="p-4 space-y-3">
+      <SuperadminChartCard
+        kicker="Prioridad"
+        title="Negocios a rescatar"
+        description="Priorizada por urgencia × valor · actuá primero sobre el de arriba · auto 30s"
+        density="compact"
+        actions={toast ? <span className="text-xs font-bold text-[var(--accent)]">{toast}</span> : undefined}
+      >
+        <div className="space-y-3">
           {k.total === 0 ? (
             <div className="flex items-center gap-2.5 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3.5 py-3">
               <HeartHandshake className="h-5 w-5 text-[var(--data-success-600,#059669)] shrink-0" />
@@ -152,7 +177,7 @@ export function RescueQueue() {
             </>
           )}
         </div>
-      </section>
-    </div>
+      </SuperadminChartCard>
+    </AdminTabShell>
   );
 }
