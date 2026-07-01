@@ -10,11 +10,12 @@
 
 import { useMemo, useState } from "react";
 import {
-  Wallet, Server, TrendingUp, TrendingDown, Building2, Download, RefreshCw, DollarSign,
+  Wallet, Server, TrendingUp, TrendingDown, Building2, Download, RefreshCw, DollarSign, FileText,
 } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import { useGastos } from "./use-gastos";
 import { fmtPen, expensesToCSV, type Expense } from "./gastos-helpers";
+import { generatePnlPDF } from "./pnl-pdf";
 import { PnlHero } from "./PnlHero";
 import { BudgetPanel } from "./BudgetPanel";
 import { ExpenseForm } from "./ExpenseForm";
@@ -48,6 +49,19 @@ export default function GastosClient() {
     a.download = "gastos-plataforma.csv";
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportPnl = () => {
+    generatePnlPDF({
+      mrrPen: g.mrrPen,
+      payingTenants: g.payingTenants,
+      summary: g.summary,
+      fxRate: g.fxRate,
+      dateStr: new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }),
+    }).catch((err) => {
+      g.setErr("No se pudo generar el PDF.");
+      console.error("[gastos] pnl pdf", err);
+    });
   };
 
   const onSubmitForm = async (input: Parameters<typeof g.addExpense>[0]) => {
@@ -111,6 +125,9 @@ export default function GastosClient() {
             <Download className="h-4 w-4" /> CSV
           </button>
         )}
+        <button onClick={exportPnl} className={TOOL}>
+          <FileText className="h-4 w-4" /> P&L PDF
+        </button>
         <button onClick={() => void g.load()} disabled={g.busy} className={`${TOOL} ml-auto`}>
           <RefreshCw className="h-4 w-4" /> Actualizar
         </button>
