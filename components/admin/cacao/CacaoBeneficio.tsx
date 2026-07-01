@@ -26,7 +26,12 @@ import { Field } from "@/components/admin/shared/Field";
 import { StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { cacaoRendimiento, cacaoMerma, cacaoBeneficioAlerta } from "@/lib/cacao/cacao-quality";
+import {
+  cacaoRendimiento,
+  cacaoMerma,
+  cacaoBeneficioAlerta,
+  MERMA_TIPICA_PCT,
+} from "@/lib/cacao/cacao-quality";
 import CacaoBeneficioForm from "./CacaoBeneficioForm";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
 import CacaoBitacoraModal from "./CacaoBitacoraModal";
@@ -176,8 +181,11 @@ export default function CacaoBeneficio() {
 
   const kpis = useMemo(() => {
     let enProceso = 0,
+      fermentando = 0,
+      secando = 0,
       terminados = 0,
       kgSeco = 0,
+      kgHumedoProceso = 0,
       mermaSum = 0,
       mermaN = 0,
       atencion = 0;
@@ -185,7 +193,12 @@ export default function CacaoBeneficio() {
       if (b.estado === "terminado") {
         terminados++;
         if (b.pesoSecoKg) kgSeco += Number(b.pesoSecoKg);
-      } else enProceso++;
+      } else {
+        enProceso++;
+        if (b.estado === "fermentando") fermentando++;
+        else if (b.estado === "secando") secando++;
+        if (b.pesoHumedoKg) kgHumedoProceso += Number(b.pesoHumedoKg);
+      }
       if (b.mermaPct != null) {
         mermaSum += Number(b.mermaPct);
         mermaN++;
@@ -194,8 +207,11 @@ export default function CacaoBeneficio() {
     }
     return {
       enProceso,
+      fermentando,
+      secando,
       terminados,
       kgSeco: Math.round(kgSeco * 100) / 100,
+      kgHumedoProceso: Math.round(kgHumedoProceso * 100) / 100,
       mermaProm: mermaN ? Math.round((mermaSum / mermaN) * 10) / 10 : null,
       atencion,
     };
@@ -211,6 +227,39 @@ export default function CacaoBeneficio() {
     );
   }, [items, search, filter]);
 
+  // Totales del set visible (pie de tabla): kg húmedo/seco + merma y rendimiento
+  // promedio de las filas con ambos pesos.
+  const viewTotals = useMemo(() => {
+    let humedo = 0,
+      seco = 0,
+      mermaSum = 0,
+      mermaN = 0,
+      rendSum = 0,
+      rendN = 0;
+    for (const b of view) {
+      if (b.pesoHumedoKg) humedo += Number(b.pesoHumedoKg);
+      if (b.pesoSecoKg) seco += Number(b.pesoSecoKg);
+      if (b.mermaPct != null) {
+        mermaSum += Number(b.mermaPct);
+        mermaN++;
+      }
+      const rend = cacaoRendimiento(
+        b.pesoHumedoKg == null ? null : Number(b.pesoHumedoKg),
+        b.pesoSecoKg == null ? null : Number(b.pesoSecoKg),
+      );
+      if (rend != null) {
+        rendSum += rend;
+        rendN++;
+      }
+    }
+    return {
+      humedo: Math.round(humedo * 100) / 100,
+      seco: Math.round(seco * 100) / 100,
+      mermaProm: mermaN ? Math.round((mermaSum / mermaN) * 10) / 10 : null,
+      rendProm: rendN ? Math.round((rendSum / rendN) * 10) / 10 : null,
+    };
+  }, [view]);
+
   function exportCsv() {
     const head = [
       "Lote",
@@ -224,6 +273,8 @@ export default function CacaoBeneficio() {
       "Peso humedo",
       "Peso seco",
       "Merma %",
+      "Rendimiento %",
+      "Dias en etapa",
     ];
     const esc = (v: unknown) => {
       const s = String(v ?? "");
@@ -242,6 +293,11 @@ export default function CacaoBeneficio() {
         n2(b.pesoHumedoKg),
         n2(b.pesoSecoKg),
         b.mermaPct,
+        cacaoRendimiento(
+          b.pesoHumedoKg == null ? null : Number(b.pesoHumedoKg),
+          b.pesoSecoKg == null ? null : Number(b.pesoSecoKg),
+        ) ?? "",
+        alertaOf(b).dias ?? "",
       ]
         .map(esc)
         .join(","),
@@ -264,7 +320,11 @@ export default function CacaoBeneficio() {
         <StatCard
           label="En proceso"
           value={String(kpis.enProceso)}
-          subValue="fermentando / secando"
+          subValue={
+            kpis.enProceso > 0
+              ? `${kpis.fermentando} fermentando · ${kpis.secando} secando`
+              : "sin lotes en proceso"
+          }
           icon={Clock}
           emphasis={kpis.enProceso > 0 ? "warning" : "neutral"}
         />
@@ -285,9 +345,13 @@ export default function CacaoBeneficio() {
         <StatCard
           label="Merma promedio"
           value={kpis.mermaProm != null ? `${kpis.mermaProm}%` : "—"}
-          subValue="húmedo → seco"
+          subValue={`húmedo → seco · típica ~${MERMA_TIPICA_PCT}%`}
           icon={TrendingUp}
-          emphasis="neutral"
+          emphasis={
+            kpis.mermaProm != null && Math.abs(kpis.mermaProm - MERMA_TIPICA_PCT) > 10
+              ? "warning"
+              : "neutral"
+          }
         />
       </div>
 
@@ -491,6 +555,29 @@ export default function CacaoBeneficio() {
               );
             })}
           </tbody>
+          {view.length > 0 && (
+            <tfoot>
+              <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
+                <Td className="font-bold text-[var(--text-secondary)]">
+                  Total · {view.length}
+                </Td>
+                <Td />
+                <Td />
+                <Td />
+                <Td />
+                <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  {n2(viewTotals.humedo)} → {n2(viewTotals.seco)}
+                </Td>
+                <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  {viewTotals.mermaProm != null ? `${viewTotals.mermaProm}%` : "—"}
+                </Td>
+                <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  {viewTotals.rendProm != null ? `${viewTotals.rendProm}%` : "—"}
+                </Td>
+                <Td />
+              </tr>
+            </tfoot>
+          )}
         </table>
         {loading && items.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-tertiary)]">
@@ -513,7 +600,7 @@ export default function CacaoBeneficio() {
                 Sin beneficios registrados
               </p>
               <p className="mx-auto mt-1 max-w-sm text-sm">
-                Registrá la fermentación y secado de un lote para controlar la merma húmedo→seco y
+                Registra la fermentación y secado de un lote para controlar la merma húmedo→seco y
                 el rendimiento.
               </p>
               <button
@@ -573,9 +660,9 @@ export default function CacaoBeneficio() {
                     {aSecado ? <Sun className="h-6 w-6" /> : <CheckCircle2 className="h-6 w-6" />}
                   </span>
                   <div className="min-w-0">
-                    <h3 className="text-base font-bold text-[var(--text-primary)]">
+                    <div role="heading" aria-level={3} className="text-base font-bold text-[var(--text-primary)]">
                       {aSecado ? "Pasar a secado" : "Terminar beneficio"} {advance.loteCode ?? ""}
-                    </h3>
+                    </div>
                     <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                       {aSecado
                         ? "Cierra la fermentación e inicia el secado. Se anotan los días fermentados automáticamente."
@@ -719,9 +806,9 @@ export default function CacaoBeneficio() {
                 <AlertTriangle className="h-6 w-6" />
               </span>
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[var(--text-primary)]">
+                <div role="heading" aria-level={3} className="text-base font-bold text-[var(--text-primary)]">
                   Anular beneficio {items.find((b) => b.id === annulId)?.loteCode ?? ""}
-                </h3>
+                </div>
                 <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                   Sale del inventario y los totales.{" "}
                   <strong className="text-[var(--text-secondary)]">No se borra</strong> — queda en
@@ -761,6 +848,6 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
     </th>
   );
 }
-function Td({ children, className }: { children: React.ReactNode; className?: string }) {
+function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
 }
