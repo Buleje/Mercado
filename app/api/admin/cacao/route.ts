@@ -24,6 +24,8 @@ const producerSchema = z.object({
   variedad: z.string().trim().max(40).nullable().optional(),
   certificacion: z.string().trim().max(40).nullable().optional(),
   altitudMsnm: z.coerce.number().int().min(0).max(6000).nullable().optional(),
+  latitud: z.coerce.number().min(-90).max(90).nullable().optional(),
+  longitud: z.coerce.number().min(-180).max(180).nullable().optional(),
   telefono: z.string().trim().max(30).nullable().optional(),
   observaciones: z.string().trim().max(1000).nullable().optional(),
   status: z.enum(["activo", "inactivo"]).optional(),

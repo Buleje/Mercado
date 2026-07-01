@@ -34,6 +34,7 @@ import {
 } from "@/lib/cacao/cacao-quality";
 import { printCacaoLiquidacion } from "@/lib/cacao/cacao-liquidacion";
 import { shareCacaoText } from "@/lib/cacao/cacao-print";
+import LeafletMap from "@/components/LeafletMap";
 
 interface Producer {
   id: string;
@@ -45,6 +46,8 @@ interface Producer {
   variedad: string | null;
   certificacion: string | null;
   altitudMsnm: number | null;
+  latitud: string | null;
+  longitud: string | null;
   telefono: string | null;
   observaciones: string | null;
   status: string;
@@ -361,6 +364,32 @@ export default function CacaoProducerDrawer({
                     )}
                     {producer.observaciones && (
                       <p className="pt-1 text-[var(--text-secondary)]">{producer.observaciones}</p>
+                    )}
+                    {producer.latitud && producer.longitud && (
+                      <div className="pt-2">
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
+                            <MapPin className="h-3.5 w-3.5" /> Parcela
+                          </span>
+                          <a
+                            href={`https://www.openstreetmap.org/?mlat=${producer.latitud}&mlon=${producer.longitud}#map=15/${producer.latitud}/${producer.longitud}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs font-bold text-[var(--accent)] hover:underline"
+                          >
+                            Ver en mapa
+                          </a>
+                        </div>
+                        <div className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
+                          <LeafletMap
+                            lat={Number(producer.latitud)}
+                            lon={Number(producer.longitud)}
+                            height={160}
+                            zoom={14}
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
                 ) : (

@@ -5249,6 +5249,8 @@ model CacaoProducer {
   variedad      String? // CCN-51 | criollo | trinitario | forastero | nacional
   certificacion String? // organico | comercio_justo | convencional
   altitudMsnm   Int?
+  latitud       Decimal?  @db.Decimal(10, 7) // ubicación de la parcela (mapa/trazabilidad)
+  longitud      Decimal?  @db.Decimal(10, 7)
   telefono      String?
   observaciones String?
   status        String    @default("activo") // activo | inactivo

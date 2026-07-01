@@ -3,11 +3,13 @@
 /** CacaoProducerForm — alta de productor de cacao (ADR-128, v2 rediseñado).
  *  Layout 2 columnas: formulario seccionado + tarjeta viva del productor. */
 import { useState } from "react";
-import { Users, Loader2, X, MapPin, Phone, Award, Leaf, CreditCard, Gauge } from "@buleje/design-system/icons";
+import { Users, Loader2, X, MapPin, Phone, Award, Leaf, CreditCard, Gauge, Navigation } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import LeafletMap from "@/components/LeafletMap";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { CACAO_VARIEDADES, CACAO_CERTIFICACIONES } from "@/lib/cacao/cacao-quality";
+import { BRAND_GEO } from "@/lib/geo";
 
 const I = "w-full h-11 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20 placeholder:text-[var(--text-tertiary)]";
 const CERT_LABEL: Record<string, string> = { organico: "Orgánico", comercio_justo: "Comercio justo", convencional: "Convencional" };
@@ -15,9 +17,27 @@ const CERT_LABEL: Record<string, string> = { organico: "Orgánico", comercio_jus
 export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [f, setF] = useState({ nombre: "", dni: "", sector: "", parcelaHa: "", variedad: "", certificacion: "", altitudMsnm: "", telefono: "", observaciones: "" });
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [f, setF] = useState({ nombre: "", dni: "", sector: "", parcelaHa: "", variedad: "", certificacion: "", altitudMsnm: "", latitud: "", longitud: "", telefono: "", observaciones: "" });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
   const isValid = f.nombre.trim().length >= 2;
+
+  // GPS del teléfono: el acopiador suele estar EN la parcela al registrar.
+  function useMyLocation() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setError("Tu dispositivo no permite ubicación GPS.");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setF((s) => ({ ...s, latitud: pos.coords.latitude.toFixed(6), longitud: pos.coords.longitude.toFixed(6) }));
+        setGeoLoading(false);
+      },
+      (err) => { setError(`No se pudo obtener la ubicación: ${err.message}`); setGeoLoading(false); },
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +48,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
         nombre: f.nombre.trim(), dni: f.dni.trim() || null, sector: f.sector.trim() || null,
         parcelaHa: f.parcelaHa ? Number(f.parcelaHa) : null, variedad: f.variedad || null,
         certificacion: f.certificacion || null, altitudMsnm: f.altitudMsnm ? Number(f.altitudMsnm) : null,
+        latitud: f.latitud ? Number(f.latitud) : null, longitud: f.longitud ? Number(f.longitud) : null,
         telefono: f.telefono.trim() || null, observaciones: f.observaciones.trim() || null,
       };
       const r = await fetch("/api/admin/cacao?type=producer", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
@@ -66,6 +87,49 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
                   <Field label="Variedad predominante"><select value={f.variedad} onChange={set("variedad")} className={I}><option value="">—</option>{CACAO_VARIEDADES.map((v) => <option key={v} value={v}>{v}</option>)}</select></Field>
                   <Field label="Certificación"><select value={f.certificacion} onChange={set("certificacion")} className={I}><option value="">—</option>{CACAO_CERTIFICACIONES.map((c) => <option key={c} value={c}>{CERT_LABEL[c]}</option>)}</select></Field>
                   <Field label="Altitud (msnm)"><input type="number" value={f.altitudMsnm} onChange={set("altitudMsnm")} placeholder="600" className={`${I} font-mono tabular-nums`} /></Field>
+                </div>
+              </Section>
+
+              <Section icon={MapPin} title="Ubicación de la parcela">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={useMyLocation}
+                    disabled={geoLoading}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border-2 border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] disabled:opacity-60"
+                  >
+                    {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                    Usar mi ubicación (GPS)
+                  </button>
+                  {f.latitud && f.longitud && (
+                    <span className="font-mono text-xs text-[var(--text-secondary)]">
+                      {Number(f.latitud).toFixed(5)}, {Number(f.longitud).toFixed(5)}
+                    </span>
+                  )}
+                  {(f.latitud || f.longitud) && (
+                    <button
+                      type="button"
+                      onClick={() => setF((s) => ({ ...s, latitud: "", longitud: "" }))}
+                      className="text-xs font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-[var(--text-tertiary)]">
+                  Tocá el mapa para marcar la parcela, o usá el GPS del teléfono si estás ahí. Sirve
+                  para logística de recojo y trazabilidad de origen.
+                </p>
+                <div className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
+                  <LeafletMap
+                    lat={f.latitud ? Number(f.latitud) : BRAND_GEO.lat}
+                    lon={f.longitud ? Number(f.longitud) : BRAND_GEO.lng}
+                    zoom={f.latitud ? 15 : 12}
+                    height={200}
+                    onPick={(la, lo) =>
+                      setF((s) => ({ ...s, latitud: la.toFixed(6), longitud: lo.toFixed(6) }))
+                    }
+                  />
                 </div>
               </Section>
 

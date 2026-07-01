@@ -62,6 +62,8 @@ export interface ProducerInput {
   variedad?: string | null;
   certificacion?: string | null;
   altitudMsnm?: number | null;
+  latitud?: number | string | null;
+  longitud?: number | string | null;
   telefono?: string | null;
   observaciones?: string | null;
   status?: string;
@@ -214,6 +216,8 @@ export class CacaoDB {
         variedad: input.variedad?.trim() || null,
         certificacion: input.certificacion?.trim() || null,
         altitudMsnm: input.altitudMsnm ?? null,
+        latitud: dec(input.latitud),
+        longitud: dec(input.longitud),
         telefono: input.telefono?.trim() || null,
         observaciones: input.observaciones?.trim() || null,
         status: input.status ?? "activo",
@@ -233,7 +237,7 @@ export class CacaoDB {
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const data: Prisma.CacaoProducerUpdateInput = {};
-    const decKeys = new Set(["parcelaHa"]);
+    const decKeys = new Set(["parcelaHa", "latitud", "longitud"]);
     for (const [k, v] of Object.entries(patch)) {
       if (v === undefined) continue;
       if (decKeys.has(k)) (data as Record<string, unknown>)[k] = dec(v as number | string | null);
