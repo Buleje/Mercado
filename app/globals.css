@@ -1412,6 +1412,17 @@ body {
   .modal-backdrop { animation: none; }
 }
 
+/* ── Leaflet stacking (fix modal detrás del mapa) ──
+ * Leaflet asigna z-index altos a sus panes/controles (controles 800, popup 700,
+ * tooltip 650, marker 600…) pero `.leaflet-container` no crea stacking context
+ * propio, así que esos elementos ESCAPAN por encima de los modales (backdrop z-50)
+ * y el modal se ve "detrás del mapa". `isolation: isolate` fuerza un stacking
+ * context en cada mapa → sus z-index internos quedan contenidos y todos los
+ * modales quedan siempre por encima. Aplica a TODOS los mapas Leaflet del app. */
+.leaflet-container {
+  isolation: isolate;
+}
+
 /* ── Mejora 18: Button loading indicator for admin panel ───────────────── */
 [data-admin-shell] button[disabled],
 [data-admin-shell="true"] button[disabled] {

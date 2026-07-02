@@ -7,10 +7,12 @@
  * labores. Drawer lateral. Brandon 2026-07-02.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Plus, Check, RotateCcw, Trash2, Loader2, Calendar, Warehouse, X } from "@buleje/design-system/icons";
+import { RefreshCw, Plus, Check, RotateCcw, Trash2, Loader2, Calendar, Warehouse, X, Settings2, Copy, Power } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_LABORES, LABOR_LABEL, LABOR_UNIDADES, PARCELA_STATUS, type CacaoLaborTipo, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
+
+const CACAO_VARIEDADES = ["CCN-51", "criollo", "trinitario", "forastero", "nacional"];
 
 interface Parcela { id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null; anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null }
 interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null; loteId: string | null; gastoId: string | null; createdAt: string }
@@ -37,6 +39,8 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDup, setShowDup] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [sendFor, setSendFor] = useState<Labor | null>(null);
 
@@ -89,12 +93,22 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
         {parcela && (
           <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
             <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: m.bg, color: m.fg }}><m.icon className="h-3 w-3" />{m.label}</span>
+            {parcela.status === "inactiva" && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]"><Power className="h-3 w-3" />Inactiva</span>}
             {parcela.areaHa != null && <span>{parcela.areaHa.toLocaleString("es-PE", { maximumFractionDigits: 1 })} ha</span>}
             {parcela.variedad && <span>· {parcela.variedad}</span>}
             {parcela.anioSiembra && <span>· siembra {parcela.anioSiembra}</span>}
             {parcela.nPlantas && <span>· {parcela.nPlantas} plantas</span>}
           </div>
         )}
+
+        {parcela && (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => { setShowEdit((v) => !v); setShowForm(false); }} className={`inline-flex h-9 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold ${showEdit ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}><Settings2 className="h-3.5 w-3.5" />Editar datos</button>
+            <button type="button" onClick={() => setShowDup(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Copy className="h-3.5 w-3.5" />Duplicar</button>
+          </div>
+        )}
+
+        {showEdit && parcela && <EditarParcelaForm parcela={parcela} onCancel={() => setShowEdit(false)} onDone={() => { setShowEdit(false); setDirty(true); load(); }} />}
 
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
 
@@ -163,6 +177,101 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
         </div>
       </div>
       {sendFor && <CosechaAcopioModal labor={sendFor} onClose={() => setSendFor(null)} onSent={() => { setSendFor(null); setDirty(true); load(); }} />}
+      {showDup && parcela && <DuplicarParcelaModal parcela={parcela} onClose={() => setShowDup(false)} onDone={() => { setShowDup(false); setDirty(true); }} />}
+    </AdminModal>
+  );
+}
+
+/** Edita la ficha de la sección: código, nombre, área, variedad, año, plantas,
+ *  estado (activa/inactiva) y notas. Estructura → PATCH update_parcela. */
+function EditarParcelaForm({ parcela, onDone, onCancel }: { parcela: Parcela; onDone: () => void; onCancel: () => void }) {
+  const [f, setF] = useState({
+    codigo: parcela.codigo,
+    nombre: parcela.nombre ?? "",
+    areaHa: parcela.areaHa != null ? String(parcela.areaHa) : "",
+    variedad: parcela.variedad ?? "",
+    anioSiembra: parcela.anioSiembra != null ? String(parcela.anioSiembra) : "",
+    nPlantas: parcela.nPlantas != null ? String(parcela.nPlantas) : "",
+    observaciones: parcela.observaciones ?? "",
+    status: parcela.status || "activa",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (submitting) return;
+    if (!f.codigo.trim()) { setError("El código es obligatorio."); return; }
+    setSubmitting(true); setError(null);
+    try {
+      const patch = {
+        codigo: f.codigo.trim(), nombre: f.nombre.trim() || null,
+        areaHa: f.areaHa ? Number(f.areaHa) : null, variedad: f.variedad || null,
+        anioSiembra: f.anioSiembra ? Number(f.anioSiembra) : null, nPlantas: f.nPlantas ? Number(f.nPlantas) : null,
+        observaciones: f.observaciones.trim() || null, status: f.status,
+      };
+      const r = await fetch("/api/admin/cacao/campo", { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify({ action: "update_parcela", id: parcela.id, patch }) });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error === "codigo_duplicado" ? "Ya existe una sección con ese código." : (d.message ?? `HTTP ${r.status}`)); }
+      onDone();
+    } catch (err) { setError(err instanceof Error ? err.message : String(err)); setSubmitting(false); }
+  }
+
+  const I = "h-11 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  return (
+    <form onSubmit={submit} className="space-y-2 rounded-xl border-2 border-[var(--accent-soft)] bg-[var(--surface-sunken)] p-3">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Código<input value={f.codigo} onChange={set("codigo")} className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre<input value={f.nombre} onChange={set("nombre")} placeholder="Lote alto" className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Área (ha)<input type="number" step="0.01" min="0" value={f.areaHa} onChange={set("areaHa")} className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Variedad<select value={f.variedad} onChange={set("variedad")} className={`mt-1 ${I}`}><option value="">—</option>{CACAO_VARIEDADES.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Año de siembra<input type="number" min="1900" max="2200" value={f.anioSiembra} onChange={set("anioSiembra")} placeholder="2019" className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">N° de plantas<input type="number" min="0" value={f.nPlantas} onChange={set("nPlantas")} placeholder="1100" className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Estado<select value={f.status} onChange={set("status")} className={`mt-1 ${I}`}><option value="activa">Activa</option><option value="inactiva">Inactiva</option></select></label>
+      </div>
+      <label className="block text-xs font-bold text-[var(--text-secondary)]">Notas<input value={f.observaciones} onChange={set("observaciones")} placeholder="opcional" className={`mt-1 ${I}`} /></label>
+      {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-2 text-xs text-[var(--data-error-700)]">{error}</div>}
+      <div className="flex gap-2 pt-1">
+        <button type="button" onClick={onCancel} className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
+        <button type="submit" disabled={submitting} className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar datos</button>
+      </div>
+    </form>
+  );
+}
+
+/** Duplica la estructura de la sección (metadata, sin labores ni polígono) con un
+ *  código nuevo — para clonar rápido secciones parecidas. */
+function DuplicarParcelaModal({ parcela, onClose, onDone }: { parcela: Parcela; onClose: () => void; onDone: () => void }) {
+  const [codigo, setCodigo] = useState(`${parcela.codigo}-copia`);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (submitting || !codigo.trim()) { if (!codigo.trim()) setError("El código es obligatorio."); return; }
+    setSubmitting(true); setError(null);
+    try {
+      const r = await fetch("/api/admin/cacao/campo?type=parcela", {
+        method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
+        body: JSON.stringify({ codigo: codigo.trim(), nombre: parcela.nombre, areaHa: parcela.areaHa, variedad: parcela.variedad, anioSiembra: parcela.anioSiembra, nPlantas: parcela.nPlantas, observaciones: parcela.observaciones }),
+      });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error === "codigo_duplicado" ? "Ya existe una sección con ese código." : (d.message ?? `HTTP ${r.status}`)); }
+      onDone();
+    } catch (err) { setError(err instanceof Error ? err.message : String(err)); setSubmitting(false); }
+  }
+
+  const I = "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  return (
+    <AdminModal open onClose={onClose} variant="centered-sm" icon={Copy} title="Duplicar sección" description={`Copia los datos de ${parcela.codigo} en una sección nueva (sin labores ni polígono).`}>
+      <form onSubmit={submit} className="space-y-4 p-5">
+        <label className="block text-sm font-bold text-[var(--text-primary)]">Código de la nueva sección<input value={codigo} onChange={(e) => setCodigo(e.target.value)} className={`mt-1 ${I}`} autoFocus /></label>
+        <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se copian nombre, área, variedad, año y plantas. Dibujá su polígono y registrá sus labores aparte.</p>
+        {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          <button type="submit" disabled={submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}Duplicar</button>
+        </div>
+      </form>
     </AdminModal>
   );
 }

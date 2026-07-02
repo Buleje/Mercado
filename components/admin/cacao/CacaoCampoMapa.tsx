@@ -365,7 +365,10 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       </div>
 
       <div className={fullscreen ? "relative flex-1 min-h-0" : "relative"}>
-        <div ref={containerRef} style={{ height: fullscreen ? "100%" : 480, cursor: drawing || measuring ? "crosshair" : "" }} className="w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
+        {/* `isolate` = isolation:isolate → el mapa crea su PROPIO stacking context,
+            así los z-index internos de Leaflet (controles z-800, tooltips z-650…)
+            quedan contenidos y nunca escapan por encima de los modales (z-50). */}
+        <div ref={containerRef} style={{ height: fullscreen ? "100%" : 480, cursor: drawing || measuring ? "crosshair" : "" }} className="isolate w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
         {ready && !hasPolygons && !drawing && !measuring && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-xs rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
