@@ -51,6 +51,7 @@ import CacaoAsesor from "./CacaoAsesor";
 import CacaoResumen from "./CacaoResumen";
 import CacaoInventario from "./CacaoInventario";
 import CacaoProductores from "./CacaoProductores";
+import CacaoLiquidaciones from "./CacaoLiquidaciones";
 import CacaoVentas from "./CacaoVentas";
 import CacaoAlertsBell from "./CacaoAlertsBell";
 
@@ -749,6 +750,9 @@ export default function CacaoAcopio() {
 
       {/* PRODUCTORES — componente propio (self-fetch + agregados + sus modales) */}
       {view === "productores" && <CacaoProductores />}
+
+      {/* LIQUIDACIONES — cuentas por pagar al productor (worklist + pago batch) */}
+      {view === "liquidaciones" && <CacaoLiquidaciones />}
 
       {/* BENEFICIO — componente propio (self-fetch + KPIs + anular + ficha lote) */}
       {view === "beneficio" && <CacaoBeneficio />}

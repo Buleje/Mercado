@@ -889,6 +889,152 @@ export class CacaoDB {
     return { linked: res.count, producerId: producer.id, producerNombre: producer.nombre };
   }
 
+  // ─── Liquidaciones: cuentas por pagar al productor (worklist) ────────
+  // Rollup por productor de los lotes con saldo pendiente (liquidación −
+  // abonado > 0). Sólo lotes vinculados al padrón (productorId). Ordenado por
+  // saldo desc para que el owner pague primero al que más le debe.
+  static async liquidacionesPendientes(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lotes = await prisma.cacaoLote.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        status: "registrado",
+        productorId: { not: null },
+        estadoPago: { not: "pagado" },
+      },
+      select: {
+        id: true,
+        loteCode: true,
+        fecha: true,
+        pesoKg: true,
+        totalPagado: true,
+        montoPagado: true,
+        estadoPago: true,
+        productorId: true,
+      },
+      orderBy: { fecha: "asc" },
+    });
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    type Row = { id: string; loteCode: string | null; fecha: string; kg: number; total: number; abonado: number; saldo: number; estadoPago: string };
+    type G = { producerId: string; lotes: Row[]; totalSaldo: number; totalDebido: number; totalAbonado: number; oldest: Date | null };
+    const byProd = new Map<string, G>();
+    for (const l of lotes) {
+      const total = Number(l.totalPagado ?? 0);
+      const abonado = Number(l.montoPagado ?? 0);
+      const saldo = Math.max(0, total - abonado);
+      if (saldo <= 0 || !l.productorId) continue;
+      const g = byProd.get(l.productorId) ?? {
+        producerId: l.productorId,
+        lotes: [],
+        totalSaldo: 0,
+        totalDebido: 0,
+        totalAbonado: 0,
+        oldest: null,
+      };
+      const f = new Date(l.fecha);
+      g.lotes.push({ id: l.id, loteCode: l.loteCode, fecha: f.toISOString(), kg: r2(Number(l.pesoKg ?? 0)), total: r2(total), abonado: r2(abonado), saldo: r2(saldo), estadoPago: l.estadoPago });
+      g.totalSaldo += saldo;
+      g.totalDebido += total;
+      g.totalAbonado += abonado;
+      if (!g.oldest || f < g.oldest) g.oldest = f;
+      byProd.set(l.productorId, g);
+    }
+    const producers = await this.listProducers(tenantId, { includeInactive: true });
+    const pMap = new Map(producers.map((p) => [p.id, p]));
+    const groups = [...byProd.values()]
+      .map((g) => {
+        const p = pMap.get(g.producerId);
+        return {
+          producerId: g.producerId,
+          nombre: p?.nombre ?? "—",
+          codigo: p?.codigo ?? null,
+          sector: p?.sector ?? null,
+          telefono: p?.telefono ?? null,
+          lotes: g.lotes,
+          nLotes: g.lotes.length,
+          totalSaldo: r2(g.totalSaldo),
+          totalDebido: r2(g.totalDebido),
+          totalAbonado: r2(g.totalAbonado),
+          oldest: g.oldest ? g.oldest.toISOString() : null,
+        };
+      })
+      .sort((a, b) => b.totalSaldo - a.totalSaldo);
+    return {
+      groups,
+      totals: {
+        productores: groups.length,
+        lotes: groups.reduce((s, g) => s + g.nLotes, 0),
+        saldo: r2(groups.reduce((s, g) => s + g.totalSaldo, 0)),
+      },
+    };
+  }
+
+  /**
+   * Paga la liquidación pendiente de un productor repartiendo `monto` entre sus
+   * lotes con saldo, del más antiguo al más nuevo (parcial en el último). Si
+   * `monto` es null/undefined, salda TODO. Deriva estadoPago por lote con
+   * cacaoEstadoPago (mismo contrato que registrarPagoAcopio) en una transacción.
+   */
+  static async pagarLiquidacionProductor(
+    tenantId: string,
+    producerId: string,
+    monto?: number | null,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const producer = await prisma.cacaoProducer.findFirst({
+      where: { id: producerId, tenantId },
+      select: { id: true },
+    });
+    if (!producer) throw new Error("producer_not_found");
+    const lotes = await prisma.cacaoLote.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        status: "registrado",
+        productorId: producerId,
+        estadoPago: { not: "pagado" },
+      },
+      select: { id: true, totalPagado: true, montoPagado: true },
+      orderBy: { fecha: "asc" },
+    });
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    const pend = lotes
+      .map((l) => {
+        const total = Number(l.totalPagado ?? 0);
+        const abonado = Number(l.montoPagado ?? 0);
+        return { id: l.id, total, abonado, saldo: Math.max(0, total - abonado) };
+      })
+      .filter((l) => l.saldo > 0);
+    const totalSaldo = pend.reduce((s, l) => s + l.saldo, 0);
+    let restante = monto == null ? totalSaldo : Math.max(0, Math.min(Number(monto), totalSaldo));
+    if (restante <= 0) return { pagados: 0, aplicado: 0, saldoRestante: r2(totalSaldo) };
+    const aplicadoTotal = restante;
+    const updates: { id: string; nuevoAbonado: number; estado: string }[] = [];
+    for (const l of pend) {
+      if (restante <= 0) break;
+      const aplicar = Math.min(restante, l.saldo);
+      const nuevoAbonado = r2(l.abonado + aplicar);
+      const { estado } = cacaoEstadoPago(l.total, nuevoAbonado);
+      updates.push({ id: l.id, nuevoAbonado, estado });
+      restante = r2(restante - aplicar);
+    }
+    await prisma.$transaction(
+      updates.map((u) =>
+        prisma.cacaoLote.update({
+          where: { id: u.id, tenantId } satisfies Prisma.CacaoLoteWhereUniqueInput,
+          data: { montoPagado: dec(u.nuevoAbonado), estadoPago: u.estado },
+        }),
+      ),
+    );
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
+    return { pagados: updates.length, aplicado: r2(aplicadoTotal), saldoRestante: r2(totalSaldo - aplicadoTotal) };
+  }
+
   // ─── Ficha de lote: detalle + beneficio vinculado ────────────────────
   static async loteDetail(tenantId: string, id: string) {
     if (!tenantId) throw new Error("tenantId is required");

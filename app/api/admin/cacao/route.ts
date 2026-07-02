@@ -162,6 +162,11 @@ const patchSchema = z.discriminatedUnion("action", [
     productorNombre: z.string().trim().min(1).max(160),
     producerId: z.string().trim().min(1).max(60),
   }),
+  z.object({
+    action: z.literal("pagar_liquidacion"),
+    producerId: z.string().trim().min(1).max(60),
+    monto: z.coerce.number().min(0).max(99_999_999).nullable().optional(),
+  }),
 ]);
 
 async function guard(req: NextRequest, roles: ("admin" | "almacenero" | "owner")[]) {
@@ -217,6 +222,8 @@ export async function GET(req: NextRequest) {
       );
     if (view === "orphan-lotes")
       return NextResponse.json(await CacaoDB.orphanLotesSummary(g.auth.tenantId));
+    if (view === "liquidaciones")
+      return NextResponse.json(await CacaoDB.liquidacionesPendientes(g.auth.tenantId));
     if (view === "producer-detail") {
       if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
       const detail = await CacaoDB.producerDetail(g.auth.tenantId, id);
@@ -562,6 +569,24 @@ export async function PATCH(req: NextRequest) {
         if (String(e instanceof Error ? e.message : e) === "producer_not_found")
           return NextResponse.json(
             { error: "producer_not_found", message: "No se encontró el productor en el padrón." },
+            { status: 404 },
+          );
+        throw e;
+      }
+    }
+    if (parsed.data.action === "pagar_liquidacion") {
+      try {
+        return NextResponse.json(
+          await CacaoDB.pagarLiquidacionProductor(
+            g.auth.tenantId,
+            parsed.data.producerId,
+            parsed.data.monto ?? null,
+          ),
+        );
+      } catch (e) {
+        if (String(e instanceof Error ? e.message : e) === "producer_not_found")
+          return NextResponse.json(
+            { error: "producer_not_found", message: "No se encontró el productor." },
             { status: 404 },
           );
         throw e;
