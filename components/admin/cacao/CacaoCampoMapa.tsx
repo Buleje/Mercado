@@ -8,12 +8,14 @@
  */
 import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize, Edit3, Trash2 } from "@buleje/design-system/icons";
+import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize, Edit3, Trash2, Locate, Tag, Route } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
 import { PARCELA_STATUS } from "@/lib/cacao/cacao-labores";
-import { geodesicAreaHa } from "@/lib/cacao/geo-area";
+import { geodesicAreaHa, haversineM, formatDist } from "@/lib/cacao/geo-area";
+
+const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 import type { Parcela } from "./CacaoCampo";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
@@ -51,6 +53,10 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const editLayerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editPolyRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- capa de medición + marcador de mi ubicación
+  const measureLayerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const locateMarkerRef = useRef<any>(null);
 
   const [ready, setReady] = useState(false);
   const [drawing, setDrawing] = useState(false);
@@ -65,8 +71,19 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const [savingEdit, setSavingEdit] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [editErr, setEditErr] = useState<string | null>(null);
+  // Funciones de alto nivel: etiquetas, medición, GPS, ir a sección.
+  const [showLabels, setShowLabels] = useState(false);
+  const [measuring, setMeasuring] = useState(false);
+  const [measureDist, setMeasureDist] = useState(0);
+  const [measureArea, setMeasureArea] = useState(0);
+  const [measurePts, setMeasurePts] = useState(0);
+  const [locating, setLocating] = useState(false);
+  const [mapMsg, setMapMsg] = useState<string | null>(null);
   const editVertsRef = useRef<[number, number][]>([]);
   const editingRef = useRef(false);
+  const measuringRef = useRef(false);
+  const measureVertsRef = useRef<[number, number][]>([]);
+  const showLabelsRef = useRef(false);
   const vertsRef = useRef<[number, number][]>([]);
   const drawingRef = useRef(false);
   const parcelasRef = useRef(parcelas);
@@ -87,7 +104,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     v.forEach((p, i) => L.circleMarker(p, { radius: 5, color: "#facc15", fillColor: "#fff", fillOpacity: 1, weight: 2 }).bindTooltip(String(i + 1)).addTo(drawRef.current));
   }, []);
 
-  const renderPolys = useCallback(() => {
+  const renderPolys = useCallback((fit = true) => {
     const L = LRef.current, map = mapRef.current;
     if (!L || !map) return;
     if (!polysRef.current) polysRef.current = L.layerGroup().addTo(map);
@@ -100,14 +117,18 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       const poly = L.polygon(pts, { color: m.ring, fillColor: m.ring, fillOpacity: 0.35, weight: 2 });
       poly.bindTooltip(`${p.codigo}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""}${editingRef.current ? " · tocá para editar" : ""}`, { sticky: true });
       poly.on("click", () => {
-        if (drawingRef.current) return;
+        if (drawingRef.current || measuringRef.current) return;
         if (editingRef.current) selectForEditRef.current(p);
         else onOpenRef.current(p.id);
       });
       poly.addTo(polysRef.current);
+      // Etiqueta permanente con el código (toggle "Etiquetas").
+      if (showLabelsRef.current) {
+        L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: `<span style="display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;padding:1px 6px;border-radius:6px;background:rgba(15,23,42,.72);color:#fff;font:700 11px/1.4 system-ui;box-shadow:0 1px 2px rgba(0,0,0,.4)">${escapeHtml(p.codigo)}</span>`, iconSize: [0, 0] }) }).addTo(polysRef.current);
+      }
       pts.forEach((pt) => bounds.push(pt));
     }
-    if (bounds.length) { try { map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30], maxZoom: 17 }); } catch { /* noop */ } }
+    if (fit && bounds.length) { try { map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30], maxZoom: 17 }); } catch { /* noop */ } }
   }, []);
 
   // Init once
@@ -122,10 +143,15 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       satRef.current = L.tileLayer(SAT, { maxZoom: 19, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 19, attribution: '© OpenStreetMap' });
       map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
-        if (!drawingRef.current) return;
-        vertsRef.current = [...vertsRef.current, [e.latlng.lat, e.latlng.lng]];
-        setNVerts(vertsRef.current.length);
-        redrawDrawing();
+        const ll: [number, number] = [e.latlng.lat, e.latlng.lng];
+        if (drawingRef.current) {
+          vertsRef.current = [...vertsRef.current, ll];
+          setNVerts(vertsRef.current.length);
+          redrawDrawing();
+        } else if (measuringRef.current) {
+          measureVertsRef.current = [...measureVertsRef.current, ll];
+          renderMeasure();
+        }
       });
       setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 200);
       setReady(true);
@@ -226,7 +252,61 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     } catch (e) { setEditErr(e instanceof Error ? e.message : String(e)); setSavingEdit(false); setConfirmDel(false); }
   }
 
+  // ── Medición de distancia/área (no crea sección) ──
+  function renderMeasure() {
+    const L = LRef.current, map = mapRef.current;
+    if (!L || !map) return;
+    if (!measureLayerRef.current) measureLayerRef.current = L.layerGroup().addTo(map);
+    measureLayerRef.current.clearLayers();
+    const v = measureVertsRef.current;
+    setMeasurePts(v.length);
+    if (v.length === 0) { setMeasureDist(0); setMeasureArea(0); return; }
+    if (v.length >= 2) L.polyline(v, { color: "#f472b6", weight: 3, dashArray: "6,4" }).addTo(measureLayerRef.current);
+    v.forEach((p) => L.circleMarker(p, { radius: 5, color: "#f472b6", fillColor: "#fff", fillOpacity: 1, weight: 2 }).addTo(measureLayerRef.current));
+    let dist = 0;
+    for (let i = 1; i < v.length; i++) dist += haversineM(v[i - 1], v[i]);
+    setMeasureDist(dist);
+    setMeasureArea(v.length >= 3 ? geodesicAreaHa(v) : 0);
+  }
+  function startMeasure() {
+    if (drawingRef.current) cancelDraw();
+    if (editingRef.current) exitEdit();
+    measureVertsRef.current = []; measuringRef.current = true; setMeasuring(true);
+    setMeasurePts(0); setMeasureDist(0); setMeasureArea(0); setMapMsg(null);
+  }
+  function undoMeasure() { measureVertsRef.current = measureVertsRef.current.slice(0, -1); renderMeasure(); }
+  function clearMeasure() { measureVertsRef.current = []; renderMeasure(); }
+  function exitMeasure() { measuringRef.current = false; setMeasuring(false); measureVertsRef.current = []; if (measureLayerRef.current) measureLayerRef.current.clearLayers(); }
+
+  // ── Ir a sección / GPS / etiquetas ──
+  function flyTo(id: string) {
+    const p = parcelasRef.current.find((x) => x.id === id);
+    const L = LRef.current, map = mapRef.current;
+    if (!p || !L || !map) return;
+    const pts = parseCoords(p.poligono ?? null);
+    if (pts && pts.length) { try { map.flyToBounds(L.latLngBounds(pts), { maxZoom: 18, padding: [40, 40] }); } catch { /* noop */ } }
+  }
+  function locate() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) { setMapMsg("Tu navegador no permite ubicación."); return; }
+    setLocating(true); setMapMsg(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const L = LRef.current, map = mapRef.current;
+        if (!L || !map) return;
+        const { latitude, longitude } = pos.coords;
+        if (locateMarkerRef.current) map.removeLayer(locateMarkerRef.current);
+        locateMarkerRef.current = L.circleMarker([latitude, longitude], { radius: 8, color: "#2563eb", fillColor: "#3b82f6", fillOpacity: 0.9, weight: 3 }).bindTooltip("Estás acá", { direction: "top" }).addTo(map);
+        map.flyTo([latitude, longitude], 16);
+      },
+      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activá el permiso de ubicación en tu navegador para usar el GPS." : "No pude obtener tu ubicación."); },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+  function toggleLabels() { const v = !showLabelsRef.current; showLabelsRef.current = v; setShowLabels(v); renderPolys(false); }
+
   const hasPolygons = parcelas.some((p) => parseCoords(p.poligono ?? null));
+  const conPoligono = parcelas.filter((p) => parseCoords(p.poligono ?? null));
 
   return (
     <div className={fullscreen ? "fixed inset-0 z-[45] flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-3"}>
@@ -256,19 +336,37 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
               <button type="button" onClick={exitEdit} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
             </>
           )
+        ) : measuring ? (
+          <>
+            <span className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Tocá el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${measureArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
+            <button type="button" onClick={undoMeasure} disabled={measurePts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
+            <button type="button" onClick={clearMeasure} disabled={measurePts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><X className="h-4 w-4" />Limpiar</button>
+            <button type="button" onClick={exitMeasure} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Check className="h-4 w-4" />Listo</button>
+          </>
         ) : (
           <>
             <button type="button" onClick={startDraw} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Pencil className="h-4 w-4" />Dibujar sección</button>
             {hasPolygons && <button type="button" onClick={enterEdit} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Edit3 className="h-4 w-4" />Editar</button>}
+            <button type="button" onClick={startMeasure} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Route className="h-4 w-4" />Medir</button>
           </>
         )}
-        <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="ml-auto inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
-        <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden sm:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {conPoligono.length > 0 && (
+            <select value="" onChange={(e) => { if (e.target.value) flyTo(e.target.value); }} title="Ir a una sección" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+              <option value="">Ir a sección…</option>
+              {conPoligono.map((p) => <option key={p.id} value={p.id}>{p.codigo}</option>)}
+            </select>
+          )}
+          <button type="button" onClick={locate} disabled={locating} title="Centrar el mapa en mi ubicación (GPS)" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Mi ubicación</span></button>
+          {hasPolygons && <button type="button" onClick={toggleLabels} title="Mostrar los códigos sobre las secciones" className={`inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)] ${showLabels ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Tag className="h-4 w-4" /><span className="hidden sm:inline">Etiquetas</span></button>}
+          <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
+          <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden sm:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
+        </div>
       </div>
 
       <div className={fullscreen ? "relative flex-1 min-h-0" : "relative"}>
-        <div ref={containerRef} style={{ height: fullscreen ? "100%" : 480, cursor: drawing ? "crosshair" : "" }} className="w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
-        {ready && !hasPolygons && !drawing && (
+        <div ref={containerRef} style={{ height: fullscreen ? "100%" : 480, cursor: drawing || measuring ? "crosshair" : "" }} className="w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
+        {ready && !hasPolygons && !drawing && !measuring && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-xs rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
               <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
@@ -280,8 +378,10 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         )}
       </div>
       {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
-      {!fullscreen && !editing && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>}
+      {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-900)]">{mapMsg}<button type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-900)]"><X className="h-4 w-4" /></button></p>}
+      {!fullscreen && !editing && !measuring && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>}
       {!fullscreen && editing && <p className="text-xs text-[var(--text-tertiary)]"><Edit3 className="mr-1 inline h-3 w-3" />Arrastrá los puntos azules para mover los límites; el área en hectáreas se recalcula sola. Guardá para aplicar.</p>}
+      {!fullscreen && measuring && <p className="text-xs text-[var(--text-tertiary)]"><Route className="mr-1 inline h-3 w-3" />Tocá puntos en el mapa para medir distancia; con 3+ puntos también calcula el área. No crea ninguna sección.</p>}
 
       {pending && <AsignarSeccionModal poligono={pending} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
     </div>

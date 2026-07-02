@@ -25,3 +25,16 @@ export function geodesicAreaM2(latlngs: [number, number][]): number {
 export function geodesicAreaHa(latlngs: [number, number][]): number {
   return Math.round((geodesicAreaM2(latlngs) / 10_000) * 100) / 100;
 }
+
+/** Distancia en metros entre dos puntos [lat, lng] (haversine). */
+export function haversineM(a: [number, number], b: [number, number]): number {
+  const [lat1, lng1] = a, [lat2, lng2] = b;
+  const dLat = (lat2 - lat1) * D2R, dLng = (lng2 - lng1) * D2R;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * D2R) * Math.cos(lat2 * D2R) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+/** Formatea metros a "X m" o "Y.YY km". */
+export function formatDist(m: number): string {
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(2)} km`;
+}
