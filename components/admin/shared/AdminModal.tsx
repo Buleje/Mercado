@@ -77,15 +77,22 @@ interface AdminModalProps {
 // "bottom-sheet" (full-width, pegado abajo, esquinas superiores redondeadas) —
 // el patrón móvil estándar, más cómodo que una tarjeta flotante centrada.
 // En sm+ vuelven a ser tarjetas centradas como siempre.
+// Brandon 2026-07-03: los anchos van en REM EXPLÍCITOS, no en tokens `max-w-{sm,md,lg,xl}`.
+// Este proyecto redefine `--container-{sm,md,lg,xl}` en @theme (globals.css) como una
+// escala de contenedores de layout (md=960px, lg=1200px…), y en Tailwind v4 `max-w-md`
+// = `var(--container-md)`. Usar los tokens hacía que los modales salieran 2× de ancho
+// (el drawer `side` a 960px se veía "chueco"). Los rem fijos son inmunes al override y
+// matchean el intent original (sm=24rem, md=28rem, lg=32rem). `wide`/`pos` usan `2xl`/`6xl`
+// que NO están overrideados, así que quedan como estaban.
 const VARIANT_CLASSES: Record<Variant, string> = {
-  default: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-lg sm:rounded-2xl sm:max-h-[85vh]",
-  "centered-sm": "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-sm sm:rounded-2xl sm:max-h-[85vh]",
+  default: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[32rem] sm:rounded-2xl sm:max-h-[85vh]",
+  "centered-sm": "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[24rem] sm:rounded-2xl sm:max-h-[85vh]",
   wide: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-2xl sm:rounded-2xl sm:max-h-[85vh]",
   // Brandon 2026-05-16: variant `pos` para checkouts con 2-columnas desktop.
   // max-w-6xl + 92vh para que en PC quepa TODO el flujo de cobro sin scroll.
   pos: "w-full rounded-t-2xl max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-2xl",
   fullscreen: "w-screen h-screen rounded-none",
-  side: "ml-auto h-screen w-full max-w-md rounded-l-2xl",
+  side: "h-screen w-full max-w-[28rem] rounded-l-2xl",
 };
 
 const VARIANT_POSITION: Record<Variant, string> = {

@@ -8,7 +8,7 @@
  */
 import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2 } from "@buleje/design-system/icons";
+import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
@@ -51,6 +51,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const [drawing, setDrawing] = useState(false);
   const [nVerts, setNVerts] = useState(0);
   const [layer, setLayer] = useState<"sat" | "street">("sat");
+  const [fullscreen, setFullscreen] = useState(false);
   const [pending, setPending] = useState<[number, number][] | null>(null);
   const vertsRef = useRef<[number, number][]>([]);
   const drawingRef = useRef(false);
@@ -125,6 +126,24 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     else { map.removeLayer(satRef.current); streetRef.current.addTo(map); }
   }, [layer]);
 
+  // Pantalla completa: Leaflet necesita invalidateSize tras cambiar de tamaño;
+  // bloqueamos el scroll del body y salimos con Escape (salvo que haya un modal
+  // abierto — ahí Radix maneja el Escape primero).
+  useEffect(() => {
+    const map = mapRef.current;
+    const t = map ? setTimeout(() => map.invalidateSize(), 220) : null;
+    if (!fullscreen) return () => { if (t) clearTimeout(t); };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !pending) setFullscreen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      if (t) clearTimeout(t);
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [fullscreen, pending]);
+
   function startDraw() { vertsRef.current = []; setNVerts(0); drawingRef.current = true; setDrawing(true); redrawDrawing(); }
   function cancelDraw() { vertsRef.current = []; setNVerts(0); drawingRef.current = false; setDrawing(false); if (drawRef.current) drawRef.current.clearLayers(); }
   function undo() { vertsRef.current = vertsRef.current.slice(0, -1); setNVerts(vertsRef.current.length); redrawDrawing(); }
@@ -133,7 +152,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const hasPolygons = parcelas.some((p) => parseCoords(p.poligono ?? null));
 
   return (
-    <div className="space-y-3">
+    <div className={fullscreen ? "fixed inset-0 z-[45] flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-3"}>
       <div className="flex flex-wrap items-center gap-2">
         {!drawing ? (
           <button type="button" onClick={startDraw} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Pencil className="h-4 w-4" />Dibujar sección</button>
@@ -146,10 +165,11 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
           </>
         )}
         <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="ml-auto inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
+        <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden sm:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
       </div>
 
-      <div className="relative">
-        <div ref={containerRef} style={{ height: 480, cursor: drawing ? "crosshair" : "" }} className="w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
+      <div className={fullscreen ? "relative flex-1 min-h-0" : "relative"}>
+        <div ref={containerRef} style={{ height: fullscreen ? "100%" : 480, cursor: drawing ? "crosshair" : "" }} className="w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
         {ready && !hasPolygons && !drawing && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-xs rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
@@ -161,7 +181,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
           </div>
         )}
       </div>
-      <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>
+      {!fullscreen && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>}
 
       {pending && <AsignarSeccionModal poligono={pending} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
     </div>
