@@ -99,6 +99,7 @@ export async function GET(req: NextRequest) {
   const id = sp.get("id") ?? undefined;
   try {
     if (view === "stats") return NextResponse.json({ stats: await CacaoCampoDB.stats(g.auth.tenantId) });
+    if (view === "analytics") return NextResponse.json(await CacaoCampoDB.campoAnalytics(g.auth.tenantId));
     if (view === "labores")
       return NextResponse.json({
         labores: await CacaoCampoDB.listLabores(g.auth.tenantId, {

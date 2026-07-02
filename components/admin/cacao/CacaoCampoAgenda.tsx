@@ -7,8 +7,9 @@
  * Brandon 2026-07-02.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Calendar, Search, RefreshCw, AlertCircle, CheckCircle2, Clock, AlertTriangle } from "@buleje/design-system/icons";
+import { Calendar, Search, RefreshCw, AlertCircle, CheckCircle2, Clock, AlertTriangle, Sparkles, Plus } from "@buleje/design-system/icons";
 import { CACAO_LABORES, LABOR_LABEL, type CacaoLaborTipo } from "@/lib/cacao/cacao-labores";
+import { csrfHeaders } from "@/lib/csrf-client";
 import type { Parcela } from "./CacaoCampo";
 
 interface LaborRow {
@@ -17,6 +18,7 @@ interface LaborRow {
   responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null;
   insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null;
 }
+interface Sugerida { parcelaId: string; codigo: string; tipo: CacaoLaborTipo; ultimaHecha: string | null; dueDate: string; diasRestantes: number; atrasada: boolean; nunca: boolean }
 const money = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const ICON = Object.fromEntries(CACAO_LABORES.map((l) => [l.tipo, l.icon])) as Record<CacaoLaborTipo, (typeof CACAO_LABORES)[number]["icon"]>;
@@ -30,6 +32,8 @@ const ESTADO = {
 
 export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas: Parcela[]; onOpenParcela: (id: string) => void }) {
   const [labores, setLabores] = useState<LaborRow[]>([]);
+  const [sugeridas, setSugeridas] = useState<Sugerida[]>([]);
+  const [programando, setProgramando] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fEstado, setFEstado] = useState("todos");
@@ -40,14 +44,32 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const r = await fetch("/api/admin/cacao/campo?view=labores", { credentials: "include" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const d = await r.json();
-      setLabores(d.labores ?? []);
+      const [rl, ra] = await Promise.all([
+        fetch("/api/admin/cacao/campo?view=labores", { credentials: "include" }),
+        fetch("/api/admin/cacao/campo?view=analytics", { credentials: "include" }),
+      ]);
+      if (!rl.ok) throw new Error(`HTTP ${rl.status}`);
+      setLabores((await rl.json()).labores ?? []);
+      if (ra.ok) setSugeridas((await ra.json()).sugeridas ?? []);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  /** Agenda una labor sugerida como pendiente (fechaPlan = fecha sugerida). */
+  async function programar(s: Sugerida) {
+    const key = `${s.parcelaId}:${s.tipo}`;
+    setProgramando(key); setError(null);
+    try {
+      const r = await fetch("/api/admin/cacao/campo?type=labor", {
+        method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
+        body: JSON.stringify({ parcelaId: s.parcelaId, tipo: s.tipo, estado: "pendiente", fechaPlan: s.dueDate }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setProgramando(null); }
+  }
 
   const view = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -69,6 +91,35 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
   const S = "h-11 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <div className="space-y-4">
+      {sugeridas.length > 0 && (
+        <div className="rounded-2xl border-2 border-[var(--accent-soft)] bg-[var(--surface-raised)] p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]"><Sparkles className="h-4 w-4" /></span>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[var(--text-primary)]">Próximas labores sugeridas</p>
+              <p className="text-xs text-[var(--text-tertiary)]">Según el ciclo agronómico del cacao y la última labor hecha en cada sección.</p>
+            </div>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {sugeridas.slice(0, 9).map((s) => {
+              const Icon = ICON[s.tipo]; const key = `${s.parcelaId}:${s.tipo}`;
+              const tono = s.atrasada ? "text-[var(--data-error-700)]" : s.nunca ? "text-[var(--data-warning-800)]" : "text-[var(--text-tertiary)]";
+              return (
+                <div key={key} className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--surface-raised)] text-[var(--accent)]"><Icon className="h-4 w-4" /></span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-[var(--text-primary)]"><span className="font-mono">{s.codigo}</span> · {LABOR_LABEL[s.tipo]}</p>
+                    <p className={`text-[length:var(--ts-2xs)] font-bold ${tono}`}>{s.atrasada ? `Atrasada ${Math.abs(s.diasRestantes)} d` : s.nunca ? "Nunca hecha" : `En ${s.diasRestantes} d`}</p>
+                  </div>
+                  <button type="button" onClick={() => programar(s)} disabled={programando === key} title="Programar esta labor" className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-50">{programando === key ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}</button>
+                </div>
+              );
+            })}
+          </div>
+          {sugeridas.length > 9 && <p className="mt-2 text-xs text-[var(--text-tertiary)]">+{sugeridas.length - 9} sugerencias más (programá las de arriba para verlas actualizarse).</p>}
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex h-11 min-w-[180px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />

@@ -8,11 +8,12 @@
  */
 import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize } from "@buleje/design-system/icons";
+import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize, Edit3, Trash2 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
 import { PARCELA_STATUS } from "@/lib/cacao/cacao-labores";
+import { geodesicAreaHa } from "@/lib/cacao/geo-area";
 import type { Parcela } from "./CacaoCampo";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
@@ -46,6 +47,10 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const satRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const streetRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- capa de edición (polígono + handles de vértice)
+  const editLayerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const editPolyRef = useRef<any>(null);
 
   const [ready, setReady] = useState(false);
   const [drawing, setDrawing] = useState(false);
@@ -53,12 +58,23 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const [layer, setLayer] = useState<"sat" | "street">("sat");
   const [fullscreen, setFullscreen] = useState(false);
   const [pending, setPending] = useState<[number, number][] | null>(null);
+  // Edición de secciones existentes: mover vértices → recalcula área en vivo.
+  const [editing, setEditing] = useState(false);
+  const [editSel, setEditSel] = useState<{ id: string; codigo: string } | null>(null);
+  const [editArea, setEditArea] = useState(0);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [editErr, setEditErr] = useState<string | null>(null);
+  const editVertsRef = useRef<[number, number][]>([]);
+  const editingRef = useRef(false);
   const vertsRef = useRef<[number, number][]>([]);
   const drawingRef = useRef(false);
   const parcelasRef = useRef(parcelas);
   parcelasRef.current = parcelas;
   const onOpenRef = useRef(onOpenParcela);
   onOpenRef.current = onOpenParcela;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const selectForEditRef = useRef<(p: any) => void>(() => {});
 
   const redrawDrawing = useCallback(() => {
     const L = LRef.current, map = mapRef.current;
@@ -82,8 +98,12 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       if (!pts) continue;
       const m = PARCELA_STATUS[p.laborStatus];
       const poly = L.polygon(pts, { color: m.ring, fillColor: m.ring, fillOpacity: 0.35, weight: 2 });
-      poly.bindTooltip(`${p.codigo}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""}`, { sticky: true });
-      poly.on("click", () => { if (!drawingRef.current) onOpenRef.current(p.id); });
+      poly.bindTooltip(`${p.codigo}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""}${editingRef.current ? " · tocá para editar" : ""}`, { sticky: true });
+      poly.on("click", () => {
+        if (drawingRef.current) return;
+        if (editingRef.current) selectForEditRef.current(p);
+        else onOpenRef.current(p.id);
+      });
       poly.addTo(polysRef.current);
       pts.forEach((pt) => bounds.push(pt));
     }
@@ -149,19 +169,97 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   function undo() { vertsRef.current = vertsRef.current.slice(0, -1); setNVerts(vertsRef.current.length); redrawDrawing(); }
   function finishDraw() { if (vertsRef.current.length < 3) return; setPending(vertsRef.current); }
 
+  // ── Edición de secciones existentes: arrastrar vértices + área en vivo ──
+  function renderEdit() {
+    const L = LRef.current, map = mapRef.current;
+    if (!L || !map) return;
+    if (!editLayerRef.current) editLayerRef.current = L.layerGroup().addTo(map);
+    editLayerRef.current.clearLayers();
+    const verts = editVertsRef.current;
+    if (verts.length < 3) return;
+    editPolyRef.current = L.polygon(verts, { color: "#38bdf8", weight: 2, fillColor: "#38bdf8", fillOpacity: 0.2, dashArray: "4,4" }).addTo(editLayerRef.current);
+    const handle = L.divIcon({ className: "", html: '<span style="display:block;width:14px;height:14px;border-radius:50%;background:#38bdf8;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)"></span>', iconSize: [14, 14], iconAnchor: [7, 7] });
+    verts.forEach((pt, i) => {
+      const mk = L.marker(pt, { draggable: true, icon: handle }).addTo(editLayerRef.current);
+      mk.on("drag", (e: { target: { getLatLng: () => { lat: number; lng: number } } }) => {
+        const ll = e.target.getLatLng();
+        editVertsRef.current[i] = [ll.lat, ll.lng];
+        editPolyRef.current?.setLatLngs(editVertsRef.current);
+        setEditArea(geodesicAreaHa(editVertsRef.current));
+      });
+    });
+    setEditArea(geodesicAreaHa(verts));
+  }
+  function selectForEdit(p: { id: string; codigo: string; poligono?: string | null }) {
+    const pts = parseCoords(p.poligono ?? null);
+    if (!pts) return;
+    setEditSel({ id: p.id, codigo: p.codigo }); setConfirmDel(false); setEditErr(null);
+    editVertsRef.current = pts.map((x) => [x[0], x[1]] as [number, number]);
+    renderEdit();
+  }
+  selectForEditRef.current = selectForEdit;
+  function enterEdit() { if (drawingRef.current) cancelDraw(); editingRef.current = true; setEditing(true); }
+  function exitEdit() {
+    editingRef.current = false; setEditing(false); setEditSel(null); setConfirmDel(false); setEditErr(null); setSavingEdit(false);
+    editVertsRef.current = [];
+    if (editLayerRef.current) editLayerRef.current.clearLayers();
+  }
+  async function saveEdit() {
+    if (!editSel || editVertsRef.current.length < 3) return;
+    setSavingEdit(true); setEditErr(null);
+    try {
+      const r = await fetch("/api/admin/cacao/campo", {
+        method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
+        body: JSON.stringify({ action: "update_parcela", id: editSel.id, patch: { poligono: JSON.stringify(editVertsRef.current), areaHa: geodesicAreaHa(editVertsRef.current) } }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      exitEdit(); onChanged();
+    } catch (e) { setEditErr(e instanceof Error ? e.message : String(e)); setSavingEdit(false); }
+  }
+  async function deleteSel() {
+    if (!editSel) return;
+    setSavingEdit(true); setEditErr(null);
+    try {
+      const r = await fetch(`/api/admin/cacao/campo?type=parcela&id=${encodeURIComponent(editSel.id)}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      exitEdit(); onChanged();
+    } catch (e) { setEditErr(e instanceof Error ? e.message : String(e)); setSavingEdit(false); setConfirmDel(false); }
+  }
+
   const hasPolygons = parcelas.some((p) => parseCoords(p.poligono ?? null));
 
   return (
     <div className={fullscreen ? "fixed inset-0 z-[45] flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-3"}>
       <div className="flex flex-wrap items-center gap-2">
-        {!drawing ? (
-          <button type="button" onClick={startDraw} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Pencil className="h-4 w-4" />Dibujar sección</button>
-        ) : (
+        {drawing ? (
           <>
             <span className="inline-flex h-11 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-900)]">Tocá el mapa para marcar los vértices ({nVerts})</span>
             <button type="button" onClick={undo} disabled={nVerts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={finishDraw} disabled={nVerts < 3} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Terminar ({nVerts})</button>
             <button type="button" onClick={cancelDraw} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          </>
+        ) : editing ? (
+          editSel ? (
+            <>
+              <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-800)]"><Edit3 className="h-4 w-4" />Editando {editSel.codigo} · {editArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha</span>
+              <button type="button" onClick={saveEdit} disabled={savingEdit} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar</button>
+              {!confirmDel ? (
+                <button type="button" onClick={() => setConfirmDel(true)} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" />Borrar</button>
+              ) : (
+                <button type="button" onClick={deleteSel} disabled={savingEdit} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Confirmar borrar</button>
+              )}
+              <button type="button" onClick={exitEdit} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
+            </>
+          ) : (
+            <>
+              <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-800)]"><Edit3 className="h-4 w-4" />Tocá una sección para mover sus límites</span>
+              <button type="button" onClick={exitEdit} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
+            </>
+          )
+        ) : (
+          <>
+            <button type="button" onClick={startDraw} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Pencil className="h-4 w-4" />Dibujar sección</button>
+            {hasPolygons && <button type="button" onClick={enterEdit} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Edit3 className="h-4 w-4" />Editar</button>}
           </>
         )}
         <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="ml-auto inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
@@ -181,7 +279,9 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
           </div>
         )}
       </div>
-      {!fullscreen && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>}
+      {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
+      {!fullscreen && !editing && <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>}
+      {!fullscreen && editing && <p className="text-xs text-[var(--text-tertiary)]"><Edit3 className="mr-1 inline h-3 w-3" />Arrastrá los puntos azules para mover los límites; el área en hectáreas se recalcula sola. Guardá para aplicar.</p>}
 
       {pending && <AsignarSeccionModal poligono={pending} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
     </div>
