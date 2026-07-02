@@ -7,17 +7,18 @@
  * fertilización, cosecha, etc. y ver qué se hizo y qué falta. Brandon 2026-07-02.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Trees, Plus, RefreshCw, AlertCircle, Grid3x3, Square, ClipboardList, Loader2, X } from "@buleje/design-system/icons";
+import { Trees, Plus, RefreshCw, AlertCircle, Grid3x3, Square, ClipboardList, Loader2, X, LayoutGrid, Map as MapIcon } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_LABORES, PARCELA_STATUS, type CacaoParcelaStatus, type CacaoLaborTipo } from "@/lib/cacao/cacao-labores";
 import CacaoParcelaDrawer from "./CacaoParcelaDrawer";
+import CacaoCampoMapa from "./CacaoCampoMapa";
 
 type PorTipo = Record<CacaoLaborTipo, { hechos: number; pendientes: number; vencido: boolean; ultimoHecho: string | null }>;
 export interface Parcela {
   id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null;
-  anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null;
+  anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null; poligono: string | null;
   laborStatus: CacaoParcelaStatus; labores: { total: number; hechos: number; pendientes: number; vencidos: number }; porTipo: PorTipo;
 }
 
@@ -37,6 +38,7 @@ export default function CacaoCampo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [vista, setVista] = useState<"grilla" | "mapa">("grilla");
   const [showNew, setShowNew] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
 
@@ -72,6 +74,10 @@ export default function CacaoCampo() {
 
       {/* Toolbar + leyenda */}
       <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-2xl border-2 border-[var(--rule-base)] p-0.5">
+          <button type="button" onClick={() => setVista("grilla")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "grilla" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><LayoutGrid className="h-4 w-4" />Grilla</button>
+          <button type="button" onClick={() => setVista("mapa")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "mapa" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><MapIcon className="h-4 w-4" />Mapa</button>
+        </div>
         <div className="mr-auto flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)]">
           {(["al_dia", "pendiente", "vencido", "sin_labores"] as CacaoParcelaStatus[]).map((s) => {
             const m = PARCELA_STATUS[s];
@@ -83,8 +89,10 @@ export default function CacaoCampo() {
         <button type="button" onClick={() => setShowNew(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nueva sección</button>
       </div>
 
-      {/* Grilla / maqueta */}
-      {loading && parcelas.length === 0 ? (
+      {/* Mapa: dibujar/dividir el terreno en secciones (fase 2) */}
+      {vista === "mapa" ? (
+        <CacaoCampoMapa parcelas={parcelas} onOpenParcela={setDrawerId} onChanged={load} />
+      ) : loading && parcelas.length === 0 ? (
         <div className="rounded-2xl border-2 border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
       ) : parcelas.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">

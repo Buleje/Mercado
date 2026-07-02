@@ -5279,8 +5279,9 @@ model CacaoParcela {
   nPlantas      Int?
   gridRow       Int       @default(0) // posición en la grilla (maqueta)
   gridCol       Int       @default(0)
-  latitud       Decimal?  @db.Decimal(10, 7) // fase 2: contorno geo sobre mapa
+  latitud       Decimal?  @db.Decimal(10, 7) // centro de la parcela (marcador)
   longitud      Decimal?  @db.Decimal(10, 7)
+  poligono      String? // contorno dibujado en el mapa: JSON [[lat,lng],…]
   color         String? // color opcional del bloque en la grilla
   status        String    @default("activa") // activa | inactiva
   observaciones String?

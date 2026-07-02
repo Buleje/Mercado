@@ -27,6 +27,7 @@ export interface ParcelaInput {
   nPlantas?: number | null;
   gridRow?: number | null;
   gridCol?: number | null;
+  poligono?: string | null;
   color?: string | null;
   observaciones?: string | null;
   status?: string;
@@ -144,6 +145,7 @@ export class CacaoCampoDB {
           nPlantas: input.nPlantas ?? null,
           gridRow: input.gridRow ?? 0,
           gridCol: input.gridCol ?? 0,
+          poligono: input.poligono?.trim() || null,
           color: input.color?.trim() || null,
           observaciones: input.observaciones?.trim() || null,
           status: input.status ?? "activa",

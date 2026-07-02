@@ -23,6 +23,21 @@ const parcelaSchema = z.object({
   nPlantas: z.coerce.number().int().min(0).max(10_000_000).nullable().optional(),
   gridRow: z.coerce.number().int().min(0).max(1000).nullable().optional(),
   gridCol: z.coerce.number().int().min(0).max(1000).nullable().optional(),
+  poligono: z
+    .string()
+    .trim()
+    .max(20000)
+    .nullable()
+    .optional()
+    .refine((v) => {
+      if (v == null || v === "") return true;
+      try {
+        const a = JSON.parse(v);
+        return Array.isArray(a) && a.every((p) => Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === "number" && Number.isFinite(x)));
+      } catch {
+        return false;
+      }
+    }, { message: "poligono inválido: debe ser JSON [[lat,lng],…]" }),
   color: z.string().trim().max(20).nullable().optional(),
   observaciones: z.string().trim().max(1000).nullable().optional(),
   status: z.enum(["activa", "inactiva"]).optional(),
