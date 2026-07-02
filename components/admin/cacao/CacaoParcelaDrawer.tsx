@@ -13,7 +13,8 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_LABORES, LABOR_LABEL, LABOR_UNIDADES, PARCELA_STATUS, type CacaoLaborTipo, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
 
 interface Parcela { id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null; anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null }
-interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; createdAt: string }
+interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null; createdAt: string }
+const money = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
 const ICON = Object.fromEntries(CACAO_LABORES.map((l) => [l.tipo, l.icon])) as Record<CacaoLaborTipo, (typeof CACAO_LABORES)[number]["icon"]>;
@@ -137,9 +138,10 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
                           ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"><Check className="h-3 w-3" />Hecho {fdate(l.fechaHecho)}</span>
                           : <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${vencido ? "bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"}`}><Calendar className="h-3 w-3" />{vencido ? "Vencida" : "Programada"} {fdate(l.fechaPlan)}</span>}
                       </div>
-                      {(l.detalle || l.responsable || l.cantidad != null) && (
-                        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{[l.detalle, l.responsable && `por ${l.responsable}`, l.cantidad != null && `${l.cantidad}${l.unidad ? ` ${l.unidad}` : ""}`].filter(Boolean).join(" · ")}</p>
+                      {(l.detalle || l.responsable || l.cantidad != null || l.insumo || l.costo != null) && (
+                        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{[l.detalle, l.responsable && `por ${l.responsable}`, l.cantidad != null && `${l.cantidad}${l.unidad ? ` ${l.unidad}` : ""}`, l.insumo && (l.dosis ? `${l.insumo} (${l.dosis})` : l.insumo), l.costo != null && `S/ ${money(l.costo)}`].filter(Boolean).join(" · ")}</p>
                       )}
+                      {!!l.recurrenteDias && <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><RotateCcw className="h-3 w-3" />cada {l.recurrenteDias} d</span>}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       {l.estado === "hecho"
@@ -160,7 +162,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
 
 function RegistrarLaborForm({ parcelaId, responsables, onDone }: { parcelaId: string; responsables: string[]; onDone: () => void }) {
   const today = new Date().toISOString().slice(0, 10);
-  const [f, setF] = useState({ tipo: "poda" as CacaoLaborTipo, estado: "hecho", fecha: today, responsable: "", detalle: "", cantidad: "", unidad: LABOR_UNIDADES.poda[0] });
+  const [f, setF] = useState({ tipo: "poda" as CacaoLaborTipo, estado: "hecho", fecha: today, responsable: "", detalle: "", cantidad: "", unidad: LABOR_UNIDADES.poda[0], insumo: "", dosis: "", costo: "", recurrente: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -184,6 +186,8 @@ function RegistrarLaborForm({ parcelaId, responsables, onDone }: { parcelaId: st
         fechaHecho: hecho ? f.fecha : null, fechaPlan: hecho ? null : f.fecha,
         responsable: f.responsable.trim() || null, detalle: f.detalle.trim() || null,
         cantidad: f.cantidad ? Number(f.cantidad) : null, unidad: f.cantidad ? f.unidad : null,
+        insumo: f.insumo.trim() || null, dosis: f.dosis.trim() || null,
+        costo: f.costo ? Number(f.costo) : null, recurrenteDias: f.recurrente ? Number(f.recurrente) : null,
       };
       const r = await fetch("/api/admin/cacao/campo?type=labor", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
@@ -201,8 +205,13 @@ function RegistrarLaborForm({ parcelaId, responsables, onDone }: { parcelaId: st
         <label className="text-xs font-bold text-[var(--text-secondary)]">Responsable<input value={f.responsable} onChange={set("responsable")} list="cacao-responsables" placeholder="opcional" className={`mt-1 ${I}`} /><datalist id="cacao-responsables">{responsables.map((r) => <option key={r} value={r} />)}</datalist></label>
         <label className="text-xs font-bold text-[var(--text-secondary)]">Cantidad<input type="number" step="0.01" min="0" value={f.cantidad} onChange={set("cantidad")} placeholder="ej. 200" className={`mt-1 ${I}`} /></label>
         <label className="text-xs font-bold text-[var(--text-secondary)]">Unidad<select value={f.unidad} onChange={set("unidad")} className={`mt-1 ${I}`}>{LABOR_UNIDADES[f.tipo].map((u) => <option key={u} value={u}>{u}</option>)}</select></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Insumo / producto<input value={f.insumo} onChange={set("insumo")} placeholder="ej. urea, fungicida" className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Dosis<input value={f.dosis} onChange={set("dosis")} placeholder="ej. 2 kg/ha" className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Costo (S/)<input type="number" step="0.01" min="0" value={f.costo} onChange={set("costo")} placeholder="mano de obra + insumo" className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Repetir cada (días)<input type="number" min="1" max="3650" value={f.recurrente} onChange={set("recurrente")} placeholder="ej. 30 (opcional)" className={`mt-1 ${I}`} /></label>
       </div>
       <label className="block text-xs font-bold text-[var(--text-secondary)]">Detalle<input value={f.detalle} onChange={set("detalle")} placeholder="opcional" className={`mt-1 ${I}`} /></label>
+      {f.recurrente && Number(f.recurrente) > 0 && <p className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]"><RotateCcw className="h-3 w-3" />Al marcarla hecha, se agenda automáticamente la próxima a {f.recurrente} días.</p>}
       {fechaFutura && !error && <p className="text-xs font-bold text-[var(--data-error-700)]">Una labor “ya hecha” no puede tener fecha futura.</p>}
       {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-2 text-xs text-[var(--data-error-700)]">{error}</div>}
       <button type="submit" disabled={submitting || fechaFutura} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar labor</button>

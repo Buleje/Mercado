@@ -53,6 +53,10 @@ const laborSchema = z.object({
   detalle: z.string().trim().max(500).nullable().optional(),
   cantidad: z.coerce.number().min(0).max(9_999_999).nullable().optional(),
   unidad: z.string().trim().max(20).nullable().optional(),
+  insumo: z.string().trim().max(160).nullable().optional(),
+  dosis: z.string().trim().max(80).nullable().optional(),
+  costo: z.coerce.number().min(0).max(9_999_999).nullable().optional(),
+  recurrenteDias: z.coerce.number().int().min(1).max(3650).nullable().optional(),
 });
 
 const patchSchema = z.discriminatedUnion("action", [

@@ -5310,6 +5310,10 @@ model CacaoParcelaLabor {
   detalle     String?
   cantidad    Decimal?  @db.Decimal(12, 2) // ej. kg cosechados, litros aplicados, jornales
   unidad      String? // kg | L | jornal | sacos
+  insumo      String? // producto aplicado (fertilizante, fungicida, etc.)
+  dosis       String? // ej. "2 kg/ha", "1 L/200L agua"
+  costo       Decimal?  @db.Decimal(12, 2) // costo de la labor (mano de obra + insumo) → Finanzas
+  recurrenteDias Int? // si se setea, al marcarla hecha se agenda la próxima a +N días
   createdBy   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

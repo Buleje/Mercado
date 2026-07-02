@@ -44,6 +44,10 @@ export interface LaborInput {
   detalle?: string | null;
   cantidad?: number | string | null;
   unidad?: string | null;
+  insumo?: string | null;
+  dosis?: string | null;
+  costo?: number | string | null;
+  recurrenteDias?: number | null;
   createdBy?: string | null;
 }
 
@@ -127,7 +131,7 @@ export class CacaoCampoDB {
     });
     return {
       parcela: { ...parcela, areaHa: parcela.areaHa == null ? null : Number(parcela.areaHa) },
-      labores: labores.map((l) => ({ ...l, cantidad: l.cantidad == null ? null : Number(l.cantidad) })),
+      labores: labores.map((l) => ({ ...l, cantidad: l.cantidad == null ? null : Number(l.cantidad), costo: l.costo == null ? null : Number(l.costo) })),
     };
   }
 
@@ -158,6 +162,7 @@ export class CacaoCampoDB {
         fechaPlan: l.fechaPlan ? l.fechaPlan.toISOString() : null,
         responsable: l.responsable, detalle: l.detalle,
         cantidad: l.cantidad == null ? null : Number(l.cantidad), unidad: l.unidad,
+        insumo: l.insumo, dosis: l.dosis, costo: l.costo == null ? null : Number(l.costo), recurrenteDias: l.recurrenteDias,
       };
     });
     rows.sort((a, b) => b.fecha.localeCompare(a.fecha));
@@ -249,25 +254,60 @@ export class CacaoCampoDB {
         detalle: input.detalle?.trim() || null,
         cantidad: dec(input.cantidad),
         unidad: input.unidad?.trim() || null,
+        insumo: input.insumo?.trim() || null,
+        dosis: input.dosis?.trim() || null,
+        costo: dec(input.costo),
+        recurrenteDias: input.recurrenteDias ?? null,
         createdBy: input.createdBy ?? null,
       },
     });
+    // Si se registra directo como hecha y es recurrente, agenda la próxima.
+    if (estado === "hecho") await this.scheduleNextRecurrence(tenantId, l, l.fechaHecho ?? new Date());
     this.invalidate(tenantId);
     return l;
   }
 
-  /** Marca una labor como hecha (o la reabre a pendiente). */
-  static async setLaborEstado(tenantId: string, id: string, estado: "hecho" | "pendiente", fechaHecho?: Date | null) {
-    if (!tenantId) throw new Error("tenantId is required");
-    const labor = await prisma.cacaoParcelaLabor.findFirst({ where: { id, tenantId, deletedAt: null }, select: { id: true } });
-    if (!labor) throw new Error("labor_not_found");
-    const l = await prisma.cacaoParcelaLabor.update({
-      where: { id, tenantId } satisfies Prisma.CacaoParcelaLaborWhereUniqueInput,
+  /** Agenda la próxima ocurrencia de una labor recurrente (+recurrenteDias),
+   *  evitando duplicar si ya hay una futura pendiente del mismo tipo/sección. */
+  private static async scheduleNextRecurrence(
+    tenantId: string,
+    labor: { parcelaId: string; tipo: string; recurrenteDias: number | null; responsable: string | null; insumo: string | null; dosis: string | null; costo: Prisma.Decimal | null; unidad: string | null },
+    base: Date,
+  ) {
+    if (!labor.recurrenteDias || labor.recurrenteDias <= 0) return;
+    const yaAgendada = await prisma.cacaoParcelaLabor.findFirst({
+      where: { tenantId, parcelaId: labor.parcelaId, tipo: labor.tipo, estado: { not: "hecho" }, deletedAt: null, fechaPlan: { gte: base } },
+      select: { id: true },
+    });
+    if (yaAgendada) return;
+    await prisma.cacaoParcelaLabor.create({
       data: {
-        estado,
-        fechaHecho: estado === "hecho" ? (fechaHecho ?? new Date()) : null,
+        tenantId, parcelaId: labor.parcelaId, tipo: labor.tipo, estado: "pendiente",
+        fechaPlan: new Date(base.getTime() + labor.recurrenteDias * 86_400_000), recurrenteDias: labor.recurrenteDias,
+        responsable: labor.responsable, insumo: labor.insumo, dosis: labor.dosis, costo: labor.costo, unidad: labor.unidad,
+        createdBy: "recurrencia",
       },
     });
+  }
+
+  /** Marca una labor como hecha (o la reabre a pendiente). Si la labor es
+   *  recurrente (recurrenteDias) y se marca hecha, agenda automáticamente la
+   *  próxima a +N días — así el ciclo alimenta los KPIs pendiente/vencido. */
+  static async setLaborEstado(tenantId: string, id: string, estado: "hecho" | "pendiente", fechaHecho?: Date | null) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const labor = await prisma.cacaoParcelaLabor.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: { id: true, parcelaId: true, tipo: true, estado: true, recurrenteDias: true, responsable: true, insumo: true, dosis: true, costo: true, unidad: true },
+    });
+    if (!labor) throw new Error("labor_not_found");
+    const hechaAhora = estado === "hecho";
+    const fecha = hechaAhora ? (fechaHecho ?? new Date()) : null;
+    const l = await prisma.cacaoParcelaLabor.update({
+      where: { id, tenantId } satisfies Prisma.CacaoParcelaLaborWhereUniqueInput,
+      data: { estado, fechaHecho: fecha },
+    });
+    // Recién completada + recurrente → agenda la próxima ocurrencia.
+    if (hechaAhora && labor.estado !== "hecho") await this.scheduleNextRecurrence(tenantId, labor, fecha ?? new Date());
     this.invalidate(tenantId);
     return l;
   }

@@ -15,7 +15,9 @@ interface LaborRow {
   id: string; parcelaId: string; parcelaCodigo: string; parcelaNombre: string | null;
   tipo: CacaoLaborTipo; estado: string; vencido: boolean; fecha: string;
   responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null;
+  insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null;
 }
+const money = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const ICON = Object.fromEntries(CACAO_LABORES.map((l) => [l.tipo, l.icon])) as Record<CacaoLaborTipo, (typeof CACAO_LABORES)[number]["icon"]>;
 const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
@@ -107,8 +109,8 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
                             <span className="text-sm font-bold text-[var(--text-primary)]">{LABOR_LABEL[l.tipo]}</span>
                             <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: est.bg, color: est.fg }}><est.icon className="h-3 w-3" />{est.label}</span>
                           </div>
-                          {(l.responsable || l.detalle || l.cantidad != null) && (
-                            <p className="mt-0.5 truncate text-xs text-[var(--text-tertiary)]">{[l.detalle, l.responsable && `por ${l.responsable}`, l.cantidad != null && `${l.cantidad}${l.unidad ? ` ${l.unidad}` : ""}`].filter(Boolean).join(" · ")}</p>
+                          {(l.responsable || l.detalle || l.cantidad != null || l.insumo || l.costo != null) && (
+                            <p className="mt-0.5 truncate text-xs text-[var(--text-tertiary)]">{[l.detalle, l.responsable && `por ${l.responsable}`, l.cantidad != null && `${l.cantidad}${l.unidad ? ` ${l.unidad}` : ""}`, l.insumo, l.costo != null && `S/ ${money(l.costo)}`].filter(Boolean).join(" · ")}</p>
                           )}
                         </div>
                         <span className="shrink-0 text-xs font-bold text-[var(--text-secondary)]">{fdate(l.fecha)}</span>
