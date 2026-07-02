@@ -25,12 +25,12 @@ export interface Parcela {
 const n1 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { maximumFractionDigits: 1 }));
 const VARIEDADES = ["CCN-51", "criollo", "trinitario", "forastero", "nacional"];
 
-/** Color del icono de una labor en la celda según su estado en esa sección. */
-function tipoTone(t: { hechos: number; pendientes: number; vencido: boolean }): string {
-  if (t.vencido) return "var(--data-error-500)";
-  if (t.pendientes > 0) return "var(--data-warning-500)";
-  if (t.hechos > 0) return "var(--data-success-600)";
-  return "var(--text-tertiary)";
+/** Estado de una labor en la sección → key de PARCELA_STATUS (mismo color que la leyenda). */
+function laborStatusKey(t: { hechos: number; pendientes: number; vencido: boolean }): CacaoParcelaStatus {
+  if (t.vencido) return "vencido";
+  if (t.pendientes > 0) return "pendiente";
+  if (t.hechos > 0) return "al_dia";
+  return "sin_labores";
 }
 
 export default function CacaoCampo() {
@@ -55,10 +55,11 @@ export default function CacaoCampo() {
   useEffect(() => { load(); }, [load]);
 
   const kpis = useMemo(() => {
+    const total = parcelas.length;
     const area = parcelas.reduce((a, p) => a + (p.areaHa ?? 0), 0);
     const alDia = parcelas.filter((p) => p.laborStatus === "al_dia").length;
     const pend = parcelas.reduce((a, p) => a + p.labores.pendientes + p.labores.vencidos, 0);
-    return { total: parcelas.length, area, alDia, pend };
+    return { total, area, alDia, pend, pct: total > 0 ? Math.round((alDia / total) * 100) : 0 };
   }, [parcelas]);
 
   return (
@@ -66,7 +67,7 @@ export default function CacaoCampo() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Secciones" value={String(kpis.total)} icon={Grid3x3} emphasis="neutral" />
         <StatCard label="Hectáreas" value={`${n1(kpis.area)} ha`} icon={Square} emphasis="neutral" />
-        <StatCard label="Al día" value={`${kpis.alDia}/${kpis.total}`} icon={Trees} emphasis={kpis.total > 0 && kpis.alDia === kpis.total ? "success" : "neutral"} />
+        <StatCard label="Secciones al día" value={`${kpis.alDia} de ${kpis.total}`} subValue={kpis.total > 0 ? `${kpis.pct}% al día` : "sin secciones"} icon={Trees} emphasis={kpis.total > 0 && kpis.alDia === kpis.total ? "success" : "neutral"} />
         <StatCard label="Labores pendientes" value={String(kpis.pend)} icon={ClipboardList} emphasis={kpis.pend > 0 ? "warning" : "success"} />
       </div>
 
@@ -111,15 +112,15 @@ export default function CacaoCampo() {
                 style={{ borderColor: m.ring, background: m.bg }}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-lg font-extrabold text-[var(--text-primary)]">{p.codigo}</span>
-                  <m.icon className="h-5 w-5 shrink-0" style={{ color: m.fg }} />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-raised)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold shadow-sm" style={{ color: m.fg }}><m.icon className="h-3 w-3" />{m.label}</span>
                 </div>
                 <div className="text-xs text-[var(--text-secondary)]">
                   {p.areaHa != null ? `${n1(p.areaHa)} ha` : "—"}{p.variedad ? ` · ${p.variedad}` : ""}
                 </div>
-                <div className="mt-auto flex items-center gap-1.5 pt-1">
+                <div className="mt-auto flex flex-wrap items-center gap-1 pt-1">
                   {CACAO_LABORES.map((l) => {
-                    const t = p.porTipo[l.tipo];
-                    return <l.icon key={l.tipo} className="h-4 w-4" style={{ color: tipoTone(t) }} aria-hidden />;
+                    const sm = PARCELA_STATUS[laborStatusKey(p.porTipo[l.tipo])];
+                    return <span key={l.tipo} title={`${l.label}: ${sm.label}`} className="grid h-6 w-6 place-items-center rounded-md" style={{ background: sm.bg, color: sm.fg }}><l.icon className="h-3.5 w-3.5" /></span>;
                   })}
                 </div>
               </button>

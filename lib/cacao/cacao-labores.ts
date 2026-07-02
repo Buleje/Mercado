@@ -25,6 +25,16 @@ export const LABOR_LABEL: Record<CacaoLaborTipo, string> = Object.fromEntries(
   CACAO_LABORES.map((l) => [l.tipo, l.label]),
 ) as Record<CacaoLaborTipo, string>;
 
+/** Unidades sugeridas por tipo de labor (select, no texto libre → datos limpios). */
+export const LABOR_UNIDADES: Record<CacaoLaborTipo, string[]> = {
+  poda: ["jornal", "plantas", "ha"],
+  fertilizacion: ["kg", "sacos", "L", "jornal"],
+  deshierbe: ["jornal", "ha", "L"],
+  fitosanitario: ["L", "mL", "kg", "jornal"],
+  riego: ["L", "m³", "horas"],
+  cosecha: ["kg", "sacos", "quintales"],
+};
+
 /** Meta visual de cada estado de sección (color por token + icono + etiqueta). */
 export const PARCELA_STATUS: Record<CacaoParcelaStatus, { label: string; icon: LucideIcon; bg: string; fg: string; ring: string }> = {
   al_dia: { label: "Al día", icon: CheckCircle2, bg: "var(--data-success-50)", fg: "var(--data-success-700)", ring: "var(--data-success-500)" },

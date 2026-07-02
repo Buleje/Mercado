@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Plus, Check, RotateCcw, Trash2, Loader2, Calendar } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CACAO_LABORES, LABOR_LABEL, PARCELA_STATUS, type CacaoLaborTipo, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
+import { CACAO_LABORES, LABOR_LABEL, LABOR_UNIDADES, PARCELA_STATUS, type CacaoLaborTipo, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
 
 interface Parcela { id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null; anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null }
 interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; createdAt: string }
@@ -56,6 +56,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
     for (const l of labores) if (l.estado === "hecho" && l.fechaHecho) { const cur = m.get(l.tipo); if (!cur || l.fechaHecho > cur) m.set(l.tipo, l.fechaHecho); }
     return m;
   }, [labores]);
+  const responsables = useMemo(() => [...new Set(labores.map((l) => l.responsable).filter((r): r is string => !!r))].sort(), [labores]);
 
   async function mutate(fn: () => Promise<Response>, key: string) {
     setBusy(key); setError(null);
@@ -112,7 +113,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
         </div>
 
         <button type="button" onClick={() => setShowForm((v) => !v)} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar labor</button>
-        {showForm && <RegistrarLaborForm parcelaId={parcelaId} onDone={() => { setShowForm(false); setDirty(true); load(); }} />}
+        {showForm && <RegistrarLaborForm parcelaId={parcelaId} responsables={responsables} onDone={() => { setShowForm(false); setDirty(true); load(); }} />}
 
         {/* Historial */}
         <div>
@@ -157,24 +158,32 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
   );
 }
 
-function RegistrarLaborForm({ parcelaId, onDone }: { parcelaId: string; onDone: () => void }) {
+function RegistrarLaborForm({ parcelaId, responsables, onDone }: { parcelaId: string; responsables: string[]; onDone: () => void }) {
   const today = new Date().toISOString().slice(0, 10);
-  const [f, setF] = useState({ tipo: "poda" as CacaoLaborTipo, estado: "hecho", fecha: today, responsable: "", detalle: "", cantidad: "", unidad: "" });
+  const [f, setF] = useState({ tipo: "poda" as CacaoLaborTipo, estado: "hecho", fecha: today, responsable: "", detalle: "", cantidad: "", unidad: LABOR_UNIDADES.poda[0] });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
+  // Al cambiar la labor, la unidad por defecto pasa a la primera sugerida de ese tipo.
+  const setTipo = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const tipo = e.target.value as CacaoLaborTipo;
+    setF((s) => ({ ...s, tipo, unidad: LABOR_UNIDADES[tipo].includes(s.unidad) ? s.unidad : LABOR_UNIDADES[tipo][0] }));
+  };
+  const hecho = f.estado === "hecho";
+  const fechaFutura = hecho && f.fecha > today;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting) return;
+    if (fechaFutura) { setError("Si ya la hiciste, la fecha no puede ser futura. Cambiá el estado a “Programada” para agendarla."); return; }
+    if (f.cantidad && Number(f.cantidad) < 0) { setError("La cantidad no puede ser negativa."); return; }
     setSubmitting(true); setError(null);
     try {
-      const hecho = f.estado === "hecho";
       const payload = {
         parcelaId, tipo: f.tipo, estado: f.estado,
         fechaHecho: hecho ? f.fecha : null, fechaPlan: hecho ? null : f.fecha,
         responsable: f.responsable.trim() || null, detalle: f.detalle.trim() || null,
-        cantidad: f.cantidad ? Number(f.cantidad) : null, unidad: f.unidad.trim() || null,
+        cantidad: f.cantidad ? Number(f.cantidad) : null, unidad: f.cantidad ? f.unidad : null,
       };
       const r = await fetch("/api/admin/cacao/campo?type=labor", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
@@ -186,16 +195,17 @@ function RegistrarLaborForm({ parcelaId, onDone }: { parcelaId: string; onDone: 
   return (
     <form onSubmit={submit} className="space-y-2 rounded-xl border-2 border-[var(--accent-soft)] bg-[var(--surface-sunken)] p-3">
       <div className="grid grid-cols-2 gap-2">
-        <label className="text-xs font-bold text-[var(--text-secondary)]">Labor<select value={f.tipo} onChange={set("tipo")} className={`mt-1 ${I}`}>{CACAO_LABORES.map((l) => <option key={l.tipo} value={l.tipo}>{l.label}</option>)}</select></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Labor<select value={f.tipo} onChange={setTipo} className={`mt-1 ${I}`}>{CACAO_LABORES.map((l) => <option key={l.tipo} value={l.tipo}>{l.label}</option>)}</select></label>
         <label className="text-xs font-bold text-[var(--text-secondary)]">Estado<select value={f.estado} onChange={set("estado")} className={`mt-1 ${I}`}><option value="hecho">Ya la hice</option><option value="pendiente">Programada</option></select></label>
-        <label className="text-xs font-bold text-[var(--text-secondary)]">Fecha<input type="date" value={f.fecha} onChange={set("fecha")} className={`mt-1 ${I}`} /></label>
-        <label className="text-xs font-bold text-[var(--text-secondary)]">Responsable<input value={f.responsable} onChange={set("responsable")} placeholder="opcional" className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">{hecho ? "Fecha realizada" : "Fecha programada"}<input type="date" value={f.fecha} onChange={set("fecha")} max={hecho ? today : undefined} min={hecho ? undefined : today} className={`mt-1 ${I} ${fechaFutura ? "border-[var(--data-error-500)]" : ""}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Responsable<input value={f.responsable} onChange={set("responsable")} list="cacao-responsables" placeholder="opcional" className={`mt-1 ${I}`} /><datalist id="cacao-responsables">{responsables.map((r) => <option key={r} value={r} />)}</datalist></label>
         <label className="text-xs font-bold text-[var(--text-secondary)]">Cantidad<input type="number" step="0.01" min="0" value={f.cantidad} onChange={set("cantidad")} placeholder="ej. 200" className={`mt-1 ${I}`} /></label>
-        <label className="text-xs font-bold text-[var(--text-secondary)]">Unidad<input value={f.unidad} onChange={set("unidad")} placeholder="kg / L / jornal" className={`mt-1 ${I}`} /></label>
+        <label className="text-xs font-bold text-[var(--text-secondary)]">Unidad<select value={f.unidad} onChange={set("unidad")} className={`mt-1 ${I}`}>{LABOR_UNIDADES[f.tipo].map((u) => <option key={u} value={u}>{u}</option>)}</select></label>
       </div>
       <label className="block text-xs font-bold text-[var(--text-secondary)]">Detalle<input value={f.detalle} onChange={set("detalle")} placeholder="opcional" className={`mt-1 ${I}`} /></label>
+      {fechaFutura && !error && <p className="text-xs font-bold text-[var(--data-error-700)]">Una labor “ya hecha” no puede tener fecha futura.</p>}
       {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-2 text-xs text-[var(--data-error-700)]">{error}</div>}
-      <button type="submit" disabled={submitting} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar labor</button>
+      <button type="submit" disabled={submitting || fechaFutura} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar labor</button>
     </form>
   );
 }

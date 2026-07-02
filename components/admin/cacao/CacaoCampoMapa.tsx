@@ -130,6 +130,8 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   function undo() { vertsRef.current = vertsRef.current.slice(0, -1); setNVerts(vertsRef.current.length); redrawDrawing(); }
   function finishDraw() { if (vertsRef.current.length < 3) return; setPending(vertsRef.current); }
 
+  const hasPolygons = parcelas.some((p) => parseCoords(p.poligono ?? null));
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -146,7 +148,19 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="ml-auto inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
       </div>
 
-      <div ref={containerRef} style={{ height: 480, cursor: drawing ? "crosshair" : "" }} className="w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
+      <div className="relative">
+        <div ref={containerRef} style={{ height: 480, cursor: drawing ? "crosshair" : "" }} className="w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
+        {ready && !hasPolygons && !drawing && (
+          <div className="absolute inset-0 flex items-center justify-center p-6">
+            <div className="max-w-xs rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
+              <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Dibujá tu primera sección para verla en el mapa</p>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">Tocá “Dibujar sección” y marcá el contorno de tu terreno. Aparecerá acá coloreada por su estado.</p>
+              <button type="button" onClick={startDraw} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><Pencil className="h-4 w-4" />Dibujar sección</button>
+            </div>
+          </div>
+        )}
+      </div>
       <p className="text-xs text-[var(--text-tertiary)]"><MapPin className="mr-1 inline h-3 w-3" />Tocá una sección dibujada para ver y registrar sus labores. Dibujá con al menos 3 puntos.</p>
 
       {pending && <AsignarSeccionModal poligono={pending} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
