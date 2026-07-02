@@ -9,11 +9,12 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  HandCoins, Coins, Users, Search, RefreshCw, Download, AlertCircle, CheckCircle2, MessageCircle, Loader2, Clock, ChevronDown,
+  HandCoins, Coins, Users, Search, RefreshCw, Download, AlertCircle, CheckCircle2, MessageCircle, Loader2, Clock, ChevronDown, Printer,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { openPrintable } from "@/lib/cacao/cacao-print";
 
 interface LoteRow { id: string; loteCode: string | null; fecha: string; kg: number; total: number; abonado: number; saldo: number; estadoPago: string }
 interface Grupo {
@@ -154,10 +155,34 @@ export default function CacaoLiquidaciones() {
   );
 }
 
+/** Constancia de pago imprimible (firmable en campo). HTML autocontenido con su
+ *  propio window.print(); openPrintable lo abre vía iframe robusto. */
+function receiptHtml(grupo: Grupo, aplicado: number, saldoRestante: number, fecha: string): string {
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => (({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }) as Record<string, string>)[c] ?? c);
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Constancia de pago — ${esc(grupo.nombre)}</title>
+<style>*{box-sizing:border-box}body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;color:#111;margin:0;padding:32px}
+.doc{max-width:520px;margin:0 auto}h1{font-size:20px;margin:0 0 2px}.muted{color:#555;font-size:13px;margin:0}
+table{width:100%;border-collapse:collapse;margin:20px 0}td{padding:8px 0;font-size:14px;border-bottom:1px solid #eee}
+td.k{color:#555}td.v{text-align:right;font-weight:700}.total{font-size:22px;font-weight:800}
+.firma{margin-top:56px;display:flex;justify-content:space-between;gap:24px}.firma div{flex:1;border-top:1px solid #333;padding-top:6px;text-align:center;font-size:12px;color:#555}</style>
+</head><body><div class="doc">
+<h1>Constancia de pago de liquidación</h1><p class="muted">Acopio de cacao · ${esc(fecha)}</p>
+<table>
+<tr><td class="k">Productor</td><td class="v">${esc(grupo.nombre)}</td></tr>
+<tr><td class="k">Código</td><td class="v">${esc(grupo.codigo ?? "—")}</td></tr>
+<tr><td class="k">Lotes en la cuenta</td><td class="v">${grupo.nLotes}</td></tr>
+<tr><td class="k">Monto pagado</td><td class="v total">S/ ${n2(aplicado)}</td></tr>
+<tr><td class="k">Saldo restante</td><td class="v">S/ ${n2(saldoRestante)}</td></tr>
+</table>
+<div class="firma"><div>Firma del productor</div><div>Firma / sello del acopiador</div></div>
+</div><script>window.onload=function(){window.print()}</script></body></html>`;
+}
+
 function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClose: () => void; onPaid: () => void }) {
   const [monto, setMonto] = useState(Number(grupo.totalSaldo).toFixed(2));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<{ aplicado: number; saldoRestante: number; fecha: string } | null>(null);
   const parsed = Number(monto);
   const valido = Number.isFinite(parsed) && parsed > 0 && parsed <= grupo.totalSaldo + 0.001;
 
@@ -173,8 +198,30 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
         body: JSON.stringify({ action: "pagar_liquidacion", producerId: grupo.producerId, monto: full ? null : parsed }),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
-      onPaid();
+      const data = await r.json().catch(() => ({}));
+      const aplicado = Number(data.aplicado ?? parsed);
+      const saldoRestante = Number(data.saldoRestante ?? Math.max(0, grupo.totalSaldo - parsed));
+      const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+      setDone({ aplicado, saldoRestante, fecha });
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); setSubmitting(false); }
+  }
+
+  if (done) {
+    return (
+      <AdminModal open onClose={onPaid} variant="centered-sm" title="Pago registrado" description={`Se registró el pago a ${grupo.nombre}.`}>
+        <div className="space-y-4 text-center">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-700)]"><CheckCircle2 className="h-7 w-7" /></span>
+          <div>
+            <p className="text-2xl font-extrabold text-[var(--text-primary)]">S/ {n2(done.aplicado)}</p>
+            <p className="text-sm text-[var(--text-secondary)]">pagados a {grupo.nombre}. {done.saldoRestante > 0 ? `Queda S/ ${n2(done.saldoRestante)} pendiente.` : "Cuenta saldada."}</p>
+          </div>
+          <div className="flex justify-center gap-2">
+            <button type="button" onClick={() => openPrintable(receiptHtml(grupo, done.aplicado, done.saldoRestante, done.fecha))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" />Imprimir comprobante</button>
+            <button type="button" onClick={onPaid} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90">Listo</button>
+          </div>
+        </div>
+      </AdminModal>
+    );
   }
 
   return (
