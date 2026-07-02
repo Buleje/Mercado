@@ -7,13 +7,13 @@
  * labores. Drawer lateral. Brandon 2026-07-02.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Plus, Check, RotateCcw, Trash2, Loader2, Calendar } from "@buleje/design-system/icons";
+import { RefreshCw, Plus, Check, RotateCcw, Trash2, Loader2, Calendar, Warehouse, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_LABORES, LABOR_LABEL, LABOR_UNIDADES, PARCELA_STATUS, type CacaoLaborTipo, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
 
 interface Parcela { id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null; anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null }
-interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null; createdAt: string }
+interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null; loteId: string | null; createdAt: string }
 const money = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
@@ -38,6 +38,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
   const [busy, setBusy] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [sendFor, setSendFor] = useState<Labor | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -142,8 +143,12 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
                         <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{[l.detalle, l.responsable && `por ${l.responsable}`, l.cantidad != null && `${l.cantidad}${l.unidad ? ` ${l.unidad}` : ""}`, l.insumo && (l.dosis ? `${l.insumo} (${l.dosis})` : l.insumo), l.costo != null && `S/ ${money(l.costo)}`].filter(Boolean).join(" · ")}</p>
                       )}
                       {!!l.recurrenteDias && <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><RotateCcw className="h-3 w-3" />cada {l.recurrenteDias} d</span>}
+                      {l.tipo === "cosecha" && l.loteId && <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-[var(--data-success-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"><Warehouse className="h-3 w-3" />En acopio</span>}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
+                      {l.tipo === "cosecha" && l.estado === "hecho" && l.cantidad != null && l.cantidad > 0 && !l.loteId && (
+                        <button type="button" onClick={() => setSendFor(l)} title="Enviar a Acopio" className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--accent)] text-white hover:opacity-90"><Warehouse className="h-4 w-4" /></button>
+                      )}
                       {l.estado === "hecho"
                         ? <button type="button" disabled={busy === `estado-${l.id}`} onClick={() => setEstado(l, "pendiente")} title="Reabrir" className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{busy === `estado-${l.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}</button>
                         : <button type="button" disabled={busy === `estado-${l.id}`} onClick={() => setEstado(l, "hecho")} title="Marcar hecha" className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--data-success-500)] text-white hover:opacity-90 disabled:opacity-50">{busy === `estado-${l.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</button>}
@@ -154,6 +159,48 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
               })}
             </ul>
           )}
+        </div>
+      </div>
+      {sendFor && <CosechaAcopioModal labor={sendFor} onClose={() => setSendFor(null)} onSent={() => { setSendFor(null); setDirty(true); load(); }} />}
+    </AdminModal>
+  );
+}
+
+function CosechaAcopioModal({ labor, onClose, onSent }: { labor: Labor; onClose: () => void; onSent: () => void }) {
+  const [precio, setPrecio] = useState("");
+  const [productor, setProductor] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const kg = labor.cantidad ?? 0;
+  const total = precio ? kg * Number(precio) : 0;
+
+  async function enviar() {
+    if (submitting) return;
+    setSubmitting(true); setError(null);
+    try {
+      const r = await fetch("/api/admin/cacao/campo", {
+        method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
+        body: JSON.stringify({ action: "enviar_acopio", laborId: labor.id, precioPorKg: precio ? Number(precio) : null, productorNombre: productor.trim() || null }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      onSent();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); setSubmitting(false); }
+  }
+
+  const I = "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  return (
+    <AdminModal open onClose={onClose} variant="centered-sm" icon={Warehouse} title="Enviar cosecha a Acopio" description={`${kg.toLocaleString("es-PE")} kg cosechados el ${fdate(labor.fechaHecho)}.`}>
+      <div className="space-y-4 p-5">
+        <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se creará un lote en <strong className="text-[var(--text-primary)]">Acopio</strong> con estos {kg} kg y el origen de esta sección (trazabilidad NTP 208.040). Podés ajustarlo luego en Acopio.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-sm font-bold text-[var(--text-primary)]">Precio S/ por kg<input type="number" step="0.01" min="0" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="opcional" className={`mt-1 ${I}`} autoFocus /></label>
+          <label className="text-sm font-bold text-[var(--text-primary)]">Productor<input value={productor} onChange={(e) => setProductor(e.target.value)} placeholder="opcional" className={`mt-1 ${I}`} /></label>
+        </div>
+        {precio && <p className="text-sm text-[var(--text-secondary)]">Liquidación estimada: <strong className="text-[var(--text-primary)]">S/ {money(total)}</strong></p>}
+        {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          <button type="button" disabled={submitting} onClick={enviar} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Warehouse className="h-4 w-4" />}Enviar a Acopio</button>
         </div>
       </div>
     </AdminModal>

@@ -8,6 +8,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { CacaoDB } from "@/lib/db/cacao.db";
 
 const CACHE_PREFIX = "cacao";
 const dec = (v: number | string | null | undefined) =>
@@ -310,6 +311,46 @@ export class CacaoCampoDB {
     if (hechaAhora && labor.estado !== "hecho") await this.scheduleNextRecurrence(tenantId, labor, fecha ?? new Date());
     this.invalidate(tenantId);
     return l;
+  }
+
+  /** Envía una cosecha (labor hecha con kg) al módulo de Acopio como CacaoLote,
+   *  arrastrando el origen (sección) para trazabilidad — clave para certificación
+   *  y NTP 208.040. Marca la labor con loteId para no duplicar el envío. */
+  static async enviarCosechaAAcopio(
+    tenantId: string,
+    laborId: string,
+    opts: { precioPorKg?: number | null; productorNombre?: string | null; createdBy: string },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const labor = await prisma.cacaoParcelaLabor.findFirst({
+      where: { id: laborId, tenantId, deletedAt: null },
+      select: { id: true, tipo: true, estado: true, cantidad: true, fechaHecho: true, loteId: true, parcelaId: true },
+    });
+    if (!labor) throw new Error("labor_not_found");
+    if (labor.tipo !== "cosecha") throw new Error("no_es_cosecha");
+    if (labor.estado !== "hecho") throw new Error("cosecha_no_hecha");
+    if (labor.loteId) throw new Error("ya_enviada");
+    const kg = labor.cantidad == null ? 0 : Number(labor.cantidad);
+    if (kg <= 0) throw new Error("sin_cantidad");
+    const parcela = await prisma.cacaoParcela.findFirst({ where: { id: labor.parcelaId, tenantId }, select: { codigo: true, variedad: true } });
+    const lote = await CacaoDB.createLote(tenantId, {
+      pesoKg: kg,
+      fecha: labor.fechaHecho ?? new Date(),
+      variedad: parcela?.variedad ?? null,
+      productorNombre: opts.productorNombre?.trim() || null,
+      precioPorKg: opts.precioPorKg ?? null,
+      tipoGrano: "seco",
+      parcelaId: labor.parcelaId,
+      parcelaCodigo: parcela?.codigo ?? null,
+      observaciones: `Origen: sección ${parcela?.codigo ?? "—"} (Campo)`,
+      createdBy: opts.createdBy,
+    });
+    await prisma.cacaoParcelaLabor.update({
+      where: { id: laborId, tenantId } satisfies Prisma.CacaoParcelaLaborWhereUniqueInput,
+      data: { loteId: lote.id },
+    });
+    this.invalidate(tenantId);
+    return { lote: { id: lote.id, loteCode: lote.loteCode, pesoKg: Number(lote.pesoKg) } };
   }
 
   static async deleteLabor(tenantId: string, id: string) {

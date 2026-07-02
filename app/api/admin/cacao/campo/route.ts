@@ -67,6 +67,12 @@ const patchSchema = z.discriminatedUnion("action", [
     estado: z.enum(["hecho", "pendiente"]),
     fechaHecho: z.coerce.date().nullable().optional(),
   }),
+  z.object({
+    action: z.literal("enviar_acopio"),
+    laborId: z.string().trim().min(1),
+    precioPorKg: z.coerce.number().min(0).max(9_999_999).nullable().optional(),
+    productorNombre: z.string().trim().max(160).nullable().optional(),
+  }),
 ]);
 
 async function guard(req: NextRequest) {
@@ -183,6 +189,29 @@ export async function PATCH(req: NextRequest) {
       } catch (e) {
         if (String(e instanceof Error ? e.message : e) === "codigo_duplicado")
           return NextResponse.json({ error: "codigo_duplicado", message: "Ya existe una sección con ese código." }, { status: 409 });
+        throw e;
+      }
+    }
+    if (parsed.data.action === "enviar_acopio") {
+      try {
+        return NextResponse.json(
+          await CacaoCampoDB.enviarCosechaAAcopio(g.auth.tenantId, parsed.data.laborId, {
+            precioPorKg: parsed.data.precioPorKg ?? null,
+            productorNombre: parsed.data.productorNombre ?? null,
+            createdBy: g.auth.username ?? "unknown",
+          }),
+          { status: 201 },
+        );
+      } catch (e) {
+        const msg = String(e instanceof Error ? e.message : e);
+        const known: Record<string, string> = {
+          labor_not_found: "No se encontró la labor.",
+          no_es_cosecha: "Solo se puede enviar a acopio una labor de cosecha.",
+          cosecha_no_hecha: "Marcá la cosecha como hecha antes de enviarla.",
+          ya_enviada: "Esta cosecha ya fue enviada a acopio.",
+          sin_cantidad: "Registrá los kg cosechados antes de enviar.",
+        };
+        if (known[msg]) return NextResponse.json({ error: msg, message: known[msg] }, { status: 400 });
         throw e;
       }
     }

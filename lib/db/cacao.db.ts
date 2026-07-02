@@ -74,6 +74,8 @@ export interface LoteInput {
   loteCode?: string | null;
   productorId?: string | null;
   productorNombre?: string | null;
+  parcelaId?: string | null;
+  parcelaCodigo?: string | null;
   fecha?: Date;
   variedad?: string | null;
   tipoGrano?: string;
@@ -321,6 +323,8 @@ export class CacaoDB {
         loteCode,
         productorId: input.productorId?.trim() || null,
         productorNombre: input.productorNombre?.trim() || null,
+        parcelaId: input.parcelaId?.trim() || null,
+        parcelaCodigo: input.parcelaCodigo?.trim() || null,
         fecha: input.fecha ?? new Date(),
         variedad: input.variedad?.trim() || null,
         tipoGrano: input.tipoGrano?.trim() || "seco",

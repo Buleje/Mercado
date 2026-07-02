@@ -23,6 +23,7 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Trees,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -64,6 +65,7 @@ interface Lote {
   fecha: string;
   productorId: string | null;
   productorNombre: string | null;
+  parcelaCodigo: string | null;
   variedad: string | null;
   tipoGrano: string;
   pesoKg: string;
@@ -637,6 +639,14 @@ export default function CacaoAcopio() {
                             className="ml-1.5 inline-flex rounded bg-[var(--data-warning-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]"
                           >
                             sin vincular
+                          </span>
+                        )}
+                        {l.parcelaCodigo && (
+                          <span
+                            title={`Origen: sección ${l.parcelaCodigo} (Campo)`}
+                            className="ml-1.5 inline-flex items-center gap-1 rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"
+                          >
+                            <Trees className="h-3 w-3" />origen {l.parcelaCodigo}
                           </span>
                         )}
                       </Td>
