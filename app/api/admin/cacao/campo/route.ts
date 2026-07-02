@@ -89,6 +89,14 @@ export async function GET(req: NextRequest) {
   const id = sp.get("id") ?? undefined;
   try {
     if (view === "stats") return NextResponse.json({ stats: await CacaoCampoDB.stats(g.auth.tenantId) });
+    if (view === "labores")
+      return NextResponse.json({
+        labores: await CacaoCampoDB.listLabores(g.auth.tenantId, {
+          tipo: sp.get("tipo") || undefined,
+          estado: sp.get("estado") || undefined,
+          parcelaId: sp.get("parcelaId") || undefined,
+        }),
+      });
     if (view === "parcela-detail") {
       if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
       const detail = await CacaoCampoDB.parcelaDetail(g.auth.tenantId, id);

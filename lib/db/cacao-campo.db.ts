@@ -131,6 +131,39 @@ export class CacaoCampoDB {
     };
   }
 
+  // ─── Agenda: todas las labores del campo con su sección (cronograma) ──
+  static async listLabores(tenantId: string, filters: { tipo?: string; estado?: string; parcelaId?: string } = {}) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const where: Prisma.CacaoParcelaLaborWhereInput = { tenantId, deletedAt: null };
+    if (filters.tipo) where.tipo = filters.tipo;
+    if (filters.parcelaId) where.parcelaId = filters.parcelaId;
+    if (filters.estado === "hecho") where.estado = "hecho";
+    else if (filters.estado === "pendiente") where.estado = { not: "hecho" };
+    const [labores, parcelas] = await Promise.all([
+      prisma.cacaoParcelaLabor.findMany({ where, orderBy: [{ createdAt: "desc" }] }),
+      prisma.cacaoParcela.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, codigo: true, nombre: true } }),
+    ]);
+    const pMap = new Map(parcelas.map((p) => [p.id, p]));
+    const now = Date.now();
+    // Fecha relevante para ordenar el cronograma: la que efectivamente pasó/pasará.
+    const rows = labores.map((l) => {
+      const p = pMap.get(l.parcelaId);
+      const fecha = (l.estado === "hecho" ? l.fechaHecho : l.fechaPlan) ?? l.createdAt;
+      const vencido = l.estado !== "hecho" && !!l.fechaPlan && l.fechaPlan.getTime() < now;
+      return {
+        id: l.id, parcelaId: l.parcelaId, parcelaCodigo: p?.codigo ?? "—", parcelaNombre: p?.nombre ?? null,
+        tipo: l.tipo, estado: vencido ? "vencido" : l.estado, vencido,
+        fecha: fecha.toISOString(),
+        fechaHecho: l.fechaHecho ? l.fechaHecho.toISOString() : null,
+        fechaPlan: l.fechaPlan ? l.fechaPlan.toISOString() : null,
+        responsable: l.responsable, detalle: l.detalle,
+        cantidad: l.cantidad == null ? null : Number(l.cantidad), unidad: l.unidad,
+      };
+    });
+    rows.sort((a, b) => b.fecha.localeCompare(a.fecha));
+    return rows;
+  }
+
   static async createParcela(tenantId: string, input: ParcelaInput) {
     if (!tenantId) throw new Error("tenantId is required");
     try {
