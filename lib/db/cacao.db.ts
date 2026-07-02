@@ -782,6 +782,113 @@ export class CacaoDB {
     };
   }
 
+  // ─── Reconciliación de acopio: lotes con nombre libre pero SIN vínculo
+  // al padrón (productorId = null). Estos lotes no suman al historial ni a los
+  // pagos del productor (producersWithStats sólo mira lotes con FK), así que la
+  // tab Productores los muestra en cero aunque el Resumen los cuente por nombre.
+  // Agrupa por nombre normalizado y sugiere el productor del padrón que coincide.
+  static async orphanLotesSummary(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [lotes, producers] = await Promise.all([
+      prisma.cacaoLote.findMany({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: "registrado",
+          productorId: null,
+          NOT: { productorNombre: null },
+        },
+        select: { productorNombre: true, pesoKg: true, totalPagado: true, fecha: true },
+      }),
+      this.listProducers(tenantId, { includeInactive: true }),
+    ]);
+    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+    const pIndex = new Map<string, { id: string; nombre: string }>();
+    for (const p of producers) pIndex.set(norm(p.nombre), { id: p.id, nombre: p.nombre });
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    type G = {
+      nombre: string;
+      lotes: number;
+      kg: number;
+      pagado: number;
+      lastFecha: Date | null;
+    };
+    const groups = new Map<string, G>();
+    for (const l of lotes) {
+      const raw = (l.productorNombre ?? "").trim();
+      if (!raw) continue;
+      const key = norm(raw);
+      const g = groups.get(key) ?? { nombre: raw, lotes: 0, kg: 0, pagado: 0, lastFecha: null };
+      g.lotes++;
+      g.kg += Number(l.pesoKg ?? 0);
+      g.pagado += Number(l.totalPagado ?? 0);
+      const f = new Date(l.fecha);
+      if (!g.lastFecha || f > g.lastFecha) g.lastFecha = f;
+      groups.set(key, g);
+    }
+    const list = [...groups.entries()]
+      .map(([key, g]) => {
+        const match = pIndex.get(key);
+        return {
+          nombre: g.nombre,
+          lotes: g.lotes,
+          kg: r2(g.kg),
+          pagado: r2(g.pagado),
+          lastFecha: g.lastFecha ? g.lastFecha.toISOString() : null,
+          suggestedProducerId: match?.id ?? null,
+          suggestedProducerNombre: match?.nombre ?? null,
+        };
+      })
+      .sort((a, b) => b.pagado - a.pagado);
+    return {
+      groups: list,
+      totals: {
+        names: list.length,
+        lotes: list.reduce((s, g) => s + g.lotes, 0),
+        kg: r2(list.reduce((s, g) => s + g.kg, 0)),
+        pagado: r2(list.reduce((s, g) => s + g.pagado, 0)),
+        conSugerencia: list.filter((g) => g.suggestedProducerId).length,
+      },
+    };
+  }
+
+  /**
+   * Vincula al padrón todos los lotes huérfanos cuyo nombre libre coincida
+   * (case-insensitive) con `productorNombre`, seteando el `productorId` del
+   * productor elegido y normalizando el nombre al canónico del padrón. A partir
+   * de acá esos kg/pagos suman al historial del productor.
+   */
+  static async linkLotesToProducer(
+    tenantId: string,
+    input: { productorNombre: string; producerId: string },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const name = input.productorNombre.trim();
+    if (!name) throw new Error("nombre_required");
+    const producer = await prisma.cacaoProducer.findFirst({
+      where: { id: input.producerId, tenantId },
+      select: { id: true, nombre: true },
+    });
+    if (!producer) throw new Error("producer_not_found");
+    const res = await prisma.cacaoLote.updateMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        productorId: null,
+        productorNombre: { equals: name, mode: "insensitive" },
+      },
+      data: { productorId: producer.id, productorNombre: producer.nombre },
+    });
+    if (res.count > 0) {
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {
+        /* cache best-effort */
+      }
+    }
+    return { linked: res.count, producerId: producer.id, producerNombre: producer.nombre };
+  }
+
   // ─── Ficha de lote: detalle + beneficio vinculado ────────────────────
   static async loteDetail(tenantId: string, id: string) {
     if (!tenantId) throw new Error("tenantId is required");

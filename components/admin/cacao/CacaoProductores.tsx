@@ -7,12 +7,13 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Users, Plus, Search, RefreshCw, Coins, Scale, Award, Download, AlertCircle, Trophy, AlertTriangle,
+  Users, Plus, Search, RefreshCw, Coins, Scale, Award, Download, AlertCircle, Trophy, AlertTriangle, Link2,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import CacaoProducerForm from "./CacaoProducerForm";
 import CacaoProducerDrawer from "./CacaoProducerDrawer";
 import CacaoLoteDrawer from "./CacaoLoteDrawer";
+import CacaoReconcileModal from "./CacaoReconcileModal";
 
 interface PStats { kg: number; pagado: number; abonado: number; saldo: number; lotes: number; lastFecha: string | null; gradoI: number }
 interface Producer {
@@ -39,14 +40,23 @@ export default function CacaoProductores() {
   const [showNew, setShowNew] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [loteDrawerId, setLoteDrawerId] = useState<string | null>(null);
+  const [showReconcile, setShowReconcile] = useState(false);
+  const [orphan, setOrphan] = useState<{ lotes: number; pagado: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const r = await fetch(`/api/admin/cacao?view=producers-stats${includeInactive ? "&all=1" : ""}`, { credentials: "include" });
+      const [r, ro] = await Promise.all([
+        fetch(`/api/admin/cacao?view=producers-stats${includeInactive ? "&all=1" : ""}`, { credentials: "include" }),
+        fetch("/api/admin/cacao?view=orphan-lotes", { credentials: "include" }),
+      ]);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const d = await r.json();
       setProducers(d.producers ?? []);
+      // Lotes de acopio con nombre libre pero sin FK al padrón: no suman al
+      // historial del productor. Se ofrecen para reconciliar (banner + modal).
+      if (ro.ok) { const od = await ro.json(); setOrphan({ lotes: od.totals?.lotes ?? 0, pagado: od.totals?.pagado ?? 0 }); }
+      else setOrphan(null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [includeInactive]);
@@ -99,6 +109,20 @@ export default function CacaoProductores() {
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
+
+      {/* Lotes de acopio sin vínculo al padrón: no suman al historial ni a los
+          pagos del productor. Se ofrece reconciliar en 1 click. */}
+      {orphan && orphan.lotes > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-900)]">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <div className="min-w-[180px] flex-1">
+            <strong>{orphan.lotes} lote{orphan.lotes === 1 ? "" : "s"}</strong> (S/ {n2(orphan.pagado)}) de acopio sin vincular al padrón. No suman al historial ni a los pagos del productor.
+          </div>
+          <button type="button" onClick={() => setShowReconcile(true)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90">
+            <Link2 className="h-4 w-4" />Vincular ahora
+          </button>
+        </div>
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
@@ -157,6 +181,7 @@ export default function CacaoProductores() {
         )}
       </div>
 
+      {showReconcile && <CacaoReconcileModal onClose={() => setShowReconcile(false)} onDone={load} />}
       {showNew && <CacaoProducerForm onClose={() => setShowNew(false)} onSaved={() => { setShowNew(false); load(); }} />}
       {drawerId && <CacaoProducerDrawer producerId={drawerId} onClose={() => setDrawerId(null)} onChanged={load} onOpenLote={(id) => { setDrawerId(null); setLoteDrawerId(id); }} />}
       {loteDrawerId && <CacaoLoteDrawer loteId={loteDrawerId} onClose={() => setLoteDrawerId(null)} />}

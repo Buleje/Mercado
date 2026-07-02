@@ -157,6 +157,11 @@ const patchSchema = z.discriminatedUnion("action", [
     id: z.string().trim().min(1),
     patch: producerSchema.partial(),
   }),
+  z.object({
+    action: z.literal("link_lotes"),
+    productorNombre: z.string().trim().min(1).max(160),
+    producerId: z.string().trim().min(1).max(60),
+  }),
 ]);
 
 async function guard(req: NextRequest, roles: ("admin" | "almacenero" | "owner")[]) {
@@ -210,6 +215,8 @@ export async function GET(req: NextRequest) {
           includeInactive: sp.get("all") === "1",
         }),
       );
+    if (view === "orphan-lotes")
+      return NextResponse.json(await CacaoDB.orphanLotesSummary(g.auth.tenantId));
     if (view === "producer-detail") {
       if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
       const detail = await CacaoDB.producerDetail(g.auth.tenantId, id);
@@ -542,6 +549,23 @@ export async function PATCH(req: NextRequest) {
           updatedBy: g.auth.username ?? null,
         }),
       });
+    }
+    if (parsed.data.action === "link_lotes") {
+      try {
+        return NextResponse.json(
+          await CacaoDB.linkLotesToProducer(g.auth.tenantId, {
+            productorNombre: parsed.data.productorNombre,
+            producerId: parsed.data.producerId,
+          }),
+        );
+      } catch (e) {
+        if (String(e instanceof Error ? e.message : e) === "producer_not_found")
+          return NextResponse.json(
+            { error: "producer_not_found", message: "No se encontró el productor en el padrón." },
+            { status: 404 },
+          );
+        throw e;
+      }
     }
     return NextResponse.json({
       producer: await CacaoDB.updateProducer(g.auth.tenantId, parsed.data.id, parsed.data.patch),
