@@ -13,7 +13,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_LABORES, LABOR_LABEL, LABOR_UNIDADES, PARCELA_STATUS, type CacaoLaborTipo, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
 
 interface Parcela { id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null; anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null }
-interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null; loteId: string | null; createdAt: string }
+interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null; loteId: string | null; gastoId: string | null; createdAt: string }
 const money = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
@@ -144,6 +144,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
                       )}
                       {!!l.recurrenteDias && <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><RotateCcw className="h-3 w-3" />cada {l.recurrenteDias} d</span>}
                       {l.tipo === "cosecha" && l.loteId && <span className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-[var(--data-success-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"><Warehouse className="h-3 w-3" />En acopio</span>}
+                      {l.gastoId && <span title="Costo posteado como gasto en Finanzas" className="mt-1 ml-1 inline-flex items-center gap-1 rounded-full bg-[var(--data-info-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)]">en Finanzas</span>}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       {l.tipo === "cosecha" && l.estado === "hecho" && l.cantidad != null && l.cantidad > 0 && !l.loteId && (

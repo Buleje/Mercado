@@ -9,6 +9,13 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { CacaoDB } from "@/lib/db/cacao.db";
+import { ExpensesDB } from "@/lib/db/finance.db";
+
+/** Etiquetas de labor sin importar el config client (que arrastra icons). */
+const TIPO_LABEL: Record<string, string> = {
+  poda: "Poda", fertilizacion: "Fertilización", deshierbe: "Deshierbe",
+  fitosanitario: "Control fitosanitario", riego: "Riego", cosecha: "Cosecha",
+};
 
 const CACHE_PREFIX = "cacao";
 const dec = (v: number | string | null | undefined) =>
@@ -262,8 +269,11 @@ export class CacaoCampoDB {
         createdBy: input.createdBy ?? null,
       },
     });
-    // Si se registra directo como hecha y es recurrente, agenda la próxima.
-    if (estado === "hecho") await this.scheduleNextRecurrence(tenantId, l, l.fechaHecho ?? new Date());
+    // Si se registra directo como hecha: agenda recurrencia + postea el costo a Finanzas.
+    if (estado === "hecho") {
+      await this.scheduleNextRecurrence(tenantId, l, l.fechaHecho ?? new Date());
+      await this.syncGastoForLabor(tenantId, l, true);
+    }
     this.invalidate(tenantId);
     return l;
   }
@@ -291,6 +301,31 @@ export class CacaoCampoDB {
     });
   }
 
+  /** Sincroniza el gasto en Finanzas para una labor: si está hecha y tiene costo,
+   *  postea/mantiene un Expense (category 'campo'); si no, lo elimina. Idempotente. */
+  private static async syncGastoForLabor(
+    tenantId: string,
+    labor: { id: string; tipo: string; costo: Prisma.Decimal | null; fechaHecho: Date | null; gastoId: string | null; parcelaId: string },
+    incurred: boolean,
+  ) {
+    const costo = labor.costo == null ? 0 : Number(labor.costo);
+    if (incurred && costo > 0) {
+      if (labor.gastoId) return; // ya posteado
+      const parcela = await prisma.cacaoParcela.findFirst({ where: { id: labor.parcelaId, tenantId }, select: { codigo: true } });
+      const gasto = await ExpensesDB.add(tenantId, {
+        category: "campo",
+        description: `${TIPO_LABEL[labor.tipo] ?? labor.tipo} — sección ${parcela?.codigo ?? "—"}`,
+        amount: costo,
+        date: (labor.fechaHecho ?? new Date()).toISOString(),
+        recurring: false,
+      });
+      await prisma.cacaoParcelaLabor.update({ where: { id: labor.id, tenantId } satisfies Prisma.CacaoParcelaLaborWhereUniqueInput, data: { gastoId: gasto.id } });
+    } else if (labor.gastoId) {
+      await ExpensesDB.delete(tenantId, labor.gastoId);
+      await prisma.cacaoParcelaLabor.update({ where: { id: labor.id, tenantId } satisfies Prisma.CacaoParcelaLaborWhereUniqueInput, data: { gastoId: null } });
+    }
+  }
+
   /** Marca una labor como hecha (o la reabre a pendiente). Si la labor es
    *  recurrente (recurrenteDias) y se marca hecha, agenda automáticamente la
    *  próxima a +N días — así el ciclo alimenta los KPIs pendiente/vencido. */
@@ -298,7 +333,7 @@ export class CacaoCampoDB {
     if (!tenantId) throw new Error("tenantId is required");
     const labor = await prisma.cacaoParcelaLabor.findFirst({
       where: { id, tenantId, deletedAt: null },
-      select: { id: true, parcelaId: true, tipo: true, estado: true, recurrenteDias: true, responsable: true, insumo: true, dosis: true, costo: true, unidad: true },
+      select: { id: true, parcelaId: true, tipo: true, estado: true, recurrenteDias: true, responsable: true, insumo: true, dosis: true, costo: true, unidad: true, gastoId: true },
     });
     if (!labor) throw new Error("labor_not_found");
     const hechaAhora = estado === "hecho";
@@ -309,6 +344,8 @@ export class CacaoCampoDB {
     });
     // Recién completada + recurrente → agenda la próxima ocurrencia.
     if (hechaAhora && labor.estado !== "hecho") await this.scheduleNextRecurrence(tenantId, labor, fecha ?? new Date());
+    // Postea/quita el gasto en Finanzas según quede hecha o reabierta.
+    await this.syncGastoForLabor(tenantId, { ...labor, fechaHecho: fecha }, hechaAhora);
     this.invalidate(tenantId);
     return l;
   }
@@ -355,11 +392,14 @@ export class CacaoCampoDB {
 
   static async deleteLabor(tenantId: string, id: string) {
     if (!tenantId) throw new Error("tenantId is required");
+    const labor = await prisma.cacaoParcelaLabor.findFirst({ where: { id, tenantId, deletedAt: null }, select: { gastoId: true } });
     const res = await prisma.cacaoParcelaLabor.updateMany({
       where: { id, tenantId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
     if (res.count === 0) throw new Error("labor_not_found");
+    // Quita el gasto de Finanzas asociado (si lo había).
+    if (labor?.gastoId) await ExpensesDB.delete(tenantId, labor.gastoId);
     this.invalidate(tenantId);
     return { ok: true };
   }

@@ -5315,6 +5315,7 @@ model CacaoParcelaLabor {
   costo       Decimal?  @db.Decimal(12, 2) // costo de la labor (mano de obra + insumo) → Finanzas
   recurrenteDias Int? // si se setea, al marcarla hecha se agenda la próxima a +N días
   loteId      String? // si es cosecha enviada a Acopio, el CacaoLote generado (evita doble envío)
+  gastoId     String? // si tiene costo y está hecha, el Expense posteado en Finanzas (sync)
   createdBy   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
