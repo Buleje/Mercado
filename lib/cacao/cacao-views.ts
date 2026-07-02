@@ -6,13 +6,13 @@
  */
 
 import {
-  PackageCheck, Droplets, Warehouse, Coins, Users, BarChart3, Newspaper, Sparkles, Activity, HandCoins, MapPin,
+  PackageCheck, Droplets, Warehouse, Coins, Users, BarChart3, Newspaper, Sparkles, Activity, HandCoins, MapPin, ShieldCheck,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
 export type CacaoView =
   | "acopio" | "beneficio" | "inventario" | "ventas"
-  | "productores" | "liquidaciones" | "mapa" | "resumen" | "mercado" | "noticias" | "asesor";
+  | "productores" | "liquidaciones" | "mapa" | "certificacion" | "resumen" | "mercado" | "noticias" | "asesor";
 
 export type CacaoViewDef = { key: CacaoView; label: string; icon: LucideIcon; hint: string };
 export type CacaoViewGroup = { id: string; label: string; views: CacaoViewDef[] };
@@ -35,6 +35,7 @@ export const CACAO_VIEW_GROUPS: CacaoViewGroup[] = [
       { key: "productores", label: "Productores", icon: Users, hint: "Proveedores" },
       { key: "liquidaciones", label: "Liquidaciones", icon: HandCoins, hint: "Pagos al productor" },
       { key: "mapa", label: "Mapa", icon: MapPin, hint: "Parcelas geolocalizadas" },
+      { key: "certificacion", label: "Certificación", icon: ShieldCheck, hint: "Cumplimiento EUDR + certs" },
       { key: "resumen", label: "Resumen", icon: BarChart3, hint: "KPIs de campaña" },
     ],
   },

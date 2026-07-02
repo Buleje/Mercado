@@ -53,6 +53,7 @@ import CacaoInventario from "./CacaoInventario";
 import CacaoProductores from "./CacaoProductores";
 import CacaoLiquidaciones from "./CacaoLiquidaciones";
 import CacaoMapa from "./CacaoMapa";
+import CacaoCertificacion from "./CacaoCertificacion";
 import CacaoVentas from "./CacaoVentas";
 import CacaoAlertsBell from "./CacaoAlertsBell";
 
@@ -757,6 +758,9 @@ export default function CacaoAcopio() {
 
       {/* MAPA — parcelas de productores geolocalizadas (multi-marker) */}
       {view === "mapa" && <CacaoMapa />}
+
+      {/* CERTIFICACIÓN — cumplimiento EUDR (geolocalización) + certificaciones */}
+      {view === "certificacion" && <CacaoCertificacion />}
 
       {/* BENEFICIO — componente propio (self-fetch + KPIs + anular + ficha lote) */}
       {view === "beneficio" && <CacaoBeneficio />}
