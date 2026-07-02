@@ -5,9 +5,6 @@
     "BSM_PROJECT_ROOT": "${CLAUDE_PROJECT_DIR}",
     "BSM_HOOKS_DEBUG": "0",
     "BSM_AUTOKILL": "1",
-    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-    "OTEL_EXPORTER_OTLP_ENDPOINT": "",
-    "OTEL_SERVICE_NAME": "bodega-san-martin-claude",
     "SLASH_COMMAND_TOOL_CHAR_BUDGET": "20000"
   },
   "hooks": {
@@ -220,9 +217,6 @@
       }
     ]
   },
-  "skillOverrides": {
-    "agent-report": "user-invocable-only"
-  },
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
@@ -392,7 +386,25 @@
       "Bash(rm -R *)",
       "Bash(rm -f /*)",
       "Bash(rm /*)",
-      "Bash(sudo *)",
+      "Bash(sudo rm *)",
+      "Bash(sudo dd *)",
+      "Bash(sudo mkfs*)",
+      "Bash(sudo wipefs*)",
+      "Bash(sudo fdisk*)",
+      "Bash(sudo parted*)",
+      "Bash(sudo chmod -R 777*)",
+      "Bash(sudo chown -R *)",
+      "Bash(sudo su*)",
+      "Bash(sudo -i*)",
+      "Bash(sudo -s*)",
+      "Bash(sudo bash*)",
+      "Bash(sudo sh *)",
+      "Bash(sudo visudo*)",
+      "Bash(sudo passwd*)",
+      "Bash(sudo userdel*)",
+      "Bash(sudo deluser*)",
+      "Bash(sudo shutdown*)",
+      "Bash(sudo reboot*)",
       "Bash(curl * | sh*)",
       "Bash(curl * | bash*)",
       "Bash(wget * | sh*)",

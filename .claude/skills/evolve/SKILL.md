@@ -87,6 +87,6 @@ DETECTAR (git log, metrics, self-heal)
 | Sistema | Rol |
 |---|---|
 | agent-metrics | Fuente de datos |
-| self-heal | Fuente de errores + destino de reglas |
+| agente `healer` | Fuente de errores + destino de reglas |
 | session-recap | Trigger automatico al final |
 | director-config.json | Destino de cambios model/routing/squads |

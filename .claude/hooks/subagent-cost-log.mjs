@@ -57,7 +57,9 @@ async function readStdin() {
     process.stdin.setEncoding("utf-8");
     process.stdin.on("data", (chunk) => (data += chunk));
     process.stdin.on("end", () => resolve(data));
-    setTimeout(() => resolve(data), 40);
+    // 40ms truncaba el payload bajo carga → 1503 entradas "unknown" en el
+    // jsonl. El hook corre async con timeout 2s; 1500ms deja margen.
+    setTimeout(() => resolve(data), 1500);
   });
 }
 

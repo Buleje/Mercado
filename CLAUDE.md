@@ -87,7 +87,7 @@ Vitest 4 · Playwright 1.59 + `@playwright/mcp` · `@axe-core/playwright` · k6 
 | 10 | **Sin secrets hardcodeados** — `.env*` + `lib/env.ts` valida startup | — |
 | 11 | **Raw SQL** — solo `$1 $2 $3`, nunca interpolation | SQLi |
 | 12 | **ADR nuevo** para arquitectura / contratos / schema → `/adr [título]` | — |
-| 13 | **Self-heal** — 3 intentos auto antes de escalar (`/self-heal`) | — |
+| 13 | **Self-heal** — 3 intentos auto antes de escalar (agente `healer`) | — |
 | 14 | **Deploy** — SLO healthy + canary 5%→25%→100% + DR drill <35d | — |
 
 ### TypeScript / Lint
@@ -196,7 +196,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 | `README.md` | Quick start, deployment Vercel, API endpoints |
 | `docs/adr/` | Decisiones de arquitectura vivas |
 | `SESSION_HANDOFF.md` | Estado de sesión anterior (si existe) |
-| `.claude/hooks/` | Hooks (wiring real en `settings.json`): mem-guard, danger-zone, pre-bash-guard (Pre); lint/tsc/rubric/typography async (Post); deploy-gates solo en Skill(deploy) |
+| `.claude/hooks/` | Hooks (wiring real en `settings.json`): mem-guard, danger-zone, pre-bash-guard (Pre); hex/typography/rubric/screenshot/auto-learn async (Post); deploy-gates solo en Skill(deploy); Stop = gate agente de evidencia |
 | `.claude/rules/` | Reglas path-scoped 2026 — cargan SOLO al tocar archivos que matchean (db, ui, danger-zone, agentic-style, code-quality) |
 | `.claude/workflows/` | Workflows guardados — `audit-verificado` (auditoría + refutación adversarial) |
 | `.claude/rubrics/` | Rubrics bash-verificables por capa (api, db, migration, ui) — usa `outcome-evaluator` |
@@ -212,7 +212,7 @@ Schema completo en `.env.example`. Valida en startup vía `lib/env.ts`.
 |---|---|
 | `outcome-evaluator` | "evaluá/self-grade" → Generator+Evaluator con rubric, max 3 iters |
 | `dreaming` | "consolidá memoria" / MEMORY.md >50 → dedupe en **dry-run**, apply explícito (nunca borra a ciegas) |
-| `agentic-loops` · `turbo-parallel` · `ultra-impact` | tareas >1h, ≥3 capas, o 3+ sub-tareas paralelas |
+| `turbo-parallel` · `ultra-impact` | tareas >1h, ≥3 capas, o 3+ sub-tareas paralelas |
 | Rubrics (`api-endpoint`/`db-class`/`prisma-migration`/`ui-component`) | corren auto vía `post-edit-rubric-check.mjs` (warning no-bloqueante) |
-| Hooks Pre (mem-guard/danger-zone/pre-bash-guard) | bloquean RAM crítica / archivos críticos / `rm -rf`. Post (lint/tsc/rubric/typography) = async no-bloqueante. Deploy-gates SÓLO en `Skill(deploy)` |
+| Hooks Pre (mem-guard/danger-zone/pre-bash-guard) | bloquean RAM crítica / archivos críticos / `rm -rf`. Post (hex/typography/rubric/screenshot) = async no-bloqueante. Deploy-gates SÓLO en `Skill(deploy)` |
 

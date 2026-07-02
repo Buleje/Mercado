@@ -244,3 +244,10 @@ ${CLAUDE_PROJECT_DIR}/
 /.idea
 # Backup de prune de settings (.bak-prune no lo cubría /.claude/*.bak).
 /.claude/*.bak-*
+
+# credenciales temporales IBKR (se shredean tras el setup)
+.ibkr-stdin
+.ibkr-creds.env
+
+# log runtime de qdrant local
+.qdrant-runtime.log

@@ -118,7 +118,7 @@ Output (JSON estricto):
 | `ultra-impact` | Cada fase del pipeline → outcome-loop con rubric correspondiente |
 | `verify` | Genera el evaluator output. outcome-evaluator es 1 nivel arriba (loop) |
 | `deploy-check` | Es la rubric pre-deploy. outcome-evaluator orquesta retries |
-| `agentic-loops` | Patrón #4 (este). Reemplaza "dispatch + esperar y leer" por loop calificado |
+| `turbo-parallel` | Dispatch paralelo; outcome-evaluator agrega el loop calificado encima |
 
 ## Cuándo NO usar
 
@@ -134,7 +134,6 @@ Output (JSON estricto):
 
 ## Referencias cruzadas
 
-- [[agentic-loops]] — patrones SOTA generales
 - [[verify]] — gate de "antes de decir listo"
 - [[deploy-check]] — gate pre-deploy
 - [[ultra-impact]] — pipeline grande

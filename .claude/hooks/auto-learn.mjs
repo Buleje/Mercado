@@ -55,8 +55,22 @@ function writeJSON(path, data) {
   }
 }
 
+function readStdinSync() {
+  // WSL deja stdin no-bloqueante bajo ráfagas de edits → readFileSync tira
+  // EAGAIN (672 errores acumulados). Retry con sleep bloqueante corto.
+  for (let attempt = 0; attempt < 20; attempt++) {
+    try {
+      return readFileSync(process.stdin.fd, "utf8");
+    } catch (err) {
+      if (err?.code !== "EAGAIN") throw err;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+    }
+  }
+  return "";
+}
+
 try {
-  const input = readFileSync(process.stdin.fd, "utf8");
+  const input = readStdinSync();
   const event = JSON.parse(input);
 
   // Only process Edit/Write/MultiEdit

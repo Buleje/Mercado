@@ -92,13 +92,13 @@ NO reportar "listo" hasta que queden 0 fails.
 
 **NUNCA decir "listo" / "consolidado" / "integrado" sin haber corrido `/verify`.**
 
-Si un check falla, leer el error, arreglar, y re-correr `/verify`. Si después de 3 intentos sigue fallando, escalar con `/self-heal`.
+Si un check falla, leer el error, arreglar, y re-correr `/verify`. Si después de 3 intentos sigue fallando, escalar al agente `healer`.
 
 ## Complemento
 
 - `/deploy-check` — más exhaustivo, para PRE-DEPLOY real (incluye build + SLO gates)
 - `/verify` — intra-sesión, barato, constante, antes de cada "listo"
-- `/self-heal` — cuando `/verify` falla repetido y hay que depurar
+- agente `healer` — cuando `/verify` falla repetido y hay que depurar
 
 ## Ejemplo de invocación
 
