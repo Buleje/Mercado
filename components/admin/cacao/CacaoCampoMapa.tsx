@@ -12,10 +12,32 @@ import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize, E
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
-import { PARCELA_STATUS } from "@/lib/cacao/cacao-labores";
+import { PARCELA_STATUS, CACAO_LABORES } from "@/lib/cacao/cacao-labores";
 import { geodesicAreaHa, haversineM, formatDist } from "@/lib/cacao/geo-area";
 
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+
+/**
+ * HTML de la etiqueta detallada sobre cada sección: código + qué falta hacer
+ * (labores vencidas y pendientes por tipo). Scrim oscuro para contraste sobre
+ * satélite; borde izquierdo con el color del estado; texto de tokens del DS.
+ */
+function labelHtml(p: Parcela): string {
+  const m = PARCELA_STATUS[p.laborStatus];
+  const overdue: string[] = [], pending: string[] = [];
+  for (const l of CACAO_LABORES) {
+    const t = p.porTipo?.[l.tipo];
+    if (!t) continue;
+    if (t.vencido) overdue.push(l.label);
+    else if (t.pendientes > 0) pending.push(l.label);
+  }
+  const cap = (arr: string[]) => (arr.length > 3 ? `${arr.slice(0, 2).join(", ")} +${arr.length - 2}` : arr.join(", "));
+  const lines: string[] = [];
+  if (overdue.length) lines.push(`<div style="color:var(--data-error-300,#fca5a5)">Vencidas: ${escapeHtml(cap(overdue))}</div>`);
+  if (pending.length) lines.push(`<div style="color:var(--data-warning-300,#fcd34d)">Pendientes: ${escapeHtml(cap(pending))}</div>`);
+  if (!lines.length) lines.push(`<div style="color:var(--data-success-300,#86efac);opacity:.95">Al día</div>`);
+  return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${m.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)"><div style="font-weight:800;font-size:12px">${escapeHtml(p.codigo)}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""}</div>${lines.join("")}</div>`;
+}
 import type { Parcela } from "./CacaoCampo";
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
@@ -122,9 +144,9 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         else onOpenRef.current(p.id);
       });
       poly.addTo(polysRef.current);
-      // Etiqueta permanente con el código (toggle "Etiquetas").
+      // Etiqueta detallada (toggle "Etiquetas"): código + qué falta hacer.
       if (showLabelsRef.current) {
-        L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: `<span style="display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;padding:1px 6px;border-radius:6px;background:rgba(15,23,42,.72);color:#fff;font:700 11px/1.4 system-ui;box-shadow:0 1px 2px rgba(0,0,0,.4)">${escapeHtml(p.codigo)}</span>`, iconSize: [0, 0] }) }).addTo(polysRef.current);
+        L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: labelHtml(p), iconSize: [0, 0] }) }).addTo(polysRef.current);
       }
       pts.forEach((pt) => bounds.push(pt));
     }
