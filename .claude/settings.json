@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "BSM_PROJECT_ROOT": "${CLAUDE_PROJECT_DIR}",
+    "BSM_PROJECT_ROOT": "/home/usuario/proyectos/Mercado",
     "BSM_HOOKS_DEBUG": "0",
     "BSM_AUTOKILL": "1",
     "SLASH_COMMAND_TOOL_CHAR_BUDGET": "20000"
@@ -76,32 +76,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/hex-code-guard.mjs",
-            "timeout": 3,
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/auto-learn.mjs",
-            "timeout": 5,
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-typography-lint.mjs",
-            "timeout": 5,
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-ui-screenshot.mjs",
-            "timeout": 30,
-            "async": true
-          },
-          {
-            "type": "command",
-            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-rubric-check.mjs",
-            "timeout": 15,
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-dispatcher.mjs",
+            "timeout": 10,
             "async": true
           }
         ]

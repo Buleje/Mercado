@@ -167,8 +167,22 @@ try {
     success,
   };
 
-  // 1) JSONL append-only
+  // 1) JSONL append-only (rotación: >1MB → conservar últimas 1500 líneas)
   mkdirSync(metricsDir, { recursive: true });
+  try {
+    if (existsSync(jsonlFile)) {
+      const prev = readFileSync(jsonlFile, "utf-8");
+      if (prev.length > 1_000_000) {
+        writeFileSync(
+          jsonlFile,
+          prev.trim().split("\n").slice(-1500).join("\n") + "\n",
+          "utf-8",
+        );
+      }
+    }
+  } catch (err) {
+    logErr("rotate jsonl", err);
+  }
   appendFileSync(jsonlFile, JSON.stringify(entry) + "\n", "utf-8");
 
   // 2) Aggregated JSON for skills

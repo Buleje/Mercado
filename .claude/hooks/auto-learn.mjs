@@ -26,6 +26,16 @@ const errLogPath = join(projectRoot, ".claude/learning/auto-learn.errors.log");
 function logErr(scope, err) {
   try {
     mkdirSync(dirname(errLogPath), { recursive: true });
+    // Rotación: >100KB → conservar solo el último cuarto (llegó a 45KB de
+    // puro EAGAIN; sin cap crecería indefinido).
+    try {
+      const prev = readFileSync(errLogPath, "utf-8");
+      if (prev.length > 100_000) {
+        writeFileSync(errLogPath, prev.slice(-25_000), "utf-8");
+      }
+    } catch {
+      /* primera escritura: el file no existe todavía */
+    }
     appendFileSync(
       errLogPath,
       `${new Date().toISOString()} [${scope}] ${String(err?.stack ?? err ?? "unknown")}\n`,
@@ -189,8 +199,25 @@ try {
       }
     });
 
+    // Cap: patterns crecía sin límite (372KB / 9379 líneas al 2026-07-02).
+    // Quedan los 300 con lastSeen más reciente; evolve-autopilot lee este file.
+    if (patterns.patterns.length > 300) {
+      patterns.patterns.sort(
+        (a, b) => new Date(b.lastSeen ?? 0) - new Date(a.lastSeen ?? 0),
+      );
+      patterns.patterns = patterns.patterns.slice(0, 300);
+    }
+
     patterns.lastScan = now;
     writeJSON(patternsPath, patterns);
+  }
+
+  // Cap: coEditClusters era la única array sin límite en edit-log (153KB).
+  if (editLog.coEditClusters.length > 150) {
+    editLog.coEditClusters.sort(
+      (a, b) => new Date(b.lastSeen ?? 0) - new Date(a.lastSeen ?? 0),
+    );
+    editLog.coEditClusters = editLog.coEditClusters.slice(0, 150);
   }
 
   editLog.lastUpdated = now;
