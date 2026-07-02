@@ -81,8 +81,8 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
   const m = PARCELA_STATUS[status];
 
   return (
-    <AdminModal open onClose={close} variant="side" title={parcela ? `Sección ${parcela.codigo}` : "Sección"} description={parcela?.nombre ?? undefined}>
-      <div className="space-y-4">
+    <AdminModal open onClose={close} variant="side" icon={m.icon} title={parcela ? `Sección ${parcela.codigo}` : "Sección"} description={parcela?.nombre ?? undefined}>
+      <div className="space-y-4 p-5">
         {parcela && (
           <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
             <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: m.bg, color: m.fg }}><m.icon className="h-3 w-3" />{m.label}</span>
@@ -111,7 +111,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
           })}
         </div>
 
-        <button type="button" onClick={() => setShowForm((v) => !v)} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar labor</button>
+        <button type="button" onClick={() => setShowForm((v) => !v)} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar labor</button>
         {showForm && <RegistrarLaborForm parcelaId={parcelaId} onDone={() => { setShowForm(false); setDirty(true); load(); }} />}
 
         {/* Historial */}
@@ -195,7 +195,7 @@ function RegistrarLaborForm({ parcelaId, onDone }: { parcelaId: string; onDone: 
       </div>
       <label className="block text-xs font-bold text-[var(--text-secondary)]">Detalle<input value={f.detalle} onChange={set("detalle")} placeholder="opcional" className={`mt-1 ${I}`} /></label>
       {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-2 text-xs text-[var(--data-error-700)]">{error}</div>}
-      <button type="submit" disabled={submitting} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar labor</button>
+      <button type="submit" disabled={submitting} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar labor</button>
     </form>
   );
 }

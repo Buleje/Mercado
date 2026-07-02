@@ -86,7 +86,7 @@ export default function CacaoCampo() {
         </div>
         <button type="button" onClick={() => setIncludeInactive((v) => !v)} className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold ${includeInactive ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}>{includeInactive ? "Todas" : "Activas"}</button>
         <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
-        <button type="button" onClick={() => setShowNew(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nueva sección</button>
+        <button type="button" onClick={() => setShowNew(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nueva sección</button>
       </div>
 
       {/* Mapa: dibujar/dividir el terreno en secciones (fase 2) */}
@@ -99,7 +99,7 @@ export default function CacaoCampo() {
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Trees className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">Dibujá tu chacra</p>
           <p className="mx-auto mt-1 max-w-sm text-sm">Agregá cada sección de tu terreno (ej. una hectárea = un código). Después registrás poda, fertilización, cosecha y las ves acá por color.</p>
-          <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Nueva sección</button>
+          <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Nueva sección</button>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -159,8 +159,8 @@ function NuevaParcelaModal({ onClose, onSaved }: { onClose: () => void; onSaved:
 
   const I = "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="default" title="Nueva sección" description="Una parte de tu chacra con su propio código (ej. una hectárea).">
-      <form onSubmit={submit} className="space-y-3">
+    <AdminModal open onClose={onClose} variant="default" icon={Trees} title="Nueva sección" description="Una parte de tu chacra con su propio código (ej. una hectárea).">
+      <form onSubmit={submit} className="space-y-4 p-5">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Código *<input value={f.codigo} onChange={set("codigo")} placeholder="A-01" className={`mt-1 ${I}`} autoFocus /></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Nombre<input value={f.nombre} onChange={set("nombre")} placeholder="Lote alto" className={`mt-1 ${I}`} /></label>
@@ -172,7 +172,7 @@ function NuevaParcelaModal({ onClose, onSaved }: { onClose: () => void; onSaved:
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
-          <button type="submit" disabled={!valido || submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Crear sección</button>
+          <button type="submit" disabled={!valido || submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Crear sección</button>
         </div>
       </form>
     </AdminModal>

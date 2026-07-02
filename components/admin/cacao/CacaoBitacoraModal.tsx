@@ -279,7 +279,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
             <button
               type="submit"
               disabled={saving || !canSave}
-              className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
             >
               {saving ? (
                 <>

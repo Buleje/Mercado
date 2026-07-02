@@ -123,7 +123,7 @@ export default function CacaoLiquidaciones() {
                   {g.telefono && (
                     <a href={waLink(g.telefono, g.nombre, g.totalSaldo)} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]" aria-label={`WhatsApp a ${g.nombre}`}><MessageCircle className="h-4 w-4" /></a>
                   )}
-                  <button type="button" onClick={() => setPayFor(g)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><HandCoins className="h-4 w-4" />Pagar</button>
+                  <button type="button" onClick={() => setPayFor(g)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><HandCoins className="h-4 w-4" />Pagar</button>
                 </div>
                 {isOpen && (
                   <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2">
@@ -208,8 +208,8 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
 
   if (done) {
     return (
-      <AdminModal open onClose={onPaid} variant="centered-sm" title="Pago registrado" description={`Se registró el pago a ${grupo.nombre}.`}>
-        <div className="space-y-4 text-center">
+      <AdminModal open onClose={onPaid} variant="centered-sm" icon={CheckCircle2} title="Pago registrado" description={`Se registró el pago a ${grupo.nombre}.`}>
+        <div className="space-y-4 p-5 text-center">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-700)]"><CheckCircle2 className="h-7 w-7" /></span>
           <div>
             <p className="text-2xl font-extrabold text-[var(--text-primary)]">S/ {n2(done.aplicado)}</p>
@@ -217,7 +217,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
           </div>
           <div className="flex justify-center gap-2">
             <button type="button" onClick={() => openPrintable(receiptHtml(grupo, done.aplicado, done.saldoRestante, done.fecha))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" />Imprimir comprobante</button>
-            <button type="button" onClick={onPaid} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90">Listo</button>
+            <button type="button" onClick={onPaid} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90">Listo</button>
           </div>
         </div>
       </AdminModal>
@@ -225,8 +225,8 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="centered-sm" title={`Pagar a ${grupo.nombre}`} description={`Saldo pendiente: S/ ${n2(grupo.totalSaldo)} en ${grupo.nLotes} lote${grupo.nLotes === 1 ? "" : "s"}.`}>
-      <div className="space-y-4">
+    <AdminModal open onClose={onClose} variant="centered-sm" icon={HandCoins} title={`Pagar a ${grupo.nombre}`} description={`Saldo pendiente: S/ ${n2(grupo.totalSaldo)} en ${grupo.nLotes} lote${grupo.nLotes === 1 ? "" : "s"}.`}>
+      <div className="space-y-4 p-5">
         <div>
           <label htmlFor="cacao-liq-monto" className="mb-1 block text-sm font-bold text-[var(--text-primary)]">Monto a pagar (S/)</label>
           <input id="cacao-liq-monto" type="number" inputMode="decimal" step="0.01" min="0" max={grupo.totalSaldo} value={monto} onChange={(e) => setMonto(e.target.value)} className="h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" autoFocus />
@@ -239,7 +239,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
-          <button type="button" disabled={!valido || submitting} onClick={pagar} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">
+          <button type="button" disabled={!valido || submitting} onClick={pagar} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <HandCoins className="h-4 w-4" />}Registrar pago
           </button>
         </div>

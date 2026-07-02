@@ -134,7 +134,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         {!drawing ? (
-          <button type="button" onClick={startDraw} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Pencil className="h-4 w-4" />Dibujar sección</button>
+          <button type="button" onClick={startDraw} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Pencil className="h-4 w-4" />Dibujar sección</button>
         ) : (
           <>
             <span className="inline-flex h-11 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-900)]">Tocá el mapa para marcar los vértices ({nVerts})</span>
@@ -180,8 +180,8 @@ function AsignarSeccionModal({ poligono, onClose, onSaved }: { poligono: [number
 
   const I = "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="default" title="Nueva sección dibujada" description={`${poligono.length} puntos · centro ${c[0].toFixed(4)}, ${c[1].toFixed(4)}`}>
-      <form onSubmit={submit} className="space-y-3">
+    <AdminModal open onClose={onClose} variant="default" icon={Pencil} title="Nueva sección dibujada" description={`${poligono.length} puntos · centro ${c[0].toFixed(4)}, ${c[1].toFixed(4)}`}>
+      <form onSubmit={submit} className="space-y-4 p-5">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Código *<input value={f.codigo} onChange={set("codigo")} placeholder="A-01" className={`mt-1 ${I}`} autoFocus /></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Nombre<input value={f.nombre} onChange={set("nombre")} placeholder="Lote alto" className={`mt-1 ${I}`} /></label>
@@ -191,7 +191,7 @@ function AsignarSeccionModal({ poligono, onClose, onSaved }: { poligono: [number
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
-          <button type="submit" disabled={!valido || submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar sección</button>
+          <button type="submit" disabled={!valido || submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar sección</button>
         </div>
       </form>
     </AdminModal>

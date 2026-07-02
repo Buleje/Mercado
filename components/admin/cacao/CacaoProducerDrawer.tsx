@@ -324,7 +324,7 @@ export default function CacaoProducerDrawer({
                       type="button"
                       disabled={saving || !form.nombre?.trim()}
                       onClick={saveEdit}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
                     >
                       {saving ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -608,7 +608,7 @@ export default function CacaoProducerDrawer({
                     })),
                   )
                 }
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
               >
                 <Printer className="h-4 w-4" />
                 Liquidación
@@ -674,7 +674,7 @@ export default function CacaoProducerDrawer({
               type="button"
               disabled={saving}
               onClick={registrarPago}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Guardar pago

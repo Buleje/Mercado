@@ -371,7 +371,7 @@ export default function CacaoAcopio() {
             <button
               type="button"
               onClick={() => setShowLote(true)}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
+              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
             >
               <Plus className="h-5 w-5" />
               Nuevo lote
@@ -545,7 +545,7 @@ export default function CacaoAcopio() {
                 <button
                   type="button"
                   onClick={() => load("acopio")}
-                  className="inline-flex h-10 items-center rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90"
+                  className="inline-flex h-10 items-center rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90"
                 >
                   Aplicar filtros
                 </button>
@@ -1112,7 +1112,7 @@ function EmptyOrLoading({
         <button
           type="button"
           onClick={cta.onClick}
-          className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent-600,var(--accent))] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"
+          className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"
         >
           <Plus className="h-4 w-4" />
           {cta.label}

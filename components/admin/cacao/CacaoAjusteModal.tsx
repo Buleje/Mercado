@@ -197,7 +197,7 @@ export default function CacaoAjusteModal({ variedades, onClose, onSaved }: Props
           <button
             type="submit"
             disabled={!isValid || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? (
               <>

@@ -26,10 +26,36 @@
  *   · centered-sm — max-w-sm (confirmaciones)
  */
 
+import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
-import { X } from "@buleje/design-system/icons";
+import { X, type LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+
+/**
+ * El tema de acento del admin (que puede diferir del root del tenant) vive en un
+ * wrapper inline bajo <body>. El modal se portalea a <body>, FUERA de ese wrapper,
+ * así que sin esto heredaría el acento del root (a veces otro color). Copiamos los
+ * tokens de acento del wrapper al contenido del modal para que matchee su panel.
+ */
+function useAdminAccent(open: boolean): React.CSSProperties {
+  const [vars, setVars] = useState<React.CSSProperties>({});
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const wrap = Array.from(document.body.children).find((el) =>
+      (el.getAttribute("style") || "").includes("--accent"),
+    );
+    if (!wrap) return;
+    const cs = getComputedStyle(wrap);
+    const next: Record<string, string> = {};
+    for (const v of ["--accent", "--accent-dark", "--accent-soft", "--accent-muted"]) {
+      const val = cs.getPropertyValue(v).trim();
+      if (val) next[v] = val;
+    }
+    setVars(next as React.CSSProperties);
+  }, [open]);
+  return vars;
+}
 
 type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm" | "pos";
 
@@ -39,6 +65,8 @@ interface AdminModalProps {
   title?: string;
   /** Descripción opcional debajo del título (accessibility). */
   description?: string;
+  /** Icono opcional: chip en accent-soft antes del título (menos genérico). */
+  icon?: LucideIcon;
   variant?: Variant;
   children: React.ReactNode;
   className?: string;
@@ -74,11 +102,13 @@ export default function AdminModal({
   onClose,
   title,
   description,
+  icon: Icon,
   variant = "default",
   children,
   className,
   hideCloseButton,
 }: AdminModalProps) {
+  const accentVars = useAdminAccent(open);
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
@@ -90,6 +120,7 @@ export default function AdminModal({
         />
         <Dialog.Content
           aria-describedby={description ? undefined : undefined}
+          style={accentVars}
           className={cn(
             "fixed z-50 bg-[var(--surface-raised)] overflow-hidden flex flex-col shadow-[var(--shadow-xl)] outline-none",
             VARIANT_POSITION[variant],
@@ -108,19 +139,26 @@ export default function AdminModal({
           )}
 
           {/* Header */}
-          {(title || !hideCloseButton) && (
+          {(title || Icon || !hideCloseButton) && (
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0 gap-3">
-              <div className="min-w-0">
-                {title && (
-                  <Dialog.Title className="font-display text-base sm:text-lg font-semibold text-[var(--text-primary)] tracking-tight truncate">
-                    {title}
-                  </Dialog.Title>
+              <div className="flex min-w-0 items-center gap-3">
+                {Icon && (
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <Icon className="h-5 w-5" strokeWidth={1.75} />
+                  </span>
                 )}
-                {description && (
-                  <Dialog.Description className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
-                    {description}
-                  </Dialog.Description>
-                )}
+                <div className="min-w-0">
+                  {title && (
+                    <Dialog.Title className="font-display text-base sm:text-lg font-semibold text-[var(--text-primary)] tracking-tight truncate">
+                      {title}
+                    </Dialog.Title>
+                  )}
+                  {description && (
+                    <Dialog.Description className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
+                      {description}
+                    </Dialog.Description>
+                  )}
+                </div>
               </div>
               {!hideCloseButton && (
                 <Dialog.Close asChild>
