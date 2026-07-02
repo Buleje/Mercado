@@ -52,6 +52,7 @@ import CacaoResumen from "./CacaoResumen";
 import CacaoInventario from "./CacaoInventario";
 import CacaoProductores from "./CacaoProductores";
 import CacaoLiquidaciones from "./CacaoLiquidaciones";
+import CacaoMapa from "./CacaoMapa";
 import CacaoVentas from "./CacaoVentas";
 import CacaoAlertsBell from "./CacaoAlertsBell";
 
@@ -753,6 +754,9 @@ export default function CacaoAcopio() {
 
       {/* LIQUIDACIONES — cuentas por pagar al productor (worklist + pago batch) */}
       {view === "liquidaciones" && <CacaoLiquidaciones />}
+
+      {/* MAPA — parcelas de productores geolocalizadas (multi-marker) */}
+      {view === "mapa" && <CacaoMapa />}
 
       {/* BENEFICIO — componente propio (self-fetch + KPIs + anular + ficha lote) */}
       {view === "beneficio" && <CacaoBeneficio />}
