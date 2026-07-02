@@ -5264,6 +5264,61 @@ model CacaoProducer {
   @@index([deletedAt])
 }
 
+/// Sección / cuartel del campo de cacao — la "maqueta" de la chacra en grilla.
+/// Cada sección (p. ej. una hectárea) tiene su código y posición en el tablero;
+/// las labores (poda, fertilización, cosecha…) se registran contra ella para ver
+/// en el mapa qué se hizo y qué falta. Ref. app-level (sin FK), como CacaoLote.
+model CacaoParcela {
+  id            String    @id @default(cuid())
+  tenantId      String
+  codigo        String // A-01 (único por tenant)
+  nombre        String? // alias opcional
+  areaHa        Decimal?  @db.Decimal(8, 2)
+  variedad      String? // CCN-51 | criollo | trinitario | forastero | nacional
+  anioSiembra   Int?
+  nPlantas      Int?
+  gridRow       Int       @default(0) // posición en la grilla (maqueta)
+  gridCol       Int       @default(0)
+  latitud       Decimal?  @db.Decimal(10, 7) // fase 2: contorno geo sobre mapa
+  longitud      Decimal?  @db.Decimal(10, 7)
+  color         String? // color opcional del bloque en la grilla
+  status        String    @default("activa") // activa | inactiva
+  observaciones String?
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@unique([tenantId, codigo])
+  @@index([tenantId, status])
+  @@index([deletedAt])
+}
+
+/// Labor agrícola (poda, fertilización, deshierbe, control fitosanitario, riego,
+/// cosecha) planificada o realizada en una sección. Estado + fechas para ver en
+/// la grilla qué está al día, pendiente o vencido.
+model CacaoParcelaLabor {
+  id          String    @id @default(cuid())
+  tenantId    String
+  parcelaId   String // ref. app-level a CacaoParcela
+  tipo        String // poda | fertilizacion | deshierbe | fitosanitario | riego | cosecha
+  estado      String    @default("pendiente") // pendiente | hecho
+  fechaPlan   DateTime? // planificada / programada
+  fechaHecho  DateTime? // realizada
+  responsable String?
+  detalle     String?
+  cantidad    Decimal?  @db.Decimal(12, 2) // ej. kg cosechados, litros aplicados, jornales
+  unidad      String? // kg | L | jornal | sacos
+  createdBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([tenantId, tipo])
+  @@index([parcelaId, estado])
+  @@index([deletedAt])
+}
+
 /// Lote de acopio de cacao + control de calidad (prueba de corte) + liquidación.
 model CacaoLote {
   id              String   @id @default(cuid())
