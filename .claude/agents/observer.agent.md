@@ -9,11 +9,6 @@ maxTurns: 30
 memory: project
 effort: high
 color: red
-mcpServers:
-  - sentry:
-      type: stdio
-      command: npx
-      args: ["-y", "@sentry/mcp-server@latest"]
 ---
 
 # Observer — Hub OPS SRE & Incident Commander

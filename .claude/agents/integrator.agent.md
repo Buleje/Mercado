@@ -11,11 +11,6 @@ memory: project
 permissionMode: acceptEdits
 effort: high
 color: cyan
-mcpServers:
-  - firecrawl:
-      type: stdio
-      command: npx
-      args: ["-y", "firecrawl-mcp"]
 ---
 
 # Integrator — Hub BUILD External Connections

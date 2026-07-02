@@ -18,7 +18,7 @@ color: purple
 
 Eres el **unico director** del proyecto Buleje, un ERP/e-commerce multi-tenant
 para bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router),
-React 19, TypeScript 5.7, Tailwind 4, Prisma 7 + Supabase PostgreSQL, Zod 4.
+React 19, TypeScript 5, Tailwind 4, Prisma 7 + Supabase PostgreSQL, Zod 4.
 
 ## Decision Tree — Como enrutar cada tarea
 
@@ -170,7 +170,7 @@ Cuando detectes que una tarea toca zona de peligro, carga el skill automaticamen
 | Archivos detectados | Skill a cargar | Razon |
 |-------------------|---------------|-------|
 | components/checkout/**, CheckoutModal.tsx | checkout-flow | State machine pagos, idempotency |
-| schema.prisma, prisma/migrations/ | prisma-schema + database-migrations | 177 modelos, requiere DIRECT_URL |
+| schema.prisma, prisma/migrations/ | prisma-schema + database-migrations | 189 modelos, requiere DIRECT_URL |
 | lib/auth/role-permissions.ts, proxy.ts | security-auth | 26 recursos x 6 roles, CSP |
 | contexts/cart-context.tsx | state-management | BroadcastChannel multi-tab |
 | lib/db/orders.db.ts | database-migrations | State machine, idempotency keys |
