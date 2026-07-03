@@ -44,9 +44,10 @@ export function ProductRelated({ products, storeSlug }: ProductRelatedProps) {
         <SectionTitle as="h2">También te puede interesar</SectionTitle>
       </div>
 
-      {/* Brandon 2026-06-25: misma grilla densa que el catálogo del inicio
-          (CatalogView CATALOG_GRID) — cards del mismo tamaño/diseño. */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
+      {/* Grid normalizado a tamaño estándar de "relacionados" (Brandon 2026-07-04):
+          máx 5 columnas + gap mayor → cards más grandes y legibles que la grilla
+          densa del catálogo (que en el detalle, más angosto, salían diminutas). */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {products.map((product, index) => {
           const cardProduct: UnifiedProductCardProduct = {
             id: product.id,

@@ -120,7 +120,7 @@ export function ProductCatalogExplorer({
     return (
       <section aria-label="Cargando catálogo" className="space-y-4">
         <div className="h-7 w-64 animate-pulse bg-[var(--surface-sunken)]" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {Array.from({ length: 14 }).map((_, i) => (
             <div key={i} className="aspect-[3/4] animate-pulse bg-[var(--surface-sunken)]" />
           ))}
