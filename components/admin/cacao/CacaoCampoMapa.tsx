@@ -74,6 +74,12 @@ const centroid = (pts: [number, number][]): [number, number] => {
   const s = pts.reduce((a, p) => [a[0] + p[0], a[1] + p[1]] as [number, number], [0, 0]);
   return [s[0] / pts.length, s[1] / pts.length];
 };
+/** Área (ha, ≥3 pts) + perímetro (m, línea recorrida) de un polígono en construcción. */
+function drawMetrics(v: [number, number][]): { area: number; perim: number } {
+  let perim = 0;
+  for (let i = 1; i < v.length; i++) perim += haversineM(v[i - 1], v[i]);
+  return { area: v.length >= 3 ? geodesicAreaHa(v) : 0, perim };
+}
 
 export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: { parcelas: Parcela[]; onOpenParcela: (id: string) => void; onChanged: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +107,8 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const [ready, setReady] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const [nVerts, setNVerts] = useState(0);
+  const [drawArea, setDrawArea] = useState(0);
+  const [drawPerim, setDrawPerim] = useState(0);
   const [layer, setLayer] = useState<"sat" | "street">("sat");
   const [fullscreen, setFullscreen] = useState(false);
   const [pending, setPending] = useState<[number, number][] | null>(null);
@@ -146,6 +154,8 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     if (v.length === 0) return;
     if (v.length >= 2) L.polygon(v, { color: "#facc15", weight: 2, dashArray: "5,5", fillOpacity: 0.15 }).addTo(drawRef.current);
     v.forEach((p, i) => L.circleMarker(p, { radius: 5, color: "#facc15", fillColor: "#fff", fillOpacity: 1, weight: 2 }).bindTooltip(String(i + 1)).addTo(drawRef.current));
+    // Etiqueta de área en vivo al centro del polígono en construcción.
+    if (v.length >= 3) L.marker(centroid(v), { interactive: false, icon: L.divIcon({ className: "", html: `<div style="transform:translate(-50%,-50%);white-space:nowrap;background:rgba(15,23,42,.82);color:#fff;padding:2px 7px;border-radius:7px;font:700 11px system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${geodesicAreaHa(v)} ha</div>`, iconSize: [0, 0] }) }).addTo(drawRef.current);
   }, []);
 
   const renderPolys = useCallback((fit = true) => {
@@ -191,6 +201,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
         if (drawingRef.current) {
           vertsRef.current = [...vertsRef.current, ll];
           setNVerts(vertsRef.current.length);
+          const m = drawMetrics(vertsRef.current); setDrawArea(m.area); setDrawPerim(m.perim);
           redrawDrawing();
         } else if (measuringRef.current) {
           measureVertsRef.current = [...measureVertsRef.current, ll];
@@ -240,10 +251,27 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     };
   }, [fullscreen, pending]);
 
-  function startDraw() { vertsRef.current = []; setNVerts(0); drawingRef.current = true; setDrawing(true); redrawDrawing(); }
-  function cancelDraw() { vertsRef.current = []; setNVerts(0); drawingRef.current = false; setDrawing(false); if (drawRef.current) drawRef.current.clearLayers(); }
-  function undo() { vertsRef.current = vertsRef.current.slice(0, -1); setNVerts(vertsRef.current.length); redrawDrawing(); }
+  function startDraw() { vertsRef.current = []; setNVerts(0); setDrawArea(0); setDrawPerim(0); setMapMsg(null); drawingRef.current = true; setDrawing(true); redrawDrawing(); }
+  function cancelDraw() { vertsRef.current = []; setNVerts(0); setDrawArea(0); setDrawPerim(0); drawingRef.current = false; setDrawing(false); if (drawRef.current) drawRef.current.clearLayers(); }
+  function undo() { vertsRef.current = vertsRef.current.slice(0, -1); setNVerts(vertsRef.current.length); const m = drawMetrics(vertsRef.current); setDrawArea(m.area); setDrawPerim(m.perim); redrawDrawing(); }
   function finishDraw() { if (vertsRef.current.length < 3) return; setPending(vertsRef.current); }
+  /** Agrega un vértice en la ubicación GPS actual — para "caminar" el contorno del terreno. */
+  function addGpsPoint() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) { setMapMsg("Tu navegador no permite ubicación."); return; }
+    setLocating(true); setMapMsg(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const ll: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        vertsRef.current = [...vertsRef.current, ll]; setNVerts(vertsRef.current.length);
+        const m = drawMetrics(vertsRef.current); setDrawArea(m.area); setDrawPerim(m.perim);
+        redrawDrawing();
+        if (mapRef.current) mapRef.current.panTo(ll);
+      },
+      (err: { code: number }) => { setLocating(false); setMapMsg(err.code === 1 ? "Activá el permiso de ubicación para marcar por GPS." : "No pude obtener tu ubicación."); },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
 
   // ── Edición de secciones existentes: arrastrar vértices + área en vivo ──
   function renderEdit() {
@@ -357,6 +385,17 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
 
   const hasPolygons = parcelas.some((p) => parseCoords(p.poligono ?? null));
   const conPoligono = parcelas.filter((p) => parseCoords(p.poligono ?? null));
+  // Sugerencia de código para la próxima sección: siguiente número del prefijo más usado.
+  const suggestedCodigo = (() => {
+    const byPrefix = new Map<string, number[]>();
+    for (const p of parcelas) {
+      const mt = /^([A-Za-z]+)-?(\d+)/.exec(p.codigo.trim());
+      if (mt) { const pre = mt[1].toUpperCase(); const arr = byPrefix.get(pre) ?? []; arr.push(parseInt(mt[2], 10)); byPrefix.set(pre, arr); }
+    }
+    if (!byPrefix.size) return "A-01";
+    const [pre, nums] = [...byPrefix.entries()].sort((a, b) => b[1].length - a[1].length)[0];
+    return `${pre}-${String(Math.max(...nums) + 1).padStart(2, "0")}`;
+  })();
   const legendItems: { c: string; l: string }[] = colorBy === "sanidad"
     ? [{ c: "var(--data-success-500)", l: "Sano" }, { c: SANIDAD_SEVERIDAD.baja.ring, l: "Plaga baja" }, { c: SANIDAD_SEVERIDAD.media.ring, l: "Plaga media" }, { c: SANIDAD_SEVERIDAD.alta.ring, l: "Plaga alta" }]
     : (["al_dia", "pendiente", "vencido", "sin_labores"] as const).map((s) => ({ c: PARCELA_STATUS[s].ring, l: PARCELA_STATUS[s].label }));
@@ -366,7 +405,8 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       <div className="flex flex-wrap items-center gap-2">
         {drawing ? (
           <>
-            <span className="inline-flex h-11 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-900)]">Tocá el mapa para marcar los vértices ({nVerts})</span>
+            <span className="inline-flex h-11 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-900)]">Tocá el mapa para marcar los vértices ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${drawArea.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
+            <button type="button" onClick={addGpsPoint} disabled={locating} title="Agregar un vértice en mi ubicación GPS (caminar el terreno)" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Punto GPS</span></button>
             <button type="button" onClick={undo} disabled={nVerts === 0} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={finishDraw} disabled={nVerts < 3} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Terminar ({nVerts})</button>
             <button type="button" onClick={cancelDraw} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
@@ -454,13 +494,16 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       {!fullscreen && editing && <p className="text-xs text-[var(--text-tertiary)]"><Edit3 className="mr-1 inline h-3 w-3" />Arrastrá los puntos azules para mover los límites; el área en hectáreas se recalcula sola. Guardá para aplicar.</p>}
       {!fullscreen && measuring && <p className="text-xs text-[var(--text-tertiary)]"><Route className="mr-1 inline h-3 w-3" />Tocá puntos en el mapa para medir distancia; con 3+ puntos también calcula el área. No crea ninguna sección.</p>}
 
-      {pending && <AsignarSeccionModal poligono={pending} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
+      {pending && <AsignarSeccionModal poligono={pending} suggestedCodigo={suggestedCodigo} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
     </div>
   );
 }
 
-function AsignarSeccionModal({ poligono, onClose, onSaved }: { poligono: [number, number][]; onClose: () => void; onSaved: () => void }) {
-  const [f, setF] = useState({ codigo: "", nombre: "", areaHa: "", variedad: "" });
+function AsignarSeccionModal({ poligono, suggestedCodigo, onClose, onSaved }: { poligono: [number, number][]; suggestedCodigo: string; onClose: () => void; onSaved: () => void }) {
+  const areaCalc = geodesicAreaHa(poligono);
+  let perimCalc = 0;
+  for (let i = 0; i < poligono.length; i++) perimCalc += haversineM(poligono[i], poligono[(i + 1) % poligono.length]);
+  const [f, setF] = useState({ codigo: suggestedCodigo, nombre: "", areaHa: String(areaCalc), variedad: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -485,12 +528,12 @@ function AsignarSeccionModal({ poligono, onClose, onSaved }: { poligono: [number
 
   const I = "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
-    <AdminModal open onClose={onClose} variant="default" icon={Pencil} title="Nueva sección dibujada" description={`${poligono.length} puntos · centro ${c[0].toFixed(4)}, ${c[1].toFixed(4)}`}>
+    <AdminModal open onClose={onClose} variant="default" icon={Pencil} title="Nueva sección dibujada" description={`${poligono.length} puntos · ${areaCalc.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha · ${formatDist(perimCalc)} de perímetro`}>
       <form onSubmit={submit} className="space-y-4 p-5">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Código *<input value={f.codigo} onChange={set("codigo")} placeholder="A-01" className={`mt-1 ${I}`} autoFocus /></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Nombre<input value={f.nombre} onChange={set("nombre")} placeholder="Lote alto" className={`mt-1 ${I}`} /></label>
-          <label className="text-sm font-bold text-[var(--text-primary)]">Área (ha)<input type="number" step="0.01" min="0" value={f.areaHa} onChange={set("areaHa")} placeholder="1.0" className={`mt-1 ${I}`} /></label>
+          <label className="text-sm font-bold text-[var(--text-primary)]">Área (ha) <span className="font-normal text-[var(--text-tertiary)]">· calculada del dibujo</span><input type="number" step="0.01" min="0" value={f.areaHa} onChange={set("areaHa")} placeholder="1.0" className={`mt-1 ${I}`} /></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Variedad<select value={f.variedad} onChange={set("variedad")} className={`mt-1 ${I}`}><option value="">—</option>{VARIEDADES.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
         </div>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
