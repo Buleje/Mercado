@@ -13,6 +13,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { ArrowRight, MapPin, Bike, ShieldCheck, Eye, Award, Moon, Star, Wallet } from "@buleje/design-system/icons";
 import ShareStoreButton from "./ShareStoreButton";
+import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import {
   haversineKm,
   ZONE_COORDS,
@@ -291,7 +292,9 @@ export default function PremiumStoreCard({
                   <div className="relative aspect-square w-full bg-[var(--surface-sunken)]">
                     {p.image ? (
                       <Image src={p.image} alt={`${p.name} — ${name}`} fill sizes="(min-width:640px) 110px, 30vw" className="object-cover" />
-                    ) : null}
+                    ) : (
+                      <ProductPhotoFallback name={p.name} category={p.category} size="sm" showName={false} />
+                    )}
                     {p.category && (
                       <span className="absolute left-1 top-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
                         {p.category}

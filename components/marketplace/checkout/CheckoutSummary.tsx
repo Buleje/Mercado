@@ -20,11 +20,11 @@ import {
   ShieldCheck,
   Truck,
   ArrowRight,
-  Smartphone,
   CheckCircle2,
   TrendingDown,
   ChevronRight,
 } from "@buleje/design-system/icons";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
 import Tooltip from "@/components/ui-system/Tooltip";
@@ -330,6 +330,17 @@ export default function CheckoutSummary({
               title="Seguridad & Privacidad"
               lines={["Pago seguro", "Tus datos personales protegidos"]}
             />
+            {/* Medios de pago con ícono de marca (arte original) */}
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)]">
+                Aceptamos
+              </span>
+              <span className="flex items-center gap-1.5">
+                <PaymentMethodIcon method="yape" size={22} title="Yape" />
+                <PaymentMethodIcon method="plin" size={22} title="Plin" />
+                <PaymentMethodIcon method="efectivo" size={22} title="Efectivo" />
+              </span>
+            </div>
           </div>
         )}
       </aside>
@@ -552,7 +563,6 @@ export default function CheckoutSummary({
           {[
             { Icon: ShieldCheck, label: "Seguro" },
             { Icon: Truck, label: "25 min" },
-            { Icon: Smartphone, label: "Yape / Plin" },
           ].map(({ Icon, label }) => (
             <li
               key={label}
@@ -562,6 +572,12 @@ export default function CheckoutSummary({
               {label}
             </li>
           ))}
+          {/* Íconos de marca para los pagos (arte original) */}
+          <li className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] py-1 pl-1 pr-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
+            <PaymentMethodIcon method="yape" size={18} />
+            <PaymentMethodIcon method="plin" size={18} />
+            Yape · Plin
+          </li>
         </ul>
       )}
     </aside>

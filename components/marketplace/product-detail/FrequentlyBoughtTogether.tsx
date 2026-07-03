@@ -15,8 +15,9 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, ShoppingCart, Plus } from "@buleje/design-system/icons";
+import { Check, ShoppingCart, Plus, Store as StoreIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 
 type RP = {
@@ -98,10 +99,11 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
           }
         } catch {/* queda vacío */}
       }
-      // Solo complementos de la MISMA tienda (los sin storeSlug se asumen del store).
+      // El FALLBACK ya viene acotado a la tienda; las recomendaciones de co-compra
+      // SÍ pueden ser de otra tienda (señal real) — se muestran con badge "otra
+      // tienda · entrega aparte" en vez de esconderlas (Brandon 2026-07-04).
       const clean = list
         .filter((p) => p.productId && p.productId !== productId && p.name)
-        .filter((p) => !p.storeSlug || p.storeSlug === storeSlug)
         .slice(0, 3);
       // El producto actual abre el combo como ancla ("Este producto + …").
       const withAnchor = anchor ? [anchor, ...clean] : clean;
@@ -163,6 +165,8 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
 
   const chosen = items.filter((p) => selected.has(p.productId));
   const total = chosen.reduce((a, p) => a + p.price, 0);
+  // ¿Algún complemento es de OTRA tienda? Entonces son entregas separadas.
+  const hasOtherStore = items.some((p) => p.storeSlug && p.storeSlug !== storeSlug);
 
   return (
     <section
@@ -178,7 +182,8 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
             Cómpralos juntos
           </h2>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-            Este producto + lo que suele acompañarlo · una sola entrega
+            Este producto + lo que suele acompañarlo
+            {hasOtherStore ? " · algunas de otra tienda (entregas separadas)" : " · una sola entrega"}
           </p>
         </div>
       </header>
@@ -188,6 +193,7 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
         {items.map((p, idx) => {
           const isSel = selected.has(p.productId);
           const isAnchor = anchor != null && p.productId === anchor.productId;
+          const isOther = !isAnchor && !!p.storeSlug && p.storeSlug !== storeSlug;
           const href = `/marketplace/${p.storeSlug ?? storeSlug}/producto/${p.productId}`;
           return (
             <div key={p.productId} className="flex items-center gap-3 shrink-0">
@@ -207,6 +213,15 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
                 {isAnchor && (
                   <span className="absolute top-2 right-2 z-10 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white">
                     Este producto
+                  </span>
+                )}
+                {isOther && (
+                  <span
+                    className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-500,#d97706)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white"
+                    title={p.storeName ? `De ${p.storeName} · entrega aparte` : "Otra tienda · entrega aparte"}
+                  >
+                    <StoreIcon className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                    Otra tienda
                   </span>
                 )}
                 {/* Checkbox */}
@@ -229,9 +244,7 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
                     {p.image ? (
                       <Image src={p.image} alt={p.name} fill sizes="144px" className="object-cover" />
                     ) : (
-                      <span className="absolute inset-0 grid place-items-center text-xl font-bold uppercase text-[var(--text-tertiary)]">
-                        {p.name.trim().charAt(0)}
-                      </span>
+                      <ProductPhotoFallback name={p.name} category={p.category} size="sm" showName={false} />
                     )}
                   </div>
                   <div className="p-2.5">
@@ -239,6 +252,11 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
                       {p.name}
                     </p>
                     <p className="mt-1 text-base font-bold tabular-nums text-[var(--text-primary)]">{fmt(p.price)}</p>
+                    {isOther && p.storeName && (
+                      <p className="mt-0.5 truncate text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+                        {p.storeName}
+                      </p>
+                    )}
                   </div>
                 </Link>
               </div>
