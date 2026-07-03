@@ -29,6 +29,7 @@ const FiadoTendenciaCobroChart = dynamic(() => import("./FiadoTendenciaCobroChar
 const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false });
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
 const FiadoMarketplaceToggle = dynamic(() => import("./fiados/FiadoMarketplaceToggle"), { ssr: false });
+const CreditRequestsPanel = dynamic(() => import("./fiados/CreditRequestsPanel"), { ssr: false });
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -938,6 +939,10 @@ export default function FiadosModule() {
       {/* Fiado Digital — toggle self-serve para exhibir "Acepta fiado" en el
           marketplace (badge + filtro en /tiendas). Brandon 2026-07-03. */}
       <FiadoMarketplaceToggle />
+
+      {/* Solicitudes de línea de fiado del vecino (Frente 3) — solo aparece si
+          hay pendientes. Aprobar fija la línea → desbloquea checkout. */}
+      <CreditRequestsPanel />
 
       {/* Sub-tabs · Audit 2026-05-17 */}
       <nav

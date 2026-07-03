@@ -42,6 +42,7 @@ import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
 import { CreditScoreCard } from "@/components/credit/CreditScoreCard";
 import { CreditTransparencyBanner } from "@/components/credit/CreditTransparencyBanner";
 import { RequestCreditIncreaseButton } from "@/components/credit/RequestCreditIncreaseButton";
+import { CreditRequestsDB } from "@/lib/db/credit-requests.db";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -439,14 +440,18 @@ export default async function MiCreditoPage() {
   }
 
   // Fetch en paralelo — scoring + crédito disponible + fiados + historial
-  const [scoreResult, creditInfo, fiados, history] = await Promise.all([
+  const [scoreResult, creditInfo, fiados, history, creditRequests] = await Promise.all([
     calculateCreditScore(tenantId, customerPhone).catch(() => null),
     getAvailableCredit(tenantId, customerPhone).catch(() => null),
     FiadosDB.list(tenantId, { customerId: customerPhone }).catch(() => []),
     // Acceso canónico vía DB class (regla #1): MeCreditScoreDB cachea + scopea
     // por tenant. Devuelve DESC; acá el chart/deltas esperan ASC → reverse.
     MeCreditScoreDB.getHistory(tenantId, customerPhone, 12).then((h) => [...h].reverse()),
+    // Frente 3 — solicitudes de línea del cliente (para mostrar "en revisión").
+    CreditRequestsDB.listByCustomer(tenantId, customerPhone, 3).catch(() => []),
   ]);
+
+  const hasPendingRequest = creditRequests.some((r) => r.status === "PENDING");
 
   // Si el scoring engine falla completamente (sin historial en DB aún)
   if (!scoreResult || !creditInfo) {
@@ -553,9 +558,17 @@ export default async function MiCreditoPage() {
         />
       </div>
 
-      {/* Pedir aumento de línea — nudge al dueño (Frente 2 portal accionable) */}
+      {/* Solicitud de línea de fiado (Frente 3). Si ya hay una PENDING, mostramos
+          "en revisión" en vez del botón; si no, el botón para pedir. */}
       <div className="mt-4">
-        <RequestCreditIncreaseButton />
+        {hasPendingRequest ? (
+          <div className="flex items-center gap-2 rounded-2xl border border-[var(--data-warning-200,var(--rule-base))] bg-[var(--data-warning-50,var(--surface-sunken))] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)]">
+            <Clock className="h-5 w-5 shrink-0" aria-hidden />
+            Tu solicitud de línea está en revisión. La bodega te avisará.
+          </div>
+        ) : (
+          <RequestCreditIncreaseButton />
+        )}
       </div>
 
       {/* Fiados activos */}
