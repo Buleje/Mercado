@@ -26,6 +26,7 @@ const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEdit
 // Componentes que antes vivían sueltos en TabRouter — ahora forman parte
 // de la grilla de secciones del SettingsModule (selección + detalle).
 const TeamTab = dynamic(() => import("@/components/admin/TeamTab"));
+const LoginDevicesCard = dynamic(() => import("@/components/admin/security/LoginDevicesCard"), { ssr: false });
 const NavDefaultTabsConfig = dynamic(
   () => import("@/components/admin/NavDefaultTabsConfig").then((m) => ({ default: m.NavDefaultTabsConfig })),
 );
@@ -982,6 +983,9 @@ export default function SettingsModule({
 
   const renderSecurity = () => (
     <div className="space-y-6">
+      {/* Dispositivos y accesos (#3a) — desde dónde entró el admin */}
+      <LoginDevicesCard />
+
       {/* Current credentials display */}
       <SectionCard title="Credenciales de acceso" desc="Usuario y contraseña para iniciar sesión en el panel">
         <div className="space-y-3">
