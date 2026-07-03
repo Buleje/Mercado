@@ -34,6 +34,9 @@ export type DbMarketplaceProduct = {
   unit: string;
   badge: string | null;
   stock: number | null;
+  brand: string | null;
+  weightKg: number | null;
+  dimensions: string | null;
   image: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -207,6 +210,10 @@ export const MarketplacePublicDB = {
             unit: true,
             badge: true,
             stock: true,
+            // Ficha técnica — datos reales del producto ya cargados en admin.
+            brand: true,
+            weightKg: true,
+            dimensions: true,
             metaTitle: true,
             metaDescription: true,
             ogImage: true,
@@ -267,6 +274,9 @@ export const MarketplacePublicDB = {
           unit: product.unit,
           badge: product.badge,
           stock: product.stock,
+          brand: product.brand,
+          weightKg: product.weightKg,
+          dimensions: product.dimensions,
           image: product.image,
           metaTitle: product.metaTitle,
           metaDescription: product.metaDescription,

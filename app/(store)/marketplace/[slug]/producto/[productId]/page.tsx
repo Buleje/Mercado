@@ -40,6 +40,9 @@ interface ApiProduct {
   unit: string | null;
   badge: string | null;
   stock: number | null;
+  brand: string | null;
+  weightKg: number | null;
+  dimensions: string | null;
   image: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -414,6 +417,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
           stock: product.stock,
           imageUrl: product.image,
           badge: product.badge,
+          brand: product.brand,
+          weightKg: product.weightKg,
+          dimensions: product.dimensions,
         }}
         store={{
           id: product.store.id,

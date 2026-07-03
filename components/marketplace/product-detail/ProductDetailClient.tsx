@@ -58,6 +58,9 @@ export interface PDPProduct {
   stock: number | null;
   imageUrl: string | null;
   badge?: string | null;
+  brand?: string | null;
+  weightKg?: number | null;
+  dimensions?: string | null;
 }
 
 export interface PDPStore {
@@ -525,6 +528,9 @@ export function ProductDetailClient({
                   category={product.category}
                   unit={product.unit}
                   price={product.price}
+                  brand={product.brand}
+                  weightKg={product.weightKg}
+                  dimensions={product.dimensions}
                 />
               </div>
 
