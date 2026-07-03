@@ -11,7 +11,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { ArrowRight, MapPin, Bike, ShieldCheck, Eye, Award, Moon, Star } from "@buleje/design-system/icons";
+import { ArrowRight, MapPin, Bike, ShieldCheck, Eye, Award, Moon, Star, Wallet } from "@buleje/design-system/icons";
 import ShareStoreButton from "./ShareStoreButton";
 import {
   haversineKm,
@@ -44,6 +44,8 @@ interface Props {
   rating?: number;
   reviewCount?: number;
   verified?: boolean;
+  /** Fiado Digital — la tienda acepta "compra ahora, paga después". */
+  acceptsFiado?: boolean;
   /** Estado de apertura — server-computed desde businessHours (getStoreOpenStatus). */
   isOpenNow?: boolean;
   /** Etiqueta de próxima apertura ya formateada ("Abre mañana 8:00 AM"). */
@@ -92,6 +94,7 @@ export default function PremiumStoreCard({
   rating,
   reviewCount,
   verified,
+  acceptsFiado,
   isOpenNow,
   nextOpeningLabel,
   products,
@@ -222,6 +225,15 @@ export default function PremiumStoreCard({
               {category && (
                 <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
                   {category}
+                </span>
+              )}
+              {acceptsFiado && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]"
+                  title="Acepta fiado — compra ahora, paga después"
+                >
+                  <Wallet className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                  Acepta fiado
                 </span>
               )}
               {zone && (

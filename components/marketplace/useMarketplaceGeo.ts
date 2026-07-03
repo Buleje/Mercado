@@ -58,6 +58,8 @@ export interface MarketplaceStore {
   searchBoost?: boolean;
   /** Beneficio "Banner propio" → promo banner de la tienda en /tiendas. */
   ownBanner?: boolean;
+  /** Fiado Digital — la tienda acepta "compra ahora, paga después". Badge + filtro. */
+  acceptsFiado?: boolean;
   // ── Backfill marketplace (TS-Sprint5) — opcionales para no romper consumers ──
   paymentMethods?: string[];
   minOrderAmount?: number;

@@ -28,6 +28,7 @@ const FiadoTendenciaCobroChart = dynamic(() => import("./FiadoTendenciaCobroChar
 });
 const FiadoModals = dynamic(() => import("./fiados/FiadoModals"), { ssr: false });
 const FiadoStats = dynamic(() => import("./fiados/FiadoStats"), { ssr: false });
+const FiadoMarketplaceToggle = dynamic(() => import("./fiados/FiadoMarketplaceToggle"), { ssr: false });
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -933,6 +934,10 @@ export default function FiadosModule() {
         description="Gestiona los créditos a clientes, cobranza por ruta, riesgo de morosidad y proyección de cobros."
         icon={HandCoins}
       />
+
+      {/* Fiado Digital — toggle self-serve para exhibir "Acepta fiado" en el
+          marketplace (badge + filtro en /tiendas). Brandon 2026-07-03. */}
+      <FiadoMarketplaceToggle />
 
       {/* Sub-tabs · Audit 2026-05-17 */}
       <nav

@@ -21,7 +21,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 // Brandon 2026-05-18 v3: iconos List, Map (toggle removido), Truck/Wallet/Gift
 // (KPIs hero removidos) ya no se usan en este archivo.
 import {
-  Store, MapPin, ArrowUpRight, Bike,
+  Store, MapPin, ArrowUpRight, Bike, Wallet,
   Search as SearchIcon, ShoppingBag, ChevronRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -418,6 +418,14 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
     setGeoActive,
     setUserCoords,
   } = useMarketplaceGeo(stores, setProductFilters);
+
+  // Fiado Digital — solo mostramos el filtro "Acepta fiado" si al menos una
+  // tienda del listado lo ofrece (evita un filtro que rinde vacío en ciudades
+  // recién lanzadas). Mismo criterio que chipHasMatch de QuickFilterChips.
+  const anyAcceptsFiado = useMemo(
+    () => stores.some((s) => s.acceptsFiado === true),
+    [stores],
+  );
 
   const handleFiltersChange = useCallback(
     (patch: Partial<MarketplaceFiltersState>) => {
@@ -1229,6 +1237,17 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
               variant="pill"
               title="Solo tiendas abiertas en este momento"
             />
+            {/* Fiado Digital — solo si alguna tienda lo ofrece. */}
+            {anyAcceptsFiado && (
+              <QuickFilterToggle
+                active={activeChips.has("accepts_fiado")}
+                onToggle={() => handleChipToggle("accepts_fiado")}
+                icon={Wallet}
+                label="Acepta fiado"
+                variant="pill"
+                title="Solo tiendas que aceptan fiado (compra ahora, paga después)"
+              />
+            )}
             <div className="shrink-0 [scroll-snap-align:start]">
               <MarketplaceFilters
                 filters={productFilters}
@@ -1283,6 +1302,21 @@ export default function TiendasClient({ initialZone, initialCategory, initialSto
                 variant="full"
               />
             </div>
+            {/* PAGO — Fiado Digital (solo si alguna tienda lo ofrece) */}
+            {anyAcceptsFiado && (
+              <div className="border-t border-[var(--rule-soft)] pt-4">
+                <p className="mb-2 text-sm font-semibold text-[var(--text-primary)]">
+                  Pago
+                </p>
+                <QuickFilterToggle
+                  active={activeChips.has("accepts_fiado")}
+                  onToggle={() => handleChipToggle("accepts_fiado")}
+                  icon={Wallet}
+                  label="Acepta fiado"
+                  variant="full"
+                />
+              </div>
+            )}
           </div>
 
           {/* "Lo que se te antoja" se movió al TOPE del sidebar (Brandon

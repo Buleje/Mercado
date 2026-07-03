@@ -51,6 +51,13 @@ export interface InitialStore {
   searchBoost?: boolean;
   /** Beneficio "Banner propio" → muestra un banner promocional en /tiendas. */
   ownBanner?: boolean;
+  /**
+   * Fiado Digital — la tienda acepta "compra ahora, paga después" (crédito de
+   * barrio). Alimenta el badge "Acepta fiado" y el filtro en /tiendas. Vive en
+   * `Store.benefits.acceptsFiado` (JSONB, sin migración). Lo prende la bodega
+   * (self-serve) o el superadmin.
+   */
+  acceptsFiado?: boolean;
 }
 
 export type StoreDisplayTier = "standard" | "featured" | "premium";
@@ -190,6 +197,7 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         verified: Boolean(benefitsMap.get(s.id)?.verified),
         searchBoost: Boolean(benefitsMap.get(s.id)?.searchBoost),
         ownBanner: Boolean(benefitsMap.get(s.id)?.ownBanner),
+        acceptsFiado: Boolean(benefitsMap.get(s.id)?.acceptsFiado),
       };
     });
 

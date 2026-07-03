@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Tag,
   Check,
+  Wallet,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -347,10 +348,19 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
         </span>
       </div>
 
-      {/* Trust chips: envío gratis y/o mín pedido (condicional) */}
+      {/* Trust chips: envío gratis, mín pedido y/o acepta fiado (condicional) */}
       {(store.freeDelivery ||
+        store.acceptsFiado ||
         (store.minOrderAmount != null && store.minOrderAmount > 0)) && (
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* Fiado Digital — diferenciador #1 de Buleje. Chip destacado en teal
+              para que "compra ahora, paga después" salte a la vista. */}
+          {store.acceptsFiado && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-primary)]">
+              <Wallet className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+              Acepta fiado
+            </span>
+          )}
           {store.freeDelivery && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] max-md:bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] max-md:text-[var(--text-primary)]">
               <Bike className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
@@ -663,6 +673,13 @@ export function passesChips(
         if ((store.minOrderAmount ?? 0) > 0) return false;
         break;
       }
+      case "accepts_fiado": {
+        // El campo viaja en MarketplaceStore (benefits.acceptsFiado). Si no
+        // está presente (consumer legacy), no filtramos — mejor mostrar.
+        if (!("acceptsFiado" in store)) break;
+        if (store.acceptsFiado !== true) return false;
+        break;
+      }
       case "open_24h": {
         if (!("openHours" in store) || store.openHours == null) break;
         // Una tienda es 24h si todos los días tiene open=0 close=24 (o equivalente).
@@ -699,6 +716,7 @@ export interface StoreChipFields {
   createdAt: string | Date;
   paymentMethods: string[];
   minOrderAmount: number;
+  acceptsFiado: boolean;
 }
 
 export default function MarketplaceStoresView({
@@ -923,6 +941,7 @@ export default function MarketplaceStoresView({
                     rating={store.rating}
                     reviewCount={store.reviewCount}
                     verified={store.verified}
+                    acceptsFiado={store.acceptsFiado}
                     isOpenNow={store.isOpenNow}
                     nextOpeningLabel={formatNextOpening(store.nextOpeningAt)}
                     lat={store.lat}
