@@ -20,88 +20,9 @@ import {
   // "Avísame" (campana) que abre WhatsApp a Buleje para avisar al reponer.
   BellRing,
   Timer,
-  // Audit P0 UX #2 (2026-05-18): Lucide icons reemplazan los emoji unicode
-  // del fallback — los emoji no rinden consistente en todos los browsers
-  // (vimos cajitas vacías en Chromium sin emoji-font). Los Lucide siempre
-  // renderizan como SVG.
-  Pizza,
-  Beef,
-  Beer,
-  Carrot,
-  ChefHat,
-  Cookie,
-  Croissant,
-  Drumstick,
-  Fish,
-  Milk,
-  Sandwich,
-  Apple,
-  Package,
-  type LucideIcon,
 } from "@buleje/design-system/icons";
 
-// Audit P12 + P0 UX #2: fallback amable para productos sin foto. Antes
-// mostraba un placeholder vectorial gris genérico que parecía bug; ahora
-// muestra ÍCONO LUCIDE de la categoría (no emoji unicode) + nombre del
-// producto sobre fondo de marca + CTA honesto "Sin foto". Convierte un
-// negativo en invitación al bodeguero a colaborar con la curaduría visual.
-const CATEGORY_ICON: Record<string, LucideIcon> = {
-  abarrotes: Package,
-  bebidas: Beer,
-  carnes: Beef,
-  lacteos: Milk,
-  frutas: Apple,
-  verduras: Carrot,
-  panaderia: Croissant,
-  panadería: Croissant,
-  golosinas: Cookie,
-  limpieza: Package,
-  hogar: Package,
-  mascotas: Package,
-  bebes: Package,
-  bebés: Package,
-  farmacia: Package,
-  ferreteria: Package,
-  ferretería: Package,
-  pollo: Drumstick,
-  polleria: Drumstick,
-  pollería: Drumstick,
-  pescados: Fish,
-  congelados: Package,
-  pizza: Pizza,
-  pizzas: Pizza,
-  pizzeria: Pizza,
-  pizzería: Pizza,
-  sandwich: Sandwich,
-  sandwiches: Sandwich,
-  comida: ChefHat,
-  comidas: ChefHat,
-  restaurante: ChefHat,
-  restaurantes: ChefHat,
-  default: ShoppingCart,
-};
-function ProductImageFallback({ name, category }: { name?: string | null; category?: string | null }) {
-  const key = (category ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  const Icon = CATEGORY_ICON[key] ?? CATEGORY_ICON.default;
-  return (
-    <div
-      className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-3 bg-linear-to-br from-[var(--accent)]/8 via-[var(--surface-canvas)] to-[var(--accent)]/5"
-      aria-label={name ? `${name} — sin foto` : "Producto sin foto"}
-    >
-      <span
-        className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)]/12 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/15"
-        aria-hidden
-      >
-        <Icon className="h-8 w-8" strokeWidth={1.5} />
-      </span>
-      {name && (
-        <p className="text-xs font-bold text-[var(--text-secondary)] leading-tight line-clamp-2 max-w-[92%]">
-          {name}
-        </p>
-      )}
-    </div>
-  );
-}
+import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import { cn } from "@/lib/utils";
 import { BRAND_GEO } from "@/lib/geo";
 import { celebrate } from "@/lib/celebrate";
@@ -522,7 +443,7 @@ export default function UnifiedProductCard({
                 }
               />
             ) : (
-              <ProductImageFallback name={product.name} category={product.category} />
+              <ProductPhotoFallback name={product.name} category={product.category} />
             )}
           </div>
         </Link>

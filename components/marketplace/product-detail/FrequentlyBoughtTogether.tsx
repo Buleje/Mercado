@@ -88,7 +88,9 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
       } catch {/* timeout o error → sigue al fallback */}
       if (list.length === 0) {
         try {
-          const r = await withTimeout(`/api/marketplace/catalog?limit=8`);
+          // Fallback ACOTADO a la misma tienda: un combo de "una sola entrega"
+          // no puede mezclar 4 bodegas (Brandon 2026-07-04).
+          const r = await withTimeout(`/api/marketplace/catalog?store=${encodeURIComponent(storeSlug)}&limit=12`);
           if (r.ok) {
             const j = await r.json();
             const raw = Array.isArray(j.data) ? j.data : Array.isArray(j.items) ? j.items : [];
@@ -96,7 +98,11 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
           }
         } catch {/* queda vacío */}
       }
-      const clean = list.filter((p) => p.productId && p.productId !== productId && p.name).slice(0, 3);
+      // Solo complementos de la MISMA tienda (los sin storeSlug se asumen del store).
+      const clean = list
+        .filter((p) => p.productId && p.productId !== productId && p.name)
+        .filter((p) => !p.storeSlug || p.storeSlug === storeSlug)
+        .slice(0, 3);
       // El producto actual abre el combo como ancla ("Este producto + …").
       const withAnchor = anchor ? [anchor, ...clean] : clean;
       if (!cancelled) {
@@ -105,7 +111,7 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
       }
     })();
     return () => { cancelled = true; };
-  }, [productId]);
+  }, [productId, storeSlug]);
 
   const toggle = useCallback((id: number) => {
     setSelected((prev) => {

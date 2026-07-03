@@ -24,6 +24,7 @@ import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import UnifiedProductCard, {
   type UnifiedProductCardProduct,
 } from "@/components/marketplace/UnifiedProductCard";
+import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
@@ -184,9 +185,7 @@ export default function CartSuggestions() {
                       unoptimized
                     />
                   ) : (
-                    <span className="absolute inset-0 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-                      Sin foto
-                    </span>
+                    <ProductPhotoFallback name={r.name} size="sm" showName={false} />
                   )}
                 </div>
                 <div className="p-3 flex flex-col gap-1.5">
