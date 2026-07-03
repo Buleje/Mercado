@@ -12,6 +12,8 @@ import {
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import ProductVariantsInline from "@/components/admin/inventario/ProductVariantsInline";
 import ImageBankPicker from "@/components/admin/inventario/ImageBankPicker";
+import ProductSpecsEditor, { type SpecRow } from "@/components/admin/inventario/ProductSpecsEditor";
+import ProductRichContentEditor, { type RichBlock } from "@/components/admin/inventario/ProductRichContentEditor";
 import { toast } from "sonner";
 import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
 import EmptyState from "@/components/admin/shared/EmptyState";
@@ -149,8 +151,13 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // /api/upload y se persisten vía POST /api/marketplace/products/[id]/images.
   const [addGallery, setAddGallery] = useState<string[]>([]);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  // Contenido rico (estilo Amazon): ficha técnica editable + bloques A+.
+  const [addSpecs, setAddSpecs] = useState<SpecRow[]>([]);
+  const [addRich, setAddRich] = useState<RichBlock[]>([]);
+  const [editSpecs, setEditSpecs] = useState<SpecRow[]>([]);
+  const [editRich, setEditRich] = useState<RichBlock[]>([]);
   // Reset de extras cada vez que se abre el modal (alta o duplicar).
-  useEffect(() => { if (showAdd) { setAddVariants([]); setAddModifierGroups([]); setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" }); setAddGallery([]); } }, [showAdd]);
+  useEffect(() => { if (showAdd) { setAddVariants([]); setAddModifierGroups([]); setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" }); setAddGallery([]); setAddSpecs([]); setAddRich([]); } }, [showAdd]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
@@ -385,7 +392,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       durationLabel: p.durationLabel ?? "", pricingUnit: p.pricingUnit ?? "fijo", notes: p.notes ?? "",
     });
   };
-  const closeEditModal = () => { setEditModalProduct(null); setEditForm({}); setImgInfo(null); setImgError(null); };
+  const closeEditModal = () => { setEditModalProduct(null); setEditForm({}); setImgInfo(null); setImgError(null); setEditSpecs([]); setEditRich([]); };
+
+  // Contenido rico: inicializar specs/bloques al abrir el modal (cualquier vía).
+  useEffect(() => {
+    if (!editModalProduct) return;
+    try {
+      const a = editModalProduct.specsJson ? JSON.parse(editModalProduct.specsJson) : [];
+      setEditSpecs(Array.isArray(a) ? a.filter((x: { label?: unknown; value?: unknown }) => typeof x?.label === "string" && typeof x?.value === "string") : []);
+    } catch { setEditSpecs([]); }
+    try {
+      const a = editModalProduct.richContentJson ? JSON.parse(editModalProduct.richContentJson) : [];
+      setEditRich(Array.isArray(a) ? a : []);
+    } catch { setEditRich([]); }
+  }, [editModalProduct]);
 
   const saveEdit = async () => {
     if (!editModalProduct) return;
@@ -408,6 +428,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         const v = (editForm as Record<string, unknown>)[k];
         if (v !== undefined && v !== "") body[k] = v;
       }
+      // Contenido rico — siempre enviar (incl. vacío) para permitir limpiar.
+      body.specs = editSpecs.filter((s) => s.label.trim() && s.value.trim());
+      body.richContent = editRich.filter((b) => (b.heading?.trim() || b.body?.trim() || b.imageUrl));
       // Stock ilimitado (trackStock=false) → null explícito en los 3 campos
       // para que el backend los limpie ("stock" in body deja pasar el null).
       const tracks = (editForm as { trackStock?: boolean }).trackStock !== false
@@ -562,6 +585,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           durationLabel: addForm.durationLabel || undefined,
           pricingUnit: addForm.pricingUnit || undefined,
           notes: addForm.notes || undefined,
+          // Contenido rico (estilo Amazon).
+          specs: addSpecs.filter((s) => s.label.trim() && s.value.trim()),
+          richContent: addRich.filter((b) => (b.heading?.trim() || b.body?.trim() || b.imageUrl)),
         }),
       });
       if (!res.ok) {
@@ -2537,6 +2563,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <p className="text-xs text-[var(--text-tertiary)]">Mejora cómo se ve el producto en Google y al compartir el enlace.</p>
               </div>
 
+              {/* Contenido rico (estilo Amazon) — ficha técnica editable + bloques A+ */}
+              <ProductSpecsEditor value={addSpecs} onChange={setAddSpecs} />
+              <ProductRichContentEditor value={addRich} onChange={setAddRich} />
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <Field label="Imagen del producto" labelClassName={FIELD_LABEL} className="sm:col-span-2 space-y-3">
                   {(imgFieldId) => (<>
@@ -2949,6 +2979,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   )}
                 </div>
               </div>
+
+              {/* Contenido rico (estilo Amazon) — ficha técnica editable + bloques A+ */}
+              <ProductSpecsEditor value={editSpecs} onChange={setEditSpecs} />
+              <ProductRichContentEditor value={editRich} onChange={setEditRich} />
 
               {/* Variantes — editor inline real (CRUD vía /api/.../variants) */}
               <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-4 space-y-3">

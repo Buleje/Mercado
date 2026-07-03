@@ -43,6 +43,8 @@ interface ApiProduct {
   brand: string | null;
   weightKg: number | null;
   dimensions: string | null;
+  specsJson: string | null;
+  richContentJson: string | null;
   image: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -153,6 +155,32 @@ async function fetchRelated(
         category: p.category,
         stock: p.stock ?? undefined,
       }));
+  } catch {
+    return [];
+  }
+}
+
+// ── Parsers de contenido rico (JSON string → estructura) ───────────────────────
+
+function parseSpecs(json: string | null): Array<{ label: string; value: string }> {
+  if (!json) return [];
+  try {
+    const arr = JSON.parse(json);
+    return Array.isArray(arr)
+      ? arr.filter((x) => x && typeof x.label === "string" && typeof x.value === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseRichContent(
+  json: string | null,
+): Array<{ heading?: string; body?: string; imageUrl?: string }> {
+  if (!json) return [];
+  try {
+    const arr = JSON.parse(json);
+    return Array.isArray(arr) ? arr.filter((x) => x && typeof x === "object") : [];
   } catch {
     return [];
   }
@@ -420,6 +448,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
           brand: product.brand,
           weightKg: product.weightKg,
           dimensions: product.dimensions,
+          customSpecs: parseSpecs(product.specsJson),
+          richContent: parseRichContent(product.richContentJson),
         }}
         store={{
           id: product.store.id,

@@ -52,6 +52,7 @@ const PRODUCT_SELECT = {
   stock: true, stockMin: true, stockMax: true, active: true, tenantId: true,
   type: true, isPrepared: true, brand: true, sku: true, taxType: true, weightKg: true,
   dimensions: true, durationLabel: true, pricingUnit: true, notes: true,
+  specsJson: true, richContentJson: true,
 } as const;
 
 function mapProduct(p: PProduct): DbProduct {
@@ -81,6 +82,8 @@ function mapProduct(p: PProduct): DbProduct {
     ...(p.durationLabel != null && { durationLabel: p.durationLabel }),
     ...(p.pricingUnit != null && { pricingUnit: p.pricingUnit }),
     ...(p.notes != null && { notes: p.notes }),
+    ...(p.specsJson != null && { specsJson: p.specsJson }),
+    ...(p.richContentJson != null && { richContentJson: p.richContentJson }),
   };
 }
 
@@ -232,6 +235,7 @@ export const ProductsDB = {
       type: product.type, isPrepared: product.isPrepared, brand: product.brand, sku: product.sku,
       taxType: product.taxType, weightKg: product.weightKg, dimensions: product.dimensions,
       durationLabel: product.durationLabel, pricingUnit: product.pricingUnit, notes: product.notes,
+      specsJson: product.specsJson, richContentJson: product.richContentJson,
     };
     if (product.id) {
       const existing = await prisma.product.findUnique({
@@ -270,6 +274,7 @@ export const ProductsDB = {
         type: product.type, isPrepared: product.isPrepared ?? false, brand: product.brand, sku: product.sku,
         taxType: product.taxType, weightKg: product.weightKg, dimensions: product.dimensions,
         durationLabel: product.durationLabel, pricingUnit: product.pricingUnit, notes: product.notes,
+        specsJson: product.specsJson ?? null, richContentJson: product.richContentJson ?? null,
       },
     });
     revalidateTag(`tenant:${product.tenantId}:products`, "max");

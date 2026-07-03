@@ -155,6 +155,9 @@ model Product {
   metaDescription     String?
   metaKeywordsJson    String?
   ogImage             String?
+  // ── Contenido rico (estilo Amazon) — editable en admin, render en el detalle ──
+  specsJson           String? // ficha técnica editable: [{ label, value }]
+  richContentJson     String? // bloques A+ (infografías): [{ heading?, body?, imageUrl? }]
 
   stockoutPredictions StockoutPrediction[]
   sponsoredBoosts     SponsoredBoost[]

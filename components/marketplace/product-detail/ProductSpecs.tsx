@@ -13,6 +13,8 @@ export interface ProductSpecsProps {
   brand?: string | null;
   weightKg?: number | null;
   dimensions?: string | null;
+  /** Especificaciones libres cargadas por el vendedor (label/value). */
+  customSpecs?: Array<{ label: string; value: string }>;
 }
 
 interface SpecRow {
@@ -30,6 +32,12 @@ function buildSpecs(p: ProductSpecsProps): SpecRow[] {
     rows.push({ label: "Peso", value: `${p.weightKg} kg` });
   }
   if (p.dimensions) rows.push({ label: "Medidas", value: p.dimensions });
+  // Specs libres del vendedor (ingredientes, origen, garantía, etc.).
+  for (const s of p.customSpecs ?? []) {
+    if (s.label?.trim() && s.value?.trim()) {
+      rows.push({ label: s.label.trim(), value: s.value.trim() });
+    }
+  }
   rows.push({ label: "Precio", value: `S/ ${p.price.toFixed(2)}` });
   return rows;
 }

@@ -32,6 +32,7 @@ import { ProductInfo } from "./ProductInfo";
 import { ProductActions } from "./ProductActions";
 import { ProductDescription } from "./ProductDescription";
 import { ProductSpecs } from "./ProductSpecs";
+import { ProductRichContent } from "./ProductRichContent";
 import { ProductSellerInfo } from "./ProductSellerInfo";
 import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
@@ -61,6 +62,10 @@ export interface PDPProduct {
   brand?: string | null;
   weightKg?: number | null;
   dimensions?: string | null;
+  /** Ficha técnica editable (specs libres) cargada en admin. */
+  customSpecs?: Array<{ label: string; value: string }>;
+  /** Contenido rico A+ (infografías): bloques imagen+texto. */
+  richContent?: Array<{ heading?: string; body?: string; imageUrl?: string }>;
 }
 
 export interface PDPStore {
@@ -531,7 +536,13 @@ export function ProductDetailClient({
                   brand={product.brand}
                   weightKg={product.weightKg}
                   dimensions={product.dimensions}
+                  customSpecs={product.customSpecs}
                 />
+                {product.richContent && product.richContent.length > 0 && (
+                  <div className="mt-4">
+                    <ProductRichContent blocks={product.richContent} />
+                  </div>
+                )}
               </div>
 
               <div id="combo" className="scroll-mt-28">

@@ -46,6 +46,9 @@ const ProductUpdateSchema = z.object({
   durationLabel: z.string().max(60).optional(),
   pricingUnit:   z.enum(["fijo", "hora", "m3", "unidad", "dia"]).optional(),
   notes:         z.string().max(2000).optional(),
+  // Contenido rico (estilo Amazon) — arrays estructurados; se guardan como JSON.
+  specs:         z.array(z.object({ label: z.string().max(60), value: z.string().max(400) })).max(30).optional(),
+  richContent:   z.array(z.object({ heading: z.string().max(120).optional(), body: z.string().max(3000).optional(), imageUrl: z.string().max(500_000).optional() })).max(20).optional(),
 });
 
 type RouteCtx = { params: Promise<{ id: string }> };
@@ -84,7 +87,9 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       );
     }
 
-    const body = parsed.data;
+    // specs/richContent salen del body y se convierten a JSON aparte (el upsert
+    // espera specsJson/richContentJson string, no los arrays crudos).
+    const { specs, richContent, ...body } = parsed.data;
     const updated = await ProductsDB.upsert({
       ...existing,
       ...body,
@@ -99,6 +104,8 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       stockMin: "stockMin" in body ? body.stockMin : existing.stockMin,
       stockMax: "stockMax" in body ? body.stockMax : existing.stockMax,
       description: body.description ?? existing.description,
+      specsJson: specs !== undefined ? JSON.stringify(specs) : existing.specsJson,
+      richContentJson: richContent !== undefined ? JSON.stringify(richContent) : existing.richContentJson,
     });
 
     // Record price history when price actually changed

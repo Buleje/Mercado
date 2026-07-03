@@ -37,6 +37,8 @@ export type DbMarketplaceProduct = {
   brand: string | null;
   weightKg: number | null;
   dimensions: string | null;
+  specsJson: string | null;
+  richContentJson: string | null;
   image: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
@@ -214,6 +216,8 @@ export const MarketplacePublicDB = {
             brand: true,
             weightKg: true,
             dimensions: true,
+            specsJson: true,
+            richContentJson: true,
             metaTitle: true,
             metaDescription: true,
             ogImage: true,
@@ -277,6 +281,8 @@ export const MarketplacePublicDB = {
           brand: product.brand,
           weightKg: product.weightKg,
           dimensions: product.dimensions,
+          specsJson: product.specsJson,
+          richContentJson: product.richContentJson,
           image: product.image,
           metaTitle: product.metaTitle,
           metaDescription: product.metaDescription,

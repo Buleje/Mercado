@@ -80,6 +80,11 @@ export type DbProduct = {
   taxType?: string;
   weightKg?: number;
   dimensions?: string;
+  // ── Contenido rico (estilo Amazon) ──
+  /** Ficha técnica editable: JSON string de [{ label, value }]. */
+  specsJson?: string | null;
+  /** Contenido A+: JSON string de [{ heading?, body?, imageUrl? }]. */
+  richContentJson?: string | null;
   // ── Servicio ──
   durationLabel?: string;
   /** fijo | hora | m3 | unidad | dia. */
