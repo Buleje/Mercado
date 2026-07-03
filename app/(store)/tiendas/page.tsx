@@ -7,7 +7,7 @@ import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import { BRAND_GEO } from "@/lib/geo";
-import { getBannersForSlot } from "@/lib/promo-banners";
+import { getLiveBannersForSlot } from "@/lib/promo-banners";
 import HomeHeroBanner from "@/components/marketplace/home/HomeHeroBanner";
 
 const BASE_URL = "https://www.buleje.pe";
@@ -124,10 +124,10 @@ export default async function TiendasPage() {
   const initialStores = await getInitialMarketplaceStores();
 
   // Banner promocional al tope, IGUAL que la home (mismo slot "tiendas-hero" →
-  // banners idénticos). Resuelto en el server (getBannersForSlot es síncrono)
+  // banners idénticos). Resuelto en el server (banners cacheados con "use cache")
   // y pasado como initialBanners → se pinta en el primer byte, sin cascada
   // hidratar→fetch→pintar. Brandon 2026-06-13: re-añadido a /tiendas.
-  const heroBanners = getBannersForSlot("tiendas-hero")
+  const heroBanners = (await getLiveBannersForSlot("tiendas-hero"))
     .filter((b) => b.active)
     .sort((a, b) => a.order - b.order);
 

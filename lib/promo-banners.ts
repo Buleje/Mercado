@@ -7,6 +7,7 @@
  * Slots disponibles: "explorar" | "bodegas" | "recetas" | "ofertas"
  */
 
+import { cacheLife } from "next/cache";
 import data from "@/lib/data/promo-banners.json";
 
 export type PromoBannerSlot =
@@ -146,12 +147,26 @@ export function isBannerLive(b: PromoBanner, nowMs: number = Date.now()): boolea
   return true;
 }
 
-/** Devuelve los banners vigentes del slot (activos + en ventana), ordenados. */
+/** Devuelve los banners vigentes del slot (activos + en ventana), ordenados.
+ *  SÍNCRONA — usar solo en Client Components (pueden leer la hora libremente). */
 export function getBannersForSlot(slot: PromoBannerSlot): PromoBanner[] {
   const now = Date.now();
   return (STORE[slot] ?? [])
     .filter((b) => isBannerLive(b, now))
     .sort((a, b) => a.order - b.order);
+}
+
+/**
+ * Versión para SERVER COMPONENTS prerenderizados (páginas SEO del store). El
+ * filtrado usa `Date.now()`, prohibido en render de servidor bajo Next 16 Cache
+ * Components; envolverlo en `"use cache"` lo hace válido (el resultado se cachea
+ * como snapshot) SIN volver dinámica la página. Revalida cada minuto (los banners
+ * cambian por ventana de fechas, no al segundo). ADR-019.
+ */
+export async function getLiveBannersForSlot(slot: PromoBannerSlot): Promise<PromoBanner[]> {
+  "use cache";
+  cacheLife({ revalidate: 60, stale: 120 });
+  return getBannersForSlot(slot);
 }
 
 /** Lista todos los slots con sus banners (para superadmin). */

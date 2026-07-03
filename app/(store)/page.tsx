@@ -7,7 +7,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { resolveStoreContext } from "@/lib/store-metadata";
 import TenantStoreHome from "@/components/store/TenantStoreHome";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
-import { getBannersForSlot } from "@/lib/promo-banners";
+import { getLiveBannersForSlot } from "@/lib/promo-banners";
 import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db";
 // Brandon 2026-05-20 v5: LandingHeader removido — chrome unificado vive
 // en app/(store)/layout.tsx (mismo que /tiendas y /marketplace).
@@ -500,7 +500,7 @@ async function HomeHero() {
   // perf audit P1: resolvemos los banners en el SERVER (lectura del JSON de
   // slots, sin red) y los pasamos como initialBanners → el hero se pinta en el
   // primer byte, sin la cascada hidratar→fetch→pintar del fetch client.
-  const initialBanners = getBannersForSlot("tiendas-hero")
+  const initialBanners = (await getLiveBannersForSlot("tiendas-hero"))
     .filter((b) => b.active)
     .sort((a, b) => a.order - b.order);
   return (

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import RecetarioClient from "@/components/store/RecetarioClient";
-import { getBannersForSlot } from "@/lib/promo-banners";
+import { getLiveBannersForSlot } from "@/lib/promo-banners";
 
 export const metadata: Metadata = {
   title: "Recetario Peruano — Buleje | Recetas con ingredientes de bodega",
@@ -19,12 +19,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RecetasPage() {
+export default async function RecetasPage() {
   // Hero promocional al tope, IGUAL que el inicio y /tiendas (mismo
-  // HomeHeroBanner). Resuelto en el server (getBannersForSlot es síncrono) y
-  // pasado como initialBanners → se pinta en el primer byte, sin cascada
+  // HomeHeroBanner). Resuelto en el server (banners cacheados con "use cache")
+  // y pasado como initialBanners → se pinta en el primer byte, sin cascada
   // hidratar→fetch→pintar.
-  const heroBanners = getBannersForSlot("recetas")
+  const heroBanners = (await getLiveBannersForSlot("recetas"))
     .filter((b) => b.active)
     .sort((a, b) => a.order - b.order);
 
