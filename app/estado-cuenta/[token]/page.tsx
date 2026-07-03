@@ -1,6 +1,7 @@
 import { verifyStatementToken } from "@/lib/fiado/statement-token";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { TenantsDB } from "@/lib/db/tenants.db";
+import { SettingsDB } from "@/lib/db/settings.db";
 
 /**
  * /estado-cuenta/[token] — Estado de cuenta de fiados PÚBLICO (link compartible).
@@ -53,9 +54,12 @@ export default async function EstadoCuentaPage({
     );
   }
 
-  const [fiados, tenant] = await Promise.all([
+  const [fiados, tenant, settings] = await Promise.all([
     FiadosDB.list(v.tenantId, { customerId: v.customerId }),
     TenantsDB.getBasicById(v.tenantId),
+    // Datos Yape de la tienda — para el bloque "Pagar con Yape". Degrada a
+    // null si falla (la página sigue mostrando el estado de cuenta).
+    SettingsDB.get(v.tenantId).catch(() => null),
   ]);
 
   const pendientes = fiados.filter((f) => f.status === "ACTIVO" || f.status === "VENCIDO");
@@ -63,6 +67,16 @@ export default async function EstadoCuentaPage({
   const nombre = pendientes[0]?.customerName ?? fiados[0]?.customerName ?? "Cliente";
   const tienda = tenant?.name ?? "la tienda";
   const now = Date.now();
+
+  // "Pagar con Yape" — solo si la tienda tiene Yape activo y hay saldo.
+  const yape =
+    settings?.yapeEnabled && (settings.yapePhone || settings.yapeImage)
+      ? {
+          phone: settings.yapePhone ?? null,
+          name: settings.yapeName ?? null,
+          image: settings.yapeImage ?? null,
+        }
+      : null;
 
   return (
     <Shell>
@@ -124,10 +138,48 @@ export default async function EstadoCuentaPage({
           </ul>
         )}
 
+        {/* Pagar con Yape — datos de la tienda + monto. Sin gateway: el cliente
+            yapea y avisa con su captura; el dueño registra el pago. */}
+        {pendientes.length > 0 && yape && (
+          <div className="border-t border-[var(--rule-base)] px-6 py-5">
+            <p className="text-sm font-bold text-[var(--text-primary)]">Paga con Yape</p>
+            <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+              Yapea {fmt(total)} a {tienda} y envía tu captura por WhatsApp.
+            </p>
+
+            {yape.image ? (
+              // QR de Yape de la tienda. <img> nativo: página pública standalone
+              // sin config de next/image para dominios externos.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={yape.image}
+                alt={`Código Yape de ${tienda}`}
+                className="mx-auto mt-4 h-44 w-44 rounded-xl border border-[var(--rule-base)] object-contain bg-white"
+              />
+            ) : null}
+
+            {yape.phone && (
+              <div className="mt-4 rounded-xl bg-[var(--surface-sunken)] px-4 py-3 text-center">
+                <p className="text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Número Yape
+                </p>
+                <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
+                  {yape.phone}
+                </p>
+                {yape.name && (
+                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{yape.name}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Pie */}
         <div className="px-6 py-4 bg-[var(--surface-sunken)] text-center">
           <p className="text-xs text-[var(--text-tertiary)]">
-            Acércate a <span className="font-semibold text-[var(--text-secondary)]">{tienda}</span> para regularizar tu cuenta.
+            {yape
+              ? <>Después de yapear, avísale a <span className="font-semibold text-[var(--text-secondary)]">{tienda}</span> con tu captura.</>
+              : <>Acércate a <span className="font-semibold text-[var(--text-secondary)]">{tienda}</span> para regularizar tu cuenta.</>}
           </p>
         </div>
       </div>
