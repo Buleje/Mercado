@@ -10,9 +10,11 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Scale, Coins, PackageCheck, Users, Leaf, Warehouse, TrendingUp, Award, Droplets,
   AlertCircle, Download, RefreshCw, Calendar, Beaker, Percent, Banknote,
+  Trees, Stethoscope, ClipboardList,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
+import { PLAGA_LABEL, type CacaoPlaga } from "@/lib/cacao/cacao-sanidad";
 import { printCacaoReporte } from "@/lib/cacao/cacao-reporte";
 
 interface Stats {
@@ -29,8 +31,13 @@ interface Trends {
   humedadFuera: { loteCode: string; humedadPct: number }[]; humedadFueraCount: number;
 }
 interface Inventory { kgSecoDisponible: number; valorEstimado: number; kgHumedoProceso: number; rendimientoProm: number | null }
+interface CampoStats { parcelas: number; areaHa: number; alDia: number; pendientes: number; vencidos: number; laboresPendientes: number }
+interface CampoSanidad { focosActivos: number; criticos: number; seccionesAfectadas: number; plagaTop: CacaoPlaga | null }
+interface CampoTotales { cosechaKg: number; rendKgHa: number | null; ingresos: number; costos: number; margen: number }
 
 const n2 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+const n0 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
+const n1 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 1 });
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }); } catch { return iso; } };
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const mesLabel = (m: string) => { const [y, mm] = m.split("-"); return `${MESES[Number(mm) - 1] ?? mm} ${(y ?? "").slice(2)}`; };
@@ -63,6 +70,9 @@ export default function CacaoResumen() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [trends, setTrends] = useState<Trends | null>(null);
   const [inv, setInv] = useState<Inventory | null>(null);
+  const [campo, setCampo] = useState<CampoStats | null>(null);
+  const [campoSan, setCampoSan] = useState<CampoSanidad | null>(null);
+  const [campoTot, setCampoTot] = useState<CampoTotales | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rango, setRango] = useState<string>("all");
@@ -75,16 +85,22 @@ export default function CacaoResumen() {
       if (from) qs.set("from", from);
       if (to) qs.set("to", to);
       const q = qs.toString() ? `&${qs}` : "";
-      const [rs, rt, ri] = await Promise.all([
+      const [rs, rt, ri, rc, rcs, rca] = await Promise.all([
         fetch(`/api/admin/cacao?view=stats${q}`, { credentials: "include" }),
         fetch(`/api/admin/cacao?view=trends${q}`, { credentials: "include" }),
-        // Inventario = stock ACTUAL, no se filtra por campaña.
+        // Inventario + Campo = estado ACTUAL de la chacra, no se filtran por campaña.
         fetch("/api/admin/cacao?view=inventory", { credentials: "include" }),
+        fetch("/api/admin/cacao/campo?view=stats", { credentials: "include" }),
+        fetch("/api/admin/cacao/campo?view=sanidad-stats", { credentials: "include" }),
+        fetch("/api/admin/cacao/campo?view=analytics", { credentials: "include" }),
       ]);
       if (!rs.ok) throw new Error(`HTTP ${rs.status}`);
       setStats((await rs.json()).stats ?? null);
       setTrends(rt.ok ? (await rt.json()).trends ?? null : null);
       setInv(ri.ok ? (await ri.json()).inventory ?? null : null);
+      setCampo(rc.ok ? (await rc.json()).stats ?? null : null);
+      setCampoSan(rcs.ok ? (await rcs.json()).stats ?? null : null);
+      setCampoTot(rca.ok ? (await rca.json()).totales ?? null : null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [rango]);
@@ -133,6 +149,22 @@ export default function CacaoResumen() {
         <Mini icon={Leaf} label="Índice ferm. prom." value={`${stats.indiceFermentacionProm}%`} tone={stats.indiceFermentacionProm >= 60 ? "ok" : "warn"} />
         <Mini icon={Percent} label="Humedad en norma" value={`${stats.pctHumedadEnNorma}%`} hint={`${stats.humedadMuestras} muestra${stats.humedadMuestras !== 1 ? "s" : ""}`} tone={stats.pctHumedadEnNorma >= 80 ? "ok" : "warn"} />
       </div>
+
+      {/* Campo — tu chacra (integra el módulo de manejo de campo) */}
+      {campo && campo.parcelas > 0 && (
+        <div>
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Trees className="h-4 w-4 text-[var(--accent)]" />Campo — tu chacra</h3>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard label="Secciones" value={String(campo.parcelas)} subValue={`${n1(campo.areaHa)} ha`} icon={Trees} emphasis="neutral" />
+            <StatCard label="Cosecha propia" value={campoTot ? `${n0(campoTot.cosechaKg)} kg` : "—"} subValue={campoTot?.rendKgHa != null ? `${n1(campoTot.rendKgHa)} kg/ha` : "sin cosecha"} icon={Scale} emphasis="neutral" />
+            <StatCard label="Labores pendientes" value={String(campo.laboresPendientes)} subValue={campo.vencidos > 0 ? `${campo.vencidos} sección${campo.vencidos !== 1 ? "es" : ""} vencida${campo.vencidos !== 1 ? "s" : ""}` : `${campo.alDia} al día`} icon={ClipboardList} emphasis={campo.vencidos > 0 ? "warning" : "neutral"} />
+            <StatCard label="Sanidad" value={campoSan && campoSan.focosActivos > 0 ? `${campoSan.focosActivos} foco${campoSan.focosActivos !== 1 ? "s" : ""}` : "Sin focos"} subValue={campoSan && campoSan.focosActivos > 0 ? `${campoSan.criticos} de severidad alta${campoSan.plagaTop ? ` · ${PLAGA_LABEL[campoSan.plagaTop]}` : ""}` : "todo sano"} icon={Stethoscope} emphasis={campoSan && campoSan.criticos > 0 ? "error" : campoSan && campoSan.focosActivos > 0 ? "warning" : "success"} />
+          </div>
+          {campoTot && (campoTot.ingresos > 0 || campoTot.costos > 0) && (
+            <p className="mt-2 text-xs text-[var(--text-tertiary)]">Margen del campo: <strong className={campoTot.margen >= 0 ? "text-[var(--data-success-700)]" : "text-[var(--data-error-700)]"}>S/ {n2(campoTot.margen)}</strong> · ingresos S/ {n2(campoTot.ingresos)} − costos de labores S/ {n2(campoTot.costos)}. <span className="text-[var(--text-tertiary)]">El campo refleja el estado actual (no la campaña seleccionada).</span></p>
+          )}
+        </div>
+      )}
 
       {/* Inventario seco */}
       {inv && (inv.kgSecoDisponible > 0 || inv.kgHumedoProceso > 0) && (
