@@ -204,6 +204,10 @@ export const PLAN_PRO: PlanDefinition = {
     "metas-logros",
     "support-inbox",
     "turnos",
+    // Canales de venta social (TikTok Shop + Meta pixel) — tracking/marketing
+    // básico. Desde Starter (S/89) para que el negocio que ya vende a diario
+    // pueda optimizar sus anuncios. enterprise/max lo heredan vía spread.
+    "canales",
   ]),
   features: new Set<PlanFeature>([]),
   limits: {
@@ -256,9 +260,6 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     //  siguen en Business/max.)
     "campanas",
     "puntos",
-    // Canales de venta social (TikTok Shop + Meta pixel) — herramienta de
-    // marketing/tracking, alineada con el highlight "Promociones, fidelizacion".
-    "canales",
     // Recetas + tesoreria
     "recetas",
     "tesoreria",
