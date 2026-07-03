@@ -53,11 +53,18 @@ const COMBINED: Feature[] = [
   { Icon: ShieldCheck, title: "Datos propios vs prestados", desc: "Cada pedido en tu sitio es tu dato de cliente — público propio y compras repetidas." },
 ];
 
+const GA_FEATURES: Feature[] = [
+  { Icon: Users, title: "Audiencia y comportamiento", desc: "Cuántos entran, de dónde vienen, qué páginas ven y cuánto se quedan." },
+  { Icon: TrendingUp, title: "Embudo de conversión", desc: "Del catálogo al pago: dónde abandonan y qué canal/campaña trae ventas." },
+  { Icon: ShoppingBag, title: "Evento de compra automático", desc: "Cada pedido confirmado dispara 'purchase' con el monto — ROI real por canal." },
+];
+
 const FIELD =
   "w-full h-11 text-sm border-2 border-[var(--rule-base)] rounded-xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 export default function SalesChannelsTab() {
   const [config, setConfig] = useState<SalesChannelsConfig>(EMPTY_SALES_CHANNELS);
+  const [analyticsId, setAnalyticsId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -67,8 +74,10 @@ export default function SalesChannelsTab() {
     let active = true;
     fetch("/api/admin/sales-channels", { headers: csrfHeaders({}) })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d: { channels?: SalesChannelsConfig } | null) => {
-        if (active && d?.channels) setConfig(d.channels);
+      .then((d: { channels?: SalesChannelsConfig; analyticsId?: string } | null) => {
+        if (!active || !d) return;
+        if (d.channels) setConfig(d.channels);
+        if (typeof d.analyticsId === "string") setAnalyticsId(d.analyticsId);
       })
       .catch((err) => console.error("[sales-channels] load failed", err))
       .finally(() => active && setLoading(false));
@@ -84,11 +93,12 @@ export default function SalesChannelsTab() {
       const res = await fetch("/api/admin/sales-channels", {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(config),
+        body: JSON.stringify({ ...config, analyticsId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const d = (await res.json()) as { channels: SalesChannelsConfig };
+      const d = (await res.json()) as { channels: SalesChannelsConfig; analyticsId?: string };
       setConfig(d.channels);
+      if (typeof d.analyticsId === "string") setAnalyticsId(d.analyticsId);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
@@ -109,6 +119,7 @@ export default function SalesChannelsTab() {
 
   const metaConnected = config.meta.pixelId.trim().length > 0;
   const tiktokConnected = config.tiktok.pixelId.trim().length > 0;
+  const gaConnected = analyticsId.trim().length > 0;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -117,9 +128,10 @@ export default function SalesChannelsTab() {
           Canales de venta
         </h1>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Conectá tu tienda con TikTok Shop y Meta (Facebook + Instagram). Pegá tus Pixel IDs y se
-          activan los eventos en tu tienda. Las integraciones profundas (catálogo en vivo, checkout
-          nativo, live shopping) se habilitan con la app de cada plataforma.
+          Conectá tu tienda con TikTok Shop, Meta (Facebook + Instagram) y Google Analytics. Pegá
+          tus IDs de píxel/medición y se activan los eventos en tu tienda — incluida la conversión de
+          compra. Las integraciones profundas (catálogo en vivo, checkout nativo, live shopping) se
+          habilitan con la app de cada plataforma.
         </p>
       </div>
 
@@ -195,6 +207,25 @@ export default function SalesChannelsTab() {
           value={config.tiktok.catalogId}
           onChange={(v) => setConfig((c) => ({ ...c, tiktok: { ...c.tiktok, catalogId: v } }))}
         />
+      </ChannelCard>
+
+      {/* Google Analytics 4 — mismo storeTheme.analyticsId que Config/customizer */}
+      <ChannelCard
+        Brand={BarChart3}
+        name="Google Analytics 4"
+        connected={gaConnected}
+        accent="var(--data-warning-500)"
+        features={GA_FEATURES}
+      >
+        <Field
+          label="ID de medición (GA4)"
+          placeholder="G-XXXXXXXXXX"
+          value={analyticsId}
+          onChange={setAnalyticsId}
+        />
+        <p className="text-xs text-[var(--text-tertiary)]">
+          Mismo ID que en Configuración → tu tienda. Editarlo acá o allá es lo mismo.
+        </p>
       </ChannelCard>
 
       <div className="flex items-center gap-3 sticky bottom-2">

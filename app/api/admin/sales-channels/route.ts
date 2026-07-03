@@ -38,6 +38,10 @@ const BodySchema = z.object({
     pixelId: Id,
     catalogId: Id,
   }),
+  // Google Analytics 4 (G-XXXXXXXXXX). Vive en el MISMO storeTheme.analyticsId
+  // que Config→Settings y el customizer — single source of truth. Opcional para
+  // no romper clientes que solo mandan meta/tiktok. El injector valida el formato.
+  analyticsId: z.string().trim().max(40).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -49,7 +53,9 @@ export async function GET(req: NextRequest) {
   try {
     const tenantId = await canonicalTenantId(auth.tenantId);
     const channels = await SettingsDB.getSalesChannels(tenantId);
-    return NextResponse.json({ channels });
+    const theme = await SettingsDB.getStoreThemeJson(tenantId);
+    const analyticsId = typeof theme?.analyticsId === "string" ? theme.analyticsId : "";
+    return NextResponse.json({ channels, analyticsId });
   } catch (e) {
     logger.error("[admin/sales-channels] GET error", {
       err: e instanceof Error ? e.message : String(e),
@@ -81,13 +87,18 @@ export async function PATCH(req: NextRequest) {
     // Espejamos los Pixel IDs a las claves que el storefront YA lee:
     // - `storeTheme.pixelId`     → lo inyecta components/store/TenantAnalytics (/t/<slug>)
     // - `storeTheme.tiktokPixelId` → lo inyecta el mismo componente (TikTok, abajo)
+    // - `storeTheme.analyticsId`   → GA4, misma clave que Config/customizer (single source)
     // Además guardamos el blob `salesChannels` (config completa + ruta subdominio).
-    await SettingsDB.patchStoreThemeJson(tenantId, {
+    const patch: Record<string, unknown> = {
       salesChannels: config,
       pixelId: config.meta.pixelId,
       tiktokPixelId: config.tiktok.pixelId,
-    });
-    return NextResponse.json({ channels: config });
+    };
+    // Solo tocamos analyticsId si el cliente lo mandó — así no pisamos el GA4
+    // configurado desde Settings cuando otro caller manda solo meta/tiktok.
+    if (parsed.data.analyticsId !== undefined) patch.analyticsId = parsed.data.analyticsId;
+    await SettingsDB.patchStoreThemeJson(tenantId, patch);
+    return NextResponse.json({ channels: config, analyticsId: parsed.data.analyticsId ?? "" });
   } catch (e) {
     logger.error("[admin/sales-channels] PATCH error", {
       err: e instanceof Error ? e.message : String(e),
