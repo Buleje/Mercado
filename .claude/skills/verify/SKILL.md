@@ -47,6 +47,23 @@ Como `quick` + además:
 - Arranca dev server si no está vivo (`curl http://localhost:3000 || npm run dev &`)
 - MCP Playwright screenshot de la ruta donde aparece el componente
 
+### `/verify build` — SI toqué páginas server, layouts, sitemap, lib usada en prerender
+
+**`tsc --noEmit` NO atrapa errores de prerender** (ej. `Date.now()` en server bajo
+Cache Components, cache `.next/dev` corrupto) — lección 2026-07-02: dos "listo"
+bloqueados por el Stop hook por saltarse esto. Un solo comando hace TODA la danza
+(mata dev → limpia .next → build → veredicto → re-levanta dev):
+
+```bash
+node scripts/build-gate.mjs            # gate completo, exit 0 = apto para "listo"
+node scripts/build-gate.mjs --no-restart   # sin re-levantar dev
+```
+
+Pegar el bloque "VEREDICTO BUILD-GATE" como evidencia. Log: `/tmp/build-gate.log`.
+Cuándo es OBLIGATORIO: cambios en `app/**/page.tsx` server, `app/**/layout.tsx`,
+`app/sitemap.ts`, o libs llamadas desde páginas prerenderizadas. Cambios client-only
+(`"use client"`) no lo requieren (tsc + curl + screenshot bastan).
+
 ## Algoritmo
 
 ```
