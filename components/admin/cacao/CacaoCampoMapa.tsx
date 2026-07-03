@@ -13,18 +13,30 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
 import { PARCELA_STATUS, CACAO_LABORES } from "@/lib/cacao/cacao-labores";
-import { PLAGA_LABEL, type CacaoPlaga } from "@/lib/cacao/cacao-sanidad";
+import { PLAGA_LABEL, SANIDAD_SEVERIDAD, type CacaoPlaga } from "@/lib/cacao/cacao-sanidad";
+
+type ColorBy = "estado" | "sanidad";
 import { geodesicAreaHa, haversineM, formatDist } from "@/lib/cacao/geo-area";
 
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 
-/**
- * HTML de la etiqueta detallada sobre cada sección: código + qué falta hacer
- * (labores vencidas y pendientes por tipo). Scrim oscuro para contraste sobre
- * satélite; borde izquierdo con el color del estado; texto de tokens del DS.
- */
-function labelHtml(p: Parcela): string {
+/** Color + etiqueta de estado de una sección según el criterio (labores o sanidad). */
+function polyMeta(p: Parcela, colorBy: ColorBy): { ring: string; label: string } {
+  if (colorBy === "sanidad") {
+    if (p.sanidad && p.sanidad.focos > 0) { const s = SANIDAD_SEVERIDAD[p.sanidad.severidadMax ?? "media"]; return { ring: s.ring, label: `Plaga ${s.label.toLowerCase()}` }; }
+    return { ring: "var(--data-success-500)", label: "Sano" };
+  }
   const m = PARCELA_STATUS[p.laborStatus];
+  return { ring: m.ring, label: m.label };
+}
+
+/**
+ * HTML de la etiqueta sobre cada sección: código + área + ESTADO en texto (según
+ * el criterio de color) + detalle (labores vencidas/pendientes y plaga). Scrim
+ * oscuro para contraste sobre satélite; borde izquierdo con el color del estado.
+ */
+function labelHtml(p: Parcela, colorBy: ColorBy): string {
+  const meta = polyMeta(p, colorBy);
   const overdue: string[] = [], pending: string[] = [];
   for (const l of CACAO_LABORES) {
     const t = p.porTipo?.[l.tipo];
@@ -36,12 +48,13 @@ function labelHtml(p: Parcela): string {
   const lines: string[] = [];
   if (overdue.length) lines.push(`<div style="color:var(--data-error-300,#fca5a5)">Vencidas: ${escapeHtml(cap(overdue))}</div>`);
   if (pending.length) lines.push(`<div style="color:var(--data-warning-300,#fcd34d)">Pendientes: ${escapeHtml(cap(pending))}</div>`);
-  if (!lines.length) lines.push(`<div style="color:var(--data-success-300,#86efac);opacity:.95">Al día</div>`);
+  if (!overdue.length && !pending.length) lines.push(`<div style="color:var(--data-success-300,#86efac);opacity:.9">Sin labores pendientes</div>`);
   if (p.sanidad && p.sanidad.focos > 0) {
     const plagas = p.sanidad.plagas.map((pl) => PLAGA_LABEL[pl as CacaoPlaga] ?? pl);
     lines.push(`<div style="color:var(--data-error-300,#fca5a5);font-weight:700">Plaga: ${escapeHtml(cap(plagas))}</div>`);
   }
-  return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${m.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)"><div style="font-weight:800;font-size:12px">${escapeHtml(p.codigo)}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""}</div>${lines.join("")}</div>`;
+  const header = `<div style="font-weight:800;font-size:12px">${escapeHtml(p.codigo)}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""}</div><div style="font-weight:700;color:${meta.ring}">${escapeHtml(meta.label)}</div>`;
+  return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${meta.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${header}${lines.join("")}</div>`;
 }
 import type { Parcela } from "./CacaoCampo";
 
@@ -98,8 +111,10 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const [savingEdit, setSavingEdit] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [editErr, setEditErr] = useState<string | null>(null);
-  // Funciones de alto nivel: etiquetas, medición, GPS, ir a sección.
-  const [showLabels, setShowLabels] = useState(false);
+  // Funciones de alto nivel: etiquetas, coloreo temático, medición, GPS, ir a sección.
+  const [showLabels, setShowLabels] = useState(true);
+  const [colorBy, setColorBy] = useState<ColorBy>("estado");
+  const [cursor, setCursor] = useState<{ lat: number; lng: number } | null>(null);
   const [measuring, setMeasuring] = useState(false);
   const [measureDist, setMeasureDist] = useState(0);
   const [measureArea, setMeasureArea] = useState(0);
@@ -110,7 +125,9 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const editingRef = useRef(false);
   const measuringRef = useRef(false);
   const measureVertsRef = useRef<[number, number][]>([]);
-  const showLabelsRef = useRef(false);
+  const showLabelsRef = useRef(true);
+  const colorByRef = useRef<ColorBy>("estado");
+  colorByRef.current = colorBy;
   const vertsRef = useRef<[number, number][]>([]);
   const drawingRef = useRef(false);
   const parcelasRef = useRef(parcelas);
@@ -140,18 +157,18 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     for (const p of parcelasRef.current) {
       const pts = parseCoords(p.poligono ?? null);
       if (!pts) continue;
-      const m = PARCELA_STATUS[p.laborStatus];
-      const poly = L.polygon(pts, { color: m.ring, fillColor: m.ring, fillOpacity: 0.35, weight: 2 });
-      poly.bindTooltip(`${p.codigo}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""}${editingRef.current ? " · tocá para editar" : ""}`, { sticky: true });
+      const meta = polyMeta(p, colorByRef.current);
+      const poly = L.polygon(pts, { color: meta.ring, fillColor: meta.ring, fillOpacity: 0.35, weight: 2 });
+      poly.bindTooltip(`${p.codigo}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""} · ${meta.label}${editingRef.current ? " · tocá para editar" : ""}`, { sticky: true });
       poly.on("click", () => {
         if (drawingRef.current || measuringRef.current) return;
         if (editingRef.current) selectForEditRef.current(p);
         else onOpenRef.current(p.id);
       });
       poly.addTo(polysRef.current);
-      // Etiqueta detallada (toggle "Etiquetas"): código + qué falta hacer.
+      // Etiqueta con el estado en texto (toggle "Etiquetas").
       if (showLabelsRef.current) {
-        L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: labelHtml(p), iconSize: [0, 0] }) }).addTo(polysRef.current);
+        L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: labelHtml(p, colorByRef.current), iconSize: [0, 0] }) }).addTo(polysRef.current);
       }
       pts.forEach((pt) => bounds.push(pt));
     }
@@ -180,6 +197,10 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
           renderMeasure();
         }
       });
+      // Controles profesionales: barra de escala (métrica) + lectura de coordenadas.
+      L.control.scale({ metric: true, imperial: false, position: "bottomleft" }).addTo(map);
+      map.on("mousemove", (e: { latlng: { lat: number; lng: number } }) => setCursor({ lat: e.latlng.lat, lng: e.latlng.lng }));
+      map.on("mouseout", () => setCursor(null));
       setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 200);
       setReady(true);
       renderPolys();
@@ -190,6 +211,8 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
 
   // Re-render polygons when data changes
   useEffect(() => { if (ready) renderPolys(); }, [parcelas, ready, renderPolys]);
+  // Recolorear/retextear sin re-encuadrar al cambiar el criterio de color.
+  useEffect(() => { if (ready) renderPolys(false); }, [colorBy, ready, renderPolys]);
 
   // Switch base layer
   useEffect(() => {
@@ -334,6 +357,9 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
 
   const hasPolygons = parcelas.some((p) => parseCoords(p.poligono ?? null));
   const conPoligono = parcelas.filter((p) => parseCoords(p.poligono ?? null));
+  const legendItems: { c: string; l: string }[] = colorBy === "sanidad"
+    ? [{ c: "var(--data-success-500)", l: "Sano" }, { c: SANIDAD_SEVERIDAD.baja.ring, l: "Plaga baja" }, { c: SANIDAD_SEVERIDAD.media.ring, l: "Plaga media" }, { c: SANIDAD_SEVERIDAD.alta.ring, l: "Plaga alta" }]
+    : (["al_dia", "pendiente", "vencido", "sin_labores"] as const).map((s) => ({ c: PARCELA_STATUS[s].ring, l: PARCELA_STATUS[s].label }));
 
   return (
     <div className={fullscreen ? "fixed inset-0 z-[45] flex flex-col gap-3 bg-[var(--surface-canvas)] p-3 sm:p-4" : "space-y-3"}>
@@ -385,6 +411,10 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
             </select>
           )}
           <button type="button" onClick={locate} disabled={locating} title="Centrar el mapa en mi ubicación (GPS)" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Mi ubicación</span></button>
+          <select value={colorBy} onChange={(e) => setColorBy(e.target.value as ColorBy)} title="Colorear las secciones por" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+            <option value="estado">Color: Estado</option>
+            <option value="sanidad">Color: Sanidad</option>
+          </select>
           {hasPolygons && <button type="button" onClick={toggleLabels} title="Mostrar los códigos sobre las secciones" className={`inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)] ${showLabels ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Tag className="h-4 w-4" /><span className="hidden sm:inline">Etiquetas</span></button>}
           <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
           <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden sm:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
@@ -406,6 +436,17 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
             </div>
           </div>
         )}
+        {/* Leyenda del criterio de color (mapa temático) */}
+        {ready && hasPolygons && (
+          <div className="pointer-events-none absolute right-3 top-3 z-[500] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-md)]">
+            <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{colorBy === "sanidad" ? "Sanidad" : "Estado de labores"}</p>
+            <div className="space-y-0.5">
+              {legendItems.map((it) => <span key={it.l} className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: it.c }} />{it.l}</span>)}
+            </div>
+          </div>
+        )}
+        {/* Lectura de coordenadas del cursor (mapeo profesional) */}
+        {cursor && <div className="pointer-events-none absolute bottom-3 right-3 z-[500] rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{Number(cursor.lat).toFixed(5)}, {Number(cursor.lng).toFixed(5)}</div>}
       </div>
       {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
       {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-900)]">{mapMsg}<button type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-900)]"><X className="h-4 w-4" /></button></p>}
