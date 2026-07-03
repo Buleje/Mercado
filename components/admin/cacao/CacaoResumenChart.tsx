@@ -9,7 +9,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from "recharts";
-import { ShoppingCart, Package, Activity, RefreshCw, TrendingUp, TrendingDown, Minus, Boxes } from "@buleje/design-system/icons";
+import { ShoppingCart, Package, Activity, RefreshCw, TrendingUp, TrendingDown, Minus, Boxes, FileSpreadsheet, Image as ImageIcon } from "@buleje/design-system/icons";
 
 interface Punto { mes: string; precioCompra: number | null; precioVenta: number | null; kgCompra: number; kgVenta: number }
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -74,6 +74,50 @@ export default function CacaoResumenChart() {
   const fmtVal = (v: number) => (metric === "kg" ? `${n0(v)} kg` : `S/ ${n0(v)}`);
   const up = (view?.variacion ?? 0) > 0.5, down = (view?.variacion ?? 0) < -0.5;
 
+  function triggerDownload(blob: Blob, name: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.click();
+    URL.revokeObjectURL(url);
+  }
+  /** Descarga la planilla mensual completa (kg + precios + valor) como CSV. */
+  function exportCSV() {
+    const head = ["Mes", "Kg comprado", "Kg vendido", "Precio compra S//kg", "Precio venta S//kg", "Valor comprado S/", "Valor vendido S/"];
+    const rows = serie.map((p) => [
+      mesLabel(p.mes), p.kgCompra, p.kgVenta,
+      p.precioCompra ?? "", p.precioVenta ?? "",
+      p.precioCompra != null ? Math.round(p.precioCompra * p.kgCompra) : "",
+      p.precioVenta != null ? Math.round(p.precioVenta * p.kgVenta) : "",
+    ]);
+    const csv = [head, ...rows].map((r) => r.join(",")).join("\n");
+    triggerDownload(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }), "cacao-comprado-vendido.csv");
+  }
+  /** Exporta el gráfico como PNG (SVG → canvas). Recharts usa colores explícitos y
+   *  gradientes inline, así que renderiza bien fuera del CSS de la página. */
+  function exportPNG() {
+    const svg = rootRef.current?.querySelector(".recharts-surface") as SVGSVGElement | null;
+    if (!svg) return;
+    const w = svg.clientWidth || 800, h = svg.clientHeight || 300;
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+    clone.setAttribute("width", String(w)); clone.setAttribute("height", String(h));
+    const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bg.setAttribute("width", "100%"); bg.setAttribute("height", "100%"); bg.setAttribute("fill", "#ffffff");
+    clone.insertBefore(bg, clone.firstChild);
+    const data = new XMLSerializer().serializeToString(clone);
+    const url = URL.createObjectURL(new Blob([data], { type: "image/svg+xml;charset=utf-8" }));
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = w * 2; canvas.height = h * 2;
+      const ctx = canvas.getContext("2d");
+      if (ctx) { ctx.scale(2, 2); ctx.drawImage(img, 0, 0); }
+      URL.revokeObjectURL(url);
+      canvas.toBlob((b) => { if (b) triggerDownload(b, "cacao-grafico.png"); }, "image/png");
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); setError("No se pudo exportar la imagen."); };
+    img.src = url;
+  }
+
   return (
     <div ref={rootRef} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -87,6 +131,12 @@ export default function CacaoResumenChart() {
             <button type="button" onClick={() => setMetric("kg")} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${metric === "kg" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>Kilos</button>
             <button type="button" onClick={() => setMetric("valor")} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${metric === "valor" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>Valor S/</button>
           </div>
+          {view && (
+            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+              <button type="button" onClick={exportCSV} title="Descargar la planilla mensual (CSV)" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"><FileSpreadsheet className="h-3.5 w-3.5" />CSV</button>
+              <button type="button" onClick={exportPNG} title="Descargar el gráfico como imagen (PNG)" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"><ImageIcon className="h-3.5 w-3.5" />PNG</button>
+            </div>
+          )}
         </div>
       </div>
 
