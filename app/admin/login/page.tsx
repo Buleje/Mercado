@@ -12,7 +12,7 @@
  */
 
 import { SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useRef, useMemo, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2, LogIn, User, Lock, Eye, EyeOff, AlertTriangle,
@@ -78,10 +78,21 @@ export default function AdminLoginPage() {
   // ADR-120 login unificado: si la credencial existe en varias tiendas, el
   // backend devuelve la lista y mostramos un selector en vez de adivinar.
   const [tenantChoices, setTenantChoices] = useState<Array<{ slug: string; name: string }> | null>(null);
+  // Bloq Mayús activado — causa #1 de "puse bien la clave y no me deja".
+  const [capsLock, setCapsLock] = useState(false);
+  // Segundos restantes tras un 429 (rate limit / lockout). Mientras >0, el
+  // submit se deshabilita y mostramos una cuenta regresiva: recargar NO ayuda.
+  const [retryAfter, setRetryAfter] = useState(0);
+  // Motivo por el que llegó al login (sesión expirada / ruta protegida).
+  const [reason, setReason] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     fromRef.current = params.get("from");
+    // Banner de contexto: si lo redirigieron desde una ruta protegida.
+    const r = params.get("reason");
+    if (r === "expired") setReason("Tu sesión expiró. Ingresá de nuevo.");
+    else if (fromRef.current) setReason("Inicia sesión para continuar.");
 
     // Login universal (ADR-120): el backend resuelve el tenant por la
     // credencial. Si vino ?tenant= (desde un /t/{slug} o el superadmin) lo
@@ -120,6 +131,13 @@ export default function AdminLoginPage() {
       return () => clearTimeout(t);
     }
   }, [error]);
+
+  // Cuenta regresiva del bloqueo por rate limit / lockout (429). Tick 1s.
+  useEffect(() => {
+    if (retryAfter <= 0) return;
+    const t = setInterval(() => setRetryAfter((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [retryAfter]);
 
   const showError = (msg: string) => {
     setError(msg);
@@ -208,15 +226,45 @@ export default function AdminLoginPage() {
         } else {
           router.push(safeRedirectPath(fromRef.current, adminPath("/admin")));
         }
+      } else if (res.status === 429) {
+        // Rate limit o lockout: recargar NO ayuda (es por tiempo del servidor).
+        // Mostramos cuenta regresiva para que el usuario sepa cuánto esperar.
+        const ra = Number(res.headers.get("Retry-After")) || 60;
+        setRetryAfter(ra);
+        setError(null);
+      } else if (res.status === 400) {
+        showError("Completá tu usuario y contraseña.");
+      } else if (res.status === 401) {
+        showError(
+          capsLock
+            ? "Usuario o contraseña incorrectos. Ojo: Bloq Mayús está activado."
+            : "Usuario o contraseña incorrectos.",
+        );
+      } else if (res.status >= 500) {
+        showError("El servidor tuvo un problema. Reintentá en unos segundos.");
       } else {
-        showError("Usuario o contraseña incorrectos");
+        showError("No se pudo iniciar sesión.");
       }
     } catch {
-      showError("No se pudo iniciar sesión");
+      showError(
+        typeof navigator !== "undefined" && !navigator.onLine
+          ? "Sin conexión. Revisá tu internet e intentá de nuevo."
+          : "No se pudo conectar con el servidor. Reintentá.",
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  /** Detecta Bloq Mayús en teclado físico para avisar en el form. */
+  const detectCapsLock = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (typeof e.getModifierState === "function") {
+      setCapsLock(e.getModifierState("CapsLock"));
+    }
+  };
+
+  const mmss = (s: number) =>
+    `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   const handleBypass = async () => {
     setBypassLoading(true);
@@ -379,6 +427,9 @@ export default function AdminLoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={pw}
                   onChange={(e) => setPw(e.target.value)}
+                  onKeyDown={detectCapsLock}
+                  onKeyUp={detectCapsLock}
+                  aria-describedby={capsLock ? "caps-lock-warn" : undefined}
                   className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="••••••••"
                   autoComplete="current-password"
@@ -403,6 +454,16 @@ export default function AdminLoginPage() {
                   )}
                 </button>
               </div>
+              {capsLock && (
+                <p
+                  id="caps-lock-warn"
+                  role="status"
+                  className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"
+                >
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Bloq Mayús está activado
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between text-sm pt-1">
@@ -427,6 +488,26 @@ export default function AdminLoginPage() {
               </a>
             </div>
 
+            {reason && !error && retryAfter === 0 && (
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[var(--accent)]/8 border border-[var(--accent)]/20 text-sm font-semibold text-[var(--text-secondary)]">
+                <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5 text-[var(--accent)]" aria-hidden />
+                {reason}
+              </div>
+            )}
+
+            {retryAfter > 0 && (
+              <div
+                role="alert"
+                className="flex items-start gap-3 p-4 rounded-2xl bg-[var(--data-warning-500)]/10 border-2 border-[var(--data-warning-500)]/25 text-sm font-bold text-[var(--data-warning-700)]"
+              >
+                <Clock className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
+                <span>
+                  Demasiados intentos. Esperá{" "}
+                  <span className="tabular-nums">{mmss(retryAfter)}</span> — recargar no ayuda.
+                </span>
+              </div>
+            )}
+
             {error && (
               <div
                 role="alert"
@@ -439,13 +520,18 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              disabled={loading || !pw}
+              disabled={loading || !pw || retryAfter > 0}
               className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-base font-extrabold tracking-tight shadow-lg shadow-[var(--accent)]/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-[var(--accent)]/40 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
                   Verificando…
+                </>
+              ) : retryAfter > 0 ? (
+                <>
+                  <Clock className="h-5 w-5" strokeWidth={2.25} />
+                  Esperá {mmss(retryAfter)}
                 </>
               ) : (
                 <>
