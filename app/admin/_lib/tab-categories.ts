@@ -44,6 +44,7 @@ import {
   Gift,
   HeartHandshake,
   Radio,
+  Share2,
   UserPlus,
   TreePine,
   Leaf,
@@ -278,7 +279,7 @@ export const MODULE_INFO: Partial<
     tip: "Premia a tus clientes frecuentes para que compren más seguido.",
   },
   canales: {
-    icon: Radio,
+    icon: Share2,
     iconColor: "text-[var(--accent)]",
     priority: "medium",
     desc: "Canales de venta social: conectá TikTok Shop y Meta (Facebook + Instagram).",

@@ -256,6 +256,9 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     //  siguen en Business/max.)
     "campanas",
     "puntos",
+    // Canales de venta social (TikTok Shop + Meta pixel) — herramienta de
+    // marketing/tracking, alineada con el highlight "Promociones, fidelizacion".
+    "canales",
     // Recetas + tesoreria
     "recetas",
     "tesoreria",

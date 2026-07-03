@@ -57,6 +57,7 @@ import {
   HeartHandshake,
   Repeat,
   Radio,
+  Share2,
   CheckSquare,
   StickyNote,
   ChefHat,
@@ -82,6 +83,7 @@ export const ALL_TABS = [
   // — CRECIMIENTO (Marketing & Fidelización) — hub único, sub-tabs como accesos directos —
   { id: "campanas" as Tab,            label: "Campañas",            icon: Megaphone },
   { id: "puntos" as Tab,              label: "Puntos & Fidelización", icon: Heart },
+  { id: "canales" as Tab,             label: "Canales de Venta",    icon: Share2 },
   { id: "gift-cards-admin" as Tab,    label: "Gift Cards",          icon: Gift },
   { id: "socio-members" as Tab,       label: "Socio Buleje",        icon: HeartHandshake },
   { id: "subscriptions" as Tab,       label: "Bodega al Mes",       icon: Repeat },
