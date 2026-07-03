@@ -444,7 +444,6 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "campanas",
       "puntos",
-      "canales",
       "gift-cards-admin",
       "socio-members",
       "subscriptions",
@@ -497,6 +496,10 @@ export const BASIC_MODULES: TabCategory[] = [
     icon: Store,
     tabs: [
       "marketplace",
+      // Canales de venta social (TikTok Shop + Meta pixel + GA4). Vive bajo el
+      // super-grupo "Canales" del sidebar (la categoría "crecimiento" no se
+      // renderiza en el sidebar curado; acá SÍ aparece). Brandon 2026-07-03.
+      "canales",
       "delivery-partners",
       "delivery-live",
     ],

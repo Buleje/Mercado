@@ -103,6 +103,7 @@ const ALL_CURRENT: ModuleId[] = [
   "delivery-partners",
   "delivery-live",
   "marketplace-chat",
+  "canales",
   "store-customizer",
   "pagina-inicio",
   "auditoria",
