@@ -8,7 +8,7 @@
  */
 import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize, Edit3, Trash2, Locate, Tag, Route } from "@buleje/design-system/icons";
+import { Pencil, Undo2, Check, X, Layers, MapPin, Loader2, Maximize, Minimize, Edit3, Trash2, Locate, Tag, Route, Navigation, Download } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
@@ -62,6 +62,19 @@ const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const VARIEDADES = ["CCN-51", "criollo", "trinitario", "forastero", "nacional"];
 
+/** Parsea texto de coordenadas (una "lat, lng" por línea) a puntos válidos.
+ *  Acepta separador coma o espacio; ignora líneas inválidas. */
+function parseCoordText(text: string): [number, number][] {
+  const pts: [number, number][] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.trim().match(/(-?\d+(?:\.\d+)?)[,;\s]+(-?\d+(?:\.\d+)?)/);
+    if (!m) continue;
+    const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) pts.push([lat, lng]);
+  }
+  return pts;
+}
+
 function parseCoords(json: string | null): [number, number][] | null {
   if (!json) return null;
   try {
@@ -112,6 +125,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
   const [layer, setLayer] = useState<"sat" | "street">("sat");
   const [fullscreen, setFullscreen] = useState(false);
   const [pending, setPending] = useState<[number, number][] | null>(null);
+  const [coordModal, setCoordModal] = useState(false);
   // Edición de secciones existentes: mover vértices → recalcula área en vivo.
   const [editing, setEditing] = useState(false);
   const [editSel, setEditSel] = useState<{ id: string; codigo: string } | null>(null);
@@ -192,10 +206,13 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     import("leaflet").then((L) => {
       if (destroyed || !containerRef.current) return;
       LRef.current = L;
-      const map = L.map(containerRef.current, { center: [BRAND_GEO.lat, BRAND_GEO.lng], zoom: 15 });
+      const map = L.map(containerRef.current, { center: [BRAND_GEO.lat, BRAND_GEO.lng], zoom: 15, maxZoom: 21 });
       mapRef.current = map;
-      satRef.current = L.tileLayer(SAT, { maxZoom: 19, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
-      streetRef.current = L.tileLayer(STREET, { maxZoom: 19, attribution: '© OpenStreetMap' });
+      // maxNativeZoom: Esri/OSM no tienen tiles nativos a zoom muy alto en zonas
+      // rurales → mostraban "Map data not yet available". Con maxNativeZoom, Leaflet
+      // reescala el último tile disponible en vez de pedir tiles inexistentes.
+      satRef.current = L.tileLayer(SAT, { maxZoom: 21, maxNativeZoom: 17, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
+      streetRef.current = L.tileLayer(STREET, { maxZoom: 21, maxNativeZoom: 19, attribution: '© OpenStreetMap' });
       map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
         const ll: [number, number] = [e.latlng.lat, e.latlng.lng];
         if (drawingRef.current) {
@@ -382,6 +399,31 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
     );
   }
   function toggleLabels() { const v = !showLabelsRef.current; showLabelsRef.current = v; setShowLabels(v); renderPolys(false); }
+  /** Vuela a una coordenada exacta y deja un marcador (locación de survey). */
+  function goToCoord(lat: number, lng: number) {
+    const L = LRef.current, map = mapRef.current;
+    if (!L || !map) return;
+    if (locateMarkerRef.current) map.removeLayer(locateMarkerRef.current);
+    locateMarkerRef.current = L.circleMarker([lat, lng], { radius: 7, color: "#2563eb", fillColor: "#3b82f6", fillOpacity: 0.9, weight: 3 }).bindTooltip(`${lat.toFixed(6)}, ${lng.toFixed(6)}`, { direction: "top" }).addTo(map);
+    map.flyTo([lat, lng], 18);
+  }
+  /** Exporta las secciones dibujadas como GeoJSON (FeatureCollection) — para plan
+   *  de manejo, EUDR/certificación o SIG. GeoJSON usa orden [lng, lat] y anillo cerrado. */
+  function exportGeoJSON() {
+    const features = parcelasRef.current.map((p) => {
+      const pts = parseCoords(p.poligono ?? null);
+      if (!pts) return null;
+      const ring = [...pts.map(([lat, lng]) => [lng, lat]), [pts[0][1], pts[0][0]]];
+      return { type: "Feature", properties: { codigo: p.codigo, nombre: p.nombre, areaHa: p.areaHa, variedad: p.variedad, estado: p.laborStatus, focosSanidad: p.sanidad?.focos ?? 0 }, geometry: { type: "Polygon", coordinates: [ring] } };
+    }).filter(Boolean);
+    if (!features.length) { setMapMsg("Dibujá al menos una sección para exportar."); return; }
+    const fc = { type: "FeatureCollection", features };
+    const blob = new Blob([JSON.stringify(fc, null, 2)], { type: "application/geo+json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "campo-secciones.geojson"; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const hasPolygons = parcelas.some((p) => parseCoords(p.poligono ?? null));
   const conPoligono = parcelas.filter((p) => parseCoords(p.poligono ?? null));
@@ -441,6 +483,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
             <button type="button" onClick={startDraw} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Pencil className="h-4 w-4" />Dibujar sección</button>
             {hasPolygons && <button type="button" onClick={enterEdit} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Edit3 className="h-4 w-4" />Editar</button>}
             <button type="button" onClick={startMeasure} disabled={!ready} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Route className="h-4 w-4" />Medir</button>
+            <button type="button" onClick={() => setCoordModal(true)} disabled={!ready} title="Crear o ir a una sección por coordenadas GPS" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Navigation className="h-4 w-4" />Coordenadas</button>
           </>
         )}
         <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -456,6 +499,7 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
             <option value="sanidad">Color: Sanidad</option>
           </select>
           {hasPolygons && <button type="button" onClick={toggleLabels} title="Mostrar los códigos sobre las secciones" className={`inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)] ${showLabels ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Tag className="h-4 w-4" /><span className="hidden sm:inline">Etiquetas</span></button>}
+          {hasPolygons && <button type="button" onClick={exportGeoJSON} title="Exportar las secciones como GeoJSON (plan de manejo / EUDR / SIG)" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /><span className="hidden sm:inline">Exportar</span></button>}
           <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" />{layer === "sat" ? "Satélite" : "Calles"}</button>
           <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden sm:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
         </div>
@@ -495,7 +539,55 @@ export default function CacaoCampoMapa({ parcelas, onOpenParcela, onChanged }: {
       {!fullscreen && measuring && <p className="text-xs text-[var(--text-tertiary)]"><Route className="mr-1 inline h-3 w-3" />Tocá puntos en el mapa para medir distancia; con 3+ puntos también calcula el área. No crea ninguna sección.</p>}
 
       {pending && <AsignarSeccionModal poligono={pending} suggestedCodigo={suggestedCodigo} onClose={() => setPending(null)} onSaved={() => { setPending(null); cancelDraw(); onChanged(); }} />}
+      {coordModal && <CoordenadasModal onClose={() => setCoordModal(false)} onCreate={(pts) => { setCoordModal(false); setPending(pts); }} onGoTo={(lat, lng) => { setCoordModal(false); goToCoord(lat, lng); }} />}
     </div>
+  );
+}
+
+/** Mapeo por coordenadas (grado plan de manejo): crear una sección pegando la
+ *  lista de puntos GPS del levantamiento, o volar a una coordenada exacta. */
+function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; onCreate: (pts: [number, number][]) => void; onGoTo: (lat: number, lng: number) => void }) {
+  const [text, setText] = useState("");
+  const [goLat, setGoLat] = useState("");
+  const [goLng, setGoLng] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const pts = parseCoordText(text);
+  const area = pts.length >= 3 ? geodesicAreaHa(pts) : 0;
+
+  function crear() {
+    if (pts.length < 3) { setError("Necesitás al menos 3 coordenadas válidas (una «lat, lng» por línea)."); return; }
+    onCreate(pts);
+  }
+  function ir() {
+    const lat = parseFloat(goLat), lng = parseFloat(goLng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) { setError("Coordenada inválida."); return; }
+    onGoTo(lat, lng);
+  }
+
+  const I = "h-11 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  return (
+    <AdminModal open onClose={onClose} variant="wide" icon={Navigation} title="Mapeo por coordenadas" description="Creá una sección desde tu levantamiento GPS o andá a una coordenada exacta.">
+      <div className="space-y-5 p-5">
+        <div>
+          <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Crear sección por coordenadas</p>
+          <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pegá los vértices del terreno, una coordenada por línea: <span className="font-mono">latitud, longitud</span> (ej. de tu GPS). Se cierra el polígono solo.</p>
+          <textarea value={text} onChange={(e) => { setText(e.target.value); setError(null); }} rows={6} placeholder={"-8.38200, -74.53100\n-8.38150, -74.52950\n-8.38300, -74.52980"} className={`${I} h-auto py-2 font-mono`} />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="inline-flex h-9 items-center rounded-lg bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)]">{pts.length} puntos válidos{area > 0 ? ` · ${area.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : ""}</span>
+            <button type="button" onClick={crear} disabled={pts.length < 3} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Continuar</button>
+          </div>
+        </div>
+        <div className="border-t-2 border-[var(--rule-base)] pt-4">
+          <p className="mb-2 text-sm font-bold text-[var(--text-primary)]">Ir a una coordenada</p>
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Latitud<input value={goLat} onChange={(e) => setGoLat(e.target.value)} placeholder="-8.3820" className={`mt-1 ${I} w-36`} /></label>
+            <label className="text-xs font-bold text-[var(--text-secondary)]">Longitud<input value={goLng} onChange={(e) => setGoLng(e.target.value)} placeholder="-74.5310" className={`mt-1 ${I} w-36`} /></label>
+            <button type="button" onClick={ir} className="inline-flex h-11 items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Navigation className="h-4 w-4" />Ir</button>
+          </div>
+        </div>
+        {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
+      </div>
+    </AdminModal>
   );
 }
 
