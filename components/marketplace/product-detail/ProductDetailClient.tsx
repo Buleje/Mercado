@@ -18,8 +18,6 @@ import {
   ChevronRight,
   Home,
   Store,
-  Smartphone,
-  Banknote,
   ArrowLeft,
   Share2,
   Star,
@@ -33,6 +31,7 @@ import { ProductActions } from "./ProductActions";
 import { ProductDescription } from "./ProductDescription";
 import { ProductSpecs } from "./ProductSpecs";
 import { ProductRichContent } from "./ProductRichContent";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 import { ProductSellerInfo } from "./ProductSellerInfo";
 import ProductReviews from "./ProductReviews";
 import { ProductRelated, type RelatedProduct } from "./ProductRelated";
@@ -464,6 +463,7 @@ export function ProductDetailClient({
                 <ProductSellerInfo
                   storeName={store.name}
                   storeSlug={store.slug}
+                  storeLogo={store.logo}
                   storeDescription={store.description}
                   storeZone={store.zone}
                   storeKm={store.km}
@@ -476,16 +476,12 @@ export function ProductDetailClient({
                   <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mb-3">
                     Pagás al recibir — sin tarjetas.
                   </p>
-                  <ul className="space-y-2 text-sm text-[var(--text-primary)]">
-                    <li className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Yape
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Plin
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Banknote className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden /> Efectivo
-                    </li>
+                  <ul className="space-y-2 text-sm font-medium text-[var(--text-primary)]">
+                    {["Yape", "Plin", "Efectivo"].map((m) => (
+                      <li key={m} className="flex items-center gap-2.5">
+                        <PaymentMethodIcon method={m} size="sm" /> {m}
+                      </li>
+                    ))}
                   </ul>
                 </section>
               </aside>

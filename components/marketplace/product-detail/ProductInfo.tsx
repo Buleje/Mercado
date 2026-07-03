@@ -11,6 +11,7 @@ import { Store, Truck, Tag, Smartphone } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { SocioBadge } from "./SocioBadge";
 import RatingStars from "@/components/ui-system/RatingStars";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 
 const fmt = (n: number) =>
   `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -177,14 +178,15 @@ export function ProductInfo({
         </div>
       </div>
 
-      {/* Métodos de pago — chips rectos neutros */}
+      {/* Métodos de pago — ícono de marca + wordmark */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Pago:</span>
         {["Yape", "Plin", "Efectivo"].map((method) => (
           <span
             key={method}
-            className="inline-flex items-center rounded-sm border border-[var(--rule-base)] px-2.5 py-1 text-sm text-[var(--text-secondary)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] py-1 pl-1 pr-2.5 text-sm text-[var(--text-secondary)]"
           >
+            <PaymentMethodIcon method={method} size="sm" />
             {method}
           </span>
         ))}
