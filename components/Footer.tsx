@@ -50,6 +50,7 @@ const marketplaceLinks = [
   { href: "/marketplace/en-vivo", label: "Buleje en Vivo" },
   { href: "/marketplace/ofertas", label: "Ofertas flash" },
   { href: "/recetas", label: "Recetas" },
+  { href: "/precio-cacao", label: "Precio del cacao" },
   { href: "/asistente", label: "Asistente IA" },
 ];
 
