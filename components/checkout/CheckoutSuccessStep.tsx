@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { m } from "framer-motion";
 import {
   MapPin,
@@ -10,9 +11,12 @@ import {
   PackageCheck,
   Sparkles,
 } from "@buleje/design-system/icons";
+import { fireTenantPurchase } from "@/lib/tenant-pixels";
 
 export interface CheckoutSuccessStepProps {
   orderId: string;
+  /** Total del pedido — dispara el evento Purchase a los pixels del tenant. */
+  value?: number;
   onClose: () => void;
 }
 
@@ -26,8 +30,15 @@ export interface CheckoutSuccessStepProps {
  */
 export function CheckoutSuccessStep({
   orderId,
+  value,
   onClose,
 }: CheckoutSuccessStepProps) {
+  // Conversión: al confirmarse el pedido disparamos Purchase a Meta/TikTok/GA4
+  // del comerciante (si los configuró). Deduplicado por orderId en el helper.
+  useEffect(() => {
+    if (orderId) fireTenantPurchase({ orderId, value: value ?? 0 });
+  }, [orderId, value]);
+
   return (
     <m.div
       key="exito"

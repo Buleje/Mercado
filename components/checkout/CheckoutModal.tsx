@@ -283,6 +283,7 @@ export default function CheckoutModal() {
         {state.step === "exito" && (
           <CheckoutSuccessStep
             orderId={state.ui.orderId}
+            value={finalTotal}
             onClose={closeCheckout}
           />
         )}
