@@ -99,7 +99,7 @@ export default function SuperAdminLoginPage() {
         startRetryFromResponse(res);
         setError(false);
       } else {
-        setError(messageForStatus(res.status) ?? data.error ?? "Credenciales inválidas");
+        setError(messageForStatus(res.status, { attemptsLeft: data?.attemptsLeft }) ?? data.error ?? "Credenciales inválidas");
         setTimeout(() => setError(false), 3500);
       }
     } catch {

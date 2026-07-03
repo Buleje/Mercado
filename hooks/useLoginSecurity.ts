@@ -36,13 +36,21 @@ export function useLoginSecurity() {
    * mostrar el countdown (no un texto estático).
    */
   const messageForStatus = useCallback(
-    (status: number): string | null => {
+    (status: number, opts?: { attemptsLeft?: number }): string | null => {
       if (status === 429) return null;
       if (status === 400) return "Completá tu usuario y contraseña.";
       if (status === 401 || status === 403) {
-        return capsLock
+        let msg = capsLock
           ? "Usuario o contraseña incorrectos. Ojo: Bloq Mayús está activado."
           : "Usuario o contraseña incorrectos.";
+        // Avisar cuando quedan pocos intentos antes del lockout.
+        const left = opts?.attemptsLeft;
+        if (typeof left === "number" && left >= 0 && left <= 2) {
+          msg += left === 0
+            ? " Cuenta bloqueada 15 min por seguridad."
+            : ` Te queda${left === 1 ? "" : "n"} ${left} intento${left === 1 ? "" : "s"}.`;
+        }
+        return msg;
       }
       if (status >= 500) return "El servidor tuvo un problema. Reintentá en unos segundos.";
       return "No se pudo iniciar sesión.";

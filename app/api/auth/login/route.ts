@@ -78,7 +78,7 @@ function makeRefreshCookie() {
 
 export async function POST(req: Request) {
   // Rate limit: 3 failed login attempts per hour (AUTH preset)
-  const rateLimitResponse = applyRateLimit(req, "AUTH", "auth:login");
+  const rateLimitResponse = applyRateLimit(req, "LOGIN", "auth:login");
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
@@ -356,7 +356,11 @@ export async function POST(req: Request) {
   }
 
   logger.warn("[auth/login] Failed authentication attempt", { username, tenantId });
-  return NextResponse.json({ error: "incorrect credentials" }, { status: 401 });
+  // Intentos restantes antes del lockout per-username (5/15min) — para que el
+  // cliente avise "te quedan N intentos" en vez de un genérico. currentAttempts
+  // se leyó pre-compare; tras este fallo el nuevo total es currentAttempts+1.
+  const attemptsLeft = Math.max(0, LOGIN_LOCKOUT_MAX - (currentAttempts + 1));
+  return NextResponse.json({ error: "incorrect credentials", attemptsLeft }, { status: 401 });
   } catch (e) {
     logger.error("[auth/login] Unhandled error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "server error" }, { status: 500 });

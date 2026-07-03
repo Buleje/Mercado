@@ -385,6 +385,12 @@ export const RateLimitPresets = {
   MODERATE: { maxReqs: 20, windowSec: 5 * 60 },
   GENEROUS: { maxReqs: 100, windowSec: 60 },
   AUTH: { maxReqs: IS_DEV ? 50 : 3, windowSec: 60 * 60 },
+  // LOGIN — más generoso que AUTH porque el login legítimo comparte IP en
+  // bodegas (dueño + cajero + repartidor en la misma red) y un login válido
+  // gasta 1-2 requests (el selector de tienda re-postea). El brute-force real
+  // lo frena el lockout PER-USERNAME (5 fallos/15min), no este límite por IP.
+  // Prod 20/h por IP corta credential-stuffing masivo sin lockear compañeros.
+  LOGIN: { maxReqs: IS_DEV ? 100 : 20, windowSec: 60 * 60 },
 } as const;
 
 /**

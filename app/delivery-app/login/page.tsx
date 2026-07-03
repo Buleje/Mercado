@@ -72,7 +72,7 @@ export default function DeliveryLoginPage() {
           // Rate limit / lockout: recargar no ayuda → countdown.
           startRetryFromResponse(res);
         } else {
-          setError(messageForStatus(res.status) ?? data.error ?? "No pudimos iniciar sesión");
+          setError(messageForStatus(res.status, { attemptsLeft: data?.attemptsLeft }) ?? data.error ?? "No pudimos iniciar sesión");
         }
         return;
       }

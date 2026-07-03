@@ -235,11 +235,18 @@ export default function AdminLoginPage() {
       } else if (res.status === 400) {
         showError("Completá tu usuario y contraseña.");
       } else if (res.status === 401) {
-        showError(
-          capsLock
-            ? "Usuario o contraseña incorrectos. Ojo: Bloq Mayús está activado."
-            : "Usuario o contraseña incorrectos.",
-        );
+        const body = await res.json().catch(() => ({}));
+        const left = body?.attemptsLeft;
+        let msg = capsLock
+          ? "Usuario o contraseña incorrectos. Ojo: Bloq Mayús está activado."
+          : "Usuario o contraseña incorrectos.";
+        if (typeof left === "number" && left >= 0 && left <= 2) {
+          msg +=
+            left === 0
+              ? " Cuenta bloqueada 15 min por seguridad."
+              : ` Te queda${left === 1 ? "" : "n"} ${left} intento${left === 1 ? "" : "s"}.`;
+        }
+        showError(msg);
       } else if (res.status >= 500) {
         showError("El servidor tuvo un problema. Reintentá en unos segundos.");
       } else {
