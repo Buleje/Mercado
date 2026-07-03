@@ -7,6 +7,7 @@
  * productores, alerta de humedad + reporte imprimible.
  */
 import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Scale, Coins, PackageCheck, Users, Leaf, Warehouse, TrendingUp, Award, Droplets,
   AlertCircle, Download, RefreshCw, Calendar, Beaker, Percent, Banknote,
@@ -16,6 +17,12 @@ import { StatCard } from "@buleje/design-system";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 import { PLAGA_LABEL, type CacaoPlaga } from "@/lib/cacao/cacao-sanidad";
 import { printCacaoReporte } from "@/lib/cacao/cacao-reporte";
+
+// Gráfico central grande (recharts) fuera del bundle inicial.
+const CacaoResumenChart = dynamic(() => import("./CacaoResumenChart"), {
+  ssr: false,
+  loading: () => <div className="flex h-[420px] items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]"><RefreshCw className="h-6 w-6 animate-spin" /></div>,
+});
 
 interface Stats {
   lotes: number; productoresActivos: number; kgAcopiados: number; valorPagado: number;
@@ -39,8 +46,6 @@ const n2 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", 
 const n0 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
 const n1 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 1 });
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }); } catch { return iso; } };
-const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const mesLabel = (m: string) => { const [y, mm] = m.split("-"); return `${MESES[Number(mm) - 1] ?? mm} ${(y ?? "").slice(2)}`; };
 
 /** Presets de campaña → rango ISO {from,to} para no mezclar años/campañas. */
 const RANGO_OPCIONES: { v: string; label: string }[] = [
@@ -142,6 +147,9 @@ export default function CacaoResumen() {
         <StatCard label="Calidad Grado I" value={`${stats.pctGradoI}%`} subValue="de los lotes" icon={Award} emphasis={stats.pctGradoI >= 50 ? "success" : "warning"} />
       </div>
 
+      {/* Gráfico central grande: comprado vs vendido por mes */}
+      <CacaoResumenChart />
+
       {/* KPIs secundarios */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Mini icon={PackageCheck} label="Kg por lote (prom.)" value={`${n2(stats.kgPromLote)} kg`} />
@@ -193,11 +201,8 @@ export default function CacaoResumen() {
         </Panel>
       </div>
 
-      {/* Tendencia + top productores */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Panel icon={Calendar} title="Kg acopiados por mes">
-          {!trends || trends.meses.length === 0 ? <Muted /> : (() => { const max = Math.max(...trends.meses.map((m) => m.kg), 1); return trends.meses.map((m) => <Bar key={m.mes} label={mesLabel(m.mes)} value={m.kg} max={max} unit="kg" />); })()}
-        </Panel>
+      {/* Top productores (la tendencia mensual está en el gráfico central de arriba) */}
+      <div className="grid grid-cols-1 gap-4">
         <Panel icon={Users} title="Top productores (por pago)">
           {!trends || trends.topProductores.length === 0 ? <Muted /> : trends.topProductores.map((p, i) => (
             <div key={p.nombre + i} className="flex items-center justify-between gap-2 py-1.5 text-sm">
