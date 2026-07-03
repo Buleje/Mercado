@@ -20,6 +20,7 @@ import {
   Sparkles,
   ShoppingBag,
   Tag,
+  Share2,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
@@ -122,18 +123,23 @@ export default function SalesChannelsTab() {
   const gaConnected = analyticsId.trim().length > 0;
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
-          Canales de venta
-        </h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Conectá tu tienda con TikTok Shop, Meta (Facebook + Instagram) y Google Analytics. Pegá
-          tus IDs de píxel/medición y se activan los eventos en tu tienda — incluida la conversión de
-          compra. Las integraciones profundas (catálogo en vivo, checkout nativo, live shopping) se
-          habilitan con la app de cada plataforma.
-        </p>
-      </div>
+    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 sm:px-6 py-2">
+      <header className="flex items-start gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <Share2 className="h-6 w-6" />
+        </span>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
+            Canales de venta
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
+            Conectá tu tienda con TikTok Shop, Meta (Facebook + Instagram) y Google Analytics. Pegá
+            tus IDs de píxel/medición y se activan los eventos en tu tienda — incluida la conversión
+            de compra. Las integraciones profundas (catálogo en vivo, checkout nativo, live shopping)
+            se habilitan con la app de cada plataforma.
+          </p>
+        </div>
+      </header>
 
       {error && (
         <p className="text-sm font-semibold text-[var(--data-error-500)] rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2">
