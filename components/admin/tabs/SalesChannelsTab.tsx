@@ -25,6 +25,7 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { EMPTY_SALES_CHANNELS, type SalesChannelsConfig } from "@/lib/types/sales-channels";
+import SalesChannelsAnalyticsPanel from "./SalesChannelsAnalyticsPanel";
 
 type Icon = ComponentType<{ className?: string }>;
 type Feature = { Icon: Icon; title: string; desc: string };
@@ -171,6 +172,9 @@ export default function SalesChannelsTab() {
           ))}
         </div>
       </section>
+
+      {/* Rendimiento por canal (tráfico + conversiones desde el tracking de visitas) */}
+      <SalesChannelsAnalyticsPanel />
 
       {/* Meta */}
       <ChannelCard
