@@ -6,7 +6,6 @@
  * Recibe productos del Server Component (misma categoría o tienda).
  */
 
-import Link from "next/link";
 import { Kicker, SectionTitle } from "@buleje/design-system";
 import UnifiedProductCard, { type UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
 
@@ -21,6 +20,7 @@ export interface RelatedProduct {
   storeName?: string;
   storeSlug?: string;
   storeId?: string;
+  storeLogo?: string | null;
   storeProductId?: string;
   unit?: string | null;
   category?: string;
@@ -58,6 +58,7 @@ export function ProductRelated({ products, storeSlug }: ProductRelatedProps) {
             storeName: product.storeName,
             storeSlug: product.storeSlug,
             storeId: product.storeId,
+            storeLogo: product.storeLogo,
             storeProductId: product.storeProductId,
             unit: product.unit,
             category: product.category,

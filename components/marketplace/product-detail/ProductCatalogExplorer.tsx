@@ -14,7 +14,7 @@
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { Kicker, SectionTitle } from "@buleje/design-system";
-import { Loader2, LayoutGrid, ArrowRight } from "@buleje/design-system/icons";
+import { LayoutGrid, ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard, { type UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
 
@@ -39,6 +39,7 @@ type CatProduct = {
   image: string | null;
   category: string | null;
   storeSlug?: string;
+  storeLogo?: string | null;
   storeProductId?: string;
   unit?: string | null;
   stock?: number;
@@ -55,6 +56,7 @@ function norm(raw: Record<string, unknown>): CatProduct {
     image: (raw.image as string) ?? images[0] ?? null,
     category: (raw.category as string) ?? null,
     storeSlug: (raw.storeSlug as string) ?? (store.slug as string) ?? undefined,
+    storeLogo: (raw.storeLogo as string) ?? (store.logo as string) ?? null,
     storeProductId: (raw.storeProductId as string) ?? undefined,
     unit: (raw.unit as string) ?? null,
     stock: raw.stock != null ? Number(raw.stock) : undefined,
@@ -79,7 +81,11 @@ export function ProductCatalogExplorer({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/marketplace/catalog?storeSlug=${encodeURIComponent(storeSlug)}&limit=40`)
+    // Timeout 5s: si la red cuelga, el catálogo cae a estado vacío en vez de
+    // dejar el skeleton animándose para siempre (Brandon 2026-07-04).
+    fetch(`/api/marketplace/catalog?storeSlug=${encodeURIComponent(storeSlug)}&limit=40`, {
+      signal: AbortSignal.timeout(5000),
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (cancelled) return;
@@ -172,6 +178,7 @@ export function ProductCatalogExplorer({
             image: p.image,
             storeName,
             storeSlug: p.storeSlug ?? storeSlug,
+            storeLogo: p.storeLogo,
             storeProductId: p.storeProductId,
             unit: p.unit,
             category: p.category ?? undefined,

@@ -78,6 +78,7 @@ interface ApiCatalogProduct {
   storeId: string;
   storeSlug: string;
   storeName: string;
+  storeLogo: string | null;
   storeZone: string | null;
   storeRating: number;
 }
@@ -150,6 +151,7 @@ async function fetchRelated(
         storeName: p.storeName,
         storeSlug: p.storeSlug,
         storeId: p.storeId,
+        storeLogo: p.storeLogo,
         storeProductId: p.storeProductId,
         unit: p.unit,
         category: p.category,

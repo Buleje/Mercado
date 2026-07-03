@@ -74,18 +74,21 @@ export default function FrequentlyBoughtTogether({ productId, storeId, storeName
 
   useEffect(() => {
     let cancelled = false;
+    // Timeout por request: si la red se cuelga, el combo NO se queda en skeleton
+    // eterno — aborta a los 5s y cae al fallback / estado vacío (Brandon 2026-07-04).
+    const withTimeout = (url: string) => fetch(url, { signal: AbortSignal.timeout(5000) });
     (async () => {
       let list: RP[] = [];
       try {
-        const r = await fetch(`/api/marketplace/recommendations/${productId}`);
+        const r = await withTimeout(`/api/marketplace/recommendations/${productId}`);
         if (r.ok) {
           const j = await r.json();
           list = (Array.isArray(j.products) ? j.products : []).map(norm);
         }
-      } catch {/* sigue al fallback */}
+      } catch {/* timeout o error → sigue al fallback */}
       if (list.length === 0) {
         try {
-          const r = await fetch(`/api/marketplace/catalog?limit=8`);
+          const r = await withTimeout(`/api/marketplace/catalog?limit=8`);
           if (r.ok) {
             const j = await r.json();
             const raw = Array.isArray(j.data) ? j.data : Array.isArray(j.items) ? j.items : [];

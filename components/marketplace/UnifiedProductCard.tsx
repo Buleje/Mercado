@@ -85,23 +85,20 @@ function ProductImageFallback({ name, category }: { name?: string | null; catego
   const Icon = CATEGORY_ICON[key] ?? CATEGORY_ICON.default;
   return (
     <div
-      className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]"
-      aria-label="Producto sin foto"
+      className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-3 bg-linear-to-br from-[var(--accent)]/8 via-[var(--surface-canvas)] to-[var(--accent)]/5"
+      aria-label={name ? `${name} — sin foto` : "Producto sin foto"}
     >
       <span
-        className="mb-2 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]"
+        className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)]/12 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/15"
         aria-hidden
       >
-        <Icon className="h-7 w-7" strokeWidth={1.75} />
+        <Icon className="h-8 w-8" strokeWidth={1.5} />
       </span>
       {name && (
-        <p className="text-xs font-semibold text-[var(--text-secondary)] leading-tight line-clamp-2 max-w-[90%]">
+        <p className="text-xs font-bold text-[var(--text-secondary)] leading-tight line-clamp-2 max-w-[92%]">
           {name}
         </p>
       )}
-      <p className="mt-1 text-xs font-medium text-[var(--text-tertiary)]">
-        Sin foto
-      </p>
     </div>
   );
 }
