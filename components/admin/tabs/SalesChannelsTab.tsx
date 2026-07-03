@@ -141,6 +141,13 @@ export default function SalesChannelsTab() {
         </div>
       </header>
 
+      {/* Estado de conexión — resumen de un vistazo */}
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusChip label="Meta" connected={metaConnected} />
+        <StatusChip label="TikTok" connected={tiktokConnected} />
+        <StatusChip label="Google Analytics" connected={gaConnected} />
+      </div>
+
       {error && (
         <p className="text-sm font-semibold text-[var(--data-error-500)] rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2">
           {error}
@@ -234,7 +241,7 @@ export default function SalesChannelsTab() {
         </p>
       </ChannelCard>
 
-      <div className="flex items-center gap-3 sticky bottom-2">
+      <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 mt-2 flex items-center gap-3 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 py-3">
         <button
           type="button"
           onClick={save}
@@ -251,6 +258,24 @@ export default function SalesChannelsTab() {
         )}
       </div>
     </div>
+  );
+}
+
+/** Chip compacto de estado por canal (conectado / sin conectar). */
+function StatusChip({ label, connected }: { label: string; connected: boolean }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-xs font-bold",
+        connected
+          ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-600)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+      )}
+    >
+      {connected ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+      {label}
+      <span className="opacity-70">· {connected ? "conectado" : "sin conectar"}</span>
+    </span>
   );
 }
 
