@@ -7,15 +7,17 @@
  * labores. Drawer lateral. Brandon 2026-07-02.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Plus, Check, RotateCcw, Trash2, Loader2, Calendar, Warehouse, X, Settings2, Copy, Power } from "@buleje/design-system/icons";
+import { RefreshCw, Plus, Check, RotateCcw, Trash2, Loader2, Calendar, Warehouse, X, Settings2, Copy, Power, Stethoscope } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_LABORES, LABOR_LABEL, LABOR_UNIDADES, PARCELA_STATUS, type CacaoLaborTipo, type CacaoParcelaStatus } from "@/lib/cacao/cacao-labores";
+import { PLAGA_LABEL, SANIDAD_SEVERIDAD, SANIDAD_ESTADO, type CacaoPlaga, type SanidadSeveridad, type SanidadEstado } from "@/lib/cacao/cacao-sanidad";
 
 const CACAO_VARIEDADES = ["CCN-51", "criollo", "trinitario", "forastero", "nacional"];
 
 interface Parcela { id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null; anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null }
 interface Labor { id: string; tipo: CacaoLaborTipo; estado: string; fechaPlan: string | null; fechaHecho: string | null; responsable: string | null; detalle: string | null; cantidad: number | null; unidad: string | null; insumo: string | null; dosis: string | null; costo: number | null; recurrenteDias: number | null; loteId: string | null; gastoId: string | null; createdAt: string }
+interface Foco { id: string; plaga: CacaoPlaga; severidad: SanidadSeveridad; incidenciaPct: number | null; estado: SanidadEstado; fecha: string; tratamiento: string | null }
 const money = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); } catch { return iso; } };
@@ -35,6 +37,7 @@ function statusOf(labores: Labor[]): CacaoParcelaStatus {
 export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { parcelaId: string; onClose: () => void; onChanged: () => void }) {
   const [parcela, setParcela] = useState<Parcela | null>(null);
   const [labores, setLabores] = useState<Labor[]>([]);
+  const [sanidad, setSanidad] = useState<Foco[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -50,13 +53,14 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
       const r = await fetch(`/api/admin/cacao/campo?view=parcela-detail&id=${encodeURIComponent(parcelaId)}`, { credentials: "include" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const d = await r.json();
-      setParcela(d.parcela); setLabores(d.labores ?? []);
+      setParcela(d.parcela); setLabores(d.labores ?? []); setSanidad(d.sanidad ?? []);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [parcelaId]);
   useEffect(() => { load(); }, [load]);
 
   const status = useMemo(() => statusOf(labores), [labores]);
+  const activeFocos = useMemo(() => sanidad.filter((f) => f.estado !== "resuelto"), [sanidad]);
   const ultimoPorTipo = useMemo(() => {
     const m = new Map<CacaoLaborTipo, string>();
     for (const l of labores) if (l.estado === "hecho" && l.fechaHecho) { const cur = m.get(l.tipo); if (!cur || l.fechaHecho > cur) m.set(l.tipo, l.fechaHecho); }
@@ -111,6 +115,23 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
         {showEdit && parcela && <EditarParcelaForm parcela={parcela} onCancel={() => setShowEdit(false)} onDone={() => { setShowEdit(false); setDirty(true); load(); }} />}
 
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
+
+        {activeFocos.length > 0 && (
+          <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3">
+            <p className="mb-1.5 flex items-center gap-1.5 text-sm font-bold text-[var(--data-error-700)]"><Stethoscope className="h-4 w-4" />Sanidad: {activeFocos.length} foco{activeFocos.length > 1 ? "s" : ""} activo{activeFocos.length > 1 ? "s" : ""}</p>
+            <ul className="space-y-1">
+              {activeFocos.map((f) => { const sev = SANIDAD_SEVERIDAD[f.severidad]; const est = SANIDAD_ESTADO[f.estado]; return (
+                <li key={f.id} className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: sev.bg, color: sev.fg }}>{PLAGA_LABEL[f.plaga]} · {sev.label}</span>
+                  <span className="rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: est.bg, color: est.fg }}>{est.label}</span>
+                  {f.incidenciaPct != null && <span>{f.incidenciaPct}% afectado</span>}
+                  {f.tratamiento && <span className="truncate">· {f.tratamiento}</span>}
+                </li>
+              ); })}
+            </ul>
+            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-error-700)]">Seguí su tratamiento en la pestaña Sanidad.</p>
+          </div>
+        )}
 
         {/* Resumen por labor: último hecho */}
         <div className="grid grid-cols-2 gap-2">

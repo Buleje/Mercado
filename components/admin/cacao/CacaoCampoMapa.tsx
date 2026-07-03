@@ -13,6 +13,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { BRAND_GEO } from "@/lib/geo";
 import { PARCELA_STATUS, CACAO_LABORES } from "@/lib/cacao/cacao-labores";
+import { PLAGA_LABEL, type CacaoPlaga } from "@/lib/cacao/cacao-sanidad";
 import { geodesicAreaHa, haversineM, formatDist } from "@/lib/cacao/geo-area";
 
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
@@ -36,6 +37,10 @@ function labelHtml(p: Parcela): string {
   if (overdue.length) lines.push(`<div style="color:var(--data-error-300,#fca5a5)">Vencidas: ${escapeHtml(cap(overdue))}</div>`);
   if (pending.length) lines.push(`<div style="color:var(--data-warning-300,#fcd34d)">Pendientes: ${escapeHtml(cap(pending))}</div>`);
   if (!lines.length) lines.push(`<div style="color:var(--data-success-300,#86efac);opacity:.95">Al día</div>`);
+  if (p.sanidad && p.sanidad.focos > 0) {
+    const plagas = p.sanidad.plagas.map((pl) => PLAGA_LABEL[pl as CacaoPlaga] ?? pl);
+    lines.push(`<div style="color:var(--data-error-300,#fca5a5);font-weight:700">Plaga: ${escapeHtml(cap(plagas))}</div>`);
+  }
   return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${m.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)"><div style="font-weight:800;font-size:12px">${escapeHtml(p.codigo)}${p.areaHa != null ? ` · ${p.areaHa} ha` : ""}</div>${lines.join("")}</div>`;
 }
 import type { Parcela } from "./CacaoCampo";

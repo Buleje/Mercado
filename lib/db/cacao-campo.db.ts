@@ -10,6 +10,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { CacaoDB } from "@/lib/db/cacao.db";
 import { ExpensesDB } from "@/lib/db/finance.db";
+import { CacaoSanidadDB } from "@/lib/db/cacao-sanidad.db";
 
 /** Etiquetas de labor sin importar el config client (que arrastra icons). */
 const TIPO_LABEL: Record<string, string> = {
@@ -99,12 +100,13 @@ export class CacaoCampoDB {
     if (!tenantId) throw new Error("tenantId is required");
     const where: Prisma.CacaoParcelaWhereInput = { tenantId, deletedAt: null };
     if (!filters.includeInactive) where.status = "activa";
-    const [parcelas, labores] = await Promise.all([
+    const [parcelas, labores, sanidadMap] = await Promise.all([
       prisma.cacaoParcela.findMany({ where, orderBy: [{ gridRow: "asc" }, { gridCol: "asc" }, { codigo: "asc" }] }),
       prisma.cacaoParcelaLabor.findMany({
         where: { tenantId, deletedAt: null },
         select: { parcelaId: true, tipo: true, estado: true, fechaPlan: true, fechaHecho: true },
       }),
+      CacaoSanidadDB.summaryByParcela(tenantId),
     ]);
     const now = Date.now();
     const byParcela = new Map<string, LaborLite[]>();
@@ -138,6 +140,7 @@ export class CacaoCampoDB {
         laborStatus: agg.status,
         labores: { total: ls.length, hechos: agg.hechos, pendientes: agg.pendientes, vencidos: agg.vencidos },
         porTipo,
+        sanidad: sanidadMap.get(p.id) ?? { focos: 0, severidadMax: null, plagas: [] },
       };
     });
     return list;
@@ -147,13 +150,17 @@ export class CacaoCampoDB {
     if (!tenantId) throw new Error("tenantId is required");
     const parcela = await prisma.cacaoParcela.findFirst({ where: { id, tenantId, deletedAt: null } });
     if (!parcela) return null;
-    const labores = await prisma.cacaoParcelaLabor.findMany({
-      where: { tenantId, parcelaId: id, deletedAt: null },
-      orderBy: [{ fechaHecho: "desc" }, { fechaPlan: "asc" }, { createdAt: "desc" }],
-    });
+    const [labores, sanidad] = await Promise.all([
+      prisma.cacaoParcelaLabor.findMany({
+        where: { tenantId, parcelaId: id, deletedAt: null },
+        orderBy: [{ fechaHecho: "desc" }, { fechaPlan: "asc" }, { createdAt: "desc" }],
+      }),
+      CacaoSanidadDB.list(tenantId, { parcelaId: id }),
+    ]);
     return {
       parcela: { ...parcela, areaHa: parcela.areaHa == null ? null : Number(parcela.areaHa) },
       labores: labores.map((l) => ({ ...l, cantidad: l.cantidad == null ? null : Number(l.cantidad), costo: l.costo == null ? null : Number(l.costo) })),
+      sanidad,
     };
   }
 

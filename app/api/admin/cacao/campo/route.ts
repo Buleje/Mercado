@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { CacaoCampoDB, CACAO_LABOR_TIPOS } from "@/lib/db/cacao-campo.db";
+import { CacaoSanidadDB, CACAO_PLAGAS_TIPOS, SANIDAD_SEVERIDADES, SANIDAD_ESTADOS } from "@/lib/db/cacao-sanidad.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 
@@ -59,6 +60,18 @@ const laborSchema = z.object({
   recurrenteDias: z.coerce.number().int().min(1).max(3650).nullable().optional(),
 });
 
+const sanidadSchema = z.object({
+  parcelaId: z.string().trim().min(1).max(60),
+  plaga: z.enum(CACAO_PLAGAS_TIPOS),
+  severidad: z.enum(SANIDAD_SEVERIDADES).optional(),
+  incidenciaPct: z.coerce.number().min(0).max(100).nullable().optional(),
+  fecha: z.coerce.date().nullable().optional(),
+  tratamiento: z.string().trim().max(500).nullable().optional(),
+  responsable: z.string().trim().max(120).nullable().optional(),
+  notas: z.string().trim().max(1000).nullable().optional(),
+  estado: z.enum(SANIDAD_ESTADOS).optional(),
+});
+
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("update_parcela"), id: z.string().trim().min(1), patch: parcelaSchema.partial() }),
   z.object({
@@ -72,6 +85,12 @@ const patchSchema = z.discriminatedUnion("action", [
     laborId: z.string().trim().min(1),
     precioPorKg: z.coerce.number().min(0).max(9_999_999).nullable().optional(),
     productorNombre: z.string().trim().max(160).nullable().optional(),
+  }),
+  z.object({
+    action: z.literal("set_sanidad"),
+    id: z.string().trim().min(1),
+    estado: z.enum(SANIDAD_ESTADOS),
+    tratamiento: z.string().trim().max(500).nullable().optional(),
   }),
 ]);
 
@@ -100,6 +119,15 @@ export async function GET(req: NextRequest) {
   try {
     if (view === "stats") return NextResponse.json({ stats: await CacaoCampoDB.stats(g.auth.tenantId) });
     if (view === "analytics") return NextResponse.json(await CacaoCampoDB.campoAnalytics(g.auth.tenantId));
+    if (view === "sanidad")
+      return NextResponse.json({
+        sanidad: await CacaoSanidadDB.list(g.auth.tenantId, {
+          parcelaId: sp.get("parcelaId") || undefined,
+          plaga: sp.get("plaga") || undefined,
+          estado: sp.get("estado") || undefined,
+        }),
+      });
+    if (view === "sanidad-stats") return NextResponse.json({ stats: await CacaoSanidadDB.stats(g.auth.tenantId) });
     if (view === "labores")
       return NextResponse.json({
         labores: await CacaoCampoDB.listLabores(g.auth.tenantId, {
@@ -141,6 +169,19 @@ export async function POST(req: NextRequest) {
       try {
         const labor = await CacaoCampoDB.createLabor(g.auth.tenantId, { ...parsed.data, createdBy: g.auth.username ?? null });
         return NextResponse.json({ labor }, { status: 201 });
+      } catch (e) {
+        if (String(e instanceof Error ? e.message : e) === "parcela_not_found")
+          return NextResponse.json({ error: "parcela_not_found", message: "No se encontró la sección." }, { status: 404 });
+        throw e;
+      }
+    }
+    if (type === "sanidad") {
+      const parsed = sanidadSchema.safeParse(body);
+      if (!parsed.success)
+        return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+      try {
+        const foco = await CacaoSanidadDB.create(g.auth.tenantId, { ...parsed.data, createdBy: g.auth.username ?? null });
+        return NextResponse.json({ sanidad: foco }, { status: 201 });
       } catch (e) {
         if (String(e instanceof Error ? e.message : e) === "parcela_not_found")
           return NextResponse.json({ error: "parcela_not_found", message: "No se encontró la sección." }, { status: 404 });
@@ -216,6 +257,15 @@ export async function PATCH(req: NextRequest) {
         throw e;
       }
     }
+    if (parsed.data.action === "set_sanidad") {
+      try {
+        return NextResponse.json(await CacaoSanidadDB.setEstado(g.auth.tenantId, parsed.data.id, parsed.data.estado, parsed.data.tratamiento ?? null));
+      } catch (e) {
+        if (String(e instanceof Error ? e.message : e) === "sanidad_not_found")
+          return NextResponse.json({ error: "sanidad_not_found", message: "No se encontró el registro." }, { status: 404 });
+        throw e;
+      }
+    }
     try {
       return NextResponse.json({
         labor: await CacaoCampoDB.setLaborEstado(g.auth.tenantId, parsed.data.id, parsed.data.estado, parsed.data.fechaHecho ?? null),
@@ -245,6 +295,15 @@ export async function DELETE(req: NextRequest) {
       } catch (e) {
         if (String(e instanceof Error ? e.message : e) === "labor_not_found")
           return NextResponse.json({ error: "labor_not_found", message: "No se encontró la labor." }, { status: 404 });
+        throw e;
+      }
+    }
+    if (type === "sanidad") {
+      try {
+        return NextResponse.json(await CacaoSanidadDB.remove(g.auth.tenantId, id));
+      } catch (e) {
+        if (String(e instanceof Error ? e.message : e) === "sanidad_not_found")
+          return NextResponse.json({ error: "sanidad_not_found", message: "No se encontró el registro." }, { status: 404 });
         throw e;
       }
     }

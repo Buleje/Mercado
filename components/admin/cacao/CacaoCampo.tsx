@@ -7,21 +7,24 @@
  * fertilización, cosecha, etc. y ver qué se hizo y qué falta. Brandon 2026-07-02.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Trees, Plus, RefreshCw, AlertCircle, Grid3x3, Square, ClipboardList, Loader2, X, LayoutGrid, Map as MapIcon, Calendar, TrendingUp } from "@buleje/design-system/icons";
+import { Trees, Plus, RefreshCw, AlertCircle, Grid3x3, Square, ClipboardList, Loader2, X, LayoutGrid, Map as MapIcon, Calendar, TrendingUp, Stethoscope } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CACAO_LABORES, PARCELA_STATUS, type CacaoParcelaStatus, type CacaoLaborTipo } from "@/lib/cacao/cacao-labores";
+import { SANIDAD_SEVERIDAD, type SanidadSeveridad } from "@/lib/cacao/cacao-sanidad";
 import CacaoParcelaDrawer from "./CacaoParcelaDrawer";
 import CacaoCampoMapa from "./CacaoCampoMapa";
 import CacaoCampoAgenda from "./CacaoCampoAgenda";
 import CacaoCampoAnalisis from "./CacaoCampoAnalisis";
+import CacaoCampoSanidad from "./CacaoCampoSanidad";
 
 type PorTipo = Record<CacaoLaborTipo, { hechos: number; pendientes: number; vencido: boolean; ultimoHecho: string | null }>;
 export interface Parcela {
   id: string; codigo: string; nombre: string | null; areaHa: number | null; variedad: string | null;
   anioSiembra: number | null; nPlantas: number | null; status: string; observaciones: string | null; poligono: string | null;
   laborStatus: CacaoParcelaStatus; labores: { total: number; hechos: number; pendientes: number; vencidos: number }; porTipo: PorTipo;
+  sanidad: { focos: number; severidadMax: SanidadSeveridad | null; plagas: string[] };
 }
 
 const n1 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { maximumFractionDigits: 1 }));
@@ -40,7 +43,7 @@ export default function CacaoCampo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [includeInactive, setIncludeInactive] = useState(false);
-  const [vista, setVista] = useState<"grilla" | "mapa" | "agenda" | "analisis">("grilla");
+  const [vista, setVista] = useState<"grilla" | "mapa" | "agenda" | "analisis" | "sanidad">("grilla");
   const [showNew, setShowNew] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
 
@@ -82,6 +85,7 @@ export default function CacaoCampo() {
           <button type="button" onClick={() => setVista("mapa")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "mapa" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><MapIcon className="h-4 w-4" />Mapa</button>
           <button type="button" onClick={() => setVista("agenda")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "agenda" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><Calendar className="h-4 w-4" />Agenda</button>
           <button type="button" onClick={() => setVista("analisis")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "analisis" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><TrendingUp className="h-4 w-4" />Análisis</button>
+          <button type="button" onClick={() => setVista("sanidad")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "sanidad" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><Stethoscope className="h-4 w-4" />Sanidad</button>
         </div>
         <div className="mr-auto flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)]">
           {(["al_dia", "pendiente", "vencido", "sin_labores"] as CacaoParcelaStatus[]).map((s) => {
@@ -101,6 +105,8 @@ export default function CacaoCampo() {
         <CacaoCampoAgenda parcelas={parcelas} onOpenParcela={setDrawerId} />
       ) : vista === "analisis" ? (
         <CacaoCampoAnalisis onOpenParcela={setDrawerId} />
+      ) : vista === "sanidad" ? (
+        <CacaoCampoSanidad parcelas={parcelas} onOpenParcela={setDrawerId} onChanged={load} />
       ) : loading && parcelas.length === 0 ? (
         <div className="rounded-2xl border-2 border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
       ) : parcelas.length === 0 ? (
@@ -125,6 +131,9 @@ export default function CacaoCampo() {
                 <div className="text-xs text-[var(--text-secondary)]">
                   {p.areaHa != null ? `${n1(p.areaHa)} ha` : "—"}{p.variedad ? ` · ${p.variedad}` : ""}
                 </div>
+                {p.sanidad.focos > 0 && (() => { const sv = SANIDAD_SEVERIDAD[p.sanidad.severidadMax ?? "media"]; return (
+                  <span className="inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: sv.bg, color: sv.fg }}><Stethoscope className="h-3 w-3" />{p.sanidad.focos} foco{p.sanidad.focos > 1 ? "s" : ""}</span>
+                ); })()}
                 <div className="mt-auto flex flex-wrap items-center gap-1 pt-1">
                   {CACAO_LABORES.map((l) => {
                     const sm = PARCELA_STATUS[laborStatusKey(p.porTipo[l.tipo])];

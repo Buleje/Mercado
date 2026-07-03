@@ -5326,6 +5326,31 @@ model CacaoParcelaLabor {
   @@index([deletedAt])
 }
 
+/// Monitoreo fitosanitario del campo (migración 309): focos de plaga/enfermedad
+/// (monilia, escoba de bruja, phytophthora…) por sección, con severidad,
+/// incidencia %, tratamiento y estado (activo → controlado → resuelto).
+model CacaoSanidad {
+  id            String    @id @default(cuid())
+  tenantId      String
+  parcelaId     String // ref. app-level a CacaoParcela
+  plaga         String // monilia | escoba_bruja | phytophthora | mazorquero | chinche | otros
+  severidad     String    @default("media") // baja | media | alta
+  incidenciaPct Decimal?  @db.Decimal(5, 2) // % de mazorcas/plantas afectadas
+  fecha         DateTime  @default(now())
+  tratamiento   String? // qué se aplicó / plan de control
+  responsable   String?
+  notas         String?
+  estado        String    @default("activo") // activo | controlado | resuelto
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([tenantId, estado])
+  @@index([parcelaId, estado])
+  @@index([deletedAt])
+}
+
 /// Lote de acopio de cacao + control de calidad (prueba de corte) + liquidación.
 model CacaoLote {
   id              String   @id @default(cuid())
