@@ -11,9 +11,10 @@
  * catálogo público). Categorías derivadas de los productos devueltos.
  */
 
+import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { Kicker, SectionTitle } from "@buleje/design-system";
-import { Loader2, LayoutGrid } from "@buleje/design-system/icons";
+import { Loader2, LayoutGrid, ArrowRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import UnifiedProductCard, { type UnifiedProductCardProduct } from "@/components/marketplace/UnifiedProductCard";
 
@@ -159,8 +160,9 @@ export function ProductCatalogExplorer({
         </div>
       )}
 
-      {/* Grid — misma grilla densa que el catálogo del inicio (CatalogView). */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
+      {/* Grid normalizado a tamaño estándar (Brandon 2026-07-04) — máx 5 columnas
+          + gap mayor, cards legibles (antes hasta 7 cols → items diminutos). */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {filtered.slice(0, 21).map((p, index) => {
           const card: UnifiedProductCardProduct = {
             id: p.id,
@@ -191,6 +193,17 @@ export function ProductCatalogExplorer({
           No hay productos en esta categoría.
         </p>
       )}
+
+      {/* CTA de navegación — ver el catálogo completo de la tienda. */}
+      <div className="pt-1">
+        <Link
+          href={`/marketplace/${storeSlug}`}
+          className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-5 py-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          Ver toda la tienda de {storeName}
+          <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+        </Link>
+      </div>
     </section>
   );
 }
