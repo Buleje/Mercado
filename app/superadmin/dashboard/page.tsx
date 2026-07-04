@@ -5,10 +5,14 @@ import Link from "next/link";
 import {
   Building2,
   TrendingUp,
+  TrendingDown,
   ShoppingBag,
   Banknote,
   RefreshCw,
   ArrowRight,
+  CheckCircle2,
+  AlertTriangle,
+  Minus,
 } from "@buleje/design-system/icons";
 import {
   StatCard,
@@ -296,6 +300,9 @@ export default function DashboardPage() {
         </>
       }
     >
+      {/* ── Resumen ejecutivo: el TL;DR del negocio en una línea ────────── */}
+      {data && <ExecutiveSummary data={data} />}
+
       {/* ── Centro de comando: KPIs operativos accionables (auto-fetch) ──── */}
       <CommandCenterStrip />
 
@@ -523,5 +530,57 @@ export default function DashboardPage() {
         </div>
       )}
     </AdminTabShell>
+  );
+}
+
+/**
+ * ExecutiveSummary — TL;DR del negocio en una línea. Lee los datos que la
+ * página ya tiene (sin fetch extra) y da un veredicto de salud + la narrativa
+ * con los números clave resaltados. Lo primero que ve el superadmin.
+ */
+function ExecutiveSummary({ data }: { data: AnalyticsData }) {
+  const total = data.overview.totalTenants;
+  const paying = data.overview.payingTenants;
+  const atRisk = data.atRiskCount ?? 0;
+  const orders = data.growth.ordersThisMonth;
+  const mrrPct = data.growth.mrrGrowthPct;
+  const riskRatio = total > 0 ? atRisk / total : 0;
+
+  const health =
+    riskRatio >= 0.6 ? "attention" : riskRatio >= 0.3 ? "watch" : "healthy";
+  const HEALTH = {
+    healthy: { label: "Negocio saludable", icon: CheckCircle2, chip: "bg-[var(--data-success-50)] text-[var(--data-success-700)]", border: "border-[var(--data-success-500)]/30", iconc: "text-[var(--data-success-500)]" },
+    watch: { label: "Salud estable — vigilá el riesgo", icon: AlertTriangle, chip: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300", border: "border-amber-400/30", iconc: "text-amber-500" },
+    attention: { label: "Requiere atención", icon: AlertTriangle, chip: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300", border: "border-amber-400/40", iconc: "text-amber-500" },
+  }[health];
+  const Icon = HEALTH.icon;
+
+  const TrendIcon = mrrPct > 0.5 ? TrendingUp : mrrPct < -0.5 ? TrendingDown : Minus;
+  const trendTone = mrrPct > 0.5 ? "text-[var(--data-success-500)]" : mrrPct < -0.5 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]";
+  const trendText = mrrPct > 0.5 ? `+${mrrPct.toFixed(1)}%` : mrrPct < -0.5 ? `${mrrPct.toFixed(1)}%` : "estable";
+
+  return (
+    <section aria-label="Resumen ejecutivo" className={`mb-5 rounded-2xl border-2 ${HEALTH.border} bg-[var(--surface-raised)] p-4 sm:p-5`}>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${HEALTH.chip}`}>
+          <Icon className="h-6 w-6" strokeWidth={1.9} aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">{HEALTH.label}</p>
+          <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
+            MRR <strong className="text-[var(--text-primary)] tabular-nums">{fmtSoles(data.overview.mrr)}</strong>{" "}
+            <span className={`inline-flex items-center gap-0.5 font-semibold ${trendTone}`}>
+              <TrendIcon className="h-3.5 w-3.5" aria-hidden />{trendText}
+            </span>{" "}
+            · <strong className="text-[var(--text-primary)]">{paying}</strong> de pago de{" "}
+            <strong className="text-[var(--text-primary)]">{total}</strong> tiendas ·{" "}
+            {atRisk > 0
+              ? <strong className={health === "healthy" ? "text-[var(--text-primary)]" : "text-amber-600 dark:text-amber-400"}>{atRisk} en riesgo</strong>
+              : <span className="text-[var(--data-success-500)] font-semibold">sin riesgos</span>}{" "}
+            · <strong className="text-[var(--text-primary)] tabular-nums">{orders.toLocaleString("es-PE")}</strong> pedidos este mes
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
