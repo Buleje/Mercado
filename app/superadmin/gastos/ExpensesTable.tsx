@@ -129,6 +129,15 @@ export function ExpensesTable({
       .sort((a, b) => b.subtotalPen - a.subtotalPen);
   }, [filtered, grouped]);
 
+  // Total mensual de lo que se está mostrando (respeta búsqueda/filtro) — lo que
+  // una tabla de gastos necesita al pie: ¿cuánto suma este set?
+  const shown = useMemo(() => {
+    const totalPen = filtered.reduce((s, r) => s + r.amountPen, 0);
+    const recurringPen = filtered.reduce((s, r) => (r.recurring ? s + r.amountPen : s), 0);
+    return { totalPen, recurringPen, count: filtered.length };
+  }, [filtered]);
+  const isFiltered = cat !== "all" || q.trim() !== "";
+
   const hasUsd = expenses.some((e) => e.currency === "USD");
 
   return (
@@ -197,6 +206,26 @@ export function ExpensesTable({
                   <Row key={x.id} x={x} busy={busy} onEdit={onEdit} onDelete={onDelete} />
                 ))}
           </tbody>
+          {shown.count > 0 && (
+            <tfoot>
+              <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/60">
+                <td className="p-2 text-sm font-bold text-[var(--text-secondary)]" colSpan={2}>
+                  {shown.count} gasto{shown.count !== 1 ? "s" : ""}
+                  {isFiltered && <span className="font-normal text-[var(--text-tertiary)]"> (filtrados)</span>}
+                  {shown.recurringPen > 0 && (
+                    <span className="block text-sm font-normal text-[var(--text-tertiary)]">
+                      {fmtPen(shown.recurringPen)}/mes fijo (recurrente)
+                    </span>
+                  )}
+                </td>
+                <td className="p-2 text-right tabular-nums font-extrabold text-[var(--text-primary)]">
+                  {fmtPen(shown.totalPen)}
+                  <span className="block text-sm font-normal text-[var(--text-tertiary)]">/mes en total</span>
+                </td>
+                <td className="p-2" />
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
