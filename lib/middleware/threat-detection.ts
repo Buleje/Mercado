@@ -14,7 +14,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { detectThreats } from "@/lib/security/threat-signatures";
-import { isIpBlocked, isBlocklistEnabled } from "@/lib/security/ip-blocklist";
+import { isIpBlocked, isBlocklistEnabled, isTrustedIp } from "@/lib/security/ip-blocklist";
 
 function clientIp(req: NextRequest): string {
   return (
@@ -68,6 +68,10 @@ export async function guardThreats(
   requestId: string,
 ): Promise<NextResponse | null> {
   const ip = clientIp(req);
+
+  // 0. IPs de confianza (dueño/oficina) → nunca bloquear ni analizar. Evita
+  //    que un falso positivo deje al dueño afuera de su propio panel.
+  if (isTrustedIp(ip)) return null;
 
   // 1. Blocklist — IPs auto/manual-baneadas (solo si Upstash está activo).
   if (isBlocklistEnabled()) {

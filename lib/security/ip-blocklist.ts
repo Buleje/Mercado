@@ -15,6 +15,7 @@
  */
 
 import { Redis } from "@upstash/redis";
+import { isIpAllowed } from "@/lib/security/ip-allowlist";
 
 export interface BlockedIp {
   ip: string;
@@ -139,4 +140,35 @@ export async function bumpThreatCounter(ip: string): Promise<number> {
 /** ¿Está habilitada la blocklist distribuida? (Upstash configurado) */
 export function isBlocklistEnabled(): boolean {
   return client() !== null;
+}
+
+// ── IPs de confianza — nunca se bloquean ni analizan ─────────────────────────
+// `WAF_TRUSTED_IPS` (IP exacta o CIDR, coma-separadas). Vacío = ninguna.
+// Evita que el propio dueño/oficina se auto-bloquee por un falso positivo.
+// Edge-safe: isIpAllowed es parsing puro.
+let _trustedResolved = false;
+let _trustedList: string[] = [];
+
+function trustedList(): string[] {
+  if (_trustedResolved) return _trustedList;
+  _trustedResolved = true;
+  const raw = process.env.WAF_TRUSTED_IPS ?? "";
+  _trustedList = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return _trustedList;
+}
+
+export function isTrustedIp(ip: string): boolean {
+  if (!ip || ip === "unknown") return false;
+  const list = trustedList();
+  if (list.length === 0) return false;
+  try {
+    return isIpAllowed(ip, list);
+  } catch {
+    return false;
+  }
+}
+
+/** ¿Hay IPs de confianza configuradas? (para mostrarlo en el dashboard) */
+export function hasTrustedIps(): boolean {
+  return trustedList().length > 0;
 }

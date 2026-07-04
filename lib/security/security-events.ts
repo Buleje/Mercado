@@ -1,10 +1,11 @@
 import "server-only";
 import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import {
-  bumpThreatCounter, blockIp, listBlockedIps, AUTO_BLOCK_THRESHOLD, isBlocklistEnabled,
+  bumpThreatCounter, blockIp, listBlockedIps, AUTO_BLOCK_THRESHOLD, isBlocklistEnabled, hasTrustedIps,
   type BlockedIp,
 } from "@/lib/security/ip-blocklist";
 import type { ThreatType, ThreatSeverity } from "@/lib/security/threat-signatures";
+import { reportSecurityIncident } from "@/lib/sentry-alerts";
 import { logger } from "@/lib/logger";
 
 /**
@@ -60,6 +61,19 @@ export async function recordSecurityEvent(evt: IncomingSecurityEvent): Promise<{
   if (threatCount >= AUTO_BLOCK_THRESHOLD) {
     await blockIp(evt.ip, `auto: ${threatCount} amenazas (${evt.maxSeverity})`);
     autoBlocked = true;
+    // Alerta en tiempo real — el dueño se entera sin abrir el dashboard.
+    // Fire-and-forget: si Sentry no está configurado, es no-op.
+    try {
+      reportSecurityIncident(`IP auto-bloqueada tras ${threatCount} amenazas`, {
+        ip: evt.ip,
+        path: evt.path,
+        threatTypes: evt.threats.map((t) => t.type),
+        severity: evt.maxSeverity,
+        threatCount,
+      });
+    } catch (err) {
+      logger.error("[security-events] sentry alert failed", { error: String(err) });
+    }
   }
   return { autoBlocked, threatCount };
 }
@@ -89,6 +103,7 @@ export interface ThreatOverview {
   recent: SecurityEventRow[];
   blockedIps: BlockedIp[];
   blocklistEnabled: boolean;
+  trustedIpsConfigured: boolean;
 }
 
 interface ParsedDetail {
@@ -166,5 +181,6 @@ export async function getThreatOverview(windowDays = 7): Promise<ThreatOverview>
     recent,
     blockedIps,
     blocklistEnabled: isBlocklistEnabled(),
+    trustedIpsConfigured: hasTrustedIps(),
   };
 }

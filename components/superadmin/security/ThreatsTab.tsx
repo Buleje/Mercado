@@ -31,6 +31,7 @@ interface Overview {
   recent: Array<{ id: string; at: string; ip: string; path: string; method: string; types: ThreatType[]; maxSeverity: Severity; blockedInline: boolean }>;
   blockedIps: Array<{ ip: string; reason: string; at: string; ttl: number }>;
   blocklistEnabled: boolean;
+  trustedIpsConfigured: boolean;
 }
 
 const TYPE_META: Record<ThreatType, { label: string; icon: LucideIcon }> = {
@@ -140,8 +141,9 @@ export function ThreatsTab() {
           <p className="text-sm text-[var(--text-secondary)]">
             Inspecciona cada request en el borde · bloqueo inline de firmas críticas ·{" "}
             {data.blocklistEnabled
-              ? "auto-bloqueo de IPs reincidentes activo"
+              ? "auto-bloqueo de IPs reincidentes + alerta a Sentry"
               : <span className="text-amber-600 dark:text-amber-400">blocklist distribuida OFF (configurá Upstash Redis)</span>}
+            {data.trustedIpsConfigured && " · IPs de confianza exentas"}
           </p>
         </div>
       </div>
