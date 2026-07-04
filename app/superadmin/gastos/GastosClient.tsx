@@ -20,6 +20,7 @@ import { useGastos } from "./use-gastos";
 import { fmtPen, expensesToCSV, type Expense } from "./gastos-helpers";
 import { generatePnlPDF } from "./pnl-pdf";
 import { PnlHero } from "./PnlHero";
+import { SpendHealthBanner } from "./SpendHealthBanner";
 import { BudgetPanel } from "./BudgetPanel";
 import { ExpenseForm } from "./ExpenseForm";
 import { ExpensesTable } from "./ExpensesTable";
@@ -131,6 +132,13 @@ export default function GastosClient() {
         <>
           <PnlHero mrrPen={g.mrrPen} runRatePen={runRate} payingTenants={g.payingTenants} />
 
+          <SpendHealthBanner
+            runRatePen={runRate}
+            prevRunRatePen={prev}
+            recurringMonthlyPen={g.summary?.recurringMonthlyPen ?? 0}
+            budgetPen={g.budget}
+          />
+
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <SAKpiCard
               label="Gasto real / mes"
@@ -147,6 +155,27 @@ export default function GastosClient() {
               icon={(g.costs?.avgGrossMargin ?? 0) >= 0 ? TrendingUp : TrendingDown}
               tone={(g.costs?.avgGrossMargin ?? 0) >= 50 ? "good" : (g.costs?.avgGrossMargin ?? 0) >= 0 ? "warn" : "bad"}
             />
+          </div>
+
+          {/* Mapa del dinero: ¿va subiendo? · ¿dónde se va? — antes escondido en
+              el tab Registro; en el Resumen ejecutivo es lo primero que se mira. */}
+          <div className="grid gap-3 lg:grid-cols-2">
+            <SuperadminChartCard
+              kicker="Tendencia"
+              title="Gasto de los últimos 6 meses"
+              description="Barras = gasto real por mes; la línea punteada es tu tope."
+              density="compact"
+            >
+              <TrendChart trend={g.summary?.trend ?? []} budgetPen={g.budget} />
+            </SuperadminChartCard>
+            <SuperadminChartCard
+              kicker="Distribución"
+              title="¿Dónde se va la plata?"
+              description="Reparto del gasto de este mes por categoría."
+              density="compact"
+            >
+              <CategoryDonut data={g.summary?.byCategory ?? []} />
+            </SuperadminChartCard>
           </div>
 
           <SuperadminChartCard
