@@ -12,7 +12,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PrimaryButton, SuccessAlert } from "@buleje/design-system";
-import { ArrowRight, Check, Sparkles, Star } from "@buleje/design-system/icons";
+import { ArrowRight, Check, Sparkles, Star, Crown } from "@buleje/design-system/icons";
 import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
 import { PlanSelector } from "./PlanSelector";
 import { useSocioBuleje } from "@/contexts/socio-buleje-context";
@@ -132,32 +132,71 @@ export function SocioHero() {
                 El plan que más eligen
               </span>
             )}
-            {/* Mini-carnet de Socio */}
+            {/* Carnet de Socio — tarjeta premium con chip, greca amazónica y brillo */}
             <div
-              className="relative overflow-hidden rounded-2xl p-4 text-white"
+              className="relative aspect-[1.62/1] overflow-hidden rounded-2xl p-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
               style={{
                 backgroundImage:
-                  "linear-gradient(120deg, var(--accent-dark) 0%, #0d3b3b 100%)",
+                  "linear-gradient(125deg, var(--accent) 0%, var(--accent-dark) 42%, #0b3838 100%)",
               }}
             >
-              <div aria-hidden className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
-              <div className="relative flex items-center justify-between">
-                <div>
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/70">
-                    Tarjeta de socio
-                  </p>
-                  <p className="mt-0.5 text-xl font-black leading-none tracking-tight">Buleje</p>
+              {/* Patrón greca (identidad shipibo, sutil) */}
+              <svg
+                aria-hidden
+                className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.10]"
+                preserveAspectRatio="none"
+                viewBox="0 0 220 130"
+              >
+                <defs>
+                  <pattern id="socio-greca" width="26" height="26" patternUnits="userSpaceOnUse">
+                    <path d="M0 13h6.5V6.5H13V13h6.5v6.5H13V26H6.5v-6.5H0z" fill="none" stroke="#fff" strokeWidth="1.3" />
+                  </pattern>
+                </defs>
+                <rect width="220" height="130" fill="url(#socio-greca)" />
+              </svg>
+              {/* Brillo diagonal */}
+              <div aria-hidden className="pointer-events-none absolute -inset-y-10 -left-1/4 w-1/3 rotate-12 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+
+              <div className="relative flex h-full flex-col justify-between">
+                {/* Top: marca + tier */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/15 ring-1 ring-inset ring-white/25">
+                      <Crown className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    </span>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/65">Tarjeta Socio</p>
+                      <p className="text-lg font-black leading-none tracking-tight">Buleje</p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] ring-1 ring-inset ring-white/25">
+                    Socio
+                  </span>
                 </div>
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-inset ring-white/25">
-                  <Star className="h-5 w-5 fill-white text-white" aria-hidden />
-                </span>
-              </div>
-              <p className="relative mt-5 font-mono text-base font-semibold tracking-[0.25em] text-white/80">
-                •••• •••• 2026
-              </p>
-              <div className="relative mt-2 flex items-center justify-between text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-white/60">
-                <span>Vecino Socio</span>
-                <span>Ciudad Constitución</span>
+
+                {/* Chip + número */}
+                <div className="flex items-center gap-3">
+                  <span className="relative h-7 w-10 shrink-0 overflow-hidden rounded-md bg-gradient-to-br from-amber-200 to-amber-400 shadow-sm ring-1 ring-inset ring-amber-500/40">
+                    <span className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2 bg-amber-700/40" />
+                    <span className="absolute inset-y-1 left-1/2 w-px -translate-x-1/2 bg-amber-700/40" />
+                  </span>
+                  <p className="font-mono text-sm font-semibold tracking-[0.28em] text-white/90 sm:text-base">
+                    ••••&nbsp;2026
+                  </p>
+                </div>
+
+                {/* Bottom: titular + validez */}
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/55">Titular</p>
+                    <p className="text-sm font-bold tracking-wide">Vecino Socio</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/55">Ciudad Constitución</p>
+                    <p className="text-xs font-semibold text-white/80">Válida 2026</p>
+                  </div>
+                </div>
               </div>
             </div>
 
