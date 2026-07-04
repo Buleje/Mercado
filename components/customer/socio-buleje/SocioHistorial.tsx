@@ -62,17 +62,17 @@ export function SocioHistorial() {
                   y={y}
                   width={BAR_WIDTH}
                   height={barHeight}
-                  rx="4"
-                  fill="var(--text-primary)"
-                  opacity="0.85"
+                  rx="6"
+                  fill="var(--accent)"
+                  opacity={i === data.length - 1 ? 1 : 0.7}
                 />
                 <text
                   x={x + BAR_WIDTH / 2}
                   y={y - 6}
                   textAnchor="middle"
                   fontSize="11"
-                  fontWeight="700"
-                  fill="var(--text-primary)"
+                  fontWeight="800"
+                  fill="var(--accent)"
                 >
                   {d.amount}
                 </text>
