@@ -33,30 +33,23 @@ export function SocioKPIs() {
         Métricas de tu membresía
       </h2>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        {/* Cashback destacado — accionable */}
-        <div
-          className="relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 text-white shadow-[var(--shadow-md)] sm:p-6 lg:col-span-1 lg:row-span-1"
-          style={{
-            backgroundImage:
-              "linear-gradient(140deg, var(--accent) 0%, var(--accent-dark) 100%)",
-          }}
-        >
-          <div aria-hidden className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
-          <div className="relative">
+        {/* Cashback destacado — accionable, tinte accent sutil (minimalista) */}
+        <div className="flex flex-col justify-between rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent)]/6 p-5 sm:p-6 lg:col-span-1 lg:row-span-1">
+          <div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 ring-1 ring-inset ring-white/25">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/12 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/20">
                 <Wallet className="h-5 w-5" aria-hidden />
               </span>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/80">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Cashback disponible
               </p>
             </div>
-            <p className="mt-3 text-3xl font-black tabular-nums sm:text-4xl">{fmt(cashback)}</p>
-            <p className="mt-1 text-sm text-white/80">Listo para tu próximo pedido</p>
+            <p className="mt-3 text-3xl font-black tabular-nums text-[var(--accent)] sm:text-4xl">{fmt(cashback)}</p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">Listo para tu próximo pedido</p>
           </div>
           <Link
             href="/marketplace"
-            className="relative mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-[var(--accent-dark)] transition-transform hover:-translate-y-0.5"
+            className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
           >
             Usar en mi próximo pedido
             <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />

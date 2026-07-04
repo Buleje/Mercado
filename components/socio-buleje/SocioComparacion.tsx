@@ -29,7 +29,7 @@ const ROWS: readonly Row[] = [
 export function SocioComparacion() {
   return (
     <section
-      className="mx-auto max-w-5xl px-4 py-16 sm:py-20"
+      className="mx-auto max-w-7xl px-4 py-16 sm:py-20"
       aria-labelledby="comparacion-heading"
     >
       <header className="mx-auto mb-10 max-w-2xl text-center">

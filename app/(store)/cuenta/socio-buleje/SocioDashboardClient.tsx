@@ -27,7 +27,6 @@ import { SocioHistorial } from "@/components/customer/socio-buleje/SocioHistoria
 import { CancelarMembresiaModal } from "@/components/customer/socio-buleje/CancelarMembresiaModal";
 import { useSocioBuleje } from "@/contexts/socio-buleje-context";
 import { useCustomer } from "@/contexts/customer-context";
-import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
 import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
 import { relatedFor } from "@/lib/navigation/feature-registry";
 
@@ -75,19 +74,9 @@ export function SocioDashboardClient() {
   return (
     <>
       <main id="main-content" className="bg-[var(--surface-canvas)] min-h-screen">
-        <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-3">
-            <Breadcrumbs
-              items={[
-                { label: "Mi cuenta", href: "/cuenta" },
-                { label: "Socio Buleje" },
-              ]}
-            />
-          </div>
-        </div>
         <SocioDashboardHero name={customerName} />
 
-        <div className="mx-auto max-w-5xl px-4 py-8 space-y-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-10">
           {status === "canceled" && (
             <InfoAlert
               title="Membresía en cancelación"

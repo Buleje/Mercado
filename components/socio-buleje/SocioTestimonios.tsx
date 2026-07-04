@@ -17,7 +17,7 @@ export function SocioTestimonios() {
       className="border-y border-[var(--rule-muted)] bg-[var(--surface-sunken)]/60"
       aria-labelledby="testimonios-heading"
     >
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:py-20">
         <header className="mx-auto mb-12 max-w-2xl text-center">
           <Kicker>Testimonios</Kicker>
           <SectionTitle

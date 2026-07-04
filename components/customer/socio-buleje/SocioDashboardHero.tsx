@@ -50,7 +50,7 @@ export function SocioDashboardHero({ name = "Socio" }: { name?: string }) {
         <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-8 px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
+      <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-8 px-4 py-12 sm:px-6 lg:px-8 lg:py-14">
         {/* Copy */}
         <div className="min-w-0 flex-1 text-white">
           <span

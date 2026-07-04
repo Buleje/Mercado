@@ -44,7 +44,7 @@ export function SocioCalculadora() {
       className="border-y border-[var(--rule-muted)] bg-[var(--surface-sunken)]/60"
       aria-labelledby="calculadora-heading"
     >
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:py-20">
         <header className="text-center max-w-xl mx-auto mb-10">
           <Kicker className="inline-flex items-center gap-1.5">
             <Calculator className="h-3.5 w-3.5" aria-hidden />
@@ -112,30 +112,24 @@ export function SocioCalculadora() {
             />
           </div>
 
-          {/* Payback summary — card gradiente accent (punch premium) */}
-          <div
-            className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl p-5 text-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(120deg, var(--accent) 0%, var(--accent-dark) 100%)",
-            }}
-          >
+          {/* Payback summary — tinte accent sutil (minimalista, sin gradiente pleno) */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--accent)]/25 bg-[var(--accent)]/6 p-5">
             <div className="min-w-0 flex-1">
-              <p className="text-lg font-black leading-tight sm:text-xl">
+              <p className="text-lg font-black leading-tight text-[var(--text-primary)] sm:text-xl">
                 {net > 0
                   ? `Ahorrás ${fmt(net)} netos al año`
                   : "Tu ahorro cubre el costo del plan"}
               </p>
-              <p className="mt-1 text-sm leading-relaxed text-white/85">
+              <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
                 Costo anual del plan: {fmt(yearlyCost)}. La suscripción se paga
                 sola en {paybackDays} {paybackDays === 1 ? "día" : "días"}.
               </p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/70">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Payback
               </p>
-              <p className="text-[length:var(--ts-2xl)] font-black tabular-nums">
+              <p className="text-[length:var(--ts-2xl)] font-black tabular-nums text-[var(--accent)]">
                 {paybackDays}d
               </p>
             </div>
