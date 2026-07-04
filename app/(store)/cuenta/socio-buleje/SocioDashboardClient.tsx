@@ -6,7 +6,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import {
   SectionTitle,
   BodyText,
@@ -32,11 +31,6 @@ import Breadcrumbs from "@/components/ui-system/Breadcrumbs";
 import RelatedFeatures from "@/components/ui-system/RelatedFeatures";
 import { relatedFor } from "@/lib/navigation/feature-registry";
 
-const MarketplaceNavbar = dynamic(
-  () => import("@/components/marketplace/MarketplaceNavbar"),
-  { ssr: true },
-);
-
 export function SocioDashboardClient() {
   const { isSocio, isLoading, status, totalSaved } = useSocioBuleje();
   const { customer } = useCustomer();
@@ -46,21 +40,16 @@ export function SocioDashboardClient() {
 
   if (isLoading) {
     return (
-      <>
-        <MarketplaceNavbar />
-        <LoadingState variant="fullscreen" message="Cargando tu panel de Socio..." />
-      </>
+      <LoadingState variant="fullscreen" message="Cargando tu panel de Socio..." />
     );
   }
 
   if (!isSocio) {
     return (
-      <>
-        <MarketplaceNavbar />
-        <main
-          id="main-content"
-          className="bg-[var(--surface-canvas)] min-h-[70vh] flex items-center justify-center px-4 py-12"
-        >
+      <main
+        id="main-content"
+        className="bg-[var(--surface-canvas)] flex min-h-[70vh] items-center justify-center px-4 py-12"
+      >
           <div className="flex flex-col items-center text-center max-w-md">
             {/* Ilustración custom — corona con identidad shipibo */}
             <div className="text-[var(--text-secondary)] mb-6" aria-hidden="true">
@@ -79,14 +68,12 @@ export function SocioDashboardClient() {
               </PrimaryButton>
             </div>
           </div>
-        </main>
-      </>
+      </main>
     );
   }
 
   return (
     <>
-      <MarketplaceNavbar />
       <main id="main-content" className="bg-[var(--surface-canvas)] min-h-screen">
         <div className="border-b border-[var(--rule-muted)] bg-[var(--surface-raised)]">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-3">

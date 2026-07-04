@@ -62,6 +62,10 @@ function shouldShowRail(pathname: string): boolean {
   // páginas del nav (Inicio·Tiendas·En Vivo·Recetas·Ofertas·Negocios·Abre tu Tienda).
   if (pathname.startsWith("/negocios")) return true;
   if (pathname.startsWith("/abrir-tienda")) return true;
+  // Brandon 2026-07-04: la membresía Socio Buleje (landing + panel) también
+  // lleva el rail lateral, como el resto del nav.
+  if (pathname.startsWith("/socio-buleje")) return true;
+  if (pathname.startsWith("/cuenta/socio-buleje")) return true;
   const m = pathname.match(/^\/marketplace\/([^/]+)/);
   if (m) {
     // Secciones de navegación del marketplace → rail.
