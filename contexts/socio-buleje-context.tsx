@@ -73,6 +73,8 @@ const CASHBACK_RATE = 0.05;
 
 // Dev-demo user id — en prod saldrá de la session / customer auth.
 const DEMO_USER_ID = "user_demo_01";
+/** userId del socio actual (dev-demo). En prod vendrá de la sesión del cliente. */
+export const SOCIO_CURRENT_USER_ID = DEMO_USER_ID;
 
 function loadState(storageKey: string): SocioBulejeState {
   if (typeof window === "undefined") return EMPTY_STATE;
@@ -209,10 +211,15 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
       persist(optimistic);
 
       try {
+        // Referido: si el link trae ?ref=<code>, lo pasamos para acreditar al referrer.
+        const ref =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("ref")
+            : null;
         const res = await fetch("/api/socio-buleje/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan, userId: DEMO_USER_ID }),
+          body: JSON.stringify({ plan, userId: DEMO_USER_ID, ...(ref ? { ref } : {}) }),
         });
         if (res.ok) {
           const data = (await res.json()) as {

@@ -21,6 +21,7 @@ import { SocioCorona } from "@/components/ui-system/illustrations";
 import { SocioDashboardHero } from "@/components/customer/socio-buleje/SocioDashboardHero";
 import { SocioKPIs } from "@/components/customer/socio-buleje/SocioKPIs";
 import { SocioTierCard } from "@/components/customer/socio-buleje/SocioTierBadge";
+import { SocioReferralCard } from "@/components/customer/socio-buleje/SocioReferralCard";
 import { SocioUsoBeneficios } from "@/components/customer/socio-buleje/SocioUsoBeneficios";
 import { SocioOfertasExclusivas } from "@/components/customer/socio-buleje/SocioOfertasExclusivas";
 import { SocioHistorial } from "@/components/customer/socio-buleje/SocioHistorial";
@@ -115,6 +116,7 @@ export function SocioDashboardClient() {
             <SocioUsoBeneficios />
           </div>
 
+          <SocioReferralCard />
           <SocioHistorial />
           <SocioOfertasExclusivas />
 
