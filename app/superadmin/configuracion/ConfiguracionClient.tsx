@@ -19,8 +19,9 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import {
   Loader2, Save, CheckCircle, Upload, Smartphone, CreditCard,
-  Building2, MessageCircle, Search, AlertTriangle, X, Settings,
+  Building2, MessageCircle, Search, AlertTriangle, X, Settings, ShieldCheck,
 } from "@buleje/design-system/icons";
+import { KeepAliveSwitch } from "@/components/shared/KeepAliveSwitch";
 import {
   PLATFORM_CONFIG_DEFAULTS,
   type PlatformConfig,
@@ -213,6 +214,15 @@ export default function ConfiguracionClient() {
           )}
         </div>
       )}
+
+      {/* ── Sesión y seguridad ────────────────────────────────────── */}
+      <Section
+        icon={<ShieldCheck className="h-5 w-5 text-[var(--accent)]" />}
+        title="Sesión y seguridad"
+        subtitle="Controlá cómo se mantiene tu sesión mientras trabajás en el panel."
+      >
+        <KeepAliveSwitch />
+      </Section>
 
       {/* ── 1. Pagos manuales ─────────────────────────────────────── */}
       <Section

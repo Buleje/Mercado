@@ -5,6 +5,7 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import type { StoreMode } from "@/lib/jsondb";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { KeepAliveSwitch } from "@/components/shared/KeepAliveSwitch";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import {
@@ -983,6 +984,9 @@ export default function SettingsModule({
 
   const renderSecurity = () => (
     <div className="space-y-6">
+      {/* Modo mantener sesión activa — no volver al login mientras se trabaja */}
+      <KeepAliveSwitch />
+
       {/* Dispositivos y accesos (#3a) — desde dónde entró el admin */}
       <LoginDevicesCard />
 

@@ -46,6 +46,7 @@ import {
   Webhook,
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
+import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -478,6 +479,7 @@ function ImpersonationBanner({ slug, onClear }: { slug: string; onClear: () => v
 export default function SuperAdminShell({ children, username, freshToken }: SuperAdminShellProps) {
   const pathname = usePathname();
   const { dark, toggle } = useTheme();
+  useSessionKeepAlive("superadmin"); // "modo mantener sesión" (switch en Configuración)
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -1851,7 +1853,7 @@ function NavGroupsAccordion({
                       onClick={onItemClick}
                       aria-current={active ? "page" : undefined}
                       className={[
-                        "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-normal transition-colors",
+                        "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-normal transition-colors",
                         active ? itemActive : itemIdle,
                       ].join(" ")}
                     >

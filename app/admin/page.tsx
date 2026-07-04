@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
+import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
 import { useAdminPrefetch } from "@/hooks/use-admin-prefetch";
 import { useTenantCacheGuard } from "@/hooks/use-tenant-cache-guard";
 import { LoadingState } from "@buleje/design-system";
@@ -71,6 +72,7 @@ function AdminPage() {
   const { handleLogout, onUnauth } = useAdminTenantPath(router);
 
   useTokenRefresh();
+  useSessionKeepAlive("admin"); // "modo mantener sesión" (switch en Ajustes · Seguridad)
   const onboarding = useOnboarding();
 
   const {
