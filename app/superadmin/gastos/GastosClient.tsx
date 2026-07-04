@@ -8,9 +8,9 @@
  * tienda + margen. Orquesta useGastos() + sub-componentes. Brandon 2026-06-30.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
-  Wallet, Server, TrendingUp, TrendingDown, Building2, Download, RefreshCw, DollarSign, FileText,
+  Wallet, Server, TrendingUp, TrendingDown, Download, RefreshCw, DollarSign, FileText,
   LayoutDashboard, Receipt, History, type LucideIcon,
 } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
@@ -27,6 +27,7 @@ import { ExpensesTable } from "./ExpensesTable";
 import { TrendChart } from "./TrendChart";
 import { CategoryDonut } from "./CategoryDonut";
 import { HistoryTable } from "./HistoryTable";
+import { TenantCostsPanel } from "./TenantCostsPanel";
 
 const TOOL =
   "inline-flex items-center gap-1.5 rounded-lg bg-[var(--surface-sunken)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
@@ -47,11 +48,6 @@ export default function GastosClient() {
   const runRate = g.summary?.monthlyRunRatePen ?? 0;
   const prev = g.summary?.prevMonthRunRatePen ?? 0;
   const delta = prev > 0 ? ((runRate - prev) / prev) * 100 : null;
-
-  const tenants = useMemo(
-    () => (g.costs?.tenants ?? []).slice().sort((a, b) => b.totalCost - a.totalCost),
-    [g.costs],
-  );
 
   const downloadCSV = () => {
     const blob = new Blob(["﻿" + expensesToCSV(g.expenses)], { type: "text/csv;charset=utf-8;" });
@@ -251,54 +247,7 @@ export default function GastosClient() {
       )}
 
       {/* ── Costos de infra por tienda ────────────────────────────────────── */}
-      {tab === "costos" && (
-        <SuperadminChartCard
-          title="Costos por tienda"
-          description="Infra estimada (storage · compute · IA) y margen bruto por tienda."
-          density="compact"
-        >
-          <div className="overflow-hidden rounded-lg border border-[var(--rule-soft)]">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] text-left text-sm font-bold text-[var(--text-tertiary)]">
-                <tr>
-                  <th className="p-2">Tienda</th>
-                  <th className="p-2">Plan</th>
-                  <th className="p-2 text-right">Storage</th>
-                  <th className="p-2 text-right">Compute</th>
-                  <th className="p-2 text-right">IA</th>
-                  <th className="p-2 text-right">Total</th>
-                  <th className="p-2 text-right">Margen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tenants.length === 0 && !g.loading && (
-                  <tr>
-                    <td colSpan={7} className="p-4 text-center text-[var(--text-tertiary)]">Sin datos de costos.</td>
-                  </tr>
-                )}
-                {tenants.map((t) => (
-                  <tr key={t.tenantId} className="border-t border-[var(--rule-soft)]">
-                    <td className="p-2">
-                      <span className="inline-flex items-center gap-1.5 font-bold text-[var(--text-primary)]">
-                        <Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />
-                        {t.tenantName}
-                      </span>
-                    </td>
-                    <td className="p-2 text-[var(--text-secondary)]">{t.plan}</td>
-                    <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.storageCost)}</td>
-                    <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.computeCost)}</td>
-                    <td className="p-2 text-right tabular-nums text-[var(--text-secondary)]">{fmtPen(t.aiCost)}</td>
-                    <td className="p-2 text-right tabular-nums font-bold text-[var(--text-primary)]">{fmtPen(t.totalCost)}</td>
-                    <td className={`p-2 text-right tabular-nums font-bold ${t.grossMargin >= 0 ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-error-600,#dc2626)]"}`}>
-                      {t.grossMargin.toFixed(0)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </SuperadminChartCard>
-      )}
+      {tab === "costos" && <TenantCostsPanel costs={g.costs} loading={g.loading} />}
     </AdminTabShell>
   );
 }
