@@ -47,6 +47,7 @@ import {
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
+import { SessionExpiryGuard } from "@/components/shared/SessionExpiryGuard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -685,24 +686,10 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     };
   }, []);
 
-  // Inactivity timeout — auto-logout after 30 min without interaction
-  useEffect(() => {
-    const INACTIVITY_MS = 30 * 60 * 1000; // 30 minutos
-    let timer: ReturnType<typeof setTimeout>;
-    const resetTimer = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        setSessionExpired(true);
-      }, INACTIVITY_MS);
-    };
-    const events = ["mousedown", "keydown", "scroll", "touchstart"] as const;
-    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }));
-    resetTimer();
-    return () => {
-      clearTimeout(timer);
-      events.forEach((e) => window.removeEventListener(e, resetTimer));
-    };
-  }, []);
+  // Inactivity timeout: lo maneja <SessionExpiryGuard/> (abajo en el render).
+  // Avisa 3 min antes con "Seguir conectado" en vez de sacar de golpe, y se
+  // re-arma con los pings del "modo mantener sesión activa" (por eso con ese
+  // modo ON el aviso no aparece).
 
   // Escape cierra el slide-over de configuración (click-fuera ya lo cierra).
   useEffect(() => {
@@ -1248,6 +1235,12 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
       )}
 
       {/* Session Expired Modal */}
+      <SessionExpiryGuard
+        panel="superadmin"
+        onExpire={() => setSessionExpired(true)}
+        onLogout={handleLogout}
+      />
+
       {sessionExpired && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-w-sm w-full p-6 shadow-[var(--shadow-xl)] text-center">
