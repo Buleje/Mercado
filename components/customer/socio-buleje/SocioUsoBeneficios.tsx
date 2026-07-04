@@ -7,7 +7,6 @@
 import {
   SectionTitle,
   CardTitle,
-  BodyText,
   Caption,
   Kicker,
 } from "@buleje/design-system";
@@ -97,10 +96,10 @@ function ProgressBar({ pct }: { pct: number }) {
     >
       <div
         className={cn(
-          "h-full rounded-full transition-all",
+          "h-full rounded-full transition-all duration-700",
           pct >= 75
             ? "bg-[var(--data-success-500)]"
-            : "bg-[var(--text-primary)]",
+            : "bg-[var(--accent)]",
         )}
         style={{ width: `${pct}%` }}
       />

@@ -20,6 +20,7 @@ import { ChevronDown } from "@buleje/design-system/icons";
 import { SocioCorona } from "@/components/ui-system/illustrations";
 import { SocioDashboardHero } from "@/components/customer/socio-buleje/SocioDashboardHero";
 import { SocioKPIs } from "@/components/customer/socio-buleje/SocioKPIs";
+import { SocioTierCard } from "@/components/customer/socio-buleje/SocioTierBadge";
 import { SocioUsoBeneficios } from "@/components/customer/socio-buleje/SocioUsoBeneficios";
 import { SocioOfertasExclusivas } from "@/components/customer/socio-buleje/SocioOfertasExclusivas";
 import { SocioHistorial } from "@/components/customer/socio-buleje/SocioHistorial";
@@ -36,7 +37,7 @@ const MarketplaceNavbar = dynamic(
 );
 
 export function SocioDashboardClient() {
-  const { isSocio, isLoading, status } = useSocioBuleje();
+  const { isSocio, isLoading, status, totalSaved } = useSocioBuleje();
   const { customer } = useCustomer();
   const [showDangerZone, setShowDangerZone] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -107,7 +108,13 @@ export function SocioDashboardClient() {
           )}
 
           <SocioKPIs />
-          <SocioUsoBeneficios />
+
+          {/* Tier (gamificación) + uso de beneficios — lado a lado en desktop */}
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <SocioTierCard totalSpent={Math.round((totalSaved || 0) * 20)} />
+            <SocioUsoBeneficios />
+          </div>
+
           <SocioHistorial />
           <SocioOfertasExclusivas />
 
