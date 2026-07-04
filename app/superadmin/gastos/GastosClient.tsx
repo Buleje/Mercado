@@ -134,6 +134,8 @@ export default function GastosClient() {
             prevRunRatePen={prev}
             recurringMonthlyPen={g.summary?.recurringMonthlyPen ?? 0}
             budgetPen={g.budget}
+            byCategory={g.summary?.byCategory ?? []}
+            prevByCategory={g.history?.[1]?.byCategory ?? []}
           />
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

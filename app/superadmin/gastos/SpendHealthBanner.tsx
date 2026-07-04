@@ -8,23 +8,42 @@
  * nuevo. Brandon 2026-07-04.
  */
 
-import { Activity, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
-import { fmtPen } from "./gastos-helpers";
+import { Activity, TrendingUp, TrendingDown, Minus, ArrowUpRight } from "@buleje/design-system/icons";
+import { CAT_META, fmtPen } from "./gastos-helpers";
+
+type CatAmount = { category: string; amountPen: number };
 
 export function SpendHealthBanner({
   runRatePen,
   prevRunRatePen,
   recurringMonthlyPen,
   budgetPen,
+  byCategory = [],
+  prevByCategory = [],
 }: {
   runRatePen: number;
   prevRunRatePen: number;
   recurringMonthlyPen: number;
   budgetPen: number | null;
+  /** Gasto por categoría de este mes y del mes pasado — para atribuir el alza. */
+  byCategory?: CatAmount[];
+  prevByCategory?: CatAmount[];
 }) {
   const delta = prevRunRatePen > 0 ? ((runRatePen - prevRunRatePen) / prevRunRatePen) * 100 : null;
   const fixedPct = runRatePen > 0 ? Math.round((recurringMonthlyPen / runRatePen) * 100) : null;
   const usagePct = budgetPen && budgetPen > 0 ? Math.round((runRatePen / budgetPen) * 100) : null;
+
+  // ¿Qué subió? La categoría con mayor aumento vs el mes pasado.
+  const driver = (() => {
+    if (prevByCategory.length === 0 || byCategory.length === 0) return null;
+    const prev = new Map(prevByCategory.map((c) => [c.category, c.amountPen]));
+    let top: { category: string; delta: number } | null = null;
+    for (const c of byCategory) {
+      const d = c.amountPen - (prev.get(c.category) ?? 0);
+      if (d > 0.01 && (!top || d > top.delta)) top = { category: c.category, delta: d };
+    }
+    return top;
+  })();
 
   // Tono del "vs mes pasado": subir el gasto es malo (rojo), bajar es bueno.
   const trendUp = delta !== null && delta > 0.5;
@@ -73,6 +92,12 @@ export function SpendHealthBanner({
                 </>
               )}
             </p>
+            {trendUp && driver && (
+              <p className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-700,#b91c1c)]">
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                El alza vino sobre todo de {CAT_META[driver.category]?.label ?? driver.category} (+{fmtPen(driver.delta)})
+              </p>
+            )}
           </div>
         </div>
 
