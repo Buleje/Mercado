@@ -29,11 +29,11 @@ function collectForRum(metric: Metric) {
   pending.set(metric.name.toLowerCase(), { value: metric.value, rating: metric.rating });
 }
 
-function flushRum() {
+function flushRum(tenantSlug: string) {
   if (flushed || pending.size === 0 || typeof navigator === "undefined") return;
   flushed = true;
   const body = JSON.stringify({
-    tenantSlug: getActiveTenantSlug(),
+    tenantSlug,
     metrics: Object.fromEntries(pending),
   });
   try {
@@ -57,8 +57,15 @@ function report(metric: Metric) {
   collectForRum(metric);
 }
 
-export default function WebVitalsReporter() {
+/**
+ * @param tenantSlug atribución explícita del RUM (tiendas white-label lo pasan
+ *   server-side). Sin prop, se auto-detecta del path/subdominio (marketplace + home).
+ */
+export default function WebVitalsReporter({ tenantSlug }: { tenantSlug?: string } = {}) {
   useEffect(() => {
+    const slug = tenantSlug || getActiveTenantSlug();
+    const flush = () => flushRum(slug);
+
     onCLS(report);
     onFCP(report);
     onINP(report);
@@ -66,15 +73,15 @@ export default function WebVitalsReporter() {
     onTTFB(report);
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") flushRum();
+      if (document.visibilityState === "hidden") flush();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("pagehide", flushRum);
+    window.addEventListener("pagehide", flush);
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("pagehide", flushRum);
+      window.removeEventListener("pagehide", flush);
     };
-  }, []);
+  }, [tenantSlug]);
 
   return null;
 }

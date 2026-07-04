@@ -17,6 +17,7 @@ import { SettingsDB } from "@/lib/db/settings.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { logger } from "@/lib/logger";
 import TenantPageTracker from "./_components/TenantPageTracker";
+import WebVitalsReporter from "@/components/WebVitalsReporter";
 import VendorTrustBadges from "@/components/store/VendorTrustBadges";
 import StickyCouponBanner from "@/components/store/StickyCouponBanner";
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
@@ -706,6 +707,12 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
 
       {/* Beacon tracker (client component) */}
       <TenantPageTracker tenantSlug={tenant.slug} />
+
+      {/* RUM Core Web Vitals → historial de rendimiento del tab admin (per-tenant).
+          El landing white-label renderiza su propio árbol (fuera del (store) shell),
+          así que el reporter se monta acá con el slug explícito. No en preview
+          (no ensuciar el histórico con el dueño editando). */}
+      {!isPreview && <WebVitalsReporter tenantSlug={tenant.slug} />}
 
       {/* GA4 + Meta Pixel del comerciante (Brandon 2026-06-26) — solo en la tienda
           pública, NUNCA en preview (no contaminar las métricas con el dueño editando). */}
