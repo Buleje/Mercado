@@ -16,7 +16,7 @@ import { logger } from "@/lib/logger";
  */
 
 const ThreatSchema = z.object({
-  type: z.enum(["sqli", "xss", "path_traversal", "command_injection", "scanner", "sensitive_probe"]),
+  type: z.enum(["sqli", "nosqli", "xss", "path_traversal", "command_injection", "code_injection", "ssrf", "scanner", "sensitive_probe"]),
   severity: z.enum(["low", "medium", "high", "critical"]),
   evidence: z.string().max(200),
 });

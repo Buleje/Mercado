@@ -16,9 +16,12 @@
 
 export type ThreatType =
   | "sqli"
+  | "nosqli"
   | "xss"
   | "path_traversal"
   | "command_injection"
+  | "code_injection"
+  | "ssrf"
   | "scanner"
   | "sensitive_probe";
 
@@ -65,6 +68,10 @@ const SIGNATURES: Signature[] = [
   { type: "sqli", severity: "high", re: /\b(sleep|benchmark|pg_sleep|waitfor\s+delay)\s*\(/i },
   { type: "sqli", severity: "medium", re: /(\bdrop\b\s+\btable\b|information_schema|;--|\/\*!)/i },
 
+  // NoSQL injection — operadores de Mongo en query/JSON.
+  { type: "nosqli", severity: "high", re: /\$(where|ne|gt|gte|lt|lte|regex|in|nin|exists)\b/i },
+  { type: "nosqli", severity: "medium", re: /\[\$(ne|gt|lt|in|or|and)\]/i }, // ?user[$ne]=
+
   // XSS — tags de script, handlers on*, javascript:, svg/onload.
   { type: "xss", severity: "critical", re: /<script[\s>]/i },
   { type: "xss", severity: "high", re: /javascript:\s*[^\s]/i },
@@ -78,7 +85,16 @@ const SIGNATURES: Signature[] = [
 
   // Command injection — separadores de shell + comandos comunes.
   { type: "command_injection", severity: "critical", re: /[;|`]\s*(cat|wget|curl|nc|bash|sh|rm|chmod|python|perl)\b/i },
-  { type: "command_injection", severity: "high", re: /\$\(.*\)|\$\{.*\}/ },
+  { type: "command_injection", severity: "high", re: /\$\(.*\)/ },
+
+  // Code / template injection — Log4Shell (JNDI), SSTI, XXE.
+  { type: "code_injection", severity: "critical", re: /\$\{jndi:(ldap|rmi|dns|iiop):/i }, // Log4Shell
+  { type: "code_injection", severity: "high", re: /\{\{\s*[\w.]+\s*[*+]\s*[\w.]+\s*\}\}|\$\{\{.+\}\}/ }, // SSTI {{7*7}}
+  { type: "code_injection", severity: "high", re: /<!ENTITY\b|<!DOCTYPE[^>]+SYSTEM|SYSTEM\s+["']file:/i }, // XXE
+
+  // SSRF — apuntar a loopback / metadata de la nube desde un parámetro.
+  { type: "ssrf", severity: "high", re: /(url|uri|dest|redirect|next|target|callback)=https?:\/\/(127\.0\.0\.1|localhost|0\.0\.0\.0|169\.254\.169\.254|metadata\.google)/i },
+  { type: "ssrf", severity: "medium", re: /(url|uri|dest)=(file|gopher|dict):\/\//i },
 
   // Sondeo de rutas sensibles — .env, .git, wp-admin, phpMyAdmin, backups.
   { type: "sensitive_probe", severity: "high", re: /\/(\.env|\.git\/|wp-login\.php|wp-admin|phpmyadmin|\.aws\/|\.ssh\/|config\.php)/i },

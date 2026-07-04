@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 type Severity = "low" | "medium" | "high" | "critical";
-type ThreatType = "sqli" | "xss" | "path_traversal" | "command_injection" | "scanner" | "sensitive_probe";
+type ThreatType = "sqli" | "nosqli" | "xss" | "path_traversal" | "command_injection" | "code_injection" | "ssrf" | "scanner" | "sensitive_probe";
 
 interface Overview {
   windowDays: number;
@@ -36,9 +36,12 @@ interface Overview {
 
 const TYPE_META: Record<ThreatType, { label: string; icon: LucideIcon }> = {
   sqli: { label: "SQL injection", icon: Database },
+  nosqli: { label: "NoSQL injection", icon: Database },
   xss: { label: "Cross-site scripting", icon: Code2 },
   path_traversal: { label: "Path traversal", icon: FolderOpen },
   command_injection: { label: "Command injection", icon: Command },
+  code_injection: { label: "Inyección de código", icon: Code2 },
+  ssrf: { label: "SSRF", icon: Globe },
   scanner: { label: "Escáner / bot", icon: ScanLine },
   sensitive_probe: { label: "Sondeo de rutas", icon: Target },
 };

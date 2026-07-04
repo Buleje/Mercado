@@ -28,6 +28,11 @@ export interface BlockedIp {
 
 const BLOCK_PREFIX = "sec:blocked:";
 const THREAT_PREFIX = "sec:threat:";
+const PERSIST_PREFIX = "sec:persist:";
+
+/** Máx eventos persistidos por IP por minuto (anti-inflado de ActivityLog). */
+export const PERSIST_CAP_PER_MIN = 12;
+const PERSIST_WINDOW_SEC = 60;
 
 /** TTL por defecto del ban (6 h) y de la ventana de conteo (15 min). */
 export const DEFAULT_BLOCK_TTL_SEC = 6 * 60 * 60;
@@ -131,6 +136,26 @@ export async function bumpThreatCounter(ip: string): Promise<number> {
     const key = `${THREAT_PREFIX}${ip}`;
     const count = await c.incr(key);
     if (count === 1) await c.expire(key, THREAT_WINDOW_SEC);
+    return count;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Contador de persistencia por IP en una ventana de 1 min. Devuelve el conteo
+ * tras incrementar. El caller persiste el evento solo si count <= cap — así una
+ * tormenta de bots no infla ActivityLog con miles de filas iguales (el
+ * auto-bloqueo sigue funcionando vía el threat counter, que no se throttlea).
+ * Sin Redis → devuelve 0 (siempre persiste; en dev no hay tormenta).
+ */
+export async function bumpPersistCounter(ip: string): Promise<number> {
+  const c = client();
+  if (!c || !ip || ip === "unknown") return 0;
+  try {
+    const key = `${PERSIST_PREFIX}${ip}`;
+    const count = await c.incr(key);
+    if (count === 1) await c.expire(key, PERSIST_WINDOW_SEC);
     return count;
   } catch {
     return 0;

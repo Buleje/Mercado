@@ -1,7 +1,8 @@
 import "server-only";
 import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import {
-  bumpThreatCounter, blockIp, listBlockedIps, AUTO_BLOCK_THRESHOLD, isBlocklistEnabled, hasTrustedIps,
+  bumpThreatCounter, bumpPersistCounter, blockIp, listBlockedIps,
+  AUTO_BLOCK_THRESHOLD, PERSIST_CAP_PER_MIN, isBlocklistEnabled, hasTrustedIps,
   type BlockedIp,
 } from "@/lib/security/ip-blocklist";
 import type { ThreatType, ThreatSeverity } from "@/lib/security/threat-signatures";
@@ -47,13 +48,18 @@ export async function recordSecurityEvent(evt: IncomingSecurityEvent): Promise<{
     blockedInline: evt.blockedInline,
   });
 
-  await ActivityLogDB.create(evt.tenantId ?? "system", {
-    action: ACTION,
-    entity: "security",
-    entityId: evt.requestId ?? null,
-    detail,
-    user: "waf",
-  }).catch((err) => logger.error("[security-events] persist failed", { error: String(err) }));
+  // Anti-inflado: si esta IP ya persistió muchos eventos este minuto, saltá el
+  // write (el auto-bloqueo abajo NO se throttlea, sigue contando toda amenaza).
+  const persistCount = await bumpPersistCounter(evt.ip);
+  if (persistCount <= PERSIST_CAP_PER_MIN) {
+    await ActivityLogDB.create(evt.tenantId ?? "system", {
+      action: ACTION,
+      entity: "security",
+      entityId: evt.requestId ?? null,
+      detail,
+      user: "waf",
+    }).catch((err) => logger.error("[security-events] persist failed", { error: String(err) }));
+  }
 
   // Escalada: contá amenazas por IP en la ventana; al umbral, auto-ban.
   const threatCount = await bumpThreatCounter(evt.ip);
