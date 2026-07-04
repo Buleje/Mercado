@@ -16,14 +16,33 @@ Build premium software with the quality standards of a senior multi-disciplinary
                     HEALER (Sonnet)
 ```
 
-## Decision Tree
+## Orchestration model (actualizado 2026-07-04)
 
-| Task scope | Action |
-|-----------|--------|
-| 1 file, 1 area | Direct subagent (no Hub) |
-| 2-4 files, 1-2 areas | Partial teammates from relevant Hub |
-| 5+ files, 2+ areas | Full Hub BUILD → gate → Hub QUALITY |
-| Sprint / initiative | Pipeline: BUILD → QUALITY → OPS (streaming) |
+**Via primaria: Workflows verificados.** Auditorias, migraciones, reviews y todo
+fan-out con verificacion se despachan via Workflow (`.claude/workflows/`, p.ej.
+`audit-verificado`) — verifier en contexto fresco / refutador adversarial por
+hallazgo. El `director` es un **router thin** que clasifica la tarea por tier
+Fast-Path (ADR-058) y elige la via mas barata que garantice verificacion.
+
+**Hub & Spoke / TeamCreate: secundario.** Reservado para builds interactivos
+genuinamente multi-agente con coordinacion en vivo — caso raro. Casi todo trabajo
+multi-fase se expresa mejor como Workflow por fases: `BUILD→QUALITY→OPS` sigue
+siendo el *template* de fases, no un Hub de agentes vivos por default.
+
+> **Drift 2026-07-04:** telemetria de 5 semanas = **38 corridas de Workflow-subagents
+> vs 0 despachos de director/TeamCreate**. Los Workflows reemplazaron al Hub&Spoke en
+> la practica; el director se adelgazo (405→~140 lineas) a router de tiers. El diagrama
+> de arriba describe el *roster* de agentes disponibles, no el flujo por default.
+
+## Decision Tree (por tier Fast-Path ADR-058)
+
+| Tier | Scope | Accion |
+|------|-------|--------|
+| HOTFIX | 1 file, <20 lineas | `Agent()` directo al subagente de dominio |
+| FEATURE | 2-5 files, 1 area | `Agent()` directo (1-2 subagentes) |
+| AUDIT/MIGRATE/REVIEW | "audita/migra/revisa X" | **Workflow `audit-verificado`** / fan-out verificado (primaria) |
+| INITIATIVE | 5+ files, 2+ areas | **Workflow por fases** (template BUILD→QUALITY→OPS) |
+| DANGER | zona de peligro | subagente + `security` antes del merge |
 
 ## Team (14 Agents)
 
@@ -31,7 +50,7 @@ Build premium software with the quality standards of a senior multi-disciplinary
 
 | Agent | Model | Role |
 |-------|-------|------|
-| `director` | Opus | Sole orchestrator. Dynamic routing, Hub composition, fallback chain, sprint pipeline |
+| `director` | Opus | Router thin. Clasifica por tier Fast-Path (ADR-058) y despacha: `Agent()` directo (HOTFIX/FEATURE) · Workflow verificado (audit/migrate/review) · Workflow por fases (INITIATIVE). TeamCreate solo para builds interactivos multi-agente (raro) |
 | `healer` | Sonnet | Auto-repair lint/tsc/test failures. Max 3 attempts before escalating |
 
 ### Hub BUILD (5 agents)
