@@ -9,6 +9,7 @@ import {
   Plus, Trash2, X, Check, Search, Loader2, AlertTriangle,
   MessageCircle, ExternalLink, Send, Calendar, TrendingUp,
   Percent, Users, User, Phone, Target, Play, Pause, Clock,
+  Pencil, Zap, Gift, Eye, EyeOff, Flame, Sparkles, BadgePercent,
 } from "@buleje/design-system/icons";
 import type { DbPromotion, DbCustomer } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
@@ -260,7 +261,10 @@ export default function PromotionsTab() {
 
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
-    await fetch(`/api/promotions/${confirmDeleteId}`, { method: "DELETE" });
+    await fetch(`/api/promotions/${confirmDeleteId}`, {
+      method: "DELETE",
+      headers: csrfHeaders(),
+    });
     setConfirmDeleteId(null);
     load();
   };
@@ -488,46 +492,64 @@ export default function PromotionsTab() {
 
   const topPromo = promoMetrics.reduce((best, p) => p.estimatedUses > (best?.estimatedUses ?? 0) ? p : best, promoMetrics[0]);
 
+  const totalUses = promoMetrics.reduce((s, p) => s + p.estimatedUses, 0);
+  const totalRevenue = promoMetrics.reduce((s, p) => s + p.estimatedRevenue, 0);
+
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* ── Mejora 13: Resumen de rendimiento ────────────────────────────── */}
+    <div className="space-y-5">
+      {/* Header + toolbar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Promociones y campañas</SectionTitle>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {active.length} activas · {inactive.length} inactivas · {campaigns.length} campañas
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            <Sparkles className="h-4 w-4" /> Sugerencias IA
+          </button>
+          <button
+            onClick={() => setShowTemplates(true)}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            <Calendar className="h-4 w-4" /> Plantillas
+          </button>
+          <button
+            onClick={openCreate}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white transition-all hover:brightness-105"
+          >
+            <Plus className="h-4 w-4" /> Nueva promoción
+          </button>
+        </div>
+      </div>
+
+      {/* Resumen de rendimiento — stat cards firma (sin emojis) */}
       {promos.length > 0 && (
-        <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-[var(--data-success-500)]" />
-            Rendimiento de Promociones
-          </CardTitle>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Activas</p>
-              <p className="text-lg font-extrabold text-[var(--data-success-500)]">{active.length}</p>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: "Activas", value: active.length, icon: Zap, tint: "var(--data-success-500)" },
+            { label: "Usos estimados", value: totalUses, icon: TrendingUp, tint: "var(--accent)" },
+            { label: "Ingreso estimado", value: `S/${totalRevenue.toFixed(0)}`, icon: BadgePercent, tint: "var(--data-info-500)" },
+            { label: "Más usada", value: topPromo?.name || "—", sub: topPromo ? `~${topPromo.estimatedUses} usos` : "", icon: Flame, tint: "var(--data-warning-500)" },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="flex items-center gap-2">
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: `color-mix(in srgb, ${s.tint} 14%, transparent)`, color: s.tint }}
+                >
+                  <s.icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </span>
+                <p className="text-sm font-semibold text-[var(--text-secondary)]">{s.label}</p>
+              </div>
+              <p className="mt-1.5 truncate font-display text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{s.value}</p>
+              {s.sub && <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{s.sub}</p>}
             </div>
-            <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Total usos est.</p>
-              <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{promoMetrics.reduce((s, p) => s + p.estimatedUses, 0)}</p>
-            </div>
-            <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Revenue est.</p>
-              <p className="text-lg font-extrabold text-primary">S/{promoMetrics.reduce((s, p) => s + p.estimatedRevenue, 0).toFixed(0)}</p>
-            </div>
-            <div className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Mas popular</p>
-              <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{topPromo?.name || "-"}</p>
-              <p className="text-xs text-[var(--text-tertiary)]">{topPromo ? `~${topPromo.estimatedUses} usos` : ""}</p>
-            </div>
-          </div>
-          {/* Badges de rendimiento inline por promo */}
-          <div className="flex flex-wrap gap-2">
-            {promoMetrics.slice(0, 6).map(p => (
-              <span key={p.id} className={cn(
-                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold",
-                p.estimatedUses > 10 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                p.estimatedUses < 3 ? "bg-gray-100 text-[var(--text-secondary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-              )}>
-                {p.estimatedUses > 10 ? "🔥" : p.estimatedUses < 3 ? "💤" : "📊"} {p.name}: ~{p.estimatedUses} usos
-              </span>
-            ))}
-          </div>
+          ))}
         </div>
       )}
 
@@ -640,114 +662,115 @@ export default function PromotionsTab() {
         )}
       </div>
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Promociones</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{active.length} activas · {inactive.length} inactivas</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white hover:brightness-110 transition-all "
-            style={{ background: 'linear-gradient(to right, #8b5cf6, #9333ea)' }}
-          >
-            <MessageCircle className="h-4 w-4" /> Sugerencias IA
-          </button>
-          <button
-            onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] transition-colors "
-          >
-            <Calendar className="h-4 w-4" /> Plantillas
-          </button>
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors "
-          >
-            <Plus className="h-4 w-4" /> Nueva
-          </button>
-        </div>
-      </div>
-
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">Cargando…</div>
+        <div className="flex h-40 items-center justify-center text-[var(--text-tertiary)]">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Cargando…
+        </div>
       ) : promos.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
-          No hay promociones. Crea una o pide sugerencias a la IA.
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
+          <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <Gift className="h-7 w-7" strokeWidth={2} />
+          </span>
+          <div className="space-y-1">
+            <h3 className="text-lg font-extrabold text-[var(--text-primary)]">Todavía no tienes promociones</h3>
+            <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">
+              Creá tu primera oferta y mandala por WhatsApp a tus clientes — o pedile ideas a la IA según tu negocio.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={openCreate}
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-extrabold text-white transition-all hover:brightness-105"
+            >
+              <Plus className="h-4 w-4" /> Crear promoción
+            </button>
+            <button
+              onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            >
+              <Sparkles className="h-4 w-4" /> Pedir ideas a la IA
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
-          {promos.map(p => (
-            <div key={p.id} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-hidden">
+          {promoMetrics.map(p => {
+            const targetLabel = p.targetType === "all" ? "Todos"
+              : p.targetType === "group" ? "Grupo"
+              : p.targetType === "individual" ? "Individual"
+              : p.targetType === "specific" ? "Segmentado" : "Todos";
+            return (
+            <div key={p.id} className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow hover:shadow-[var(--shadow-sm)]">
               <div className="flex">
-                {/* Accent strip */}
-                <div className={cn("w-1.5 shrink-0",
-                  p.active ? (p.discountPercent > 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--accent-soft)]") : "bg-gray-200"
-                )} />
-                <div className="flex-1">
+                {/* Accent strip por estado */}
+                <div className={cn("w-1.5 shrink-0", p.active ? "bg-[var(--accent)]" : "bg-[var(--rule-base)]")} />
+                <div className="min-w-0 flex-1">
                   <div
-                    className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                    className="cursor-pointer p-4 transition-colors hover:bg-[var(--surface-sunken)]/40"
                     {...activateProps(() => setDetailPromo(p))}
                   >
                     <div className="flex flex-wrap items-start gap-3">
                       {/* Image preview */}
                       {p.imageUrl && (
-                        <div className="relative w-14 h-14 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden shrink-0">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-sunken)]">
                           <Image src={p.imageUrl} alt={p.name} fill className="object-cover" sizes="56px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         </div>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</span>
-                          <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.active ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-[var(--text-primary)]">{p.name}</span>
+                          <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-[length:var(--ts-xs)] font-bold",
+                            p.active ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                           )}>
                             {p.active ? "Activa" : "Inactiva"}
                           </span>
                           {p.discountPercent > 0 && (
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
-                              {p.discountPercent}% OFF
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--data-error-50)] px-2.5 py-0.5 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-700)]">
+                              <BadgePercent className="h-3 w-3" /> {p.discountPercent}% OFF
                             </span>
                           )}
-                          <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
-                            p.targetType === "all" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
-                            p.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                          )}>
-                            {p.targetType === "all" ? "Todos" : p.targetType === "group" ? "Grupo" : "Individual"}
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
+                            <Target className="h-3 w-3" /> {targetLabel}
                           </span>
                         </div>
-                        <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5 line-clamp-2">{p.description}</p>
-                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
-                          Creada: {formatDate(p.createdAt)}
-                          {p.expiresAt && <> · Expira: {formatDate(p.expiresAt)}</>}
-                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-sm text-[var(--text-secondary)]">{p.description}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                          <span>Creada {formatDate(p.createdAt)}</span>
+                          {p.expiresAt && <span>· Expira {formatDate(p.expiresAt)}</span>}
+                          <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-secondary)]">
+                            <TrendingUp className="h-3.5 w-3.5" /> ~{p.estimatedUses} usos
+                          </span>
+                          <span className="inline-flex items-center gap-1 font-semibold text-[var(--text-secondary)]">
+                            <BadgePercent className="h-3.5 w-3.5" /> ~S/{p.estimatedRevenue.toFixed(0)} est.
+                          </span>
+                        </div>
                       </div>
                       {/* Actions */}
-                      <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                      <div className="flex shrink-0 items-center gap-1" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => openSendModal(p)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                          className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--accent-soft)] hover:text-[var(--accent)]"
                           title="Enviar por WhatsApp"
                         >
                           <Send className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openEdit(p)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                          className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                           title="Editar"
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => toggleActive(p)}
-                          className={cn("p-1.5 rounded-lg transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}
+                          className={cn("rounded-lg p-2 transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
                           title={p.active ? "Desactivar" : "Activar"}
                         >
-                          <Check className="h-4 w-4" />
+                          {p.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(p.id)}
-                          className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                          className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -758,7 +781,8 @@ export default function PromotionsTab() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
