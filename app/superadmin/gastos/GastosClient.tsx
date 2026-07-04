@@ -27,6 +27,7 @@ import { ExpensesTable } from "./ExpensesTable";
 import { TrendChart } from "./TrendChart";
 import { CategoryDonut } from "./CategoryDonut";
 import { HistoryTable } from "./HistoryTable";
+import { HistoryInsights } from "./HistoryInsights";
 import { TenantCostsPanel } from "./TenantCostsPanel";
 
 const TOOL =
@@ -236,14 +237,17 @@ export default function GastosClient() {
 
       {/* ── Historial mensual ─────────────────────────────────────────────── */}
       {tab === "historial" && (
-        <SuperadminChartCard
-          kicker="Evolución"
-          title="Historial mensual"
-          description="Cierre real congelado por mes; expandí un mes para ver el desglose por categoría."
-          density="compact"
-        >
-          <HistoryTable history={g.history} />
-        </SuperadminChartCard>
+        <>
+          <HistoryInsights history={g.history} />
+          <SuperadminChartCard
+            kicker="Detalle"
+            title="Historial mensual"
+            description="Cierre real congelado por mes; expandí un mes para ver el desglose por categoría."
+            density="compact"
+          >
+            <HistoryTable history={g.history} />
+          </SuperadminChartCard>
+        </>
       )}
 
       {/* ── Costos de infra por tienda ────────────────────────────────────── */}
