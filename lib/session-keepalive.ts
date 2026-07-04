@@ -15,7 +15,10 @@
  */
 
 const KEY = "bsm-session-keepalive";
+/** Se emite cuando cambia el switch ON/OFF. */
 export const KEEPALIVE_EVENT = "bsm-keepalive-changed";
+/** Se emite en cada renovación exitosa de la sesión (para mostrar "activo · hace Xs"). */
+export const KEEPALIVE_PING_EVENT = "bsm-keepalive-ping";
 
 export function getKeepAlive(): boolean {
   if (typeof window === "undefined") return false;

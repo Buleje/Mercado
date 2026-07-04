@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { getKeepAlive, KEEPALIVE_EVENT } from "@/lib/session-keepalive";
+import { getKeepAlive, KEEPALIVE_EVENT, KEEPALIVE_PING_EVENT } from "@/lib/session-keepalive";
 
 const REFRESH_INTERVAL_MS = 4 * 60 * 1000; // 4 min — por debajo del access de 15 min
 const ACTIVITY_THROTTLE_MS = 90 * 1000; // no refrescar por actividad más de 1 vez / 90s
@@ -43,15 +43,23 @@ export function useSessionKeepAlive(panel: "admin" | "superadmin"): { enabled: b
 
     const refresh = async () => {
       if (inFlightRef.current) return;
-      if (document.visibilityState !== "visible") return; // no gastar requests en background
+      // Nota: NO saltamos en background. El modo "mantener activa" existe
+      // justamente para que no te saque cuando dejás la pestaña de lado un
+      // rato; el idle timeout del superadmin (30 min) mata la sesión si nadie
+      // renueva. El navegador ya throttlea el interval en background, así que
+      // el gasto es mínimo.
       inFlightRef.current = true;
       lastRefreshRef.current = Date.now();
       try {
-        if (panel === "admin") {
-          await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
-        } else {
-          // GET rota el platform token cuando pasó la mitad de su vida.
-          await fetch("/api/superadmin/auth", { method: "GET", credentials: "include" });
+        const res =
+          panel === "admin"
+            ? await fetch("/api/auth/refresh", { method: "POST", credentials: "include" })
+            : // GET rota el platform token cuando pasó la mitad de su vida / idle.
+              await fetch("/api/superadmin/auth", { method: "GET", credentials: "include" });
+        if (res.ok) {
+          // Aviso a la UI (el switch muestra "renovada hace Xs") — prueba viva
+          // de que el modo está funcionando.
+          window.dispatchEvent(new CustomEvent(KEEPALIVE_PING_EVENT, { detail: Date.now() }));
         }
       } catch {
         /* error de red — reintenta en el próximo tick, no rompemos nada */
