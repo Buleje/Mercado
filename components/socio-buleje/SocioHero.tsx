@@ -62,10 +62,10 @@ export function SocioHero() {
           </span>
 
           <h1 id="socio-hero-heading" className="mt-5">
-            <span className="font-display block text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+            <span className="block text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
               Socio Buleje
             </span>
-            <span className="font-display mt-1 block text-2xl font-semibold italic leading-tight text-white/90 sm:text-3xl">
+            <span className="mt-1.5 block text-2xl font-bold leading-tight tracking-tight text-white/90 sm:text-3xl">
               Ahorrá todo el año en tu bodega
             </span>
           </h1>
@@ -96,11 +96,34 @@ export function SocioHero() {
               </span>
             ))}
           </div>
+
+          {/* Prueba social */}
+          <div className="mt-7 flex items-center gap-3">
+            <div className="flex -space-x-2">
+              {["ER", "CP", "MT"].map((i) => (
+                <span
+                  key={i}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/25 text-[length:var(--ts-2xs)] font-black text-white ring-2 ring-[var(--accent-dark)]"
+                >
+                  {i}
+                </span>
+              ))}
+            </div>
+            <p className="text-sm font-semibold text-white/90">
+              +800 vecinos ya son Socios
+            </p>
+          </div>
         </div>
 
         {/* ── Columna conversión ── */}
         <div className="w-full">
-          <div className="rounded-3xl border border-white/40 bg-[var(--surface-raised)] p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.35)] sm:p-6">
+          <div className="relative rounded-3xl border border-white/40 bg-[var(--surface-raised)] p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.35)] sm:p-6">
+            {!isSocio && (
+              <span className="absolute -top-3 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-[var(--accent)] px-3.5 py-1 text-xs font-black text-white shadow-lg ring-2 ring-[var(--surface-raised)]">
+                <Star className="h-3.5 w-3.5 fill-white" aria-hidden />
+                El plan que más eligen
+              </span>
+            )}
             {/* Mini-carnet de Socio */}
             <div
               className="relative overflow-hidden rounded-2xl p-4 text-white"
@@ -115,15 +138,19 @@ export function SocioHero() {
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/70">
                     Tarjeta de socio
                   </p>
-                  <p className="font-display mt-0.5 text-xl font-black leading-none">Buleje</p>
+                  <p className="mt-0.5 text-xl font-black leading-none tracking-tight">Buleje</p>
                 </div>
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-inset ring-white/25">
                   <Star className="h-5 w-5 fill-white text-white" aria-hidden />
                 </span>
               </div>
-              <p className="relative mt-6 text-sm font-semibold tracking-[var(--ls-wide)] text-white/90">
-                Vecino Socio · Ciudad Constitución
+              <p className="relative mt-5 font-mono text-base font-semibold tracking-[0.25em] text-white/80">
+                •••• •••• 2026
               </p>
+              <div className="relative mt-2 flex items-center justify-between text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-white/60">
+                <span>Vecino Socio</span>
+                <span>Ciudad Constitución</span>
+              </div>
             </div>
 
             {isSocio ? (

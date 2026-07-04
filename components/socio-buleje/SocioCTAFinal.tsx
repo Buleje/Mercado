@@ -52,7 +52,7 @@ export function SocioCTAFinal() {
             </span>
             <h2
               id="cta-final-heading"
-              className="font-display mt-4 text-3xl font-black leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl"
+              className="mt-4 text-3xl font-black leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl"
             >
               Probalo {TRIAL_DAYS} días gratis, sin compromiso
             </h2>

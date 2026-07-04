@@ -74,7 +74,7 @@ export function SocioBeneficios() {
         <SectionTitle
           id="beneficios-heading"
           as="h2"
-          className="font-display mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
+          className="mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
         >
           Beneficios pensados para tu bodega diaria
         </SectionTitle>
@@ -94,7 +94,7 @@ export function SocioBeneficios() {
               <Icon className="h-6 w-6" strokeWidth={2} aria-hidden />
             </span>
             <div className="space-y-1.5">
-              <h3 className="font-display text-lg font-bold leading-tight text-[var(--text-primary)]">
+              <h3 className="text-lg font-bold leading-tight text-[var(--text-primary)]">
                 {title}
               </h3>
               <BodyText className="text-[var(--text-secondary)]">{description}</BodyText>

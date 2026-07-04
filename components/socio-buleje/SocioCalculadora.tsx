@@ -53,7 +53,7 @@ export function SocioCalculadora() {
           <SectionTitle
             id="calculadora-heading"
             as="h2"
-            className="font-display mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
+            className="mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
           >
             ¿Cuánto ahorrás siendo Socio?
           </SectionTitle>
@@ -121,7 +121,7 @@ export function SocioCalculadora() {
             }}
           >
             <div className="min-w-0 flex-1">
-              <p className="font-display text-lg font-black leading-tight sm:text-xl">
+              <p className="text-lg font-black leading-tight sm:text-xl">
                 {net > 0
                   ? `Ahorrás ${fmt(net)} netos al año`
                   : "Tu ahorro cubre el costo del plan"}

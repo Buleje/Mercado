@@ -27,7 +27,7 @@ export function SocioFAQ() {
         <SectionTitle
           id="faq-heading"
           as="h2"
-          className="font-display mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
+          className="mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
         >
           Todo lo que quieres saber
         </SectionTitle>

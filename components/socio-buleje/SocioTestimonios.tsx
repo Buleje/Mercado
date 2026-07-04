@@ -23,7 +23,7 @@ export function SocioTestimonios() {
           <SectionTitle
             id="testimonios-heading"
             as="h2"
-            className="font-display mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
+            className="mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
           >
             Vecinos de Pucallpa que ya son Socios
           </SectionTitle>
