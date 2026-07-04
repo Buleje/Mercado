@@ -21,6 +21,7 @@ import {
   Tag,
   Rocket,
   MessageCircle,
+  Crown,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,8 @@ const RAIL_LINKS: readonly RailLink[] = [
   { href: "/recetas", label: "Recetas", Icon: ChefHat, matchPrefix: "/recetas" },
   // "Descubre" (/marketplace/para-vos) removido del rail — Brandon 2026-06-14.
   { href: "/abrir-tienda", label: "Abre tu Tienda", Icon: Rocket, matchPrefix: "/abrir-tienda" },
+  // Membresía Socio Buleje — debajo de "Abre tu Tienda" (Brandon 2026-07-04).
+  { href: "/socio-buleje", label: "Socio", Icon: Crown, matchPrefix: "/socio-buleje" },
 ];
 
 export default function MarketplaceNavRail() {
