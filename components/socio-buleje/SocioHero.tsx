@@ -13,6 +13,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { PrimaryButton, SuccessAlert } from "@buleje/design-system";
 import { ArrowRight, Check, Sparkles, Star } from "@buleje/design-system/icons";
+import { BodegueroCelebrando } from "@/components/ui-system/illustrations/success-moments";
 import { PlanSelector } from "./PlanSelector";
 import { useSocioBuleje } from "@/contexts/socio-buleje-context";
 import type { SocioPlan } from "@/lib/validators/socio-buleje";
@@ -116,8 +117,15 @@ export function SocioHero() {
         </div>
 
         {/* ── Columna conversión ── */}
-        <div className="w-full">
-          <div className="relative rounded-3xl border border-white/40 bg-[var(--surface-raised)] p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.35)] sm:p-6">
+        <div className="relative w-full">
+          {/* Bodeguero celebrando — asoma junto al carnet (solo desktop). */}
+          <BodegueroCelebrando
+            size={190}
+            strokeWidth={1.75}
+            aria-hidden
+            className="pointer-events-none absolute -bottom-16 -left-24 z-0 hidden text-white drop-shadow-[0_8px_20px_rgba(0,0,0,0.25)] xl:block"
+          />
+          <div className="relative z-10 rounded-3xl border border-white/40 bg-[var(--surface-raised)] p-5 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:-translate-y-0.5 sm:p-6">
             {!isSocio && (
               <span className="absolute -top-3 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-[var(--accent)] px-3.5 py-1 text-xs font-black text-white shadow-lg ring-2 ring-[var(--surface-raised)]">
                 <Star className="h-3.5 w-3.5 fill-white" aria-hidden />
