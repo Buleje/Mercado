@@ -285,10 +285,15 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <SidebarConfigPanel items={SIDEBAR_ITEMS} />
+      <JumpNav />
+
+      <div id="set-sidebar" className="scroll-mt-28">
+        <SidebarConfigPanel items={SIDEBAR_ITEMS} />
+      </div>
 
       {/* ─── Precios de planes ─────────────────────────────────────── */}
       <SectionHeader
+        id="set-precios"
         eyebrow="Monetización"
         icon={DollarSign}
         title="Precios de planes"
@@ -312,6 +317,7 @@ export default function SettingsPage() {
         icon={Percent}
         title="Comisión por defecto"
         subtitle="Porcentaje que la plataforma retiene de cada venta cross-vendor. Puede sobreescribirse por categoría o por vendor."
+        id="set-comision"
       />
       <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -355,6 +361,7 @@ export default function SettingsPage() {
 
       {/* ─── Límites por plan ────────────────────────────────────────── */}
       <SectionHeader
+        id="set-limites"
         eyebrow="Cuotas"
         icon={BarChart3}
         title="Límites por plan"
@@ -401,6 +408,7 @@ export default function SettingsPage() {
 
       {/* ─── Controles ───────────────────────────────────────────────── */}
       <SectionHeader
+        id="set-controles"
         eyebrow="Operativa"
         icon={Settings}
         title="Controles de plataforma"
@@ -461,18 +469,20 @@ function StatPill({
 }
 
 function SectionHeader({
+  id,
   eyebrow,
   icon: Icon,
   title,
   subtitle,
 }: {
+  id?: string;
   eyebrow: string;
   icon: LucideIcon;
   title: string;
   subtitle: string;
 }) {
   return (
-    <div className="flex items-start gap-3 border-b border-[var(--rule-soft)] pb-3 pt-2">
+    <div id={id} className="scroll-mt-28 flex items-start gap-3 border-b border-[var(--rule-soft)] pb-3 pt-2">
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
         <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
       </span>
@@ -486,6 +496,63 @@ function SectionHeader({
         <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
       </div>
     </div>
+  );
+}
+
+// ── Barra de salto entre secciones (sticky) — página muy larga (~4000px) ─────
+function useActiveSection(ids: string[]): string {
+  const [active, setActive] = useState(ids[0] ?? "");
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (vis[0]) setActive(vis[0].target.id);
+      },
+      { rootMargin: "-112px 0px -60% 0px", threshold: [0.05, 0.4] },
+    );
+    ids.forEach((id) => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    return () => obs.disconnect();
+  }, [ids]);
+  return active;
+}
+
+const JUMP_SECTIONS = [
+  { id: "set-sidebar", label: "Barra lateral" },
+  { id: "set-precios", label: "Precios" },
+  { id: "set-comision", label: "Comisión" },
+  { id: "set-limites", label: "Límites" },
+  { id: "set-controles", label: "Controles" },
+];
+
+function JumpNav() {
+  const ids = useMemo(() => JUMP_SECTIONS.map((s) => s.id), []);
+  const active = useActiveSection(ids);
+  return (
+    <nav
+      aria-label="Ir a sección"
+      className="sticky top-2 z-20 -mx-1 overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-2 py-1.5 backdrop-blur"
+    >
+      <ul className="flex min-w-full items-center gap-1">
+        {JUMP_SECTIONS.map((s) => {
+          const isActive = active === s.id;
+          return (
+            <li key={s.id}>
+              <a
+                href={`#${s.id}`}
+                aria-current={isActive ? "true" : undefined}
+                className={`inline-flex whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-bold transition-colors ${
+                  isActive
+                    ? "bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                }`}
+              >
+                {s.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 
