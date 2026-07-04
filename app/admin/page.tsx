@@ -7,6 +7,7 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
+import { SessionExpiryGuard } from "@/components/shared/SessionExpiryGuard";
 import { useAdminPrefetch } from "@/hooks/use-admin-prefetch";
 import { useTenantCacheGuard } from "@/hooks/use-tenant-cache-guard";
 import { LoadingState } from "@buleje/design-system";
@@ -436,6 +437,11 @@ function AdminPage() {
           onboarding={onboarding}
         />
       </div>
+
+      {/* Aviso amable antes de cerrar por inactividad (30 min). Se re-arma con
+          la actividad del usuario y con el "modo mantener sesión activa" (switch
+          en Ajustes · Seguridad), así que con ese modo ON no aparece. */}
+      <SessionExpiryGuard panel="admin" onExpire={handleLogout} onLogout={handleLogout} />
     </div>
     </TrialExpiredGuard>
   );
