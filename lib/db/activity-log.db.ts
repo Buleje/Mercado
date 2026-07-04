@@ -31,8 +31,16 @@ export interface ActivityLogPageOpts {
   entity?: string;
   user?: string;
   action?: string;
+  /** Solo entradas creadas en o después de esta fecha (filtro de período). */
+  since?: Date;
   limit?: number;
   offset?: number;
+}
+
+export interface ActivityLogSummary {
+  total: number;
+  /** Conteo por acción exacta, desc. Alimenta cards categorizadas + filtro. */
+  byAction: Array<{ action: string; count: number }>;
 }
 
 export interface ActivityLogPageEntry {
@@ -83,6 +91,7 @@ export const ActivityLogDB = {
     if (opts.entity) where.entity = opts.entity;
     if (opts.action) where.action = opts.action;
     if (opts.user) where.user = { contains: opts.user, mode: "insensitive" as const };
+    if (opts.since) where.createdAt = { gte: opts.since };
 
     const [logs, total] = await Promise.all([
       prisma.activityLog.findMany({
@@ -153,6 +162,33 @@ export const ActivityLogDB = {
     const items = hasMore ? rows.slice(0, limit) : rows;
     const nextCursor = hasMore ? items[items.length - 1].id : null;
     return { items, nextCursor };
+  },
+
+  /**
+   * Resumen agregado del audit trail para las cards + filtro dinámico de
+   * acciones del tab Auditoría. Cuenta por acción (groupBy) sobre el conjunto
+   * filtrado por entity/user/since — deliberadamente SIN el filtro de action,
+   * para que las categorías se muestren siempre completas y sean clickeables.
+   */
+  async summarize(
+    tenantId: string,
+    opts: { entity?: string; user?: string; since?: Date } = {},
+  ): Promise<ActivityLogSummary> {
+    const where: Record<string, unknown> = { tenantId };
+    if (opts.entity) where.entity = opts.entity;
+    if (opts.user) where.user = { contains: opts.user, mode: "insensitive" as const };
+    if (opts.since) where.createdAt = { gte: opts.since };
+
+    const grouped = await prisma.activityLog.groupBy({
+      by: ["action"],
+      where,
+      _count: { action: true },
+      orderBy: { _count: { action: "desc" } },
+    });
+
+    const byAction = grouped.map((g) => ({ action: g.action, count: g._count.action }));
+    const total = byAction.reduce((acc, g) => acc + g.count, 0);
+    return { total, byAction };
   },
 
   /**
