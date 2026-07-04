@@ -1,18 +1,13 @@
 "use client";
 
 /**
- * SocioBeneficios — Grid 6 cards con los beneficios del Socio.
+ * SocioBeneficios — Grid de 6 beneficios (rediseño 2026-07-04).
  *
- * IconBadge large + título + copy. Estilo minimalista (ADR-075).
+ * Cards con icon-badge en accent-soft, hover lift y borde accent, título
+ * `font-display`. Coherente con el hero premium.
  */
 
-import {
-  SectionTitle,
-  CardTitle,
-  BodyText,
-  Kicker,
-  IconBadge,
-} from "@buleje/design-system";
+import { SectionTitle, BodyText, Kicker } from "@buleje/design-system";
 import {
   Truck,
   Percent,
@@ -51,8 +46,7 @@ const BENEFICIOS: readonly Beneficio[] = [
   {
     Icon: Clock,
     title: "Acceso temprano a ofertas",
-    description:
-      "Verás las promos 24 horas antes que el resto del marketplace.",
+    description: "Verás las promos 24 horas antes que el resto del marketplace.",
   },
   {
     Icon: MessageCircle,
@@ -75,12 +69,12 @@ export function SocioBeneficios() {
       className="mx-auto max-w-6xl px-4 py-16 sm:py-20"
       aria-labelledby="beneficios-heading"
     >
-      <header className="text-center max-w-2xl mx-auto mb-12">
+      <header className="mx-auto mb-12 max-w-2xl text-center">
         <Kicker>Lo que obtenés</Kicker>
         <SectionTitle
           id="beneficios-heading"
           as="h2"
-          className="mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
+          className="font-display mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
         >
           Beneficios pensados para tu bodega diaria
         </SectionTitle>
@@ -90,20 +84,20 @@ export function SocioBeneficios() {
         </BodyText>
       </header>
 
-      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {BENEFICIOS.map(({ Icon, title, description }) => (
           <li
             key={title}
-            className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex flex-col gap-4"
+            className="group flex flex-col gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 transition-all duration-200 hover:-translate-y-1 hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]"
           >
-            <IconBadge size="xl" intent="muted" shape="square" asDiv>
-              <Icon className="h-6 w-6" aria-hidden />
-            </IconBadge>
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/15 transition-colors group-hover:bg-[var(--accent)] group-hover:text-white">
+              <Icon className="h-6 w-6" strokeWidth={2} aria-hidden />
+            </span>
             <div className="space-y-1.5">
-              <CardTitle>{title}</CardTitle>
-              <BodyText className="text-[var(--text-secondary)]">
-                {description}
-              </BodyText>
+              <h3 className="font-display text-lg font-bold leading-tight text-[var(--text-primary)]">
+                {title}
+              </h3>
+              <BodyText className="text-[var(--text-secondary)]">{description}</BodyText>
             </div>
           </li>
         ))}

@@ -10,7 +10,6 @@
 import { useMemo, useState } from "react";
 import {
   SectionTitle,
-  CardTitle,
   BodyText,
   Caption,
   Kicker,
@@ -54,7 +53,7 @@ export function SocioCalculadora() {
           <SectionTitle
             id="calculadora-heading"
             as="h2"
-            className="mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
+            className="font-display mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
           >
             ¿Cuánto ahorrás siendo Socio?
           </SectionTitle>
@@ -84,7 +83,7 @@ export function SocioCalculadora() {
               value={spend}
               onChange={(e) => setSpend(Number(e.target.value))}
               aria-label="Compras mensuales estimadas"
-              className="w-full h-2 rounded-full bg-[var(--surface-sunken)] appearance-none cursor-pointer accent-[var(--text-primary)]"
+              className="w-full h-2 rounded-full bg-[var(--surface-sunken)] appearance-none cursor-pointer accent-[var(--accent)]"
             />
 
             <div className="mt-2 flex justify-between">
@@ -113,26 +112,32 @@ export function SocioCalculadora() {
             />
           </div>
 
-          {/* Payback summary */}
-          <div className="mt-6 rounded-xl border border-[var(--rule-muted)] bg-[var(--surface-sunken)]/60 p-4">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div className="flex-1 min-w-0">
-                <CardTitle className="text-[length:var(--ts-base)]">
-                  {net > 0
-                    ? `Ahorrás ${fmt(net)} netos al año`
-                    : "Tu ahorro cubre el costo del plan"}
-                </CardTitle>
-                <BodyText className="mt-1 text-[var(--text-secondary)]">
-                  Costo anual del plan: {fmt(yearlyCost)}. La suscripción se
-                  paga sola en {paybackDays} {paybackDays === 1 ? "día" : "días"}.
-                </BodyText>
-              </div>
-              <div className="text-right shrink-0">
-                <Caption className="text-[var(--text-tertiary)]">Payback</Caption>
-                <p className="text-[length:var(--ts-2xl)] font-extrabold tabular-nums text-[var(--text-primary)]">
-                  {paybackDays}d
-                </p>
-              </div>
+          {/* Payback summary — card gradiente accent (punch premium) */}
+          <div
+            className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl p-5 text-white"
+            style={{
+              backgroundImage:
+                "linear-gradient(120deg, var(--accent) 0%, var(--accent-dark) 100%)",
+            }}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-lg font-black leading-tight sm:text-xl">
+                {net > 0
+                  ? `Ahorrás ${fmt(net)} netos al año`
+                  : "Tu ahorro cubre el costo del plan"}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-white/85">
+                Costo anual del plan: {fmt(yearlyCost)}. La suscripción se paga
+                sola en {paybackDays} {paybackDays === 1 ? "día" : "días"}.
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/70">
+                Payback
+              </p>
+              <p className="text-[length:var(--ts-2xl)] font-black tabular-nums">
+                {paybackDays}d
+              </p>
             </div>
           </div>
         </div>

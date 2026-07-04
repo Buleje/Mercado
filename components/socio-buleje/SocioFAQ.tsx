@@ -27,7 +27,7 @@ export function SocioFAQ() {
         <SectionTitle
           id="faq-heading"
           as="h2"
-          className="mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
+          className="font-display mt-2 text-[length:var(--ts-2xl)] sm:text-[length:var(--ts-3xl)]"
         >
           Todo lo que quieres saber
         </SectionTitle>
@@ -40,13 +40,15 @@ export function SocioFAQ() {
       <ul className="space-y-2.5">
         {MOCK_FAQS.map((faq) => (
           <li key={faq.q}>
-            <details className="group rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 open:shadow-sm transition-shadow">
+            <details className="group rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 transition-all open:border-[var(--accent)]/30 open:shadow-sm hover:border-[var(--accent)]/40">
               <summary className="flex items-center justify-between gap-4 cursor-pointer list-none">
-                <CardTitle>{faq.q}</CardTitle>
-                <ChevronDown
-                  className="h-4 w-4 text-[var(--text-tertiary)] transition-transform group-open:rotate-180 shrink-0"
-                  aria-hidden
-                />
+                <CardTitle className="transition-colors group-hover:text-[var(--accent)]">{faq.q}</CardTitle>
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] transition-colors group-open:bg-[var(--accent)] group-open:text-white">
+                  <ChevronDown
+                    className="h-4 w-4 transition-transform group-open:rotate-180"
+                    aria-hidden
+                  />
+                </span>
               </summary>
               <BodyText className="mt-3 text-[var(--text-secondary)] leading-relaxed">
                 {faq.a}
