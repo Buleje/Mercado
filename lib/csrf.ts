@@ -146,6 +146,11 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // IDs con regex, rate-limit GENEROUS y solo incrementa contadores (sin
     // datos sensibles ni mutación de estado de usuario).
     "/api/marketplace/promo-banners/track",
+    // Beacon de Core Web Vitals RUM (historial de rendimiento por tenant):
+    // mismo caso sendBeacon sin headers. El endpoint valida slug con regex +
+    // Zod safeParse, rate-limit STRICT, y solo suma números a un rollup
+    // diario (sin datos sensibles ni mutación de estado de usuario).
+    "/api/analytics/vitals",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;
