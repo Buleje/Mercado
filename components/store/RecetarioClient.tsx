@@ -52,6 +52,7 @@ type Receta = {
   costoTotal?: number;
   colorFrom?: string;
   colorTo?: string;
+  emoji?: string | null;
   imageUrl?: string | null;
   ingredientes: Ingrediente[];
   totalIngredientes: number;
@@ -74,6 +75,15 @@ const CATEGORIAS: { id: string; label: string; Icon: LucideIcon }[] = [
 ];
 
 import { CATEGORIA_GRADIENTS } from "@/lib/recipe-gradients";
+
+// Ícono grande por categoría para el hero de la card (sobre el gradiente).
+const CAT_ICON: Record<string, LucideIcon> = {
+  "Entradas": Salad,
+  "Platos de fondo": ChefHat,
+  "Sopas": Soup,
+  "Postres": Cake,
+  "Bebidas": GlassWater,
+};
 
 const DIFICULTAD_LABELS: Record<string, { label: string; Icon: LucideIcon }> = {
   "Facil": { label: "Fácil", Icon: Star },
@@ -194,13 +204,28 @@ function RecetaCard({
                 className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
               />
             ) : (
-              /* Placeholder más grande con icono y texto visible */
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] text-[var(--text-tertiary)] gap-3">
-                <ChefHat className="h-14 w-14" strokeWidth={1.25} aria-hidden />
-                <span className="text-[length:var(--ts-xs)] uppercase tracking-wider font-bold">
-                  {receta.categoria ?? "Receta"}
-                </span>
-              </div>
+              /* Ícono de categoría grande en blanco sobre el gradiente de la
+                 categoría — vibrante, único por tipo de plato y confiable en
+                 todo browser (Brandon 2026-07-04). */
+              (() => {
+                const CatIcon = CAT_ICON[receta.categoria ?? ""] ?? Utensils;
+                return (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center overflow-hidden"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, ${receta.colorFrom ?? "#f97316"}, ${receta.colorTo ?? "#ef4444"})`,
+                    }}
+                  >
+                    <div aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-xl" />
+                    <div aria-hidden className="pointer-events-none absolute -bottom-8 -left-6 h-28 w-28 rounded-full bg-black/10 blur-xl" />
+                    <CatIcon
+                      className="h-20 w-20 text-white/95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.25)] transition-transform duration-[var(--dur-slow)] group-hover:scale-110 sm:h-24 sm:w-24"
+                      strokeWidth={1.4}
+                      aria-hidden
+                    />
+                  </div>
+                );
+              })()
             )}
 
             {/* Subtle bottom gradient solo si hay imagen real */}
@@ -289,6 +314,17 @@ function RecetaCard({
               </p>
             </div>
           </div>
+
+          {/* CTA: agregar los ingredientes disponibles al carrito (1 click) */}
+          <button
+            type="button"
+            onClick={() => onAddAll(receta)}
+            disabled={availIngs === 0}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ShoppingCart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Agregar ingredientes
+          </button>
         </div>
       </div>
     </motion.div>
@@ -347,10 +383,12 @@ export default function RecetarioClient({
   const [catFilter, setCatFilter] = useState("todas");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [suggestion, setSuggestion] = useState("");
-  // Filtro de cocinabilidad — solo mostrar recetas que se pueden cocinar HOY
-  // (todos los ingredientes esenciales tienen stock en al menos 1 tienda).
-  // Default ON: el cliente quiere ver lo que puede pedir ya.
-  const [cookableOnly, setCookableOnly] = useState(true);
+  // Filtro de cocinabilidad — solo recetas cocinables HOY. Default OFF para que
+  // el recetario muestre TODO el catálogo (con banda de estado por card); el
+  // cliente puede acotar a "solo cocinables" con el toggle. Brandon 2026-07-04.
+  const [cookableOnly, setCookableOnly] = useState(false);
+  // Filtro por dificultad (nuevo): "" = todas.
+  const [difFilter, setDifFilter] = useState<"" | "Facil" | "Media" | "Dificil">("");
   // Vista previa de receta — reemplaza la pagina dedicada /recetas/[id]
   const [previewRecipe, setPreviewRecipe] = useState<Receta | null>(null);
   const { addItem } = useCart();
@@ -402,8 +440,12 @@ export default function RecetarioClient({
       list = list.filter(r => r.cookable !== false);
     }
 
+    if (difFilter) {
+      list = list.filter(r => r.dificultad === difFilter);
+    }
+
     return list;
-  }, [recetas, search, catFilter, cookableOnly]);
+  }, [recetas, search, catFilter, cookableOnly, difFilter]);
 
   // Conteo total de no-cocinables para el toggle (independiente de filtros)
   const hiddenByCookability = useMemo(
@@ -612,6 +654,34 @@ export default function RecetarioClient({
                 )}
               </span>
             </label>
+          </div>
+
+          {/* Row 3: filtro por dificultad (nuevo) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Dificultad
+            </span>
+            {([
+              { v: "", label: "Todas" },
+              { v: "Facil", label: "Fácil" },
+              { v: "Media", label: "Media" },
+              { v: "Dificil", label: "Difícil" },
+            ] as const).map((d) => (
+              <button
+                key={d.v || "all"}
+                type="button"
+                onClick={() => setDifFilter(d.v)}
+                aria-pressed={difFilter === d.v}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-[length:var(--ts-xs)] font-bold transition-colors",
+                  difFilter === d.v
+                    ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]",
+                )}
+              >
+                {d.label}
+              </button>
+            ))}
           </div>
 
           {/* Mobile count */}
