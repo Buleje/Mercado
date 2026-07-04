@@ -9,8 +9,8 @@
  */
 
 import { ChartWrapper } from "@buleje/design-system";
-import { TrendingUp, TrendingDown } from "@buleje/design-system/icons";
-import { MOCK_MONTHLY_SAVINGS } from "@/lib/mocks/socio-buleje.mock";
+import { TrendingUp, TrendingDown, LineChart } from "@buleje/design-system/icons";
+import { useSocioBuleje } from "@/contexts/socio-buleje-context";
 
 const H = 150; // alto del área de plot
 const PAD_TOP = 24; // espacio para las etiquetas de valor
@@ -22,9 +22,29 @@ function fmt(n: number): string {
 }
 
 export function SocioHistorial() {
-  const data = MOCK_MONTHLY_SAVINGS;
-  const max = Math.max(...data.map((d) => d.amount), 1);
+  // Datos REALES del ledger (vía context). Sin mock.
+  const { monthlySavings } = useSocioBuleje();
+  const data = monthlySavings;
   const total = data.reduce((a, b) => a + b.amount, 0);
+
+  // Empty state: socio nuevo / sin cashback ganado todavía.
+  if (data.length === 0 || total <= 0) {
+    return (
+      <ChartWrapper title="Historial de ahorro" description="Tu cashback mes a mes, en tiempo real">
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]">
+            <LineChart className="h-7 w-7" strokeWidth={1.75} aria-hidden />
+          </span>
+          <p className="max-w-xs text-sm text-[var(--text-secondary)]">
+            Todavía no generaste cashback. Cada pedido como Socio suma 5% — acá vas a
+            ver tu ahorro crecer mes a mes.
+          </p>
+        </div>
+      </ChartWrapper>
+    );
+  }
+
+  const max = Math.max(...data.map((d) => d.amount), 1);
   const avg = Math.round(total / data.length);
   const best = data.reduce((a, b) => (b.amount > a.amount ? b : a), data[0]);
 

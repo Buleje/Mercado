@@ -1,7 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { StatusQuerySchema } from "@/lib/validators/socio-buleje";
-import { SocioBulejeDB } from "@/lib/db/socio-buleje.db";
+import { SocioBulejeDB, getSocioMonthlySavings } from "@/lib/db/socio-buleje.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
@@ -34,7 +34,13 @@ export async function GET(req: NextRequest) {
     const { userId } = parsed.data;
     const membership = await SocioBulejeDB.getMembership(tenantId, userId);
 
-    return NextResponse.json({ ok: true, membership, traceId });
+    // Ahorro mensual REAL del ledger (solo si hay membership). Alimenta el
+    // historial y el "uso este mes" del panel con datos reales, no mock.
+    const savings = membership
+      ? await getSocioMonthlySavings(tenantId, userId, 6).catch(() => null)
+      : null;
+
+    return NextResponse.json({ ok: true, membership, savings, traceId });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
     logger.warn("[api/socio-buleje/status] error", {

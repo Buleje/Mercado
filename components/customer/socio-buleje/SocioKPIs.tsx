@@ -11,10 +11,10 @@ import Link from "next/link";
 import { StatCard } from "@buleje/design-system";
 import {
   TrendingUp,
-  Truck,
   CalendarDays,
   Wallet,
   ArrowRight,
+  Coins,
 } from "@buleje/design-system/icons";
 import { useSocioBuleje } from "@/contexts/socio-buleje-context";
 
@@ -23,9 +23,9 @@ function fmt(n: number): string {
 }
 
 export function SocioKPIs() {
-  const { cashbackBalance, totalSaved, totalOrdersWithFreeShipping, daysAsSocio } =
-    useSocioBuleje();
-  const cashback = cashbackBalance || 47.3;
+  // Datos REALES del ledger (vía context). Sin fallbacks de prueba.
+  const { cashbackBalance, totalSaved, daysAsSocio, thisMonthCashback } = useSocioBuleje();
+  const cashback = cashbackBalance;
 
   return (
     <section aria-labelledby="kpi-heading">
@@ -59,21 +59,21 @@ export function SocioKPIs() {
         {/* Stats secundarios */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-2">
           <StatCard
-            label="Ahorro acumulado este año"
-            value={fmt(totalSaved || 312.5)}
+            label="Cashback ganado (histórico)"
+            value={fmt(totalSaved)}
             icon={TrendingUp}
             emphasis="success"
             subValue="Desde que sos Socio"
           />
           <StatCard
-            label="Envíos gratis"
-            value={String(totalOrdersWithFreeShipping || 27)}
-            icon={Truck}
-            subValue="Pedidos sin costo de delivery"
+            label="Ganado este mes"
+            value={fmt(thisMonthCashback)}
+            icon={Coins}
+            subValue="Cashback del mes en curso"
           />
           <StatCard
             label="Días como Socio"
-            value={String(daysAsSocio || 182)}
+            value={String(daysAsSocio)}
             icon={CalendarDays}
             subValue="Y contando"
           />

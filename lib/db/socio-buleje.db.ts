@@ -1025,6 +1025,46 @@ export function getPlanPrice(plan: SocioPlanInput): number {
   return planPriceSoles(canonicalPlan(plan));
 }
 
+/**
+ * Ahorro mensual REAL del socio, derivado del ledger de cashback (entradas
+ * "earned"/"bonus"). Devuelve los últimos `months` meses (rellena con 0 los
+ * meses sin actividad) + el total del mes en curso. Datos reales, no mock.
+ */
+export async function getSocioMonthlySavings(
+  tenantId: string,
+  userId: string,
+  months = 6,
+): Promise<{ monthly: Array<{ month: string; amount: number }>; thisMonth: number; hasData: boolean }> {
+  const entries = await SocioBulejeDB.getCashbackHistory(tenantId, userId, 300);
+  const MONTHS_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
+
+  // Suma de "ganado" por clave YYYY-MM.
+  const byKey = new Map<string, number>();
+  let hasData = false;
+  for (const e of entries) {
+    if (e.type !== "earned" && e.type !== "bonus") continue;
+    if (e.amountSoles <= 0) continue;
+    hasData = true;
+    const d = new Date(e.createdAt);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    byKey.set(key, (byKey.get(key) ?? 0) + e.amountSoles);
+  }
+
+  // Construir la ventana de los últimos `months` meses (incluye el actual).
+  const now = new Date();
+  const monthly: Array<{ month: string; amount: number }> = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    monthly.push({ month: MONTHS_ES[d.getUTCMonth()], amount: Math.round((byKey.get(key) ?? 0) * 100) / 100 });
+  }
+
+  const thisKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const thisMonth = Math.round((byKey.get(thisKey) ?? 0) * 100) / 100;
+
+  return { monthly, thisMonth, hasData };
+}
+
 // Logger dev-only para diagnosticar unused warnings.
 if (process.env.NODE_ENV === "development") {
   logger.debug("[socio-buleje.db] loaded Prisma-backed DB class (ADR-078)");

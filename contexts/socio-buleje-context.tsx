@@ -37,6 +37,10 @@ export type SocioBulejeState = {
   totalSaved: number;
   totalOrdersWithFreeShipping: number;
   daysAsSocio: number;
+  /** Ahorro mensual REAL (ledger) — últimos 6 meses. Vacío si no hay actividad. */
+  monthlySavings: Array<{ month: string; amount: number }>;
+  /** Cashback ganado en el mes en curso (real). */
+  thisMonthCashback: number;
 };
 
 type SocioBulejeCtx = SocioBulejeState & {
@@ -62,6 +66,8 @@ const EMPTY_STATE: SocioBulejeState = {
   totalSaved: 0,
   totalOrdersWithFreeShipping: 0,
   daysAsSocio: 0,
+  monthlySavings: [],
+  thisMonthCashback: 0,
 };
 
 const SocioBulejeContext = createContext<SocioBulejeCtx | null>(null);
@@ -114,7 +120,13 @@ function daysBetween(a: string, b: string): number {
   return Math.max(0, Math.floor((d2 - d1) / (24 * 60 * 60 * 1000)));
 }
 
-function serverToState(m: ServerMembership | null): SocioBulejeState {
+type ServerSavings = {
+  monthly: Array<{ month: string; amount: number }>;
+  thisMonth: number;
+  hasData: boolean;
+} | null;
+
+function serverToState(m: ServerMembership | null, savings?: ServerSavings): SocioBulejeState {
   if (!m) return EMPTY_STATE;
   return {
     isSocio: m.status === "active" || m.status === "trial",
@@ -125,6 +137,8 @@ function serverToState(m: ServerMembership | null): SocioBulejeState {
     totalSaved: m.totalEarned,
     totalOrdersWithFreeShipping: 0, // no lo trackea ADR-078 v1
     daysAsSocio: daysBetween(m.startedAt, new Date().toISOString()),
+    monthlySavings: savings?.monthly ?? [],
+    thisMonthCashback: savings?.thisMonth ?? 0,
   };
 }
 
@@ -153,9 +167,10 @@ export function SocioBulejeProvider({ children }: { children: ReactNode }) {
       const data = (await res.json()) as {
         ok: boolean;
         membership: ServerMembership | null;
+        savings?: ServerSavings;
       };
       if (data.ok) {
-        persist(serverToState(data.membership));
+        persist(serverToState(data.membership, data.savings));
       }
     } catch {
       // offline / SSR — dejamos el optimistic state.
