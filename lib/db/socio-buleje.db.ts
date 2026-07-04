@@ -589,6 +589,16 @@ export const SocioBulejeDB: ISocioBulejeDB = {
         throw new SocioInactiveError(membership.status);
       }
 
+      // Idempotencia por orderId: si ya se acreditó cashback earned de este
+      // pedido, devolvemos esa entry (evita doble crédito en reintentos).
+      if (orderId) {
+        const dup = (await tx.socioCashbackEntry.findFirst({
+          where: { tenantId, orderId, type: "earned" },
+          orderBy: [{ createdAt: "desc" }],
+        })) as PrismaCashbackEntry | null;
+        if (dup && "type" in dup) return dup;
+      }
+
       const last = await tx.socioCashbackEntry.findFirst({
         where: { tenantId, userId },
         orderBy: [{ createdAt: "desc" }],

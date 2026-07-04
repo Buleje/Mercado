@@ -1136,6 +1136,25 @@ export const POST = withApiHandler("orders-create", async (req) => {
     // sin requerir un login adicional. El phone ya viene del input del propio
     // cliente, así que no abrimos nuevo vector de auth — solo evitamos pedirle
     // credenciales repetidas para sus propios datos.
+    // ── Socio Buleje: cashback 5% al confirmar el pedido (fire-and-forget) ──
+    // El socio userId == teléfono (mismo que el customerId de la sesión). Si el
+    // cliente no es socio activo, es no-op. Idempotente por orderId. No bloquea
+    // la respuesta ni rompe el checkout si algo falla (CLAUDE.md #7).
+    if (saved.customer?.phone) {
+      const savedOrderId = saved.id;
+      const savedPhone = saved.customer.phone;
+      void import("@/lib/socio/order-cashback")
+        .then(({ creditOrderCashback }) =>
+          creditOrderCashback(tenantId, savedPhone, savedOrderId, computedTotal),
+        )
+        .catch((err) =>
+          logger.warn("[orders] socio cashback hook failed", {
+            error: err instanceof Error ? err.message : String(err),
+            orderId: savedOrderId,
+          }),
+        );
+    }
+
     const response = NextResponse.json(saved, { status: 201 });
     const customerPhoneForSession = saved.customer?.phone;
     if (customerPhoneForSession) {
