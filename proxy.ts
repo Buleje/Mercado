@@ -33,6 +33,7 @@ import {
   guardWriteProtectedApi,
 } from "@/lib/middleware/auth-guards";
 import { auditCrossTenantHeader } from "@/lib/middleware/cross-tenant-audit";
+import { guardThreats } from "@/lib/middleware/threat-detection";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -70,6 +71,13 @@ export async function proxy(request: NextRequest) {
     const rlResponse = await checkRateLimit(request);
     if (rlResponse) return rlResponse;
   }
+
+  // ── 4a. WAF: detección de ataques + blocklist de IPs ───────────────────────
+  // Firmas SQLi/XSS/traversal/scanner en path+query+UA → bloqueo inline (403)
+  // de firmas críticas + reporte fire-and-forget (auto-ban de reincidentes).
+  // Fail-open: cualquier fallo deja pasar la request. Ver lib/middleware/threat-detection.
+  const threatResponse = await guardThreats(request, pathname, tenantId, requestId);
+  if (threatResponse) return threatResponse;
 
   // ── 4b. CSRF double-submit cookie validation on mutations ─────────────────
   // Validates X-CSRF-Token header matches csrf-token cookie for POST/PATCH/PUT/DELETE.

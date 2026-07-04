@@ -192,6 +192,30 @@ export const ActivityLogDB = {
   },
 
   /**
+   * Eventos de seguridad PLATFORM-WIDE (cross-tenant) — para el Security Center
+   * de superadmin. A diferencia del resto de la clase, NO scopea por tenantId:
+   * los ataques (WAF/injection) son un concern de plataforma, no de un tenant.
+   * Uso EXCLUSIVO superadmin (el endpoint que lo llama exige rol superadmin).
+   */
+  async listPlatformSecurityEvents(
+    opts: { since?: Date; actions?: string[]; limit?: number } = {},
+  ): Promise<ActivityLogPageEntry[]> {
+    const limit = Math.min(2000, Math.max(1, opts.limit ?? 1000));
+    const where: Record<string, unknown> = { entity: "security" };
+    if (opts.actions && opts.actions.length > 0) where.action = { in: opts.actions };
+    if (opts.since) where.createdAt = { gte: opts.since };
+    return prisma.activityLog.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true, action: true, entity: true, entityId: true, detail: true,
+        user: true, ipAddress: true, userAgent: true, tenantId: true, createdAt: true,
+      },
+    });
+  },
+
+  /**
    * Crea una entrada de audit log directamente (no via queue). Usado
    * por endpoints que deben confirmar el insert antes de responder.
    */

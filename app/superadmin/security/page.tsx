@@ -25,9 +25,11 @@ import {
   ShieldAlert,
   ClipboardCheck,
   ScrollText,
+  Target,
 } from "@buleje/design-system/icons";
 import { SecurityHero } from "@/components/superadmin/security/SecurityHero";
 import { OverviewTab } from "@/components/superadmin/security/OverviewTab";
+import { ThreatsTab } from "@/components/superadmin/security/ThreatsTab";
 import { AuthSessionsTab } from "@/components/superadmin/security/AuthSessionsTab";
 import { PermissionsTab } from "@/components/superadmin/security/PermissionsTab";
 import { VulnerabilitiesTab } from "@/components/superadmin/security/VulnerabilitiesTab";
@@ -36,7 +38,7 @@ import { AuditLogTab } from "@/components/superadmin/security/AuditLogTab";
 import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 import { SuperAdminModuleTabs, SEGURIDAD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
-type TabKey = "overview" | "auth" | "permissions" | "vulnerabilities" | "compliance" | "audit";
+type TabKey = "overview" | "threats" | "auth" | "permissions" | "vulnerabilities" | "compliance" | "audit";
 
 interface TabDef {
   key: TabKey;
@@ -46,6 +48,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
+  { key: "threats", label: "Amenazas", icon: Target },
   { key: "auth", label: "Auth & Sesiones", icon: Lock },
   { key: "permissions", label: "Permisos", icon: Users },
   { key: "vulnerabilities", label: "Vulnerabilidades", icon: ShieldAlert },
@@ -137,6 +140,7 @@ export default function SecurityCenterPage() {
         className={SUPERADMIN_CONTENT}
       >
         {active === "overview" && <OverviewTab />}
+        {active === "threats" && <ThreatsTab />}
         {active === "auth" && <AuthSessionsTab />}
         {active === "permissions" && <PermissionsTab />}
         {active === "vulnerabilities" && <VulnerabilitiesTab />}
