@@ -9,7 +9,7 @@
 import { useMemo, useState } from "react";
 import {
   Server, MessageSquare, Sparkles, CreditCard, Users, Megaphone, MoreHorizontal,
-  Search, ArrowUpDown, Layers, Pencil, Trash2, DollarSign,
+  Search, ChevronDown, Layers, Pencil, Trash2, DollarSign,
 } from "@buleje/design-system/icons";
 import { CAT_META, fmtPen, fmtUsd, type Expense } from "./gastos-helpers";
 
@@ -90,7 +90,13 @@ export function ExpensesTable({
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
   const [sort, setSort] = useState<SortKey>("amount");
+  const [asc, setAsc] = useState(false);
   const [grouped, setGrouped] = useState(false);
+
+  const toggleSort = (k: SortKey) => {
+    if (k === sort) setAsc((a) => !a);
+    else { setSort(k); setAsc(k !== "amount"); } // texto A→Z, monto mayor→menor
+  };
 
   const cats = useMemo(
     () => Array.from(new Set(expenses.map((e) => e.category))),
@@ -105,12 +111,16 @@ export function ExpensesTable({
       return true;
     });
     rows = rows.slice().sort((a, b) => {
-      if (sort === "amount") return b.amountPen - a.amountPen;
-      if (sort === "concept") return a.concept.localeCompare(b.concept, "es");
-      return (CAT_META[a.category]?.label ?? a.category).localeCompare(CAT_META[b.category]?.label ?? b.category, "es");
+      const cmp =
+        sort === "amount"
+          ? a.amountPen - b.amountPen
+          : sort === "concept"
+            ? a.concept.localeCompare(b.concept, "es")
+            : (CAT_META[a.category]?.label ?? a.category).localeCompare(CAT_META[b.category]?.label ?? b.category, "es");
+      return asc ? cmp : -cmp;
     });
     return rows;
-  }, [expenses, q, cat, sort]);
+  }, [expenses, q, cat, sort, asc]);
 
   const groups = useMemo(() => {
     if (!grouped) return null;
@@ -163,10 +173,6 @@ export function ExpensesTable({
             <option key={c} value={c}>{CAT_META[c]?.label ?? c}</option>
           ))}
         </select>
-        <button onClick={() => setSort(sort === "amount" ? "concept" : sort === "concept" ? "category" : "amount")} className={CHIP}>
-          <ArrowUpDown className="h-4 w-4" />
-          {sort === "amount" ? "Monto" : sort === "concept" ? "Concepto" : "Categoría"}
-        </button>
         <button
           onClick={() => setGrouped((g) => !g)}
           className={`${CHIP} ${grouped ? "border-[var(--accent)] text-[var(--text-primary)]" : ""}`}
@@ -180,10 +186,10 @@ export function ExpensesTable({
         <table className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left text-sm font-bold text-[var(--text-tertiary)]">
             <tr>
-              <th className="p-2">Concepto</th>
-              <th className="p-2">Categoría</th>
-              <th className="p-2 text-right">Monto</th>
-              <th className="p-2"></th>
+              <SortHead label="Concepto" k="concept" cur={sort} asc={asc} onSort={toggleSort} />
+              <SortHead label="Categoría" k="category" cur={sort} asc={asc} onSort={toggleSort} />
+              <SortHead label="Monto" k="amount" cur={sort} asc={asc} onSort={toggleSort} align="right" />
+              <th className="p-2" />
             </tr>
           </thead>
           <tbody>
@@ -231,6 +237,38 @@ export function ExpensesTable({
 
       <FxRateEditor fxRate={fxRate} busy={busy} hasUsd={hasUsd} onSaveFx={onSaveFx} />
     </div>
+  );
+}
+
+/** Encabezado clickeable que ordena por su columna (indicador ▲/▼). */
+function SortHead({
+  label, k, cur, asc, onSort, align = "left",
+}: {
+  label: string;
+  k: SortKey;
+  cur: SortKey;
+  asc: boolean;
+  onSort: (k: SortKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = cur === k;
+  return (
+    <th className={`p-0 ${align === "right" ? "text-right" : "text-left"}`}>
+      <button
+        type="button"
+        onClick={() => onSort(k)}
+        className={`inline-flex w-full items-center gap-1 p-2 hover:text-[var(--text-primary)] ${
+          align === "right" ? "justify-end" : "justify-start"
+        } ${active ? "text-[var(--text-primary)]" : ""}`}
+        aria-label={`Ordenar por ${label}`}
+      >
+        {label}
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform ${active ? "opacity-100" : "opacity-30"} ${active && asc ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </button>
+    </th>
   );
 }
 

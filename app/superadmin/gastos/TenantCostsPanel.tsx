@@ -11,25 +11,49 @@
  * calculados por /api/superadmin/costs. Brandon 2026-07-04.
  */
 
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import {
-  Server, Building2, TrendingDown, TrendingUp, HardDrive, Cpu, Sparkles,
+  Server, Building2, TrendingDown, TrendingUp, HardDrive, Cpu, Sparkles, ChevronDown,
 } from "@buleje/design-system/icons";
 import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
 import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
-import { fmtPen, type CostsData } from "./gastos-helpers";
+import { fmtPen, type CostsData, type TenantCost } from "./gastos-helpers";
+
+type SortKey = "name" | "storage" | "compute" | "ai" | "total" | "margin";
 
 export function TenantCostsPanel({ costs, loading }: { costs: CostsData | null; loading: boolean }) {
-  const tenants = (costs?.tenants ?? []).slice().sort((a, b) => b.totalCost - a.totalCost);
+  const [sortKey, setSortKey] = useState<SortKey>("total");
+  const [asc, setAsc] = useState(false);
+
+  const base = costs?.tenants ?? [];
   const total = costs?.totalMonthlyCost ?? 0;
   const avgMargin = costs?.avgGrossMargin ?? 0;
-  const lossCount = tenants.filter((t) => t.grossMargin < 0).length;
+  const lossCount = base.filter((t) => t.grossMargin < 0).length;
 
-  const storageT = tenants.reduce((s, t) => s + t.storageCost, 0);
-  const computeT = tenants.reduce((s, t) => s + t.computeCost, 0);
-  const aiT = tenants.reduce((s, t) => s + t.aiCost, 0);
+  const storageT = base.reduce((s, t) => s + t.storageCost, 0);
+  const computeT = base.reduce((s, t) => s + t.computeCost, 0);
+  const aiT = base.reduce((s, t) => s + t.aiCost, 0);
   const compTotal = Math.max(1, storageT + computeT + aiT);
-  const maxTotal = Math.max(1, ...tenants.map((t) => t.totalCost));
+  const maxTotal = Math.max(1, ...base.map((t) => t.totalCost));
+  // La tienda más cara es SIEMPRE la de mayor costo (no depende del orden de la tabla).
+  const priciest = base.reduce<TenantCost | null>((m, t) => (!m || t.totalCost > m.totalCost ? t : m), null);
+
+  const val = (t: TenantCost): number | string =>
+    sortKey === "name" ? t.tenantName.toLowerCase()
+    : sortKey === "storage" ? t.storageCost
+    : sortKey === "compute" ? t.computeCost
+    : sortKey === "ai" ? t.aiCost
+    : sortKey === "margin" ? t.grossMargin
+    : t.totalCost;
+  const tenants = [...base].sort((a, b) => {
+    const av = val(a), bv = val(b);
+    const cmp = typeof av === "string" ? av.localeCompare(String(bv), "es") : (av as number) - (bv as number);
+    return asc ? cmp : -cmp;
+  });
+  const toggleSort = (k: SortKey) => {
+    if (k === sortKey) setAsc((a) => !a);
+    else { setSortKey(k); setAsc(false); }
+  };
 
   return (
     <>
@@ -50,9 +74,9 @@ export function TenantCostsPanel({ costs, loading }: { costs: CostsData | null; 
         />
         <SAKpiCard
           label="Tienda más cara"
-          value={tenants[0] ? fmtPen(tenants[0].totalCost) : "—"}
+          value={priciest ? fmtPen(priciest.totalCost) : "—"}
           icon={Building2}
-          sub={tenants[0]?.tenantName ?? "sin datos"}
+          sub={priciest?.tenantName ?? "sin datos"}
         />
       </div>
 
@@ -81,13 +105,13 @@ export function TenantCostsPanel({ costs, loading }: { costs: CostsData | null; 
           <table className="w-full text-sm">
             <thead className="bg-[var(--surface-sunken)] text-left text-sm font-bold text-[var(--text-tertiary)]">
               <tr>
-                <th className="p-2">Tienda</th>
+                <SortTh label="Tienda" k="name" cur={sortKey} asc={asc} onSort={toggleSort} />
                 <th className="p-2">Plan</th>
-                <th className="p-2 text-right">Storage</th>
-                <th className="p-2 text-right">Compute</th>
-                <th className="p-2 text-right">IA</th>
-                <th className="p-2">Total / mes</th>
-                <th className="p-2 text-right">Margen</th>
+                <SortTh label="Storage" k="storage" cur={sortKey} asc={asc} onSort={toggleSort} align="right" />
+                <SortTh label="Compute" k="compute" cur={sortKey} asc={asc} onSort={toggleSort} align="right" />
+                <SortTh label="IA" k="ai" cur={sortKey} asc={asc} onSort={toggleSort} align="right" />
+                <SortTh label="Total / mes" k="total" cur={sortKey} asc={asc} onSort={toggleSort} />
+                <SortTh label="Margen" k="margin" cur={sortKey} asc={asc} onSort={toggleSort} align="right" />
               </tr>
             </thead>
             <tbody>
@@ -144,6 +168,40 @@ export function TenantCostsPanel({ costs, loading }: { costs: CostsData | null; 
         </div>
       </SuperadminChartCard>
     </>
+  );
+}
+
+/** Encabezado clickeable que ordena por su columna (con indicador ▲/▼). */
+function SortTh({
+  label, k, cur, asc, onSort, align = "left",
+}: {
+  label: string;
+  k: SortKey;
+  cur: SortKey;
+  asc: boolean;
+  onSort: (k: SortKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = cur === k;
+  return (
+    <th className={`p-0 ${align === "right" ? "text-right" : "text-left"}`}>
+      <button
+        type="button"
+        onClick={() => onSort(k)}
+        className={`inline-flex w-full items-center gap-1 p-2 hover:text-[var(--text-primary)] ${
+          align === "right" ? "justify-end" : "justify-start"
+        } ${active ? "text-[var(--text-primary)]" : ""}`}
+        aria-label={`Ordenar por ${label}`}
+      >
+        {label}
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform ${
+            active ? "opacity-100" : "opacity-30"
+          } ${active && asc ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </button>
+    </th>
   );
 }
 
