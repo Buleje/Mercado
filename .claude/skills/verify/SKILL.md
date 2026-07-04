@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Gate obligatorio antes de reportar "listo". Corre tsc + lint + tests del área + curl de endpoints tocados. Si alguno falla, bloquea el reporte con una tabla de qué arreglar. Usar al cerrar una tarea, antes de decir "consolidado", "integrado", "terminado". Complementa a /deploy-check (que es pre-deploy full).
+description: Gate obligatorio antes de reportar "listo". Corre tsc + lint + tests del área + curl de endpoints tocados. Si alguno falla, bloquea el reporte con una tabla de qué arreglar. Usar al cerrar una tarea, antes de decir "consolidado", "integrado", "terminado". Complementa a /deploy check (que es pre-deploy full).
 user-invocable: true
 model: haiku
 allowed-tools: Bash, Read, Grep, Glob
@@ -113,7 +113,7 @@ Si un check falla, leer el error, arreglar, y re-correr `/verify`. Si después d
 
 ## Complemento
 
-- `/deploy-check` — más exhaustivo, para PRE-DEPLOY real (incluye build + SLO gates)
+- `/deploy check` — más exhaustivo, para PRE-DEPLOY real (build-gate + SLO gates, sin push)
 - `/verify` — intra-sesión, barato, constante, antes de cada "listo"
 - agente `healer` — cuando `/verify` falla repetido y hay que depurar
 
