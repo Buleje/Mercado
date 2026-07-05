@@ -169,6 +169,7 @@ export default function MarketplaceSecondaryNav() {
               aria-haspopup="true"
               aria-expanded={menuOpen}
               aria-controls="category-mega-menu"
+              aria-label="Ver todas las categorías"
               onClick={() => setMenuOpen((o) => !o)}
               onFocus={openMenu}
               className={cn(
@@ -178,8 +179,12 @@ export default function MarketplaceSecondaryNav() {
                   : "bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
+              {/* Brandon 2026-07-05 (audit navegación): "Categorías" → "Ver todas".
+                  Los chips de la izquierda YA son categorías; un botón también
+                  rotulado "Categorías" al lado se leía redundante. "Ver todas"
+                  deja claro que abre el listado completo. */}
               <LayoutGrid className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
-              <span className="hidden sm:inline">Categorías</span>
+              <span className="hidden sm:inline">Ver todas</span>
               <ChevronDown
                 className={cn(
                   "h-3.5 w-3.5 shrink-0 transition-transform duration-150",
@@ -191,8 +196,15 @@ export default function MarketplaceSecondaryNav() {
             </button>
           </div>
 
-          {/* ── Envío gratis — solo desktop (ahorra espacio en móvil/tablet). ── */}
-          <div className="hidden lg:block shrink-0">
+          {/* ── Envío gratis — solo desktop (ahorra espacio en móvil/tablet).
+               Brandon 2026-07-05 (audit navegación): divisor propio + `pl-1`
+               para que se lea como un módulo aparte y no apretado contra el
+               botón de categorías (antes se veía exprimido al extremo). ── */}
+          <div
+            className="hidden lg:block h-5 w-px bg-[var(--rule-soft)] shrink-0"
+            aria-hidden="true"
+          />
+          <div className="hidden lg:block shrink-0 pl-1">
             <FreeShippingIndicator />
           </div>
         </div>

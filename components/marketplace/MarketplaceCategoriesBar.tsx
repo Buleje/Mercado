@@ -40,11 +40,14 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Brandon 2026-06-11: las subcategorías DEPENDEN del vertical de arriba. En la
-  // home (embedded) usamos el vertical efectivo (default "comida"); standalone
-  // solo acota si `?v=` viene explícito (preserva el "todo el catálogo" previo).
+  // Brandon 2026-06-11: las subcategorías DEPENDEN del vertical de arriba.
+  // Brandon 2026-07-05 (audit navegación): antes la home (embedded) forzaba
+  // `vertical="comida"` cuando el "mundo" activo era "Todo" — mostraba en
+  // secreto sub-rubros de Comida (Bebidas, Postres…) aunque arriba dijera
+  // "Todo". Ahora sin `?v=` el scope es null = categorías cross-vertical reales
+  // (honesto). Con un mundo elegido (?v=comida) se acota a ese mundo.
   const rawV = searchParams.get("v");
-  const vertical = rawV ? normalizeVertical(rawV) : embedded ? "comida" : null;
+  const vertical = rawV ? normalizeVertical(rawV) : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -105,14 +108,21 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
     return `/${qs ? `?${qs}` : ""}#catalogo`;
   };
 
-  // Brandon 2026-06-11 (rework mobile): tabs FLAT con subrayado de acento — sin
-  // cápsulas redondeadas, sin fondo, sin sombra. Cohesivo con la fila de
-  // verticales de arriba; más limpio y "elaborado".
-  const tabBase =
-    "snap-start shrink-0 inline-flex items-center gap-1 border-b-2 py-2 text-[13px] font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
-  const tabActive = "border-[var(--accent)] text-[var(--accent)]";
-  const tabIdle =
-    "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]";
+  // Brandon 2026-07-05 (audit navegación): en la HOME (embedded) esta fila de
+  // subcategorías usa CÁPSULAS (pills), NO tabs subrayados. Antes ambas filas
+  // —verticales ("mundos") y subcategorías— eran tabs idénticos que arrancaban
+  // con "Todo": se leían como un duplicado ("Todo / Todo"). La cápsula marca
+  // el segundo nivel como distinto del primero. Standalone (/marketplace)
+  // conserva los tabs subrayados FLAT (Brandon 2026-06-11).
+  const tabBase = embedded
+    ? "snap-start shrink-0 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[13px] font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+    : "snap-start shrink-0 inline-flex items-center gap-1 border-b-2 py-2 text-[13px] font-bold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  const tabActive = embedded
+    ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+    : "border-[var(--accent)] text-[var(--accent)]";
+  const tabIdle = embedded
+    ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+    : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]";
 
   return (
     <div
@@ -126,7 +136,10 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
     >
       <nav
         aria-label="Categorías de productos"
-        className="flex gap-5 overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden snap-x px-4"
+        className={cn(
+          "flex overflow-x-auto no-scrollbar [&::-webkit-scrollbar]:hidden snap-x px-4",
+          embedded ? "gap-2 py-1.5" : "gap-5",
+        )}
         style={{ scrollbarWidth: "none" }}
       >
         {/* "Todo" → limpia el filtro (home: ?cat= vacío · standalone: /marketplace) */}

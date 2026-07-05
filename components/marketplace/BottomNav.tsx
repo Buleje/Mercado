@@ -28,6 +28,7 @@ import {
   ShoppingCart,
   User,
   Store as StoreIcon,
+  Tag,
   ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,7 @@ const fmtPEN = (n: number) =>
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type TabId = "inicio" | "tiendas" | "chat" | "cuenta";
+type TabId = "inicio" | "tiendas" | "ofertas" | "chat" | "cuenta";
 
 interface Tab {
   id: TabId;
@@ -51,9 +52,13 @@ interface Tab {
 // top-nav se removió en mobile porque ahora vive acá abajo.
 // Brandon 2026-06-07: tab "Carrito" quitado — el carrito vive en el ícono del
 // top-nav + la franja de pago de arriba. Quedan 4 tabs.
+// Brandon 2026-07-05 (audit navegación): agregado "Ofertas" como atajo directo
+// (antes solo se llegaba por el rail desktop / footer). 5 tabs = patrón Rappi/
+// PedidosYa. El carrito ya tiene su franja integrada arriba de los tabs.
 const TABS: Tab[] = [
   { id: "inicio", label: "Inicio", Icon: Home },
   { id: "tiendas", label: "Tiendas", Icon: StoreIcon },
+  { id: "ofertas", label: "Ofertas", Icon: Tag },
   { id: "chat", label: "Chat", Icon: MessageCircle },
   { id: "cuenta", label: "Cuenta", Icon: User },
 ];
@@ -85,6 +90,8 @@ export default function BottomNav() {
   const activeTab = useCallback((): TabId => {
     if (pathname?.startsWith("/chat")) return "chat";
     if (pathname?.startsWith("/marketplace/mi-cuenta")) return "cuenta";
+    // Ofertas ANTES de tiendas: /marketplace/ofertas también matchea /marketplace.
+    if (pathname?.startsWith("/marketplace/ofertas")) return "ofertas";
     if (pathname === "/") return "inicio";
     if (
       pathname?.startsWith("/tiendas") ||
@@ -110,6 +117,9 @@ export default function BottomNav() {
           break;
         case "tiendas":
           router.push("/tiendas");
+          break;
+        case "ofertas":
+          router.push("/marketplace/ofertas");
           break;
         case "chat":
           // Brandon 2026-06-12: el chat ahora es RUTA REAL (/chat), estilo
