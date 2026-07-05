@@ -25,7 +25,7 @@ import {
   ArrowLeft, Search, X, Menu, LayoutGrid, List, Info,
   MapPin, Clock, Wallet, Phone, UserCircle,
   Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
-  ShoppingCart, Star, MessageCircle, ShieldCheck,
+  ShoppingCart, Star, MessageCircle, ShieldCheck, Heart,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCustomer } from "@/contexts/customer-context";
@@ -130,6 +130,26 @@ export default function StoreDetailClient({
   // (Inicio, Tiendas, Mi cuenta, etc), NO el drawer de categorías.
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  // "Guardar tienda" — favoritos por dispositivo (localStorage), sin backend.
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    try {
+      const list = JSON.parse(localStorage.getItem("bsm-fav-stores") || "[]") as string[];
+      setSaved(Array.isArray(list) && list.includes(store.slug));
+    } catch { /* localStorage bloqueado — queda sin marcar */ }
+  }, [store.slug]);
+  const toggleSaved = useCallback(() => {
+    setSaved((prev) => {
+      const next = !prev;
+      try {
+        const list = new Set(JSON.parse(localStorage.getItem("bsm-fav-stores") || "[]") as string[]);
+        if (next) list.add(store.slug); else list.delete(store.slug);
+        localStorage.setItem("bsm-fav-stores", JSON.stringify([...list]));
+      } catch { /* no-op */ }
+      return next;
+    });
+  }, [store.slug]);
 
   // Cierra el drawer mobile cuando seleccionan una categoría desde el
   // drawer/sidebar — SÍ filtra (uso explícito del filtro).
@@ -699,6 +719,42 @@ export default function StoreDetailClient({
                   </p>
                 </div>
               </div>
+
+              {/* CTA — Guardar (siempre) + Mensaje por WhatsApp (si el dueño lo configuró). */}
+              {(() => {
+                const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(/\D/g, "");
+                const intl = raw ? (raw.startsWith("51") ? raw : `51${raw}`) : null;
+                const msg = encodeURIComponent(`Hola ${store.name}, vengo de Buleje y quiero hacer un pedido`);
+                return (
+                  <div className="flex gap-2">
+                    {intl && (
+                      <a
+                        href={`https://wa.me/${intl}?text=${msg}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-110"
+                      >
+                        <MessageCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Mensaje
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={toggleSaved}
+                      aria-pressed={saved}
+                      className={cn(
+                        "inline-flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-colors",
+                        intl ? "shrink-0" : "flex-1",
+                        saved
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+                      )}
+                    >
+                      <Heart className={cn("h-4 w-4", saved && "fill-[var(--accent)]")} strokeWidth={2.25} aria-hidden />
+                      {intl ? (saved ? "Guardada" : "Guardar") : (saved ? "Guardada" : "Guardar tienda")}
+                    </button>
+                  </div>
+                );
+              })()}
 
               {/* Datos del negocio: mapa · rating · delivery · zona · horario · pagos */}
               <StoreInfoPanel
