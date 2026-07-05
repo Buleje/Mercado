@@ -12,6 +12,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
+import { normalizeProducts } from "./normalize";
 
 interface SaleItem {
   productId?: string | number;
@@ -138,7 +139,7 @@ export default function TabHoy({ onTabChange }: Props) {
 
       if (prodRes.ok) {
         const data = await prodRes.json();
-        const prods = (data.products ?? []) as Array<{ name: string; stock?: number; stockMin?: number; imageUrl?: string; image?: string }>;
+        const prods = normalizeProducts(data);
         const urgent = prods
           .filter((p) => (p.stock ?? 0) < (p.stockMin ?? 0))
           .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0))[0];

@@ -126,6 +126,19 @@ async function fetchKpisV2(): Promise<Record<string, unknown>> {
   }
 }
 
+/**
+ * kpis-v2 devuelve cada KPI como objeto `{ valor, cambio?, estado?, ... }`, no un
+ * número plano. El código previo hacía `Number(d.ingresosHoy)` sobre el objeto →
+ * NaN → 0, dejando TODOS los KPI en cero. Extrae `.valor` (o el número si ya viene
+ * plano, por compatibilidad con las claves de fallback).
+ */
+function kpiVal(v: unknown): number {
+  if (v && typeof v === "object" && "valor" in v) {
+    return Number((v as { valor: unknown }).valor) || 0;
+  }
+  return Number(v) || 0;
+}
+
 // ── InlineKPIStrip — compact KPI bar embedded in Resumen ─────────────────────
 function InlineKPIStrip() {
   const [kpis, setKpis] = useState<{
@@ -137,12 +150,12 @@ function InlineKPIStrip() {
       const d = await fetchKpisV2();
       if (!d || Object.keys(d).length === 0) return;
       setKpis({
-        ventasHoy: Number(d.ingresosHoy ?? d.ventasHoy ?? d.salesDay ?? 0) || 0,
-        ticketPromedio: Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0,
-        margen: Number(d.margenOperativo ?? d.marginPct ?? 0) || 0,
-        clientesHoy: Number(d.clientesActivos ?? d.clientesHoy ?? d.customersToday ?? 0) || 0,
-        fiadoPendiente: Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0,
-        rotacion: Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0,
+        ventasHoy: kpiVal(d.ingresosHoy ?? d.ventasHoy ?? d.salesDay),
+        ticketPromedio: kpiVal(d.ticketPromedio ?? d.avgTicket),
+        margen: kpiVal(d.margenOperativo ?? d.marginPct),
+        clientesHoy: kpiVal(d.clientesActivos ?? d.clientesHoy ?? d.customersToday),
+        fiadoPendiente: kpiVal(d.fiadoPendiente ?? d.fiadoTotal),
+        rotacion: kpiVal(d.rotacionInventario ?? d.inventoryTurnover),
       });
     })();
   }, []);

@@ -97,41 +97,58 @@ export default function EInvoiceTab() {
       const res = await fetch("/api/admin/sunat/invoices?limit=100");
       if (!res.ok) { setLoadingDocs(false); return; }
       const data = await res.json();
+      // El endpoint /api/admin/sunat/invoices devuelve { data: [...] } con campos
+      // en inglés (series/number/type/sunatStatus/customerName). El mapeo previo
+      // leía serie/número/tipo/status/clienteNombre → todo caía a defaults
+      // ("0", "boleta", "emitido", "-"). Verificado contra el route 2026-07-05.
       const invoices = (data.data ?? data.invoices ?? []) as Array<{
         id: string;
-        serie: string;
-        número: string;
-        tipo: string;
-        status: string;
-        clienteNombre?: string;
-        clienteDocumento?: string;
+        series?: string;
+        number?: number | string;
+        type?: string;
+        sunatStatus?: string;
+        customerName?: string;
+        customerRuc?: string;
         subtotal?: number;
         igv?: number;
         total?: number;
-        items?: number;
-        sunatResponse?: string;
+        errorMessage?: string | null;
         pdfUrl?: string | null;
         createdAt?: string;
       }>;
+      const TYPE_MAP: Record<string, DocType> = {
+        factura: "factura",
+        nota_credito: "nota-credito",
+        "nota-credito": "nota-credito",
+        nota_debito: "nota-debito",
+        "nota-debito": "nota-debito",
+        boleta: "boleta",
+      };
+      const STATUS_MAP: Record<string, DocStatus> = {
+        pending: "pendiente",
+        accepted: "aceptado",
+        rejected: "rechazado",
+        voided: "anulado",
+      };
       const mapped: EDocument[] = invoices.map(inv => ({
         id: inv.id,
-        serie: inv.serie || (inv.tipo === "factura" ? "F001" : "B001"),
-        number: inv.número || "0",
+        serie: inv.series || (inv.type === "factura" ? "F001" : "B001"),
+        number: inv.number != null ? String(inv.number) : "0",
         date: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("es-PE") : "-",
-        type: (inv.tipo === "factura" ? "factura" : inv.tipo === "nota-credito" ? "nota-credito" : inv.tipo === "nota-debito" ? "nota-debito" : "boleta") as DocType,
-        status: (["emitido", "aceptado", "rechazado", "anulado", "pendiente"].includes(inv.status) ? inv.status : "emitido") as DocStatus,
-        clientName: inv.clienteNombre || "-",
-        clientRUC: inv.clienteDocumento || "-",
+        type: TYPE_MAP[inv.type ?? ""] ?? "boleta",
+        status: STATUS_MAP[inv.sunatStatus ?? ""] ?? "emitido",
+        clientName: inv.customerName || "-",
+        clientRUC: inv.customerRuc || "-",
         subtotal: inv.subtotal ?? 0,
         igv: inv.igv ?? 0,
         total: inv.total ?? 0,
-        items: inv.items ?? 0,
-        sunatResponse: inv.sunatResponse || "-",
+        items: 0,
+        sunatResponse: inv.errorMessage || "-",
         pdfUrl: inv.pdfUrl,
       }));
       setDocs(mapped);
-    } catch {
-      // silently fail — user sees empty state
+    } catch (e) {
+      console.error("[EInvoiceTab] no se pudo cargar comprobantes", e);
     } finally {
       setLoadingDocs(false);
     }
