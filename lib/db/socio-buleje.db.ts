@@ -522,6 +522,56 @@ export const SocioBulejeDB: ISocioBulejeDB = {
     return hydrateWithBalance(updated);
   },
 
+  /**
+   * Admin: extiende el período de la membresía `months` meses (regalo o
+   * corrección desde el panel). Parte del fin de período vigente si es futuro,
+   * o de hoy si ya venció. Reactiva la membresía; rechaza si está cancelada.
+   */
+  async extendPeriod(
+    tenantId: string,
+    userId: string,
+    months: number,
+  ): Promise<SocioMembershipWithBalance | null> {
+    const existing = await pdb.socioMembership.findUnique({
+      where: { tenantId_userId: { tenantId, userId } },
+    });
+    if (!existing) return null;
+    if (existing.status === "cancelled") {
+      throw new ConflictError(
+        "Membership cancelada — no se puede extender. Suscribite de nuevo.",
+      );
+    }
+
+    const now = new Date();
+    const base = existing.currentPeriodEnd > now ? existing.currentPeriodEnd : now;
+    const nextPeriodEnd = new Date(base);
+    nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + months);
+
+    const updated = await pdb.socioMembership.update({
+      where: { tenantId_userId: { tenantId, userId } },
+      data: {
+        currentPeriodEnd: nextPeriodEnd,
+        status: "active",
+        cancelAtPeriodEnd: false,
+      },
+    });
+
+    invalidateByPrefix(cachePrefix(tenantId, userId));
+    invalidateByPrefix(`socio:${tenantId}:stats`);
+
+    logActivity(
+      "socio_extend_period",
+      "SocioMembership",
+      `+${months} mes(es)`,
+      updated.id,
+      "system",
+      undefined,
+      tenantId,
+    ).catch((err) => logger.warn("[socio] activity log failed", { error: String(err) }));
+
+    return hydrateWithBalance(updated);
+  },
+
   async resume(
     tenantId: string,
     userId: string,
