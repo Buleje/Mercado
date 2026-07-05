@@ -20,6 +20,7 @@ import {
   ArrowRight,
   Package,
 } from "@buleje/design-system/icons";
+import { formatCategoryLabel } from "@/lib/format-category";
 
 export interface MarqueeStore {
   slug: string;
@@ -63,7 +64,9 @@ export default function StoreLogosMarquee({
           .filter((s) => s.slug);
         setStores(list);
       })
-      .catch(() => {/* no crítico: la banda se oculta */});
+      .catch(() => {
+        /* no crítico: la banda se oculta */
+      });
     return () => {
       cancelled = true;
     };
@@ -103,7 +106,11 @@ export default function StoreLogosMarquee({
           >
             <span className="hidden sm:inline">Ver las {stores.length} tiendas</span>
             <span className="sm:hidden">Ver todas</span>
-            <ArrowRight className="h-4 w-4 transition-transform group-hover/all:translate-x-0.5" strokeWidth={2.5} aria-hidden />
+            <ArrowRight
+              className="h-4 w-4 transition-transform group-hover/all:translate-x-0.5"
+              strokeWidth={2.5}
+              aria-hidden
+            />
           </Link>
         </header>
 
@@ -123,7 +130,13 @@ export default function StoreLogosMarquee({
                   {/* Logo prominente con sheen en hover */}
                   <span className="relative grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-base)] transition-all duration-300 group-hover/card:ring-2 group-hover/card:ring-[var(--accent)]/60">
                     {s.logo ? (
-                      <Image src={s.logo} alt={s.name} fill sizes="80px" className="object-cover transition-transform duration-500 group-hover/card:scale-110" />
+                      <Image
+                        src={s.logo}
+                        alt={s.name}
+                        fill
+                        sizes="80px"
+                        className="object-cover transition-transform duration-500 group-hover/card:scale-110"
+                      />
                     ) : (
                       <span className="grid h-full w-full place-items-center bg-[var(--accent-soft)] text-[var(--accent)]">
                         <Store className="h-9 w-9" strokeWidth={1.75} aria-hidden />
@@ -136,14 +149,22 @@ export default function StoreLogosMarquee({
                     <span className="line-clamp-1 text-sm font-extrabold leading-tight text-[var(--text-primary)]">
                       {s.name}
                     </span>
-                    <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} aria-label="Tienda verificada" />
+                    <ShieldCheck
+                      className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]"
+                      strokeWidth={2.5}
+                      aria-label="Tienda verificada"
+                    />
                   </span>
 
                   {/* Rating · rubro */}
                   <span className="mt-1 flex flex-wrap items-center justify-center gap-x-1.5 text-xs text-[var(--text-secondary)]">
                     {hasRating ? (
                       <span className="inline-flex items-center gap-0.5 font-bold text-[var(--text-primary)]">
-                        <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={2} aria-hidden />
+                        <Star
+                          className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
+                          strokeWidth={2}
+                          aria-hidden
+                        />
                         {rating.toFixed(1)}
                       </span>
                     ) : (
@@ -151,8 +172,12 @@ export default function StoreLogosMarquee({
                     )}
                     {s.category && (
                       <>
-                        {hasRating && <span className="text-[var(--rule-strong)]" aria-hidden>·</span>}
-                        <span className="truncate capitalize">{s.category}</span>
+                        {hasRating && (
+                          <span className="text-[var(--rule-strong)]" aria-hidden>
+                            ·
+                          </span>
+                        )}
+                        <span className="truncate">{formatCategoryLabel(s.category)}</span>
                       </>
                     )}
                   </span>

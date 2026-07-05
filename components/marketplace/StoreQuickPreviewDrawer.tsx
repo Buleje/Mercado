@@ -32,6 +32,7 @@ import {
 } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
+import { formatCategoryLabel } from "@/lib/format-category";
 import type { FeaturedNearbyStore, FeaturedNearbyProduct } from "@/lib/db/marketplace-featured.db";
 
 interface Props {
@@ -50,7 +51,11 @@ interface Props {
 type DrawerTab = "destacados" | "top";
 
 const fmtPEN = (n: number) =>
-  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN", minimumFractionDigits: 2 }).format(n);
+  new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: "PEN",
+    minimumFractionDigits: 2,
+  }).format(n);
 
 export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToCart }: Props) {
   const { addItem } = useCart();
@@ -162,11 +167,21 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             {/* ── Header con banner ─────────────────────────── */}
             <div className="relative h-32 shrink-0 overflow-hidden bg-[var(--surface-sunken)]">
               {store.banner ? (
-                <Image src={store.banner} alt="" fill sizes="420px" className="object-cover" priority />
+                <Image
+                  src={store.banner}
+                  alt=""
+                  fill
+                  sizes="420px"
+                  className="object-cover"
+                  priority
+                />
               ) : (
                 <div
                   className="absolute inset-0"
-                  style={{ background: "linear-gradient(135deg, var(--accent), color-mix(in oklch, var(--accent) 60%, #051418))" }}
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--accent), color-mix(in oklch, var(--accent) 60%, #051418))",
+                  }}
                 />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
@@ -193,29 +208,48 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
                   ) : (
                     <span
                       className="grid h-full w-full place-items-center text-xl font-black text-white"
-                      style={{ background: "linear-gradient(135deg, var(--accent), color-mix(in oklch, var(--accent) 65%, #051418))" }}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--accent), color-mix(in oklch, var(--accent) 65%, #051418))",
+                      }}
                     >
                       {initial}
                     </span>
                   )}
                 </div>
                 <div className="min-w-0 pb-0.5">
-                  <h2 className="text-lg font-black leading-tight tracking-tight truncate drop-shadow-sm">{store.name}</h2>
+                  <h2 className="text-lg font-black leading-tight tracking-tight truncate drop-shadow-sm">
+                    {store.name}
+                  </h2>
                   <div className="mt-0.5 flex items-center gap-1.5 text-xs text-white/90">
                     {store.reviewCount > 0 ? (
                       <span className="inline-flex items-center gap-1 font-bold">
-                        <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={0} aria-hidden />
+                        <Star
+                          className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
+                          strokeWidth={0}
+                          aria-hidden
+                        />
                         {Number(store.rating).toFixed(1)}
                         <span className="font-medium text-white/65">({store.reviewCount})</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 font-bold">
-                        <Sparkles className="h-3.5 w-3.5 text-[var(--data-warning-500)]" strokeWidth={2.25} aria-hidden />
+                        <Sparkles
+                          className="h-3.5 w-3.5 text-[var(--data-warning-500)]"
+                          strokeWidth={2.25}
+                          aria-hidden
+                        />
                         Nueva
                       </span>
                     )}
-                    <span aria-hidden className="text-white/45">·</span>
-                    <ShieldCheck className="h-3.5 w-3.5 text-white/85" strokeWidth={2} aria-hidden />
+                    <span aria-hidden className="text-white/45">
+                      ·
+                    </span>
+                    <ShieldCheck
+                      className="h-3.5 w-3.5 text-white/85"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
                     <span className="font-medium">Verificada</span>
                   </div>
                 </div>
@@ -225,8 +259,8 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             {/* ── Meta strip ────────────────────────────────── */}
             <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {store.category && (
-                <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold capitalize text-[var(--text-secondary)]">
-                  {store.category}
+                <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]">
+                  {formatCategoryLabel(store.category)}
                 </span>
               )}
               {store.zone && (
@@ -243,7 +277,11 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             </div>
 
             {/* ── Segmented control ─────────────────────────── */}
-            <div role="tablist" aria-label="Vistas de productos" className="flex shrink-0 gap-1 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+            <div
+              role="tablist"
+              aria-label="Vistas de productos"
+              className="flex shrink-0 gap-1 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] p-2"
+            >
               <TabButton
                 active={tab === "destacados"}
                 onClick={() => setTab("destacados")}
@@ -265,7 +303,9 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
                   <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
                     <Sparkles className="h-6 w-6" aria-hidden />
                   </span>
-                  <p className="text-sm text-[var(--text-secondary)]">Esta tienda aún no tiene productos cargados.</p>
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    Esta tienda aún no tiene productos cargados.
+                  </p>
                 </div>
               ) : tab === "destacados" ? (
                 <ListView products={featured} onAdd={handleAdd} addedFlash={addedFlash} />
@@ -278,7 +318,8 @@ export default function StoreQuickPreviewDrawer({ store, open, onClose, onAddToC
             <div className="shrink-0 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
               {featured.length > 0 && (
                 <p className="mb-2 text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  {featured.length} {featured.length === 1 ? "producto destacado" : "productos destacados"}
+                  {featured.length}{" "}
+                  {featured.length === 1 ? "producto destacado" : "productos destacados"}
                 </p>
               )}
               <Link
@@ -373,11 +414,17 @@ function ListView({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-sm font-bold leading-tight text-[var(--text-primary)]">{p.name}</p>
+              <p className="line-clamp-1 text-sm font-bold leading-tight text-[var(--text-primary)]">
+                {p.name}
+              </p>
               <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-base font-extrabold text-[var(--accent)]">{fmtPEN(price)}</span>
+                <span className="text-base font-extrabold text-[var(--accent)]">
+                  {fmtPEN(price)}
+                </span>
                 {hasDiscount && (
-                  <span className="text-xs text-[var(--text-tertiary)] line-through">{fmtPEN(p.retailPrice)}</span>
+                  <span className="text-xs text-[var(--text-tertiary)] line-through">
+                    {fmtPEN(p.retailPrice)}
+                  </span>
                 )}
               </div>
             </div>
@@ -391,7 +438,11 @@ function ListView({
                   : "bg-[var(--accent)] text-white hover:brightness-110",
               )}
             >
-              {flashing ? <Check className="h-4 w-4" strokeWidth={3} /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
+              {flashing ? (
+                <Check className="h-4 w-4" strokeWidth={3} />
+              ) : (
+                <Plus className="h-4 w-4" strokeWidth={2.5} />
+              )}
             </button>
           </li>
         );
@@ -432,7 +483,12 @@ function GridView({
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                 ) : (
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, var(--accent-soft), transparent)" }} />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: "linear-gradient(135deg, var(--accent-soft), transparent)",
+                    }}
+                  />
                 )}
                 <span className="absolute left-1.5 top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-black/70 px-1 text-[10px] font-extrabold text-white">
                   #{i + 1}
@@ -444,11 +500,17 @@ function GridView({
                 )}
               </div>
               <div className="p-2.5">
-                <p className="line-clamp-2 min-h-[2lh] text-[13px] font-bold leading-tight text-[var(--text-primary)]">{p.name}</p>
+                <p className="line-clamp-2 min-h-[2lh] text-[13px] font-bold leading-tight text-[var(--text-primary)]">
+                  {p.name}
+                </p>
                 <div className="mt-1 flex items-baseline gap-1">
-                  <span className="text-sm font-extrabold text-[var(--accent)]">{fmtPEN(price)}</span>
+                  <span className="text-sm font-extrabold text-[var(--accent)]">
+                    {fmtPEN(price)}
+                  </span>
                   {hasDiscount && (
-                    <span className="text-[10px] text-[var(--text-tertiary)] line-through">{fmtPEN(p.retailPrice)}</span>
+                    <span className="text-[10px] text-[var(--text-tertiary)] line-through">
+                      {fmtPEN(p.retailPrice)}
+                    </span>
                   )}
                 </div>
               </div>

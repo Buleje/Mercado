@@ -13,6 +13,7 @@
 import Image from "next/image";
 import { Tag } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCategoryLabel } from "@/lib/format-category";
 import type { StoreCategoryChip } from "./StoreCategories";
 
 interface Props {
@@ -25,7 +26,11 @@ interface Props {
 }
 
 export default function StoreCategoriesSidebar({
-  categories, activeCategory, onCategoryChange, images, hideHeader,
+  categories,
+  activeCategory,
+  onCategoryChange,
+  images,
+  hideHeader,
 }: Props) {
   const imageMap = images ?? {};
 
@@ -60,7 +65,7 @@ export default function StoreCategoriesSidebar({
         <CategoryRow
           key={cat.name}
           active={activeCategory === cat.name}
-          label={cat.name}
+          label={formatCategoryLabel(cat.name)}
           imageUrl={imageMap[cat.name] ?? null}
           onClick={() => handleSelect(cat.name)}
         />
@@ -72,7 +77,10 @@ export default function StoreCategoriesSidebar({
 // ─── Single row ──────────────────────────────────────────────────────────────
 
 function CategoryRow({
-  active, label, imageUrl, onClick,
+  active,
+  label,
+  imageUrl,
+  onClick,
 }: {
   active: boolean;
   label: string;
@@ -95,10 +103,14 @@ function CategoryRow({
       )}
     >
       {/* Thumbnail cuadrado y más chico */}
-      <span className={cn(
-        "shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-md overflow-hidden",
-        active ? "bg-[var(--surface-raised)]/15 ring-1 ring-[var(--surface-raised)]/25" : "bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]",
-      )}>
+      <span
+        className={cn(
+          "shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-md overflow-hidden",
+          active
+            ? "bg-[var(--surface-raised)]/15 ring-1 ring-[var(--surface-raised)]/25"
+            : "bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)]",
+        )}
+      >
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -109,13 +121,19 @@ function CategoryRow({
             unoptimized
           />
         ) : (
-          <Tag className={cn("h-4 w-4", active ? "text-[var(--surface-raised)]" : "text-[var(--text-tertiary)]")} strokeWidth={2} />
+          <Tag
+            className={cn(
+              "h-4 w-4",
+              active ? "text-[var(--surface-raised)]" : "text-[var(--text-tertiary)]",
+            )}
+            strokeWidth={2}
+          />
         )}
       </span>
 
       {/* Label — solo nombre, sin contador */}
       <span className="flex-1 min-w-0">
-        <span className="block text-sm font-medium capitalize truncate leading-tight">{label}</span>
+        <span className="block text-sm font-medium truncate leading-tight">{label}</span>
       </span>
     </button>
   );

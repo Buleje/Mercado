@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import ProductModifierModal from "@/components/marketplace/ProductModifierModal";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
+import { formatCategoryLabel } from "@/lib/format-category";
 import type { DbStoreProduct } from "@/lib/db/marketplace.db";
 
 /**
@@ -99,24 +100,19 @@ function ProductListRow({
   const href = `/marketplace/${storeSlug}/producto/${product.productId}`;
   const { addItem, items } = useMarketplaceCart();
   // qty del producto en este store (para mostrar feedback "ya agregado")
-  const inCart = items.find(
-    (i) => i.productId === product.productId && i.storeId === storeId,
-  );
+  const inCart = items.find((i) => i.productId === product.productId && i.storeId === storeId);
   const qty = inCart?.quantity ?? 0;
   const hasModifiers = (product.modifierGroups?.length ?? 0) > 0;
   const [modifierModalOpen, setModifierModalOpen] = useState(false);
 
-  const handleAdd = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      // Brandon 2026-05-27: SIEMPRE abrir el modal "Armá tu pedido", tenga o no
-      // adicionales. Sin grupos el modal muestra solo cantidad + agregar.
-      // Unifica el flujo de agregado en un único formato.
-      setModifierModalOpen(true);
-    },
-    [],
-  );
+  const handleAdd = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Brandon 2026-05-27: SIEMPRE abrir el modal "Armá tu pedido", tenga o no
+    // adicionales. Sin grupos el modal muestra solo cantidad + agregar.
+    // Unifica el flujo de agregado en un único formato.
+    setModifierModalOpen(true);
+  }, []);
 
   return (
     <div className="flex gap-3 sm:gap-4 items-center p-3 sm:p-4 rounded-xl max-md:rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40 transition-colors group">
@@ -163,7 +159,11 @@ function ProductListRow({
       <button
         type="button"
         onClick={handleAdd}
-        aria-label={qty > 0 ? `Agregar otro ${product.productName}` : `Agregar ${product.productName} al carrito`}
+        aria-label={
+          qty > 0
+            ? `Agregar otro ${product.productName}`
+            : `Agregar ${product.productName} al carrito`
+        }
         title={hasModifiers ? "Elegi opciones del producto" : "Agregar al carrito"}
         className={cn(
           "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl max-md:rounded-none border-2 transition-all",
@@ -189,7 +189,7 @@ function ProductListRow({
 
       {/* Modal "Armá tu pedido" — SIEMPRE montado (Brandon 2026-05-27): todo
           producto abre este formato; sin adicionales muestra solo cantidad. */}
-      {(
+      {
         <ProductModifierModal
           open={modifierModalOpen}
           onClose={() => setModifierModalOpen(false)}
@@ -233,7 +233,7 @@ function ProductListRow({
             setModifierModalOpen(false);
           }}
         />
-      )}
+      }
     </div>
   );
 }
@@ -280,9 +280,7 @@ export default function StoreCatalog({
 
     // Filter by active category (controlled from parent)
     if (activeCategory) {
-      list = list.filter(
-        (p) => p.productCategory?.toLowerCase() === activeCategory.toLowerCase()
-      );
+      list = list.filter((p) => p.productCategory?.toLowerCase() === activeCategory.toLowerCase());
     }
 
     // Filter by search
@@ -294,7 +292,8 @@ export default function StoreCatalog({
     // Sort
     if (sort === "price_asc") list.sort((a, b) => a.retailPrice - b.retailPrice);
     else if (sort === "price_desc") list.sort((a, b) => b.retailPrice - a.retailPrice);
-    else if (sort === "name_az") list.sort((a, b) => a.productName.localeCompare(b.productName, "es"));
+    else if (sort === "name_az")
+      list.sort((a, b) => a.productName.localeCompare(b.productName, "es"));
 
     return list;
   }, [products, activeCategory, search, sort]);
@@ -321,8 +320,8 @@ export default function StoreCatalog({
     return Array.from(map.entries());
   }, [filtered, activeCategory, search]);
 
-  const humanizeCategory = (id: string) =>
-    id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  // Single source: mismo label legible que los chips/tabs de categoría.
+  const humanizeCategory = formatCategoryLabel;
 
   return (
     <section
@@ -390,7 +389,7 @@ export default function StoreCatalog({
                   "h-12 w-12 inline-flex items-center justify-center transition-colors",
                   view === "grid"
                     ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                 )}
               >
                 <LayoutGrid className="h-5 w-5" />
@@ -404,7 +403,7 @@ export default function StoreCatalog({
                   "h-12 w-12 inline-flex items-center justify-center border-l-2 border-[var(--rule-base)] transition-colors",
                   view === "list"
                     ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                 )}
               >
                 <List className="h-5 w-5" />
@@ -418,7 +417,9 @@ export default function StoreCatalog({
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-4 text-[var(--text-secondary)]">
           <CanastaVacia size={120} strokeWidth={1.5} />
-          <p className="text-lg font-bold text-[var(--text-primary)]">No hay productos que coincidan</p>
+          <p className="text-lg font-bold text-[var(--text-primary)]">
+            No hay productos que coincidan
+          </p>
           {(search || activeCategory) && (
             <button
               type="button"
@@ -460,75 +461,79 @@ export default function StoreCatalog({
                   ? "Para todos los gustos"
                   : "Selección curada";
             return (
-            <section
-              key={cat}
-              id={`cat-${slugifyCat(cat)}`}
-              data-cat-name={cat}
-              className="scroll-mt-28"
-              aria-labelledby={`cat-h-${slugifyCat(cat)}`}
-            >
-              <div className="flex items-end justify-between gap-3 mb-5">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span
-                    aria-hidden
-                    className="h-3.5 w-3.5 rounded-full bg-[var(--text-primary)] shrink-0 shadow-[0_0_0_4px_var(--surface-sunken)]"
-                  />
-                  <div className="min-w-0">
-                    <h3
-                      id={`cat-h-${slugifyCat(cat)}`}
-                      className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight tracking-tight"
-                    >
-                      {isFirstCategory ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Flame className="h-5 w-5 text-[var(--text-secondary)]" strokeWidth={2.5} aria-hidden />
-                          Los más pedidos
-                        </span>
-                      ) : (
-                        humanizeCategory(cat)
-                      )}
-                    </h3>
-                    <p className="text-sm font-medium text-[var(--text-tertiary)] mt-0.5">
-                      {subtitleByPosition}
-                    </p>
+              <section
+                key={cat}
+                id={`cat-${slugifyCat(cat)}`}
+                data-cat-name={cat}
+                className="scroll-mt-28"
+                aria-labelledby={`cat-h-${slugifyCat(cat)}`}
+              >
+                <div className="flex items-end justify-between gap-3 mb-5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      aria-hidden
+                      className="h-3.5 w-3.5 rounded-full bg-[var(--text-primary)] shrink-0 shadow-[0_0_0_4px_var(--surface-sunken)]"
+                    />
+                    <div className="min-w-0">
+                      <h3
+                        id={`cat-h-${slugifyCat(cat)}`}
+                        className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight tracking-tight"
+                      >
+                        {isFirstCategory ? (
+                          <span className="inline-flex items-center gap-2">
+                            <Flame
+                              className="h-5 w-5 text-[var(--text-secondary)]"
+                              strokeWidth={2.5}
+                              aria-hidden
+                            />
+                            Los más pedidos
+                          </span>
+                        ) : (
+                          humanizeCategory(cat)
+                        )}
+                      </h3>
+                      <p className="text-sm font-medium text-[var(--text-tertiary)] mt-0.5">
+                        {subtitleByPosition}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                {/* Badge "popular" en la primera categoría — social proof */}
-                {isFirstCategory && (
-                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] px-3 h-7 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0 border border-[var(--rule-base)]">
-                    <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--text-tertiary)] opacity-70 animate-ping" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]" />
+                  {/* Badge "popular" en la primera categoría — social proof */}
+                  {isFirstCategory && (
+                    <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] px-3 h-7 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0 border border-[var(--rule-base)]">
+                      <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--text-tertiary)] opacity-70 animate-ping" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--text-tertiary)]" />
+                      </span>
+                      Trending
                     </span>
-                    Trending
-                  </span>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
-                {items.map((p, idx) => (
-                  <UnifiedProductCard
-                    key={p.id}
-                    index={idx}
-                    hideStore
-                    href={`/marketplace/${storeSlug}/producto/${p.productId}`}
-                    product={{
-                      id: p.productId,
-                      name: p.productName,
-                      price: p.retailPrice,
-                      image: p.productImage,
-                      unit: p.productUnit,
-                      category: p.productCategory,
-                      stock: p.stock ?? undefined,
-                      storeId,
-                      storeName,
-                      storeSlug,
-                      storeProductId: p.id,
-                      modifierGroups: p.modifierGroups,
-                      ...storeTrust,
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
+                  {items.map((p, idx) => (
+                    <UnifiedProductCard
+                      key={p.id}
+                      index={idx}
+                      hideStore
+                      href={`/marketplace/${storeSlug}/producto/${p.productId}`}
+                      product={{
+                        id: p.productId,
+                        name: p.productName,
+                        price: p.retailPrice,
+                        image: p.productImage,
+                        unit: p.productUnit,
+                        category: p.productCategory,
+                        stock: p.stock ?? undefined,
+                        storeId,
+                        storeName,
+                        storeSlug,
+                        storeProductId: p.id,
+                        modifierGroups: p.modifierGroups,
+                        ...storeTrust,
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
             );
           })}
         </div>

@@ -10,8 +10,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { formatCategoryLabel } from "@/lib/format-category";
 import dynamic from "next/dynamic";
-import { ArrowRight, MapPin, Bike, ShieldCheck, Eye, Award, Moon, Star, Wallet } from "@buleje/design-system/icons";
+import {
+  ArrowRight,
+  MapPin,
+  Bike,
+  ShieldCheck,
+  Eye,
+  Award,
+  Moon,
+  Star,
+  Wallet,
+} from "@buleje/design-system/icons";
 import ShareStoreButton from "./ShareStoreButton";
 import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import {
@@ -80,7 +91,9 @@ function Stars({ rating = 0, reviewCount = 0 }: { rating?: number; reviewCount?:
         />
       ))}
       {reviewCount > 0 && (
-        <span className="ml-0.5 text-[11px] font-bold text-[var(--text-tertiary)] tabular-nums">({reviewCount})</span>
+        <span className="ml-0.5 text-[11px] font-bold text-[var(--text-tertiary)] tabular-nums">
+          ({reviewCount})
+        </span>
       )}
     </span>
   );
@@ -192,7 +205,15 @@ export default function PremiumStoreCard({
               className={`h-16 w-16 overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] sm:h-20 sm:w-20 ${isClosed ? "grayscale opacity-80" : ""}`}
             >
               {logo ? (
-                <Image src={logo} alt={`Logo de ${name}`} width={80} height={80} sizes="80px" className="h-full w-full object-cover" priority />
+                <Image
+                  src={logo}
+                  alt={`Logo de ${name}`}
+                  width={80}
+                  height={80}
+                  sizes="80px"
+                  className="h-full w-full object-cover"
+                  priority
+                />
               ) : (
                 <span className="flex h-full w-full items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark,var(--accent))] text-2xl font-black text-white">
                   {name.trim().charAt(0).toUpperCase()}
@@ -209,7 +230,10 @@ export default function PremiumStoreCard({
             </span>
           </div>
           <div className="min-w-0">
-            <p title={name} className="flex items-center gap-1 text-base font-extrabold leading-tight tracking-tight text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors sm:text-lg">
+            <p
+              title={name}
+              className="flex items-center gap-1 text-base font-extrabold leading-tight tracking-tight text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors sm:text-lg"
+            >
               {name}
               {verified && (
                 <ShieldCheck
@@ -225,7 +249,7 @@ export default function PremiumStoreCard({
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               {category && (
                 <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
-                  {category}
+                  {formatCategoryLabel(category)}
                 </span>
               )}
               {acceptsFiado && (
@@ -291,18 +315,31 @@ export default function PremiumStoreCard({
                 >
                   <div className="relative aspect-square w-full bg-[var(--surface-sunken)]">
                     {p.image ? (
-                      <Image src={p.image} alt={`${p.name} — ${name}`} fill sizes="(min-width:640px) 110px, 30vw" className="object-cover" />
+                      <Image
+                        src={p.image}
+                        alt={`${p.name} — ${name}`}
+                        fill
+                        sizes="(min-width:640px) 110px, 30vw"
+                        className="object-cover"
+                      />
                     ) : (
-                      <ProductPhotoFallback name={p.name} category={p.category} size="sm" showName={false} />
+                      <ProductPhotoFallback
+                        name={p.name}
+                        category={p.category}
+                        size="sm"
+                        showName={false}
+                      />
                     )}
                     {p.category && (
                       <span className="absolute left-1 top-1 rounded-md bg-black/55 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-                        {p.category}
+                        {formatCategoryLabel(p.category)}
                       </span>
                     )}
                   </div>
                   <div className="p-1.5">
-                    <p className="truncate text-[11px] font-semibold text-[var(--text-secondary)]">{p.name}</p>
+                    <p className="truncate text-[11px] font-semibold text-[var(--text-secondary)]">
+                      {p.name}
+                    </p>
                     <p className="text-xs font-extrabold text-[var(--accent)]">{price(p)}</p>
                   </div>
                 </li>

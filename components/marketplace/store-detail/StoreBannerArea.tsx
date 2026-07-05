@@ -19,6 +19,7 @@ import { useState } from "react";
 import { m as motion } from "framer-motion";
 import { Store as StoreIcon, Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCategoryLabel } from "@/lib/format-category";
 
 interface StoreBannerAreaProps {
   /** URL del banner subido por el dueño. null/empty → default Buleje. */
@@ -48,10 +49,7 @@ export default function StoreBannerArea({
   const initial = name.trim().charAt(0).toUpperCase();
 
   return (
-    <section
-      aria-label={`Cabecera de ${name}`}
-      className="relative w-full overflow-hidden"
-    >
+    <section aria-label={`Cabecera de ${name}`} className="relative w-full overflow-hidden">
       {/* ── Banner background ─────────────────────────────────────────────── */}
       {/* Compact: era h-44/56/64 — estiraba muy alto en desktop. Ahora 32/36/40
           (~37% mas chico) para que se vea proporcionado al banner real subido
@@ -123,7 +121,7 @@ export default function StoreBannerArea({
               {category && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                   <StoreIcon className="h-3 w-3" aria-hidden />
-                  {category}
+                  {formatCategoryLabel(category)}
                 </span>
               )}
               {zone && (
@@ -164,7 +162,14 @@ function BulejeBrandBanner({ storeName }: { storeName: string }) {
         className="absolute inset-0 h-full w-full opacity-[0.18] mix-blend-soft-light"
       >
         <defs>
-          <pattern id="buleje-dots" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse">
+          <pattern
+            id="buleje-dots"
+            x="0"
+            y="0"
+            width="22"
+            height="22"
+            patternUnits="userSpaceOnUse"
+          >
             <circle cx="2" cy="2" r="1.4" fill="white" />
           </pattern>
         </defs>
@@ -172,9 +177,18 @@ function BulejeBrandBanner({ storeName }: { storeName: string }) {
       </svg>
 
       {/* Decorative circles top-right */}
-      <div aria-hidden className="absolute -top-24 -right-20 h-72 w-72 rounded-full border border-white/15" />
-      <div aria-hidden className="absolute -top-12 -right-10 h-48 w-48 rounded-full border border-white/10" />
-      <div aria-hidden className="absolute top-6 right-12 h-24 w-24 rounded-full bg-white/10 backdrop-blur-sm" />
+      <div
+        aria-hidden
+        className="absolute -top-24 -right-20 h-72 w-72 rounded-full border border-white/15"
+      />
+      <div
+        aria-hidden
+        className="absolute -top-12 -right-10 h-48 w-48 rounded-full border border-white/10"
+      />
+      <div
+        aria-hidden
+        className="absolute top-6 right-12 h-24 w-24 rounded-full bg-white/10 backdrop-blur-sm"
+      />
 
       {/* Diagonal accent line bottom-left */}
       <div

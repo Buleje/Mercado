@@ -22,10 +22,28 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, Search, X, Menu, LayoutGrid, List, Info,
-  MapPin, Clock, Wallet, Phone, UserCircle,
-  Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
-  ShoppingCart, Star, MessageCircle, ShieldCheck, Heart,
+  ArrowLeft,
+  Search,
+  X,
+  Menu,
+  LayoutGrid,
+  List,
+  Info,
+  MapPin,
+  Clock,
+  Wallet,
+  Phone,
+  UserCircle,
+  Home as HomeIcon,
+  Store as StoreIcon,
+  Package,
+  Tag,
+  ArrowRight,
+  ShoppingCart,
+  Star,
+  MessageCircle,
+  ShieldCheck,
+  Heart,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCustomer } from "@/contexts/customer-context";
@@ -43,10 +61,10 @@ import StoreHero from "./StoreHero";
 // Brandon 2026-05-20 v11 audit P2: StorePromoBannersStrip below-fold +
 // hace fetch propio en mount → dynamic ssr:false ahorra ~5KB initial.
 // (Brandon 2026-05-21 v6: import de `dynamic` ya está en línea 21.)
-const StorePromoBannersStrip = dynamic(
-  () => import("./StorePromoBannersStrip"),
-  { ssr: false, loading: () => null },
-);
+const StorePromoBannersStrip = dynamic(() => import("./StorePromoBannersStrip"), {
+  ssr: false,
+  loading: () => null,
+});
 import { type StoreCategoryChip } from "./StoreCategories";
 import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
 import StoreInfoPanel from "./StoreInfoPanel";
@@ -78,11 +96,9 @@ const ClosedNowBanner = dynamic(() => import("./ClosedNowBanner"), {
   loading: () => null,
 });
 import { getStoreTagline } from "@/lib/store-tagline";
+import { formatCategoryLabel } from "@/lib/format-category";
 import type { DbStore, DbStoreProduct } from "@/lib/db/marketplace.db";
-import type {
-  MockStoreReview,
-  MockStoreRatingSummary,
-} from "@/lib/mock-store-reviews";
+import type { MockStoreReview, MockStoreRatingSummary } from "@/lib/mock-store-reviews";
 
 interface StoreDetailClientProps {
   store: DbStore;
@@ -137,16 +153,23 @@ export default function StoreDetailClient({
     try {
       const list = JSON.parse(localStorage.getItem("bsm-fav-stores") || "[]") as string[];
       setSaved(Array.isArray(list) && list.includes(store.slug));
-    } catch { /* localStorage bloqueado — queda sin marcar */ }
+    } catch {
+      /* localStorage bloqueado — queda sin marcar */
+    }
   }, [store.slug]);
   const toggleSaved = useCallback(() => {
     setSaved((prev) => {
       const next = !prev;
       try {
-        const list = new Set(JSON.parse(localStorage.getItem("bsm-fav-stores") || "[]") as string[]);
-        if (next) list.add(store.slug); else list.delete(store.slug);
+        const list = new Set(
+          JSON.parse(localStorage.getItem("bsm-fav-stores") || "[]") as string[],
+        );
+        if (next) list.add(store.slug);
+        else list.delete(store.slug);
         localStorage.setItem("bsm-fav-stores", JSON.stringify([...list]));
-      } catch { /* no-op */ }
+      } catch {
+        /* no-op */
+      }
       return next;
     });
   }, [store.slug]);
@@ -168,7 +191,7 @@ export default function StoreDetailClient({
     // Categorías que matcheen
     for (const c of categories) {
       if (c.name.toLowerCase().includes(q) && !seen.has(`cat:${c.name}`)) {
-        results.push({ type: "category", label: c.name, value: c.name });
+        results.push({ type: "category", label: formatCategoryLabel(c.name), value: c.name });
         seen.add(`cat:${c.name}`);
       }
     }
@@ -365,12 +388,7 @@ export default function StoreDetailClient({
                 {store.name}
               </span>
               <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-white/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-                <span
-                  aria-hidden
-                  className={cn(
-                    "relative inline-flex h-1.5 w-1.5 shrink-0",
-                  )}
-                >
+                <span aria-hidden className={cn("relative inline-flex h-1.5 w-1.5 shrink-0")}>
                   <span
                     className={cn(
                       "absolute inline-flex h-full w-full rounded-full opacity-70",
@@ -427,9 +445,7 @@ export default function StoreDetailClient({
           {paymentMethods.length > 0 && (
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
               <Wallet className="h-4 w-4 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-              {paymentMethods
-                .map((m) => m.charAt(0).toUpperCase() + m.slice(1))
-                .join(" · ")}
+              {paymentMethods.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(" · ")}
             </span>
           )}
         </div>
@@ -439,28 +455,28 @@ export default function StoreDetailClient({
            negocio vive en la barra lateral izquierda (layout estilo Rappi). En
            mobile, la barra slim + trust strip de arriba ya la cubren. */}
       <div className="lg:hidden">
-      <StoreHero
-        name={store.name}
-        category={store.category}
-        zone={store.zone}
-        description={getStoreTagline({
-          slug: store.slug,
-          name: store.name,
-          category: store.category,
-          existing: store.description,
-        })}
-        rating={store.rating ?? 0}
-        reviewCount={store.reviewCount}
-        scheduleLabel="Lun a Dom · 7am – 11pm"
-        isOpen={isOpen}
-        paymentMethods={paymentMethods}
-        storeId={store.id}
-        storeSlug={store.slug}
-        storeLogo={store.logo ?? null}
-        lat={(store as { lat?: number | null }).lat ?? null}
-        lng={(store as { lng?: number | null }).lng ?? null}
-        whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
-      />
+        <StoreHero
+          name={store.name}
+          category={store.category}
+          zone={store.zone}
+          description={getStoreTagline({
+            slug: store.slug,
+            name: store.name,
+            category: store.category,
+            existing: store.description,
+          })}
+          rating={store.rating ?? 0}
+          reviewCount={store.reviewCount}
+          scheduleLabel="Lun a Dom · 7am – 11pm"
+          isOpen={isOpen}
+          paymentMethods={paymentMethods}
+          storeId={store.id}
+          storeSlug={store.slug}
+          storeLogo={store.logo ?? null}
+          lat={(store as { lat?: number | null }).lat ?? null}
+          lng={(store as { lng?: number | null }).lng ?? null}
+          whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
+        />
       </div>
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
@@ -533,14 +549,20 @@ export default function StoreDetailClient({
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--accent-soft)]/40 transition-colors border-b border-[var(--rule-soft)] last:border-b-0"
                     >
-                      <span className={cn(
-                        "inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0",
-                        s.type === "category" ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                      )}>
+                      <span
+                        className={cn(
+                          "inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0",
+                          s.type === "category"
+                            ? "bg-[var(--accent)]/10 text-[var(--accent)]"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+                        )}
+                      >
                         <Search className="h-4 w-4" />
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[var(--text-primary)] truncate">{s.label}</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                          {s.label}
+                        </p>
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                           {s.type === "category" ? "Filtrar por categoría" : "Producto"}
                         </p>
@@ -661,7 +683,7 @@ export default function StoreDetailClient({
                           : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                       )}
                     >
-                      <span className="tracking-tight">{cat.name}</span>
+                      <span className="tracking-tight">{formatCategoryLabel(cat.name)}</span>
                       <span
                         className={cn(
                           "inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-[length:var(--ts-2xs)] font-black tabular-nums transition-colors",
@@ -704,27 +726,44 @@ export default function StoreDetailClient({
               <div className="flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
                 <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-base)]">
                   {store.logo ? (
-                    <Image src={store.logo} alt={store.name} width={56} height={56} sizes="56px" className="h-full w-full object-cover" />
+                    <Image
+                      src={store.logo}
+                      alt={store.name}
+                      width={56}
+                      height={56}
+                      sizes="56px"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
-                    <span className="text-lg font-black text-[var(--accent)]">{store.name.trim().charAt(0).toUpperCase()}</span>
+                    <span className="text-lg font-black text-[var(--accent)]">
+                      {store.name.trim().charAt(0).toUpperCase()}
+                    </span>
                   )}
                 </span>
                 <div className="min-w-0">
                   <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                     {store.category ?? "Tienda"}
                   </p>
-                  <h1 className="truncate text-base font-black leading-tight text-[var(--text-primary)]">{store.name}</h1>
+                  <h1 className="truncate text-base font-black leading-tight text-[var(--text-primary)]">
+                    {store.name}
+                  </h1>
                   <p className="mt-0.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
-                    <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Verificada por Buleje
+                    <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Verificada
+                    por Buleje
                   </p>
                 </div>
               </div>
 
               {/* CTA — Guardar (siempre) + Mensaje por WhatsApp (si el dueño lo configuró). */}
               {(() => {
-                const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(/\D/g, "");
+                const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(
+                  /\D/g,
+                  "",
+                );
                 const intl = raw ? (raw.startsWith("51") ? raw : `51${raw}`) : null;
-                const msg = encodeURIComponent(`Hola ${store.name}, vengo de Buleje y quiero hacer un pedido`);
+                const msg = encodeURIComponent(
+                  `Hola ${store.name}, vengo de Buleje y quiero hacer un pedido`,
+                );
                 return (
                   <div className="flex gap-2">
                     {intl && (
@@ -749,8 +788,18 @@ export default function StoreDetailClient({
                           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
                       )}
                     >
-                      <Heart className={cn("h-4 w-4", saved && "fill-[var(--accent)]")} strokeWidth={2.25} aria-hidden />
-                      {intl ? (saved ? "Guardada" : "Guardar") : (saved ? "Guardada" : "Guardar tienda")}
+                      <Heart
+                        className={cn("h-4 w-4", saved && "fill-[var(--accent)]")}
+                        strokeWidth={2.25}
+                        aria-hidden
+                      />
+                      {intl
+                        ? saved
+                          ? "Guardada"
+                          : "Guardar"
+                        : saved
+                          ? "Guardada"
+                          : "Guardar tienda"}
                     </button>
                   </div>
                 );
@@ -767,7 +816,9 @@ export default function StoreDetailClient({
                 reviewCount={store.reviewCount}
                 deliveryMin={25}
                 paymentMethods={paymentMethods}
-                whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
+                whatsappNumber={
+                  (store as { whatsappPublic?: string | null }).whatsappPublic ?? null
+                }
               />
 
               {/* Categorías */}
@@ -881,7 +932,12 @@ export default function StoreDetailClient({
 
       {/* ── Reviews + Policies (compacto, divisores con tokens del DS) ────── */}
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 border-t border-[var(--rule-base)] py-8">
-        <StoreReviews summary={reviewSummary} reviews={reviews} storeSlug={store.slug} storeName={store.name} />
+        <StoreReviews
+          summary={reviewSummary}
+          reviews={reviews}
+          storeSlug={store.slug}
+          storeName={store.name}
+        />
       </div>
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 border-t border-[var(--rule-base)] py-8">
         <StorePoliciesBlock />
@@ -923,17 +979,17 @@ export default function StoreDetailClient({
       {/* ── Nav drawer general (hamburguesa del top nav) ────────────────
            Brandon 2026-05-18: unificado con el drawer del MarketplaceNavbar
            (/tiendas) en SharedMobileNavDrawer. Mismo UX en TODO el marketplace. */}
-      <SharedMobileNavDrawer
-        open={navDrawerOpen}
-        onClose={() => setNavDrawerOpen(false)}
-      />
+      <SharedMobileNavDrawer open={navDrawerOpen} onClose={() => setNavDrawerOpen(false)} />
       {/* ── WhatsApp FAB (md:hidden) ────────────────────────────────────
            Brandon 2026-05-30 (audit #6): el vecino de Pucallpa pide por
            WhatsApp. FAB flotante = 1 tap (antes el número estaba 2 taps adentro
            del modal). Solo mobile + solo si el dueño configuró whatsappPublic
            (Store.whatsappPublic, editable desde su panel de tienda). */}
       {(() => {
-        const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(/\D/g, "");
+        const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(
+          /\D/g,
+          "",
+        );
         if (!raw) return null;
         const intl = raw.startsWith("51") ? raw : `51${raw}`;
         const msg = encodeURIComponent(
@@ -1163,7 +1219,10 @@ function StoreInfoModal({
     { key: "sun", label: "Domingo" },
   ];
 
-  const hours = (hoursJson as Record<string, { open?: string; close?: string; closed?: boolean }> | undefined) ?? {};
+  const hours =
+    (hoursJson as
+      | Record<string, { open?: string; close?: string; closed?: boolean }>
+      | undefined) ?? {};
   const today = new Date().getDay(); // 0=dom, 1=lun...
   const todayKey = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][today];
 

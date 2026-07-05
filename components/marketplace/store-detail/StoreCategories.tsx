@@ -17,6 +17,7 @@
 
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { formatCategoryLabel } from "@/lib/format-category";
 
 export interface StoreCategoryChip {
   name: string;
@@ -186,10 +187,7 @@ export default function StoreCategories({
   const imageMap = images ?? {};
 
   return (
-    <nav
-      aria-label="Categorías del catálogo"
-      className="flex flex-wrap gap-1.5 sm:gap-2"
-    >
+    <nav aria-label="Categorías del catálogo" className="flex flex-wrap gap-1.5 sm:gap-2">
       <ChipButton
         active={activeCategory === null}
         label="Todos"
@@ -201,7 +199,7 @@ export default function StoreCategories({
         <ChipButton
           key={cat.name}
           active={activeCategory === cat.name}
-          label={cat.name}
+          label={formatCategoryLabel(cat.name)}
           count={cat.count}
           imageUrl={imageMap[cat.name]}
           compact={compact}
