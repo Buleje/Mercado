@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { TabSpinner } from "@/app/admin/_lib/tab-spinner";
+import { preloadTab } from "@/app/admin/_lib/tab-preload";
 import { useEnabledSpecs, SPEC_GATED_MODULE_IDS } from "@/hooks/use-enabled-specs";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
@@ -103,43 +104,21 @@ const PREFETCH_MAP: Record<string, string[]> = {
   "promociones": ["productos", "ventas-caja"],
 };
 
-// Map de dynamic imports para prefetch — reutiliza los mismos loaders del router
-const PREFETCH_LOADERS: Record<string, () => Promise<unknown>> = {
-  "vendor-dashboard": () => import("@/components/admin/unified/VendorDashboardModule"),
-  "ventas-caja":      () => import("@/components/admin/unified/POSCajaModule"),
-  "inventario":       () => import("@/components/admin/tabs/InventoryTab"),
-  "productos":        () => import("@/components/admin/unified/CatalogoTiendaModule"),
-  "compras":          () => import("@/components/admin/unified/ComprasModule"),
-  "clientes":         () => import("@/components/admin/unified/CRMClientesModule"),
-  "fiados":           () => import("@/components/admin/FiadosModule"),
-  "pedidos":          () => import("@/components/admin/OrdersTab"),
-  "plata":            () => import("@/components/admin/unified/FinanzasModule"),
-  "marketplace":      () => import("@/components/admin/unified/MarketplaceModule"),
-  "promociones":      () => import("@/components/admin/PromocionesModule"),
-};
+// Los loaders de precarga viven en app/admin/_lib/tab-preload (compartidos con
+// el hover del sidebar) — acá solo decidimos QUÉ tabs precargar por adelantado.
 
 /**
  * Hook que prefetches modulos relacionados despues de 2s de inactividad.
  * Solo carga en background, sin afectar el render actual.
  */
 function usePrefetchRelated(activeTab: Tab) {
-  const prefetchedRef = useRef<Set<string>>(new Set());
-
   useEffect(() => {
     const targets = PREFETCH_MAP[activeTab];
     if (!targets) return;
-
+    // preloadTab ya dedupea internamente (idempotente).
     const timer = setTimeout(() => {
-      for (const tabId of targets) {
-        if (prefetchedRef.current.has(tabId)) continue;
-        const loader = PREFETCH_LOADERS[tabId];
-        if (loader) {
-          prefetchedRef.current.add(tabId);
-          loader().catch(() => {});
-        }
-      }
+      for (const tabId of targets) preloadTab(tabId);
     }, 2000);
-
     return () => clearTimeout(timer);
   }, [activeTab]);
 }

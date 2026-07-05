@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
+import { preloadTab } from "@/app/admin/_lib/tab-preload";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type FlyoutTheme = "light" | "dark" | "cristal";
@@ -115,6 +116,9 @@ export function SidebarFlyout({
               onNavigate(id);
               onClose();
             }}
+            // Precarga el chunk del tab al pasar el mouse / enfocar → el clic abre al instante.
+            onMouseEnter={() => preloadTab(id)}
+            onFocus={() => preloadTab(id)}
             className={cn(
               "relative w-full flex items-center gap-2.5 px-4 py-2.5 text-[length:var(--ts-sm)] font-medium transition-all",
               isActive
