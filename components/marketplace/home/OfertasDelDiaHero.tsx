@@ -15,7 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Clock } from "@buleje/design-system/icons";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
-import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 
 interface FeaturedProduct {
@@ -146,17 +145,22 @@ export default function OfertasDelDiaHero() {
           </div>
         }
       />
-      <HorizontalCarousel ariaLabel="Ofertas del día">
-        {cards.map((p, i) => (
-          <UnifiedProductCard
-            key={p.storeProductId}
-            product={p}
-            variant={p.discount ? "flash" : "default"}
-            layout="compact"
-            index={i}
-          />
+      {/* Grilla contenida (no se corre al borde; como "Todos los productos") */}
+      <ul
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+        aria-label="Ofertas del día"
+      >
+        {cards.slice(0, 12).map((p, i) => (
+          <li key={p.storeProductId}>
+            <UnifiedProductCard
+              product={p}
+              variant={p.discount ? "flash" : "default"}
+              layout="compact"
+              index={i}
+            />
+          </li>
         ))}
-      </HorizontalCarousel>
+      </ul>
     </section>
   );
 }
