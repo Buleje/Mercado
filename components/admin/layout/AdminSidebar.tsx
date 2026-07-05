@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
+import { preloadTab } from "@/app/admin/_lib/tab-preload";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
 import { SPEC_GATED_MODULE_IDS, useEnabledSpecs } from "@/hooks/use-enabled-specs";
@@ -1043,6 +1044,8 @@ export function AdminSidebar({
                       data-tour-tab={isSingleTab ? catTabs[0] : category.id}
                       onMouseEnter={(e) => {
                         if (!isSingleTab) handleCategoryMouseEnter(category.id);
+                        // Precarga el chunk del tab (link directo o 1er sub-tab) → clic instantáneo.
+                        preloadTab(catTabs[0] as string);
                         // Compact: mostrar tooltip lateral con nombre + tip opcional
                         const tipTabId = isSingleTab ? catTabs[0] : catTabs[0];
                         const tipText = MODULE_INFO[tipTabId as Tab]?.tip;
@@ -1152,6 +1155,8 @@ export function AdminSidebar({
                                 <button
                                   key={subTabId}
                                   onClick={() => navigateTab(subTabId as Tab)}
+                                  onMouseEnter={() => preloadTab(subTabId)}
+                                  onFocus={() => preloadTab(subTabId)}
                                   className={cn(
                                     "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[length:var(--ts-sm)] transition-all",
                                     isSubActive
@@ -1228,6 +1233,8 @@ export function AdminSidebar({
                 key={id}
                 data-tour-tab={id}
                 onClick={() => navigateTab(id)}
+                onMouseEnter={() => preloadTab(id)}
+                onFocus={() => preloadTab(id)}
                 className={cn(
                   "group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[length:var(--ts-sm)] font-medium transition-all mb-px",
                   tab === id
@@ -1267,7 +1274,7 @@ export function AdminSidebar({
                 <button
                   data-tour-tab={id}
                   onClick={() => navigateTab(id)}
-                  onMouseEnter={(e) => handleCompactHover(e.currentTarget, label)}
+                  onMouseEnter={(e) => { preloadTab(id); handleCompactHover(e.currentTarget, label); }}
                   onMouseLeave={handleCompactLeave}
                   aria-label={label}
                   className={cn(
