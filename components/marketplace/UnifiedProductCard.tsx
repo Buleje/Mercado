@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { BRAND_GEO } from "@/lib/geo";
 import { celebrate } from "@/lib/celebrate";
 import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
+import { useToast } from "@/contexts/toast-context";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import { useCompare } from "@/contexts/compare-context";
 import ProductModifierModal from "@/components/marketplace/ProductModifierModal";
@@ -140,6 +141,9 @@ export default function UnifiedProductCard({
   // adicionales NO queremos abrir el AddedToCartDrawer encima (sería un
   // modal sobre otro modal). El producto se agrega al cart y se cierra.
   const { items: cartItems, addItem } = useMarketplaceCart();
+  // Toast "Agregado al carrito" — confirmación CLARA al agregar desde la card
+  // (antes solo cambiaba el badge, imperceptible). Audit comprador 2026-07-05.
+  const { showToast } = useToast();
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
   const [modifierModalOpen, setModifierModalOpen] = useState(false);
@@ -348,7 +352,8 @@ export default function UnifiedProductCard({
       stock: product.stock ?? undefined,
     });
     celebrate({ intensity: "sm" });
-  }, [isOutOfStock, atStockCap, product, addItem, flyToNavCart]);
+    showToast(product.name, product.image ?? "");
+  }, [isOutOfStock, atStockCap, product, addItem, flyToNavCart, showToast]);
 
   /* ── Badges top-left ───────────────────────────────────────────── */
   const showOfertaBadge =
@@ -820,6 +825,7 @@ export default function UnifiedProductCard({
             setModifierModalOpen(false);
             flyToNavCart(); // ✈️ vuela al carrito del nav
             celebrate({ intensity: "sm" }); // 🎉 agregado al carrito
+            showToast(product.name, product.image ?? ""); // ✓ toast "Agregado"
           }}
         />
       )}

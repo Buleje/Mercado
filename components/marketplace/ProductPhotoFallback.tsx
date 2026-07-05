@@ -23,6 +23,7 @@ import {
   Milk,
   Sandwich,
   Apple,
+  Coffee,
   Package,
   ShoppingCart,
   type LucideIcon,
@@ -64,6 +65,7 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
 // intencional, no "a medio terminar". Se prueba cuando la categoría no resuelve
 // a un ícono específico. Orden = primero match gana.
 const NAME_HINTS: Array<[RegExp, LucideIcon]> = [
+  [/caf[eé]|instant[aá]neo|nescaf|t[eé] |infusi[oó]n/i, Coffee],
   [/agua|gaseosa|cola|kola|cerveza|chicha|jugo|refresco|bebida|gatorade|botella/i, Beer],
   [/pollo|brasa|alita|pierna|presa/i, Drumstick],
   [/pizza/i, Pizza],

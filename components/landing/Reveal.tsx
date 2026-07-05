@@ -16,7 +16,7 @@ interface Props {
   offset?: number;
   /** Duración total de la animación en ms (default 700). */
   duration?: number;
-  /** Threshold del IntersectionObserver (default 0.15). */
+  /** Threshold del IntersectionObserver (default 0.01 — revela apenas asoma). */
   threshold?: number;
   /** Trigger una sola vez (default true). */
   once?: boolean;
@@ -32,7 +32,7 @@ export function Reveal({
   delay = 0,
   offset = 32,
   duration = 700,
-  threshold = 0.15,
+  threshold = 0.01,
   once = true,
   as: Tag = "div",
   className,
@@ -64,7 +64,11 @@ export function Reveal({
           }
         }
       },
-      { threshold, rootMargin: "0px 0px -10% 0px" },
+      // Brandon 2026-07-05 (audit comprador): rootMargin POSITIVO abajo (300px)
+      // = revela el contenido ANTES de que entre al viewport. Antes ("-10%") lo
+      // revelaba recién 10% adentro → al scrollear rápido se veía un flash en
+      // blanco (parecía que la página se colgaba). Ahora llega ya visible.
+      { threshold, rootMargin: "0px 0px 300px 0px" },
     );
     obs.observe(node);
     return () => obs.disconnect();
