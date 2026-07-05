@@ -25,7 +25,7 @@ import {
   ArrowLeft, Search, X, Menu, LayoutGrid, List, Info,
   MapPin, Clock, Wallet, Phone, UserCircle,
   Home as HomeIcon, Store as StoreIcon, Package, Tag, ArrowRight,
-  ShoppingCart, Star, MessageCircle,
+  ShoppingCart, Star, MessageCircle, ShieldCheck,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCustomer } from "@/contexts/customer-context";
@@ -49,6 +49,7 @@ const StorePromoBannersStrip = dynamic(
 );
 import { type StoreCategoryChip } from "./StoreCategories";
 import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
+import StoreInfoPanel from "./StoreInfoPanel";
 import StoreCatalog, { slugifyCat } from "./StoreCatalog";
 // Brandon 2026-05-21 perf v6: StoreReviews (199 LOC / 8KB) + StorePoliciesBlock
 // (103 LOC / 4KB) son below-the-fold — el usuario los ve solo después de
@@ -414,8 +415,10 @@ export default function StoreDetailClient({
         </div>
       )}
 
-      {/* ── Hero del negocio (mobile + desktop) — como Rappi don-bajadon
-           muestra info completa: rating, descripción, horario, pagos. */}
+      {/* ── Hero del negocio — SOLO tablet (md). En desktop (lg+) la info del
+           negocio vive en la barra lateral izquierda (layout estilo Rappi). En
+           mobile, la barra slim + trust strip de arriba ya la cubren. */}
+      <div className="lg:hidden">
       <StoreHero
         name={store.name}
         category={store.category}
@@ -438,6 +441,7 @@ export default function StoreDetailClient({
         lng={(store as { lng?: number | null }).lng ?? null}
         whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
       />
+      </div>
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
       <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
@@ -672,10 +676,46 @@ export default function StoreDetailClient({
       {/* ── Layout: SIDEBAR (lg+) + CATALOG ─────────────────────────────── */}
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-8">
         <div className="flex gap-6 lg:gap-8">
-          {/* Sidebar desktop — sticky, vertical, scroll interno si hay muchas categorias */}
-          <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-[5.5rem]">
-              <div className="rounded-none border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2 max-h-[calc(100dvh-7rem)] overflow-y-auto">
+          {/* ── Barra lateral (lg+, estilo Rappi) — datos del negocio + categorías,
+               sticky con scroll interno. Reemplaza al hero full-width en desktop. */}
+          <aside className="hidden lg:block w-[19rem] shrink-0">
+            <div className="sticky top-[5.5rem] max-h-[calc(100dvh-7rem)] space-y-4 overflow-y-auto pr-1 [scrollbar-width:thin]">
+              {/* Identidad de la tienda */}
+              <div className="flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
+                <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-base)]">
+                  {store.logo ? (
+                    <Image src={store.logo} alt={store.name} width={56} height={56} sizes="56px" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-lg font-black text-[var(--accent)]">{store.name.trim().charAt(0).toUpperCase()}</span>
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                    {store.category ?? "Tienda"}
+                  </p>
+                  <h1 className="truncate text-base font-black leading-tight text-[var(--text-primary)]">{store.name}</h1>
+                  <p className="mt-0.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+                    <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Verificada por Buleje
+                  </p>
+                </div>
+              </div>
+
+              {/* Datos del negocio: mapa · rating · delivery · zona · horario · pagos */}
+              <StoreInfoPanel
+                name={store.name}
+                zone={store.zone}
+                address={store.zone}
+                scheduleLabel="Lun a Dom · 7am – 11pm"
+                isOpen={isOpen}
+                rating={store.rating ?? 0}
+                reviewCount={store.reviewCount}
+                deliveryMin={25}
+                paymentMethods={paymentMethods}
+                whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
+              />
+
+              {/* Categorías */}
+              <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2">
                 <StoreCategoriesSidebar
                   categories={categories}
                   activeCategory={filterCategory}
