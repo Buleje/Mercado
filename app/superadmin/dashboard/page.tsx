@@ -305,7 +305,7 @@ export default function DashboardPage() {
       {data && <ExecutiveSummary data={data} />}
 
       {/* ── Resultado financiero: ingresos vs gastos → bruta, neta, final ── */}
-      {data && <FinancialResults mrrPen={data.overview.mrr} />}
+      {data && <FinancialResults mrrPen={data.overview.mrr} mrrGrowthPct={data.growth.mrrGrowthPct} />}
 
       {/* ── Centro de comando: KPIs operativos accionables (auto-fetch) ──── */}
       <CommandCenterStrip />
