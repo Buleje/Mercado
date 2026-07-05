@@ -209,7 +209,7 @@ export default function PremiumStoreCard({
             </span>
           </div>
           <div className="min-w-0">
-            <p className="flex items-center gap-1 text-base font-extrabold leading-tight tracking-tight text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors sm:text-lg">
+            <p title={name} className="flex items-center gap-1 text-base font-extrabold leading-tight tracking-tight text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent)] transition-colors sm:text-lg">
               {name}
               {verified && (
                 <ShieldCheck

@@ -269,7 +269,10 @@ export default function OfertasClient() {
     (async () => {
       try {
         // Solo ofertas reales (sin fallback). Si no hay, mostramos empty state.
-        const res = await fetch("/api/marketplace/deals?limit=80", { signal: ctrl.signal });
+        // fallbackToLowest=true: si no hay descuentos reales publicados, mostramos
+        // los precios más bajos del marketplace (como el home) en vez de una
+        // página vacía. Corrige la contradicción "ofertas con countdown → página vacía".
+        const res = await fetch("/api/marketplace/deals?limit=80&fallbackToLowest=true", { signal: ctrl.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = (await res.json()) as DealsResponse;
         const adapted = (json.data ?? []).map(adapt);

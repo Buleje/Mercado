@@ -138,7 +138,7 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{store.name}</h3>
+            <h3 title={store.name} className="text-sm font-bold text-[var(--text-primary)] truncate">{store.name}</h3>
             {store.badge && (
               <span className="shrink-0 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-xs font-bold uppercase tracking-wide">
                 {store.badge}
@@ -233,7 +233,7 @@ export default function StoreCard({ store, variant = "grid", onToggleFavorite, c
       <div className="p-3">
         <div className="flex items-start gap-2">
           <Link href={`/tiendas/${store.slug}`} className="flex-1 min-w-0">
-            <h3 className="text-sm font-extrabold text-[var(--text-primary)] truncate">{store.name}</h3>
+            <h3 title={store.name} className="text-sm font-extrabold text-[var(--text-primary)] truncate">{store.name}</h3>
             <div className="mt-1 flex items-center gap-2 flex-wrap">
               {/* MK-57: rating prominente con count */}
               <RatingStars value={store.rating} count={store.reviewCount} size="xs" />
