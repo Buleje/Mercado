@@ -38,6 +38,7 @@ interface Trends {
   humedadFuera: { loteCode: string; humedadPct: number }[]; humedadFueraCount: number;
 }
 interface Inventory { kgSecoDisponible: number; valorEstimado: number; kgHumedoProceso: number; rendimientoProm: number | null }
+interface VentasStats { kg: number; ingresos: number; cobrado: number; saldoPendiente: number }
 interface CampoStats { parcelas: number; areaHa: number; alDia: number; pendientes: number; vencidos: number; laboresPendientes: number }
 interface CampoSanidad { focosActivos: number; criticos: number; seccionesAfectadas: number; plagaTop: CacaoPlaga | null }
 interface CampoTotales { cosechaKg: number; rendKgHa: number | null; ingresos: number; costos: number; margen: number }
@@ -78,6 +79,7 @@ export default function CacaoResumen() {
   const [campo, setCampo] = useState<CampoStats | null>(null);
   const [campoSan, setCampoSan] = useState<CampoSanidad | null>(null);
   const [campoTot, setCampoTot] = useState<CampoTotales | null>(null);
+  const [ventas, setVentas] = useState<VentasStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rango, setRango] = useState<string>("all");
@@ -90,14 +92,15 @@ export default function CacaoResumen() {
       if (from) qs.set("from", from);
       if (to) qs.set("to", to);
       const q = qs.toString() ? `&${qs}` : "";
-      const [rs, rt, ri, rc, rcs, rca] = await Promise.all([
+      const [rs, rt, ri, rc, rcs, rca, rv] = await Promise.all([
         fetch(`/api/admin/cacao?view=stats${q}`, { credentials: "include" }),
         fetch(`/api/admin/cacao?view=trends${q}`, { credentials: "include" }),
-        // Inventario + Campo = estado ACTUAL de la chacra, no se filtran por campaña.
+        // Inventario + Campo + Ventas = estado ACTUAL, no se filtran por campaña.
         fetch("/api/admin/cacao?view=inventory", { credentials: "include" }),
         fetch("/api/admin/cacao/campo?view=stats", { credentials: "include" }),
         fetch("/api/admin/cacao/campo?view=sanidad-stats", { credentials: "include" }),
         fetch("/api/admin/cacao/campo?view=analytics", { credentials: "include" }),
+        fetch("/api/admin/cacao?view=ventas-stats", { credentials: "include" }),
       ]);
       if (!rs.ok) throw new Error(`HTTP ${rs.status}`);
       setStats((await rs.json()).stats ?? null);
@@ -106,6 +109,7 @@ export default function CacaoResumen() {
       setCampo(rc.ok ? (await rc.json()).stats ?? null : null);
       setCampoSan(rcs.ok ? (await rcs.json()).stats ?? null : null);
       setCampoTot(rca.ok ? (await rca.json()).totales ?? null : null);
+      setVentas(rv.ok ? (await rv.json()).stats ?? null : null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [rango]);
@@ -149,6 +153,9 @@ export default function CacaoResumen() {
         <StatCard label="Precio promedio" value={`S/ ${n2(stats.precioPromKg)}`} subValue="por kg acopiado" icon={Banknote} emphasis="neutral" />
         <StatCard label="Calidad Grado I" value={`${stats.pctGradoI}%`} subValue="de los lotes" icon={Award} emphasis={stats.pctGradoI >= 50 ? "success" : "warning"} />
       </div>
+
+      {/* Resultado del negocio: ventas de cacao − lo pagado en acopio */}
+      <CacaoResultado ventas={ventas} valorPagado={stats.valorPagado} secoDisponible={inv?.kgSecoDisponible ?? 0} valorInventario={inv?.valorEstimado ?? 0} />
 
       {/* Gráfico central grande: comprado vs vendido por mes */}
       <CacaoResumenChart />
@@ -224,6 +231,64 @@ export default function CacaoResumen() {
             <span className="text-[var(--data-warning-800)]">{trends.humedadFuera.map((h) => `${h.loteCode} (${h.humedadPct.toFixed(1)}%)`).join(" · ")}</span></div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Resultado del negocio de cacao: ventas − lo pagado en acopio. */
+function CacaoResultado({
+  ventas, valorPagado, secoDisponible, valorInventario,
+}: {
+  ventas: VentasStats | null;
+  valorPagado: number;
+  secoDisponible: number;
+  valorInventario: number;
+}) {
+  if (!ventas || (ventas.ingresos <= 0 && valorPagado <= 0)) return null;
+  const ingresos = ventas.ingresos;
+  const resultado = ingresos - valorPagado;
+  const margen = ingresos > 0 ? (resultado / ingresos) * 100 : null;
+  const gano = resultado >= 0;
+  const color = gano ? "var(--data-success-700,#047857)" : "var(--data-error-700,#b91c1c)";
+  return (
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Banknote className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">Resultado del cacao</h3>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 sm:items-center">
+        <div>
+          <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
+            <span className="text-[var(--text-secondary)]">Ingresos por ventas</span>
+            <span className="font-bold tabular-nums text-[var(--text-primary)]">+S/ {n2(ingresos)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
+            <span className="text-[var(--text-tertiary)]">− Pagado a productores</span>
+            <span className="font-bold tabular-nums text-[var(--text-secondary)]">−S/ {n2(valorPagado)}</span>
+          </div>
+          <div className="mt-2 flex items-end justify-between gap-3 border-t-2 border-[var(--rule-base)] pt-2">
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Resultado</p>
+              <p className="inline-flex items-center gap-1 text-sm font-bold" style={{ color }}>
+                {gano ? <TrendingUp className="h-4 w-4" aria-hidden /> : <AlertCircle className="h-4 w-4" aria-hidden />}
+                {gano ? "Ganás" : "Perdés"}{margen !== null && ` · margen ${margen.toFixed(0)}%`}
+              </p>
+            </div>
+            <p className="font-mono text-2xl font-extrabold tabular-nums" style={{ color }}>
+              {gano ? "+" : "−"}S/ {n2(Math.abs(resultado))}
+            </p>
+          </div>
+        </div>
+        <div className="space-y-1.5 text-sm text-[var(--text-secondary)] sm:border-l sm:border-[var(--rule-soft)] sm:pl-4">
+          {ventas.saldoPendiente > 0 && (
+            <p>Por cobrar: <b className="text-[var(--data-warning-700,#b45309)]">S/ {n2(ventas.saldoPendiente)}</b></p>
+          )}
+          {secoDisponible > 0 && (
+            <p><b className="text-[var(--text-primary)]">{n2(secoDisponible)} kg</b> secos sin vender (≈ S/ {n2(valorInventario)} a precio acopio) — ingreso potencial.</p>
+          )}
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ventas = todo el histórico; acopio = la campaña seleccionada arriba.</p>
+        </div>
+      </div>
     </div>
   );
 }
