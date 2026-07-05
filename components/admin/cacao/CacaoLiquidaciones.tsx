@@ -61,6 +61,17 @@ export default function CacaoLiquidaciones() {
     return groups.filter((g) => g.nombre.toLowerCase().includes(q) || (g.codigo ?? "").toLowerCase().includes(q) || (g.sector ?? "").toLowerCase().includes(q));
   }, [groups, search]);
 
+  // Deuda que más tiempo lleva esperando — priorizar por antigüedad, no solo monto.
+  const aging = useMemo(() => {
+    let maxDias = 0;
+    let quien: string | null = null;
+    for (const g of groups) {
+      const d = diasDesde(g.oldest);
+      if (d != null && d > maxDias) { maxDias = d; quien = g.nombre; }
+    }
+    return { maxDias, quien };
+  }, [groups]);
+
   function exportCsv() {
     const head = ["Codigo", "Productor", "Sector", "Telefono", "Lotes pendientes", "Debido", "Abonado", "Saldo", "Deuda mas antigua"];
     const esc = (v: unknown) => { const s = String(v ?? ""); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -73,10 +84,11 @@ export default function CacaoLiquidaciones() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Total a pagar" value={`S/ ${n2(totals?.saldo ?? 0)}`} subValue={(totals?.saldo ?? 0) > 0 ? "saldo pendiente" : "al día"} icon={Coins} emphasis={(totals?.saldo ?? 0) > 0 ? "warning" : "success"} />
         <StatCard label="Productores por pagar" value={String(totals?.productores ?? 0)} icon={Users} emphasis="neutral" />
         <StatCard label="Lotes pendientes" value={String(totals?.lotes ?? 0)} icon={HandCoins} emphasis="neutral" />
+        <StatCard label="Deuda más antigua" value={aging.maxDias > 0 ? `${aging.maxDias} días` : "—"} subValue={aging.quien ?? "al día"} icon={Clock} emphasis={aging.maxDias >= 30 ? "warning" : "neutral"} />
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
