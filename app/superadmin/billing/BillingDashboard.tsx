@@ -43,6 +43,7 @@ import {
   type MrrMovement,
   type Dunning,
 } from "./DunningPanel";
+import { BillingExecutiveSummary } from "./BillingExecutiveSummary";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -534,6 +535,14 @@ export default function BillingDashboard() {
   return (
     <div className="space-y-5">
       <Toasts toasts={toasts} />
+
+      {/* ── Resumen ejecutivo (veredicto + MRR en riesgo) ─── */}
+      <BillingExecutiveSummary
+        mrrPEN={data.mrrPEN}
+        counts={data.counts}
+        dunning={data.dunning}
+        movement={data.mrrMovement}
+      />
 
       {/* ── Action bar ────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
