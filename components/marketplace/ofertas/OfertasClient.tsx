@@ -306,8 +306,12 @@ export default function OfertasClient() {
       <ExplorarTracker pageName="marketplace_ofertas" />
       {/* Designer audit P0: el PromoBannerCarousel mostraba "Ofertas
           relámpago — hasta -40%" aunque la página estuviera vacía. Ocultar
-          cuando no hay deals reales — no le mentimos al usuario. */}
-      {allDeals.length > 0 && <PromoHeroSlot slot="ofertas" moreLabel="Más ofertas" />}
+          cuando no hay deals reales — no le mentimos al usuario.
+          Brandon 2026-07-05 (audit navegación): además ocultarlo en modo
+          "lowest" (precios bajos, SIN descuentos) — antes los banners
+          "-40%/2x1/combos" contradecían al aviso "Sin descuentos publicados hoy"
+          de justo abajo. Los banners de descuento solo van con descuentos reales. */}
+      {source === "deals" && <PromoHeroSlot slot="ofertas" moreLabel="Más ofertas" />}
 
       {error && (
         <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">

@@ -395,7 +395,8 @@ export default function UnifiedProductCard({
         "group relative flex w-full overflow-hidden",
         isCompact ? "flex-col" : "flex-row sm:flex-col",
         "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
-        isOutOfStock && "opacity-70",
+        // Agotado: NO atenuamos toda la card (el texto debe quedar legible); el
+        // "apagado" vive solo en la imagen (velo claro sutil arriba). Brandon 2026-07-05.
       )}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -565,13 +566,20 @@ export default function UnifiedProductCard({
           </span>
         )}
 
-        {/* Overlay agotado */}
+        {/* Agotado — minimalista/elegante (Brandon 2026-07-05): sin velo negro ni
+            pill oscuro centrado. Velo CLARO sutil que atenúa la imagen + chip
+            discreto arriba-izquierda con tokens del DS. El nombre y el precio
+            quedan nítidos (legibles), la foto se ve "apagada". */}
         {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
-            <span className="rounded-full bg-gray-800/90 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white">
+          <>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[var(--surface-canvas)]/45"
+            />
+            <span className="absolute left-2 top-2 z-10 inline-flex items-center rounded-full bg-[var(--surface-canvas)]/85 px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)] shadow-sm ring-1 ring-[var(--rule-base)] backdrop-blur-sm">
               Agotado
             </span>
-          </div>
+          </>
         )}
 
       </div>

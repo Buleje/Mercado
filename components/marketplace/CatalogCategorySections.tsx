@@ -20,7 +20,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "@buleje/design-system/icons";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
-import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
 import { useCatalogFilter } from "@/components/marketplace/catalog-filter-context";
 import { cachedJson } from "@/lib/client-cache-fetch";
@@ -140,25 +139,36 @@ export default function CatalogCategorySections() {
   if (active) return null;
   if (!sections || sections.length === 0) return null;
 
+  // Brandon 2026-07-05: sin MarketplaceSection (que imponía max-w-[1600px] + px
+  // propio + py-16 gigante). Estas secciones HEREDAN el contenedor del catálogo
+  // (max-w-[1760px]) → mismo ancho que el grid "Todos los productos", separación
+  // vertical mínima y pareja, y `edgeBleed={false}` para que las cards se alineen
+  // al borde del grid.
   return (
-    <div className="space-y-1">
+    <div className="space-y-6 sm:space-y-7">
       {sections.map((sec) => (
-        <MarketplaceSection
-          key={sec.id}
-          id={`cat-${sec.id}`}
-          kicker="Categoría"
-          title={sec.label}
-          actions={
+        <section key={sec.id} id={`cat-${sec.id}`} aria-labelledby={`${sec.id}-h`}>
+          <div className="mb-2.5 flex items-end justify-between gap-3 sm:mb-3">
+            <div className="min-w-0">
+              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+                Categoría
+              </p>
+              <h3
+                id={`${sec.id}-h`}
+                className="text-lg font-black leading-tight tracking-tight text-[var(--text-primary)] sm:text-2xl"
+              >
+                {sec.label}
+              </h3>
+            </div>
             <Link
               href={`/?cat=${encodeURIComponent(sec.id)}#catalogo`}
-              className="inline-flex items-center gap-1 text-sm font-extrabold text-[var(--accent)] hover:gap-2 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-extrabold text-[var(--accent)] transition-all hover:gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             >
               Ver más
               <ArrowRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             </Link>
-          }
-        >
-          <HorizontalCarousel ariaLabel={`Productos de ${sec.label}`}>
+          </div>
+          <HorizontalCarousel ariaLabel={`Productos de ${sec.label}`} edgeBleed={false}>
             {sec.products.map((p, i) => (
               <UnifiedProductCard
                 key={p.storeProductId}
@@ -168,7 +178,7 @@ export default function CatalogCategorySections() {
               />
             ))}
           </HorizontalCarousel>
-        </MarketplaceSection>
+        </section>
       ))}
     </div>
   );
