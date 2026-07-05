@@ -26,6 +26,7 @@ import { TopStoresList } from "@/components/superadmin/dashboard/TopStoresList";
 import { ConversionFunnel } from "@/components/superadmin/dashboard/ConversionFunnel";
 import { LatestActiveTenantsTable } from "@/components/superadmin/dashboard/LatestActiveTenantsTable";
 import { CommandCenterStrip } from "@/components/superadmin/dashboard/CommandCenterStrip";
+import { FinancialResults } from "@/components/superadmin/dashboard/FinancialResults";
 import dynamic from "next/dynamic";
 
 // Audit P1 (2026-05-19): lazificación masiva de Recharts. Antes los 8 charts
@@ -302,6 +303,9 @@ export default function DashboardPage() {
     >
       {/* ── Resumen ejecutivo: el TL;DR del negocio en una línea ────────── */}
       {data && <ExecutiveSummary data={data} />}
+
+      {/* ── Resultado financiero: ingresos vs gastos → bruta, neta, final ── */}
+      {data && <FinancialResults mrrPen={data.overview.mrr} />}
 
       {/* ── Centro de comando: KPIs operativos accionables (auto-fetch) ──── */}
       <CommandCenterStrip />
