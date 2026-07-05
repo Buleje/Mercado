@@ -12,10 +12,10 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { TrendingUp, TrendingDown, ArrowRight, Minus, SlidersHorizontal } from "@buleje/design-system/icons";
+import { TrendingUp, TrendingDown, ArrowRight, Minus, SlidersHorizontal, Download, Target } from "@buleje/design-system/icons";
 import Link from "next/link";
 import { CategoryDonut } from "@/app/superadmin/gastos/CategoryDonut";
-import { CAT_META, fmtPen } from "@/app/superadmin/gastos/gastos-helpers";
+import { CAT_META, fmtPen, fmtPenShort } from "@/app/superadmin/gastos/gastos-helpers";
 
 interface CatAmount { category: string; amountPen: number }
 interface HistMonth { label: string; totalPen: number; real: boolean }
@@ -27,7 +27,15 @@ function fmtSignedPen(n: number): string {
   return `${n >= 0 ? "+" : "−"}${fmtPen(Math.abs(n))}`;
 }
 
-export function FinancialResults({ mrrPen, mrrGrowthPct }: { mrrPen: number; mrrGrowthPct?: number | null }) {
+export function FinancialResults({
+  mrrPen,
+  mrrGrowthPct,
+  payingTenants,
+}: {
+  mrrPen: number;
+  mrrGrowthPct?: number | null;
+  payingTenants?: number;
+}) {
   const [byCategory, setByCategory] = useState<CatAmount[] | null>(null);
   const [prevRunRate, setPrevRunRate] = useState(0);
   const [history, setHistory] = useState<HistMonth[]>([]);
@@ -100,6 +108,15 @@ export function FinancialResults({ mrrPen, mrrGrowthPct }: { mrrPen: number; mrr
           Resultado financiero · este mes
         </h3>
         <div className="flex items-center gap-3">
+          {total > 0 && (
+            <button
+              type="button"
+              onClick={() => exportPnlCsv({ mrrPen, cogs, gross, opex, net, byCategory: cats })}
+              className="inline-flex items-center gap-1 text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden /> CSV
+            </button>
+          )}
           {total > 0 && (
             <button
               type="button"
@@ -183,6 +200,14 @@ export function FinancialResults({ mrrPen, mrrGrowthPct }: { mrrPen: number; mrr
               </p>
             </div>
 
+            <ProjectionBreakEven
+              net={net}
+              total={total}
+              mrrPen={mrrPen}
+              payingTenants={payingTenants}
+              profitable={profitable}
+            />
+
             {trend.length >= 2 && <NetTrend months={trend} />}
           </div>
 
@@ -248,6 +273,86 @@ function NetTrend({ months }: { months: { label: string; net: number }[] }) {
       </div>
     </div>
   );
+}
+
+/** Proyección anual (si se mantiene) + meta de break-even (cuánto falta). */
+function ProjectionBreakEven({
+  net, total, mrrPen, payingTenants, profitable,
+}: {
+  net: number;
+  total: number;
+  mrrPen: number;
+  payingTenants?: number;
+  profitable: boolean;
+}) {
+  const annual = net * 12;
+  const gap = total - mrrPen; // MRR extra para cubrir todo el gasto
+  const avgRev = payingTenants && payingTenants > 0 ? mrrPen / payingTenants : null;
+  const extraTenants = !profitable && avgRev && gap > 0 ? Math.ceil(gap / avgRev) : null;
+
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="rounded-xl bg-[var(--surface-sunken)] p-2.5">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          Proyección anual
+        </p>
+        <p
+          className="text-sm font-extrabold tabular-nums"
+          style={{ color: profitable ? "var(--data-success-700,#047857)" : "var(--data-error-700,#b91c1c)" }}
+        >
+          {profitable ? "+" : "−"}{fmtPen(Math.abs(annual))}<span className="font-normal text-[var(--text-tertiary)]">/año si se mantiene</span>
+        </p>
+      </div>
+      <div className="rounded-xl bg-[var(--surface-sunken)] p-2.5">
+        <p className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <Target className="h-3 w-3" aria-hidden /> Break-even
+        </p>
+        {profitable ? (
+          <p className="text-sm font-bold text-[var(--data-success-700,#047857)]">Ya cubrís el gasto ✓</p>
+        ) : gap > 0 ? (
+          <p className="text-sm text-[var(--text-secondary)]">
+            Falta <span className="font-extrabold tabular-nums text-[var(--text-primary)]">{fmtPenShort(gap)}</span> de MRR
+            {extraTenants !== null && <> ≈ <span className="font-extrabold text-[var(--text-primary)]">{extraTenants}</span> tienda{extraTenants !== 1 ? "s" : ""} de pago</>}
+          </p>
+        ) : (
+          <p className="text-sm text-[var(--text-tertiary)]">—</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Descarga el P&L del mes como CSV (para contabilidad). */
+function exportPnlCsv({
+  mrrPen, cogs, gross, opex, net, byCategory,
+}: {
+  mrrPen: number;
+  cogs: number;
+  gross: number;
+  opex: number;
+  net: number;
+  byCategory: CatAmount[];
+}) {
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const rows: (string | number)[][] = [
+    ["Concepto", "Monto_PEN_mes"],
+    ["Ingresos (MRR)", round(mrrPen)],
+    ["Costo de servir", round(-cogs)],
+    ["Ganancia bruta", round(gross)],
+    ["Gastos operativos", round(-opex)],
+    ["Resultado neto", round(net)],
+    [],
+    ["Gasto por categoria", ""],
+    ...byCategory.map((c) => [CAT_META[c.category]?.label ?? c.category, round(c.amountPen)]),
+  ];
+  const csv = "﻿" + rows.map((r) => r.join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "resultado-financiero.csv";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function PnlRow({
