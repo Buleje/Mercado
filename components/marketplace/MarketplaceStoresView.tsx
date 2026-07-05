@@ -759,8 +759,19 @@ export default function MarketplaceStoresView({
   //  - Premium full-width intercalado (1 arriba, luego cada ~6 cards) para que
   //    no se amontonen y dejen respirar la grilla.
   const orderedStores = useMemo(() => {
-    const premiums = filteredStores.filter((s) => s.displayTier === "premium");
+    // Brandon 2026-07-05 (audit comprador): las tiendas CERRADAS ahora van
+    // SIEMPRE al final (dentro de su grupo), abiertas primero. Antes se
+    // mezclaban con las abiertas y el comprador no sabía cuáles podía usar ya.
+    // `isOpenNow === false` = cerrada; undefined/true = tratamos como abierta
+    // (no penalizar tiendas sin horario cargado).
+    const closedLast = (s: MarketplaceStore) => (s.isOpenNow === false ? 1 : 0);
+    const premiums = [...filteredStores.filter((s) => s.displayTier === "premium")].sort(
+      (a, b) => closedLast(a) - closedLast(b),
+    );
     const rest = [...filteredStores.filter((s) => s.displayTier !== "premium")].sort((a, b) => {
+      const ca = closedLast(a);
+      const cb = closedLast(b);
+      if (ca !== cb) return ca - cb; // abiertas primero
       const ta = a.displayTier === "featured" ? 0 : 1;
       const tb = b.displayTier === "featured" ? 0 : 1;
       if (ta !== tb) return ta - tb;

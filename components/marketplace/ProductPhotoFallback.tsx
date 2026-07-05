@@ -59,10 +59,33 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
   default: ShoppingCart,
 };
 
-/** Normaliza la categoría (sin tildes, minúscula) para matchear el mapa. */
-function iconFor(category?: string | null): LucideIcon {
+// Brandon 2026-07-05 (audit comprador): heurísticas por NOMBRE para que menos
+// productos caigan al ícono genérico (cajita/carrito) → el fallback se ve
+// intencional, no "a medio terminar". Se prueba cuando la categoría no resuelve
+// a un ícono específico. Orden = primero match gana.
+const NAME_HINTS: Array<[RegExp, LucideIcon]> = [
+  [/agua|gaseosa|cola|kola|cerveza|chicha|jugo|refresco|bebida|gatorade|botella/i, Beer],
+  [/pollo|brasa|alita|pierna|presa/i, Drumstick],
+  [/pizza/i, Pizza],
+  [/pan|torta|brownie|tiramisu|postre|helado|keke|galleta|dulce|chocolate/i, Cookie],
+  [/leche|yogur|queso|mantequilla/i, Milk],
+  [/carne|res|cerdo|chuleta|bistec|lomo|molida/i, Beef],
+  [/pescado|paiche|doncella|trucha|atun/i, Fish],
+  [/manzana|platano|fruta|naranja|papaya|pi[nñ]a|mango/i, Apple],
+  [/zanahoria|verdura|lechuga|tomate|cebolla|papa/i, Carrot],
+  [/croissant|bizcocho|empanada/i, Croissant],
+  [/sandwich|hamburguesa|hot ?dog|salchipapa/i, Sandwich],
+];
+
+/** Elige el ícono más específico: categoría explícita → nombre → default. */
+function iconFor(category?: string | null, name?: string | null): LucideIcon {
   const key = (category ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  return CATEGORY_ICON[key] ?? CATEGORY_ICON.default;
+  const byCat = CATEGORY_ICON[key];
+  if (byCat && byCat !== CATEGORY_ICON.default) return byCat;
+  if (name) {
+    for (const [re, icon] of NAME_HINTS) if (re.test(name)) return icon;
+  }
+  return byCat ?? CATEGORY_ICON.default;
 }
 
 export function ProductPhotoFallback({
@@ -77,7 +100,7 @@ export function ProductPhotoFallback({
   size?: "sm" | "md";
   showName?: boolean;
 }) {
-  const Icon = iconFor(category);
+  const Icon = iconFor(category, name);
   const circle = size === "sm" ? "h-11 w-11" : "h-16 w-16";
   const glyph = size === "sm" ? "h-5 w-5" : "h-8 w-8";
   return (
