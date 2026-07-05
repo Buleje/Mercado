@@ -83,12 +83,12 @@ import {
   Wine,
   Beef,
   Smartphone,
-  ShoppingBag,
   MapPin,
   ChevronDown,
   MessageCircle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 
 // Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
 
@@ -152,40 +152,16 @@ export const metadata: Metadata = {
   },
 };
 
-// ── Categorías principales (admin desde superadmin) ─────────────────────────
-// Lee directo del JSON server-side (mismo storage que /api/marketplace/categories)
-// para evitar el round-trip HTTP en la home.
+// ── Categorías del catálogo (audit #2 2026-07-05, eje "por producto") ────────
+// La sección "Explora por categoría" pasó de RUBROS de tienda (Restaurantes/
+// Ferreterías, del JSON del superadmin) a CATEGORÍAS DE PRODUCTO (Bebidas/
+// Carnes/Postres…, vía MarketplacePublicDB) — la MISMA fuente que el header y
+// el mega-menú → una sola taxonomía consistente. Esta forma la reusa CategoriesGrid.
 interface SuperadminCategory {
   id: string;
   label: string;
   description: string;
   imageUrl: string | null;
-}
-
-async function getSuperadminCategories(): Promise<SuperadminCategory[]> {
-  "use cache";
-  cacheLife({ revalidate: 30, stale: 60, expire: 300 });
-  cacheTag("marketplace-categories");
-  try {
-    const { readFile } = await import("node:fs/promises");
-    const { join } = await import("node:path");
-    const path = join(process.cwd(), "lib", "data", "marketplace-categories.json");
-    const raw = await readFile(path, "utf8");
-    const data = JSON.parse(raw) as Record<
-      string,
-      { label: string; description?: string; imageUrl: string | null; active: boolean }
-    >;
-    return Object.entries(data)
-      .filter(([, v]) => v.active !== false)
-      .map(([id, v]) => ({
-        id,
-        label: v.label,
-        description: v.description ?? "",
-        imageUrl: v.imageUrl,
-      }));
-  } catch {
-    return [];
-  }
 }
 
 // ── Cached marketplace stats + top stores via lib/db (regla #1 CLAUDE.md)
@@ -563,34 +539,36 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   tecnologia:  Smartphone,
 };
 
-const FEATURED_SLUGS = ["restaurante", "bodega"] as const;
+// Brandon 2026-07-05 (audit #2): "pollo-brasa" → "Pollo brasa".
+function prettyCatLabel(id: string): string {
+  const spaced = id.replace(/[-_]+/g, " ").trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
 
 function hrefForCategory(id: string): string {
-  // Si la categoría existe como filtro /tiendas, ir ahí. Sino /marketplace/categoria.
-  return `/tiendas?cat=${encodeURIComponent(id)}`;
+  // Audit #2 (eje "por producto"): filtra el CATÁLOGO por categoría de producto
+  // (mismo destino que "Ver más" de los carruseles), en vez de /tiendas por rubro.
+  return `/?cat=${encodeURIComponent(id)}#catalogo`;
 }
 
 async function CategoriesGrid() {
-  // Brandon 2026-05-30: solo mostramos rubros VINCULADOS a tiendas reales —
-  // cero categorías muertas. Cruzamos las categorías del superadmin con los
-  // `Store.category` de tiendas publicadas (case-insensitive: en la DB conviven
-  // "bodega" y "Abarrotes"). Una categoría sin ninguna tienda creada NO aparece.
-  const [allCats, activeSlugs] = await Promise.all([
-    getSuperadminCategories(),
-    MarketplaceStatsDB.getActiveStoreCategorySlugs(),
-  ]);
-  const activeSet = new Set(activeSlugs.map((s) => s.toLowerCase()));
-  const cats = allCats.filter(
-    // - sin ids de sistema (prefijo "_", ej "_meta") → card vacía
-    // - solo categorías con ≥1 tienda publicada vinculada
-    (c) => c.id && !c.id.startsWith("_") && activeSet.has(c.id.toLowerCase()),
-  );
+  // Audit #2 (eje "por producto"): categorías de PRODUCTO desde MarketplacePublicDB
+  // (misma fuente que header + mega-menú + carruseles). getProductCategories ya
+  // devuelve solo categorías con ≥1 producto real (cero muertas), ordenadas por
+  // cantidad. Los rubros de tienda siguen navegables desde /tiendas.
+  const raw = await MarketplacePublicDB.getProductCategories().catch(() => []);
+  const cats: SuperadminCategory[] = raw
+    .filter((c) => c.id && c.count > 0)
+    .map((c) => ({
+      id: c.id,
+      label: prettyCatLabel(c.id),
+      description: `${c.count} producto${c.count === 1 ? "" : "s"}`,
+      imageUrl: null,
+    }));
 
-  // Particiona: las 2 destacadas primero (Restaurantes + Bodega), resto en grid chico
-  const featured = FEATURED_SLUGS
-    .map((slug) => cats.find((c) => c.id === slug))
-    .filter((c): c is SuperadminCategory => c !== undefined);
-  const secondary = cats.filter((c) => !FEATURED_SLUGS.includes(c.id as typeof FEATURED_SLUGS[number]));
+  // Las 2 con más productos van destacadas (XL); el resto al grid chico.
+  const featured = cats.slice(0, 2);
+  const secondary = cats.slice(2);
 
   if (cats.length === 0) return null;
 
@@ -634,7 +612,7 @@ async function CategoriesGrid() {
                       priority={idx === 0}
                     />
                   ) : (() => {
-                    const CatIcon = CATEGORY_ICONS[c.id] ?? ShoppingBag;
+                    const CatIcon = getProductCategoryIcon(c.id);
                     return (
                       <CatIcon className="h-8 w-8 sm:h-10 sm:w-10 text-[var(--accent)]" strokeWidth={1.5} aria-hidden />
                     );
@@ -684,7 +662,7 @@ async function CategoriesGrid() {
                       priority={idx === 0}
                     />
                   ) : (() => {
-                    const CatIcon = CATEGORY_ICONS[c.id] ?? ShoppingBag;
+                    const CatIcon = getProductCategoryIcon(c.id);
                     return (
                       <CatIcon
                         className="h-10 w-10 sm:h-14 sm:w-14 text-[var(--accent)]"
@@ -737,7 +715,7 @@ async function CategoriesGrid() {
                       className="object-cover w-full h-full"
                     />
                   ) : (() => {
-                    const CatIcon = CATEGORY_ICONS[c.id] ?? ShoppingBag;
+                    const CatIcon = getProductCategoryIcon(c.id);
                     return (
                       <CatIcon
                         className="h-7 w-7 sm:h-8 sm:w-8 text-[var(--accent)]"
