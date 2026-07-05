@@ -48,6 +48,7 @@ import {
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
 import { SessionExpiryGuard } from "@/components/shared/SessionExpiryGuard";
+import { FinanceAlertBanner } from "@/components/superadmin/FinanceAlertBanner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1191,7 +1192,10 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
+          <FinanceAlertBanner />
+          {children}
+        </main>
       </div>
 
       {/* Slide-over "Configurar barra lateral" — monta el panel completo
