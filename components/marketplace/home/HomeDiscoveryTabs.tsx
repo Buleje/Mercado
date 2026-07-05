@@ -84,10 +84,10 @@ function normalize(raw: Record<string, unknown>): Item {
   };
 }
 
-// Grilla contenida (como "Todos los productos"): sin scroll horizontal, todo
-// visible en filas. 12 = 2 filas limpias en desktop; el resto vía "Ver todo".
-const GRID_CLASS = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6";
-const GRID_MAX = 12;
+// Una sola fila contenida (no scroller, no varias filas): 6 productos que
+// entran en 1 fila en desktop; el resto vía "Ver todo".
+const GRID_CLASS = "grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6";
+const GRID_MAX = 6;
 
 export default function HomeDiscoveryTabs() {
   const [active, setActive] = useState<TabKey>("nuevos");

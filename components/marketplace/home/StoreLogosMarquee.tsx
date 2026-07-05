@@ -107,8 +107,8 @@ export default function StoreLogosMarquee({
           </Link>
         </header>
 
-        {/* ── Grilla contenida de tiendas ──────────────────────────────── */}
-        <ul className="relative grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {/* ── Tiles verticales de tienda — una sola fila contenida ───────── */}
+        <ul className="relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {shown.map((s) => {
             const rating = s.rating ?? 0;
             const hasRating = rating > 0;
@@ -118,58 +118,55 @@ export default function StoreLogosMarquee({
                 <Link
                   href={`/marketplace/${s.slug}`}
                   aria-label={`Ver tienda ${s.name}`}
-                  className="group/card relative flex items-center gap-3 overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--accent)]/40 hover:shadow-[0_18px_40px_-16px_rgba(0,0,0,0.28)] sm:p-3.5"
+                  className="group/card relative flex h-full flex-col items-center overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-center shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--accent)]/50 hover:shadow-[0_20px_44px_-18px_rgba(0,0,0,0.3)]"
                 >
-                  {/* Logo tile */}
-                  <span className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-base)] transition-all duration-300 group-hover/card:ring-[var(--accent)]/60 sm:h-[68px] sm:w-[68px]">
+                  {/* Logo prominente con sheen en hover */}
+                  <span className="relative grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-base)] transition-all duration-300 group-hover/card:ring-2 group-hover/card:ring-[var(--accent)]/60">
                     {s.logo ? (
-                      <Image src={s.logo} alt={s.name} fill sizes="68px" className="object-cover transition-transform duration-500 group-hover/card:scale-110" />
+                      <Image src={s.logo} alt={s.name} fill sizes="80px" className="object-cover transition-transform duration-500 group-hover/card:scale-110" />
                     ) : (
                       <span className="grid h-full w-full place-items-center bg-[var(--accent-soft)] text-[var(--accent)]">
-                        <Store className="h-7 w-7" strokeWidth={1.75} aria-hidden />
+                        <Store className="h-9 w-9" strokeWidth={1.75} aria-hidden />
                       </span>
                     )}
                   </span>
 
-                  {/* Info de marca */}
-                  <span className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="flex items-center gap-1">
-                      <span className="truncate text-sm font-extrabold leading-tight text-[var(--text-primary)] sm:text-[15px]">
-                        {s.name}
-                      </span>
-                      <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} aria-label="Tienda verificada" />
+                  {/* Nombre + verificado */}
+                  <span className="mt-3 flex items-center justify-center gap-1">
+                    <span className="line-clamp-1 text-sm font-extrabold leading-tight text-[var(--text-primary)]">
+                      {s.name}
                     </span>
-
-                    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-[var(--text-secondary)]">
-                      {hasRating ? (
-                        <span className="inline-flex items-center gap-0.5 font-bold text-[var(--text-primary)]">
-                          <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={2} aria-hidden />
-                          {rating.toFixed(1)}
-                        </span>
-                      ) : (
-                        <span className="font-semibold">Nueva</span>
-                      )}
-                      {s.category && (
-                        <>
-                          {hasRating && <span className="text-[var(--rule-strong)]" aria-hidden>·</span>}
-                          <span className="truncate capitalize">{s.category}</span>
-                        </>
-                      )}
-                      {products > 0 && (
-                        <>
-                          <span className="text-[var(--rule-strong)]" aria-hidden>·</span>
-                          <span className="inline-flex items-center gap-0.5">
-                            <Package className="h-3 w-3" aria-hidden />
-                            {products}
-                          </span>
-                        </>
-                      )}
-                    </span>
+                    <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} aria-label="Tienda verificada" />
                   </span>
 
-                  {/* CTA flecha en hover */}
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-all duration-300 group-hover/card:bg-[var(--accent)] group-hover/card:text-white">
-                    <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                  {/* Rating · rubro */}
+                  <span className="mt-1 flex flex-wrap items-center justify-center gap-x-1.5 text-xs text-[var(--text-secondary)]">
+                    {hasRating ? (
+                      <span className="inline-flex items-center gap-0.5 font-bold text-[var(--text-primary)]">
+                        <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" strokeWidth={2} aria-hidden />
+                        {rating.toFixed(1)}
+                      </span>
+                    ) : (
+                      <span className="font-semibold">Nueva</span>
+                    )}
+                    {s.category && (
+                      <>
+                        {hasRating && <span className="text-[var(--rule-strong)]" aria-hidden>·</span>}
+                        <span className="truncate capitalize">{s.category}</span>
+                      </>
+                    )}
+                  </span>
+
+                  {/* Chip de productos + CTA que aparece en hover */}
+                  <span className="mt-3 flex items-center gap-2">
+                    {products > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+                        <Package className="h-3 w-3" aria-hidden /> {products} productos
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
+                      Ver <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                    </span>
                   </span>
                 </Link>
               </li>

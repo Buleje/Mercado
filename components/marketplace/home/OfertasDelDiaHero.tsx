@@ -145,12 +145,12 @@ export default function OfertasDelDiaHero() {
           </div>
         }
       />
-      {/* Grilla contenida (no se corre al borde; como "Todos los productos") */}
+      {/* Una sola fila contenida (6 productos, entran en 1 fila en desktop) */}
       <ul
-        className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+        className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6"
         aria-label="Ofertas del día"
       >
-        {cards.slice(0, 12).map((p, i) => (
+        {cards.slice(0, 6).map((p, i) => (
           <li key={p.storeProductId}>
             <UnifiedProductCard
               product={p}
