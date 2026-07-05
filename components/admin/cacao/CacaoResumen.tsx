@@ -139,6 +139,9 @@ export default function CacaoResumen() {
         </div>
       </div>
 
+      {/* Veredicto de campaña — el TL;DR de un vistazo */}
+      <CampaignVerdict stats={stats} inv={inv} />
+
       {/* Hero KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Kg acopiados" value={`${n2(stats.kgAcopiados)} kg`} subValue={`${stats.lotes} lote${stats.lotes !== 1 ? "s" : ""}`} icon={Scale} emphasis="success" />
@@ -222,6 +225,48 @@ export default function CacaoResumen() {
         </div>
       )}
     </div>
+  );
+}
+
+/** Veredicto de campaña — el TL;DR: calidad + cuánto acopiaste, de un vistazo. */
+function CampaignVerdict({ stats, inv }: { stats: Stats; inv: Inventory | null }) {
+  if (stats.kgAcopiados <= 0) return null;
+  const q = stats.pctGradoI;
+  const h = stats.pctHumedadEnNorma;
+  const verdict = q >= 60 && h >= 80 ? "solida" : q < 50 || h < 60 ? "vigilar" : "curso";
+  const meta = {
+    solida: { label: "Campaña sólida", color: "var(--data-success-700,#047857)", border: "var(--data-success-500)", Icon: Award },
+    curso: { label: "Campaña en curso", color: "var(--accent-dark)", border: "var(--accent)", Icon: Leaf },
+    vigilar: { label: "Vigilá la calidad", color: "var(--data-warning-700,#b45309)", border: "var(--data-warning-500)", Icon: AlertCircle },
+  }[verdict];
+  const qColor = q >= 50 ? "var(--data-success-700,#047857)" : "var(--data-warning-700,#b45309)";
+  const hColor = h >= 80 ? "var(--data-success-700,#047857)" : "var(--data-warning-700,#b45309)";
+  const secoListo = inv && inv.kgSecoDisponible > 0;
+  return (
+    <section
+      className="flex flex-col gap-3 rounded-2xl border-2 p-4 sm:flex-row sm:items-center sm:gap-4"
+      style={{ borderColor: meta.border, background: "var(--surface-raised)" }}
+    >
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "var(--surface-sunken)", color: meta.color }}>
+          <meta.Icon className="h-6 w-6" strokeWidth={2} aria-hidden />
+        </span>
+        <div className="sm:min-w-[8.5rem]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Campaña</p>
+          <p className="text-base font-extrabold" style={{ color: meta.color }}>{meta.label}</p>
+        </div>
+      </div>
+      <p className="text-sm text-[var(--text-secondary)] sm:border-l sm:border-[var(--rule-soft)] sm:pl-4">
+        Acopiaste <b className="text-[var(--text-primary)]">{n2(stats.kgAcopiados)} kg</b> de{" "}
+        <b className="text-[var(--text-primary)]">{stats.productoresActivos}</b> productor
+        {stats.productoresActivos !== 1 ? "es" : ""} por{" "}
+        <b className="text-[var(--text-primary)]">S/ {n2(stats.valorPagado)}</b> (S/ {n2(stats.precioPromKg)}/kg) · Grado I{" "}
+        <b style={{ color: qColor }}>{q}%</b> · humedad en norma <b style={{ color: hColor }}>{h}%</b>
+        {secoListo && (
+          <> · <b className="text-[var(--data-success-700,#047857)]">{n2(inv.kgSecoDisponible)} kg</b> secos listos para vender</>
+        )}
+      </p>
+    </section>
   );
 }
 
