@@ -90,14 +90,14 @@ export default function CheckoutIdentitySection() {
     const initial = fullName.charAt(0).toUpperCase();
     return (
       <div className="flex items-center gap-3 sm:gap-4">
-        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white text-lg font-black uppercase">
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-white text-lg font-bold uppercase">
           {initial}
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
             Comprando como
           </p>
-          <p className="text-base sm:text-lg font-black tracking-[-0.01em] text-[var(--text-primary)] leading-tight truncate">
+          <p className="text-base font-semibold tracking-[-0.01em] text-[var(--text-primary)] leading-tight truncate">
             {fullName}
           </p>
           {savedCustomer.phone && (

@@ -180,7 +180,7 @@ export default function CheckoutSummary({
           "p-5 space-y-4",
         )}
       >
-        <h2 className="text-xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+        <h2 className="text-lg font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
           Resumen
         </h2>
 
@@ -195,7 +195,7 @@ export default function CheckoutSummary({
                 {it.image ? (
                   <Image src={it.image} alt={it.name} fill sizes="44px" className="object-cover" />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center text-sm font-black uppercase text-[var(--accent)]">
+                  <span className="flex h-full w-full items-center justify-center text-sm font-bold uppercase text-[var(--accent)]">
                     {it.name.trim().charAt(0)}
                   </span>
                 )}
@@ -289,7 +289,7 @@ export default function CheckoutSummary({
             <span className="text-[length:var(--ts-sm)] font-semibold text-[var(--text-primary)]">
               Estimación total
             </span>
-            <span className="text-2xl font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
+            <span className="text-2xl font-bold tabular-nums tracking-[-0.02em] text-[var(--text-primary)] leading-none">
               {fmt(total)}
             </span>
           </div>

@@ -220,11 +220,11 @@ function SectionBox({
               {kicker}
             </p>
             {collapsed && summary != null ? (
-              <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight truncate">
+              <p className="text-base font-semibold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight truncate">
                 {summary}
               </p>
             ) : (
-              <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+              <h2 className="text-base sm:text-lg font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                 {title}
               </h2>
             )}
@@ -1116,7 +1116,7 @@ export default function CheckoutEntregaPage() {
                       ? "Buscando tu zona..."
                       : "1 toque · Autollenar"}
                 </span>
-                <span className="block text-lg sm:text-xl font-black tracking-[var(--ls-tight)]">
+                <span className="block text-base sm:text-lg font-bold tracking-[var(--ls-tight)]">
                   {geoSuccess
                     ? "Dirección autollenada"
                     : geoLoading
@@ -1167,7 +1167,7 @@ export default function CheckoutEntregaPage() {
                     setManualAddressEntry(true);
                     setUseNewAddress(true);
                   }}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] h-12 sm:h-13 px-5 text-[length:var(--ts-sm)] sm:text-base font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 active:scale-[0.98] transition-all shadow-sm"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] h-12 sm:h-13 px-5 text-[length:var(--ts-sm)] sm:text-base font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:-translate-y-0.5 active:scale-[0.98] transition-all shadow-sm"
                 >
                   <Edit3 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                   Ingresar Dirección Manualmente
@@ -1393,7 +1393,7 @@ export default function CheckoutEntregaPage() {
                     Pago en efectivo
                   </p>
                   {cashAmount >= grandTotal && cashAmount > grandTotal ? (
-                    <p className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums">
+                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
                       Pagas con {fmt(cashAmount)} · vuelto {fmt(cashChange)}
                     </p>
                   ) : (
@@ -1405,7 +1405,7 @@ export default function CheckoutEntregaPage() {
                 <button
                   type="button"
                   onClick={() => setCashModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border border-[var(--accent)]/30 px-3.5 h-9 text-[length:var(--ts-xs)] font-extrabold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-canvas)] border border-[var(--accent)]/30 px-3.5 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors shrink-0"
                 >
                   Cambiar vuelto
                 </button>
@@ -1560,7 +1560,7 @@ export default function CheckoutEntregaPage() {
             <SectionBox kicker="Puntos Buleje" title="Canjeá lo que tengas" icon={Sparkles}>
               <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] -mt-2">
                 Tienes{" "}
-                <strong className="text-[var(--text-primary)] tabular-nums font-black">
+                <strong className="text-[var(--text-primary)] tabular-nums font-bold">
                   {loyaltyAvailable}
                 </strong>{" "}
                 puntos · 100 pts = S/1
