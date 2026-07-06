@@ -44,6 +44,7 @@ import MarketplaceStoresView, {
 } from "@/components/marketplace/MarketplaceStoresView";
 import SubcategoryChips from "@/components/marketplace/tiendas/SubcategoryChips";
 import QuickFilterToggle from "@/components/marketplace/tiendas/QuickFilterToggle";
+import BackToTopButton from "@/components/marketplace/BackToTopButton";
 import { useTiendasUrlSync } from "./use-tiendas-url-sync";
 import { deriveActiveZones } from "@/lib/marketplace-zones";
 import {
@@ -164,10 +165,6 @@ const RepetirUltimoPedido = dynamic(() => import("@/components/marketplace/Repet
   loading: () => null,
 });
 const InvitaVecinoCard = dynamic(() => import("@/components/marketplace/InvitaVecinoCard"), {
-  ssr: false,
-  loading: () => null,
-});
-const CuponBienvenidaBar = dynamic(() => import("@/components/marketplace/CuponBienvenidaBar"), {
   ssr: false,
   loading: () => null,
 });
@@ -816,6 +813,17 @@ export default function TiendasClient({
     });
   }
 
+  // Contador por chip (audit comodidad) — cuántas tiendas matchean cada filtro
+  // rápido, para mostrarlo en el chip ("Abierto ahora (2)") antes de aplicarlo.
+  const chipCounts = useMemo(
+    () => ({
+      top_rated: stores.filter((s) => (s.rating ?? 0) >= 4).length,
+      open_now: stores.filter((s) => (s as { isOpenNow?: boolean }).isOpenNow !== false).length,
+      accepts_fiado: stores.filter((s) => s.acceptsFiado === true).length,
+    }),
+    [stores],
+  );
+
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
 
@@ -834,6 +842,7 @@ export default function TiendasClient({
   return (
     <div className="min-h-screen overflow-x-clip bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="tiendas_directorio" />
+      <BackToTopButton />
 
       {/* ── Sticky subcategory bar (mobile only) ──
            Aparece debajo del nav cuando el usuario hace scroll past
@@ -893,10 +902,10 @@ export default function TiendasClient({
           información comercial (h1 "Las mejores tiendas de tu barrio",
           stats, descripción) vive en home (/). */}
 
-      {/* ── Cupón de bienvenida (Brandon 2026-06-02) — ARRIBA del hero, visible
-           al abrir, solo para usuarios nuevos (el componente se auto-gatea por
-           primer-pedido + dismiss). Saca el cupón de adentro del hero rotante. */}
-      {search.trim().length === 0 && <CuponBienvenidaBar />}
+      {/* Cupón de bienvenida (CuponBienvenidaBar) REMOVIDO — Brandon 2026-07-06:
+           el 10% ya aparece en la barra superior global (MarketplacePromoBar) y
+           como card en la fila de promos del banner. Una franja full-width propia
+           duplicaba el mensaje y robaba una fila entera. */}
 
       {/* Banner de promos REMOVIDO de /tiendas (Brandon 2026-06-08, opción A):
           el mismo banner ya vive en /marketplace; acá —directorio donde el
@@ -1321,7 +1330,7 @@ export default function TiendasClient({
                 active={activeChips.has("top_rated")}
                 onToggle={() => handleChipToggle("top_rated")}
                 icon={Star}
-                label="4+ estrellas"
+                label={`4+ estrellas${chipCounts.top_rated ? ` (${chipCounts.top_rated})` : ""}`}
                 variant="pill"
                 fillIconWhenActive
                 title="Solo tiendas con rating 4 estrellas o más"
@@ -1332,7 +1341,7 @@ export default function TiendasClient({
                 active={activeChips.has("open_now")}
                 onToggle={() => handleChipToggle("open_now")}
                 icon={Clock}
-                label="Abierto ahora"
+                label={`Abierto ahora${chipCounts.open_now ? ` (${chipCounts.open_now})` : ""}`}
                 variant="pill"
                 title="Solo tiendas abiertas en este momento"
               />
@@ -1342,7 +1351,7 @@ export default function TiendasClient({
                   active={activeChips.has("accepts_fiado")}
                   onToggle={() => handleChipToggle("accepts_fiado")}
                   icon={Wallet}
-                  label="Acepta fiado"
+                  label={`Acepta fiado${chipCounts.accepts_fiado ? ` (${chipCounts.accepts_fiado})` : ""}`}
                   variant="pill"
                   title="Solo tiendas que aceptan fiado (compra ahora, paga después)"
                 />

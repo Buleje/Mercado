@@ -328,7 +328,7 @@ export default async function TiendasPage() {
         {`Tiendas y bodegas en ${BRAND_GEO.city} con delivery — Buleje Marketplace`}
       </h1>
       {/* Banner promocional full-width, igual que el inicio (slot tiendas-hero) */}
-      <HomeHeroBanner initialBanners={heroBanners} />
+      <HomeHeroBanner initialBanners={heroBanners} layout="row" />
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
 
       {/* Trabajá con nosotros — reclutamiento (tiendas/comercios/repartidores),
