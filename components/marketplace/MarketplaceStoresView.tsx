@@ -64,6 +64,10 @@ const StoreDistanceMapModal = dynamic(
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { StoreCardCanonical } from "@buleje/design-system";
 import StorePromoBanner from "./StorePromoBanner";
+// Nivel "Premium" (beneficio superadmin): card de fila completa con preview de
+// productos. Se re-habilita para que /tiendas honre los niveles que promete la
+// previsualizacion de /superadmin/stores (Brandon 2026-07-05).
+import PremiumStoreCard, { type PremiumProduct } from "./PremiumStoreCard";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
 import ShareStoreButton from "@/components/marketplace/ShareStoreButton";
@@ -243,6 +247,18 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
   // ── Overlay sobre el cover: rating pill + promo + vacaciones ──
   const coverOverlay = (
     <>
+      {/* Nivel "Destacada" (superadmin) — badge visible, como promete la
+          previsualización de /superadmin/stores. Premium usa su propia card
+          (PremiumStoreCard), así que acá solo aparece featured. */}
+      {store.displayTier === "featured" && (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] shadow-sm"
+          title="Tienda destacada"
+        >
+          <Star className="h-2.5 w-2.5 fill-current" strokeWidth={2.5} aria-hidden="true" />
+          Destacada
+        </span>
+      )}
       {/* Brandon 2026-06-08: rating movido a la DESCRIPCIÓN (body) → el cover
           queda limpio. Acá solo ofertas / último pedido / vacaciones. */}
       {store.activePromos != null && store.activePromos > 0 && (
@@ -789,10 +805,69 @@ const StoreGrid = memo(function StoreGrid({
   );
 });
 
+/**
+ * TieredStores — renderiza una lista respetando el NIVEL de cada tienda
+ * (superadmin): las Premium como card de fila completa con preview de productos
+ * (arriba), y el resto (Destacada + Estándar) en la grilla. Así /tiendas honra
+ * lo que promete la previsualización de /superadmin/stores. Reusado en el
+ * listado plano y en cada sección por categoría.
+ */
+const TieredStores = memo(function TieredStores({
+  stores,
+  premiumProducts,
+  lastOrdersByStore,
+  userCoords,
+  ariaLabel,
+}: {
+  stores: MarketplaceStore[];
+  premiumProducts: Record<string, PremiumProduct[]>;
+  lastOrdersByStore: Record<string, LastOrderInfo>;
+  userCoords?: { lat: number; lng: number } | null;
+  ariaLabel: string;
+}) {
+  const premiums = stores.filter((s) => s.displayTier === "premium");
+  const rest = stores.filter((s) => s.displayTier !== "premium");
+  return (
+    <div className="space-y-4">
+      {premiums.map((s) => (
+        <PremiumStoreCard
+          key={s.id}
+          slug={s.slug}
+          name={s.name}
+          logo={s.logo}
+          cover={s.cover}
+          category={s.category}
+          zone={s.zone}
+          rating={s.rating}
+          reviewCount={s.reviewCount}
+          verified={s.verified}
+          acceptsFiado={s.acceptsFiado}
+          isOpenNow={s.isOpenNow}
+          nextOpeningLabel={formatNextOpening(s.nextOpeningAt)}
+          products={premiumProducts[s.slug] ?? []}
+          lat={s.lat}
+          lng={s.lng}
+          userCoords={userCoords}
+        />
+      ))}
+      {rest.length > 0 && (
+        <StoreGrid
+          stores={rest}
+          lastOrdersByStore={lastOrdersByStore}
+          userCoords={userCoords}
+          ariaLabel={ariaLabel}
+        />
+      )}
+    </div>
+  );
+});
+
 export default function MarketplaceStoresView({
   stores: _stores,
-  // premiumProducts: audit #5 — ya no se usa (todas las tiendas usan la card
-  // estándar). Se mantiene en la interface por compat con el caller (ignorado).
+  // premiumProducts (Brandon 2026-07-05): RE-HABILITADO. Alimenta el preview de
+  // productos de las cards de nivel Premium (beneficio superadmin), para que
+  // /tiendas honre lo que promete la previsualizacion de /superadmin/stores.
+  premiumProducts = {},
   loading,
   error,
   search,
@@ -825,10 +900,9 @@ export default function MarketplaceStoresView({
         );
 
   // Orden por beneficio (superadmin):
-  //  - Destacada (featured) primero, ancho normal → la acompañan estándar.
-  //  - searchBoost sube dentro de su grupo.
-  //  - Premium full-width intercalado (1 arriba, luego cada ~6 cards) para que
-  //    no se amontonen y dejen respirar la grilla.
+  //  - Premium primero (se renderiza como card de fila completa via TieredStores).
+  //  - Destacada (featured) después, con badge + realce; luego estándar.
+  //  - searchBoost sube dentro de su grupo. Cerradas al final de cada grupo.
   const orderedStores = useMemo(() => {
     // Brandon 2026-07-05 (audit comprador): las tiendas CERRADAS ahora van
     // SIEMPRE al final (dentro de su grupo), abiertas primero. Antes se
@@ -850,15 +924,9 @@ export default function MarketplaceStoresView({
       const bb = b.searchBoost ? 0 : 1;
       return ba - bb;
     });
-    const out: MarketplaceStore[] = [];
-    let pi = 0;
-    if (premiums[pi]) out.push(premiums[pi++]); // primer premium arriba
-    rest.forEach((s, i) => {
-      out.push(s);
-      if ((i + 1) % 6 === 0 && premiums[pi]) out.push(premiums[pi++]);
-    });
-    while (premiums[pi]) out.push(premiums[pi++]);
-    return out;
+    // Premium primero, luego el resto. TieredStores separa premium (full-width)
+    // del grid; acá solo garantizamos el orden premium → featured → standard.
+    return [...premiums, ...rest];
   }, [filteredStores]);
 
   // ── Agrupación por categoría (Brandon 2026-07-05) ──────────────────────────
@@ -1083,8 +1151,9 @@ export default function MarketplaceStoresView({
                     {g.stores.length}
                   </span>
                 </div>
-                <StoreGrid
+                <TieredStores
                   stores={g.stores}
+                  premiumProducts={premiumProducts}
                   lastOrdersByStore={lastOrdersByStore}
                   userCoords={userCoords}
                   ariaLabel={`${g.stores.length} tienda${g.stores.length !== 1 ? "s" : ""} de ${g.label}`}
@@ -1094,8 +1163,9 @@ export default function MarketplaceStoresView({
           </div>
         ) : (
           <div className="mt-6">
-            <StoreGrid
+            <TieredStores
               stores={orderedStores}
+              premiumProducts={premiumProducts}
               lastOrdersByStore={lastOrdersByStore}
               userCoords={userCoords}
               ariaLabel={`${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""} encontrada${filteredStores.length !== 1 ? "s" : ""}`}
