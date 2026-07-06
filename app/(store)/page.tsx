@@ -59,9 +59,7 @@ const StoreLogosMarquee = dynamic(
 const OfertasDelDiaHero = dynamic(
   () => import("@/components/marketplace/home/OfertasDelDiaHero"),
 );
-const WelcomeStrip = dynamic(
-  () => import("@/components/marketplace/home/WelcomeStrip"),
-);
+// WelcomeStrip retirado del inicio (Brandon 2026-07-06) — ver comentario abajo.
 import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import CatalogSortTabs from "@/components/marketplace/home/CatalogSortTabs";
@@ -647,13 +645,16 @@ async function CategoriesGrid() {
              ícono. Cero relleno teal (adiós neon). Cada bloque = título serif +
              GRILLA DE CUADRITOS (sin conteos) — cada categoría es un tile
              cuadrado navegable. ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-start">
+        {/* Masonry (Brandon 2026-07-06): `columns` empaqueta los bloques sin
+             huecos — los bloques cortos (Bebidas, Frescos) suben a rellenar el
+             espacio de los altos → todo uniforme, sin gaps grandes. */}
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3 sm:gap-4">
           {visible.map((b) => {
             const BlockIcon = b.icon;
             return (
               <div
                 key={b.id}
-                className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-[border-color,box-shadow] duration-[var(--dur-base)] hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] hover:shadow-[var(--shadow-md)]"
+                className="mb-3 sm:mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-[border-color,box-shadow] duration-[var(--dur-base)] hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] hover:shadow-[var(--shadow-md)]"
               >
                 {/* Encabezado del bloque — sans bold (sin serif alargada), sin conteo */}
                 <div className="flex items-center gap-2.5 border-b border-[var(--rule-soft)] px-4 py-3.5">
@@ -1175,11 +1176,11 @@ export default async function Home() {
       {/* 1. Hero = banner rotativo full-width (swipe) */}
       <HomeHero />
 
-      {/* 1.1 Bienvenida personalizada (Brandon 2026-06-14): saludo + "repetir
-          última compra" para el cliente logueado. Self-hide si no hay sesión
-          (null en SSR → sin layout shift). Va en todos los tabs: es una barra
-          fina personalizada, no una sección de descubrimiento. */}
-      <WelcomeStrip />
+      {/* 1.1 Bienvenida personalizada — QUITADA (Brandon 2026-07-06): la barra
+          "Hola {nombre} · repetir última compra · Mis pedidos" que aparecía al
+          loguearse se retiró del inicio (el perfil/pedidos ya viven en la cuenta
+          y el navbar). Deja el hero + descubrimiento sin la franja de perfil. */}
+      {/* <WelcomeStrip /> */}
 
       {/* 1.2 Verticales — SOLO MOBILE (Brandon 2026-06-11): los chips
           Comida/Bodega/Ferretería/Electro/Farmacia los aporta el chrome
