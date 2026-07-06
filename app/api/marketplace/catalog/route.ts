@@ -158,8 +158,16 @@ export async function GET(req: NextRequest) {
     let nextCursor: string | undefined;
     if (isMixed) {
       const mixed = roundRobinByStore(results, (r) => r.store.id);
-      items = mixed.slice(offset, offset + limit);
-      hasMore = mixed.length > offset + limit;
+      // Brandon 2026-07-06 (audit inicio): en "Destacados" (default de la home),
+      // los productos CON foto van PRIMERO → el catálogo se ve lleno arriba en vez
+      // de una pared de placeholders. Sort ESTABLE (Node) → preserva el round-robin
+      // por tienda dentro de cada grupo. Solo reordena "popular"; los demás sorts
+      // (precio/nuevos/rating) quedan intactos. No oculta nada: los sin-foto bajan.
+      const photoFirst = [...mixed].sort(
+        (a, b) => (b.product.image ? 1 : 0) - (a.product.image ? 1 : 0),
+      );
+      items = photoFirst.slice(offset, offset + limit);
+      hasMore = photoFirst.length > offset + limit;
       nextCursor = hasMore ? String(offset + limit) : undefined;
     } else {
       hasMore = results.length > limit;

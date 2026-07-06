@@ -627,7 +627,8 @@ async function CategoriesGrid() {
           {groups.map((g) => (
             <div key={g.key}>
               {showGroupLabels && (
-                <h3 className="mb-3 text-sm font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+                  <span aria-hidden className="inline-block h-4 w-1 rounded-full bg-[var(--accent)]" />
                   {g.label}
                 </h3>
               )}
@@ -638,11 +639,11 @@ async function CategoriesGrid() {
                     <Link
                       key={c.id}
                       href={hrefForCategory(c.id)}
-                      className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] transition-colors"
+                      className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-sm)] transition-[transform,box-shadow,border-color] duration-[var(--dur-base)]"
                     >
-                      <span className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)] shrink-0">
+                      <span className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--accent)]/10 ring-1 ring-[var(--accent)]/15 group-hover:bg-[var(--accent)] transition-colors duration-[var(--dur-base)] shrink-0">
                         <CatIcon
-                          className="h-7 w-7 sm:h-8 sm:w-8 text-[var(--accent)]"
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-[var(--accent)] group-hover:text-white transition-colors duration-[var(--dur-base)]"
                           strokeWidth={1.75}
                           aria-hidden
                         />

@@ -66,18 +66,38 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
 // a un ícono específico. Orden = primero match gana.
 const NAME_HINTS: Array<[RegExp, LucideIcon]> = [
   [/caf[eé]|instant[aá]neo|nescaf|t[eé] |infusi[oó]n/i, Coffee],
-  [/agua|gaseosa|cola|kola|cerveza|chicha|jugo|refresco|bebida|gatorade|botella/i, Beer],
-  [/pollo|brasa|alita|pierna|presa/i, Drumstick],
+  [/cerveza|pilsen|cusque[nñ]a|corona|vino|pisco|ron |whisky|trago|licor/i, Beer],
+  [/agua|gaseosa|cola|kola|chicha|jugo|refresco|bebida|gatorade|botella|inca/i, Beer],
+  [/pollo|brasa|alita|pierna|presa|broaster/i, Drumstick],
   [/pizza/i, Pizza],
-  [/pan|torta|brownie|tiramisu|postre|helado|keke|galleta|dulce|chocolate/i, Cookie],
-  [/leche|yogur|queso|mantequilla/i, Milk],
-  [/carne|res|cerdo|chuleta|bistec|lomo|molida/i, Beef],
-  [/pescado|paiche|doncella|trucha|atun/i, Fish],
-  [/manzana|platano|fruta|naranja|papaya|pi[nñ]a|mango/i, Apple],
-  [/zanahoria|verdura|lechuga|tomate|cebolla|papa/i, Carrot],
+  [/pan|torta|brownie|tiramisu|postre|helado|keke|galleta|dulce|chocolate|caramelo/i, Cookie],
+  [/snack|papitas|chizito|cheetos|piqueo|man[ií] |chifle|doritos|lays/i, Cookie],
+  [/leche|yogur|queso|mantequilla|manjar/i, Milk],
+  [/carne|res|cerdo|chuleta|bistec|lomo|molida|chorizo/i, Beef],
+  [/pescado|paiche|doncella|trucha|atun|conserva/i, Fish],
+  [/manzana|platano|fruta|naranja|papaya|pi[nñ]a|mango|palta/i, Apple],
+  [/zanahoria|verdura|lechuga|tomate|cebolla|papa|ajo|culantro/i, Carrot],
   [/croissant|bizcocho|empanada/i, Croissant],
-  [/sandwich|hamburguesa|hot ?dog|salchipapa/i, Sandwich],
+  [/sandwich|hamburguesa|hot ?dog|salchipapa|shawarma/i, Sandwich],
+  [/almuerzo|men[uú]|combo|plato|ceviche|tallarin|pasta|arroz chaufa|guiso/i, ChefHat],
 ];
+
+// Brandon 2026-07-06 (audit inicio) — variedad tonal determinística por nombre:
+// el grid de "sin foto" antes se veía monótono (todo el mismo tinte teal). Cada
+// tile toma una de 4 variantes derivadas del nombre → mosaico con vida, sin
+// hex hardcodeados (solo tokens de marca: teal --accent + coral --data-warning).
+const BG_VARIANTS = [
+  "from-[var(--accent)]/10 via-[var(--surface-canvas)] to-[var(--accent)]/4",
+  "from-[var(--accent)]/5 via-[var(--surface-canvas)] to-[var(--accent)]/12",
+  "from-[var(--data-warning-500)]/8 via-[var(--surface-canvas)] to-[var(--accent)]/6",
+  "from-[var(--accent)]/8 via-[var(--surface-canvas)] to-[var(--data-warning-500)]/7",
+];
+function variantFor(seed?: string | null): string {
+  const s = seed ?? "";
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return BG_VARIANTS[h % BG_VARIANTS.length];
+}
 
 /** Elige el ícono más específico: categoría explícita → nombre → default. */
 function iconFor(category?: string | null, name?: string | null): LucideIcon {
@@ -107,7 +127,7 @@ export function ProductPhotoFallback({
   const glyph = size === "sm" ? "h-5 w-5" : "h-8 w-8";
   return (
     <div
-      className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-3 bg-linear-to-br from-[var(--accent)]/8 via-[var(--surface-canvas)] to-[var(--accent)]/5"
+      className={`absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-3 bg-linear-to-br ${variantFor(name ?? category)}`}
       aria-label={name ? `${name} — sin foto` : "Producto sin foto"}
     >
       <span
