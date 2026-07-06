@@ -1239,40 +1239,8 @@ export default function TiendasClient({
               </div>
             )}
 
-            {/* Vista lista / mapa — solo TABLET (md..lg). En desktop (lg+) vive en
-              la toolbar arriba del grid; en mobile siempre lista. */}
-            <div className="hidden md:grid lg:hidden grid-cols-2 rounded-sm border border-[var(--rule-base)] overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setViewMode("list")}
-                aria-pressed={viewMode === "list"}
-                aria-label="Ver como lista"
-                className={cn(
-                  "inline-flex h-10 items-center justify-center gap-1.5 text-sm font-bold transition-colors",
-                  viewMode === "list"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                Lista
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("map")}
-                aria-pressed={viewMode === "map"}
-                aria-label="Ver en el mapa"
-                className={cn(
-                  "inline-flex h-10 items-center justify-center gap-1.5 border-l border-[var(--rule-base)] text-sm font-bold transition-colors",
-                  viewMode === "map"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                Mapa
-              </button>
-            </div>
+            {/* View-toggle de tablet REMOVIDO (Brandon 2026-07-06): Lista/Mapa
+                ahora vive inline en la fila de filtros de arriba. */}
 
             {/* ── LO QUE SE TE ANTOJA — filtro PRINCIPAL por subcategoría.
                Brandon 2026-06-02: movido al TOPE del sidebar (lo primero que ve
@@ -1345,6 +1313,61 @@ export default function TiendasClient({
                   title="Solo tiendas que aceptan fiado (compra ahora, paga después)"
                 />
               )}
+
+              {/* Zona — en la MISMA fila (Brandon 2026-07-06). Abre el modal. */}
+              {zonesForFilter.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setZoneModalOpen(true)}
+                  aria-haspopup="dialog"
+                  className={cn(
+                    "shrink-0 inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-bold transition-colors [scroll-snap-align:start]",
+                    zone
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                  <span className="max-w-[120px] truncate">
+                    {zone ? (zonesForFilter.find((z) => z.id === zone)?.label ?? "Zona") : "Zona"}
+                  </span>
+                </button>
+              )}
+
+              {/* Lista / Mapa — en la MISMA fila (Brandon 2026-07-06). */}
+              <div className="shrink-0 inline-flex overflow-hidden rounded-full border border-[var(--rule-base)] [scroll-snap-align:start]">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  aria-pressed={viewMode === "list"}
+                  aria-label="Ver como lista"
+                  className={cn(
+                    "inline-flex h-9 items-center gap-1.5 px-3 text-sm font-bold transition-colors",
+                    viewMode === "list"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <List className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("map")}
+                  aria-pressed={viewMode === "map"}
+                  aria-label="Ver en el mapa"
+                  className={cn(
+                    "inline-flex h-9 items-center gap-1.5 border-l border-[var(--rule-base)] px-3 text-sm font-bold transition-colors",
+                    viewMode === "map"
+                      ? "bg-[var(--text-primary)] text-[var(--surface-raised)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <MapIcon className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                  Mapa
+                </button>
+              </div>
+
               <div className="shrink-0 [scroll-snap-align:start]">
                 <MarketplaceFilters
                   filters={productFilters}
@@ -1446,81 +1469,9 @@ export default function TiendasClient({
             {/* "Lo que se te antoja" se movió al TOPE del sidebar (Brandon
               2026-06-02) — ver bloque justo debajo del header "Filtrar tiendas". */}
 
-            {/* Filtrar por zona = botón único que abre modal.
-              Brandon mayo 14 2026: las cajitas inline de zonas saturaban
-              la UI cuando había muchas zonas. Ahora un solo botón con la
-              zona activa visible (o "Todas las zonas") + modal con la
-              lista completa al tap.
-              Brandon mayo 18 2026: en mobile, la zona vive dentro del modal
-              de filtros (chips junto a categoría/precio) — escondemos este
-              botón inline. En desktop sigue visible. */}
-            {zonesForFilter.length > 1 && (
-              <div className="hidden sm:block lg:border-t lg:border-[var(--rule-soft)] lg:pt-3">
-                {/* Label solo visible en desktop sidebar */}
-                <p className="mb-2 hidden lg:block text-sm font-semibold text-[var(--text-primary)]">
-                  Zona
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setZoneModalOpen(true)}
-                  aria-haspopup="dialog"
-                  aria-expanded={zoneModalOpen}
-                  className={cn(
-                    "w-full sm:w-auto lg:w-full inline-flex items-center gap-2.5 rounded-md border transition-colors px-3.5 h-12 sm:h-14 lg:h-11",
-                    zone
-                      ? "border-[var(--text-primary)] bg-[var(--surface-sunken)] text-[var(--text-primary)]"
-                      : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)]/40",
-                  )}
-                >
-                  <MapPin
-                    className={cn(
-                      "h-4 w-4 shrink-0",
-                      zone ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
-                    )}
-                    strokeWidth={2.25}
-                    aria-hidden
-                  />
-                  <span className="flex flex-col items-start gap-0.5 min-w-0">
-                    <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
-                      {zone ? "Zona activa" : "Filtrar por zona"}
-                    </span>
-                    <span className="text-sm font-extrabold tracking-tight leading-tight truncate max-w-[180px] sm:max-w-[240px]">
-                      {zone
-                        ? (zonesForFilter.find((z) => z.id === zone)?.label ?? "Zona")
-                        : "Todas las zonas"}
-                    </span>
-                  </span>
-                  {zone && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setZone("");
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setZone("");
-                        }
-                      }}
-                      aria-label="Quitar filtro de zona"
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors shrink-0 cursor-pointer"
-                    >
-                      <span aria-hidden className="text-base font-black leading-none">
-                        ×
-                      </span>
-                    </span>
-                  )}
-                  <ChevronRight
-                    className="h-4 w-4 opacity-50 shrink-0 ml-1"
-                    strokeWidth={2.5}
-                    aria-hidden
-                  />
-                </button>
-              </div>
-            )}
+            {/* Botón de zona separado REMOVIDO (Brandon 2026-07-06): la Zona
+                ahora vive inline en la fila de filtros de arriba (abre el mismo
+                modal). El modal se conserva abajo. */}
 
             {/* ── Modal de zonas ────────────────────────────────────────── */}
             {zoneModalOpen && (
@@ -1628,19 +1579,16 @@ export default function TiendasClient({
 
           {/* ── MAIN: Grid de tiendas ── */}
           <div className="min-w-0">
-            {/* Toolbar superior (desktop) — Brandon 2026-06-14: Ordenar + Vista
-              (Lista/Mapa) viven ARRIBA del grid, NO mezclados con los filtros.
-              El sidebar queda solo con filtros reales. */}
+            {/* Toolbar superior (desktop) — SOLO en modo sidebar (muchas tiendas).
+              Con pocas tiendas, Ordenar + Lista/Mapa ya viven en la fila slim de
+              filtros de arriba (Brandon 2026-07-06). Evita el toolbar duplicado. */}
+            {manyStores && (
             <div className="hidden lg:flex items-center justify-end gap-3 mb-4 pb-3 border-b border-[var(--rule-soft)]">
-              {/* Sort del main SOLO con muchas tiendas — con pocas, la barra slim
-                  de filtros ya trae el "Ordenar" (evita duplicado). */}
-              {manyStores && (
-                <StoresSortSelector
-                  value={sortKey}
-                  onChange={handleSortChange}
-                  className="!rounded-sm hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40"
-                />
-              )}
+              <StoresSortSelector
+                value={sortKey}
+                onChange={handleSortChange}
+                className="!rounded-sm hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40"
+              />
               <div className="grid grid-cols-2 rounded-sm border border-[var(--rule-base)] overflow-hidden">
                 <button
                   type="button"
@@ -1674,6 +1622,7 @@ export default function TiendasClient({
                 </button>
               </div>
             </div>
+            )}
 
             {/* Listado o Mapa según viewMode (Brandon 2026-06-02). */}
             {viewMode === "map" ? (
