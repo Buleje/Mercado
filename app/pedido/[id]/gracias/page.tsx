@@ -4,20 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-  CheckCircle2, Package, Clock, Share2, Star,
-  ArrowRight, Smartphone, ShoppingBag,
+  Check, Package, Clock, Gift,
+  ArrowRight, Smartphone, ShoppingBag, MessageCircle,
 } from "@buleje/design-system/icons";
 
 /**
  * /pedido/[id]/gracias — Order confirmation "thank you" page.
  *
- * Shown after successful checkout. Includes:
- * - Order confirmation with animated checkmark
- * - Estimated delivery time
- * - Share on WhatsApp button
- * - PWA install prompt
- * - Link to track order
- * - Referral code invite
+ * Rediseño 2026-07-06 (Brandon): de plantilla genérica (emerald/slate hardcoded)
+ * a confirmación editorial on-brand — teal del DS, tokens, tipografía suave,
+ * mismo lenguaje visual que el checkout. Incluye: hero de éxito con check
+ * animado + confeti de marca, tarjeta de resumen, seguir pedido, compartir por
+ * WhatsApp, instalar PWA, referidos y seguir comprando.
  */
 
 type OrderSummary = {
@@ -28,27 +26,36 @@ type OrderSummary = {
   estimatedDelivery: string;
 };
 
-const CONFETTI_COLORS = ["var(--accent)", "#ff6b5b", "#10b981", "#6366f1", "#ec4899"];
+// Confeti anclado a la marca (teal + coral) — nada de arcoíris genérico.
+const CONFETTI_COLORS = ["var(--accent)", "#ff6b5b", "#14C2C2"];
 
 function generatePieces() {
-  return Array.from({ length: 20 }, (_, i) => ({
+  return Array.from({ length: 18 }, (_, i) => ({
     id: i,
     left: Math.random() * 100,
     width: 6 + Math.random() * 6,
     height: 8 + Math.random() * 8,
     color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-    duration: 1.5 + Math.random(),
+    duration: 1.6 + Math.random(),
     delay: Math.random() * 0.5,
     rotation: Math.random() * 360,
   }));
 }
 
 function ConfettiEffect() {
-  const [pieces] = useState(generatePieces);
+  // Generado SOLO en cliente (post-mount): Math.random en el render inicial
+  // rompería la hidratación (SSR ≠ cliente). En SSR = sin piezas.
+  const [pieces, setPieces] = useState<ReturnType<typeof generatePieces>>([]);
+  useEffect(() => {
+    setPieces(generatePieces());
+  }, []);
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+    <div
+      aria-hidden
+      className="fixed inset-0 pointer-events-none z-50 overflow-hidden motion-reduce:hidden"
+    >
       <style>{`
-        @keyframes confetti-fall {
+        @keyframes bjConfettiFall {
           0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
           100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
@@ -64,7 +71,7 @@ function ConfettiEffect() {
             height: `${p.height}px`,
             backgroundColor: p.color,
             borderRadius: "2px",
-            animation: `confetti-fall ${p.duration}s ease-in ${p.delay}s forwards`,
+            animation: `bjConfettiFall ${p.duration}s ease-in ${p.delay}s forwards`,
             transform: `rotate(${p.rotation}deg)`,
           }}
         />
@@ -84,7 +91,6 @@ export default function GraciasPage() {
       localStorage.setItem("buleje-first-purchase", "1");
     } catch { /* ignore quota/disabled storage */ }
 
-    // Fetch basic order info
     (async () => {
       try {
         const res = await fetch(`/api/orders/${id}`, { credentials: "include" });
@@ -101,118 +107,149 @@ export default function GraciasPage() {
       } catch { /* use defaults */ }
     })();
 
-    // Hide confetti after 3s
     const timer = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(timer);
   }, [id]);
 
   const orderId = order?.id ?? id ?? "";
   const shortId = orderId.slice(-8).toUpperCase();
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 
   const handleShare = () => {
-    const text = `Acabo de hacer un pedido en Buleje! Prueba tu tambien: https://www.buleje.pe`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
+    const text = `¡Acabo de hacer un pedido en Buleje! Probá vos también: https://www.buleje.pe`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
-      {/* Confetti effect — pieces generated once via useState to satisfy react-hooks/purity */}
+    <div className="relative min-h-screen bg-[var(--surface-canvas)]">
+      {/* Banda de color superior (sutil, teal) que enmarca el momento de éxito */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-linear-to-b from-[var(--accent-soft)] to-transparent"
+      />
       {showConfetti && <ConfettiEffect />}
 
-      <div className="mx-auto max-w-lg px-4 py-12">
-        {/* Success icon */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-4">
-            <CheckCircle2 className="h-10 w-10 text-[var(--data-success-600)]" />
-          </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-            Pedido confirmado!
+      <div className="relative mx-auto max-w-[30rem] px-4 py-10 sm:py-14">
+        {/* ── Hero de éxito ─────────────────────────────────────────── */}
+        <div className="text-center mb-7 sm:mb-8">
+          <span className="relative mx-auto mb-5 inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-[0_14px_34px_-10px_var(--accent-glow)]">
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-[var(--accent)]/25 animate-ping motion-reduce:hidden"
+            />
+            <Check
+              className="relative h-10 w-10 animate-[bjCheckIn_0.5s_cubic-bezier(0.22,1,0.36,1)] motion-reduce:animate-none"
+              strokeWidth={2.75}
+              aria-hidden
+            />
+            <style>{`
+              @keyframes bjCheckIn {
+                0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+                60% { transform: scale(1.15) rotate(0deg); opacity: 1; }
+                100% { transform: scale(1) rotate(0deg); }
+              }
+            `}</style>
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-[var(--text-primary)]">
+            ¡Pedido confirmado!
           </h1>
-          <p className="mt-2 text-slate-500 dark:text-slate-400">
-            Tu pedido <span className="font-mono font-bold text-[var(--data-success-600)]">#{shortId}</span> fue recibido
+          <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-snug">
+            Tu pedido{" "}
+            <span className="font-mono font-semibold text-[var(--accent-dark)] dark:text-[var(--accent)]">
+              #{shortId}
+            </span>{" "}
+            fue recibido. Ya lo estamos preparando.
           </p>
         </div>
 
-        {/* Order summary card */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-              <Package className="h-4 w-4" />
-              <span>{order?.itemCount ?? "..."} productos</span>
-            </div>
-            <span className="text-lg font-bold text-[var(--data-success-700)]">
-              S/{(order?.total ?? 0).toFixed(2)}
+        {/* ── Resumen del pedido ────────────────────────────────────── */}
+        <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6 mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-2 text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
+              <Package className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={2} aria-hidden />
+              {order ? `${order.itemCount} producto${order.itemCount === 1 ? "" : "s"}` : "Cargando…"}
+            </span>
+            <span className="text-2xl font-bold tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+              {fmt(order?.total ?? 0)}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
-            <Clock className="h-4 w-4 text-[var(--data-warning-600)] shrink-0" />
-            <p className="text-sm text-[var(--data-warning-700)] dark:text-amber-300">
-              Tiempo estimado: <strong>{order?.estimatedDelivery ?? "30-60 min"}</strong>
+          <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-[var(--accent-soft)] px-4 py-3">
+            <Clock className="h-4 w-4 shrink-0 text-[var(--accent-dark)] dark:text-[var(--accent)]" strokeWidth={2} aria-hidden />
+            <p className="text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
+              Tiempo estimado:{" "}
+              <strong className="font-semibold text-[var(--text-primary)]">
+                {order?.estimatedDelivery ?? "30-60 min"}
+              </strong>
             </p>
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="space-y-3 mb-8">
+        {/* ── Acciones principales ──────────────────────────────────── */}
+        <div className="space-y-2.5 mb-8">
           <Link
             href={`/pedido/${id}`}
-            className="flex items-center justify-center gap-2 w-full rounded-xl bg-[var(--data-success-600)] px-6 py-3 text-white font-semibold shadow-md hover:bg-[var(--data-success-700)] transition-colors"
+            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-6 h-13 text-base font-bold text-white transition-opacity hover:opacity-90"
           >
-            <Package className="h-5 w-5" />
+            <Package className="h-5 w-5" strokeWidth={2} aria-hidden />
             Seguir mi pedido
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2.25} aria-hidden />
           </Link>
 
           <button
+            type="button"
             onClick={handleShare}
-            className="flex items-center justify-center gap-2 w-full rounded-xl border-2 border-[#25D366] px-6 py-3 text-[#25D366] font-semibold hover:bg-[#25D366]/5 transition-colors"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 h-13 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
           >
-            <Share2 className="h-5 w-5" />
-            Compartir en WhatsApp
+            <MessageCircle className="h-5 w-5" strokeWidth={2} aria-hidden />
+            Compartir por WhatsApp
           </button>
         </div>
 
-        {/* PWA install suggestion */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-5 mb-6">
-          <div className="flex items-start gap-3">
-            <Smartphone className="h-5 w-5 text-[var(--data-success-600)] mt-0.5 shrink-0" />
-            <div>
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Instala Buleje en tu celular
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Agrega a tu pantalla de inicio para pedir mas rápido la próxima vez.
-                Toca el menu del navegador y selecciona &quot;Agregar a inicio&quot;.
+        {/* ── Extras: instalar app + referidos ──────────────────────── */}
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 sm:p-5">
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-muted)] text-[var(--accent-dark)] dark:text-[var(--accent)]">
+              <Smartphone className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-[length:var(--ts-sm)] sm:text-base font-semibold text-[var(--text-primary)] leading-tight">
+                Instalá Buleje en tu celular
+              </h2>
+              <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-snug">
+                Agregala a tu pantalla de inicio y pedí más rápido la próxima vez —
+                desde el menú del navegador, &quot;Agregar a inicio&quot;.
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Referral invite */}
-        <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-5 mb-6">
-          <div className="flex items-start gap-3">
-            <Star className="h-5 w-5 text-[var(--data-success-600)] mt-0.5 shrink-0" />
-            <div>
-              <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
-                Invita a un amigo y gana puntos
-              </h3>
-              <p className="text-xs text-[var(--data-success-600)] dark:text-emerald-400 mt-1">
-                Comparte tu codigo de referido y ambos ganan puntos de lealtad.
-                Ve a Mi Cuenta para encontrar tu codigo.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Continue shopping */}
-        <div className="text-center">
           <Link
-            href="/tienda"
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[var(--data-success-600)] transition-colors"
+            href="/marketplace/mi-cuenta"
+            className="group flex items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--accent)_25%,transparent)] bg-[var(--accent-soft)] p-4 sm:p-5 transition-colors hover:border-[var(--accent)]"
           >
-            <ShoppingBag className="h-4 w-4" />
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
+              <Gift className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="inline-flex items-center gap-1 text-[length:var(--ts-sm)] sm:text-base font-semibold text-[var(--text-primary)] leading-tight">
+                Invitá a un amigo y ganá puntos
+                <ArrowRight className="h-4 w-4 text-[var(--accent-dark)] transition-transform group-hover:translate-x-0.5 dark:text-[var(--accent)]" strokeWidth={2.25} aria-hidden />
+              </h2>
+              <p className="mt-1 text-[length:var(--ts-sm)] text-[var(--text-secondary)] leading-snug">
+                Compartí tu código de referido y ambos ganan puntos de lealtad.
+              </p>
+            </div>
+          </Link>
+        </div>
+
+        {/* ── Seguir comprando ──────────────────────────────────────── */}
+        <div className="mt-8 text-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-[length:var(--ts-sm)] font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
+          >
+            <ShoppingBag className="h-4 w-4" strokeWidth={2} aria-hidden />
             Seguir comprando
           </Link>
         </div>
