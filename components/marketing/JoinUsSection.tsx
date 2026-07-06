@@ -78,13 +78,22 @@ const JOIN_CARDS: JoinCard[] = [
   },
 ];
 
-export function JoinUsSection() {
+export function JoinUsSection({
+  // Ancho del contenido — por defecto 1280; /tiendas lo pasa a 1760 para
+  // alinear con el resto de sus secciones (Brandon 2026-07-06).
+  maxWidthClass = "max-w-[1280px]",
+}: { maxWidthClass?: string } = {}) {
   return (
     <section
       aria-label="Sumate a Buleje"
-      className="bg-[var(--surface-canvas)] border-t border-[var(--rule-base)] py-10 sm:py-16"
+      className="relative overflow-hidden border-t border-[var(--rule-base)] bg-linear-to-b from-[var(--accent-soft)]/30 via-[var(--surface-canvas)] to-[var(--surface-canvas)] py-10 sm:py-16"
     >
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Glow decorativo de marca (esquina) — apenas perceptible, da vida. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[var(--accent)]/[0.08] blur-3xl"
+      />
+      <div className={cn("relative mx-auto px-4 sm:px-6 lg:px-8", maxWidthClass)}>
         {/* Header editorial — minimalista pero con vida (acento de marca) */}
         <div className="max-w-2xl mb-6 sm:mb-10">
           <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">

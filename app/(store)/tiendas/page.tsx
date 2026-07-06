@@ -340,7 +340,7 @@ export default async function TiendasPage() {
           mismo componente que la home (single source). Brandon 2026-05-31:
           reemplaza el CTA de dueño que vivía acá; el funnel de vendors se
           centraliza en este bloque. */}
-      <JoinUsSection />
+      <JoinUsSection maxWidthClass="max-w-[1760px]" />
     </>
   );
 }

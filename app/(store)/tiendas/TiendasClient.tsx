@@ -1120,24 +1120,26 @@ export default function TiendasClient({
              banner (Brandon 2026-07-06, ref Betano). Es el filtro por
              subcategoría, promovido a fila prominente de tiles. Solo si hay. */}
         {subcategories.length > 0 && (
-          <div ref={subcategorySectionRef} className="mb-5">
-            <h2 className="mb-3 text-lg font-extrabold tracking-tight text-[var(--text-primary)] sm:text-xl">
+          <div ref={subcategorySectionRef} className="mb-4">
+            <h2 className="mb-2.5 text-base font-extrabold tracking-tight text-[var(--text-primary)] sm:text-lg">
               ¿Qué se te antoja hoy?
             </h2>
-            <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
               <button
                 type="button"
                 onClick={() => setSubCategoryId(null)}
                 aria-pressed={subCategoryId === null}
                 className={cn(
-                  "group flex h-[104px] w-[104px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all sm:h-[132px] sm:w-[132px]",
+                  "group flex h-[76px] w-[76px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl border transition-all sm:h-[92px] sm:w-[92px]",
                   subCategoryId === null
                     ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
                 )}
               >
-                <Boxes className="h-7 w-7 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-                <span className="text-sm font-extrabold text-[var(--text-primary)]">Todas</span>
+                <Boxes className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+                <span className="text-[length:var(--ts-xs)] font-extrabold text-[var(--text-primary)]">
+                  Todas
+                </span>
               </button>
               <SubcategoryChips
                 subcategories={subcategories}
@@ -1190,7 +1192,7 @@ export default function TiendasClient({
             aria-label="Filtros de tiendas"
             className={cn(
               // Compacto por defecto (barra slim); roomier solo como sidebar.
-              "mb-2 space-y-2.5",
+              "mb-2 space-y-2",
               manyStores &&
                 "lg:mb-0 lg:space-y-5 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]",
             )}
