@@ -39,6 +39,7 @@ import CheckoutUpsell from "@/components/marketplace/checkout/CheckoutUpsell";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
 import CheckoutCouponFields from "@/components/marketplace/checkout/CheckoutCouponFields";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
+import CheckoutEditModal from "@/components/marketplace/checkout/CheckoutEditModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
 import { CheckoutTransitionOverlay } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
 import OrderSummaryCard from "@/components/ui-system/OrderSummaryCard";
@@ -92,6 +93,8 @@ export default function CheckoutConfirmarPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [guestMode, setGuestMode] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // Editar datos/entrega en un modal in-place (Brandon 2026-07-06) — sin redirigir.
+  const [editMode, setEditMode] = useState<"datos" | "entrega" | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastData, setToastData] = useState<{ title: string; subtitle: string } | null>(null);
   // Cupón editable acá también: el flujo rápido (perfil completo) salta
@@ -757,7 +760,7 @@ export default function CheckoutConfirmarPage() {
               kicker="Datos"
               title="Quién recibe"
               icon={User}
-              editHref="/checkout/datos?edit=1"
+              onEdit={() => setEditMode("datos")}
               className="col-span-2 sm:col-span-1"
             >
               <dl className="space-y-1.5 text-[length:var(--ts-sm)]">
@@ -771,7 +774,7 @@ export default function CheckoutConfirmarPage() {
               kicker="Entrega"
               title="Dónde te llega"
               icon={MapPin}
-              editHref="/checkout/entrega"
+              onEdit={() => setEditMode("entrega")}
               className="col-span-2 sm:col-span-1"
             >
               <dl className="space-y-1.5 text-[length:var(--ts-sm)]">
@@ -1027,6 +1030,11 @@ export default function CheckoutConfirmarPage() {
 
         <AuthModal open={authModalOpen} onClose={closeAuthModal} />
 
+      {/* Editar datos/entrega en modal in-place (sin redirigir) */}
+      {editMode && (
+        <CheckoutEditModal mode={editMode} onClose={() => setEditMode(null)} />
+      )}
+
       {/* Modal de detalle del pedido (abierto desde el botón ojo) */}
       <OrderDetailsModal
         open={detailsOpen}
@@ -1072,6 +1080,7 @@ function ReviewCard({
   title,
   icon: Icon,
   editHref,
+  onEdit,
   children,
   wide,
   dense,
@@ -1080,7 +1089,9 @@ function ReviewCard({
   kicker: string;
   title: string;
   icon: typeof User;
-  editHref: string;
+  /** Navegación (fallback). Preferí `onEdit` para editar en modal sin redirigir. */
+  editHref?: string;
+  onEdit?: () => void;
   children: React.ReactNode;
   wide?: boolean;
   /** Cards a media columna (Pago/Pedido): icono + lápiz arriba, título a ancho
@@ -1088,15 +1099,17 @@ function ReviewCard({
   dense?: boolean;
   className?: string;
 }) {
-  const editLink = (
-    <Link
-      href={editHref}
-      aria-label={`Editar ${title}`}
-      className="inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:scale-95 transition-all shrink-0"
-    >
+  const editCls =
+    "inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:scale-95 transition-all shrink-0";
+  const editLink = onEdit ? (
+    <button type="button" onClick={onEdit} aria-label={`Editar ${title}`} className={editCls}>
+      <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+    </button>
+  ) : editHref ? (
+    <Link href={editHref} aria-label={`Editar ${title}`} className={editCls}>
       <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
     </Link>
-  );
+  ) : null;
   const iconChip = (
     <span
       aria-hidden

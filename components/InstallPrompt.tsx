@@ -45,6 +45,15 @@ export default function InstallPrompt() {
     const hasFirstPurchase = localStorage.getItem(LS.firstPurchase) === "1";
 
     const tryShow = () => {
+      // FIX (Brandon 2026-07-06): el poll NO chequeaba `shown`/`dismissed`, así
+      // que ~3s después de cerrar el prompt lo volvía a abrir. Ahora respeta el
+      // cierre → una vez cerrado, no reaparece (ni por poll ni por navegación).
+      if (
+        localStorage.getItem(LS.shown) === "1" ||
+        localStorage.getItem(LS.dismissed) === "1"
+      ) {
+        return;
+      }
       const ready = localStorage.getItem(LS.firstPurchase) === "1";
       if (ready && deferredPromptRef) setShowPrompt(true);
     };
