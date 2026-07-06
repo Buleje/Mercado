@@ -86,6 +86,10 @@ import {
   MapPin,
   ChevronDown,
   MessageCircle,
+  Leaf,
+  GlassWater,
+  Sparkles,
+  Package,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
@@ -551,33 +555,78 @@ function hrefForCategory(id: string): string {
   return `/?cat=${encodeURIComponent(id)}#catalogo`;
 }
 
+// ── Bloques temáticos (Brandon 2026-07-06) ──────────────────────────────────
+// Reemplaza el bento teal (neon, cada tile se inundaba de --accent en hover)
+// por un ÍNDICE EDITORIAL agrupado en bloques: cada categoría de producto cae
+// en el 1er bloque cuyo patrón matchea; lo no reconocido va a "Más". El color
+// se retira a mínimos del DS (superficies + hairlines + acento SOLO en el
+// cuadro del ícono y el hover de la fila). Minimalista pero estructurado.
+interface CategoryBlockDef {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  /** 1er match gana; el bloque sin `match` (último) es el catch-all "Más". */
+  match?: RegExp;
+}
+const CATEGORY_BLOCKS: CategoryBlockDef[] = [
+  {
+    id: "preparada",
+    label: "Comida preparada",
+    icon: UtensilsCrossed,
+    match: /pizza|calzon|brasa|broaster|alita|hamburgues|sandwich|salchipapa|shawarma|\bmenu|menú|combo|almuerzo|parrilla|guiso|caldo|sopa|crema|cebiche|ceviche|postre|helado|torta|keke|ensalada|guarnicion|acompan|desayuno|anticucho/i,
+  },
+  {
+    id: "frescos",
+    label: "Frescos",
+    icon: Leaf,
+    match: /fruta|verdura|carne|pollo|res|cerdo|chancho|pescado|marisco|paiche|fresco|huevo|lacteo|lácteo|queso|leche|yogur|embutido/i,
+  },
+  {
+    id: "bebidas",
+    label: "Bebidas",
+    icon: GlassWater,
+    match: /bebida|gaseosa|agua|jugo|refresco|cerveza|pilsen|licor|vino|pisco|ron|whisky|trago|energizante|café|cafe/i,
+  },
+  {
+    id: "despensa",
+    label: "Despensa",
+    icon: ShoppingCart,
+    match: /abarrote|snack|golosina|galleta|fideo|pasta|arroz|azucar|azúcar|aceite|conserva|enlatado|panaderia|panadería|\bpan\b|dulce|cereal|harina|menestra|grano|salsa|condimento/i,
+  },
+  {
+    id: "hogar",
+    label: "Hogar y cuidado",
+    icon: Sparkles,
+    match: /limpieza|hogar|aseo|ferreteria|ferretería|herramienta|construccion|construcción|madera|electro|tecnologia|tecnología|celular|farmacia|botica|salud|mascota|bebe|bebé|cuidado|regalo|papeleria|papelería/i,
+  },
+  { id: "mas", label: "Más categorías", icon: Package },
+];
+
 async function CategoriesGrid() {
   // Audit #2 (eje "por producto"): categorías de PRODUCTO desde MarketplacePublicDB
   // (misma fuente que header + mega-menú + carruseles). getProductCategories ya
   // devuelve solo categorías con ≥1 producto real (cero muertas), ordenadas por
   // cantidad. Los rubros de tienda siguen navegables desde /tiendas.
-  // Audit #3 (separar rubros): `flat` = todas las categorías (autoritativo,
-  // nada se pierde). Las llamadas por-vertical solo definen a qué GRUPO va cada
-  // una → así "Madera aserrada" cae en Ferretería y no al lado de "Postres".
   const flat = (await MarketplacePublicDB.getProductCategories().catch(() => []))
     .filter((c) => c.id && c.count > 0);
   if (flat.length === 0) return null;
 
-  const toCat = (c: { id: string; count: number }): SuperadminCategory => ({
-    id: c.id,
-    label: prettyCatLabel(c.id),
-    description: `${c.count} producto${c.count === 1 ? "" : "s"}`,
-    imageUrl: null,
-  });
-
-  // Bento (Brandon 2026-07-06): las 2 categorías MÁS GRANDES = cards HERO con
-  // foto real de un producto representativo; el resto = tiles chicos → layout
-  // asimétrico tipo revista. Reemplaza la grilla agrupada por vertical.
-  const featured = flat.slice(0, 2).map(toCat);
-  const rest = flat.slice(2).map(toCat);
-  const sampleImages = await MarketplacePublicDB.getCategorySampleImages(
-    featured.map((c) => c.id),
-  ).catch((): Record<string, string> => ({}));
+  // Clasificar cada categoría en su bloque (1er patrón que matchea; resto → "Más").
+  // Normaliza acentos/ñ antes del test → "Acompañamientos"/"Lácteos" matchean sus
+  // patrones sin duplicar cada forma acentuada en el regex.
+  const norm = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const blocks = CATEGORY_BLOCKS.map((b) => ({
+    ...b,
+    cats: [] as Array<{ id: string; label: string }>,
+  }));
+  const fallback = blocks[blocks.length - 1];
+  for (const c of flat) {
+    const key = norm(c.id);
+    const target = blocks.find((b) => b.match?.test(key)) ?? fallback;
+    target.cats.push({ id: c.id, label: prettyCatLabel(c.id) });
+  }
+  const visible = blocks.filter((b) => b.cats.length > 0);
 
   return (
     <section
@@ -588,101 +637,61 @@ async function CategoriesGrid() {
         <SectionHeading
           eyebrow="Categorías"
           title="Explora por categoría"
-          subtitle={`Todo lo que tu barrio vende, en un solo lugar — con delivery rápido en ${BRAND_GEO.city}.`}
+          subtitle={`Todo lo que tu barrio vende, ordenado por bloques — con delivery rápido en ${BRAND_GEO.city}.`}
           actionLabel="Ver todas"
           actionHref="/tiendas"
         />
 
-        {/* ── Bento (Brandon 2026-07-06): 2 cards HERO con FOTO real (la 1ra
-             cuadrada 2×2, la 2da ancha 2×1) + tiles chicos. grid-flow-dense
-             rellena los huecos alrededor de la card grande → asimétrico tipo
-             revista, un solo héroe visual por card (DS §7). ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[110px] sm:auto-rows-[124px] gap-2.5 sm:gap-3 [grid-auto-flow:dense]">
-          {featured.map((c, i) => {
-            const CatIcon = getProductCategoryIcon(c.id);
-            const img = sampleImages[c.id.toLowerCase()];
-            const span = i === 0 ? "col-span-2 row-span-2" : "col-span-2 row-span-1";
+        {/* ── Índice editorial por bloques (Brandon 2026-07-06): paneles calmos
+             sobre superficie, hairlines del DS, acento SOLO en el cuadro del
+             ícono. Cero relleno teal (adiós neon). Cada bloque = título serif +
+             GRILLA DE CUADRITOS (sin conteos) — cada categoría es un tile
+             cuadrado navegable. ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-start">
+          {visible.map((b) => {
+            const BlockIcon = b.icon;
             return (
-              <Link
-                key={c.id}
-                href={hrefForCategory(c.id)}
-                className={`group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-[var(--rule-base)] p-4 transition-[transform,box-shadow,border-color] duration-[var(--dur-base)] hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-lg)] ${span}`}
+              <div
+                key={b.id}
+                className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-[border-color,box-shadow] duration-[var(--dur-base)] hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] hover:shadow-[var(--shadow-md)]"
               >
-                {img ? (
-                  <>
-                    <Image
-                      src={img}
-                      alt=""
-                      fill
-                      sizes="(min-width: 768px) 50vw, 100vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent"
-                    />
-                  </>
-                ) : (
-                  <>
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)]"
-                    />
-                    <CatIcon
-                      aria-hidden
-                      strokeWidth={1.25}
-                      className="pointer-events-none absolute -right-3 -top-3 h-28 w-28 rotate-12 text-white/[0.16] transition-transform duration-500 group-hover:scale-110"
-                    />
-                  </>
-                )}
-                <span className="relative z-10 flex flex-col gap-1">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white ring-1 ring-inset ring-white/25 backdrop-blur-sm">
-                    <CatIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                {/* Encabezado del bloque — sans bold (sin serif alargada), sin conteo */}
+                <div className="flex items-center gap-2.5 border-b border-[var(--rule-soft)] px-4 py-3.5">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-muted)] text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_20%,transparent)] dark:text-[var(--accent)]">
+                    <BlockIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
                   </span>
-                  <span className="mt-1 text-base sm:text-lg font-black tracking-tight text-white leading-tight line-clamp-2 drop-shadow">
-                    {c.label}
+                  <span className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                    {b.label}
                   </span>
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-white/85 drop-shadow">
-                    {c.description}
-                  </span>
-                </span>
-              </Link>
-            );
-          })}
+                </div>
 
-          {rest.map((c) => {
-            const CatIcon = getProductCategoryIcon(c.id);
-            return (
-              <Link
-                key={c.id}
-                href={hrefForCategory(c.id)}
-                className="group relative col-span-1 row-span-1 flex flex-col justify-end overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-[transform,box-shadow,border-color] duration-[var(--dur-base)] hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)]"
-              >
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)]/[0.07] via-transparent to-transparent transition-opacity duration-[var(--dur-base)] group-hover:opacity-0"
-                />
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] opacity-0 transition-opacity duration-[var(--dur-base)] group-hover:opacity-100"
-                />
-                <CatIcon
-                  aria-hidden
-                  strokeWidth={1.25}
-                  className="pointer-events-none absolute -right-2 -top-2 h-14 w-14 rotate-12 text-[var(--accent)]/[0.14] transition-all duration-[var(--dur-base)] group-hover:scale-110 group-hover:text-white/25"
-                />
-                <span className="relative z-10 flex flex-col gap-0.5">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/12 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/15 transition-colors duration-[var(--dur-base)] group-hover:bg-white/20 group-hover:text-white group-hover:ring-white/30">
-                    <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                  </span>
-                  <span className="mt-1 text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2 transition-colors duration-[var(--dur-base)] group-hover:text-white">
-                    {c.label}
-                  </span>
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] transition-colors duration-[var(--dur-base)] group-hover:text-white/85">
-                    {c.description}
-                  </span>
-                </span>
-              </Link>
+                {/* Cuadritos de categorías (grilla, sin números). Bloque de una
+                    sola categoría → tile a todo el ancho (sin celda vacía). */}
+                <ul
+                  className={`grid gap-2.5 p-3 ${
+                    b.cats.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                  }`}
+                >
+                  {b.cats.map((c) => {
+                    const CatIcon = getProductCategoryIcon(c.id);
+                    return (
+                      <li key={c.id}>
+                        <Link
+                          href={hrefForCategory(c.id)}
+                          className="group/tile flex h-full flex-col items-center justify-center gap-2.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-4 text-center transition-[border-color,background-color,transform] duration-[var(--dur-fast)] hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] hover:bg-[var(--surface-sunken)]"
+                        >
+                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-muted)] text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_16%,transparent)] transition-transform duration-[var(--dur-fast)] group-hover/tile:scale-105 dark:text-[var(--accent)]">
+                            <CatIcon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                          </span>
+                          <span className="text-sm font-semibold leading-tight text-[var(--text-primary)] line-clamp-2">
+                            {c.label}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             );
           })}
         </div>

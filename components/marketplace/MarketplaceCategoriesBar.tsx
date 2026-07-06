@@ -35,6 +35,14 @@ function prettyLabel(id: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/**
+ * Barra CURADA (Brandon 2026-07-06): antes mostraba TODAS las subcategorías
+ * (scroll largo + ítems nicho tipo "Guarniciones/Acompañamientos" como si
+ * fueran nav principal). Ahora = top por cantidad de productos + chip "Ver
+ * todo" al final. El catálogo completo sigue a un toque en /explorar.
+ */
+const TOP_SUBCATEGORIES = 7;
+
 export default function MarketplaceCategoriesBar({ embedded = false }: { embedded?: boolean }) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const pathname = usePathname();
@@ -108,6 +116,21 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
     return `/${qs ? `?${qs}` : ""}#catalogo`;
   };
 
+  // Curación: top por cantidad de productos. Si el filtro activo cae fuera del
+  // top, igual lo incluimos (para que el chip activo siempre se vea en la barra).
+  const sortedCats = [...categories].sort((a, b) => b.count - a.count);
+  const topCats = sortedCats.slice(0, TOP_SUBCATEGORIES);
+  const visibleCategories =
+    activeCat && !topCats.some((c) => c.id === activeCat)
+      ? [
+          ...(sortedCats.find((c) => c.id === activeCat)
+            ? [sortedCats.find((c) => c.id === activeCat)!]
+            : []),
+          ...topCats,
+        ]
+      : topCats;
+  const hasMore = categories.length > visibleCategories.length;
+
   // Brandon 2026-07-05 (audit navegación): en la HOME (embedded) esta fila de
   // subcategorías usa CÁPSULAS (pills), NO tabs subrayados. Antes ambas filas
   // —verticales ("mundos") y subcategorías— eran tabs idénticos que arrancaban
@@ -151,7 +174,7 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
           Todo
         </Link>
 
-        {categories.map((cat) => {
+        {visibleCategories.map((cat) => {
           const Icon = getProductCategoryIcon(cat.id.toLowerCase());
           const active = activeCat === cat.id;
           return (
@@ -170,6 +193,17 @@ export default function MarketplaceCategoriesBar({ embedded = false }: { embedde
             </Link>
           );
         })}
+
+        {/* Escape hatch: el resto de categorías vive en /explorar (curamos la barra) */}
+        {hasMore && (
+          <Link
+            href="/marketplace/explorar"
+            className={cn(tabBase, tabIdle)}
+            aria-label="Ver todas las categorías"
+          >
+            Ver todo
+          </Link>
+        )}
       </nav>
     </div>
   );
