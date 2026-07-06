@@ -636,20 +636,43 @@ async function CategoriesGrid() {
                 {g.cats.map((c) => {
                   const CatIcon = getProductCategoryIcon(c.id);
                   return (
+                    // Brandon 2026-07-06 (rediseño creativo): tile editorial con
+                    // ícono GIGANTE de watermark + wash de acento en reposo que, al
+                    // hover, se rellena con el gradiente teal firma (todo → blanco).
+                    // Muestra el conteo de productos. Un solo ingrediente héroe
+                    // (ícono) por tile, anclado en tokens (DS §5/§7).
                     <Link
                       key={c.id}
                       href={hrefForCategory(c.id)}
-                      className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-sm)] transition-[transform,box-shadow,border-color] duration-[var(--dur-base)]"
+                      className="group relative flex min-h-[108px] flex-col justify-end overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-[transform,box-shadow,border-color] duration-[var(--dur-base)] hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)] sm:min-h-[136px] sm:p-3.5"
                     >
-                      <span className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--accent)]/10 ring-1 ring-[var(--accent)]/15 group-hover:bg-[var(--accent)] transition-colors duration-[var(--dur-base)] shrink-0">
-                        <CatIcon
-                          className="h-7 w-7 sm:h-8 sm:w-8 text-[var(--accent)] group-hover:text-white transition-colors duration-[var(--dur-base)]"
-                          strokeWidth={1.75}
-                          aria-hidden
-                        />
-                      </span>
-                      <span className="text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                        {c.label}
+                      {/* Wash de acento en reposo → se apaga al hover */}
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)]/[0.07] via-transparent to-transparent transition-opacity duration-[var(--dur-base)] group-hover:opacity-0"
+                      />
+                      {/* Fill del gradiente teal firma en hover */}
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] opacity-0 transition-opacity duration-[var(--dur-base)] group-hover:opacity-100"
+                      />
+                      {/* Ícono gigante de watermark (identidad de la categoría) */}
+                      <CatIcon
+                        aria-hidden
+                        strokeWidth={1.25}
+                        className="pointer-events-none absolute -right-2 -top-2 h-16 w-16 rotate-12 text-[var(--accent)]/[0.14] transition-all duration-[var(--dur-base)] group-hover:scale-110 group-hover:text-white/25 sm:h-20 sm:w-20"
+                      />
+                      {/* Chip de ícono + label + conteo */}
+                      <span className="relative z-10 flex flex-col gap-1.5">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/12 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/15 transition-colors duration-[var(--dur-base)] group-hover:bg-white/20 group-hover:text-white group-hover:ring-white/30">
+                          <CatIcon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+                        </span>
+                        <span className="text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2 transition-colors duration-[var(--dur-base)] group-hover:text-white">
+                          {c.label}
+                        </span>
+                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] transition-colors duration-[var(--dur-base)] group-hover:text-white/85">
+                          {c.description}
+                        </span>
                       </span>
                     </Link>
                   );

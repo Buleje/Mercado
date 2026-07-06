@@ -191,9 +191,15 @@ export default function UnifiedProductCard({
     [cartLines],
   );
 
+  // Brandon 2026-07-06: al tocar un producto → su PÁGINA DE DETALLE (no la
+  // tienda). Antes el default caía a `/marketplace/{slug}` (portada de la
+  // tienda), lo que confundía en "Productos destacados"/recomendados. Los callers
+  // que ya pasan `href` explícito (catálogo) mantienen su destino.
   const productHref =
     href ??
-    (product.storeSlug ? `/marketplace/${product.storeSlug}` : "/marketplace");
+    (product.storeSlug
+      ? `/marketplace/${product.storeSlug}/producto/${product.id}`
+      : "/marketplace");
 
   const { onMouseEnter, onMouseLeave } = useHoverPrefetch(productHref);
 
