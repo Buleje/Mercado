@@ -327,8 +327,13 @@ export default async function TiendasPage() {
       <h1 className="sr-only">
         {`Tiendas y bodegas en ${BRAND_GEO.city} con delivery — Buleje Marketplace`}
       </h1>
-      {/* Banner promocional full-width, igual que el inicio (slot tiendas-hero) */}
-      <HomeHeroBanner initialBanners={heroBanners} layout="row" />
+      {/* Banner promocional — alineado a la IZQUIERDA con las secciones (mismo
+          max-w + padding-left) y REBASA a la derecha (sin padding-right → las
+          cards se cortan contra el borde, efecto carrusel Betano). Brandon
+          2026-07-06. */}
+      <div className="mx-auto w-full max-w-[1760px] pl-4 pt-4 sm:pl-6 sm:pt-5 lg:pl-8">
+        <HomeHeroBanner initialBanners={heroBanners} layout="row" />
+      </div>
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
 
       {/* Trabajá con nosotros — reclutamiento (tiendas/comercios/repartidores),

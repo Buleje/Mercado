@@ -1113,11 +1113,41 @@ export default function TiendasClient({
             degradados a H2 para jerarquía limpia H1→H2→H3 (cards). */}
         <h2 className="sm:hidden sr-only">Tiendas y bodegas en {BRAND_GEO.city} con delivery</h2>
 
-        {/* h2 desktop compacto — 1 línea. mb reducido (Brandon 2026-07-06) para
-            acoplar mejor los filtros y que no ocupen tanto. */}
-        <h2 className="hidden sm:block text-2xl lg:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight mb-3">
-          Tiendas en <span className="text-[var(--accent)]">{BRAND_GEO.city}</span>
-        </h2>
+        {/* Título "Tiendas en {ciudad}" REMOVIDO (Brandon 2026-07-06): el banner
+            + las categorías ya orientan; el h1 SEO vive sr-only en el server. */}
+
+        {/* ── ¿QUÉ SE TE ANTOJA HOY? — cuadros grandes de categoría bajo el
+             banner (Brandon 2026-07-06, ref Betano). Es el filtro por
+             subcategoría, promovido a fila prominente de tiles. Solo si hay. */}
+        {subcategories.length > 0 && (
+          <div ref={subcategorySectionRef} className="mb-5">
+            <h2 className="mb-3 text-lg font-extrabold tracking-tight text-[var(--text-primary)] sm:text-xl">
+              ¿Qué se te antoja hoy?
+            </h2>
+            <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+              <button
+                type="button"
+                onClick={() => setSubCategoryId(null)}
+                aria-pressed={subCategoryId === null}
+                className={cn(
+                  "group flex h-[104px] w-[104px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all sm:h-[132px] sm:w-[132px]",
+                  subCategoryId === null
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
+                )}
+              >
+                <Boxes className="h-7 w-7 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+                <span className="text-sm font-extrabold text-[var(--text-primary)]">Todas</span>
+              </button>
+              <SubcategoryChips
+                subcategories={subcategories}
+                activeId={subCategoryId}
+                onSelect={setSubCategoryId}
+                variant="tile"
+              />
+            </div>
+          </div>
+        )}
 
         {/* ── DESKTOP SIDEBAR LAYOUT — lg:grid-cols-[280px_1fr]
              En < lg (mobile + tablet): los filtros y el grid quedan en flujo
@@ -1246,56 +1276,8 @@ export default function TiendasClient({
                Brandon 2026-06-02: movido al TOPE del sidebar (lo primero que ve
                el cliente para filtrar por antojo) + tamaño grande. En mobile
                aparece como tira scrollable; en desktop como cards apiladas. */}
-            {subcategories.length > 0 && (
-              <div
-                ref={subcategorySectionRef}
-                /* Brandon 2026-06-07: filtro de categoría "Lo que se te antoja"
-                 (Pollos, Pizzas…) oculto en celular (max-md-) — /tiendas mobile
-                 minimalista, sin filtros de categoría. Visible en tablet/desktop. */
-                className="max-md:hidden lg:pb-4 lg:mb-1 lg:border-b lg:border-[var(--rule-soft)]"
-              >
-                {/* Brandon 2026-07-06 (audit #3): "Categoría" → "¿Qué se te
-                    antoja?" para diferenciar este filtro-antojo (Pollos/Pizzas) del
-                    jump bar de secciones (Comida/Bodega/Ferretería) — antes ambos
-                    decían "categoría" y confundían. */}
-                <p className="mb-2.5 text-sm font-semibold text-[var(--text-primary)]">
-                  ¿Qué se te antoja?
-                </p>
-                {/* Tira horizontal con cards icono + label. En desktop se usa
-                    SIEMPRE salvo con sidebar (muchas tiendas), donde van apiladas.
-                    Brandon 2026-07-06: evita cards gigantes en el aside full-width. */}
-                <div
-                  role="group"
-                  aria-label="Filtrá por categoría"
-                  className={cn(
-                    "flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1",
-                    manyStores && "lg:hidden",
-                  )}
-                >
-                  <SubcategoryChips
-                    subcategories={subcategories}
-                    activeId={subCategoryId}
-                    onSelect={setSubCategoryId}
-                    variant="card"
-                  />
-                </div>
-                {/* Desktop sidebar (muchas tiendas): cards apiladas (filtro estrella) */}
-                {manyStores && (
-                  <div
-                    role="group"
-                    aria-label="Filtrá por categoría"
-                    className="hidden lg:flex flex-col gap-2"
-                  >
-                    <SubcategoryChips
-                      subcategories={subcategories}
-                      activeId={subCategoryId}
-                      onSelect={setSubCategoryId}
-                      variant="row"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Subcategorías ("¿Qué se te antoja?") MOVIDAS del aside a la fila de
+                tiles grandes bajo el banner (Brandon 2026-07-06). Acá ya no van. */}
 
             {/* "Lo más pedido" — antes label era "Subcategoría" (técnico, suena
               a panel admin). Brandon 2026-05-18 v3: renombrado a copy comercial

@@ -27,7 +27,7 @@ interface SubcategoryChipsProps {
   subcategories: ReadonlyArray<SubcategoryChipOption>;
   activeId: string | null;
   onSelect: (id: string | null) => void;
-  variant: "pill" | "card" | "row";
+  variant: "pill" | "card" | "row" | "tile";
 }
 
 export default function SubcategoryChips({
@@ -117,6 +117,48 @@ export default function SubcategoryChips({
                 )}
               >
                 {s.label}
+              </span>
+            </button>
+          );
+        }
+
+        // ── TILE: cuadro grande estilo Betano (foto cover + label overlay).
+        //     Brandon 2026-07-06: fila de "¿qué se te antoja hoy?" bajo el banner. ──
+        if (variant === "tile") {
+          return (
+            <button
+              key={`tile-${s.id}`}
+              onClick={onClick}
+              aria-pressed={active}
+              title={s.description || s.label}
+              className={cn(
+                "group relative h-[104px] w-[104px] shrink-0 overflow-hidden rounded-2xl border transition-all sm:h-[132px] sm:w-[132px]",
+                active
+                  ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/40"
+                  : "border-[var(--rule-base)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
+              )}
+            >
+              {s.imageUrl ? (
+                <Image
+                  src={s.imageUrl}
+                  alt=""
+                  fill
+                  sizes="132px"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              ) : (
+                <span className="absolute inset-0 flex items-center justify-center bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <Boxes className="h-8 w-8" strokeWidth={1.75} aria-hidden />
+                </span>
+              )}
+              <span
+                aria-hidden
+                className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent"
+              />
+              <span className="absolute inset-x-0 bottom-0 p-2 text-left">
+                <span className="line-clamp-2 text-sm font-extrabold leading-tight text-white drop-shadow">
+                  {s.label}
+                </span>
               </span>
             </button>
           );

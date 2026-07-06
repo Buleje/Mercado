@@ -85,7 +85,7 @@ function CompactPromoCard({ banner }: { banner: PromoBanner }) {
       href={banner.ctaHref || "/tiendas"}
       onClick={() => trackBanner("click", [banner.id])}
       aria-label={banner.title || banner.ctaLabel || "Promoción"}
-      className="group relative flex h-[150px] flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-soft)] p-4 text-white shadow-sm transition-transform hover:-translate-y-0.5 sm:h-[184px] sm:p-5"
+      className="group relative flex h-[210px] flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-soft)] p-4 text-white shadow-sm transition-transform hover:-translate-y-0.5 sm:h-[280px] sm:p-5"
       style={bg ? { background: bg } : undefined}
     >
       {hasImage && (
@@ -172,7 +172,7 @@ function PromoRow({ slides }: { slides: PromoBanner[] }) {
             key={b.id}
             data-promo-card
             role="listitem"
-            className="w-[82vw] shrink-0 [scroll-snap-align:start] sm:w-[60%] md:w-[46%] lg:w-[38%] xl:w-[31%]"
+            className="w-[70vw] shrink-0 [scroll-snap-align:start] sm:w-[52%] md:w-[38%] lg:w-[29%] xl:w-[23%]"
           >
             <CompactPromoCard banner={b} />
           </div>

@@ -157,21 +157,25 @@ function ClosedNowOverlay({ nextOpeningLabel }: { nextOpeningLabel?: string | nu
   const opensAt = nextOpeningLabel?.replace(/^Abre\s+/i, "") ?? null;
   return (
     <div aria-hidden className="absolute inset-0 z-10 pointer-events-none">
-      {/* Velo tenue — atenúa apenas, no tapa. */}
-      <div className="absolute inset-0 bg-white/45 dark:bg-gray-950/45" />
-      {/* Pill de estado — frosted, minimalista. */}
-      <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 shadow-sm backdrop-blur-sm dark:bg-gray-950/90">
-          <Moon className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={2.25} />
-          <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide text-[var(--text-primary)]">
+      {/* Atenuado elegante — oscurece apenas la foto para que SE NOTE que está
+          en pausa, sin el rectángulo gris. La tienda se sigue viendo. */}
+      <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/15 to-black/25" />
+      {/* Badge prominente pero limpio: icono en círculo + "Cerrada" + próxima
+          apertura, apilados. Arriba-izquierda. */}
+      <div className="absolute left-2.5 top-2.5 inline-flex items-center gap-2 rounded-xl bg-white/95 py-1.5 pl-1.5 pr-3 shadow-md backdrop-blur dark:bg-gray-950/90">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--text-primary)] text-[var(--surface-raised)]">
+          <Moon className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </span>
+        <span className="flex flex-col leading-none">
+          <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-[var(--text-primary)]">
             Cerrada
           </span>
+          {opensAt && (
+            <span className="mt-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+              Abre {opensAt}
+            </span>
+          )}
         </span>
-        {opensAt && (
-          <span className="inline-flex items-center rounded-full bg-[var(--accent)]/92 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white shadow-sm backdrop-blur-sm">
-            Abre {opensAt}
-          </span>
-        )}
       </div>
     </div>
   );
