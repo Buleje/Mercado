@@ -40,38 +40,11 @@ const StoreDistanceMapModal = dynamic(
   { ssr: false },
 );
 
-// Mapea una MarketplaceStore + sus productos premium al shape que espera el
-// drawer (FeaturedNearbyStore con productosDestacados embebidos). Sin fetch.
-function toFeaturedStore(
-  store: MarketplaceStore,
-  products: import("./PremiumStoreCard").PremiumProduct[],
-): FeaturedNearbyStore {
-  return {
-    id: store.id,
-    slug: store.slug,
-    name: store.name,
-    logo: store.logo ?? null,
-    banner: store.cover ?? null,
-    category: store.category ?? "",
-    zone: store.zone ?? null,
-    rating: store.rating ?? 0,
-    reviewCount: store.reviewCount ?? 0,
-    description: null,
-    distanceKm: 0,
-    productosDestacados: products.map((p) => ({
-      id: String(p.productId),
-      productId: p.productId,
-      name: p.name,
-      image: p.image,
-      retailPrice: p.retailPrice,
-      discountPrice: p.discountPrice ?? null,
-      discountLabel: null,
-    })),
-  };
-}
+// Audit #5: toFeaturedStore removido — era el adapter para la card premium
+// ancha (PremiumStoreCard), que ya no se usa (todas las tiendas usan la card
+// estándar).
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { StoreCardCanonical } from "@buleje/design-system";
-import PremiumStoreCard from "./PremiumStoreCard";
 import StorePromoBanner from "./StorePromoBanner";
 import MiniBulejeBanner from "@/components/marketplace/MiniBulejeBanner";
 import FollowStoreButton from "@/components/marketplace/FollowStoreButton";
@@ -386,9 +359,11 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     </div>
   );
 
-  // Destacada: anillo teal + leve realce para distinguirla de las estándar
-  // sin ocupar fila completa (premium usa su propia card).
-  const isFeatured = store.displayTier === "featured";
+  // Destacada: anillo teal + leve realce para distinguirla de las estándar.
+  // Audit #5 (Brandon 2026-07-05): premium ya NO usa card ancha propia — todas
+  // las tiendas usan esta card estándar (grid parejo para comparar); premium y
+  // featured comparten el realce "Destacada" + van primero (orderedStores).
+  const isFeatured = store.displayTier === "featured" || store.displayTier === "premium";
   // Brandon 2026-05-30 (audit #5): era <m.div> con initial={false} + animate
   // estático = animación NO-OP que arrastraba framer-motion (~30KB) al bundle
   // inicial de /tiendas. <div> plano = comportamiento idéntico (el card ya
@@ -721,7 +696,8 @@ export interface StoreChipFields {
 
 export default function MarketplaceStoresView({
   stores: _stores,
-  premiumProducts = {},
+  // premiumProducts: audit #5 — ya no se usa (todas las tiendas usan la card
+  // estándar). Se mantiene en la interface por compat con el caller (ignorado).
   loading,
   error,
   search,
@@ -937,37 +913,8 @@ export default function MarketplaceStoresView({
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mt-6"
         >
           {orderedStores.map((store, i) => {
-            // Premium: card de fila completa con preview de productos (no la
-            // card estándar agrandada). Si no hay productos igual se muestra.
-            if (store.displayTier === "premium") {
-              return (
-                <div key={store.id} role="listitem" className="sm:col-span-2 xl:col-span-3 2xl:col-span-4">
-                  <PremiumStoreCard
-                    slug={store.slug}
-                    name={store.name}
-                    logo={store.logo}
-                    cover={store.cover}
-                    category={store.category}
-                    zone={store.zone}
-                    rating={store.rating}
-                    reviewCount={store.reviewCount}
-                    verified={store.verified}
-                    acceptsFiado={store.acceptsFiado}
-                    isOpenNow={store.isOpenNow}
-                    nextOpeningLabel={formatNextOpening(store.nextOpeningAt)}
-                    lat={store.lat}
-                    lng={store.lng}
-                    userCoords={userCoords}
-                    products={premiumProducts[store.slug] ?? []}
-                    onQuickView={
-                      (premiumProducts[store.slug]?.length ?? 0) > 0
-                        ? () => setQuickViewStore(toFeaturedStore(store, premiumProducts[store.slug] ?? []))
-                        : undefined
-                    }
-                  />
-                </div>
-              );
-            }
+            // Audit #5: TODAS las tiendas usan la card estándar (grid parejo).
+            // Premium/featured van primero + con el realce "Destacada".
             return (
               <div key={store.id} role="listitem">
                 <StoreCardWrapper
