@@ -156,6 +156,9 @@ function selectCls(error?: boolean) {
 function SectionBox({
   done,
   active = false,
+  collapsed = false,
+  summary,
+  onEdit,
   kicker,
   title,
   icon: Icon,
@@ -164,6 +167,10 @@ function SectionBox({
 }: {
   done?: boolean;
   active?: boolean;
+  /** Paso completo → colapsa a resumen + "Editar" (foco en el paso actual). */
+  collapsed?: boolean;
+  summary?: React.ReactNode;
+  onEdit?: () => void;
   kicker: string;
   title: string;
   icon: typeof Wallet;
@@ -174,7 +181,8 @@ function SectionBox({
   return (
     <section
       className={cn(
-        "rounded-2xl border bg-[var(--surface-raised)] p-4 sm:p-5 space-y-4 transition-[border-color] duration-[var(--dur-base)]",
+        "rounded-2xl border bg-[var(--surface-raised)] p-4 sm:p-5 transition-[border-color] duration-[var(--dur-base)]",
+        collapsed ? "space-y-0" : "space-y-4",
         done
           ? "border-[color-mix(in_srgb,var(--accent)_25%,transparent)]"
           : active
@@ -182,7 +190,7 @@ function SectionBox({
             : "border-[var(--rule-soft)]",
       )}
     >
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span
             aria-hidden
@@ -211,14 +219,31 @@ function SectionBox({
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
               {kicker}
             </p>
-            <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
-              {title}
-            </h2>
+            {collapsed && summary != null ? (
+              <p className="text-base sm:text-lg font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight truncate">
+                {summary}
+              </p>
+            ) : (
+              <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+                {title}
+              </h2>
+            )}
           </div>
         </div>
-        {action}
+        {collapsed && onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-[length:var(--ts-sm)] font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+          >
+            <Edit3 className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Editar
+          </button>
+        ) : (
+          action
+        )}
       </div>
-      {children}
+      {!collapsed && children}
     </section>
   );
 }
@@ -244,6 +269,11 @@ export default function CheckoutEntregaPage() {
     loyaltyDiscountTotal,
   } = useCheckoutData();
   const [touched, setTouched] = useState(false);
+  // Acordeón (Brandon 2026-07-06): las secciones completas colapsan a un resumen;
+  // "Editar" las reabre (una vez abiertas, quedan abiertas). Foco en el paso actual.
+  const [editingSection, setEditingSection] = useState<Record<string, boolean>>({});
+  const editSection = (id: string) =>
+    setEditingSection((s) => ({ ...s, [id]: true }));
 
   const [couponsUserOpened, setCouponsUserOpened] = useState(false);
   const hasAppliedCoupons = Object.keys(coupons).length > 0;
@@ -897,6 +927,16 @@ export default function CheckoutEntregaPage() {
   const paymentChosen = payment.method !== "";
   const paymentReady = paymentChosen && allProofsReady;
 
+  // Resúmenes de una línea para las secciones colapsadas (acordeón).
+  const datosSummary = [customer.name?.trim(), customer.phone ? `+51 ${customer.phone}` : ""]
+    .filter(Boolean)
+    .join(" · ");
+  const direccionSummary = [address.address?.trim(), address.districtName?.trim()]
+    .filter(Boolean)
+    .join(" · ");
+  const paymentSummary =
+    PAYMENT_METHODS.find((m) => m.key === payment.method)?.label ?? "";
+
   // CTA del riel de resumen (sin evento — handleSubmit es para el <form>).
   const handleContinue = () => {
     setTouched(true);
@@ -956,6 +996,9 @@ export default function CheckoutEntregaPage() {
             icon={UserCircle}
             done={isCustomerValid}
             active={!isCustomerValid}
+            collapsed={isCustomerValid && !editingSection.datos}
+            summary={datosSummary}
+            onEdit={() => editSection("datos")}
           >
             <CheckoutIdentitySection />
           </SectionBox>
@@ -1008,6 +1051,9 @@ export default function CheckoutEntregaPage() {
             icon={MapPin}
             done={isAddressValid}
             active={isCustomerValid && !isAddressValid}
+            collapsed={isAddressValid && !editingSection.direccion}
+            summary={direccionSummary}
+            onEdit={() => editSection("direccion")}
             action={
               savedAddresses.length > 0 && manualAddressEntry ? (
                 <button
@@ -1267,6 +1313,9 @@ export default function CheckoutEntregaPage() {
             icon={Wallet}
             done={paymentReady}
             active={isCustomerValid && isAddressValid && !paymentReady}
+            collapsed={paymentReady && !editingSection.pago}
+            summary={paymentSummary}
+            onEdit={() => editSection("pago")}
           >
             {paymentConfigsLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
