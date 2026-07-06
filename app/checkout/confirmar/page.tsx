@@ -538,7 +538,7 @@ export default function CheckoutConfirmarPage() {
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               {allOk ? "Pedido confirmado" : allFail ? "Algo falló" : "Parcialmente enviado"}
             </p>
-            <h1 className="text-[clamp(1.75rem,4vw,3rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+            <h1 className="text-[clamp(1.75rem,4vw,3rem)] font-bold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               {allOk ? (
                 <>
                   ¡Listo,
@@ -786,7 +786,7 @@ export default function CheckoutConfirmarPage() {
                   <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
                     Descuentos
                   </p>
-                  <h3 className="text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+                  <h3 className="text-base font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
                     ¿Tienes un cupón?
                   </h3>
                 </div>
@@ -823,12 +823,12 @@ export default function CheckoutConfirmarPage() {
             >
               <div className="flex justify-between items-baseline text-[length:var(--ts-sm)]">
                 <span className="text-[var(--text-secondary)]">
-                  <strong className="text-[var(--text-primary)] tabular-nums font-black">
+                  <strong className="text-[var(--text-primary)] tabular-nums font-bold">
                     {loyalty.redeemPoints}
                   </strong>{" "}
                   puntos
                 </span>
-                <span className="text-[var(--accent)] font-black tabular-nums">
+                <span className="text-[var(--accent)] font-bold tabular-nums">
                   −{fmt(loyaltyDiscountTotal)}
                 </span>
               </div>
@@ -850,7 +850,7 @@ export default function CheckoutConfirmarPage() {
                   <ShoppingBag className="h-3 w-3" strokeWidth={2} aria-hidden />
                   Tu pedido
                 </p>
-                <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+                <h2 className="text-base sm:text-lg font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   {itemCount} {itemCount === 1 ? "producto" : "productos"} ·{" "}
                   <span className="tabular-nums">{fmt(grandTotal)}</span>
                 </h2>
@@ -895,11 +895,11 @@ export default function CheckoutConfirmarPage() {
                         <ShoppingBag className="h-7 w-7" strokeWidth={1.5} aria-hidden />
                       </span>
                     )}
-                    <span className="absolute top-1.5 right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)]/85 px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--surface-canvas)] backdrop-blur-sm">
+                    <span className="absolute top-1.5 right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)]/85 px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--surface-canvas)] backdrop-blur-sm">
                       ×{it.quantity}
                     </span>
                   </div>
-                  <p className="mt-1.5 text-[length:var(--ts-sm)] font-black tabular-nums leading-tight text-[var(--text-primary)]">
+                  <p className="mt-1.5 text-[length:var(--ts-sm)] font-bold tabular-nums leading-tight text-[var(--text-primary)]">
                     {fmt(it.price * it.quantity)}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)] line-clamp-1">
@@ -1112,7 +1112,7 @@ function ReviewCard({
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
             {kicker}
           </p>
-          <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
+          <h3 className="text-[length:var(--ts-sm)] sm:text-base font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
             {title}
           </h3>
         </div>
@@ -1124,7 +1124,7 @@ function ReviewCard({
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
                 {kicker}
               </p>
-              <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
+              <h3 className="text-[length:var(--ts-sm)] sm:text-base font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
                 {title}
               </h3>
             </div>

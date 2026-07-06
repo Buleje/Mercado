@@ -85,7 +85,7 @@ function ItemRow({
         ) : (
           // Brandon 2026-05-18: fallback con INICIAL del producto + gradient accent.
           <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent-soft)] via-[var(--surface-sunken)] to-[var(--accent-soft)]/60">
-            <span className="text-2xl font-black text-[var(--accent)] uppercase">
+            <span className="text-2xl font-bold text-[var(--accent)] uppercase">
               {item.name.trim().charAt(0)}
             </span>
           </div>
@@ -394,7 +394,7 @@ export default function CarritoPage() {
         <div className="flex items-center justify-between gap-3">
           {/* Título + conteo INLINE (compacto). Antes: h1 text-4xl + count debajo. */}
           <div className="flex items-baseline gap-2 sm:gap-2.5 min-w-0 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none shrink-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.02em] text-[var(--text-primary)] leading-tight shrink-0">
               Tu carrito
             </h1>
             {itemCount > 0 ? (
@@ -464,7 +464,7 @@ export default function CarritoPage() {
             <PaicheMascot size={140} animated />
           </div>
           <div className="max-w-md">
-            <p className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+            <p className="text-xl sm:text-2xl font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
               Tu carrito está <span className="text-[var(--accent)]">vacío</span>
             </p>
             <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-relaxed">
