@@ -30,12 +30,13 @@ export type CheckoutStep = "carrito" | "datos" | "entrega" | "confirmar";
 
 type StepDef = { key: CheckoutStep; label: string; short: string; href: string };
 
-// Flujo COMPLETO (invitado / perfil incompleto): datos → entrega → confirmar.
-// El "carrito" ya fue — no se muestra para reducir la percepción de fricción.
+// Flujo COMPLETO (invitado / perfil incompleto): datos+entrega → confirmar.
+// Brandon 2026-07-06: "datos" y "entrega" se unificaron en UNA página
+// (/checkout/entrega captura quién recibe + dirección + pago), así que el
+// stepper pasó de 3 a 2 pasos. El "carrito" ya fue — no se muestra.
 const FULL_STEPS: StepDef[] = [
-  { key: "datos",     label: "Tus datos",      short: "Datos",     href: "/checkout/datos" },
-  { key: "entrega",   label: "Entrega y pago", short: "Entrega",   href: "/checkout/entrega" },
-  { key: "confirmar", label: "Confirmar",      short: "Confirmar", href: "/checkout/confirmar" },
+  { key: "entrega",   label: "Datos y entrega", short: "Entrega",   href: "/checkout/entrega" },
+  { key: "confirmar", label: "Confirmar",       short: "Confirmar", href: "/checkout/confirmar" },
 ];
 
 // Flujo RÁPIDO (logueado con dirección guardada): SOLO carrito → finalizar.

@@ -23,10 +23,11 @@ import { CheckoutDataProvider } from "@/contexts/checkout-data-context";
 import { CheckoutSummaryProvider } from "@/contexts/checkout-summary-context";
 
 function pathToStep(pathname: string | null): CheckoutStep {
-  if (!pathname) return "datos";
+  // datos+entrega unificados → /checkout/datos (redirect) y /checkout/entrega
+  // son el MISMO paso "entrega" en el stepper.
+  if (!pathname) return "entrega";
   if (pathname.includes("/confirmar")) return "confirmar";
-  if (pathname.includes("/entrega")) return "entrega";
-  return "datos";
+  return "entrega";
 }
 
 export default function CheckoutLayout({ children }: { children: React.ReactNode }) {

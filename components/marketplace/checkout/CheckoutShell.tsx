@@ -72,11 +72,11 @@ export default function CheckoutShell({
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <CheckoutTopBar current={current} />
-      <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 lg:pt-10">
         {/* Grid persistente: sección central (children) + riel de resumen.
             items-start + sticky (dentro del CheckoutSummary) mantienen el riel
             fijo mientras solo cambia la columna izquierda al navegar pasos. */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 lg:gap-8 items-start pb-28 lg:pb-16">
           <div className="min-w-0">{children}</div>
           <CheckoutSummaryHost />
         </div>

@@ -270,7 +270,9 @@ export default function CarritoPage() {
   }, [loggedCustomer]);
 
   const fastFlow = isCustomerProfileComplete(resolvedCustomer);
-  const continueHref = fastFlow ? "/checkout/confirmar" : "/checkout/datos";
+  // Datos + entrega unificados (Brandon 2026-07-06): el flujo no-rápido entra
+  // directo a /checkout/entrega (captura datos + dirección + pago en una página).
+  const continueHref = fastFlow ? "/checkout/confirmar" : "/checkout/entrega";
   const handleContinueWithoutAuth = useCallback(() => openAuthModal(), [openAuthModal]);
 
   // Pre-siembra de checkout-data en localStorage cuando el perfil está completo.

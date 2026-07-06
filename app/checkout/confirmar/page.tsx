@@ -116,7 +116,7 @@ export default function CheckoutConfirmarPage() {
     // de "datos faltantes" disparaban un loop /confirmar → /datos.
     if (results.length > 0 || submitting) return;
     if (itemCount === 0) router.replace("/marketplace/carrito");
-    else if (!isCustomerValid) router.replace("/checkout/datos");
+    else if (!isCustomerValid) router.replace("/checkout/entrega");
     else if (!isAddressValid) router.replace("/checkout/entrega");
   }, [
     cartReady, itemCount, isCustomerValid, isAddressValid,

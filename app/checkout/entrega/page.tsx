@@ -8,7 +8,9 @@
  *   - Método de pago (3 PaymentMethodCards: Efectivo / Yape / Plin)
  *   - Cupón por tienda + Puntos Buleje (si disponible)
  *
- * Auto-redirect a /carrito si esta vacio o /datos si faltan datos cliente.
+ * Datos + entrega unificados (Brandon 2026-07-06): captura quién recibe
+ * (CheckoutIdentitySection) + dirección + pago en UNA página. Auto-redirect a
+ * /carrito solo si el carrito está vacío.
  */
 
 import { useRouter } from "next/navigation";
@@ -26,6 +28,7 @@ import {
   AlertCircle,
   Navigation,
   Edit3,
+  UserCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
@@ -34,6 +37,7 @@ import { useCustomer } from "@/contexts/customer-context";
 import { useRegisterCheckoutSummary } from "@/contexts/checkout-summary-context";
 import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCard";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
+import CheckoutIdentitySection from "@/components/marketplace/checkout/CheckoutIdentitySection";
 import CheckoutCouponFields from "@/components/marketplace/checkout/CheckoutCouponFields";
 import AddressPicker from "@/components/marketplace/checkout/AddressPicker";
 import AddAddressFlowModal from "@/components/marketplace/checkout/AddAddressFlowModal";
@@ -626,11 +630,13 @@ export default function CheckoutEntregaPage() {
   // Brandon mayo 15 v4 (audit QA #1): flags reales `hydrated` en lugar de
   // setTimeout(250). En redes lentas el guard antiguo expulsaba al cliente.
   const cartReady = cartHydrated && hydrated;
+  // Datos + entrega unificados (Brandon 2026-07-06): el cliente se captura acá
+  // mismo (CheckoutIdentitySection), así que NO redirigimos por customer inválido
+  // — solo si el carrito quedó vacío.
   useEffect(() => {
     if (!cartReady) return;
     if (itemCount === 0) router.replace("/marketplace/carrito");
-    else if (!isCustomerValid) router.replace("/checkout/datos");
-  }, [cartReady, itemCount, isCustomerValid, router]);
+  }, [cartReady, itemCount, router]);
 
   // Prefetch del próximo paso (acelera la navegación a /confirmar)
   useEffect(() => {
@@ -810,13 +816,14 @@ export default function CheckoutEntregaPage() {
     (e: React.FormEvent) => {
       e.preventDefault();
       setTouched(true);
+      if (!isCustomerValid) return;
       if (!isAddressValid) return;
       // Brandon mayo 15 v4: bloqueo submit si no eligió método de pago.
       if (payment.method === "") return;
       if (!allProofsReady) return;
       navigateTo("/checkout/confirmar", "Preparando tu resumen");
     },
-    [isAddressValid, allProofsReady, navigateTo, payment.method],
+    [isCustomerValid, isAddressValid, allProofsReady, navigateTo, payment.method],
   );
 
   const totalAfterCoupons = Math.max(0, grandTotal - couponDiscountTotal);
@@ -836,32 +843,36 @@ export default function CheckoutEntregaPage() {
   // CTA del riel de resumen (sin evento — handleSubmit es para el <form>).
   const handleContinue = () => {
     setTouched(true);
-    if (isAddressValid && allProofsReady)
+    if (isCustomerValid && isAddressValid && allProofsReady)
       navigateTo("/checkout/confirmar", "Preparando tu resumen");
   };
 
-  // Riel de resumen persistente — lo dibuja el layout (CheckoutShell).
-  useRegisterCheckoutSummary({
-    ctaLabel: !allProofsReady ? "Subí los comprobantes" : "Revisar pedido",
-    onCtaClick: handleContinue,
-    ctaDisabled: !isAddressValid || !allProofsReady,
-    couponDiscount: couponDiscountTotal,
-    loyaltyDiscount: loyaltyDiscountTotal,
-    showItems: true,
-    helperText: !allProofsReady
-      ? "Falta subir el comprobante de pago"
-      : "Un paso más para confirmar",
-    mobileTotal: Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal),
-    mobileCtaLabel: !allProofsReady ? "Falta comprobante" : "Revisar pedido",
-    mobileDisabledReason: !isAddressValid
+  // Primer requisito faltante → etiqueta/razón del CTA (datos → dirección → pago).
+  const missingLabel = !isCustomerValid
+    ? "Completá tus datos"
+    : !isAddressValid
       ? "Completá tu dirección"
       : !allProofsReady
         ? "Subí los comprobantes"
-        : undefined,
-    mobileHelperText:
-      isAddressValid && allProofsReady
-        ? "¡Todo listo! Solo falta confirmar."
-        : "Un paso más para confirmar",
+        : null;
+
+  // Riel de resumen persistente — lo dibuja el layout (CheckoutShell).
+  useRegisterCheckoutSummary({
+    ctaLabel: missingLabel ?? "Revisar pedido",
+    onCtaClick: handleContinue,
+    ctaDisabled: !isCustomerValid || !isAddressValid || !allProofsReady,
+    couponDiscount: couponDiscountTotal,
+    loyaltyDiscount: loyaltyDiscountTotal,
+    showItems: true,
+    helperText: missingLabel
+      ? "Completá lo que falta para continuar"
+      : "Un paso más para confirmar",
+    mobileTotal: Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal),
+    mobileCtaLabel: missingLabel ? "Falta info" : "Revisar pedido",
+    mobileDisabledReason: missingLabel ?? undefined,
+    mobileHelperText: missingLabel
+      ? "Completá lo que falta para continuar"
+      : "¡Todo listo! Solo falta confirmar.",
   });
 
   if (itemCount === 0) return null;
@@ -871,14 +882,19 @@ export default function CheckoutEntregaPage() {
       {/* Header compartido (Brandon 2026-06-01): mismo formato que datos y
           confirmar — back link + h1 + subtítulo, tamaños y padding unificados. */}
       <CheckoutStepHeader
-        backHref="/checkout/datos"
-        backLabel="Volver a tus datos"
-        title="Entrega y pago"
-        lead="Paso 2 de 3."
-        subtitle="Elegí a dónde te lo llevamos y cómo pagás."
+        backHref="/marketplace/carrito"
+        backLabel="Volver al carrito"
+        title="Tus datos y entrega"
+        lead="Paso 1 de 2."
+        subtitle="Quién recibe, a dónde te lo llevamos y cómo pagás."
       />
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
+          {/* ── Identidad (datos + entrega unificados, Brandon 2026-07-06) ── */}
+          <SectionBox kicker="Datos" title="¿Quién recibe?" icon={UserCircle}>
+            <CheckoutIdentitySection />
+          </SectionBox>
+
           {/* ── Direcciones guardadas (si hay) ───────────────────────
                 Brandon, mayo 14 2026: el boton "Usar otra direccion" del
                 picker abre AddAddressFlowModal (paso 1: CTA "Poner ubicacion
