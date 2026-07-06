@@ -1113,8 +1113,9 @@ export default function TiendasClient({
             degradados a H2 para jerarquía limpia H1→H2→H3 (cards). */}
         <h2 className="sm:hidden sr-only">Tiendas y bodegas en {BRAND_GEO.city} con delivery</h2>
 
-        {/* h2 desktop compacto — 1 línea, sin párrafos extra */}
-        <h2 className="hidden sm:block text-2xl lg:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight mb-6">
+        {/* h2 desktop compacto — 1 línea. mb reducido (Brandon 2026-07-06) para
+            acoplar mejor los filtros y que no ocupen tanto. */}
+        <h2 className="hidden sm:block text-2xl lg:text-3xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-tight mb-3">
           Tiendas en <span className="text-[var(--accent)]">{BRAND_GEO.city}</span>
         </h2>
 
@@ -1158,13 +1159,16 @@ export default function TiendasClient({
           <aside
             aria-label="Filtros de tiendas"
             className={cn(
-              "space-y-4 mb-3 lg:space-y-5 lg:mb-0",
+              // Compacto por defecto (barra slim); roomier solo como sidebar.
+              "mb-2 space-y-2.5",
               manyStores &&
-                "lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]",
+                "lg:mb-0 lg:space-y-5 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]",
             )}
           >
-            {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
-              filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
+            {/* Encabezado "Filtros · N | Limpiar" — SOLO en modo sidebar (muchas
+              tiendas). Con la barra slim es redundante (la fila de chips activos
+              ya trae "Limpiar todo"). Brandon 2026-07-06 (compactar). */}
+            {manyStores && (
             <div className="hidden lg:flex items-center justify-between gap-2 pb-3 border-b border-[var(--rule-base)]">
               <div className="flex min-w-0 items-center gap-2">
                 <SlidersHorizontal
@@ -1191,6 +1195,7 @@ export default function TiendasClient({
                 </button>
               )}
             </div>
+            )}
 
             {/* Chip "Repetir pedido" (Brandon 2026-06-10) — antes era una barra en
               la primera sección. Ahora pastilla compacta en los filtros. Solo

@@ -150,22 +150,29 @@ function formatNextOpening(iso?: string | null): string | null {
 }
 
 function ClosedNowOverlay({ nextOpeningLabel }: { nextOpeningLabel?: string | null }) {
+  // Brandon 2026-07-06: rediseño minimalista — fuera el gris pesado que tapaba la
+  // foto. Ahora: velo blanco MUY sutil (se lee "en pausa" sin ocultar la tienda)
+  // + pill limpio arriba-izquierda con el estado. La foto de la tienda se sigue
+  // viendo (más apetecible que un rectángulo gris).
+  const opensAt = nextOpeningLabel?.replace(/^Abre\s+/i, "") ?? null;
   return (
-    <div
-      aria-hidden
-      className="absolute inset-0 z-10 bg-linear-to-br from-slate-900/55 via-slate-800/55 to-slate-900/55 flex flex-col items-center justify-center text-center pointer-events-none backdrop-blur-[1px]"
-    >
-      <div className="inline-flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-slate-100 text-slate-700 shadow-lg">
-        <Moon className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+    <div aria-hidden className="absolute inset-0 z-10 pointer-events-none">
+      {/* Velo tenue — atenúa apenas, no tapa. */}
+      <div className="absolute inset-0 bg-white/45 dark:bg-gray-950/45" />
+      {/* Pill de estado — frosted, minimalista. */}
+      <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 shadow-sm backdrop-blur-sm dark:bg-gray-950/90">
+          <Moon className="h-3.5 w-3.5 text-[var(--text-secondary)]" strokeWidth={2.25} />
+          <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide text-[var(--text-primary)]">
+            Cerrada
+          </span>
+        </span>
+        {opensAt && (
+          <span className="inline-flex items-center rounded-full bg-[var(--accent)]/92 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-white shadow-sm backdrop-blur-sm">
+            Abre {opensAt}
+          </span>
+        )}
       </div>
-      <p className="mt-2 px-3 text-sm sm:text-base font-extrabold uppercase tracking-widest text-white drop-shadow-md">
-        Cerrada ahora
-      </p>
-      {nextOpeningLabel && (
-        <p className="mt-1 px-3 text-xs sm:text-sm font-medium text-white/90 drop-shadow">
-          {nextOpeningLabel}
-        </p>
-      )}
     </div>
   );
 }

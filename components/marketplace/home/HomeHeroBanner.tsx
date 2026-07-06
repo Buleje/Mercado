@@ -85,7 +85,7 @@ function CompactPromoCard({ banner }: { banner: PromoBanner }) {
       href={banner.ctaHref || "/tiendas"}
       onClick={() => trackBanner("click", [banner.id])}
       aria-label={banner.title || banner.ctaLabel || "Promoción"}
-      className="group relative flex h-[116px] flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-soft)] p-4 text-white shadow-sm transition-transform hover:-translate-y-0.5 sm:h-[128px]"
+      className="group relative flex h-[150px] flex-col justify-between overflow-hidden rounded-2xl border border-[var(--rule-soft)] p-4 text-white shadow-sm transition-transform hover:-translate-y-0.5 sm:h-[184px] sm:p-5"
       style={bg ? { background: bg } : undefined}
     >
       {hasImage && (
@@ -105,12 +105,12 @@ function CompactPromoCard({ banner }: { banner: PromoBanner }) {
       )}
       <div className="relative z-10">
         {banner.title && (
-          <p className="text-sm font-extrabold leading-tight line-clamp-2 drop-shadow">
+          <p className="text-base font-extrabold leading-tight line-clamp-2 drop-shadow sm:text-lg">
             {banner.title}
           </p>
         )}
         {banner.subtitle && (
-          <p className="mt-0.5 text-[length:var(--ts-xs)] font-medium opacity-90 line-clamp-1 drop-shadow">
+          <p className="mt-1 text-[length:var(--ts-xs)] font-medium opacity-90 line-clamp-2 drop-shadow sm:text-sm">
             {banner.subtitle}
           </p>
         )}
@@ -120,6 +120,85 @@ function CompactPromoCard({ banner }: { banner: PromoBanner }) {
         <ArrowRight className="h-3 w-3" strokeWidth={2.75} aria-hidden />
       </span>
     </Link>
+  );
+}
+
+/**
+ * PromoRow — carrusel en FILA de promos (Brandon 2026-07-06, ref Betano): varias
+ * cards anchas en una sola fila, la siguiente asomando, con auto-scroll suave
+ * (pausa al hover) + flechas en desktop. Reemplaza la grilla 2x2 del layout row.
+ */
+function PromoRow({ slides }: { slides: PromoBanner[] }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+
+  const stepPx = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return 0;
+    const card = el.querySelector<HTMLElement>("[data-promo-card]");
+    return card ? card.offsetWidth + 12 : el.clientWidth * 0.85; // +gap-3 (12px)
+  }, []);
+
+  // Auto-scroll: avanza una card cada ~4.5s; al llegar al final, vuelve al inicio.
+  useEffect(() => {
+    if (paused || slides.length <= 1) return;
+    const id = setInterval(() => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 8;
+      el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + stepPx(), behavior: "smooth" });
+    }, 4500);
+    return () => clearInterval(id);
+  }, [paused, slides.length, stepPx]);
+
+  const nudge = (dir: -1 | 1) => {
+    scrollerRef.current?.scrollBy({ left: dir * stepPx(), behavior: "smooth" });
+  };
+
+  return (
+    <div
+      className="group relative w-full"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div
+        ref={scrollerRef}
+        role="list"
+        aria-label="Promociones"
+        className="flex gap-3 overflow-x-auto scroll-smooth [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
+      >
+        {slides.map((b) => (
+          <div
+            key={b.id}
+            data-promo-card
+            role="listitem"
+            className="w-[82vw] shrink-0 [scroll-snap-align:start] sm:w-[60%] md:w-[46%] lg:w-[38%] xl:w-[31%]"
+          >
+            <CompactPromoCard banner={b} />
+          </div>
+        ))}
+      </div>
+      {slides.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={() => nudge(-1)}
+            aria-label="Promoción anterior"
+            className="absolute left-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[var(--text-primary)] opacity-0 shadow-md backdrop-blur transition-all hover:bg-white group-hover:opacity-100 md:inline-flex"
+          >
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={() => nudge(1)}
+            aria-label="Promoción siguiente"
+            className="absolute right-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[var(--text-primary)] opacity-0 shadow-md backdrop-blur transition-all hover:bg-white group-hover:opacity-100 md:inline-flex"
+          >
+            <ChevronRight className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+          </button>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -242,28 +321,10 @@ export default function HomeHeroBanner({
     );
   }
 
-  // Layout "row" (/tiendas): fila/grilla de promos compactas — se ven varias a
-  // la vez (mobile: scroll horizontal; sm+: grilla 2-3 columnas). Sin carrusel.
+  // Layout "row" (/tiendas): carrusel en una sola fila de promos anchas (ref
+  // Betano) — auto-scroll suave + flechas, la siguiente asoma. Sin dots.
   if (layout === "row") {
-    return (
-      <div className="w-full">
-        <div
-          role="list"
-          aria-label="Promociones"
-          className="flex gap-3 overflow-x-auto scrollbar-hide [scroll-snap-type:x_mandatory] sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3"
-        >
-          {slides.map((b) => (
-            <div
-              key={b.id}
-              role="listitem"
-              className="w-[80vw] shrink-0 [scroll-snap-align:start] sm:w-auto"
-            >
-              <CompactPromoCard banner={b} />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <PromoRow slides={slides} />;
   }
 
   return (

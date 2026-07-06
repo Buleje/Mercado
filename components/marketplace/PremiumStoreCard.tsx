@@ -202,7 +202,7 @@ export default function PremiumStoreCard({
               señala "premium" sin tapar contenido. Brandon 2026-05-31. */}
           <div className="relative shrink-0">
             <div
-              className={`h-16 w-16 overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] sm:h-20 sm:w-20 ${isClosed ? "grayscale opacity-80" : ""}`}
+              className={`h-16 w-16 overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] sm:h-20 sm:w-20 ${isClosed ? "opacity-90" : ""}`}
             >
               {logo ? (
                 <Image
