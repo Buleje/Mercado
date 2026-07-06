@@ -494,6 +494,14 @@ export default function TiendasClient({
     (sortKey !== "relevance" ? 1 : 0) +
     (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0);
 
+  // Audit #7 (Brandon 2026-07-05): con catálogo chico (≤6 tiendas) y SIN filtros
+  // activos, el panel de filtros (calificación/pago/zona/categoría) queda
+  // sobredimensionado — la lista se recorre de un vistazo. Lo ocultamos y la
+  // lista va a ancho completo. Con filtros activos SÍ se muestra (para ajustar/
+  // limpiar). El sort + vista lista/mapa viven en la toolbar, no se pierden.
+  const compactFilters =
+    stores.length > 0 && stores.length <= 6 && activeFilterCount === 0;
+
   // Retry counter — bump para re-ejecutar el useEffect del fetch
   const [retryKey, setRetryKey] = useState(0);
 
@@ -1051,7 +1059,7 @@ export default function TiendasClient({
              En < lg (mobile + tablet): los filtros y el grid quedan en flujo
              normal (columna única) igual que antes.
              En lg+: aside sticky izquierda + main derecha. */}
-        <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 lg:items-start">
+        <div className={compactFilters ? "" : "lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 lg:items-start"}>
           {/*
           Brandon 2026-05-21 v3 — eliminados los chips legacy "Abierto ahora /
           4.5 o más / Sin mínimo" (componente QuickFilterChips) que se
@@ -1081,6 +1089,8 @@ export default function TiendasClient({
             separados del grid por un hairline a la derecha (lg:border-r). Mismo
             lenguaje que QuickFilterToggle: radios sutiles, contornos en vez de
             fondos difuminados, estado activo = contorno oscuro sólido. */}
+          {/* Audit #7: panel de filtros oculto en catálogo chico sin filtros. */}
+          {!compactFilters && (
           <aside
             aria-label="Filtros de tiendas"
             className="space-y-4 mb-3 lg:space-y-5 lg:mb-0 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]"
@@ -1511,6 +1521,7 @@ export default function TiendasClient({
               clear-all ya viven dentro del drawer de filtros — no necesitamos
               un toolbar separado para ellos. */}
           </aside>
+          )}
 
           {/* ── MAIN: Grid de tiendas ── */}
           <div className="min-w-0">
