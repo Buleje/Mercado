@@ -89,6 +89,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
+import { MARKETPLACE_VERTICALS } from "@/lib/marketplace/verticals";
 
 // Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
 
@@ -556,27 +557,53 @@ async function CategoriesGrid() {
   // (misma fuente que header + mega-menú + carruseles). getProductCategories ya
   // devuelve solo categorías con ≥1 producto real (cero muertas), ordenadas por
   // cantidad. Los rubros de tienda siguen navegables desde /tiendas.
-  const raw = await MarketplacePublicDB.getProductCategories().catch(() => []);
-  const cats: SuperadminCategory[] = raw
-    .filter((c) => c.id && c.count > 0)
-    .map((c) => ({
-      id: c.id,
-      label: prettyCatLabel(c.id),
-      description: `${c.count} producto${c.count === 1 ? "" : "s"}`,
-      imageUrl: null,
-    }));
+  // Audit #3 (separar rubros): `flat` = todas las categorías (autoritativo,
+  // nada se pierde). Las llamadas por-vertical solo definen a qué GRUPO va cada
+  // una → así "Madera aserrada" cae en Ferretería y no al lado de "Postres".
+  const flat = (await MarketplacePublicDB.getProductCategories().catch(() => []))
+    .filter((c) => c.id && c.count > 0);
+  if (flat.length === 0) return null;
 
-  // Las 2 con más productos van destacadas (XL); el resto al grid chico.
-  const featured = cats.slice(0, 2);
-  const secondary = cats.slice(2);
+  const perVertical = await Promise.all(
+    MARKETPLACE_VERTICALS.map((v) =>
+      MarketplacePublicDB.getProductCategories(v.storeCategories).catch(() => []),
+    ),
+  );
+  // catId → primer verticalId que la contiene (orden = MARKETPLACE_VERTICALS).
+  const catVertical = new Map<string, string>();
+  perVertical.forEach((vc, i) => {
+    const vId = MARKETPLACE_VERTICALS[i].id;
+    for (const c of vc) {
+      const k = c.id.toLowerCase();
+      if (c.id && c.count > 0 && !catVertical.has(k)) catVertical.set(k, vId);
+    }
+  });
 
-  if (cats.length === 0) return null;
+  const toCat = (c: { id: string; count: number }): SuperadminCategory => ({
+    id: c.id,
+    label: prettyCatLabel(c.id),
+    description: `${c.count} producto${c.count === 1 ? "" : "s"}`,
+    imageUrl: null,
+  });
+  const OTHER = "__otros";
+  const buckets = new Map<string, SuperadminCategory[]>();
+  for (const c of flat) {
+    const vId = catVertical.get(c.id.toLowerCase()) ?? OTHER;
+    const arr = buckets.get(vId) ?? [];
+    arr.push(toCat(c));
+    buckets.set(vId, arr);
+  }
+  // Grupos en el orden de los verticales; "otros" (sin vertical) al final.
+  const groups: Array<{ key: string; label: string; cats: SuperadminCategory[] }> = [];
+  for (const v of MARKETPLACE_VERTICALS) {
+    const gcats = buckets.get(v.id);
+    if (gcats?.length) groups.push({ key: v.id, label: v.label, cats: gcats });
+  }
+  const otros = buckets.get(OTHER);
+  if (otros?.length) groups.push({ key: OTHER, label: "Más", cats: otros });
 
-  // Brandon 2026-06-12: con POCAS categorías el split featured-XL + grid-de-6
-  // dejaba huecos enormes. Si hay ≤4 rubros, una sola fila ADAPTATIVA donde las
-  // cards se reparten todo el ancho (auto-fit) y crecen para llenarlo. Con >4
-  // volvemos al layout featured + secundarias (que ya llena bien).
-  const fewCats = cats.length <= 4;
+  // Si todo cayó en un solo grupo, ocultamos los encabezados (serían ruido).
+  const showGroupLabels = groups.length > 1;
 
   return (
     <section
@@ -592,146 +619,44 @@ async function CategoriesGrid() {
           actionHref="/tiendas"
         />
 
-        {/* ── Pocas categorías → fila adaptativa que llena todo el ancho ── */}
-        {fewCats && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 sm:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
-            {cats.map((c, idx) => (
-              <Link
-                key={c.id}
-                href={hrefForCategory(c.id)}
-                className="group relative flex items-center gap-3 sm:gap-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-6 hover:border-[var(--accent)] transition-colors overflow-hidden min-h-[108px] sm:min-h-[132px]"
-              >
-                <span className="relative inline-flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-[var(--surface-sunken)] shrink-0 ring-1 ring-[var(--rule-soft)] overflow-hidden">
-                  {c.imageUrl ? (
-                    <Image
-                      src={c.imageUrl}
-                      alt={`${c.label} en ${BRAND_GEO.city} con delivery rápido`}
-                      fill
-                      sizes="(min-width: 640px) 80px, 64px"
-                      className="object-cover"
-                      priority={idx === 0}
-                    />
-                  ) : (() => {
-                    const CatIcon = getProductCategoryIcon(c.id);
-                    return (
-                      <CatIcon className="h-8 w-8 sm:h-10 sm:w-10 text-[var(--accent)]" strokeWidth={1.5} aria-hidden />
-                    );
-                  })()}
-                </span>
-                <div className="relative min-w-0 flex-1">
-                  <h3 className="text-lg sm:text-2xl font-black tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2">
-                    {c.label}
-                  </h3>
-                  {c.description && (
-                    <p className="mt-1 text-sm text-[var(--text-secondary)] leading-snug line-clamp-2">
-                      {c.description}
-                    </p>
-                  )}
-                  <span className="mt-2.5 inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
-                    Explorar
-                    <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* ── Featured XL: Restaurantes + Supermercado ────────────────── */}
-        {!fewCats && featured.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 mb-3 sm:mb-5">
-            {featured.map((c, idx) => (
-              <Link
-                key={c.id}
-                href={hrefForCategory(c.id)}
-                className="group relative flex items-center gap-4 sm:gap-6 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-7 hover:border-[var(--accent)] transition-colors overflow-hidden min-h-[120px] sm:min-h-[150px]"
-              >
-                {/* Imagen superadmin si existe, sino icono Lucide como fallback */}
-                <span
-                  className="relative inline-flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-[var(--surface-sunken)] shrink-0 ring-1 ring-[var(--rule-soft)] overflow-hidden"
-                >
-                  {c.imageUrl ? (
-                    <Image
-                      src={c.imageUrl}
-                      alt={`${c.label} en ${BRAND_GEO.city} con delivery rápido`}
-                      fill
-                      sizes="(min-width: 640px) 96px, 80px"
-                      className="object-cover"
-                      // Audit 2026-05-17 02-P1-02: featured[0] (Restaurante) es LCP
-                      // candidate above-the-fold mobile. priority elimina ~200ms.
-                      priority={idx === 0}
-                    />
-                  ) : (() => {
-                    const CatIcon = getProductCategoryIcon(c.id);
-                    return (
-                      <CatIcon
-                        className="h-10 w-10 sm:h-14 sm:w-14 text-[var(--accent)]"
-                        strokeWidth={1.5}
-                        aria-hidden
-                      />
-                    );
-                  })()}
-                </span>
-                <div className="relative min-w-0 flex-1">
-                  {/* text-xl hasta lg para que "Restaurantes" (12 chars) entre
-                      en 1 línea al lado de la imagen; text-3xl solo en lg+ donde
-                      la card es ancha. Sin break-words (rompía a mitad de palabra). */}
-                  <h3 className="text-xl lg:text-3xl font-black tracking-tight text-[var(--text-primary)] leading-tight">
-                    {c.label}
-                  </h3>
-                  {c.description && (
-                    <p className="mt-1.5 sm:mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-snug">
-                      {c.description}
-                    </p>
-                  )}
-                  <span className="mt-3 sm:mt-4 inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)] group-hover:gap-2.5 transition-all">
-                    Explorar
-                    <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* ── Secondary: categorías más chicas (3 cols mobile, 6 desktop) ── */}
-        {!fewCats && secondary.length > 0 && (
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
-            {secondary.map((c) => (
-              <Link
-                key={c.id}
-                href={hrefForCategory(c.id)}
-                className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] transition-colors"
-              >
-                <span
-                  className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] overflow-hidden ring-1 ring-[var(--rule-soft)] shrink-0"
-                >
-                  {c.imageUrl ? (
-                    <Image
-                      src={c.imageUrl}
-                      alt={`${c.label} con delivery en ${BRAND_GEO.city}`}
-                      width={64}
-                      height={64}
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (() => {
-                    const CatIcon = getProductCategoryIcon(c.id);
-                    return (
-                      <CatIcon
-                        className="h-7 w-7 sm:h-8 sm:w-8 text-[var(--accent)]"
-                        strokeWidth={1.75}
-                        aria-hidden
-                      />
-                    );
-                  })()}
-                </span>
-                <span className="text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
-                  {c.label}
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
+        {/* ── Categorías AGRUPADAS por vertical (audit #3): Comida · Bodega ·
+             Ferretería… con encabezado → separa "delivery de comida" de
+             "ferretería/insumos" (que no salga "Madera aserrada" junto a
+             "Postres"). Tiles uniformes; si todo cae en un grupo, sin encabezados. ── */}
+        <div className="space-y-6 sm:space-y-8">
+          {groups.map((g) => (
+            <div key={g.key}>
+              {showGroupLabels && (
+                <h3 className="mb-3 text-sm font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+                  {g.label}
+                </h3>
+              )}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
+                {g.cats.map((c) => {
+                  const CatIcon = getProductCategoryIcon(c.id);
+                  return (
+                    <Link
+                      key={c.id}
+                      href={hrefForCategory(c.id)}
+                      className="group flex flex-col items-center gap-2 sm:gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 hover:border-[var(--accent)] transition-colors"
+                    >
+                      <span className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-soft)] shrink-0">
+                        <CatIcon
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-[var(--accent)]"
+                          strokeWidth={1.75}
+                          aria-hidden
+                        />
+                      </span>
+                      <span className="text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-center text-[var(--text-primary)] leading-tight line-clamp-2 group-hover:text-[var(--accent)] transition-colors">
+                        {c.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
