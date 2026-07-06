@@ -111,10 +111,8 @@ export default function PaymentMethodCard({
         )}
         <p
           className={cn(
-            "tracking-[var(--ls-tight)] leading-none truncate",
-            brandColor
-              ? "text-base sm:text-lg font-bold"
-              : "text-[length:var(--ts-sm)] sm:text-base font-semibold text-[var(--text-primary)]",
+            "tracking-[var(--ls-tight)] leading-none truncate text-[length:var(--ts-sm)] sm:text-base",
+            brandColor ? "font-bold" : "font-semibold text-[var(--text-primary)]",
           )}
           style={brandColor && !selected ? { color: brandColor } : undefined}
         >
