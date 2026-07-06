@@ -27,6 +27,21 @@ import {
   haversineKm,
   ZONE_COORDS,
 } from "@/components/marketplace/useMarketplaceGeo";
+// Agrupación por "mundo" (Comida/Bodega/Ferretería/Electro/Farmacia) en el
+// estado de navegación por defecto — mismo taxonomía que la home y los chips.
+import {
+  MARKETPLACE_VERTICALS,
+  verticalForStoreCategory,
+} from "@/lib/marketplace/verticals";
+import {
+  UtensilsCrossed,
+  ShoppingBasket,
+  Wrench,
+  Smartphone,
+  Pill,
+  Store as StoreIcon,
+  type LucideIcon,
+} from "@buleje/design-system/icons";
 
 // Drawer "Vista rápida" (peek + add sin salir de /tiendas). Lazy — usa
 // framer-motion; solo se carga al primer click en una card premium.
@@ -694,6 +709,51 @@ export interface StoreChipFields {
   acceptsFiado: boolean;
 }
 
+// Icono por vertical — mismo mapping que MarketplaceVerticalChips (single-source
+// de la taxonomía en lib/marketplace/verticals). "Otras" cae al icono Store.
+const VERTICAL_ICONS: Record<string, LucideIcon> = {
+  comida: UtensilsCrossed,
+  bodega: ShoppingBasket,
+  ferreteria: Wrench,
+  electro: Smartphone,
+  farmacia: Pill,
+};
+
+/**
+ * StoreGrid — grilla responsiva de cards. Extraída para reusarla tanto en el
+ * listado plano (con filtros activos) como en cada sección por categoría.
+ */
+const StoreGrid = memo(function StoreGrid({
+  stores,
+  lastOrdersByStore,
+  userCoords,
+  ariaLabel,
+}: {
+  stores: MarketplaceStore[];
+  lastOrdersByStore: Record<string, LastOrderInfo>;
+  userCoords?: { lat: number; lng: number } | null;
+  ariaLabel: string;
+}) {
+  return (
+    <div
+      role="list"
+      aria-label={ariaLabel}
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+    >
+      {stores.map((store, i) => (
+        <div key={store.id} role="listitem">
+          <StoreCardWrapper
+            store={store}
+            index={i}
+            lastOrder={lastOrdersByStore[store.slug]}
+            userCoords={userCoords}
+          />
+        </div>
+      ))}
+    </div>
+  );
+});
+
 export default function MarketplaceStoresView({
   stores: _stores,
   // premiumProducts: audit #5 — ya no se usa (todas las tiendas usan la card
@@ -765,6 +825,44 @@ export default function MarketplaceStoresView({
     while (premiums[pi]) out.push(premiums[pi++]);
     return out;
   }, [filteredStores]);
+
+  // ── Agrupación por categoría (Brandon 2026-07-05) ──────────────────────────
+  // En el estado de navegación por defecto (sin búsqueda / filtro / zona / geo /
+  // chips) el directorio se organiza en secciones por "mundo" — Comida, Bodega,
+  // Ferretería, Electro, Farmacia — cada una con su encabezado + icono. Así el
+  // vecino escanea por tipo de tienda en vez de una grilla plana. Con CUALQUIER
+  // filtro activo volvemos al grid plano (el resultado ya está acotado).
+  const isDefaultBrowse =
+    !search && (!category || category === "todos") && !zone && !geoActive && chips.size === 0;
+
+  const verticalGroups = useMemo(() => {
+    if (!isDefaultBrowse) return null;
+    const buckets = new Map<string, MarketplaceStore[]>();
+    for (const s of orderedStores) {
+      const vId = verticalForStoreCategory(s.category) ?? "otros";
+      const arr = buckets.get(vId);
+      if (arr) arr.push(s);
+      else buckets.set(vId, [s]);
+    }
+    const groups: { id: string; label: string; Icon: LucideIcon; stores: MarketplaceStore[] }[] =
+      [];
+    // Orden de secciones = MARKETPLACE_VERTICALS; "Otras tiendas" al final.
+    for (const v of MARKETPLACE_VERTICALS) {
+      const arr = buckets.get(v.id);
+      if (arr && arr.length) {
+        groups.push({ id: v.id, label: v.label, Icon: VERTICAL_ICONS[v.id] ?? StoreIcon, stores: arr });
+      }
+    }
+    const otras = buckets.get("otros");
+    if (otras && otras.length) {
+      groups.push({ id: "otros", label: "Otras tiendas", Icon: StoreIcon, stores: otras });
+    }
+    return groups;
+  }, [isDefaultBrowse, orderedStores]);
+
+  // Solo agrupamos si hay ≥2 mundos distintos — con uno solo, un encabezado
+  // gigante para toda la página es ruido. En ese caso: grid plano.
+  const showGroups = verticalGroups !== null && verticalGroups.length >= 2;
 
   return (
     <>
@@ -895,39 +993,52 @@ export default function MarketplaceStoresView({
         </div>
       )}
 
-      {/* Store grid */}
-      {!loading && !error && filteredStores.length > 0 && (
-        <div
-          role="list"
-          aria-label={`${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""} encontrada${filteredStores.length !== 1 ? "s" : ""}`}
-          // Brandon 2026-05-21 rediseño UX: 1 col mobile (modelo Doordash/
-          // Airbnb/Yelp/Uber Eats) en lugar de 2 cols compactas.
-          // Razón: Buleje tiene 3-6 tiendas hoy, density NO es prioridad.
-          // Cards full-width mobile dan:
-          // - imagen hero 360×180 (en vez de 150×100 squeezed)
-          // - nombre tienda completo sin truncate
-          // - rating + zona + tiempo de entrega legibles
-          // - mejor tap target para conversión
-          // Desktop v2 (2026-05-26): sidebar ocupa 280px → el grid principal
-          // usa 2 cols en lg (~720px disponibles) y 3 cols en xl (~960px+).
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mt-6"
-        >
-          {orderedStores.map((store, i) => {
-            // Audit #5: TODAS las tiendas usan la card estándar (grid parejo).
-            // Premium/featured van primero + con el realce "Destacada".
-            return (
-              <div key={store.id} role="listitem">
-                <StoreCardWrapper
-                  store={store}
-                  index={i}
-                  lastOrder={lastOrdersByStore[store.slug]}
+      {/* Store grid — agrupado por categoría en navegación por defecto (Brandon
+          2026-07-05); grid plano cuando hay búsqueda/filtro/zona/geo/chip activo
+          (el resultado ya viene acotado, no hace falta seccionar).
+          Grid: 1 col mobile (Doordash/Uber Eats) · 2 en lg (sidebar 280px) ·
+          3 en xl · 4 en 2xl. */}
+      {!loading &&
+        !error &&
+        filteredStores.length > 0 &&
+        (showGroups && verticalGroups ? (
+          <div className="mt-6 space-y-10">
+            {verticalGroups.map((g) => (
+              <section key={g.id} aria-labelledby={`vsec-${g.id}`}>
+                {/* Encabezado del mundo: icono en chip + nombre + conteo. */}
+                <div className="mb-4 flex items-center gap-2.5">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                    <g.Icon className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+                  </span>
+                  <h3
+                    id={`vsec-${g.id}`}
+                    className="text-lg font-extrabold tracking-[-0.01em] text-[var(--text-primary)] sm:text-xl"
+                  >
+                    {g.label}
+                  </h3>
+                  <span className="text-[length:var(--ts-xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+                    {g.stores.length}
+                  </span>
+                </div>
+                <StoreGrid
+                  stores={g.stores}
+                  lastOrdersByStore={lastOrdersByStore}
                   userCoords={userCoords}
+                  ariaLabel={`${g.stores.length} tienda${g.stores.length !== 1 ? "s" : ""} de ${g.label}`}
                 />
-              </div>
-            );
-          })}
-        </div>
-      )}
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6">
+            <StoreGrid
+              stores={orderedStores}
+              lastOrdersByStore={lastOrdersByStore}
+              userCoords={userCoords}
+              ariaLabel={`${filteredStores.length} tienda${filteredStores.length !== 1 ? "s" : ""} encontrada${filteredStores.length !== 1 ? "s" : ""}`}
+            />
+          </div>
+        ))}
 
       {/* Geo active indicator (sr-only) */}
       {geoActive && (
