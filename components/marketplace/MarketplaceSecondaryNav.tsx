@@ -78,6 +78,18 @@ export default function MarketplaceSecondaryNav() {
       hoverCloseTimer.current = null;
     }
     setMenuOpen(true);
+    // Audit #4b: al abrir el mega-menú, cerrar otros popovers (selector de ubicación).
+    window.dispatchEvent(new CustomEvent("buleje:popover-open", { detail: "megamenu" }));
+  }, []);
+
+  // Audit #4b (Brandon 2026-07-05): si se abre OTRO popover (ubicación), cerrar
+  // el mega-menú — antes quedaban ambos superpuestos en pantalla.
+  useEffect(() => {
+    const onOther = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== "megamenu") setMenuOpen(false);
+    };
+    window.addEventListener("buleje:popover-open", onOther);
+    return () => window.removeEventListener("buleje:popover-open", onOther);
   }, []);
 
   const closeMenu = useCallback(() => {

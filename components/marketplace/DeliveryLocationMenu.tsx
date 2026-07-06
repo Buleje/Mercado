@@ -100,6 +100,24 @@ export default function DeliveryLocationMenu({ fallbackLabel }: { fallbackLabel:
     };
   }, [open]);
 
+  // Audit #4b (Brandon 2026-07-05): coordinación entre popovers. Si se abre OTRO
+  // popover (p.ej. el mega-menú de categorías), este se cierra — antes quedaban
+  // superpuestos en pantalla. Al abrir ESTE avisamos con el mismo evento.
+  useEffect(() => {
+    const onOther = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== "location") setOpen(false);
+    };
+    window.addEventListener("buleje:popover-open", onOther);
+    return () => window.removeEventListener("buleje:popover-open", onOther);
+  }, []);
+
+  // Al abrir ESTE, avisar (en effect, NO en el updater de setState — evita
+  // "update during render" al cerrar el otro popover).
+  useEffect(() => {
+    if (open)
+      window.dispatchEvent(new CustomEvent("buleje:popover-open", { detail: "location" }));
+  }, [open]);
+
   const departamentos = useMemo(() => listDepartamentos(), []);
   const provincias = useMemo(() => (depCode ? listProvincias(depCode) : []), [depCode]);
   const distritos = useMemo(
@@ -214,13 +232,54 @@ export default function DeliveryLocationMenu({ fallbackLabel }: { fallbackLabel:
           </div>
 
           <div className="space-y-2.5">
-            {/* País — fijo Perú */}
-            <label className="block">
-              <span className="mb-1 block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">País</span>
-              <select className={cn(selectCls, "opacity-90")} value="PE" disabled aria-label="País">
-                <option value="PE">🇵🇪 Perú</option>
-              </select>
-            </label>
+            {/* Audit #4 (Brandon 2026-07-05): opciones RÁPIDAS arriba (GPS + mapa),
+                antes iban al fondo tras 4 selects en cascada. La zona manual queda
+                abajo como alternativa. Select "País" (siempre Perú) removido. */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={useCurrentLocation}
+                disabled={locating}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-soft)] h-12 px-3 text-sm font-extrabold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-60"
+              >
+                <Navigation className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                {locating ? "Ubicando…" : "Mi ubicación"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMap((s) => !s)}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] h-12 px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+              >
+                {showMap ? "Ocultar mapa" : "Mapa"}
+              </button>
+            </div>
+
+            {address && (
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">{address}</p>
+            )}
+
+            {showMap && (
+              <div className="overflow-hidden rounded-xl border border-[var(--rule-soft)]">
+                <LeafletMap
+                  lat={coords?.lat ?? DEFAULT_COORDS.lat}
+                  lon={coords?.lng ?? DEFAULT_COORDS.lon}
+                  height={180}
+                  onPick={(lat, lng, addr) => {
+                    setCoords({ lat, lng });
+                    setAddress(addr);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* o elegí tu zona manualmente */}
+            <div className="flex items-center gap-2 pt-0.5">
+              <span className="h-px flex-1 bg-[var(--rule-soft)]" aria-hidden />
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                o elegí tu zona
+              </span>
+              <span className="h-px flex-1 bg-[var(--rule-soft)]" aria-hidden />
+            </div>
 
             {/* Departamento */}
             <label className="block">
@@ -254,44 +313,6 @@ export default function DeliveryLocationMenu({ fallbackLabel }: { fallbackLabel:
                 ))}
               </select>
             </label>
-
-            {/* GPS + mapa */}
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={useCurrentLocation}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] h-11 px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-60"
-                disabled={locating}
-              >
-                <Navigation className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                {locating ? "Ubicando…" : "Mi ubicación"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowMap((s) => !s)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] h-11 px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-              >
-                {showMap ? "Ocultar mapa" : "Mapa"}
-              </button>
-            </div>
-
-            {address && (
-              <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">{address}</p>
-            )}
-
-            {showMap && (
-              <div className="overflow-hidden rounded-xl border border-[var(--rule-soft)]">
-                <LeafletMap
-                  lat={coords?.lat ?? DEFAULT_COORDS.lat}
-                  lon={coords?.lng ?? DEFAULT_COORDS.lon}
-                  height={180}
-                  onPick={(lat, lng, addr) => {
-                    setCoords({ lat, lng });
-                    setAddress(addr);
-                  }}
-                />
-              </div>
-            )}
 
             <button
               type="button"
