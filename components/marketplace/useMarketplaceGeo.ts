@@ -60,6 +60,8 @@ export interface MarketplaceStore {
   ownBanner?: boolean;
   /** Fiado Digital — la tienda acepta "compra ahora, paga después". Badge + filtro. */
   acceptsFiado?: boolean;
+  /** Zonas de cobertura de reparto (multi-zona, store-extras). "Llega a N zonas". */
+  coverageZones?: string[];
   // ── Backfill marketplace (TS-Sprint5) — opcionales para no romper consumers ──
   paymentMethods?: string[];
   minOrderAmount?: number;

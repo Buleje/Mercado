@@ -19,6 +19,7 @@ import {
   Check,
   Wallet,
   Clock,
+  Truck,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -302,6 +303,10 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       ? todayHoursLabel(store.openHours as unknown as StoreHours | null | undefined, new Date())
       : null;
 
+  // Multi-zona de cobertura (config del admin en "Mi Tienda"). La zona principal
+  // ya va en la meta; acá señalamos si reparte a más zonas.
+  const coverageCount = Array.isArray(store.coverageZones) ? store.coverageZones.length : 0;
+
   // Rediseño card 2026-06-08 (Brandon): jerarquía limpia → rating · meta · trust
   // · divisor · "Ver tienda". Verificada va inline con el NOMBRE (nameSuffix del
   // DS); el nivel "Destacada" lo señala el anillo teal (isFeatured), sin chip.
@@ -352,6 +357,16 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           <Clock className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden="true" />
           <span className="truncate font-semibold text-[var(--text-secondary)]">
             Hoy {hoursToday}
+          </span>
+        </div>
+      )}
+
+      {/* Multi-zona de cobertura (config del admin) — solo si reparte a 2+ zonas. */}
+      {coverageCount >= 2 && (
+        <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] min-w-0">
+          <Truck className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden="true" />
+          <span className="truncate font-semibold text-[var(--text-secondary)]">
+            Llega a {coverageCount} zonas
           </span>
         </div>
       )}

@@ -58,6 +58,12 @@ export interface InitialStore {
    * (self-serve) o el superadmin.
    */
   acceptsFiado?: boolean;
+  /**
+   * Zonas de cobertura de reparto (multi-zona). Vive en store-extras JSON
+   * ("Mi Tienda"), aparte del `zone` legacy. Alimenta "Llega a N zonas" en la
+   * card y el filtro por zona en /tiendas.
+   */
+  coverageZones?: string[];
 }
 
 export type StoreDisplayTier = "standard" | "featured" | "premium";
@@ -157,6 +163,13 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
     const constructionMap: Record<string, { enabled: boolean; message?: string; updatedAt: string }> =
       await listConstructionMode().catch(() => ({}));
 
+    // Multi-zona de cobertura (store-extras JSON, editable en "Mi Tienda") — para
+    // mostrar "Llega a N zonas" en la card. Bulk lookup por slug, sin migración.
+    const { getStoreExtrasMap } = await import("@/lib/store-extras");
+    const extrasMap = await getStoreExtrasMap(rows.map((r) => r.slug)).catch(
+      () => new Map<string, { coverageZones: string[] }>(),
+    );
+
     // Helpers de horario para derivar isOpenNow + nextOpening en SSR.
     const { isOpenNow: storeIsOpenNow, nextOpening } = await import(
       "@/lib/marketplace-store-hours"
@@ -198,6 +211,7 @@ export async function getInitialMarketplaceStores(): Promise<InitialStore[]> {
         searchBoost: Boolean(benefitsMap.get(s.id)?.searchBoost),
         ownBanner: Boolean(benefitsMap.get(s.id)?.ownBanner),
         acceptsFiado: Boolean(benefitsMap.get(s.id)?.acceptsFiado),
+        coverageZones: extrasMap.get(s.slug)?.coverageZones ?? [],
       };
     });
 
