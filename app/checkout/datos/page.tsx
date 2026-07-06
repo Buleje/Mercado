@@ -280,7 +280,7 @@ export default function CheckoutDatosPage() {
         subtitle="Confirma con qué cuenta compras hoy."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 sm:gap-8 items-start pb-28 lg:pb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
         <div className="space-y-4 sm:space-y-5">
           {/* ── AccountPicker — siempre que haya cuentas guardadas ────
                 Incluye "Iniciar sesion con otra cuenta" abajo.            */}

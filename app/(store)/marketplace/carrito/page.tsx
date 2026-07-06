@@ -486,7 +486,7 @@ export default function CarritoPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3 sm:gap-4 lg:gap-5 items-start pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-8">
           <section aria-label="Productos en tu carrito" className="space-y-3 sm:space-y-4">
             {/* Progreso hacia envío gratis */}
             <FreeShippingProgress />

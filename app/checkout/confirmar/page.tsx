@@ -992,7 +992,6 @@ export default function CheckoutConfirmarPage() {
             los pasos previos, en confirmar solo necesita ver y aceptar */}
         <div className="hidden lg:block">
           <CheckoutSummary
-            variant="review"
             ctaLabel={
               submitting
                 ? "Procesando..."
@@ -1003,6 +1002,7 @@ export default function CheckoutConfirmarPage() {
             onCtaClick={handleConfirm}
             ctaDisabled={submitting || needsPaymentChoice}
             ctaLoading={submitting}
+            showItems
             couponDiscount={couponDiscountTotal}
             loyaltyDiscount={loyaltyDiscountTotal}
             helperText={
