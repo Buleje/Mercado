@@ -1193,6 +1193,11 @@ export default function TiendasClient({
             className={cn(
               // Compacto por defecto (barra slim); roomier solo como sidebar.
               "mb-2 space-y-2",
+              // Filtros STICKY (Brandon 2026-07-06): con la barra slim, se pega
+              // bajo el nav al scrollear (full-bleed + fondo para tapar lo de
+              // atrás). Con sidebar (muchas tiendas) usa su propio sticky lg.
+              !manyStores &&
+                "sticky top-16 z-30 -mx-4 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 px-4 py-2 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
               manyStores &&
                 "lg:mb-0 lg:space-y-5 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]",
             )}

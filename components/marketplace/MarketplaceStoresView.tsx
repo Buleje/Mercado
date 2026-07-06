@@ -64,6 +64,7 @@ const StoreDistanceMapModal = dynamic(
 import type { QuickChipId } from "@/components/marketplace/QuickFilterChips";
 import { StoreCardCanonical } from "@buleje/design-system";
 import StorePromoBanner from "./StorePromoBanner";
+import { PaymentMethodIcon } from "./PaymentIcons";
 // Nivel "Premium" (beneficio superadmin): card de fila completa con preview de
 // productos. Se re-habilita para que /tiendas honre los niveles que promete la
 // previsualizacion de /superadmin/stores (Brandon 2026-07-05).
@@ -337,8 +338,9 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
       {/* sr-only enriched aria description (rating, zone, vacación). */}
       <span className="sr-only">{ariaLabel}</span>
 
-      {/* Rating + reseñas — inline, prominente */}
-      {store.rating > 0 && (
+      {/* Rating + reseñas — o badge "Nueva" si aún no tiene reseñas (recién
+          abierta). Brandon 2026-07-06 (descubrimiento). */}
+      {store.rating > 0 ? (
         <div className="flex items-center gap-1 text-[length:var(--ts-xs)]">
           <Star className="h-3.5 w-3.5 shrink-0 fill-current text-[var(--accent)]" aria-hidden="true" />
           <span className="font-extrabold tabular-nums text-[var(--text-primary)]">
@@ -350,6 +352,11 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
             </span>
           )}
         </div>
+      ) : (
+        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[var(--data-success-500)]/12 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
+          Nueva
+        </span>
       )}
 
       {/* Meta: categoría · zona · delivery time (1 línea, truncate). En celular
@@ -419,6 +426,19 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           )}
         </div>
       )}
+
+      {/* Pagos aceptados — estándar Buleje (Yape/Plin/Efectivo). Trust de un
+          vistazo (Brandon 2026-07-06). Fila sutil bajo los chips. */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+          Pagás:
+        </span>
+        <span className="flex items-center gap-1">
+          {(["yape", "plin", "efectivo"] as const).map((m) => (
+            <PaymentMethodIcon key={m} method={m} size="sm" />
+          ))}
+        </span>
+      </div>
 
       {/* Divisor + acción "Ver tienda" — el corazón/compartir (overlay absoluto
           bottom-right) alinean a la derecha de esta fila. pr-16 reserva su lugar. */}
