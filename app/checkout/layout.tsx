@@ -20,6 +20,7 @@ import MotionProvider from "@/components/MotionProvider";
 import CheckoutShell from "@/components/marketplace/checkout/CheckoutShell";
 import type { CheckoutStep } from "@/components/marketplace/checkout/CheckoutStepper";
 import { CheckoutDataProvider } from "@/contexts/checkout-data-context";
+import { CheckoutSummaryProvider } from "@/contexts/checkout-summary-context";
 
 function pathToStep(pathname: string | null): CheckoutStep {
   if (!pathname) return "datos";
@@ -38,15 +39,17 @@ export default function CheckoutLayout({ children }: { children: React.ReactNode
   return (
     <MarketplaceStoreProviders tenantSlug="main">
       <CheckoutDataProvider>
-        <MotionProvider>
-          <Suspense fallback={null}>
-            {isAuthGate ? (
-              <div className="min-h-screen bg-[var(--surface-canvas)]">{children}</div>
-            ) : (
-              <CheckoutShell current={current}>{children}</CheckoutShell>
-            )}
-          </Suspense>
-        </MotionProvider>
+        <CheckoutSummaryProvider>
+          <MotionProvider>
+            <Suspense fallback={null}>
+              {isAuthGate ? (
+                <div className="min-h-screen bg-[var(--surface-canvas)]">{children}</div>
+              ) : (
+                <CheckoutShell current={current}>{children}</CheckoutShell>
+              )}
+            </Suspense>
+          </MotionProvider>
+        </CheckoutSummaryProvider>
       </CheckoutDataProvider>
     </MarketplaceStoreProviders>
   );

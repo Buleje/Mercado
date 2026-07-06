@@ -35,8 +35,7 @@ import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCustomer, isCustomerProfileComplete } from "@/contexts/customer-context";
 import { useCheckoutData } from "@/hooks/use-checkout-data";
-import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
-import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
+import { useRegisterCheckoutSummary } from "@/contexts/checkout-summary-context";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
 import AccountPicker from "@/components/marketplace/checkout/AccountPicker";
 import {
@@ -184,6 +183,38 @@ export default function CheckoutDatosPage() {
     }
   }, [savedCustomer, profileComplete, navigateTo]);
 
+  // ── Invitado: validación + continuar (izado arriba de los early-return para
+  //    registrar el riel de resumen persistente sin violar el orden de hooks) ──
+  const phoneOk = /^9\d{8}$/.test(guestPhone.trim());
+  const guestValid = guestName.trim().length >= 2 && phoneOk;
+  const handleGuestContinue = useCallback(() => {
+    if (!(guestName.trim().length >= 2 && /^9\d{8}$/.test(guestPhone.trim()))) return;
+    setCustomer({ name: guestName.trim(), phone: guestPhone.trim(), email: "" });
+    navigateTo("/checkout/entrega", "Calculando tu entrega");
+  }, [guestName, guestPhone, setCustomer, navigateTo]);
+
+  // Riel de resumen persistente (CheckoutShell lo dibuja): config según branch.
+  useRegisterCheckoutSummary(
+    savedCustomer
+      ? {
+          ctaLabel: profileComplete ? "Ir al resumen" : "Continuar a entrega",
+          onCtaClick: handleContinue,
+          showItems: true,
+          helperText: profileComplete ? "1 click al resumen" : "Pago al recibir o por Yape",
+          mobileTotal: grandTotal,
+        }
+      : {
+          ctaLabel: "Continuar a la entrega",
+          onCtaClick: handleGuestContinue,
+          ctaDisabled: !guestValid,
+          showItems: false,
+          helperText: "Pago al recibir o Yape · sin sorpresas",
+          mobileTotal: grandTotal,
+          mobileCtaLabel: "Continuar",
+          mobileHelperText: "Pago al recibir o Yape",
+        },
+  );
+
   // Mientras hidrata el carrito/checkout, o si el carrito está vacío (el effect
   // de arriba redirige a /marketplace/carrito), mostramos un overlay de carga en
   // vez de un blanco que parece "colgado". Brandon 2026-06-08 — fix "se queda
@@ -204,13 +235,8 @@ export default function CheckoutDatosPage() {
   // /entrega para la dirección. El pedido se cierra con pago al recibir / Yape
   // (sin comprobante pre-subido, que sí requiere login).
   if (!savedCustomer) {
-    const phoneOk = /^9\d{8}$/.test(guestPhone.trim());
-    const guestValid = guestName.trim().length >= 2 && phoneOk;
-    const handleGuestContinue = () => {
-      if (!guestValid) return;
-      setCustomer({ name: guestName.trim(), phone: guestPhone.trim(), email: "" });
-      navigateTo("/checkout/entrega", "Calculando tu entrega");
-    };
+    // El riel de resumen (desktop) + el bar CTA (mobile) los dibuja el layout
+    // (CheckoutShell) desde la config registrada arriba. Acá solo la sección.
     return (
       <>
         <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
@@ -221,41 +247,35 @@ export default function CheckoutDatosPage() {
           lead="Paso 1 de 3."
           subtitle="Déjanos tu nombre y WhatsApp para coordinar la entrega."
         />
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
-          <div className="space-y-4">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleGuestContinue();
-              }}
-              className="rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-6 space-y-4"
-            >
-              <div>
-                <label htmlFor="guest-name" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Nombre completo</label>
-                <input id="guest-name" value={guestName} onChange={(e) => { nameTouchedRef.current = true; setGuestName(e.target.value); }} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
-              </div>
-              <div>
-                <label htmlFor="guest-phone" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">WhatsApp</label>
-                <input id="guest-phone" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="9XXXXXXXX" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
-                {guestPhone.length > 0 && !phoneOk && <p className="mt-2 ml-1 text-sm text-[var(--data-error-500)]">Tu WhatsApp debe tener 9 dígitos y empezar con 9.</p>}
-                {phoneOk && recognizedFirstName && (
-                  <p className="mt-2 ml-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
-                    <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                    ¡Hola de nuevo, {recognizedFirstName}! Te reconocimos.
-                  </p>
-                )}
-              </div>
-              <button type="submit" disabled={!guestValid} className="h-12 w-full rounded-2xl bg-[var(--accent)] text-base font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 lg:hidden">
-                Continuar a la entrega
-              </button>
-              <p className="text-center text-base text-[var(--text-tertiary)]">¿Ya tienes cuenta? <Link href="/checkout/auth?returnTo=%2Fcheckout%2Fdatos" className="font-bold text-[var(--accent)] underline underline-offset-2">Inicia sesión</Link></p>
-            </form>
-          </div>
-          <div className="hidden lg:block">
-            <CheckoutSummary ctaLabel="Continuar a la entrega" onCtaClick={handleGuestContinue} ctaDisabled={!guestValid} showItems={false} helperText="Pago al recibir o Yape · sin sorpresas" />
-          </div>
+        <div className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleGuestContinue();
+            }}
+            className="rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-6 space-y-4"
+          >
+            <div>
+              <label htmlFor="guest-name" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Nombre completo</label>
+              <input id="guest-name" value={guestName} onChange={(e) => { nameTouchedRef.current = true; setGuestName(e.target.value); }} autoFocus placeholder="Ej. María Pérez" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
+            </div>
+            <div>
+              <label htmlFor="guest-phone" className="mb-2 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">WhatsApp</label>
+              <input id="guest-phone" value={guestPhone} onChange={(e) => setGuestPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} inputMode="numeric" placeholder="9XXXXXXXX" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] focus:ring-offset-2 focus:ring-offset-[var(--surface-raised)]" />
+              {guestPhone.length > 0 && !phoneOk && <p className="mt-2 ml-1 text-sm text-[var(--data-error-500)]">Tu WhatsApp debe tener 9 dígitos y empezar con 9.</p>}
+              {phoneOk && recognizedFirstName && (
+                <p className="mt-2 ml-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
+                  <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                  ¡Hola de nuevo, {recognizedFirstName}! Te reconocimos.
+                </p>
+              )}
+            </div>
+            <button type="submit" disabled={!guestValid} className="h-12 w-full rounded-2xl bg-[var(--accent)] text-base font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 lg:hidden">
+              Continuar a la entrega
+            </button>
+            <p className="text-center text-base text-[var(--text-tertiary)]">¿Ya tienes cuenta? <Link href="/checkout/auth?returnTo=%2Fcheckout%2Fdatos" className="font-bold text-[var(--accent)] underline underline-offset-2">Inicia sesión</Link></p>
+          </form>
         </div>
-        <CheckoutMobileCtaBar primaryLabel="Total" total={grandTotal} ctaLabel="Continuar" ctaOnClick={handleGuestContinue} helperText="Pago al recibir o Yape" />
       </>
     );
   }
@@ -280,8 +300,7 @@ export default function CheckoutDatosPage() {
         subtitle="Confirma con qué cuenta compras hoy."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
-        <div className="space-y-4 sm:space-y-5">
+      <div className="space-y-4 sm:space-y-5">
           {/* ── AccountPicker — siempre que haya cuentas guardadas ────
                 Incluye "Iniciar sesion con otra cuenta" abajo.            */}
           {accounts.length >= 1 && (
@@ -371,26 +390,6 @@ export default function CheckoutDatosPage() {
             </div>
           )}
         </div>
-
-        {/* CheckoutSummary oculto en mobile — CheckoutMobileCtaBar sticky
-            bottom ya cubre total + CTA continuar (Brandon, mayo 14 2026) */}
-        <div className="hidden lg:block">
-          <CheckoutSummary
-            ctaLabel={profileComplete ? "Ir al resumen" : "Continuar a entrega"}
-            onCtaClick={handleContinue}
-            showItems
-            helperText={profileComplete ? "1 click al resumen" : "Pago al recibir o por Yape"}
-          />
-        </div>
-      </div>
-
-      <CheckoutMobileCtaBar
-        primaryLabel="Total"
-        total={grandTotal}
-        ctaLabel={profileComplete ? "Ir al resumen" : "Continuar a entrega"}
-        ctaOnClick={handleContinue}
-        helperText={profileComplete ? "1 click al resumen" : "Pago al recibir o por Yape"}
-      />
 
       <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
     </>

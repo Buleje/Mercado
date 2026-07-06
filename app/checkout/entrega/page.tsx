@@ -31,8 +31,7 @@ import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCheckoutData } from "@/hooks/use-checkout-data";
 import { useCustomer } from "@/contexts/customer-context";
-import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
-import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
+import { useRegisterCheckoutSummary } from "@/contexts/checkout-summary-context";
 import PaymentMethodCard from "@/components/marketplace/checkout/PaymentMethodCard";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
 import CheckoutCouponFields from "@/components/marketplace/checkout/CheckoutCouponFields";
@@ -824,10 +823,46 @@ export default function CheckoutEntregaPage() {
   const maxRedeemByCart = totalAfterCoupons * 100;
   const maxRedeem = Math.min(loyaltyAvailable, Math.floor(maxRedeemByCart / 100) * 100);
 
-  const showAddressError = touched && !isAddressValid;
+  // Errores de dirección granulares (QA 2026-07-04): distinguimos calle corta
+  // de ubigeo incompleto para que el aviso apunte al campo real.
+  const showStreetError = touched && address.address.trim().length < 5;
+  const showUbigeoError =
+    touched &&
+    (!address.departmentCode || !address.provinceCode || !address.districtCode);
   const cashAmount = Number(payment.cashAmount || 0);
   const cashChange = cashAmount - grandTotal;
   const cashShort = cashAmount > 0 && cashAmount < grandTotal;
+
+  // CTA del riel de resumen (sin evento — handleSubmit es para el <form>).
+  const handleContinue = () => {
+    setTouched(true);
+    if (isAddressValid && allProofsReady)
+      navigateTo("/checkout/confirmar", "Preparando tu resumen");
+  };
+
+  // Riel de resumen persistente — lo dibuja el layout (CheckoutShell).
+  useRegisterCheckoutSummary({
+    ctaLabel: !allProofsReady ? "Subí los comprobantes" : "Revisar pedido",
+    onCtaClick: handleContinue,
+    ctaDisabled: !isAddressValid || !allProofsReady,
+    couponDiscount: couponDiscountTotal,
+    loyaltyDiscount: loyaltyDiscountTotal,
+    showItems: true,
+    helperText: !allProofsReady
+      ? "Falta subir el comprobante de pago"
+      : "Un paso más para confirmar",
+    mobileTotal: Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal),
+    mobileCtaLabel: !allProofsReady ? "Falta comprobante" : "Revisar pedido",
+    mobileDisabledReason: !isAddressValid
+      ? "Completá tu dirección"
+      : !allProofsReady
+        ? "Subí los comprobantes"
+        : undefined,
+    mobileHelperText:
+      isAddressValid && allProofsReady
+        ? "¡Todo listo! Solo falta confirmar."
+        : "Un paso más para confirmar",
+  });
 
   if (itemCount === 0) return null;
 
@@ -843,8 +878,7 @@ export default function CheckoutEntregaPage() {
         subtitle="Elegí a dónde te lo llevamos y cómo pagás."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
           {/* ── Direcciones guardadas (si hay) ───────────────────────
                 Brandon, mayo 14 2026: el boton "Usar otra direccion" del
                 picker abre AddAddressFlowModal (paso 1: CTA "Poner ubicacion
@@ -1026,9 +1060,9 @@ export default function CheckoutEntregaPage() {
                 maxLength={300}
                 autoComplete="street-address"
                 required
-                className={pillCls(showAddressError)}
+                className={pillCls(showStreetError)}
               />
-              {showAddressError && (
+              {showStreetError && (
                 <p className="mt-2 ml-4 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">
                   Ingresá una dirección válida (mínimo 5 caracteres).
                 </p>
@@ -1106,6 +1140,11 @@ export default function CheckoutEntregaPage() {
                 </select>
               </div>
             </div>
+            {showUbigeoError && (
+              <p className="-mt-1 text-[length:var(--ts-2xs)] text-[var(--data-error-500)]">
+                Elegí departamento, provincia y distrito para tu entrega.
+              </p>
+            )}
 
             <div>
               <Label htmlFor="ck-notes">Referencia o instrucciones</Label>
@@ -1451,53 +1490,6 @@ export default function CheckoutEntregaPage() {
               CheckoutMobileCtaBar sticky bottom cubre el rol sin duplicar
               el "Revisar pedido" que ya aparece en el CheckoutSummary. */}
         </form>
-
-        {/* CheckoutSummary oculto en mobile — CheckoutMobileCtaBar sticky
-            bottom ya cubre total + CTA revisar pedido (Brandon, mayo 14 2026) */}
-        <div className="hidden lg:block">
-          <CheckoutSummary
-            ctaLabel={!allProofsReady ? "Subí los comprobantes" : "Revisar pedido"}
-            onCtaClick={() => {
-              setTouched(true);
-              if (isAddressValid && allProofsReady)
-                navigateTo("/checkout/confirmar", "Preparando tu resumen");
-            }}
-            ctaDisabled={!isAddressValid || !allProofsReady}
-            couponDiscount={couponDiscountTotal}
-            loyaltyDiscount={loyaltyDiscountTotal}
-            showItems
-            helperText={
-              !allProofsReady
-                ? "Falta subir el comprobante de pago"
-                : "Un paso más para confirmar"
-            }
-          />
-        </div>
-      </div>
-
-      <CheckoutMobileCtaBar
-        primaryLabel="Total"
-        total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
-        ctaLabel={!allProofsReady ? "Falta comprobante" : "Revisar pedido"}
-        ctaOnClick={() => {
-          setTouched(true);
-          if (isAddressValid && allProofsReady)
-            navigateTo("/checkout/confirmar", "Preparando tu resumen");
-        }}
-        ctaDisabled={!isAddressValid || !allProofsReady}
-        disabledReason={
-          !isAddressValid
-            ? "Completá tu dirección"
-            : !allProofsReady
-              ? "Subí los comprobantes"
-              : undefined
-        }
-        helperText={
-          isAddressValid && allProofsReady
-            ? "¡Todo listo! Solo falta confirmar."
-            : "Un paso más para confirmar"
-        }
-      />
 
       <CheckoutTransitionOverlay show={isPending} label={pendingLabel} />
       {mapInitial && (

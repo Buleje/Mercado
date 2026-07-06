@@ -34,9 +34,8 @@ import { useCheckoutData } from "@/hooks/use-checkout-data";
 import { useCustomer, isCustomerProfileComplete, type Customer } from "@/contexts/customer-context";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
-import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
+import { useRegisterCheckoutSummary } from "@/contexts/checkout-summary-context";
 import CheckoutUpsell from "@/components/marketplace/checkout/CheckoutUpsell";
-import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
 import CheckoutCouponFields from "@/components/marketplace/checkout/CheckoutCouponFields";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
@@ -484,6 +483,31 @@ export default function CheckoutConfirmarPage() {
     persistAddress,
   ]);
 
+  // Riel de resumen persistente — lo dibuja el layout (CheckoutShell). Se
+  // registra antes de cualquier early-return (result screen / carrito vacío).
+  useRegisterCheckoutSummary({
+    ctaLabel: submitting
+      ? "Procesando..."
+      : needsPaymentChoice
+        ? "Elegí cómo pagás"
+        : "Confirmar pedido",
+    onCtaClick: handleConfirm,
+    ctaDisabled: submitting || needsPaymentChoice,
+    ctaLoading: submitting,
+    showItems: true,
+    couponDiscount: couponDiscountTotal,
+    loyaltyDiscount: loyaltyDiscountTotal,
+    helperText: needsPaymentChoice
+      ? "Elegí un método de pago para confirmar"
+      : "Al confirmar aceptás que cada bodega te contacte por WhatsApp",
+    mobileTotal: Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal),
+    mobileCtaLabel: submitting
+      ? "Procesando tu pedido..."
+      : needsPaymentChoice
+        ? "Elegí cómo pagás"
+        : "Confirmar pedido",
+  });
+
   // ── Result screen editorial ─────────────────────────────────────
   if (results.length > 0) {
     const succeeded = results.filter((r) => r.success);
@@ -661,8 +685,7 @@ export default function CheckoutConfirmarPage() {
         subtitle="Verificá que todo esté bien antes de confirmar."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
-        <div className="space-y-4 sm:space-y-5">
+      <div className="space-y-4 sm:space-y-5">
           {/* Auth gate v2 — Brandon 2026-05-18: compactado.
               Antes: aside con padding p-5/p-6 + iframe italic font-serif
               + descripción larga + 2 botones — competía con el CTA primario
@@ -988,53 +1011,7 @@ export default function CheckoutConfirmarPage() {
         {/* Upsell final — "¿Le sumás algo?" (no tapa el CTA principal) */}
         <CheckoutUpsell />
 
-        {/* CheckoutSummary oculto en mobile — el cliente ya revisó todo en
-            los pasos previos, en confirmar solo necesita ver y aceptar */}
-        <div className="hidden lg:block">
-          <CheckoutSummary
-            ctaLabel={
-              submitting
-                ? "Procesando..."
-                : needsPaymentChoice
-                  ? "Elegí cómo pagás"
-                  : "Confirmar pedido"
-            }
-            onCtaClick={handleConfirm}
-            ctaDisabled={submitting || needsPaymentChoice}
-            ctaLoading={submitting}
-            showItems
-            couponDiscount={couponDiscountTotal}
-            loyaltyDiscount={loyaltyDiscountTotal}
-            helperText={
-              needsPaymentChoice
-                ? "Elegí un método de pago para confirmar"
-                : "Al confirmar aceptás que cada bodega te contacte por WhatsApp"
-            }
-          />
-        </div>
         <AuthModal open={authModalOpen} onClose={closeAuthModal} />
-      </div>
-
-      {/* Sticky bottom CTA mobile — consistente con /carrito /datos /entrega */}
-      <CheckoutMobileCtaBar
-        primaryLabel="Total"
-        total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
-        ctaLabel={
-          submitting
-            ? "Procesando tu pedido..."
-            : needsPaymentChoice
-              ? "Elegí cómo pagás"
-              : "Confirmar pedido"
-        }
-        ctaOnClick={handleConfirm}
-        ctaDisabled={submitting || needsPaymentChoice}
-        ctaLoading={submitting}
-        helperText={
-          needsPaymentChoice
-            ? "Elegí un método de pago para confirmar"
-            : "Al confirmar aceptás que cada bodega te contacte por WhatsApp"
-        }
-      />
 
       {/* Modal de detalle del pedido (abierto desde el botón ojo) */}
       <OrderDetailsModal
