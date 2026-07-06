@@ -89,7 +89,6 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
-import { MARKETPLACE_VERTICALS } from "@/lib/marketplace/verticals";
 
 // Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
 
@@ -564,46 +563,21 @@ async function CategoriesGrid() {
     .filter((c) => c.id && c.count > 0);
   if (flat.length === 0) return null;
 
-  const perVertical = await Promise.all(
-    MARKETPLACE_VERTICALS.map((v) =>
-      MarketplacePublicDB.getProductCategories(v.storeCategories).catch(() => []),
-    ),
-  );
-  // catId → primer verticalId que la contiene (orden = MARKETPLACE_VERTICALS).
-  const catVertical = new Map<string, string>();
-  perVertical.forEach((vc, i) => {
-    const vId = MARKETPLACE_VERTICALS[i].id;
-    for (const c of vc) {
-      const k = c.id.toLowerCase();
-      if (c.id && c.count > 0 && !catVertical.has(k)) catVertical.set(k, vId);
-    }
-  });
-
   const toCat = (c: { id: string; count: number }): SuperadminCategory => ({
     id: c.id,
     label: prettyCatLabel(c.id),
     description: `${c.count} producto${c.count === 1 ? "" : "s"}`,
     imageUrl: null,
   });
-  const OTHER = "__otros";
-  const buckets = new Map<string, SuperadminCategory[]>();
-  for (const c of flat) {
-    const vId = catVertical.get(c.id.toLowerCase()) ?? OTHER;
-    const arr = buckets.get(vId) ?? [];
-    arr.push(toCat(c));
-    buckets.set(vId, arr);
-  }
-  // Grupos en el orden de los verticales; "otros" (sin vertical) al final.
-  const groups: Array<{ key: string; label: string; cats: SuperadminCategory[] }> = [];
-  for (const v of MARKETPLACE_VERTICALS) {
-    const gcats = buckets.get(v.id);
-    if (gcats?.length) groups.push({ key: v.id, label: v.label, cats: gcats });
-  }
-  const otros = buckets.get(OTHER);
-  if (otros?.length) groups.push({ key: OTHER, label: "Más", cats: otros });
 
-  // Si todo cayó en un solo grupo, ocultamos los encabezados (serían ruido).
-  const showGroupLabels = groups.length > 1;
+  // Bento (Brandon 2026-07-06): las 2 categorías MÁS GRANDES = cards HERO con
+  // foto real de un producto representativo; el resto = tiles chicos → layout
+  // asimétrico tipo revista. Reemplaza la grilla agrupada por vertical.
+  const featured = flat.slice(0, 2).map(toCat);
+  const rest = flat.slice(2).map(toCat);
+  const sampleImages = await MarketplacePublicDB.getCategorySampleImages(
+    featured.map((c) => c.id),
+  ).catch((): Record<string, string> => ({}));
 
   return (
     <section
@@ -619,67 +593,98 @@ async function CategoriesGrid() {
           actionHref="/tiendas"
         />
 
-        {/* ── Categorías AGRUPADAS por vertical (audit #3): Comida · Bodega ·
-             Ferretería… con encabezado → separa "delivery de comida" de
-             "ferretería/insumos" (que no salga "Madera aserrada" junto a
-             "Postres"). Tiles uniformes; si todo cae en un grupo, sin encabezados. ── */}
-        <div className="space-y-6 sm:space-y-8">
-          {groups.map((g) => (
-            <div key={g.key}>
-              {showGroupLabels && (
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
-                  <span aria-hidden className="inline-block h-4 w-1 rounded-full bg-[var(--accent)]" />
-                  {g.label}
-                </h3>
-              )}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
-                {g.cats.map((c) => {
-                  const CatIcon = getProductCategoryIcon(c.id);
-                  return (
-                    // Brandon 2026-07-06 (rediseño creativo): tile editorial con
-                    // ícono GIGANTE de watermark + wash de acento en reposo que, al
-                    // hover, se rellena con el gradiente teal firma (todo → blanco).
-                    // Muestra el conteo de productos. Un solo ingrediente héroe
-                    // (ícono) por tile, anclado en tokens (DS §5/§7).
-                    <Link
-                      key={c.id}
-                      href={hrefForCategory(c.id)}
-                      className="group relative flex min-h-[108px] flex-col justify-end overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-[transform,box-shadow,border-color] duration-[var(--dur-base)] hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)] sm:min-h-[136px] sm:p-3.5"
-                    >
-                      {/* Wash de acento en reposo → se apaga al hover */}
-                      <span
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)]/[0.07] via-transparent to-transparent transition-opacity duration-[var(--dur-base)] group-hover:opacity-0"
-                      />
-                      {/* Fill del gradiente teal firma en hover */}
-                      <span
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] opacity-0 transition-opacity duration-[var(--dur-base)] group-hover:opacity-100"
-                      />
-                      {/* Ícono gigante de watermark (identidad de la categoría) */}
-                      <CatIcon
-                        aria-hidden
-                        strokeWidth={1.25}
-                        className="pointer-events-none absolute -right-2 -top-2 h-16 w-16 rotate-12 text-[var(--accent)]/[0.14] transition-all duration-[var(--dur-base)] group-hover:scale-110 group-hover:text-white/25 sm:h-20 sm:w-20"
-                      />
-                      {/* Chip de ícono + label + conteo */}
-                      <span className="relative z-10 flex flex-col gap-1.5">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/12 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/15 transition-colors duration-[var(--dur-base)] group-hover:bg-white/20 group-hover:text-white group-hover:ring-white/30">
-                          <CatIcon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                        </span>
-                        <span className="text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2 transition-colors duration-[var(--dur-base)] group-hover:text-white">
-                          {c.label}
-                        </span>
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] transition-colors duration-[var(--dur-base)] group-hover:text-white/85">
-                          {c.description}
-                        </span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+        {/* ── Bento (Brandon 2026-07-06): 2 cards HERO con FOTO real (la 1ra
+             cuadrada 2×2, la 2da ancha 2×1) + tiles chicos. grid-flow-dense
+             rellena los huecos alrededor de la card grande → asimétrico tipo
+             revista, un solo héroe visual por card (DS §7). ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[110px] sm:auto-rows-[124px] gap-2.5 sm:gap-3 [grid-auto-flow:dense]">
+          {featured.map((c, i) => {
+            const CatIcon = getProductCategoryIcon(c.id);
+            const img = sampleImages[c.id.toLowerCase()];
+            const span = i === 0 ? "col-span-2 row-span-2" : "col-span-2 row-span-1";
+            return (
+              <Link
+                key={c.id}
+                href={hrefForCategory(c.id)}
+                className={`group relative flex flex-col justify-end overflow-hidden rounded-2xl border border-[var(--rule-base)] p-4 transition-[transform,box-shadow,border-color] duration-[var(--dur-base)] hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-lg)] ${span}`}
+              >
+                {img ? (
+                  <>
+                    <Image
+                      src={img}
+                      alt=""
+                      fill
+                      sizes="(min-width: 768px) 50vw, 100vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)]"
+                    />
+                    <CatIcon
+                      aria-hidden
+                      strokeWidth={1.25}
+                      className="pointer-events-none absolute -right-3 -top-3 h-28 w-28 rotate-12 text-white/[0.16] transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </>
+                )}
+                <span className="relative z-10 flex flex-col gap-1">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-white ring-1 ring-inset ring-white/25 backdrop-blur-sm">
+                    <CatIcon className="h-5 w-5" strokeWidth={2} aria-hidden />
+                  </span>
+                  <span className="mt-1 text-base sm:text-lg font-black tracking-tight text-white leading-tight line-clamp-2 drop-shadow">
+                    {c.label}
+                  </span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-white/85 drop-shadow">
+                    {c.description}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+
+          {rest.map((c) => {
+            const CatIcon = getProductCategoryIcon(c.id);
+            return (
+              <Link
+                key={c.id}
+                href={hrefForCategory(c.id)}
+                className="group relative col-span-1 row-span-1 flex flex-col justify-end overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-[transform,box-shadow,border-color] duration-[var(--dur-base)] hover:-translate-y-1 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)]"
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)]/[0.07] via-transparent to-transparent transition-opacity duration-[var(--dur-base)] group-hover:opacity-0"
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] opacity-0 transition-opacity duration-[var(--dur-base)] group-hover:opacity-100"
+                />
+                <CatIcon
+                  aria-hidden
+                  strokeWidth={1.25}
+                  className="pointer-events-none absolute -right-2 -top-2 h-14 w-14 rotate-12 text-[var(--accent)]/[0.14] transition-all duration-[var(--dur-base)] group-hover:scale-110 group-hover:text-white/25"
+                />
+                <span className="relative z-10 flex flex-col gap-0.5">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/12 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/15 transition-colors duration-[var(--dur-base)] group-hover:bg-white/20 group-hover:text-white group-hover:ring-white/30">
+                    <CatIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  </span>
+                  <span className="mt-1 text-[length:var(--ts-xs)] sm:text-sm font-extrabold tracking-tight text-[var(--text-primary)] leading-tight line-clamp-2 transition-colors duration-[var(--dur-base)] group-hover:text-white">
+                    {c.label}
+                  </span>
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] transition-colors duration-[var(--dur-base)] group-hover:text-white/85">
+                    {c.description}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

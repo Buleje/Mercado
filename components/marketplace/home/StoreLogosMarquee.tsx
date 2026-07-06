@@ -2,43 +2,18 @@
 
 /**
  * StoreLogosMarquee — "Las tiendas de tu barrio" (Brandon 2026-07-06 · rediseño
- * v5 "una sola fila"). Antes era una grilla agrupada por rubro; ahora es UN
- * carrusel horizontal (HorizontalCarousel: drag + snap + flechas + barra) de
- * tarjetas estilo "mini-tienda": banda con gradiente teal firma + ícono del
- * rubro de watermark, logo-avatar solapado, nombre + verificado, rating/rubro/
- * zona y pie con conteo de productos + CTA en hover. Contenida, clickeable y en
- * una sola fila. Datos: `/api/marketplace/featured-stores` (o `initialStores` RSC).
+ * v6 "stories"). Una sola fila de AVATARES CIRCULARES grandes (estilo stories de
+ * IG): logo en círculo con anillo de acento (gradiente teal firma), sello
+ * verificado en la esquina, nombre + rating/"Nueva" debajo. Minimalista, foco
+ * total en la marca, sin bandas de color. Fila scrollable (HorizontalCarousel:
+ * drag + snap + flechas). Datos: `/api/marketplace/featured-stores` (o RSC).
  */
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Store,
-  Star,
-  ShieldCheck,
-  ArrowUpRight,
-  ArrowRight,
-  Package,
-  UtensilsCrossed,
-  ShoppingBasket,
-  Wrench,
-  Smartphone,
-  Pill,
-  type LucideIcon,
-} from "@buleje/design-system/icons";
-import { formatCategoryLabel } from "@/lib/format-category";
-import { verticalForStoreCategory } from "@/lib/marketplace/verticals";
+import { Star, ShieldCheck, ArrowRight } from "@buleje/design-system/icons";
 import HorizontalCarousel from "@/components/marketplace/HorizontalCarousel";
-
-// Icono por vertical — single-source con lib/marketplace/verticals.
-const VERTICAL_ICONS: Record<string, LucideIcon> = {
-  comida: UtensilsCrossed,
-  bodega: ShoppingBasket,
-  ferreteria: Wrench,
-  electro: Smartphone,
-  farmacia: Pill,
-};
 
 export interface MarqueeStore {
   slug: string;
@@ -51,90 +26,63 @@ export interface MarqueeStore {
   productsCount?: number;
 }
 
-const MAX_STORES = 15;
+const MAX_STORES = 16;
 
-/** Tarjeta "mini-tienda" — banda gradiente + logo solapado + info + CTA hover. */
+/** Avatar circular "stories": anillo de acento + logo + sello + nombre + rating. */
 function StoreTile({ store: s }: { store: MarqueeStore }) {
   const rating = s.rating ?? 0;
   const hasRating = rating > 0;
-  const products = s.productsCount ?? 0;
-  const RubroIcon = VERTICAL_ICONS[verticalForStoreCategory(s.category) ?? ""] ?? Store;
+  const initial = s.name.trim().charAt(0).toUpperCase();
   return (
     <Link
       href={`/marketplace/${s.slug}`}
       aria-label={`Ver tienda ${s.name}`}
-      className="group/card relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--accent)]/60 hover:shadow-[0_20px_44px_-18px_rgba(0,0,0,0.3)]"
+      className="group/card flex flex-col items-center gap-2 pt-1 text-center"
     >
-      {/* Banda de portada — gradiente teal firma + ícono del rubro de watermark */}
-      <div className="relative h-16 bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)]">
-        <RubroIcon
+      {/* Anillo de acento (gradiente) + logo circular */}
+      <span className="relative grid place-items-center">
+        <span
           aria-hidden
-          strokeWidth={1.5}
-          className="pointer-events-none absolute -right-1 top-1 h-16 w-16 rotate-12 text-white/[0.18] transition-transform duration-500 group-hover/card:scale-110"
+          className="absolute inset-0 rounded-full bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] opacity-90 transition-opacity duration-300 group-hover/card:opacity-100"
         />
-        {hasRating && (
-          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-canvas)]/95 px-2 py-0.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--text-primary)] shadow ring-1 ring-black/5">
-            <Star
-              className="h-2.5 w-2.5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
-              aria-hidden
-            />
-            {rating.toFixed(1)}
-          </span>
-        )}
-      </div>
-
-      {/* Logo-avatar solapando la banda */}
-      <div className="px-3 -mt-7">
-        <span className="relative grid h-14 w-14 place-items-center overflow-hidden rounded-2xl bg-[var(--surface-canvas)] shadow-md ring-4 ring-[var(--surface-raised)]">
+        <span className="relative m-[3px] grid h-[76px] w-[76px] place-items-center overflow-hidden rounded-full bg-[var(--surface-raised)] ring-2 ring-[var(--surface-raised)] transition-transform duration-300 group-hover/card:scale-[1.04] sm:h-[84px] sm:w-[84px]">
           {s.logo ? (
-            <Image
-              src={s.logo}
-              alt=""
-              fill
-              sizes="56px"
-              className="object-cover transition-transform duration-500 group-hover/card:scale-110"
-            />
+            <Image src={s.logo} alt="" fill sizes="84px" className="object-cover" />
           ) : (
-            <span className="grid h-full w-full place-items-center bg-[var(--accent-soft)] text-[var(--accent)]">
-              <Store className="h-7 w-7" strokeWidth={1.75} aria-hidden />
+            <span className="grid h-full w-full place-items-center bg-[var(--accent-soft)] text-2xl font-black text-[var(--accent)]">
+              {initial}
             </span>
           )}
         </span>
-      </div>
-
-      {/* Cuerpo */}
-      <div className="flex flex-1 flex-col px-3 pb-3 pt-2">
-        <span className="flex items-center gap-1">
-          <span className="line-clamp-1 text-sm font-extrabold leading-tight text-[var(--text-primary)] transition-colors group-hover/card:text-[var(--accent)]">
-            {s.name}
-          </span>
+        {/* Sello verificado en la esquina */}
+        <span className="absolute -bottom-0.5 -right-0.5 z-10 grid h-6 w-6 place-items-center rounded-full bg-[var(--surface-raised)] shadow ring-1 ring-[var(--rule-base)]">
           <ShieldCheck
-            className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]"
+            className="h-3.5 w-3.5 text-[var(--accent)]"
             strokeWidth={2.5}
             aria-label="Tienda verificada"
           />
         </span>
-        <span className="mt-0.5 line-clamp-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
-          {s.category ? formatCategoryLabel(s.category) : "Tienda"}
-          {s.zone ? ` · ${s.zone}` : ""}
-        </span>
+      </span>
 
-        {/* Pie: conteo de productos (o "Nueva") + CTA en hover */}
-        <div className="mt-auto flex items-center justify-between gap-2 border-t border-[var(--rule-soft)] pt-2.5">
-          {products > 0 ? (
-            <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-              <Package className="h-3 w-3" aria-hidden /> {products} prod.
-            </span>
-          ) : (
-            <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide text-[var(--accent)]">
-              Nueva
-            </span>
-          )}
-          <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
-            Ver <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-          </span>
-        </div>
-      </div>
+      {/* Nombre */}
+      <span className="line-clamp-1 max-w-[92px] text-[length:var(--ts-xs)] font-extrabold leading-tight text-[var(--text-primary)] transition-colors group-hover/card:text-[var(--accent)] sm:max-w-[104px] sm:text-sm">
+        {s.name}
+      </span>
+
+      {/* Rating o "Nueva" */}
+      {hasRating ? (
+        <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+          <Star
+            className="h-3 w-3 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]"
+            aria-hidden
+          />
+          {rating.toFixed(1)}
+        </span>
+      ) : (
+        <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wide text-[var(--accent)]">
+          Nueva
+        </span>
+      )}
     </Link>
   );
 }
@@ -218,12 +166,13 @@ export default function StoreLogosMarquee({
           </Link>
         </header>
 
-        {/* ── Una sola fila: carrusel horizontal (drag + snap + flechas + barra) ── */}
+        {/* ── Una sola fila de avatares "stories" (drag + snap + flechas) ── */}
         <div className="relative px-1 sm:px-2">
           <HorizontalCarousel
             ariaLabel="Tiendas de tu barrio"
-            itemWidthClass="w-[62vw] sm:w-[220px] lg:w-[236px] shrink-0 snap-start"
+            itemWidthClass="w-[86px] sm:w-[108px] shrink-0 snap-start"
             edgeBleed={false}
+            showBar={false}
           >
             {shown.map((s) => (
               <StoreTile key={s.slug} store={s} />
