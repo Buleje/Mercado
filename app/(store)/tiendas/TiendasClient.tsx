@@ -29,6 +29,7 @@ import {
   Search as SearchIcon,
   ShoppingBag,
   ChevronRight,
+  X,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCategoryLabel } from "@/lib/format-category";
@@ -494,13 +495,12 @@ export default function TiendasClient({
     (sortKey !== "relevance" ? 1 : 0) +
     (productFilters.minPrice > 0 || productFilters.maxPrice < MAX_PRICE_LIMIT ? 1 : 0);
 
-  // Audit #7 (Brandon 2026-07-05): con catálogo chico (≤6 tiendas) y SIN filtros
-  // activos, el panel de filtros (calificación/pago/zona/categoría) queda
-  // sobredimensionado — la lista se recorre de un vistazo. Lo ocultamos y la
-  // lista va a ancho completo. Con filtros activos SÍ se muestra (para ajustar/
-  // limpiar). El sort + vista lista/mapa viven en la toolbar, no se pierden.
-  const compactFilters =
-    stores.length > 0 && stores.length <= 6 && activeFilterCount === 0;
+  // Audit filtros (Brandon 2026-07-06): reemplaza el viejo `compactFilters` que
+  // ESCONDÍA todos los filtros con ≤6 tiendas (choca con "usar mejor los
+  // filtros"). Ahora la barra slim (orden + chips + zona + más filtros) está
+  // SIEMPRE visible; el sidebar pesado (secciones apiladas) aparece solo cuando
+  // hay muchas tiendas (>6), donde el filtrado importa de verdad.
+  const manyStores = stores.length > 6;
 
   // Retry counter — bump para re-ejecutar el useEffect del fetch
   const [retryKey, setRetryKey] = useState(0);
@@ -761,6 +761,60 @@ export default function TiendasClient({
     search.trim().length > 0 ||
     sortKey !== "relevance" ||
     subCategoryId !== null;
+
+  // Chips de filtro activo (audit filtros #4) — feedback claro de qué está
+  // filtrado + remoción por chip. Cada uno se pinta arriba del grid con una ×.
+  const activeFilterPills: { key: string; label: string; remove: () => void }[] = [];
+  if (search.trim()) {
+    activeFilterPills.push({ key: "q", label: `"${search.trim()}"`, remove: () => setSearch("") });
+  }
+  if (category !== "todos") {
+    activeFilterPills.push({
+      key: "cat",
+      label: formatCategoryLabel(category),
+      remove: () => setCategory("todos"),
+    });
+  }
+  if (subCategoryId) {
+    activeFilterPills.push({
+      key: "sub",
+      label: activeSubcategory?.label ?? "Subcategoría",
+      remove: () => setSubCategoryId(null),
+    });
+  }
+  if (zone) {
+    activeFilterPills.push({
+      key: "zone",
+      label: zonesForFilter.find((z) => z.id === zone)?.label ?? "Zona",
+      remove: () => setZone(""),
+    });
+  }
+  if (geoActive) {
+    activeFilterPills.push({
+      key: "geo",
+      label: "Cerca de mí",
+      remove: () => {
+        setGeoActive(false);
+        setUserCoords(null);
+      },
+    });
+  }
+  if (activeChips.has("top_rated")) {
+    activeFilterPills.push({ key: "top", label: "4+ estrellas", remove: () => handleChipToggle("top_rated") });
+  }
+  if (activeChips.has("open_now")) {
+    activeFilterPills.push({ key: "open", label: "Abierto ahora", remove: () => handleChipToggle("open_now") });
+  }
+  if (activeChips.has("accepts_fiado")) {
+    activeFilterPills.push({ key: "fiado", label: "Acepta fiado", remove: () => handleChipToggle("accepts_fiado") });
+  }
+  if (sortKey !== "relevance") {
+    activeFilterPills.push({
+      key: "sort",
+      label: STORES_SORT_OPTIONS.find((o) => o.id === sortKey)?.label ?? "Orden",
+      remove: () => setSortKey("relevance"),
+    });
+  }
 
   const navMode = useMarketplaceNavMode();
   const isTiendasOnly = navMode === "tiendas-only";
@@ -1059,7 +1113,7 @@ export default function TiendasClient({
              En < lg (mobile + tablet): los filtros y el grid quedan en flujo
              normal (columna única) igual que antes.
              En lg+: aside sticky izquierda + main derecha. */}
-        <div className={compactFilters ? "" : "lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 lg:items-start"}>
+        <div className={manyStores ? "lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 lg:items-start" : ""}>
           {/*
           Brandon 2026-05-21 v3 — eliminados los chips legacy "Abierto ahora /
           4.5 o más / Sin mínimo" (componente QuickFilterChips) que se
@@ -1089,11 +1143,16 @@ export default function TiendasClient({
             separados del grid por un hairline a la derecha (lg:border-r). Mismo
             lenguaje que QuickFilterToggle: radios sutiles, contornos en vez de
             fondos difuminados, estado activo = contorno oscuro sólido. */}
-          {/* Audit #7: panel de filtros oculto en catálogo chico sin filtros. */}
-          {!compactFilters && (
+          {/* Audit filtros: aside SIEMPRE presente (barra slim). Los estilos de
+              sidebar sticky/borde solo se aplican con muchas tiendas (columna
+              280px); con pocas, la barra fluye a ancho completo arriba del grid. */}
           <aside
             aria-label="Filtros de tiendas"
-            className="space-y-4 mb-3 lg:space-y-5 lg:mb-0 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]"
+            className={cn(
+              "space-y-4 mb-3 lg:space-y-5 lg:mb-0",
+              manyStores &&
+                "lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]",
+            )}
           >
             {/* Encabezado sidebar — solo visible en desktop. Muestra el nº de
               filtros activos + acceso rápido a limpiar (modelo Amazon/Rappi). */}
@@ -1181,12 +1240,23 @@ export default function TiendasClient({
                  minimalista, sin filtros de categoría. Visible en tablet/desktop. */
                 className="max-md:hidden lg:pb-4 lg:mb-1 lg:border-b lg:border-[var(--rule-soft)]"
               >
-                <p className="mb-2.5 text-sm font-semibold text-[var(--text-primary)]">Categoría</p>
-                {/* Mobile/tablet: tira horizontal con cards icono + label */}
+                {/* Brandon 2026-07-06 (audit #3): "Categoría" → "¿Qué se te
+                    antoja?" para diferenciar este filtro-antojo (Pollos/Pizzas) del
+                    jump bar de secciones (Comida/Bodega/Ferretería) — antes ambos
+                    decían "categoría" y confundían. */}
+                <p className="mb-2.5 text-sm font-semibold text-[var(--text-primary)]">
+                  ¿Qué se te antoja?
+                </p>
+                {/* Tira horizontal con cards icono + label. En desktop se usa
+                    SIEMPRE salvo con sidebar (muchas tiendas), donde van apiladas.
+                    Brandon 2026-07-06: evita cards gigantes en el aside full-width. */}
                 <div
                   role="group"
                   aria-label="Filtrá por categoría"
-                  className="flex lg:hidden items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+                  className={cn(
+                    "flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1",
+                    manyStores && "lg:hidden",
+                  )}
                 >
                   <SubcategoryChips
                     subcategories={subcategories}
@@ -1195,19 +1265,21 @@ export default function TiendasClient({
                     variant="card"
                   />
                 </div>
-                {/* Desktop sidebar: cards grandes apiladas (filtro estrella) */}
-                <div
-                  role="group"
-                  aria-label="Filtrá por categoría"
-                  className="hidden lg:flex flex-col gap-2"
-                >
-                  <SubcategoryChips
-                    subcategories={subcategories}
-                    activeId={subCategoryId}
-                    onSelect={setSubCategoryId}
-                    variant="row"
-                  />
-                </div>
+                {/* Desktop sidebar (muchas tiendas): cards apiladas (filtro estrella) */}
+                {manyStores && (
+                  <div
+                    role="group"
+                    aria-label="Filtrá por categoría"
+                    className="hidden lg:flex flex-col gap-2"
+                  >
+                    <SubcategoryChips
+                      subcategories={subcategories}
+                      activeId={subCategoryId}
+                      onSelect={setSubCategoryId}
+                      variant="row"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -1232,7 +1304,12 @@ export default function TiendasClient({
             {/* ── MOBILE/TABLET: fila compacta con scroll (orden + 4+ + abierto + drawer) ──
                Brandon 2026-05-31: gap más ajustado y sin margen extra (lo da el
                space-y del aside) → menos aire entre filtros y subcategorías. */}
-            <div className="flex lg:hidden items-center gap-1.5 sm:gap-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
+            <div
+              className={cn(
+                "flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]",
+                manyStores && "lg:hidden",
+              )}
+            >
               {/* Sort "Relevancia" — OCULTO en celular (Brandon 2026-05-31): el
                 orden vive dentro del drawer "Filtros" (extraSort) para que la
                 fila quede limpia → 4+ · Abierto · Filtros. Visible desde sm
@@ -1278,6 +1355,7 @@ export default function TiendasClient({
                   onChange={handleFiltersChange}
                   onRequestGeo={handleGeoSort}
                   hideProductCategory
+                  hidePrice
                   zones={zonesForFilter}
                   zone={zone}
                   onZoneChange={setZone}
@@ -1293,9 +1371,36 @@ export default function TiendasClient({
               </div>
             </div>
 
-            {/* ── DESKTOP: filtros reales apilados, lenguaje único (Brandon
-              2026-06-14). "Ordenar" se movió a la toolbar de arriba; títulos
-              normales (no eyebrows tipo admin), consistente con el resto. ── */}
+            {/* Chips de filtro activo — feedback + remoción por chip (audit
+              filtros #4). Visibles apenas hay ≥1 filtro, en todos los breakpoints. */}
+            {activeFilterPills.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {activeFilterPills.map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={f.remove}
+                    aria-label={`Quitar filtro ${f.label}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 h-7 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/15"
+                  >
+                    <span className="max-w-[140px] truncate">{f.label}</span>
+                    <X className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={resetAllFilters}
+                  className="inline-flex h-7 items-center px-2 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] underline underline-offset-2 transition-colors hover:text-[var(--accent)]"
+                >
+                  Limpiar todo
+                </button>
+              </div>
+            )}
+
+            {/* ── DESKTOP: sidebar expandido (secciones apiladas) — SOLO con
+              muchas tiendas (>6). Con pocas, la barra slim de arriba ya trae
+              4+/Abierto/Fiado como pills. Brandon 2026-07-06 (audit filtros). ── */}
+            {manyStores && (
             <div className="hidden lg:flex lg:flex-col lg:gap-4">
               {/* CALIFICACIÓN */}
               <div className="border-t border-[var(--rule-soft)] pt-4">
@@ -1338,6 +1443,7 @@ export default function TiendasClient({
                 </div>
               )}
             </div>
+            )}
 
             {/* "Lo que se te antoja" se movió al TOPE del sidebar (Brandon
               2026-06-02) — ver bloque justo debajo del header "Filtrar tiendas". */}
@@ -1521,7 +1627,6 @@ export default function TiendasClient({
               clear-all ya viven dentro del drawer de filtros — no necesitamos
               un toolbar separado para ellos. */}
           </aside>
-          )}
 
           {/* ── MAIN: Grid de tiendas ── */}
           <div className="min-w-0">
@@ -1529,11 +1634,15 @@ export default function TiendasClient({
               (Lista/Mapa) viven ARRIBA del grid, NO mezclados con los filtros.
               El sidebar queda solo con filtros reales. */}
             <div className="hidden lg:flex items-center justify-end gap-3 mb-4 pb-3 border-b border-[var(--rule-soft)]">
-              <StoresSortSelector
-                value={sortKey}
-                onChange={handleSortChange}
-                className="!rounded-sm hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40"
-              />
+              {/* Sort del main SOLO con muchas tiendas — con pocas, la barra slim
+                  de filtros ya trae el "Ordenar" (evita duplicado). */}
+              {manyStores && (
+                <StoresSortSelector
+                  value={sortKey}
+                  onChange={handleSortChange}
+                  className="!rounded-sm hover:!bg-[var(--surface-sunken)] hover:!border-[var(--text-primary)]/40"
+                />
+              )}
               <div className="grid grid-cols-2 rounded-sm border border-[var(--rule-base)] overflow-hidden">
                 <button
                   type="button"

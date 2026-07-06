@@ -46,6 +46,10 @@ export interface MarketplaceFiltersProps {
   /** Si true, no renderiza el row horizontal de PRODUCT_CATEGORIES
       (porque el caller lo está renderizando arriba en formato propio). */
   hideProductCategory?: boolean;
+  /** Si true, no renderiza el filtro de RANGO DE PRECIO. En /tiendas (directorio
+      de TIENDAS) el precio no aplica — se elige una tienda, no una banda de
+      precio. Brandon 2026-07-06 (audit filtros #2). */
+  hidePrice?: boolean;
   /** Zonas disponibles. Si se provee, se muestra sección "Zona" en el drawer mobile. */
   zones?: ZoneOption[];
   /** Id de zona seleccionada ("" = todas). */
@@ -236,6 +240,7 @@ function FiltersDrawer({
   zones,
   zone,
   onZoneChange,
+  hidePrice,
   extraSort,
   onClearAll,
 }: {
@@ -251,6 +256,7 @@ function FiltersDrawer({
   zones?: ZoneOption[];
   zone?: string;
   onZoneChange?: (zone: string) => void;
+  hidePrice?: boolean;
   extraSort?: {
     value: string;
     onChange: (v: string) => void;
@@ -432,20 +438,22 @@ function FiltersDrawer({
           </div>
 
           {/* Price Range */}
-          <div>
-            <p className="mb-3 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
-              <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)] font-mono text-[10px]">
-                S/
-              </span>
-              Precio
-            </p>
-            <PriceRangePopover
-              min={filters.minPrice}
-              max={filters.maxPrice}
-              onChangeMin={(v) => onChange({ minPrice: v })}
-              onChangeMax={(v) => onChange({ maxPrice: v })}
-            />
-          </div>
+          {!hidePrice && (
+            <div>
+              <p className="mb-3 flex items-center gap-2 text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-primary)]">
+                <span aria-hidden className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[var(--accent)]/12 text-[var(--accent)] font-mono text-[10px]">
+                  S/
+                </span>
+                Precio
+              </p>
+              <PriceRangePopover
+                min={filters.minPrice}
+                max={filters.maxPrice}
+                onChangeMin={(v) => onChange({ minPrice: v })}
+                onChangeMax={(v) => onChange({ maxPrice: v })}
+              />
+            </div>
+          )}
 
           {/* Nearby */}
           <button
@@ -507,6 +515,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
     onRequestGeo,
     geoLoading,
     hideProductCategory,
+    hidePrice,
     zones,
     zone,
     onZoneChange,
@@ -595,6 +604,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
         zones={zones}
         zone={zone}
         onZoneChange={onZoneChange}
+        hidePrice={hidePrice}
         extraSort={extraSort}
         onClearAll={onClearAll}
       />
@@ -680,7 +690,8 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
         </div>
         )}
 
-        {/* Precio — dropdown con slider */}
+        {/* Precio — dropdown con slider (oculto en /tiendas via hidePrice) */}
+        {!hidePrice && (
         <div className="relative">
           <button
             type="button"
@@ -708,6 +719,7 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
             />
           </FilterDropdown>
         </div>
+        )}
 
         {/* Cerca de mí — toggle */}
         <button
