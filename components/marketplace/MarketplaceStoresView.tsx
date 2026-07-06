@@ -18,6 +18,7 @@ import {
   Tag,
   Check,
   Wallet,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,6 +28,7 @@ import {
   haversineKm,
   ZONE_COORDS,
 } from "@/components/marketplace/useMarketplaceGeo";
+import { todayHoursLabel, type StoreHours } from "@/lib/marketplace-store-hours";
 // Agrupación por "mundo" (Comida/Bodega/Ferretería/Electro/Farmacia) en el
 // estado de navegación por defecto — mismo taxonomía que la home y los chips.
 import {
@@ -292,6 +294,14 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
     deliveryLabel,
   ].filter(Boolean) as string[];
 
+  // Horario de HOY (config del admin) — solo si la tienda está abierta y no en
+  // construcción. Las cerradas ya muestran su overlay "Abre …". Degrada a null
+  // si el horario no viene con el shape esperado (no ensucia la card).
+  const hoursToday =
+    store.isOpenNow !== false && !store.underConstruction
+      ? todayHoursLabel(store.openHours as unknown as StoreHours | null | undefined, new Date())
+      : null;
+
   // Rediseño card 2026-06-08 (Brandon): jerarquía limpia → rating · meta · trust
   // · divisor · "Ver tienda". Verificada va inline con el NOMBRE (nameSuffix del
   // DS); el nivel "Destacada" lo señala el anillo teal (isFeatured), sin chip.
@@ -335,6 +345,16 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           {metaParts.join(" · ")}
         </span>
       </div>
+
+      {/* Horario de hoy (config del admin) — línea sutil, solo abiertas. */}
+      {hoursToday && (
+        <div className="flex items-center gap-1.5 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] min-w-0">
+          <Clock className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden="true" />
+          <span className="truncate font-semibold text-[var(--text-secondary)]">
+            Hoy {hoursToday}
+          </span>
+        </div>
+      )}
 
       {/* Trust chips: envío gratis, mín pedido y/o acepta fiado (condicional) */}
       {(store.freeDelivery ||
@@ -1003,8 +1023,36 @@ export default function MarketplaceStoresView({
         filteredStores.length > 0 &&
         (showGroups && verticalGroups ? (
           <div className="mt-6 space-y-10">
+            {/* Saltos por categoría — atajo a cada sección (tabla de contenidos
+                + leyenda de mundos disponibles). Scrollea suave al encabezado. */}
+            <nav
+              aria-label="Ir a una categoría"
+              className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {verticalGroups.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => {
+                    document
+                      .getElementById(`cat-${g.id}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  <g.Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+                  {g.label}
+                  <span className="tabular-nums text-[var(--text-tertiary)]">{g.stores.length}</span>
+                </button>
+              ))}
+            </nav>
             {verticalGroups.map((g) => (
-              <section key={g.id} aria-labelledby={`vsec-${g.id}`}>
+              <section
+                key={g.id}
+                id={`cat-${g.id}`}
+                aria-labelledby={`vsec-${g.id}`}
+                className="scroll-mt-28"
+              >
                 {/* Encabezado del mundo: icono en chip + nombre + conteo. */}
                 <div className="mb-4 flex items-center gap-2.5">
                   <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
