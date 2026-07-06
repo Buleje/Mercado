@@ -22,6 +22,7 @@ import {
   Wallet,
   Smartphone,
   Landmark,
+  Check,
   CheckCircle2,
   Tag,
   Sparkles,
@@ -147,43 +148,73 @@ function selectCls(error?: boolean) {
   return cn(pillCls(error), "appearance-none pr-10 bg-no-repeat bg-[right_1rem_center]");
 }
 
-// ── Section wrapper con kicker editorial ──────────────────────────────────
+// ── Section wrapper editorial con badge de completado (Brandon 2026-07-06) ──
+// El ícono de la sección vive en un badge circular que se convierte en CHECK
+// cuando ese paso está completo → la página combinada se lee como un checklist
+// premium. `active` (paso actual = 1er incompleto) pulsa suave. Las secciones
+// no-rastreadas (cupón/puntos) omiten `done` → badge neutro sin ring.
 function SectionBox({
+  done,
+  active = false,
   kicker,
   title,
   icon: Icon,
   action,
   children,
 }: {
+  done?: boolean;
+  active?: boolean;
   kicker: string;
   title: string;
   icon: typeof Wallet;
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  // Brandon, mayo 14 2026: padding mas compacto en mobile (p-4) para reducir
-  // scroll, kicker oculto en mobile, titulo mas chico, icono inline al titulo.
+  const tracked = done !== undefined;
   return (
-    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5 space-y-4">
+    <section
+      className={cn(
+        "rounded-2xl border bg-[var(--surface-raised)] p-4 sm:p-5 space-y-4 transition-[border-color] duration-[var(--dur-base)]",
+        done
+          ? "border-[color-mix(in_srgb,var(--accent)_25%,transparent)]"
+          : active
+            ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)]"
+            : "border-[var(--rule-soft)]",
+      )}
+    >
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <p className="hidden sm:flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
-            <span
-              aria-hidden
-              className="inline-flex h-[3px] w-6 rounded-full bg-[var(--accent)]"
-            />
-            <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
-            {kicker}
-          </p>
-          <h2 className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
-            <span
-              aria-hidden
-              className="sm:hidden inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]"
-            >
-              <Icon className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-            <span className="truncate">{title}</span>
-          </h2>
+        <div className="flex items-center gap-3 min-w-0">
+          <span
+            aria-hidden
+            className={cn(
+              "relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-[var(--dur-base)]",
+              done
+                ? "bg-[var(--accent)] text-white"
+                : tracked
+                  ? "bg-[var(--accent-soft)] text-[var(--accent-dark)] ring-2 ring-inset ring-[color-mix(in_srgb,var(--accent)_28%,transparent)] dark:text-[var(--accent)]"
+                  : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
+            )}
+          >
+            {active && !done && (
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full bg-[var(--accent)]/20 animate-ping motion-reduce:hidden"
+              />
+            )}
+            {done ? (
+              <Check className="relative h-5 w-5" strokeWidth={3} />
+            ) : (
+              <Icon className="relative h-[18px] w-[18px]" strokeWidth={2.25} />
+            )}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-0.5">
+              {kicker}
+            </p>
+            <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+              {title}
+            </h2>
+          </div>
         </div>
         {action}
       </div>
@@ -840,10 +871,16 @@ export default function CheckoutEntregaPage() {
   const cashChange = cashAmount - grandTotal;
   const cashShort = cashAmount > 0 && cashAmount < grandTotal;
 
+  // "Pago listo" = método elegido explícitamente Y comprobantes ok. `allProofsReady`
+  // solo es vacuo-verdadero (invitado paga al recibir); sin exigir método elegido
+  // el CTA se habilitaría pero handleSubmit lo frena → paso de pago inconsistente.
+  const paymentChosen = payment.method !== "";
+  const paymentReady = paymentChosen && allProofsReady;
+
   // CTA del riel de resumen (sin evento — handleSubmit es para el <form>).
   const handleContinue = () => {
     setTouched(true);
-    if (isCustomerValid && isAddressValid && allProofsReady)
+    if (isCustomerValid && isAddressValid && paymentReady)
       navigateTo("/checkout/confirmar", "Preparando tu resumen");
   };
 
@@ -852,15 +889,17 @@ export default function CheckoutEntregaPage() {
     ? "Completá tus datos"
     : !isAddressValid
       ? "Completá tu dirección"
-      : !allProofsReady
-        ? "Subí los comprobantes"
-        : null;
+      : !paymentChosen
+        ? "Elegí cómo pagás"
+        : !allProofsReady
+          ? "Subí los comprobantes"
+          : null;
 
   // Riel de resumen persistente — lo dibuja el layout (CheckoutShell).
   useRegisterCheckoutSummary({
     ctaLabel: missingLabel ?? "Revisar pedido",
     onCtaClick: handleContinue,
-    ctaDisabled: !isCustomerValid || !isAddressValid || !allProofsReady,
+    ctaDisabled: !isCustomerValid || !isAddressValid || !paymentReady,
     couponDiscount: couponDiscountTotal,
     loyaltyDiscount: loyaltyDiscountTotal,
     showItems: true,
@@ -891,7 +930,13 @@ export default function CheckoutEntregaPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
           {/* ── Identidad (datos + entrega unificados, Brandon 2026-07-06) ── */}
-          <SectionBox kicker="Datos" title="¿Quién recibe?" icon={UserCircle}>
+          <SectionBox
+            kicker="Datos"
+            title="¿Quién recibe?"
+            icon={UserCircle}
+            done={isCustomerValid}
+            active={!isCustomerValid}
+          >
             <CheckoutIdentitySection />
           </SectionBox>
 
@@ -941,6 +986,8 @@ export default function CheckoutEntregaPage() {
                 : "¿A dónde te lo llevamos?"
             }
             icon={MapPin}
+            done={isAddressValid}
+            active={isCustomerValid && !isAddressValid}
             action={
               savedAddresses.length > 0 && manualAddressEntry ? (
                 <button
@@ -1194,7 +1241,13 @@ export default function CheckoutEntregaPage() {
           )}
 
           {/* ── PAGO ──────────────────────────────────────────────── */}
-          <SectionBox kicker="Método de pago" title="¿Cómo te queda más cómodo?" icon={Wallet}>
+          <SectionBox
+            kicker="Método de pago"
+            title="¿Cómo te queda más cómodo?"
+            icon={Wallet}
+            done={paymentReady}
+            active={isCustomerValid && isAddressValid && !paymentReady}
+          >
             {paymentConfigsLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 {[1, 2, 3].map((i) => (
