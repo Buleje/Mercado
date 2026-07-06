@@ -821,13 +821,33 @@ export default function CheckoutEntregaPage() {
   // trackeamos el metodo previo y solo abrimos si paso de !efectivo →
   // efectivo via interaccion del cliente.
   const prevPaymentMethodRef = useRef(payment.method);
+  // Cuando la selección de efectivo es PROGRAMÁTICA (auto-select de opción única),
+  // no queremos abrir el modal de vuelto — este flag lo suprime una sola vez.
+  const suppressCashModalRef = useRef(false);
   useEffect(() => {
     const prev = prevPaymentMethodRef.current;
     if (prev !== "efectivo" && payment.method === "efectivo") {
-      setCashModalOpen(true);
+      if (suppressCashModalRef.current) {
+        suppressCashModalRef.current = false;
+      } else {
+        setCashModalOpen(true);
+      }
     }
     prevPaymentMethodRef.current = payment.method;
   }, [payment.method]);
+
+  // Auto-seleccionar cuando hay UNA sola opción de pago (Brandon 2026-07-06):
+  // el cliente no debería tener que tocar la única alternativa. Suprime el modal
+  // de vuelto para no abrirlo sin pedirlo (el cliente puede abrirlo desde la card).
+  const autoSelectedPaymentRef = useRef(false);
+  useEffect(() => {
+    if (paymentConfigsLoading || autoSelectedPaymentRef.current) return;
+    if (availableMethods.length === 1 && payment.method === "") {
+      autoSelectedPaymentRef.current = true;
+      suppressCashModalRef.current = availableMethods[0] === "efectivo";
+      setPayment({ method: availableMethods[0] });
+    }
+  }, [paymentConfigsLoading, availableMethods, payment.method, setPayment]);
 
   const buildProofModalConfig = useCallback(
     (storeSlug: string): PaymentProofModalConfig => {
