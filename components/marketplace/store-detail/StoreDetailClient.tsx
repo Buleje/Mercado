@@ -819,6 +819,7 @@ export default function StoreDetailClient({
                 whatsappNumber={
                   (store as { whatsappPublic?: string | null }).whatsappPublic ?? null
                 }
+                acceptsFiado={(store as { acceptsFiado?: boolean }).acceptsFiado ?? false}
               />
 
               {/* Categorías */}

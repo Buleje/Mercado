@@ -297,7 +297,7 @@ export const MarketplaceStoresDB = {
   /**
    * Obtener tienda por slug (pública).
    */
-  async getBySlug(slug: string): Promise<(DbStore & { vacationMode: boolean; vacationMessage: string | null; whatsappPublic: string | null; lat: number | null; lng: number | null }) | null> {
+  async getBySlug(slug: string): Promise<(DbStore & { vacationMode: boolean; vacationMessage: string | null; whatsappPublic: string | null; lat: number | null; lng: number | null; acceptsFiado: boolean }) | null> {
     const cacheKey = `marketplace:stores:slug:${slug}`;
 
     return getOrSet(cacheKey, 300, async () => {
@@ -332,6 +332,19 @@ export const MarketplaceStoresDB = {
       const trialActive = t.trialEndsAt ? t.trialEndsAt.getTime() > Date.now() : false;
       if (!t.active || (!hasPaidSub && !trialActive)) return null;
 
+      // Fiado Digital (benefits JSON, columna fuera del schema Prisma) — para
+      // mostrar "Acepta fiado" en la página de la tienda, consistente con el
+      // badge de /tiendas. Raw SQL parametrizado ($1), mismo patrón sin migración.
+      let acceptsFiado = false;
+      try {
+        const rows = await prisma.$queryRaw<Array<{ benefits: Record<string, boolean> | null }>>`
+          SELECT benefits FROM "Store" WHERE id = ${s.id}
+        `;
+        acceptsFiado = Boolean(rows[0]?.benefits?.acceptsFiado);
+      } catch {
+        acceptsFiado = false;
+      }
+
       return {
         id:          s.id,
         tenantId:    s.tenantId,
@@ -352,6 +365,7 @@ export const MarketplaceStoresDB = {
         whatsappPublic:  s.whatsappPublic ?? null,
         lat:             s.lat ?? null,
         lng:             s.lng ?? null,
+        acceptsFiado,
       };
     });
   },

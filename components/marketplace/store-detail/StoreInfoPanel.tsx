@@ -35,6 +35,9 @@ interface StoreInfoPanelProps {
   freeDelivery?: boolean;
   whatsappNumber?: string | null;
   paymentMethods?: string[]; // ["yape", "efectivo", "plin", ...]
+  /** Fiado Digital — la tienda acepta "compra ahora, paga después". Diferenciador
+   *  Buleje; se muestra igual que el badge de /tiendas para que sea consistente. */
+  acceptsFiado?: boolean;
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -58,6 +61,7 @@ export default function StoreInfoPanel({
   freeDelivery = true,
   whatsappNumber,
   paymentMethods = ["yape", "efectivo"],
+  acceptsFiado = false,
 }: StoreInfoPanelProps) {
   const ratingLabel = rating > 0 ? rating.toFixed(1) : null;
   const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent(
@@ -197,6 +201,21 @@ export default function StoreInfoPanel({
             ))}
           </div>
         </div>
+
+        {/* Fiado Digital — diferenciador Buleje. Se muestra igual que en /tiendas
+            (chip teal "compra ahora, paga después") para que el cliente lo vea
+            también en la página de la tienda, no solo en el directorio. */}
+        {acceptsFiado && (
+          <div className="border-t border-[var(--rule-soft)] pt-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent)]">
+              <Wallet className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+              Acepta fiado
+            </span>
+            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              Compra ahora y paga después con crédito de barrio.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── CTA contacto ────────────────────────────────────────────────── */}
