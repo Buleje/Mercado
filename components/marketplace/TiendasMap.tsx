@@ -133,6 +133,17 @@ function buildPopup(store: MarketplaceStore): string {
   const name = escapeHtml(store.name);
   const slug = encodeURIComponent(store.slug);
   const category = escapeHtml(store.category ?? "");
+  // Logo (Brandon 2026-07-06) — o inicial de fallback.
+  const logoHtml = store.logo
+    ? `<img src="${escapeHtml(store.logo)}" alt="" class="buleje-popup__logo" />`
+    : `<span class="buleje-popup__logo buleje-popup__logo--fallback">${escapeHtml(
+        store.name.trim().charAt(0).toUpperCase(),
+      )}</span>`;
+  // Estado abierto/cerrado (Brandon 2026-07-06).
+  const isClosed = store.isOpenNow === false;
+  const status = `<span class="buleje-popup__chip ${
+    isClosed ? "buleje-popup__chip--closed" : "buleje-popup__chip--open"
+  }">${isClosed ? "Cerrada" : "Abierto"}</span>`;
   const rating =
     store.rating > 0
       ? `<span class="buleje-popup__chip buleje-popup__chip--rating">★ ${Number(store.rating).toFixed(1)}</span>`
@@ -150,9 +161,14 @@ function buildPopup(store: MarketplaceStore): string {
       : "";
   return `
     <div class="buleje-popup">
-      <div class="buleje-popup__category">${category}</div>
-      <div class="buleje-popup__name">${name}</div>
-      <div class="buleje-popup__row">${rating}${reviews}${delivery}</div>
+      <div class="buleje-popup__head">
+        ${logoHtml}
+        <div class="buleje-popup__headtext">
+          <div class="buleje-popup__category">${category}</div>
+          <div class="buleje-popup__name">${name}</div>
+        </div>
+      </div>
+      <div class="buleje-popup__row">${status}${rating}${reviews}${delivery}</div>
       ${promos ? `<div class="buleje-popup__row">${promos}</div>` : ""}
       <a href="/marketplace/${slug}" class="buleje-popup__cta">Ver tienda →</a>
     </div>
@@ -293,6 +309,30 @@ function ensurePinStyles(): void {
       padding: 14px 16px 12px;
       font-family: system-ui, -apple-system, sans-serif;
     }
+    .buleje-popup__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .buleje-popup__logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid #e5e7eb;
+      background: #f3f4f6;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .buleje-popup__logo--fallback {
+      font-size: 16px;
+      font-weight: 900;
+      color: #6b7280;
+    }
+    .buleje-popup__headtext { min-width: 0; }
     .buleje-popup__category {
       font-size: 10px;
       font-weight: 800;
@@ -306,7 +346,6 @@ function ensurePinStyles(): void {
       font-weight: 800;
       color: #111;
       line-height: 1.2;
-      margin-bottom: 8px;
     }
     .buleje-popup__row {
       display: flex;
@@ -331,6 +370,14 @@ function ensurePinStyles(): void {
     .buleje-popup__chip--promo {
       background: #fee2e2;
       color: #b91c1c;
+    }
+    .buleje-popup__chip--open {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .buleje-popup__chip--closed {
+      background: #f3f4f6;
+      color: #4b5563;
     }
     .buleje-popup__muted {
       color: #6b7280;
