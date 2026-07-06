@@ -49,7 +49,11 @@ import TenantStoreChrome from "@/components/store/TenantStoreChrome";
 import FreeShippingBar from "@/components/store/tenant/FreeShippingBar";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 import { tenantExists } from "@/lib/tenant-check";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
+// Audit #9 (SSR-auth): validación server-side de la sesión de cliente para
+// resolver el estado de auth antes del primer render (sin skeleton en el navbar).
+import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import type { Customer } from "@/contexts/customer-context";
 import {
   GoogleAnalytics,
   GoogleTagManager,
@@ -137,6 +141,23 @@ async function StoreLayoutContent({
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
 
+  // Audit #9 (SSR-auth): resolvemos el estado de cliente desde la cookie
+  // buleje-customer-sess EN EL SERVER → el navbar pinta el estado real (avatar
+  // logueado / "Ingresar" deslogueado) en el primer byte, sin el skeleton gris
+  // ni el layout-shift. `null` = deslogueado (cookie ausente/inválida); el
+  // cliente arranca con este mismo valor → sin hydration mismatch.
+  const cookieStore = await cookies();
+  const custToken = cookieStore.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+  const custPayload = custToken ? await getCustomerPayload(custToken).catch(() => null) : null;
+  const initialCustomer: Customer | null = custPayload?.name
+    ? {
+        name: custPayload.name,
+        ...(custPayload.customerId ? { phone: custPayload.customerId } : {}),
+        location: "",
+        reference: "",
+      }
+    : null;
+
   // Validate tenant exists — return 404 for invalid slugs
   if (tenantId !== "main") {
     const exists = await tenantExists(tenantId);
@@ -183,7 +204,7 @@ async function StoreLayoutContent({
     <>
       <MetaPixel pixelId={metaPixelId} />
       <TikTokPixel pixelId={tiktokPixelId} />
-      <StoreProviders tenantSlug={tenantId}>
+      <StoreProviders tenantSlug={tenantId} initialCustomer={initialCustomer}>
       <MotionProvider>
         {/* QuickAddProvider envuelve toda la tienda — al click en producto
             se abre el drawer en lugar de navegar a una PDP.

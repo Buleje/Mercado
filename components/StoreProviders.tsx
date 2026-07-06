@@ -6,7 +6,7 @@
  * eliminating the 9-level nest in (store)/layout.tsx and improving readability.
  */
 import { CartProvider } from "@/contexts/cart-context";
-import { CustomerProvider } from "@/contexts/customer-context";
+import { CustomerProvider, type Customer } from "@/contexts/customer-context";
 import { ToastProvider } from "@/contexts/toast-context";
 import { ReviewsProvider } from "@/contexts/reviews-context";
 import { SettingsProvider } from "@/contexts/settings-context";
@@ -24,9 +24,13 @@ import ThemeInjector from "@/components/store/ThemeInjector";
 export default function StoreProviders({
   children,
   tenantSlug = "main",
+  // Audit #9 (SSR-auth): estado de cliente resuelto server-side (cookie) para
+  // que el navbar pinte el estado real sin skeleton. Se pasa a CustomerProvider.
+  initialCustomer,
 }: {
   children: React.ReactNode;
   tenantSlug?: string;
+  initialCustomer?: Customer | null;
 }) {
   return (
     <TenantSlugProvider slug={tenantSlug}>
@@ -41,7 +45,7 @@ export default function StoreProviders({
                     <CompareProvider>
                       <SocioBulejeProvider>
                         <SubscriptionProvider>
-                          <CustomerProvider>
+                          <CustomerProvider initialCustomer={initialCustomer}>
                             {/* LastOrderProvider — tracking de "tu último
                                 pedido" (badge en nav + OrderSuccessModal).
                                 Añadido al superset 2026-06-07 al unificar
