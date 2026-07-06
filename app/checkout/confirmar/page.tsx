@@ -441,6 +441,20 @@ export default function CheckoutConfirmarPage() {
               storeNames: Array.from(new Set(succeeded.map((s) => s.storeName))),
             }),
           );
+          // buleje-last-order (Brandon 2026-07-06): las páginas públicas de
+          // pedido (/pedido/[id] y /gracias) prueban propiedad con el teléfono
+          // vía este key. Antes NUNCA se escribía → /public daba 404 (tracking)
+          // y /gracias caía al endpoint privado (401). Lo persistimos acá.
+          if (first.orderId !== undefined && customer.phone) {
+            localStorage.setItem(
+              "buleje-last-order",
+              JSON.stringify({
+                orderId: String(first.orderId),
+                customerPhone: customer.phone,
+                ts: Date.now(),
+              }),
+            );
+          }
         } catch {
           /* silent */
         }

@@ -91,21 +91,64 @@ export default function GraciasPage() {
       localStorage.setItem("buleje-first-purchase", "1");
     } catch { /* ignore quota/disabled storage */ }
 
-    (async () => {
-      try {
-        const res = await fetch(`/api/orders/${id}`, { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
+    // Datos del pedido SIN pegarle al endpoint privado (daba 401 a invitados).
+    // 1) Snapshot local del pedido recién hecho (sin red) — caso común al venir
+    //    desde el checkout: trae total + items + teléfono.
+    // 2) Fallback (refresh / link): endpoint PÚBLICO probando propiedad con el
+    //    teléfono. Nunca el privado → cero 401.
+    let matchedSnapshot = false;
+    let phone: string | null = null;
+    try {
+      const raw = localStorage.getItem("marketplace-last-order");
+      if (raw) {
+        const snap = JSON.parse(raw) as {
+          orderIds?: Array<string | number>;
+          total?: number;
+          items?: unknown[];
+          customer?: { phone?: string };
+        };
+        phone = snap.customer?.phone ?? null;
+        if (snap.orderIds?.map(String).includes(String(id))) {
+          matchedSnapshot = true;
           setOrder({
-            id: data.id ?? id,
-            total: data.total ?? 0,
-            itemCount: data.items?.length ?? 0,
-            status: data.status ?? "pendiente",
+            id,
+            total: snap.total ?? 0,
+            itemCount: snap.items?.length ?? 0,
+            status: "pendiente",
             estimatedDelivery: "30-60 minutos",
           });
         }
-      } catch { /* use defaults */ }
-    })();
+      }
+    } catch { /* ignore parse/storage */ }
+
+    if (!phone) {
+      try {
+        const raw = localStorage.getItem("buleje-last-order");
+        if (raw) phone = (JSON.parse(raw) as { customerPhone?: string }).customerPhone ?? null;
+      } catch { /* ignore */ }
+    }
+
+    if (!matchedSnapshot && phone) {
+      const ph = phone;
+      (async () => {
+        try {
+          const res = await fetch(
+            `/api/orders/${id}/public?phone=${encodeURIComponent(ph)}`,
+            { cache: "no-store" },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setOrder({
+              id: data.id ?? id,
+              total: data.total ?? 0,
+              itemCount: data.items?.length ?? 0,
+              status: data.status ?? "pendiente",
+              estimatedDelivery: "30-60 minutos",
+            });
+          }
+        } catch { /* use defaults */ }
+      })();
+    }
 
     const timer = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(timer);
