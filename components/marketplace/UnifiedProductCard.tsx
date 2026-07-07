@@ -498,9 +498,11 @@ export default function UnifiedProductCard({
             </span>
           )}
 
-          {/* Timer badge (flash) */}
+          {/* Timer badge (flash) — coral de urgencia (mismo lenguaje que el
+              countdown de OfertasDelDiaHero), sólido para resaltar sobre el well
+              blanco de la foto. Brandon 2026-07-06. */}
           {variant === "flash" && countdown && countdown !== "Expirado" && (
-            <span className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[length:var(--ts-2xs)] font-bold tabular-nums bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[length:var(--ts-2xs)] font-bold tabular-nums bg-[var(--data-warning-600)] text-[var(--surface-canvas)] shadow-sm">
               <Timer className="h-3 w-3" aria-hidden />
               {countdown}
             </span>

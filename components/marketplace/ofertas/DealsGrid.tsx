@@ -59,7 +59,7 @@ export default function DealsGrid({ deals, source = "deals" }: DealsGridProps) {
           <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] mb-4">
             <Package className="h-9 w-9" strokeWidth={1.25} aria-hidden />
           </div>
-          <p className="text-lg font-black tracking-tight text-[var(--text-primary)]">
+          <p className="text-lg font-bold tracking-tight text-[var(--text-primary)]">
             Sin ofertas con esos filtros
           </p>
           <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-sm leading-relaxed">
