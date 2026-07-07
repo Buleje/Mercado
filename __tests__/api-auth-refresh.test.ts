@@ -26,6 +26,17 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
+// ── Mock: AdminUsersDB — el route valida que la cuenta siga activa vía
+// AdminUsersDB.getByUsername (línea 99 del route), que sin DB queda colgado
+// (el try/catch del route atrapa throws, NO un hang de conexión prisma) →
+// timeout de 5s en los 6 tests del happy-path. Devolvemos un usuario activo
+// para que la rotación proceda. Ningún test cubre el caso inactivo.
+vi.mock("@/lib/db/admin-users.db", () => ({
+  AdminUsersDB: {
+    getByUsername: vi.fn(async () => ({ active: true })),
+  },
+}));
+
 // ── Use REAL session functions — we need actual token generation/verification ─
 // No mock for @/lib/session — we import the real module.
 

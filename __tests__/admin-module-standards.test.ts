@@ -51,6 +51,10 @@ const CUSTOM_HEADER_MODULES = [
   // Brandon 2026-05-17: LeadsFunnelModule usa wrapper space-y-6 (más spacing
   // por densidad de KPIs + filtros + tabla). Patrón legítimo opt-out.
   "LeadsFunnelModule.tsx",
+  // Brandon 2026-07-04 (rework RUM): RendimientoModule usa wrapper space-y-6
+  // por el gauge de score + historial RUM (necesita más aire). Mismo opt-out
+  // legítimo que LeadsFunnelModule. Usa AdminModuleHeader estándar.
+  "RendimientoModule.tsx",
   // Hubs de consolidación (24→7, commit 8f9a3e99): son routers de sub-tabs;
   // cada sub-módulo trae su PROPIO AdminModuleHeader, así que el hub NO pone
   // header para evitar el doble. Tienen AdminTabBar + MODULE_ID propios.
