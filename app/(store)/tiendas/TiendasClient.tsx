@@ -43,7 +43,6 @@ import MarketplaceStoresView, {
   type StoreChipFields,
 } from "@/components/marketplace/MarketplaceStoresView";
 import SubcategoryChips from "@/components/marketplace/tiendas/SubcategoryChips";
-import SumateBulejeSection from "@/components/marketplace/tiendas/SumateBulejeSection";
 import QuickFilterToggle from "@/components/marketplace/tiendas/QuickFilterToggle";
 import BackToTopButton from "@/components/marketplace/BackToTopButton";
 import { useTiendasUrlSync } from "./use-tiendas-url-sync";
@@ -1181,21 +1180,31 @@ export default function TiendasClient({
              Mejor jerarquía: primero el "mundo", después el antojo. Filtra el
              directorio por vertical. ── */}
         {presentVerticals.length > 1 && (
-          <div className="mb-3">
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:px-0">
+          <div className="mb-4">
+            {/* Categorías como TILES grandes (Brandon 2026-07-06): mismo formato
+                que las subcategorías pero con MÁS jerarquía — tiles más grandes,
+                border-2, badge de ícono prominente + conteo de tiendas. */}
+            <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
               <button
                 type="button"
                 onClick={() => setVertical(null)}
                 aria-pressed={vertical === null}
                 className={cn(
-                  "inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border px-4 text-sm font-extrabold transition-all",
+                  "group flex h-[112px] w-[112px] shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 transition-all sm:h-[128px] sm:w-[128px]",
                   vertical === null
-                    ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]/50",
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
                 )}
               >
-                <Boxes className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                Todas
+                <span
+                  className={cn(
+                    "inline-flex h-11 w-11 items-center justify-center rounded-2xl transition-colors",
+                    vertical === null ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                  )}
+                >
+                  <Boxes className="h-5 w-5" strokeWidth={2} aria-hidden />
+                </span>
+                <span className="text-sm font-bold text-[var(--text-primary)]">Todas</span>
               </button>
               {presentVerticals.map((v) => {
                 const active = vertical === v.id;
@@ -1206,28 +1215,25 @@ export default function TiendasClient({
                     onClick={() => setVertical(active ? null : v.id)}
                     aria-pressed={active}
                     className={cn(
-                      "group inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border px-4 text-sm font-extrabold transition-all",
+                      "group flex h-[112px] w-[112px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 px-1 text-center transition-all sm:h-[128px] sm:w-[128px]",
                       active
-                        ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
-                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
                     )}
                   >
                     <span
                       className={cn(
-                        "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-colors",
-                        active ? "bg-white/20 text-white" : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                        "inline-flex h-11 w-11 items-center justify-center rounded-2xl transition-colors",
+                        active ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white",
                       )}
                     >
-                      <v.Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      <v.Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
                     </span>
-                    {v.label}
-                    <span
-                      className={cn(
-                        "tabular-nums text-[length:var(--ts-2xs)]",
-                        active ? "text-white/80" : "text-[var(--text-tertiary)]",
-                      )}
-                    >
-                      {v.count}
+                    <span className="text-sm font-bold text-[var(--text-primary)] leading-tight line-clamp-1">
+                      {v.label}
+                    </span>
+                    <span className="text-[length:var(--ts-2xs)] font-semibold tabular-nums text-[var(--text-tertiary)]">
+                      {v.count} {v.count === 1 ? "tienda" : "tiendas"}
                     </span>
                   </button>
                 );
@@ -1807,10 +1813,9 @@ export default function TiendasClient({
            share genérico que igual trae tráfico. ── */}
       {search.trim().length === 0 && <InvitaVecinoCard />}
 
-      {/* Sumate a Buleje — CTA B2B creativa al pie (Brandon 2026-07-06): dos
-          tarjetas con gradiente firma (Abre tu tienda · Sé repartidor). Va al
-          FINAL, sin robar el fold al flujo B2C "ver tienda → comprar". */}
-      {search.trim().length === 0 && <SumateBulejeSection />}
+      {/* "Sumate a Buleje" vive UNA sola vez: la sección JoinUsSection que
+          renderiza tiendas/page.tsx (mejorada creativa). Antes había un
+          SumateBulejeSection duplicado acá — removido (Brandon 2026-07-06). */}
 
       {/* Footer vive en el layout `/tiendas/layout.tsx` (persistente). */}
     </div>
