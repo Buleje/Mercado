@@ -540,13 +540,13 @@ export default function StoreCatalog({
                     <div className="min-w-0">
                       <h3
                         id={`cat-h-${slugifyCat(cat)}`}
-                        className="text-xl sm:text-2xl font-black text-[var(--text-primary)] leading-tight tracking-tight"
+                        className="text-lg sm:text-xl font-semibold text-[var(--text-primary)] leading-tight tracking-tight"
                       >
                         {isFirstCategory ? (
                           <span className="inline-flex items-center gap-2">
                             <Flame
-                              className="h-5 w-5 text-[var(--text-secondary)]"
-                              strokeWidth={2.5}
+                              className="h-4.5 w-4.5 text-[var(--text-tertiary)]"
+                              strokeWidth={2}
                               aria-hidden
                             />
                             Los más pedidos

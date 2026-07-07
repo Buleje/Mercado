@@ -41,7 +41,6 @@ import {
   ShoppingCart,
   Star,
   MessageCircle,
-  Heart,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useCustomer } from "@/contexts/customer-context";
@@ -65,7 +64,6 @@ const StorePromoBannersStrip = dynamic(() => import("./StorePromoBannersStrip"),
 });
 import { type StoreCategoryChip } from "./StoreCategories";
 import StoreCategoriesSidebar from "./StoreCategoriesSidebar";
-import StoreInfoPanel from "./StoreInfoPanel";
 import StoreCatalog, { slugifyCat } from "./StoreCatalog";
 // Brandon 2026-05-21 perf v6: StoreReviews (199 LOC / 8KB) + StorePoliciesBlock
 // (103 LOC / 4KB) son below-the-fold — el usuario los ve solo después de
@@ -144,32 +142,9 @@ export default function StoreDetailClient({
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  // "Guardar tienda" — favoritos por dispositivo (localStorage), sin backend.
-  const [saved, setSaved] = useState(false);
-  useEffect(() => {
-    try {
-      const list = JSON.parse(localStorage.getItem("bsm-fav-stores") || "[]") as string[];
-      setSaved(Array.isArray(list) && list.includes(store.slug));
-    } catch {
-      /* localStorage bloqueado — queda sin marcar */
-    }
-  }, [store.slug]);
-  const toggleSaved = useCallback(() => {
-    setSaved((prev) => {
-      const next = !prev;
-      try {
-        const list = new Set(
-          JSON.parse(localStorage.getItem("bsm-fav-stores") || "[]") as string[],
-        );
-        if (next) list.add(store.slug);
-        else list.delete(store.slug);
-        localStorage.setItem("bsm-fav-stores", JSON.stringify([...list]));
-      } catch {
-        /* no-op */
-      }
-      return next;
-    });
-  }, [store.slug]);
+  // "Guardar tienda" (favoritos): el botón vive ahora en el StoreHero (header
+  // full-width), que maneja su propio estado de favorito. La sidebar quedó solo
+  // con categorías (Brandon 2026-07-07), por eso se removió el estado local.
 
   // Cierra el drawer mobile cuando seleccionan una categoría desde el
   // drawer/sidebar — SÍ filtra (uso explícito del filtro).
@@ -447,33 +422,34 @@ export default function StoreDetailClient({
         </div>
       )}
 
-      {/* ── Hero del negocio — SOLO tablet (md). En desktop (lg+) la info del
-           negocio vive en la barra lateral izquierda (layout estilo Rappi). En
-           mobile, la barra slim + trust strip de arriba ya la cubren. */}
-      <div className="lg:hidden">
-        <StoreHero
-          name={store.name}
-          category={store.category}
-          zone={store.zone}
-          description={getStoreTagline({
-            slug: store.slug,
-            name: store.name,
-            category: store.category,
-            existing: store.description,
-          })}
-          rating={store.rating ?? 0}
-          reviewCount={store.reviewCount}
-          scheduleLabel="Lun a Dom · 7am – 11pm"
-          isOpen={isOpen}
-          paymentMethods={paymentMethods}
-          storeId={store.id}
-          storeSlug={store.slug}
-          storeLogo={store.logo ?? null}
-          lat={(store as { lat?: number | null }).lat ?? null}
-          lng={(store as { lng?: number | null }).lng ?? null}
-          whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
-        />
-      </div>
+      {/* ── Hero del negocio — header rico full-width (md + lg). Brandon
+           2026-07-07: ahora TAMBIÉN en desktop (antes lg:hidden). Toda la info
+           del negocio (identidad, rating, delivery, horario, ubicación, pagos,
+           mapa, CTAs) vive en este header estratégico arriba; la barra lateral
+           queda SOLO con las categorías. En mobile (<md) la barra slim + trust
+           strip lo cubren (StoreHero es `hidden md:block`). */}
+      <StoreHero
+        name={store.name}
+        category={store.category}
+        zone={store.zone}
+        description={getStoreTagline({
+          slug: store.slug,
+          name: store.name,
+          category: store.category,
+          existing: store.description,
+        })}
+        rating={store.rating ?? 0}
+        reviewCount={store.reviewCount}
+        scheduleLabel="Lun a Dom · 7am – 11pm"
+        isOpen={isOpen}
+        paymentMethods={paymentMethods}
+        storeId={store.id}
+        storeSlug={store.slug}
+        storeLogo={store.logo ?? null}
+        lat={(store as { lat?: number | null }).lat ?? null}
+        lng={(store as { lng?: number | null }).lng ?? null}
+        whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
+      />
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
       <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
@@ -604,82 +580,12 @@ export default function StoreDetailClient({
       {/* ── Layout: SIDEBAR (lg+) + CATALOG ─────────────────────────────── */}
       <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-8">
         <div className="flex gap-6 lg:gap-8">
-          {/* ── Barra lateral (lg+, estilo Rappi) — datos del negocio + categorías,
-               sticky con scroll interno. Reemplaza al hero full-width en desktop. */}
-          <aside className="hidden lg:block w-[19rem] shrink-0">
-            <div className="sticky top-[5.5rem] max-h-[calc(100dvh-7rem)] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin]">
-              {/* Panel unificado: identidad + mapa + datos del negocio.
-                  Brandon 2026-07-07: la identidad (logo + nombre + categoría +
-                  "Verificada") ahora es la cabecera de este panel, no una card
-                  suelta arriba ni un overlay sobre el banner. Una sola barra
-                  lateral cohesiva. */}
-              <StoreInfoPanel
-                name={store.name}
-                logo={store.logo ?? null}
-                category={store.category ?? "Tienda"}
-                zone={store.zone}
-                address={store.zone}
-                scheduleLabel="Lun a Dom · 7am – 11pm"
-                isOpen={isOpen}
-                rating={store.rating ?? 0}
-                reviewCount={store.reviewCount}
-                deliveryMin={25}
-                paymentMethods={paymentMethods}
-                acceptsFiado={(store as { acceptsFiado?: boolean }).acceptsFiado ?? false}
-              />
-
-              {/* CTA — Mensaje por WhatsApp (si el dueño lo configuró) + Guardar. */}
-              {(() => {
-                const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(
-                  /\D/g,
-                  "",
-                );
-                const intl = raw ? (raw.startsWith("51") ? raw : `51${raw}`) : null;
-                const msg = encodeURIComponent(
-                  `Hola ${store.name}, vengo de Buleje y quiero hacer un pedido`,
-                );
-                return (
-                  <div className="flex gap-2">
-                    {intl && (
-                      <a
-                        href={`https://wa.me/${intl}?text=${msg}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-white transition-[filter] hover:brightness-110"
-                      >
-                        <MessageCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden /> Mensaje
-                      </a>
-                    )}
-                    <button
-                      type="button"
-                      onClick={toggleSaved}
-                      aria-pressed={saved}
-                      className={cn(
-                        "inline-flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-colors",
-                        intl ? "shrink-0" : "flex-1",
-                        saved
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
-                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
-                      )}
-                    >
-                      <Heart
-                        className={cn("h-4 w-4", saved && "fill-[var(--accent)]")}
-                        strokeWidth={2.25}
-                        aria-hidden
-                      />
-                      {intl
-                        ? saved
-                          ? "Guardada"
-                          : "Guardar"
-                        : saved
-                          ? "Guardada"
-                          : "Guardar tienda"}
-                    </button>
-                  </div>
-                );
-              })()}
-
-              {/* Categorías */}
+          {/* ── Barra lateral (lg+) — SOLO categorías (Brandon 2026-07-07).
+               Toda la info del negocio (identidad, rating, delivery, horario,
+               pagos, mapa, CTAs) se movió al StoreHero (header full-width arriba).
+               La sidebar queda como navegación pura por categorías, sticky. */}
+          <aside className="hidden lg:block w-[17rem] shrink-0">
+            <div className="sticky top-[5.5rem] max-h-[calc(100dvh-7rem)] overflow-y-auto pr-1 [scrollbar-width:thin]">
               <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2">
                 <StoreCategoriesSidebar
                   categories={categories}
