@@ -26,6 +26,7 @@ import SectionDivider from "@/components/marketplace/home/SectionDivider";
 import ExplorarErrorBoundary from "@/components/marketplace/explorar/ExplorarErrorBoundary";
 import ExplorarBackToTop from "@/components/marketplace/explorar/ExplorarBackToTop";
 import ExplorarTracker from "@/components/marketplace/explorar/ExplorarTracker";
+import OfertasHero from "./OfertasHero";
 import FlashDealsCountdown from "./FlashDealsCountdown";
 import DealsFilterBar, { type DealsFilters } from "./DealsFilterBar";
 import DealsGrid from "./DealsGrid";
@@ -161,7 +162,7 @@ function EmptyState() {
         >
           <Tag className="h-10 w-10" strokeWidth={1.5} />
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] mb-3">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-3">
           Todavía no hay ofertas activas
         </h2>
         <p className="text-base text-[var(--text-secondary)] leading-relaxed mb-8 max-w-xl mx-auto">
@@ -189,7 +190,7 @@ function EmptyState() {
           <p className="text-[length:var(--ts-2xs)] sm:text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-2">
             Eres bodeguero
           </p>
-          <h3 className="text-lg sm:text-xl font-black text-[var(--text-primary)] mb-2">
+          <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-2">
             ¿Quieres publicar tus ofertas aquí?
           </h3>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-4">
@@ -218,25 +219,24 @@ function EmptyState() {
 
 function FinalCTA() {
   return (
-    <section className="relative overflow-hidden py-24 sm:py-32 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">
+    <section className="relative overflow-hidden py-16 sm:py-20 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)]">
       <div
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
       />
-      <div className="relative max-w-4xl mx-auto px-4 text-center">
-        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+      <div className="relative max-w-3xl mx-auto px-4 text-center">
+        <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-4">
           <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           Sigue explorando
         </p>
-        <h2 className="text-[clamp(2.5rem,7vw,5rem)] font-black tracking-[-0.04em] text-[var(--text-primary)] leading-[0.92]">
-          Más allá de
-          <br />
-          <span className="italic font-serif text-[var(--accent)]">las ofertas.</span>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] leading-tight">
+          Más allá de{" "}
+          <span className="italic font-serif font-normal text-[var(--accent)]">las ofertas</span>
         </h2>
-        <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
+        <p className="mt-3 text-base sm:text-lg text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed">
           Todo el catálogo de bodegas de Ciudad Constitución y Pucallpa en un solo lugar.
         </p>
-        <div className="mt-12 flex flex-wrap justify-center gap-3">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href="/marketplace/explorar"
             className="group inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-8 py-4 text-base font-bold shadow-lg hover:bg-[var(--accent)] hover:gap-3 transition-all"
@@ -300,18 +300,14 @@ export default function OfertasClient() {
   }, [filters, allDeals]);
 
   const flashDeals = useMemo(() => allDeals.filter((d) => d.isFlash).slice(0, 12), [allDeals]);
+  const maxDiscount = useMemo(
+    () => allDeals.reduce((max, d) => Math.max(max, d.discountPct), 0),
+    [allDeals],
+  );
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       <ExplorarTracker pageName="marketplace_ofertas" />
-      {/* Designer audit P0: el PromoBannerCarousel mostraba "Ofertas
-          relámpago — hasta -40%" aunque la página estuviera vacía. Ocultar
-          cuando no hay deals reales — no le mentimos al usuario.
-          Brandon 2026-07-05 (audit navegación): además ocultarlo en modo
-          "lowest" (precios bajos, SIN descuentos) — antes los banners
-          "-40%/2x1/combos" contradecían al aviso "Sin descuentos publicados hoy"
-          de justo abajo. Los banners de descuento solo van con descuentos reales. */}
-      {source === "deals" && <PromoHeroSlot slot="ofertas" moreLabel="Más ofertas" />}
 
       {error && (
         <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -327,6 +323,19 @@ export default function OfertasClient() {
         <EmptyState />
       ) : (
         <>
+          <OfertasHero
+            dealCount={allDeals.length}
+            maxDiscount={maxDiscount}
+            storeCount={stores.length}
+            source={source}
+          />
+          {/* Designer audit P0: el PromoBannerCarousel mostraba "Ofertas
+              relámpago — hasta -40%" aunque la página estuviera vacía. Ahora
+              vive dentro de la rama con deals; además sólo en modo "deals"
+              (con descuentos reales) — en "lowest" los banners "-40%/2x1/combos"
+              contradecían al aviso "Sin descuentos publicados hoy" de abajo. */}
+          {source === "deals" && <PromoHeroSlot slot="ofertas" moreLabel="Más ofertas" />}
+
           <HonestNotice source={source} />
 
           {flashDeals.length > 0 && (
@@ -341,7 +350,7 @@ export default function OfertasClient() {
             <RevealOnScroll>
               <div className="space-y-6">
                 <DealsFilterBar filters={filters} onFiltersChange={setFilters} />
-                <DealsGrid deals={filteredDeals} />
+                <DealsGrid deals={filteredDeals} source={source} />
               </div>
             </RevealOnScroll>
           </ExplorarErrorBoundary>

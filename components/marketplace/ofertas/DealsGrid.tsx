@@ -39,9 +39,11 @@ function dealToCard(d: Deal): UnifiedProductCardProduct {
 
 interface DealsGridProps {
   deals: Deal[];
+  /** "lowest" = sin descuentos reales → copy honesto (no "con descuento"). */
+  source?: "deals" | "lowest";
 }
 
-export default function DealsGrid({ deals }: DealsGridProps) {
+export default function DealsGrid({ deals, source = "deals" }: DealsGridProps) {
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(deals.length / PAGE_SIZE));
@@ -74,9 +76,13 @@ export default function DealsGrid({ deals }: DealsGridProps) {
       className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8"
     >
       <ExplorarSectionHeader
-        kicker="Catálogo de ofertas"
-        title="Todas las ofertas"
-        subtitle={`${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtrá por categoría o rebaja mínima arriba.`}
+        kicker={source === "lowest" ? "Catálogo" : "Catálogo de ofertas"}
+        title={source === "lowest" ? "Los precios más bajos" : "Todas las ofertas"}
+        subtitle={
+          source === "lowest"
+            ? `${deals.length} ${deals.length === 1 ? "producto" : "productos"} ordenados de menor a mayor precio. Filtrá por categoría arriba.`
+            : `${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtrá por categoría o rebaja mínima arriba.`
+        }
       />
 
       <div

@@ -22,6 +22,7 @@ import {
   Wallet,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 
 interface StoreInfoPanelProps {
   name: string;
@@ -194,8 +195,9 @@ export default function StoreInfoPanel({
             {paymentMethods.map((m) => (
               <span
                 key={m}
-                className="inline-flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] py-0.5 pl-1 pr-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
               >
+                <PaymentMethodIcon method={m} size={18} title={PAYMENT_LABELS[m] ?? m} />
                 {PAYMENT_LABELS[m] ?? m}
               </span>
             ))}
