@@ -295,9 +295,20 @@ export default function StoreDetailClient({
            overlay cuando se sale del viewport. */}
       <StoreBannerArea
         banner={store.banner ?? null}
+        logo={store.logo ?? null}
         name={store.name}
         category={store.category}
         zone={store.zone}
+        rating={store.rating ?? 0}
+        reviewCount={store.reviewCount}
+        deliveryMin={25}
+        freeDelivery
+        isOpen={isOpen}
+        scheduleLabel="Lun a Dom · 7am – 11pm"
+        paymentMethods={paymentMethods}
+        storeId={store.id}
+        storeSlug={store.slug}
+        acceptsFiado={(store as { acceptsFiado?: boolean }).acceptsFiado ?? false}
       />
 
       {/* ── MOBILE: barra slim STICKY v6 (Brandon 2026-05-18 — rediseño) ──
@@ -422,34 +433,34 @@ export default function StoreDetailClient({
         </div>
       )}
 
-      {/* ── Hero del negocio — header rico full-width (md + lg). Brandon
-           2026-07-07: ahora TAMBIÉN en desktop (antes lg:hidden). Toda la info
-           del negocio (identidad, rating, delivery, horario, ubicación, pagos,
-           mapa, CTAs) vive en este header estratégico arriba; la barra lateral
-           queda SOLO con las categorías. En mobile (<md) la barra slim + trust
-           strip lo cubren (StoreHero es `hidden md:block`). */}
-      <StoreHero
-        name={store.name}
-        category={store.category}
-        zone={store.zone}
-        description={getStoreTagline({
-          slug: store.slug,
-          name: store.name,
-          category: store.category,
-          existing: store.description,
-        })}
-        rating={store.rating ?? 0}
-        reviewCount={store.reviewCount}
-        scheduleLabel="Lun a Dom · 7am – 11pm"
-        isOpen={isOpen}
-        paymentMethods={paymentMethods}
-        storeId={store.id}
-        storeSlug={store.slug}
-        storeLogo={store.logo ?? null}
-        lat={(store as { lat?: number | null }).lat ?? null}
-        lng={(store as { lng?: number | null }).lng ?? null}
-        whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
-      />
+      {/* ── Hero del negocio — SOLO tablet (md). Brandon 2026-07-07: en desktop
+           (lg+) la info ahora vive DENTRO del banner (StoreBannerArea hero
+           overlay). En mobile (<md) la barra slim + trust strip la cubren. Así
+           que StoreHero queda para el rango tablet (md) únicamente. */}
+      <div className="lg:hidden">
+        <StoreHero
+          name={store.name}
+          category={store.category}
+          zone={store.zone}
+          description={getStoreTagline({
+            slug: store.slug,
+            name: store.name,
+            category: store.category,
+            existing: store.description,
+          })}
+          rating={store.rating ?? 0}
+          reviewCount={store.reviewCount}
+          scheduleLabel="Lun a Dom · 7am – 11pm"
+          isOpen={isOpen}
+          paymentMethods={paymentMethods}
+          storeId={store.id}
+          storeSlug={store.slug}
+          storeLogo={store.logo ?? null}
+          lat={(store as { lat?: number | null }).lat ?? null}
+          lng={(store as { lng?: number | null }).lng ?? null}
+          whatsappNumber={(store as { whatsappPublic?: string | null }).whatsappPublic ?? null}
+        />
+      </div>
 
       {/* ── Promociones de la tienda (gestionadas por el dueño desde su admin) ─ */}
       <StorePromoBannersStrip storeSlug={store.slug} storeName={store.name} />
