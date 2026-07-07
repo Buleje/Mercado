@@ -132,7 +132,7 @@ export default function SubcategoryChips({
               aria-pressed={active}
               title={s.description || s.label}
               className={cn(
-                "group relative h-[76px] w-[76px] shrink-0 overflow-hidden rounded-xl border transition-all sm:h-[92px] sm:w-[92px]",
+                "group relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-2xl border transition-all sm:h-[100px] sm:w-[100px]",
                 active
                   ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/40"
                   : "border-[var(--rule-base)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",

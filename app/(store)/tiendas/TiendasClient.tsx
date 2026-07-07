@@ -382,6 +382,14 @@ export default function TiendasClient({
     : null;
   const linkedStoreSlugsForSub = activeSubcategory?.linkedStoreSlugs ?? null;
 
+  // Encadenar categoría → subcategoría (Brandon 2026-07-06): al elegir una
+  // categoría (vertical: Comida/Bodega/…), las subcategorías visibles se acotan
+  // a las de ESE mundo — client-side, sin refetch. `categoryId` de la subcat es
+  // el rubro de tienda (restaurante/bodega…); verticalForStoreCategory lo mapea.
+  const visibleSubcategories = vertical
+    ? subcategories.filter((s) => verticalForStoreCategory(s.categoryId) === vertical)
+    : subcategories;
+
   // Observer para detectar cuando la sección original sale del viewport.
   // El estado final de visibilidad de la sticky bar se combina con la
   // dirección de scroll en `showStickySubcategoryBar` (arriba).
@@ -901,7 +909,7 @@ export default function TiendasClient({
            la sección original. Sigue la misma lógica de visibilidad
            que el nav (hide-down / show-up) + clase
            `nav-smooth-transition` para timing/easing idéntico. */}
-      {subcategories.length > 0 && (
+      {visibleSubcategories.length > 0 && (
         <div
           aria-hidden={!showStickySubcategoryBar}
           style={{
@@ -934,7 +942,7 @@ export default function TiendasClient({
                 Todas
               </button>
               <SubcategoryChips
-                subcategories={subcategories}
+                subcategories={visibleSubcategories}
                 activeId={subCategoryId}
                 onSelect={setSubCategoryId}
                 variant="pill"
@@ -1180,7 +1188,7 @@ export default function TiendasClient({
                 onClick={() => setVertical(null)}
                 aria-pressed={vertical === null}
                 className={cn(
-                  "inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border px-3.5 text-sm font-extrabold transition-all",
+                  "inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border px-4 text-sm font-extrabold transition-all",
                   vertical === null
                     ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]/50",
@@ -1198,7 +1206,7 @@ export default function TiendasClient({
                     onClick={() => setVertical(active ? null : v.id)}
                     aria-pressed={active}
                     className={cn(
-                      "group inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border px-3.5 text-sm font-extrabold transition-all",
+                      "group inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl border px-4 text-sm font-extrabold transition-all",
                       active
                         ? "border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm"
                         : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
@@ -1230,7 +1238,7 @@ export default function TiendasClient({
 
         {/* ── ¿QUÉ SE TE ANTOJA HOY? — subcategorías (Pollos/Pizzas), el nivel
              MÁS FINO, DESPUÉS de las categorías principales. Solo si hay. */}
-        {subcategories.length > 0 && (
+        {visibleSubcategories.length > 0 && (
           <div ref={subcategorySectionRef} className="mb-4">
             <h2 className="mb-2.5 text-base font-extrabold tracking-tight text-[var(--text-primary)] sm:text-lg">
               ¿Qué se te antoja hoy?
@@ -1241,7 +1249,7 @@ export default function TiendasClient({
                 onClick={() => setSubCategoryId(null)}
                 aria-pressed={subCategoryId === null}
                 className={cn(
-                  "group flex h-[76px] w-[76px] shrink-0 flex-col items-center justify-center gap-1 rounded-xl border transition-all sm:h-[92px] sm:w-[92px]",
+                  "group flex h-[84px] w-[84px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border transition-all sm:h-[100px] sm:w-[100px]",
                   subCategoryId === null
                     ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
@@ -1253,7 +1261,7 @@ export default function TiendasClient({
                 </span>
               </button>
               <SubcategoryChips
-                subcategories={subcategories}
+                subcategories={visibleSubcategories}
                 activeId={subCategoryId}
                 onSelect={setSubCategoryId}
                 variant="tile"
