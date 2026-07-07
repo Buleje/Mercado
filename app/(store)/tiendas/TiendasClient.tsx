@@ -1329,6 +1329,73 @@ export default function TiendasClient({
                 "lg:mb-0 lg:space-y-5 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:pr-7 lg:border-r lg:border-[var(--rule-base)]",
             )}
           >
+            {/* Chips COMPACTOS de categoría/subcategoría en la barra sticky
+                (Brandon 2026-07-06 task 2): viajan con la barra al scrollear
+                para quick-switch sin volver arriba. Solo cuando ya scrolleaste
+                más allá de los tiles (evita duplicar los tiles grandes de
+                arriba). Solo en la barra slim (!manyStores). */}
+            {!manyStores && scrolledPastSubcategories && presentVerticals.length > 1 && (
+              <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
+                <button
+                  type="button"
+                  onClick={() => setVertical(null)}
+                  aria-pressed={vertical === null}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-[length:var(--ts-xs)] font-bold whitespace-nowrap transition-colors",
+                    vertical === null
+                      ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  Todas
+                </button>
+                {presentVerticals.map((v) => {
+                  const active = vertical === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setVertical(active ? null : v.id)}
+                      aria-pressed={active}
+                      className={cn(
+                        "shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-[length:var(--ts-xs)] font-bold whitespace-nowrap transition-colors",
+                        active
+                          ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
+                      )}
+                    >
+                      <v.Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                      {v.label}
+                    </button>
+                  );
+                })}
+                {visibleSubcategories.length > 0 && (
+                  <>
+                    <span aria-hidden className="mx-0.5 h-5 w-px shrink-0 bg-[var(--rule-base)]" />
+                    <button
+                      type="button"
+                      onClick={() => setSubCategoryId(null)}
+                      aria-pressed={subCategoryId === null}
+                      className={cn(
+                        "shrink-0 inline-flex items-center rounded-full border px-3 h-8 text-[length:var(--ts-xs)] font-bold whitespace-nowrap transition-colors",
+                        subCategoryId === null
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)] dark:text-[var(--accent)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
+                      )}
+                    >
+                      Todas
+                    </button>
+                    <SubcategoryChips
+                      subcategories={visibleSubcategories}
+                      activeId={subCategoryId}
+                      onSelect={setSubCategoryId}
+                      variant="pill"
+                    />
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Encabezado "Filtros · N | Limpiar" — SOLO en modo sidebar (muchas
               tiendas). Con la barra slim es redundante (la fila de chips activos
               ya trae "Limpiar todo"). Brandon 2026-07-06 (compactar). */}
