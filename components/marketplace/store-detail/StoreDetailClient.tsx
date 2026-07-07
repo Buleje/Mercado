@@ -27,7 +27,6 @@ import {
   X,
   Menu,
   LayoutGrid,
-  List,
   Info,
   MapPin,
   Clock,
@@ -42,7 +41,6 @@ import {
   ShoppingCart,
   Star,
   MessageCircle,
-  ShieldCheck,
   Heart,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -138,7 +136,6 @@ export default function StoreDetailClient({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
@@ -323,7 +320,6 @@ export default function StoreDetailClient({
            overlay cuando se sale del viewport. */}
       <StoreBannerArea
         banner={store.banner ?? null}
-        logo={store.logo ?? null}
         name={store.name}
         category={store.category}
         zone={store.zone}
@@ -485,132 +481,22 @@ export default function StoreDetailClient({
       {/* ── Sentinel para detectar sticky ─────────────────────────────────── */}
       <div ref={sentinelRef} aria-hidden className="h-px w-full" />
 
-      {/* ── Sticky toolbar consolidado (Brandon, mayo 14 v4) ──────────
-          MOBILE: solo el subnav de categorías (search + toggle ya están
-          arriba en el top sticky nav). DESKTOP: search prominente + toggle.
-          MOBILE el sticky empieza después del top nav (top-[60px]) para que
-          ambos queden apilados. */}
+      {/* ── Sticky toolbar de categorías (mobile-only) ──────────────────
+          Brandon 2026-07-07: el search + view toggle desktop se MOVIERON al
+          toolbar del catálogo (StoreCatalog), al lado de "Relevancia". Este
+          sticky bar queda solo para el subnav de categorías en mobile (en
+          desktop las categorías viven en la barra lateral). Por eso ahora es
+          lg:hidden — antes quedaba una franja vacía en desktop. */}
       <div
         className={cn(
-          "sticky z-20 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-base)] transition-shadow duration-150",
-          // top-[108px] = 52 nav (v7 minimalista) + 56 barra slim. Desktop top-0.
-          "top-[108px] lg:top-0",
+          "lg:hidden sticky z-20 bg-[var(--surface-canvas)]/95 backdrop-blur-md border-b border-[var(--rule-base)] transition-shadow duration-150",
+          // top-[108px] = 52 nav (v7 minimalista) + 56 barra slim.
+          "top-[108px]",
           isStuck ? "shadow-[0_4px_16px_-6px_rgba(0,0,0,0.12)]" : "shadow-none",
         )}
         style={{ contain: "layout paint" }}
       >
-        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2.5">
-          {/* ── Desktop only: Row de Search + View toggle ── */}
-          <div className="hidden lg:flex items-center gap-2">
-            {/* Search bar grande + prominente */}
-            <div className="relative flex-1">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)]"
-                aria-hidden
-              />
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-                placeholder={`Buscar en ${store.name}…`}
-                className="w-full h-12 pl-12 pr-11 rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-colors"
-                aria-label="Buscar productos"
-                autoComplete="off"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  aria-label="Limpiar búsqueda"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  <X className="h-4 w-4" strokeWidth={2.5} />
-                </button>
-              )}
-
-              {/* Sugerencias dropdown */}
-              {searchFocused && suggestions.length > 0 && (
-                <div className="absolute top-full mt-1.5 left-0 right-0 z-40 rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden max-h-[60vh] overflow-y-auto">
-                  {suggestions.map((s, idx) => (
-                    <button
-                      key={`${s.type}:${s.value}:${idx}`}
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        if (s.type === "category") {
-                          setActiveCategory(s.value);
-                          setSearchTerm("");
-                        } else {
-                          setSearchTerm(s.value);
-                        }
-                        setSearchFocused(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--accent-soft)]/40 transition-colors border-b border-[var(--rule-soft)] last:border-b-0"
-                    >
-                      <span
-                        className={cn(
-                          "inline-flex items-center justify-center h-8 w-8 rounded-full shrink-0",
-                          s.type === "category"
-                            ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                            : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                        )}
-                      >
-                        <Search className="h-4 w-4" />
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[var(--text-primary)] truncate">
-                          {s.label}
-                        </p>
-                        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                          {s.type === "category" ? "Filtrar por categoría" : "Producto"}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* View toggle compacto — siempre visible al lado del search
-                (antes solo en mobile en una row separada). */}
-            <div
-              role="group"
-              aria-label="Cambiar entre cuadrícula y lista"
-              className="inline-flex rounded-none border-2 border-[var(--rule-base)] overflow-hidden bg-[var(--surface-raised)] shrink-0"
-            >
-              <button
-                type="button"
-                onClick={() => setView("grid")}
-                aria-pressed={view === "grid"}
-                aria-label="Vista en cuadrícula"
-                className={cn(
-                  "inline-flex items-center justify-center h-12 w-11 transition-colors",
-                  view === "grid"
-                    ? "bg-[var(--accent-600,var(--accent))] text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-                )}
-              >
-                <LayoutGrid className="h-4 w-4" strokeWidth={2.25} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("list")}
-                aria-pressed={view === "list"}
-                aria-label="Vista en lista"
-                className={cn(
-                  "inline-flex items-center justify-center h-12 w-11 border-l-2 border-[var(--rule-base)] transition-colors",
-                  view === "list"
-                    ? "bg-[var(--accent-600,var(--accent))] text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-                )}
-              >
-                <List className="h-4 w-4" strokeWidth={2.25} />
-              </button>
-            </div>
-          </div>
-
+        <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
           {/* ── Mobile category subnav (tabs estilo iFood/Rappi) ──
                Brandon mayo 14 v4: quitado el chip "Todos" (no aporta —
                si querés ver todo, cerrá el filtro). Pills rediseñadas
@@ -721,40 +607,28 @@ export default function StoreDetailClient({
           {/* ── Barra lateral (lg+, estilo Rappi) — datos del negocio + categorías,
                sticky con scroll interno. Reemplaza al hero full-width en desktop. */}
           <aside className="hidden lg:block w-[19rem] shrink-0">
-            <div className="sticky top-[5.5rem] max-h-[calc(100dvh-7rem)] space-y-4 overflow-y-auto pr-1 [scrollbar-width:thin]">
-              {/* Identidad de la tienda */}
-              <div className="flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3">
-                <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-base)]">
-                  {store.logo ? (
-                    <Image
-                      src={store.logo}
-                      alt={store.name}
-                      width={56}
-                      height={56}
-                      sizes="56px"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-lg font-black text-[var(--accent)]">
-                      {store.name.trim().charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                    {store.category ?? "Tienda"}
-                  </p>
-                  <h1 className="truncate text-base font-black leading-tight text-[var(--text-primary)]">
-                    {store.name}
-                  </h1>
-                  <p className="mt-0.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
-                    <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Verificada
-                    por Buleje
-                  </p>
-                </div>
-              </div>
+            <div className="sticky top-[5.5rem] max-h-[calc(100dvh-7rem)] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin]">
+              {/* Panel unificado: identidad + mapa + datos del negocio.
+                  Brandon 2026-07-07: la identidad (logo + nombre + categoría +
+                  "Verificada") ahora es la cabecera de este panel, no una card
+                  suelta arriba ni un overlay sobre el banner. Una sola barra
+                  lateral cohesiva. */}
+              <StoreInfoPanel
+                name={store.name}
+                logo={store.logo ?? null}
+                category={store.category ?? "Tienda"}
+                zone={store.zone}
+                address={store.zone}
+                scheduleLabel="Lun a Dom · 7am – 11pm"
+                isOpen={isOpen}
+                rating={store.rating ?? 0}
+                reviewCount={store.reviewCount}
+                deliveryMin={25}
+                paymentMethods={paymentMethods}
+                acceptsFiado={(store as { acceptsFiado?: boolean }).acceptsFiado ?? false}
+              />
 
-              {/* CTA — Guardar (siempre) + Mensaje por WhatsApp (si el dueño lo configuró). */}
+              {/* CTA — Mensaje por WhatsApp (si el dueño lo configuró) + Guardar. */}
               {(() => {
                 const raw = (store as { whatsappPublic?: string | null }).whatsappPublic?.replace(
                   /\D/g,
@@ -805,23 +679,6 @@ export default function StoreDetailClient({
                 );
               })()}
 
-              {/* Datos del negocio: mapa · rating · delivery · zona · horario · pagos */}
-              <StoreInfoPanel
-                name={store.name}
-                zone={store.zone}
-                address={store.zone}
-                scheduleLabel="Lun a Dom · 7am – 11pm"
-                isOpen={isOpen}
-                rating={store.rating ?? 0}
-                reviewCount={store.reviewCount}
-                deliveryMin={25}
-                paymentMethods={paymentMethods}
-                whatsappNumber={
-                  (store as { whatsappPublic?: string | null }).whatsappPublic ?? null
-                }
-                acceptsFiado={(store as { acceptsFiado?: boolean }).acceptsFiado ?? false}
-              />
-
               {/* Categorías */}
               <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2">
                 <StoreCategoriesSidebar
@@ -851,6 +708,16 @@ export default function StoreDetailClient({
               onExternalSearchChange={setSearchTerm}
               externalView={view}
               onExternalViewChange={setView}
+              searchSuggestions={suggestions}
+              onSelectSuggestion={(s) => {
+                if (s.type === "category") {
+                  // Filtra de verdad (filterCategory) + resalta en scrollspy.
+                  handleCategorySelect(s.value);
+                  setSearchTerm("");
+                } else {
+                  setSearchTerm(s.value);
+                }
+              }}
             />
           </main>
         </div>

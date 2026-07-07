@@ -8,8 +8,10 @@
  * banner de marca por defecto creativo: gradiente teal→ink, patrón de
  * puntos, formas geométricas y wordmark "Buleje · Pucallpa".
  *
- * Encima del banner, una fila flotante con el logo de la tienda (avatar
- * circular) + nombre + categoría — todo legible sobre cualquier banner.
+ * Brandon 2026-07-07: la fila flotante con logo + chips de categoría/zona se
+ * REMOVIÓ. Esa identidad ya vive en la barra lateral (desktop) y en la barra
+ * slim sticky + trust strip (mobile) — repetirla sobre el banner era ruido.
+ * El banner queda como una franja hero limpia.
  *
  * Sin emojis, sin saturación. Estilo Holded/Buleje.
  */
@@ -17,26 +19,21 @@
 import Image from "next/image";
 import { useState } from "react";
 import { m as motion } from "framer-motion";
-import { Store as StoreIcon, Sparkles } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import { formatCategoryLabel } from "@/lib/format-category";
+import { Sparkles } from "@buleje/design-system/icons";
 
 interface StoreBannerAreaProps {
   /** URL del banner subido por el dueño. null/empty → default Buleje. */
   banner?: string | null;
-  /** Logo de la tienda. null → avatar inicial. */
-  logo?: string | null;
-  /** Nombre — usado para overlay y para el avatar fallback. */
+  /** Nombre — usado para el alt text y el wordmark del banner default. */
   name: string;
-  /** Categoría — chip pequeño debajo del nombre. */
+  /** Categoría — solo para enriquecer el alt text (SEO/a11y). */
   category?: string | null;
-  /** Zona — segundo chip. */
+  /** Zona — solo para enriquecer el alt text (SEO/a11y). */
   zone?: string | null;
 }
 
 export default function StoreBannerArea({
   banner,
-  logo,
   name,
   category,
   zone,
@@ -46,7 +43,6 @@ export default function StoreBannerArea({
   // visible como texto raw — UX rota.
   const [bannerError, setBannerError] = useState(false);
   const hasBanner = Boolean(banner && banner.trim().length > 0) && !bannerError;
-  const initial = name.trim().charAt(0).toUpperCase();
 
   return (
     <section aria-label={`Cabecera de ${name}`} className="relative w-full overflow-hidden">
@@ -81,57 +77,6 @@ export default function StoreBannerArea({
           aria-hidden
           className="absolute inset-0 bg-linear-to-t from-black/60 via-black/15 to-transparent"
         />
-      </motion.div>
-
-      {/* ── Floating identity row ─────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-        className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8"
-      >
-        <div className="-mt-11 sm:-mt-12 lg:-mt-14 relative z-10 flex items-end gap-3.5">
-          {/* Avatar — más proporcionado (no tipo poster), bordes suaves + ring + sombra */}
-          <div
-            className={cn(
-              "shrink-0 h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 rounded-2xl max-md:rounded-none overflow-hidden",
-              "bg-[var(--surface-raised)] border-4 border-[var(--surface-canvas)]",
-              "shadow-lg max-md:shadow-none ring-1 ring-black/5 flex items-center justify-center",
-            )}
-          >
-            {logo ? (
-              <Image
-                src={logo}
-                alt={`Logo de ${name}`}
-                width={112}
-                height={112}
-                sizes="(max-width: 768px) 80px, 112px"
-                className="object-cover w-full h-full"
-              />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center bg-linear-to-br from-[var(--accent)] to-[var(--accent)]/70 text-white text-2xl sm:text-3xl font-black">
-                {initial}
-              </div>
-            )}
-          </div>
-
-          {/* Identity text — debajo del banner para no taparlo */}
-          <div className="flex-1 min-w-0 pb-2 sm:pb-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {category && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                  <StoreIcon className="h-3 w-3" aria-hidden />
-                  {formatCategoryLabel(category)}
-                </span>
-              )}
-              {zone && (
-                <span className="inline-flex items-center rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  {zone}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
       </motion.div>
     </section>
   );

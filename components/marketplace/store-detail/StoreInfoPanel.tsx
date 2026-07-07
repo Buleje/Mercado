@@ -11,21 +11,27 @@
  * Sin emojis, sin saturación. Estilo Holded/Buleje.
  */
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   MapPin,
   Clock,
-  MessageCircle,
   Truck,
   Star,
   CheckCircle2,
   Wallet,
+  ShieldCheck,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCategoryLabel } from "@/lib/format-category";
 import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 
 interface StoreInfoPanelProps {
   name: string;
+  /** Logo de la tienda — cabecera de identidad del panel. null → inicial. */
+  logo?: string | null;
+  /** Categoría — kicker de la cabecera de identidad. */
+  category?: string | null;
   zone?: string | null;
   address?: string | null;
   scheduleLabel?: string;
@@ -34,7 +40,6 @@ interface StoreInfoPanelProps {
   reviewCount: number;
   deliveryMin: number;
   freeDelivery?: boolean;
-  whatsappNumber?: string | null;
   paymentMethods?: string[]; // ["yape", "efectivo", "plin", ...]
   /** Fiado Digital — la tienda acepta "compra ahora, paga después". Diferenciador
    *  Buleje; se muestra igual que el badge de /tiendas para que sea consistente. */
@@ -52,6 +57,8 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 export default function StoreInfoPanel({
   name,
+  logo,
+  category,
   zone,
   address,
   scheduleLabel = "Lun a Dom · 6am – 11pm",
@@ -60,7 +67,6 @@ export default function StoreInfoPanel({
   reviewCount,
   deliveryMin,
   freeDelivery = true,
-  whatsappNumber,
   paymentMethods = ["yape", "efectivo"],
   acceptsFiado = false,
 }: StoreInfoPanelProps) {
@@ -68,15 +74,49 @@ export default function StoreInfoPanel({
   const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent(
     address ?? `${name} ${zone ?? "Ciudad Constitución"}`,
   )}`;
-  const waLink = whatsappNumber
-    ? `https://wa.me/51${whatsappNumber.replace(/\D/g, "")}`
-    : null;
 
   return (
     <aside
       aria-label={`Información de ${name}`}
       className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden flex flex-col"
     >
+      {/* ── Cabecera de identidad (Brandon 2026-07-07) ────────────────────
+          Antes vivía como card suelta arriba del panel + duplicada sobre el
+          banner. Ahora es el header del panel: una sola barra lateral cohesiva
+          (identidad → mapa → datos). */}
+      <div className="flex items-center gap-3 p-3.5 border-b border-[var(--rule-soft)]">
+        <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--surface-sunken)] ring-1 ring-[var(--rule-base)]">
+          {logo ? (
+            <Image
+              src={logo}
+              alt={name}
+              width={56}
+              height={56}
+              sizes="56px"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-lg font-black text-[var(--accent)]">
+              {name.trim().charAt(0).toUpperCase()}
+            </span>
+          )}
+        </span>
+        <div className="min-w-0">
+          {category && (
+            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
+              {formatCategoryLabel(category)}
+            </p>
+          )}
+          <h1 className="truncate text-base font-black leading-tight text-[var(--text-primary)]">
+            {name}
+          </h1>
+          <p className="mt-0.5 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">
+            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Verificada por
+            Buleje
+          </p>
+        </div>
+      </div>
+
       {/* ── Mini mapa SVG decorativo + status ────────────────────────────── */}
       <Link
         href={mapsHref}
@@ -219,19 +259,6 @@ export default function StoreInfoPanel({
           </div>
         )}
       </div>
-
-      {/* ── CTA contacto ────────────────────────────────────────────────── */}
-      {waLink && (
-        <Link
-          href={waLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 bg-[var(--text-primary)] text-[var(--surface-canvas)] py-3 text-sm font-bold hover:bg-[var(--accent)] active:scale-[0.99] transition-colors"
-        >
-          <MessageCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          Escribir por WhatsApp
-        </Link>
-      )}
     </aside>
   );
 }
