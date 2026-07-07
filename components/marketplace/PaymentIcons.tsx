@@ -1,14 +1,20 @@
+"use client";
+
 /**
  * PaymentIcons — íconos de métodos de pago para el marketplace peruano.
  *
- * Arte ORIGINAL (no reproduce los logos oficiales registrados de Yape/Plin):
- * badge redondeado en el color de marca + glifo/letra en blanco. Sirve para
- * indicar "aceptamos X" (uso nominativo) de forma reconocible por color + el
- * wordmark que lo acompaña. Server-compatible (SVG puro, sin estado).
- *
- * Colores de marca aproximados: Yape morado, Plin turquesa, Efectivo verde,
- * Tarjeta / Transferencia neutros.
+ * Logos OFICIALES (Brandon 2026-07-06): si existe el archivo oficial en
+ * `public/payment-logos/{método}.svg` (los que subís del brand kit), se usa ese
+ * logo real. Si el archivo no está (o falla la carga) cae al ARTE CUSTOM —
+ * badge de color + glifo — vía `onError`, así nunca hay imágenes rotas.
  */
+
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+
+// Medios con archivo de logo oficial en public/payment-logos/. Sumá acá la clave
+// + el archivo para habilitar otro (ej. "tarjeta").
+const OFFICIAL_LOGOS = new Set(["yape", "plin"]);
 
 export type PaymentMethod =
   | "yape"
@@ -46,6 +52,26 @@ export function PaymentMethodIcon({ method, size = "md", className, title }: Pro
   const px = typeof size === "number" ? size : SIZE_MAP[size];
   const m = normalize(method);
   const label = title ?? m.charAt(0).toUpperCase() + m.slice(1);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  // Logo OFICIAL si el archivo existe en public/payment-logos/; si falla la
+  // carga (archivo aún no subido), onError cae al arte custom de abajo.
+  if (OFFICIAL_LOGOS.has(m) && !logoFailed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/payment-logos/${m}.svg`}
+        width={px}
+        height={px}
+        alt={label}
+        title={label}
+        loading="lazy"
+        decoding="async"
+        className={cn("inline-block shrink-0 object-contain", className)}
+        onError={() => setLogoFailed(true)}
+      />
+    );
+  }
 
   const common = {
     width: px,
