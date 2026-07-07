@@ -372,7 +372,7 @@ export default function StoreCatalog({
             onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
             aria-label="Buscar productos"
             autoComplete="off"
-            className="w-full pl-12 pr-11 h-12 text-base font-medium rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition"
+            className="w-full pl-12 pr-11 h-12 text-base font-medium rounded-2xl max-md:rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition [&::-webkit-search-cancel-button]:hidden"
           />
           {search && (
             <button
