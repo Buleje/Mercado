@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { shouldIgnoreShortcut } from "@/lib/keyboard-guards";
 import { cachedJson } from "@/lib/client-cache-fetch";
 import { useNotificationCenter } from "./useNotificationCenter";
 import NotificationHub from "./NotificationHub";
@@ -138,15 +139,17 @@ export default function NotificationBell() {
     prevCritical.current = criticalCount;
   }, [unreadCount, criticalCount]);
 
-  // Keyboard shortcut: "N" opens panel (when no input is focused)
+  // Keyboard shortcut: "N" abre el panel — SOLO como tecla simple deliberada.
+  // FIX 2026-07-08 (reporte QA Compras): antes se disparaba con cualquier "n"
+  // aunque hubiera un modal abierto o el usuario tuviera Ctrl/Cmd/Alt pulsado
+  // (ej. Cmd+N del navegador) → abría el Centro de Notificaciones sin pedirlo.
+  // `shouldIgnoreShortcut` centraliza el guard (campo editable + modal abierto +
+  // modificadores).
   const handleKeydown = useCallback((e: KeyboardEvent) => {
-    if (e.key === "n" || e.key === "N") {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if ((e.target as HTMLElement)?.isContentEditable) return;
-      e.preventDefault();
-      setOpen((prev) => !prev);
-    }
+    if (e.key !== "n" && e.key !== "N") return;
+    if (shouldIgnoreShortcut(e)) return;
+    e.preventDefault();
+    setOpen((prev) => !prev);
   }, []);
 
   useEffect(() => {

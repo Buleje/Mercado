@@ -117,7 +117,10 @@ export default memo(function PuntoCompraProductCard({
         >
           S/{displayPrice.toFixed(2)}
         </span>
-        <span className="text-xs text-[var(--text-tertiary)]">
+        <span
+          className="text-xs text-[var(--text-tertiary)]"
+          title={product.stock == null ? "Este producto no lleva control de inventario" : `${product.stock} ${product.unit ?? ""} en stock`}
+        >
           Stock: {product.stock ?? "—"}
         </span>
       </div>

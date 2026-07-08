@@ -12,6 +12,7 @@ import { useAdminPrefetch } from "@/hooks/use-admin-prefetch";
 import { useTenantCacheGuard } from "@/hooks/use-tenant-cache-guard";
 import { LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useTheme } from "@/contexts/theme-context";
 import type { Tab } from "./_lib/tabs.types";
 import { ALL_TABS } from "./_lib/tab-data";
@@ -241,7 +242,10 @@ function AdminPage() {
   React.useEffect(() => {
     if (!hasSubSidebar || subSidebarTabs.length === 0) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // FIX 2026-07-08 (reporte QA Compras): guard robusto — no navegar si el
+      // usuario escribe (input/textarea/select/contenteditable) ni si hay un
+      // modal abierto.
+      if (isEditableTarget(e.target) || isModalOpen()) return;
       const idx = subSidebarTabs.findIndex(t => t.id === tab);
       if (e.key === "ArrowDown" && e.altKey && idx < subSidebarTabs.length - 1) {
         e.preventDefault();
@@ -249,9 +253,11 @@ function AdminPage() {
       } else if (e.key === "ArrowUp" && e.altKey && idx > 0) {
         e.preventDefault();
         navigateTab(subSidebarTabs[idx - 1].id as Tab);
-      } else if (e.key === "Escape" && hasSubSidebar) {
-        navigateTab("asistente-ia" as Tab);
       }
+      // Escape ya NO navega. Antes hacía `navigateTab("asistente-ia")`, lo que
+      // sacaba al usuario de su sección al presionar Escape para cerrar un modal
+      // → pérdida de trabajo sin aviso. Cerrar overlays es responsabilidad de
+      // cada modal (todos escuchan su propio Escape).
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
