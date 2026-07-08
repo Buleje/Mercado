@@ -133,6 +133,8 @@ export default function SugerenciasCompraTab() {
     CRITICO: false, URGENTE: false, PLANIFICAR: true,
   });
   const [creating, setCreating] = useState(false);
+  // productId de la sugerencia cuya OC se está creando (botón "Crear OC" por fila).
+  const [creatingItemId, setCreatingItemId] = useState<number | null>(null);
   const [filter, setFilter] = useState<FilterKey>("todos");
   const [search, setSearch] = useState("");
 
@@ -234,69 +236,84 @@ export default function SugerenciasCompraTab() {
   }, [selected, sugerencias]);
 
   // ── Crear OCs por proveedor ──────────────────────────────────────────────
-  const createOCs = async () => {
-    if (selected.size === 0) return;
-    setCreating(true);
-    try {
-      const selectedItems = sugerencias.filter((s) => selected.has(s.productId));
 
-      const groups = new Map<string, Sugerencia[]>();
-      for (const item of selectedItems) {
-        const key = item.suggestedSupplier?.id ?? "sin-proveedor";
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)!.push(item);
-      }
+  /**
+   * Crea OCs a partir de una lista de sugerencias, agrupando por proveedor
+   * (un POST /api/purchases por proveedor) + payable fire-and-forget. Es el
+   * núcleo reutilizado tanto por la creación masiva (seleccionados) como por
+   * el botón "Crear OC" de una sola fila. Devuelve cuántas OCs se crearon vs
+   * cuántos grupos se intentaron.
+   */
+  const createOCForItems = async (
+    items: Sugerencia[],
+  ): Promise<{ createdCount: number; groupCount: number }> => {
+    const groups = new Map<string, Sugerencia[]>();
+    for (const item of items) {
+      const key = item.suggestedSupplier?.id ?? "sin-proveedor";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(item);
+    }
 
-      let createdCount = 0;
-      for (const [supplierId, items] of groups) {
-        const supplierName =
-          supplierId !== "sin-proveedor"
-            ? items[0].suggestedSupplier?.name ?? "Proveedor por definir"
-            : "Proveedor por definir";
+    let createdCount = 0;
+    for (const [supplierId, groupItems] of groups) {
+      const supplierName =
+        supplierId !== "sin-proveedor"
+          ? groupItems[0].suggestedSupplier?.name ?? "Proveedor por definir"
+          : "Proveedor por definir";
 
-        const res = await fetch("/api/purchases", {
+      const res = await fetch("/api/purchases", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          supplierId: supplierId !== "sin-proveedor" ? supplierId : "",
+          supplierName,
+          items: groupItems.map((i) => ({
+            productId: i.productId,
+            name: i.productName,
+            quantity: i.suggestedQty,
+            unitCost: i.lastPrice ?? 0,
+            unit: "und",
+          })),
+          notes: `OC generada automaticamente por sugerencias de compra`,
+        }),
+      });
+
+      if (res.ok) {
+        createdCount++;
+        const po = await res.json();
+        // Auto-create payable (fire-and-forget)
+        fetch("/api/payables", {
           method: "POST",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             supplierId: supplierId !== "sin-proveedor" ? supplierId : "",
             supplierName,
-            items: items.map((i) => ({
-              productId: i.productId,
-              name: i.productName,
-              quantity: i.suggestedQty,
-              unitCost: i.lastPrice ?? 0,
-              unit: "und",
-            })),
-            notes: `OC generada automaticamente por sugerencias de compra`,
+            purchaseOrderId: po.id,
+            description: `Orden de compra ${po.id}`,
+            amount: po.total,
+            dueDate: new Date(Date.now() + 30 * 86_400_000).toISOString(),
           }),
-        });
-
-        if (res.ok) {
-          createdCount++;
-          const po = await res.json();
-          // Auto-create payable (fire-and-forget)
-          fetch("/api/payables", {
-            method: "POST",
-            headers: csrfHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({
-              supplierId: supplierId !== "sin-proveedor" ? supplierId : "",
-              supplierName,
-              purchaseOrderId: po.id,
-              description: `Orden de compra ${po.id}`,
-              amount: po.total,
-              dueDate: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-            }),
-          }).catch((err) => console.warn("[SugerenciasCompraTab] payable create failed:", err));
-        }
+        }).catch((err) => console.warn("[SugerenciasCompraTab] payable create failed:", err));
       }
+    }
+    return { createdCount, groupCount: groups.size };
+  };
 
-      if (createdCount === groups.size) {
+  // Creación masiva de los seleccionados.
+  const createOCs = async () => {
+    if (selected.size === 0) return;
+    setCreating(true);
+    try {
+      const selectedItems = sugerencias.filter((s) => selected.has(s.productId));
+      const { createdCount, groupCount } = await createOCForItems(selectedItems);
+
+      if (createdCount === groupCount) {
         toast.success(
           `${createdCount} ${createdCount === 1 ? "orden creada" : "órdenes creadas"}`,
-          { description: `${selected.size} productos repartidos en ${groups.size} ${groups.size === 1 ? "proveedor" : "proveedores"}.` }
+          { description: `${selected.size} productos repartidos en ${groupCount} ${groupCount === 1 ? "proveedor" : "proveedores"}.` }
         );
       } else if (createdCount > 0) {
-        toast(`Creadas ${createdCount}/${groups.size} órdenes`, { description: "Algunas fallaron. Reintentá." });
+        toast(`Creadas ${createdCount}/${groupCount} órdenes`, { description: "Algunas fallaron. Reintentá." });
       } else {
         toast.error("No se pudo crear ninguna orden");
       }
@@ -306,6 +323,24 @@ export default function SugerenciasCompraTab() {
       toast.error("Error al crear órdenes de compra");
     }
     setCreating(false);
+  };
+
+  // Creación de UNA sola OC desde la fila de una sugerencia (1 clic). Reusa el
+  // mismo núcleo; estado de carga por-item para no duplicar.
+  const createOCForOne = async (item: Sugerencia) => {
+    setCreatingItemId(item.productId);
+    try {
+      const { createdCount } = await createOCForItems([item]);
+      if (createdCount > 0) {
+        toast.success("Orden de compra creada", { description: item.productName });
+        void load(true);
+      } else {
+        toast.error("No se pudo crear la orden");
+      }
+    } catch {
+      toast.error("Error al crear la orden");
+    }
+    setCreatingItemId(null);
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -541,8 +576,8 @@ export default function SugerenciasCompraTab() {
                   const isSelected = selected.has(s.productId);
                   const lineTotal = s.lastPrice != null ? s.lastPrice * s.suggestedQty : null;
                   return (
+                    <div key={s.productId} className="flex flex-col gap-2">
                     <button
-                      key={s.productId}
                       type="button"
                       onClick={() => toggleSelect(s.productId)}
                       aria-pressed={isSelected}
@@ -621,6 +656,20 @@ export default function SugerenciasCompraTab() {
                         </div>
                       </div>
                     </button>
+                    {/* Crear OC de esta sola sugerencia en 1 clic (reporte QA
+                        Compras: "pasar de sugerencia a OC con un clic"). */}
+                    <button
+                      type="button"
+                      onClick={() => void createOCForOne(s)}
+                      disabled={creatingItemId === s.productId}
+                      className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      {creatingItemId === s.productId
+                        ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                        : <ShoppingCart className="h-4 w-4" strokeWidth={2} aria-hidden />}
+                      {creatingItemId === s.productId ? "Creando…" : "Crear OC"}
+                    </button>
+                    </div>
                   );
                 })}
               </div>

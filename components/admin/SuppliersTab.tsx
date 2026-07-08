@@ -3,7 +3,7 @@
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
-import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award, Users, Building2, CreditCard } from "@buleje/design-system/icons";
+import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award, Users, Building2, CreditCard, History } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
@@ -13,6 +13,7 @@ import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import WhatsAppButton from "./WhatsAppButton";
 import SupplierScorecard from "./compras/SupplierScorecard";
+import SupplierTimeline from "./compras/SupplierTimeline";
 import ProveedorFormModal from "./proveedores/ProveedorFormModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -42,6 +43,7 @@ export default function SuppliersTab() {
   const [deleteTarget, setDeleteTarget] = useState<DbSupplier | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [expandedScorecard, setExpandedScorecard] = useState<string | null>(null);
+  const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
   const [showProveedorModal, setShowProveedorModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<DbSupplier | null>(null);
   const [search, setSearch] = useState("");
@@ -570,6 +572,25 @@ export default function SuppliersTab() {
                       {expandedScorecard === s.id && (
                         <div className="mt-3">
                           <SupplierScorecard supplierId={s.id} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Timeline toggle: historial combinado OC + devoluciones
+                        (reporte QA Compras: no saltar entre pestañas). */}
+                    <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <button
+                        onClick={() => setExpandedTimeline(expandedTimeline === s.id ? null : s.id)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                        title="Historial combinado de órdenes de compra y devoluciones"
+                      >
+                        <History className="h-3.5 w-3.5" />
+                        {expandedTimeline === s.id ? "Ocultar historial" : "Ver historial"}
+                        {expandedTimeline === s.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+                      {expandedTimeline === s.id && (
+                        <div className="mt-3">
+                          <SupplierTimeline supplierId={s.id} supplierName={s.name} />
                         </div>
                       )}
                     </div>

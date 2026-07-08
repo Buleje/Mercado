@@ -21,6 +21,7 @@ interface ItemDevuelto {
 interface Devolucion {
   id:              string;
   createdAt:       string;
+  updatedAt?:      string;
   proveedorNombre: string;
   items:           ItemDevuelto[];
   motivo:          string;
@@ -47,9 +48,29 @@ const MOTIVOS = [
 
 const ESTADO_STYLES: Record<DevolucionEstado, string> = {
   PENDIENTE: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  ENVIADA:   "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  ENVIADA:   "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
   RESUELTA:  "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
 };
+
+// Etiquetas legibles (reporte QA Compras: "ENVIADA" = esperando respuesta del
+// proveedor). El valor persistido sigue siendo ENVIADA; solo cambia el display.
+const ESTADO_LABEL: Record<DevolucionEstado, string> = {
+  PENDIENTE: "Pendiente",
+  ENVIADA:   "Esperando respuesta",
+  RESUELTA:  "Resuelta",
+};
+
+// Días desde el envío tras los cuales una devolución "esperando respuesta" se
+// considera vencida (sin respuesta del proveedor) y se resalta para no perderla.
+const DIAS_LIMITE_RESPUESTA = 7;
+
+/** Días que una devolución lleva esperando respuesta (0 si no aplica). */
+function diasEsperando(dev: Devolucion): number {
+  if (dev.estado !== "ENVIADA") return 0;
+  const desde = new Date(dev.updatedAt ?? dev.createdAt).getTime();
+  if (Number.isNaN(desde)) return 0;
+  return Math.max(0, Math.floor((Date.now() - desde) / 86_400_000));
+}
 
 const ESTADO_SIGUIENTE: Record<DevolucionEstado, DevolucionEstado | null> = {
   PENDIENTE: "ENVIADA",
@@ -283,6 +304,9 @@ export default function DevolucionesProveedorModule() {
     ENVIADA:   devoluciones.filter(d => d.estado === "ENVIADA").length,
     RESUELTA:  devoluciones.filter(d => d.estado === "RESUELTA").length,
   };
+  // Devoluciones enviadas SIN respuesta pasado el límite — las que hay que
+  // reclamar al proveedor (reporte QA: "no perder de vista las pendientes").
+  const vencidas = devoluciones.filter(d => diasEsperando(d) > DIAS_LIMITE_RESPUESTA).length;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -330,7 +354,12 @@ export default function DevolucionesProveedorModule() {
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
                 <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{conteos.PENDIENTE}</p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">{conteos.ENVIADA} enviadas</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                  {conteos.ENVIADA} esperando respuesta
+                  {vencidas > 0 && (
+                    <span className="text-[var(--data-error-500)] font-bold"> · {vencidas} vencida{vencidas === 1 ? "" : "s"}</span>
+                  )}
+                </p>
               </div>
               <Clock className={cn("h-5 w-5 shrink-0", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
             </div>
@@ -546,8 +575,25 @@ export default function DevolucionesProveedorModule() {
                         {dev.proveedorNombre}
                       </span>
                       <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
-                        {dev.estado}
+                        {ESTADO_LABEL[dev.estado]}
                       </span>
+                      {/* Días esperando respuesta — resalta las vencidas
+                          (>{DIAS_LIMITE_RESPUESTA}d) para no perderlas de vista. */}
+                      {dev.estado === "ENVIADA" && (() => {
+                        const dias = diasEsperando(dev);
+                        const vencida = dias > DIAS_LIMITE_RESPUESTA;
+                        return (
+                          <span className={cn(
+                            "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1",
+                            vencida
+                              ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                          )}>
+                            {vencida && <AlertCircle className="h-3 w-3" />}
+                            {dias === 0 ? "enviada hoy" : `esperando hace ${dias} ${dias === 1 ? "día" : "días"}`}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-xs text-[var(--text-tertiary)]">
