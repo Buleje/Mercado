@@ -37,7 +37,17 @@ export function calculateSuggestedQty(product: Pick<PurchaseProduct, "stock" | "
   return Math.max(1, targetStock - (product.stock ?? 0));
 }
 
-/** Verifica si un producto necesita reposición */
+/**
+ * Verifica si un producto necesita reposición.
+ *
+ * FIX 2026-07-08 (reporte QA Compras): antes `(stock ?? 0) <= (stockMin ?? 0)`
+ * marcaba como "a reponer" TODO producto sin control de stock (stock/min null →
+ * `0 <= 0` = true) — ej. servicios/gastos como "Aserrado de madera" que ni
+ * rastrean inventario. Eso contradecía la pestaña Sugerencias, que solo
+ * considera productos con `stockMin > 0`. Ahora exige un mínimo REAL configurado
+ * y un stock rastreado en/por debajo de él → ambas superficies coinciden.
+ */
 export function needsReorder(product: Pick<PurchaseProduct, "stock" | "stockMin">): boolean {
-  return (product.stock ?? 0) <= (product.stockMin ?? 0);
+  const min = product.stockMin ?? 0;
+  return min > 0 && product.stock != null && product.stock <= min;
 }

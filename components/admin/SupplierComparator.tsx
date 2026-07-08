@@ -40,12 +40,21 @@ interface SupplierWithScore extends Supplier {
   scoreTiempo: number;
   scoreCondicion: number;
   scoreVariedad: number;
+  // FIX 2026-07-08 (reporte QA Compras): sin evaluaciones el score se fabricaba
+  // con defaults (50/50) → un proveedor sin historial salía ~50/100 y se
+  // coronaba "Top Proveedor", contradiciendo la pestaña Proveedores ("sin
+  // historial suficiente para evaluar"). `hasData` marca si hay datos reales.
+  hasData: boolean;
 }
 
 // ── Score ─────────────────────────────────────────────────────────────────────
 
 function calcScore(s: Supplier): SupplierWithScore {
   const ev = s.evaluations;
+  // Sin evaluaciones = sin datos reales para puntuar (calidad/precio son la base
+  // del score, 70% del peso). El score numérico se sigue calculando para no
+  // romper el radar, pero la UI muestra "Sin datos" y no lo rankea como Top.
+  const hasData = !!ev;
   // Calidad 40%
   const scoreCalidad = ev ? (ev.quality / 5) * 100 : 50;
   // Precio 30% — ev.price 5=bueno
@@ -65,7 +74,7 @@ function calcScore(s: Supplier): SupplierWithScore {
     scoreTiempo  * 0.2 +
     scoreCondicion * 0.1;
 
-  return { ...s, score, scoreCalidad, scorePrecio, scoreTiempo, scoreCondicion, scoreVariedad };
+  return { ...s, score, scoreCalidad, scorePrecio, scoreTiempo, scoreCondicion, scoreVariedad, hasData };
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -82,7 +91,18 @@ function ScoreBar({ value, color }: { value: number; color: string }) {
   );
 }
 
-function ScoreBadge({ score }: { score: number }) {
+function ScoreBadge({ score, hasData = true }: { score: number; hasData?: boolean }) {
+  // Sin datos reales → badge neutro "—" (no una letra que implique evaluación).
+  if (!hasData) {
+    return (
+      <span
+        title="Sin historial suficiente para evaluar"
+        className="inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-extrabold bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+      >
+        —
+      </span>
+    );
+  }
   const grade = score >= 80 ? "A" : score >= 65 ? "B" : score >= 50 ? "C" : "D";
   const colors: Record<string, string> = {
     A: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
@@ -200,7 +220,12 @@ export default function SupplierComparator() {
       ? suppliers.filter(s => s.name.toLowerCase().includes(productFilter.toLowerCase()))
       : suppliers;
     return [...filtered].sort((a, b) => {
-      if (sortBy === "score") return b.score - a.score;
+      if (sortBy === "score") {
+        // Los proveedores sin datos van al final (su score es un default, no un
+        // ranking real) — así no aparecen arriba de proveedores ya evaluados.
+        if (a.hasData !== b.hasData) return a.hasData ? -1 : 1;
+        return b.score - a.score;
+      }
       if (sortBy === "name") return a.name.localeCompare(b.name);
       if (sortBy === "precio") return (a.averagePurchasePrice ?? 0) - (b.averagePurchasePrice ?? 0);
       return 0;
@@ -229,15 +254,20 @@ export default function SupplierComparator() {
   // rules-of-hooks)
   const kpis = useMemo(() => {
     if (suppliers.length === 0) return { topName: "—", topScore: 0, avgScore: 0, lowestPrice: null as number | null, lowestPriceName: "—" };
-    const sortedByScore = [...suppliers].sort((a, b) => b.score - a.score);
+    // Solo proveedores CON datos reales compiten por "Top Proveedor" y entran al
+    // promedio — no coronar a uno sin historial con su score default (reporte QA).
+    const withData = suppliers.filter(s => s.hasData);
+    const sortedByScore = [...withData].sort((a, b) => b.score - a.score);
     const top = sortedByScore[0];
-    const avgScore = Math.round(suppliers.reduce((s, x) => s + x.score, 0) / suppliers.length);
+    const avgScore = withData.length > 0
+      ? Math.round(withData.reduce((s, x) => s + x.score, 0) / withData.length)
+      : 0;
     const withPrice = suppliers.filter(s => (s.averagePurchasePrice ?? 0) > 0);
     const sortedByPrice = [...withPrice].sort((a, b) => (a.averagePurchasePrice ?? 0) - (b.averagePurchasePrice ?? 0));
     const cheapest = sortedByPrice[0];
     return {
-      topName: top.name,
-      topScore: Math.round(top.score),
+      topName: top?.name ?? "—",
+      topScore: top ? Math.round(top.score) : 0,
       avgScore,
       lowestPrice: cheapest?.averagePurchasePrice ?? null,
       lowestPriceName: cheapest?.name ?? "—",
@@ -289,7 +319,7 @@ export default function SupplierComparator() {
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Top proveedor</p>
               <p className="text-lg font-extrabold leading-none mt-1.5 text-[var(--text-primary)] truncate">{kpis.topName}</p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">Score {kpis.topScore}/100</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">{kpis.topName === "—" ? "Sin proveedores evaluados aún" : `Score ${kpis.topScore}/100`}</p>
             </div>
             <Star className="h-5 w-5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
           </div>
@@ -418,8 +448,8 @@ export default function SupplierComparator() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <ScoreBadge score={s.score} />
-                          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{Number(s.score).toFixed(0)}pts</span>
+                          <ScoreBadge score={s.score} hasData={s.hasData} />
+                          <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{s.hasData ? `${Number(s.score).toFixed(0)}pts` : "Sin datos"}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -445,8 +475,8 @@ export default function SupplierComparator() {
             <div className="px-4 py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <p className="text-xs font-bold text-[var(--text-primary)] truncate">{selectedSupplier.name}</p>
               <div className="flex items-center gap-2 mt-1">
-                <ScoreBadge score={selectedSupplier.score} />
-                <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{Number(selectedSupplier.score).toFixed(1)} puntos</span>
+                <ScoreBadge score={selectedSupplier.score} hasData={selectedSupplier.hasData} />
+                <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{selectedSupplier.hasData ? `${Number(selectedSupplier.score).toFixed(1)} puntos` : "Sin historial suficiente para evaluar"}</span>
               </div>
             </div>
 

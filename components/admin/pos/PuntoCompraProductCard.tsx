@@ -26,10 +26,14 @@ export default memo(function PuntoCompraProductCard({
   const displayName = product.name || "Sin nombre";
 
   const displayPrice = product.costPrice ?? product.price;
-  const isOutOfStock = (product.stock ?? 0) === 0;
+  // Distinguir "sin control de stock" (stock null → servicios/gastos como
+  // "Aserrado de madera") de "agotado" (rastreado y en 0). En un Punto de
+  // COMPRA, un producto agotado es justamente lo que querés pedir → la tarjeta
+  // SIEMPRE agrega al carrito. Antes se deshabilitaba y el clic no hacía nada
+  // sin ninguna explicación (reporte QA Compras 2026-07-08).
+  const isOutOfStock = product.stock === 0;
 
   const handleClick = () => {
-    if (isOutOfStock) return;
     onAdd(product, suggestedQty);
   };
 
@@ -37,18 +41,16 @@ export default memo(function PuntoCompraProductCard({
     <button
       type="button"
       onClick={handleClick}
-      disabled={isOutOfStock}
-      aria-label={isOutOfStock ? `${displayName} — agotado` : `Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}`}
+      aria-label={`Agregar ${displayName} al carrito — cantidad sugerida: ${suggestedQty}${isOutOfStock ? " (agotado, repón stock)" : ""}`}
       className={cn(
         "relative border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 transition-all bg-[var(--surface-raised)]",
         "text-left w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-        isOutOfStock
-          ? "opacity-60 cursor-not-allowed"
-          : "cursor-pointer hover:shadow-sm hover:border-primary/50 hover:scale-[1.02]",
+        "cursor-pointer hover:shadow-sm hover:border-primary/50 hover:scale-[1.02]",
       )}
     >
-      {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto */}
-      {(product.stock ?? 0) === 0 ? (
+      {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto.
+          AGOTADO solo si el stock está RASTREADO en 0 (no si es null/sin control). */}
+      {isOutOfStock ? (
         <span
           aria-label="Producto agotado"
           className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error-500)]/30 text-[var(--data-error-500)] z-10"

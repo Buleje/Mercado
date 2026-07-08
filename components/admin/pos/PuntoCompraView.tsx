@@ -40,6 +40,7 @@ import {
   PurchaseSortBy as SortBy,
   PurchaseViewMode as ViewMode,
   calculateSuggestedQty,
+  needsReorder,
 } from "@/lib/types/purchases";
 import { buildPurchaseWhatsAppUrl } from "@/lib/whatsapp-client";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -477,7 +478,7 @@ export default function PuntoCompraView() {
   const filtered = useMemo(() => {
     let list = [...products];
     if (soloReponer)
-      list = list.filter((p) => (p.stock ?? 0) <= (p.stockMin ?? 0));
+      list = list.filter((p) => needsReorder(p));
     if (category !== "Todos")
       list = list.filter((p) => p.category === category);
     if (debouncedSearch) {
@@ -608,7 +609,7 @@ export default function PuntoCompraView() {
   const totalWithIGV = useMemo(() => total + igvAmount, [total, igvAmount]);
 
   const needsReorderCount = useMemo(
-    () => products.filter((p) => (p.stock ?? 0) <= (p.stockMin ?? 0)).length,
+    () => products.filter((p) => needsReorder(p)).length,
     [products],
   );
 
@@ -1385,7 +1386,7 @@ export default function PuntoCompraView() {
                 </thead>
                 <tbody>
                   {paginatedProducts.map((p) => {
-                    const needs = (p.stock ?? 0) <= (p.stockMin ?? 0);
+                    const needs = needsReorder(p);
                     const sug = calculateSuggestedQty(p);
                     return (
                       <tr
