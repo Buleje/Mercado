@@ -2281,6 +2281,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   {(id) => (<>
                     <select id={id} value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
                       {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                      {/* Categoría aplicada desde la sugerencia que aún no está
+                          en la lista del comercio → mostrarla igual para no perderla. */}
+                      {addForm.category && !formCategories.some(c => c.id === addForm.category) && (
+                        <option value={addForm.category}>{catLabelOf(addForm.category)}</option>
+                      )}
                     </select>
                     {/* Sugerencia automática: si el nombre del producto contiene
                         una palabra clave que mapea a otra categoría distinta a
@@ -2847,6 +2852,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   {(id) => (<>
                     <select id={id} value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
                       {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                      {editForm.category && !formCategories.some(c => c.id === editForm.category) && (
+                        <option value={editForm.category}>{catLabelOf(editForm.category)}</option>
+                      )}
                     </select>
                     {/* Sugerencia heurística para edición — mismo flujo que en
                         el form de creación. */}
