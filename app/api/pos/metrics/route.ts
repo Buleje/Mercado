@@ -53,11 +53,17 @@ export async function GET(req: NextRequest) {
     const ahora = new Date();
     const turnoMinutos = Math.floor((ahora.getTime() - turno.abrioEn.getTime()) / 60000);
 
-     
+    // FIX 2026-07-08 (reporte ventas-caja bug 3): `Sale.cashierId` guarda el
+    // `username`, no el `adminUserId` (CUID). Filtrar solo por adminUserId
+    // devolvía 0 → widget "Turno activo" mostraba Ventas S/0.00. Resolvemos el
+    // username del cajero del turno y filtramos por ambas formas.
+    const turnoUsername = await AdminUsersDB.getUsernameById(tenantId, turno.adminUserId);
+    const cashierIds = [turno.adminUserId, turnoUsername].filter((v): v is string => !!v);
+
     const sales = await prisma.sale.findMany({
       where: {
         tenantId,
-        cashierId: turno.adminUserId,
+        cashierId: { in: cashierIds },
         createdAt: { gte: turno.abrioEn },
       },
       select: {

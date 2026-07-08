@@ -24,9 +24,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ShieldAlert, Sparkles, ArrowRight, CheckCircle2 } from "@buleje/design-system/icons";
+import { ShieldAlert, Sparkles, ArrowRight, CheckCircle2, ShoppingCart } from "@buleje/design-system/icons";
 import { PageTitle, CardTitle } from "@buleje/design-system";
 import { cachedJson } from "@/lib/client-cache-fetch";
+
+// MODO GRACIA 2026-07-08 (decisión Brandon, reporte ventas-caja bug 1): aunque
+// el trial expire, el TILL sigue operativo — una bodega real necesita seguir
+// cobrando en el mostrador. Estos son los `tab` top-level que renderean el
+// Punto de Venta / Turnos / Caja / Cuadre (POSCajaModule). El resto del panel
+// (productos, reportes, etc.) sí queda bloqueado hasta activar un plan.
+const TILL_TABS = new Set(["ventas-caja", "turnos"]);
 
 interface PlanResponse {
   plan: string;
@@ -40,7 +47,15 @@ interface PlanResponse {
 
 type Status = "loading" | "ok" | "expired";
 
-export function TrialExpiredGuard({ children }: { children: React.ReactNode }) {
+export function TrialExpiredGuard({
+  children,
+  activeTab,
+}: {
+  children: React.ReactNode;
+  /** `tab` top-level activo del panel. Si es un tab del till, en modo gracia
+   *  se deja operar (con banner) en vez de bloquear la pantalla completa. */
+  activeTab?: string;
+}) {
   const [status, setStatus] = useState<Status>("loading");
 
   useEffect(() => {
@@ -69,7 +84,44 @@ export function TrialExpiredGuard({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (status !== "expired") return <>{children}</>;
+
+  // MODO GRACIA: si el usuario está en un tab del till, dejamos operar el POS
+  // con un banner persistente en vez de bloquear todo. El resto de tabs ven la
+  // pantalla de trial terminado (con un CTA para saltar al POS).
+  if (activeTab && TILL_TABS.has(activeTab)) {
+    return (
+      <>
+        <TrialGraceBanner />
+        {children}
+      </>
+    );
+  }
   return <TrialExpiredScreen />;
+}
+
+/**
+ * Banner rojo persistente que corona el panel mientras el trial está expirado
+ * pero el till sigue operativo (modo gracia). No es descartable a propósito.
+ */
+function TrialGraceBanner() {
+  return (
+    <div className="sticky top-0 z-[60] flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-[var(--data-error-500)] px-4 py-2 text-center text-white">
+      <span className="inline-flex items-center gap-2 text-sm font-bold">
+        <ShieldAlert className="h-4 w-4 shrink-0" strokeWidth={2.25} />
+        Trial expirado — podés seguir vendiendo.
+      </span>
+      <span className="text-sm text-white/90">
+        Activá tu plan para recuperar el panel completo.
+      </span>
+      <Link
+        href="/admin?tab=plan"
+        className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white ring-1 ring-inset ring-white/30 transition-colors hover:bg-white/25"
+      >
+        <Sparkles className="h-3.5 w-3.5" strokeWidth={2.25} />
+        Activar plan
+      </Link>
+    </div>
+  );
 }
 
 function TrialExpiredScreen() {
@@ -115,7 +167,20 @@ function TrialExpiredScreen() {
           />
         </div>
 
-        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+        {/* MODO GRACIA (bug 1): la caja física nunca se congela — desde la
+            pantalla de bloqueo se puede saltar al Punto de Venta y seguir
+            cobrando. Al entrar a ?tab=ventas-caja el guard muestra el POS con
+            el banner de gracia en vez de esta pantalla. */}
+        <a
+          href="/admin?tab=ventas-caja"
+          className="mt-8 inline-flex items-center gap-2 rounded-full border-2 border-[var(--data-success-500)] bg-[var(--accent-soft)] px-6 py-3 text-sm font-bold text-[var(--data-success-500)] transition-all hover:scale-[1.02]"
+        >
+          <ShoppingCart className="h-4 w-4" strokeWidth={2.25} />
+          Seguir vendiendo en el Punto de Venta
+          <ArrowRight className="h-4 w-4" strokeWidth={2.25} />
+        </a>
+
+        <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row">
           <Link
             href="/admin?tab=plan"
             className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-bold text-white shadow-md transition-all hover:scale-[1.02] hover:shadow-lg"

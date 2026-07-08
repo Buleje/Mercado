@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { TurnosDB } from "@/lib/db/turnos.db";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
+import { CashRegistersDB } from "@/lib/jsondb";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
@@ -69,15 +70,21 @@ export async function POST(
       }
     }
 
-    // SECURITY 2026-05-07 (T2): aggregate scoped por cashierId del turno.
+    // SECURITY 2026-05-07 (T2): aggregate scoped por cajero del turno.
     // Antes sumaba ventas de TODOS los cajeros del tenant durante el periodo →
     // ventasTotal incorrecto en multi-cajero, podia ocultar/fabricar diferencias.
-    // Sale.cashierId guarda el adminUserId del cajero que cobro.
-     
+    //
+    // FIX 2026-07-08 (reporte ventas-caja bug 3/6): `Sale.cashierId` guarda el
+    // `username` (ver app/api/sales POST), NO el `adminUserId` (CUID). Filtrar
+    // solo por adminUserId nunca matcheaba → ventasTotal S/0.00 siempre.
+    // Resolvemos el username del turno y filtramos por AMBAS formas.
+    const cajeroUsername = await AdminUsersDB.getUsernameById(auth.tenantId, existing.adminUserId);
+    const cashierIds = [existing.adminUserId, cajeroUsername].filter((v): v is string => !!v);
+
     const ventasTotal = await prisma.sale.aggregate({
       where: {
         tenantId: auth.tenantId,
-        cashierId: existing.adminUserId,
+        cashierId: { in: cashierIds },
         createdAt: { gte: existing.abrioEn },
       },
       _sum: { total: true },
@@ -100,7 +107,42 @@ export async function POST(
       );
     }
 
-    const diferencia = parsed.data.cierreEfectivo - (toNumOrZero(existing.inicioEfectivo) + totalVentas);
+    // FIX 2026-07-08 (reporte ventas-caja bug 7/8): cerrar TAMBIÉN la caja
+    // vinculada al turno. Antes cerrar el turno dejaba el CashRegister
+    // "Abierta" (estado partido) y el arqueo nunca aparecía en Cuadre
+    // (CashAuditTab lista registers cerrados). Ahora el cierre del turno
+    // cierra su caja con arqueo físico (cierreEfectivo) → el register queda
+    // cerrado con expectedAmount/difference calculados desde los movimientos
+    // REALES (ventas efectivo + ingresos − egresos), no desde inicio+ventas.
+    let cashRegister: Awaited<ReturnType<typeof CashRegistersDB.close>> = null;
+    if (existing.cashRegisterId) {
+      try {
+        const reg = await CashRegistersDB.getById(auth.tenantId, existing.cashRegisterId);
+        if (reg && reg.status === "abierta") {
+          cashRegister = await CashRegistersDB.close(
+            auth.tenantId,
+            existing.cashRegisterId,
+            parsed.data.cierreEfectivo,
+            `Cierre de turno ${id.slice(-6)}`,
+          );
+        }
+      } catch (regErr) {
+        logger.warn("[turnos/id/cerrar] cierre de caja vinculada falló (no bloqueante)", {
+          id, err: regErr instanceof Error ? regErr.message : String(regErr),
+        });
+      }
+    }
+
+    // FIX 2026-07-08 (reporte ventas-caja bug 6): el "esperado" y la diferencia
+    // deben salir de los movimientos reales de caja (incluye ingresos/egresos
+    // manuales + solo ventas en EFECTIVO), no de `inicio + ventasTotal` (que
+    // ignora egresos y cuenta ventas Yape/tarjeta que no están en el cajón).
+    // Si la caja se cerró, usamos sus números; si no hay caja vinculada,
+    // caemos al cálculo legacy.
+    const expectedAmount = cashRegister?.expectedAmount
+      ?? (toNumOrZero(existing.inicioEfectivo) + totalVentas);
+    const diferencia = cashRegister?.difference
+      ?? (parsed.data.cierreEfectivo - expectedAmount);
 
     logActivity(
       "Cerrar", "turno",
@@ -108,7 +150,13 @@ export async function POST(
       id, auth.username,
     ).catch((err) => logger.warn("[turnos/id/cerrar] activity log failed", { id, err: String(err) }));
 
-    return NextResponse.json({ ...updated, diferencia });
+    return NextResponse.json({
+      ...updated,
+      diferencia,
+      expectedAmount,
+      ventasTotal: totalVentas,
+      cashRegisterClosed: !!cashRegister,
+    });
   } catch (e) {
     logger.error("[turnos/id/cerrar] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });

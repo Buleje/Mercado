@@ -275,7 +275,7 @@ function AdminPage() {
   }
 
   return (
-    <TrialExpiredGuard>
+    <TrialExpiredGuard activeTab={tab}>
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-dark-fallback>
       {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}
       <TrialCountdownBannerLoader />

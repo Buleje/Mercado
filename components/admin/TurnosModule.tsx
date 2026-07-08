@@ -31,6 +31,7 @@ type Turno = {
   id: string;
   tenantId: string;
   adminUserId: string;
+  cashRegisterId?: string;
   inicioEfectivo: number;
   cierreEfectivo?: number;
   ventasTotal: number;
@@ -155,6 +156,17 @@ export default function TurnosModule() {
   const [cierreNotas, setCierreNotas] = useState("");
   const [closing, setClosing] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
+  // FIX 2026-07-08 (reporte ventas-caja bug 6): efectivo ESPERADO real en el
+  // cajón = apertura + ventas en efectivo + ingresos − egresos (movimientos
+  // reales de la caja vinculada). Antes el modal usaba `inicio + ventasTotal`,
+  // que ignora ingresos/egresos manuales y cuenta ventas Yape/tarjeta que no
+  // están en efectivo → generaba "sobrantes/faltantes" fantasma. Se carga al
+  // abrir el modal de cierre; `null` = aún cargando / sin caja (fallback).
+  const [cajaEsperado, setCajaEsperado] = useState<number | null>(null);
+  // Ventas del turno EN VIVO (todos los métodos) desde los movimientos de caja.
+  // Mientras el turno está ABIERTO, `turnoActivo.ventasTotal` vale 0 (solo se
+  // agrega al cerrar) → el modal mostraba "Ventas del turno S/0.00".
+  const [ventasTurnoLive, setVentasTurnoLive] = useState<number | null>(null);
 
   // Conteo por denominación — alternativa al input único. La cajera marca
   // cuántos billetes/monedas tiene de cada tipo y la app calcula el total.
@@ -265,6 +277,42 @@ export default function TurnosModule() {
     return () => document.removeEventListener("keydown", handleEsc);
   }, [showMetaConfig, showResumen, showCierre, showCreateCajero, creatingCajero, showDiffConfirm, resetCierreState]);
 
+  // FIX 2026-07-08 (reporte ventas-caja bug 6): al abrir el modal de cierre,
+  // cargar el efectivo ESPERADO real desde los movimientos de la caja
+  // vinculada (apertura + ventas efectivo + ingresos − egresos). Así el
+  // "Total esperado" y la diferencia reflejan lo que hay en el cajón, no
+  // `inicio + ventasTotal` (que ignora egresos y mezcla ventas no-efectivo).
+  useEffect(() => {
+    if (!showCierre || !turnoActivo) { setCajaEsperado(null); setVentasTurnoLive(null); return; }
+    let cancelled = false;
+    fetch("/api/cash-registers")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const registers: Array<{
+          id: string; status: string; openingAmount: number;
+          movements?: Array<{ type: string; method: string; amount: number }>;
+        }> = Array.isArray(data) ? data : (data.items ?? []);
+        // La caja del turno; si es un turno legacy sin vínculo, la que esté abierta.
+        const reg = registers.find((r) => r.id === turnoActivo.cashRegisterId)
+          ?? registers.find((r) => r.status === "abierta");
+        if (!reg) return;
+        const movs = reg.movements ?? [];
+        const ventasEfectivo = movs.filter((m) => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const ventasTotales = movs.filter((m) => m.type === "venta").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const ingresos = movs.filter((m) => m.type === "ingreso").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const egresos = movs.filter((m) => m.type === "egreso").reduce((s, m) => s + Number(m.amount || 0), 0);
+        setCajaEsperado(Number(reg.openingAmount || 0) + ventasEfectivo + ingresos - egresos);
+        setVentasTurnoLive(ventasTotales);
+      })
+      .catch(() => {
+        // Red no crítica: si la caja no carga, el modal cae al esperado legacy
+        // (inicio + ventasTotal) vía el `?? fallback` de cada display.
+        if (!cancelled) { setCajaEsperado(null); setVentasTurnoLive(null); }
+      });
+    return () => { cancelled = true; };
+  }, [showCierre, turnoActivo]);
+
   // ── Open turno ─────────────────────────────────────────────────────────────
 
   const handleAbrir = async () => {
@@ -351,7 +399,8 @@ export default function TurnosModule() {
   const DIFF_ANORMAL_PCT = 0.05;
 
   const evaluarDiferencia = (cierreMonto: number, turno: Turno): { diff: number; anormal: boolean } => {
-    const esperado = turno.inicioEfectivo + turno.ventasTotal;
+    // Esperado real del cajón (movimientos de caja); fallback legacy si aún no cargó.
+    const esperado = cajaEsperado ?? (turno.inicioEfectivo + turno.ventasTotal);
     const diff = cierreMonto - esperado;
     const absDiff = Math.abs(diff);
     const pctDiff = esperado > 0 ? absDiff / esperado : 0;
@@ -405,7 +454,9 @@ export default function TurnosModule() {
 
       // Build summary from turno data + API
       const ventasTotal = Number(cerrado.ventasTotal ?? turnoActivo.ventasTotal ?? 0);
-      const diferencia = Number(cerrado.diferencia ?? (monto - (turnoActivo.inicioEfectivo + ventasTotal)));
+      // Diferencia server-authoritative (basada en movimientos reales de caja);
+      // fallback al esperado real del cajón si el server no la devolvió.
+      const diferencia = Number(cerrado.diferencia ?? (monto - (cajaEsperado ?? (turnoActivo.inicioEfectivo + ventasTotal))));
 
       // T6 (audit ventas-caja 2026-05-07): server-authoritative aggregation.
       // Antes traiamos /api/sales completo y agregabamos en cliente, violando
@@ -1505,12 +1556,12 @@ export default function TurnosModule() {
                   </div>
                   <div className="flex justify-between items-center text-base">
                     <span className="text-[var(--text-secondary)]">Ventas del turno</span>
-                    <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</span>
+                    <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(ventasTurnoLive ?? turnoActivo.ventasTotal)}</span>
                   </div>
                   <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2.5">
-                    <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Total esperado</span>
+                    <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Efectivo esperado en caja</span>
                     <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
-                      {formatCurrency(turnoActivo.inicioEfectivo + turnoActivo.ventasTotal)}
+                      {formatCurrency(cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal))}
                     </span>
                   </div>
                 </div>
@@ -1648,7 +1699,7 @@ export default function TurnosModule() {
 
                 {/* Diferencia */}
                 {cierreEfectivo && !isNaN(parseFloat(cierreEfectivo)) && (() => {
-                  const diff = parseFloat(cierreEfectivo) - (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal);
+                  const diff = parseFloat(cierreEfectivo) - (cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal));
                   const cuadrado = Math.abs(diff) < 0.01;
                   const sobrante = diff > 0;
                   return (
@@ -1725,7 +1776,7 @@ export default function TurnosModule() {
           const monto = parseFloat(cierreEfectivo);
           const { diff } = evaluarDiferencia(monto, turnoActivo);
           const sobrante = diff > 0;
-          const esperado = turnoActivo.inicioEfectivo + turnoActivo.ventasTotal;
+          const esperado = cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal);
           const pct = esperado > 0 ? (Math.abs(diff) / esperado) * 100 : 0;
           return (
             <m.div

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { TurnosDB } from "@/lib/db/turnos.db";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
+import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -84,10 +85,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // FIX 2026-07-08 (reporte ventas-caja bug 2/4/7/8): vincular el turno a una
+    // CAJA. Antes Turno y CashRegister eran ciclos de vida independientes:
+    // abrir turno NO abría caja, así el POS volcaba movimientos al `getOpen()`
+    // = cualquier register viejo abierto (ej. uno del mes pasado nunca cerrado)
+    // → fechas de apertura inconsistentes, "ventas fantasma" en un cajón que no
+    // era el del turno, y el cierre del turno no cerraba la caja. Ahora:
+    //   - Si ya hay una caja abierta, el turno la ADOPTA (una caja por tenant).
+    //   - Si no hay ninguna, abrimos una fresca con el efectivo inicial del
+    //     turno (misma convención de `notes` que /api/cash-registers para que
+    //     Cuadre derive el nombre del cajero: "Nombre (detalle)").
+    let cashRegisterId = parsed.data.cashRegisterId;
+    if (!cashRegisterId) {
+      try {
+        const openReg = await CashRegistersDB.getOpen(auth.tenantId);
+        if (openReg) {
+          cashRegisterId = openReg.id;
+        } else {
+          const operator = (auth.name?.trim() || auth.username || "").trim();
+          const notes = operator ? `${operator} (turno)` : undefined;
+          const reg = await CashRegistersDB.open(auth.tenantId, parsed.data.inicioEfectivo, notes);
+          cashRegisterId = reg.id;
+        }
+      } catch (regErr) {
+        // No bloquear la apertura del turno si la caja falla — se puede abrir
+        // manualmente desde Caja Registradora. Solo lo logueamos.
+        logger.warn("[turnos] vinculación de caja falló (no bloqueante)", {
+          err: regErr instanceof Error ? regErr.message : String(regErr),
+        });
+      }
+    }
+
     const turno = await TurnosDB.abrir({
       tenantId: auth.tenantId,
       adminUserId: resolvedAdminUserId,
-      cashRegisterId: parsed.data.cashRegisterId,
+      cashRegisterId,
       inicioEfectivo: parsed.data.inicioEfectivo,
     });
 

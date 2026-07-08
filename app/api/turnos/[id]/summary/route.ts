@@ -52,16 +52,23 @@ export async function GET(
       }
     }
 
-    // T2: scoped por cashierId del turno + ventana temporal abrioEn..(cerroEn|now).
+    // T2: scoped por cajero del turno + ventana temporal abrioEn..(cerroEn|now).
     // Para turnos cerrados usa cerroEn como upper bound; para abiertos usa now.
     const lowerBound = turno.abrioEn;
     const upperBound = turno.cerroEn ?? new Date();
+
+    // FIX 2026-07-08 (reporte ventas-caja bug 3): `Sale.cashierId` guarda el
+    // `username` del cajero, no el `adminUserId` (CUID). Filtrar solo por
+    // adminUserId devolvía 0 ventas → summary vacío. Resolvemos el username y
+    // filtramos por ambas formas (defensivo ante datos legados).
+    const cajeroUsername = await AdminUsersDB.getUsernameById(auth.tenantId, turno.adminUserId);
+    const cashierIds = [turno.adminUserId, cajeroUsername].filter((v): v is string => !!v);
 
     // eslint-disable-next-line no-restricted-properties -- aggregate scoped por tenantId+cashierId+createdAt; refactor a SalesDB.summarizeShift pendiente.
     const sales = await prisma.sale.findMany({
       where: {
         tenantId: auth.tenantId,
-        cashierId: turno.adminUserId,
+        cashierId: { in: cashierIds },
         createdAt: { gte: lowerBound, lte: upperBound },
       },
       select: {

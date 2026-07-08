@@ -362,7 +362,12 @@ export default function FiadoModals({
                   <div className="border-t border-[var(--rule-base)] print:border-gray-400" />
                   <div className="flex justify-between">
                     <span className="text-[var(--text-secondary)] print:text-black">Deuda original:</span>
-                    <span className="font-bold text-[var(--text-secondary)]">{formatCurrency(reciboData.saldoAnterior + reciboData.montoPagado > reciboData.saldoAnterior ? reciboData.saldoAnterior + reciboData.montoPagado : selected?.total ?? 0)}</span>
+                    {/* Fix 2026-07-08 (reporte fiado bug 5): "Deuda original" = el
+                        total original del fiado (Fiado.total), igual que la línea de
+                        detalle (~571). El ternario previo sumaba saldoAnterior +
+                        montoPagado (siempre > saldoAnterior) → mostraba S/70 sobre una
+                        deuda de S/50 con abono de S/20. */}
+                    <span className="font-bold text-[var(--text-secondary)]">{formatCurrency(selected?.total ?? reciboData.saldoAnterior)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[var(--text-secondary)] print:text-black">Monto pagado:</span>

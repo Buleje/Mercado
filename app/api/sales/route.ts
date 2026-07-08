@@ -9,7 +9,6 @@ import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
-import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
@@ -166,8 +165,12 @@ export async function POST(req: NextRequest) {
 
   const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
-  const blocked = await requireActiveSubscription(auth.tenantId);
-  if (blocked) return blocked;
+  // MODO GRACIA 2026-07-08 (decisión Brandon, reporte ventas-caja bug 1): el
+  // POS NUNCA se bloquea por trial expirado — una bodega real necesita seguir
+  // cobrando en el mostrador aunque el trial del SaaS haya vencido. El gate
+  // 402 (`requireActiveSubscription`) se mantiene en el resto de writes
+  // (productos, gastos, compras, etc.), NO en la venta. El aviso de "trial
+  // expirado" se muestra como banner persistente en el POS (TrialExpiredGuard).
   // Round 20 M004: Sale + Customer + InventoryMovement + LoyaltyTx writes.
   return runWithAuditContext(req, auth.username, () => salesHandler(req, auth));
 }
