@@ -553,6 +553,17 @@ export default function PuntoCompraView() {
     };
   }, [cart, selectedSupplier, discount, paymentMethod, deliveryDate, notes, saveDraftHook]);
 
+  // Autosave del borrador ante CUALQUIER cambio del carrito/config (reporte QA
+  // Compras): antes solo se guardaba en `offline`/`beforeunload`, pero cambiar
+  // de pestaña admin DESMONTA esta vista sin disparar `beforeunload` → el
+  // carrito se perdía al volver. Guardando en cada cambio, el borrador siempre
+  // está al día y `loadDraft()` lo restaura al remontar. Solo guarda con items
+  // (no pisa con vacío; el borrador se limpia explícito al crear la orden).
+  useEffect(() => {
+    if (cart.length === 0) return;
+    saveDraftHook({ cart, selectedSupplier, discount, paymentMethod, deliveryDate, notes });
+  }, [cart, selectedSupplier, discount, paymentMethod, deliveryDate, notes, saveDraftHook]);
+
   // ── Atajo F2 para toggle escáner ─────────────────────────────────────────────
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

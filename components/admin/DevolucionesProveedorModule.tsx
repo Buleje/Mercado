@@ -103,6 +103,9 @@ export default function DevolucionesProveedorModule() {
   const [items, setItems] = useState<ItemDevuelto[]>([{ nombre: "", cantidad: 1, unidad: "und" }]);
   const [guardando, setGuardando] = useState(false);
   const [showReportes, setShowReportes] = useState(false);
+  // Nombres de productos reales del inventario → datalist para sugerir al
+  // escribir (reporte QA: el producto era texto libre, propenso a typos).
+  const [productNames, setProductNames] = useState<string[]>([]);
 
   // Cargar devoluciones con cache localStorage SWR (TTL 60s)
   const fetchDevoluciones = useCallback(async () => {
@@ -150,6 +153,21 @@ export default function DevolucionesProveedorModule() {
 
   useEffect(() => { fetchDevoluciones(); }, [fetchDevoluciones]);
   useEffect(() => { fetchProveedores(); }, [fetchProveedores]);
+
+  // Cargar nombres de productos del inventario para el datalist (una vez).
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/products")
+      .then(r => (r.ok ? r.json() : []))
+      .then((data: unknown) => {
+        if (cancelled) return;
+        const arr = Array.isArray(data) ? data : (data as { products?: unknown[] })?.products ?? [];
+        const names = (arr as Array<{ name?: string }>).map(p => p.name).filter((n): n is string => !!n);
+        setProductNames(Array.from(new Set(names)).sort());
+      })
+      .catch(err => console.warn("[DevolucionesProveedorModule] products load failed:", err));
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Acciones ─────────────────────────────────────────────────────────────
 
@@ -473,6 +491,7 @@ export default function DevolucionesProveedorModule() {
                 <input
                   type="text"
                   placeholder="Nombre del producto"
+                  list="devol-productos"
                   value={item.nombre}
                   onChange={e => actualizarItem(index, "nombre", e.target.value)}
                   className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
@@ -505,6 +524,10 @@ export default function DevolucionesProveedorModule() {
                 )}
               </div>
             ))}
+            {/* Sugerencias de productos reales del inventario. */}
+            <datalist id="devol-productos">
+              {productNames.map(n => <option key={n} value={n} />)}
+            </datalist>
           </div>
 
           {/* Notas */}

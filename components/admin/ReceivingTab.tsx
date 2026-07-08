@@ -92,6 +92,10 @@ export default function ReceivingTab() {
   const [invoiceUrl, setInvoiceUrl] = useState("");
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [invoiceError, setInvoiceError] = useState("");
+  // Sugerencias reales para los campos que eran texto libre (reporte QA):
+  // productos del inventario + proveedores registrados → datalists.
+  const [productNames, setProductNames] = useState<string[]>([]);
+  const [supplierNames, setSupplierNames] = useState<string[]>([]);
 
   // Carga recepciones con cache localStorage stale-while-revalidate
   useEffect(() => {
@@ -142,6 +146,24 @@ export default function ReceivingTab() {
   useEffect(() => {
     if (showNew) void loadPendingOCs();
   }, [showNew, loadPendingOCs]);
+
+  // Sugerencias reales para los datalists: nombres de productos + proveedores.
+  useEffect(() => {
+    let cancelled = false;
+    const asNames = (data: unknown, key?: "products" | "suppliers") => {
+      const arr = Array.isArray(data) ? data : (data as Record<string, unknown[]>)?.[key ?? ""] ?? [];
+      return Array.from(new Set((arr as Array<{ name?: string }>).map(x => x.name).filter((n): n is string => !!n))).sort();
+    };
+    Promise.all([
+      fetch("/api/products").then(r => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/api/suppliers").then(r => (r.ok ? r.json() : [])).catch(() => []),
+    ]).then(([prods, sups]) => {
+      if (cancelled) return;
+      setProductNames(asNames(prods, "products"));
+      setSupplierNames(asNames(sups, "suppliers"));
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const stats = useMemo(() => {
     const scheduled   = receptions.filter(r => r.status === "programada").length;
@@ -530,8 +552,11 @@ export default function ReceivingTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Proveedor" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
-                  placeholder="Distribuidora ABC"
+                  placeholder="Distribuidora ABC" list="recep-proveedores"
                   className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
+                <datalist id="recep-proveedores">
+                  {supplierNames.map(n => <option key={n} value={n} />)}
+                </datalist>
               </Field>
               <Field label="Nro. Orden de Compra" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
@@ -562,7 +587,7 @@ export default function ReceivingTab() {
                   <div key={idx} className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-surface rounded-xl p-2">
                     <input
                       value={row.product} onChange={e => updateChecklistRow(idx, "product", e.target.value)}
-                      placeholder="Producto" className="flex-1 min-w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs"
+                      placeholder="Producto" list="recep-productos" className="flex-1 min-w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs"
                     />
                     <input type="number" min="0" value={row.expectedQty} onChange={e => updateChecklistRow(idx, "expectedQty", +e.target.value)}
                       placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
@@ -581,6 +606,10 @@ export default function ReceivingTab() {
                     )}
                   </div>
                 ))}
+                {/* Sugerencias de productos reales del inventario. */}
+                <datalist id="recep-productos">
+                  {productNames.map(n => <option key={n} value={n} />)}
+                </datalist>
               </div>
             </div>
 
