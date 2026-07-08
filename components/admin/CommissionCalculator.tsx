@@ -15,8 +15,9 @@ const STORAGE_KEY = "commission_rates";
 type SaleRecord = {
   id: string;
   total: number;
-  cashierId: string;
-  cashierName: string;
+  cashierId: string | null;
+  // `/api/sales` no incluye el nombre — se resuelve desde /api/admin-users.
+  cashierName?: string;
   createdAt: string;
 };
 
@@ -38,6 +39,12 @@ export default function CommissionCalculator() {
   const [customRates, setCustomRates] = useState<Record<string, number>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [period, setPeriod] = useState<"month" | "week">("month");
+  // FIX 2026-07-08 (reporte ventas-caja bug "Sin cajero"): `/api/sales` NO
+  // devuelve `cashierName` — solo `cashierId`, que guarda el username del
+  // cajero (ver app/api/sales POST). Sin resolución, el detalle mostraba
+  // "Sin cajero" para TODAS las ventas aunque el total salía bien. Resolvemos
+  // username→nombre desde /api/admin-users (misma fuente que TurnosModule).
+  const [cashierNames, setCashierNames] = useState<Record<string, string>>({});
 
   /* Cargar tasas desde localStorage */
   useEffect(() => {
@@ -96,13 +103,34 @@ export default function CommissionCalculator() {
     load();
   }, [load]);
 
+  /* Resolver username→nombre del equipo (una vez). El cashierId de cada venta
+     es el username; sin este mapa el detalle caía a "Sin cajero". */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin-users")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((users: { username: string; name?: string }[]) => {
+        if (cancelled || !Array.isArray(users)) return;
+        const map: Record<string, string> = {};
+        for (const u of users) if (u.username) map[u.username] = u.name || u.username;
+        setCashierNames(map);
+      })
+      .catch((e) => console.warn("[CommissionCalculator] admin-users load failed:", e));
+    return () => { cancelled = true; };
+  }, []);
+
   /* ── Calculos ── */
   const { summaries, totalCommissions } = useMemo(() => {
     const byId: Record<string, { name: string; total: number; count: number }> = {};
 
     for (const s of sales) {
+      const hasCashier = !!s.cashierId;
       const id = s.cashierId || "unknown";
-      const name = s.cashierName || "Sin cajero";
+      // Prioridad: cashierName del payload (si existe) → nombre del equipo por
+      // username → el propio username. Solo ventas SIN cajero → "Sin cajero".
+      const name = hasCashier
+        ? (s.cashierName || cashierNames[id] || id)
+        : "Sin cajero";
       if (!byId[id]) byId[id] = { name, total: 0, count: 0 };
       byId[id].total += s.total;
       byId[id].count++;
@@ -126,7 +154,7 @@ export default function CommissionCalculator() {
     const totalCommissions = summaries.reduce((s, c) => s + c.commission, 0);
 
     return { summaries, totalCommissions };
-  }, [sales, defaultRate, customRates]);
+  }, [sales, defaultRate, customRates, cashierNames]);
 
   /* ── Export CSV ── */
   const handleExport = () => {

@@ -487,7 +487,11 @@ function SaleCompleteModal({
 }) {
   const [manualPhone, setManualPhone] = useState("");
   const displayTotal = lastSaleDetails?.total ?? cartTotal;
-  const animatedTotal = useCountUp(displayTotal, 1000);
+  // Fix 2026-07-08 (reporte ventas-caja): el count-up 0→total tardaba 1000ms →
+  // un vistazo/captura al abrir el modal "¡Venta completada!" podía leer un
+  // monto intermedio (ej. S/4.84 en una venta de S/50). Lo acortamos a 550ms:
+  // sigue siendo un "pop" celebratorio pero se estabiliza casi al instante.
+  const animatedTotal = useCountUp(displayTotal, 550);
 
   function buildWhatsAppUrl(phone: string) {
     const now = new Date();
