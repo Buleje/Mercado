@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { calculateSuggestedQty } from "@/lib/types/purchases";
 import {
   getProductosConStockMin,
   getVentasPor30Dias,
@@ -41,12 +42,21 @@ export async function GET(req: NextRequest) {
         const currentStock = p.stock ?? 0;
         const dailyAvg = salesMap.get(p.id) ?? 0;
         const daysOfStock = dailyAvg > 0 ? currentStock / dailyAvg : Infinity;
-        const suggestedQty = Math.ceil(15 * dailyAvg - currentStock);
 
-        if (suggestedQty <= 0) return null;
+        // UNIFICADO 2026-07-08 (reporte QA): la cantidad sugerida usa el MISMO
+        // `calculateSuggestedQty` que Punto de Compra (target = stockMax ??
+        // stockMin*3 ?? 10, menos el stock) → ambas pantallas dan el mismo
+        // número. La velocidad de venta se conserva solo para la URGENCIA.
+        // Solo sugerimos si el producto está por debajo de su target.
+        const target = p.stockMax ?? (((p.stockMin ?? 0) * 3) || 10);
+        if (currentStock >= target) return null;
+        const suggestedQty = calculateSuggestedQty(p);
 
         const urgency: Urgency =
-          daysOfStock <= 3 ? "CRITICO" : daysOfStock <= 7 ? "URGENTE" : "PLANIFICAR";
+          currentStock <= 0 ? "URGENTE" // agotado: urgente aunque no haya velocidad de venta
+            : daysOfStock <= 3 ? "CRITICO"
+            : daysOfStock <= 7 ? "URGENTE"
+            : "PLANIFICAR";
 
         const lastPurchase = lastPurchaseMap.get(p.id);
 

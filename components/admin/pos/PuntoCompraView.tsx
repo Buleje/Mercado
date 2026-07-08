@@ -23,6 +23,7 @@ import {
   Tag,
   Camera,
   ShoppingCart,
+  Users,
   Plus,
   X as XIcon,
   Check as CheckIcon,
@@ -199,6 +200,9 @@ export default function PuntoCompraView() {
   const [appliedPromo, setAppliedPromo] = useState<ActivePromo | null>(null);
   const [showInvoiceScanner, setShowInvoiceScanner] = useState(false);
   const [showOrderCreator, setShowOrderCreator] = useState(false);
+  // Bloqueo por trial/plan expirado al crear OC (402). Muestra un aviso claro
+  // con CTA en vez del error genérico (reporte QA Compras).
+  const [planBlockedMsg, setPlanBlockedMsg] = useState<string | null>(null);
   const [lotSelectorProduct, setLotSelectorProduct] = useState<Product | null>(null);
   const [cartTab, setCartTab] = useState<"carrito" | "frecuentes" | "paquetes">("carrito");
   // ── Modal "Nuevo proveedor" inline ──
@@ -705,7 +709,18 @@ export default function PuntoCompraView() {
           discount,
         }),
       });
-      if (!res.ok) throw new Error("Error al crear OC");
+      if (!res.ok) {
+        // 402 = trial/plan expirado (requireActiveSubscription). El backend ya
+        // manda `detail` + `upgradeUrl`; mostramos la causa REAL y un CTA en vez
+        // del genérico "No se pudo crear la OC" (reporte QA Compras).
+        if (res.status === 402) {
+          const body = await res.json().catch(() => ({} as { detail?: string; error?: string }));
+          setPlanBlockedMsg(body.detail ?? body.error ?? "Tu periodo de prueba terminó. Activá un plan para crear órdenes de compra.");
+          return;
+        }
+        throw new Error("Error al crear OC");
+      }
+      setPlanBlockedMsg(null);
       const oc = await res.json() as { id: string | number };
       const ocId = String(oc.id);
       setToastMsg(`Orden de Compra creada — ID: ${ocId}`);
@@ -1901,13 +1916,28 @@ export default function PuntoCompraView() {
                   )}
                 </div>
 
+                {/* Aviso de trial/plan expirado (402 al crear OC) — causa real
+                    + acción clara, en vez del error genérico. */}
+                {planBlockedMsg && (
+                  <div role="alert" className="mb-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 p-3">
+                    <p className="text-xs font-bold text-[var(--data-warning-500)] flex items-center gap-1.5">
+                      <ClipboardList className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      No se pudo crear la orden — plan/prueba vencido
+                    </p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">{planBlockedMsg}</p>
+                    <a href="/admin?tab=plan" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline">
+                      Ver planes →
+                    </a>
+                  </div>
+                )}
+
                 {/* Botones de acción */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={generateWhatsApp}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-success)]"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--data-success-500)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-success-500)]"
                   >
                     <MessageCircle aria-hidden="true" className="h-3.5 w-3.5" />
                     WhatsApp
@@ -1937,10 +1967,11 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={() => setShowOrderCreator(true)}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-success)]"
+                    title="Flujo DISTINTO: crea un pedido de VENTA a un cliente con estos productos (no es la compra al proveedor)."
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-secondary)] rounded-lg text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
-                    <ShoppingCart aria-hidden="true" className="h-3.5 w-3.5" />
-                    Crear pedido
+                    <Users aria-hidden="true" className="h-3.5 w-3.5" />
+                    Vender a cliente
                   </button>
 
                   <button

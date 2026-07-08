@@ -16,6 +16,7 @@ export type DbSugerenciaProduct = {
   category: string | null;
   stock: number | null;
   stockMin: number | null;
+  stockMax: number | null;
 };
 
 export type DbSugerenciaLastPurchase = {
@@ -34,7 +35,7 @@ export async function getProductosConStockMin(
 ): Promise<DbSugerenciaProduct[]> {
   return prisma.product.findMany({
     where: { tenantId, active: true, deletedAt: null, stockMin: { gt: 0 } },
-    select: { id: true, name: true, category: true, stock: true, stockMin: true },
+    select: { id: true, name: true, category: true, stock: true, stockMin: true, stockMax: true },
   });
 }
 
