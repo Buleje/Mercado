@@ -45,6 +45,7 @@ type Reception = {
   items: ReceptionItem[];
   photos: number;
   nonConformities: number;
+  invoiceUrl?: string;
 };
 
 const STATUS_MAP: Record<ReceptionStatus, { label: string; color: string; bg: string }> = {
@@ -87,6 +88,10 @@ export default function ReceivingTab() {
   });
   const [checklist, setChecklist] = useState<ReceptionItem[]>([{ ...EMPTY_CHECKLIST }]);
   const [saving, setSaving] = useState(false);
+  // Factura del proveedor adjunta a la recepción (foto/imagen → /api/upload).
+  const [invoiceUrl, setInvoiceUrl] = useState("");
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [invoiceError, setInvoiceError] = useState("");
 
   // Carga recepciones con cache localStorage stale-while-revalidate
   useEffect(() => {
@@ -169,6 +174,25 @@ export default function ReceivingTab() {
   const updateChecklistRow = <K extends keyof ReceptionItem>(idx: number, key: K, value: ReceptionItem[K]) =>
     setChecklist(prev => prev.map((row, i) => i === idx ? { ...row, [key]: value } : row));
 
+  // Sube la foto de la factura del proveedor y guarda su URL (solo imágenes).
+  const uploadInvoice = async (file: File) => {
+    setInvoiceError("");
+    setUploadingInvoice(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "recepciones");
+      const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+      const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !body.url) throw new Error(body.error ?? "No se pudo subir la factura");
+      setInvoiceUrl(body.url);
+    } catch (err) {
+      setInvoiceError(err instanceof Error ? err.message : "Error al subir la factura");
+    } finally {
+      setUploadingInvoice(false);
+    }
+  };
+
   const saveReception = async () => {
     if (!newForm.supplier || !newForm.orderRef || checklist.some(r => !r.product)) return;
     setSaving(true);
@@ -179,6 +203,7 @@ export default function ReceivingTab() {
       items: checklist,
       photos: 0,
       nonConformities,
+      invoiceUrl: invoiceUrl || undefined,
     };
     const res = await fetch("/api/compras/recepciones", {
       method: "POST",
@@ -197,6 +222,8 @@ export default function ReceivingTab() {
     setShowNew(false);
     setNewForm({ supplier: "", orderRef: "", scheduledDate: new Date().toISOString().slice(0, 10), inspector: "" });
     setChecklist([{ ...EMPTY_CHECKLIST }]);
+    setInvoiceUrl("");
+    setInvoiceError("");
     setSelectedOcId("");
   };
 
@@ -444,6 +471,11 @@ export default function ReceivingTab() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
+              {detail.invoiceUrl && (
+                <a href={detail.invoiceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-semibold text-primary hover:underline">
+                  <PackageCheck className="h-4 w-4" /> Ver factura
+                </a>
+              )}
               {detail.photos > 0 && (
                 <span className="flex items-center gap-1"><Camera className="h-4 w-4" /> {detail.photos} fotos</span>
               )}
@@ -550,6 +582,41 @@ export default function ReceivingTab() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Factura del proveedor — se adjunta a la recepción (foto). Antes
+                el módulo de factura estaba separado en Punto de Compra. */}
+            <div>
+              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1.5">
+                Factura del proveedor <span className="font-normal text-[var(--text-tertiary)]">(opcional, foto)</span>
+              </label>
+              {invoiceUrl ? (
+                <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface px-3 py-2">
+                  <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] shrink-0" aria-hidden />
+                  <a href={invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline flex-1 truncate">
+                    Ver factura adjunta
+                  </a>
+                  <button type="button" onClick={() => setInvoiceUrl("")} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors" aria-label="Quitar factura">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className={cn(
+                  "flex items-center gap-2 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-3 py-2.5 cursor-pointer hover:border-primary/50 transition-colors text-sm text-[var(--text-secondary)] dark:text-muted",
+                  uploadingInvoice && "opacity-60 cursor-wait",
+                )}>
+                  {uploadingInvoice ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
+                  {uploadingInvoice ? "Subiendo…" : "Adjuntar foto de la factura"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingInvoice}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) void uploadInvoice(f); e.target.value = ""; }}
+                  />
+                </label>
+              )}
+              {invoiceError && <p className="text-xs text-[var(--data-error-500)] mt-1">{invoiceError}</p>}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

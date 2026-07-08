@@ -2,20 +2,62 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { GoodsReceiptsDB } from "@/lib/db/goods-receipts.db";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+// Item del checklist tal como lo arma ReceivingTab (por NOMBRE de producto).
 const RecepcionItemSchema = z.object({
-  productId: z.number().int().positive(),
-  receivedQty: z.number().int().nonnegative(),
-  unitPrice: z.number().nonnegative(),
+  product: z.string().min(1),
+  expectedQty: z.number().nonnegative().default(0),
+  receivedQty: z.number().nonnegative().default(0),
+  condition: z.enum(["ok", "dañado", "vencido", "faltante"]).default("ok"),
+  notes: z.string().max(500).default(""),
 });
 
 const RecepcionSchema = z.object({
-  ocId: z.string().min(1),
+  // `orderRef` = id de la OC vinculada (opcional: puede ser recepción libre).
+  orderRef: z.string().max(120).optional().default(""),
+  supplier: z.string().min(1).max(160),
+  inspector: z.string().max(120).optional().default(""),
+  scheduledDate: z.string().optional(),
+  status: z.enum(["programada", "en-proceso", "aceptada", "parcial", "rechazada"]).optional(),
   items: z.array(RecepcionItemSchema).min(1),
-  notas: z.string().max(1000).optional(),
+  photos: z.number().int().nonnegative().optional().default(0),
+  nonConformities: z.number().int().nonnegative().optional().default(0),
+  invoiceUrl: z.string().url().max(2048).optional(),
 });
+
+// Mapea un registro GoodsReceipt al shape `Reception` que espera ReceivingTab.
+function toReception(r: Awaited<ReturnType<typeof GoodsReceiptsDB.list>>[number]) {
+  return {
+    id: r.id,
+    ref: r.ref,
+    orderRef: r.purchaseOrderId ?? "",
+    supplier: r.supplierName,
+    scheduledDate: r.scheduledDate ? r.scheduledDate.toISOString().slice(0, 10) : "",
+    receivedDate: r.receivedDate ? r.receivedDate.toISOString() : undefined,
+    status: r.status,
+    inspector: r.inspector ?? "",
+    items: Array.isArray(r.itemsJson) ? r.itemsJson : [],
+    photos: r.photos,
+    nonConformities: r.nonConformities,
+    invoiceUrl: r.invoiceUrl ?? undefined,
+  };
+}
+
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin", "almacenero"]);
+  if (auth instanceof NextResponse) return auth;
+  try {
+    const receipts = await GoodsReceiptsDB.list(auth.tenantId);
+    return NextResponse.json(receipts.map(toReception));
+  } catch (e) {
+    logger.error("[compras/recepciones] GET error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Error al listar recepciones" }, { status: 503 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "compras-recepciones"); if (_rl) return _rl;
@@ -33,121 +75,92 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+    const data = parsed.data;
 
-    const { ocId, items, notas } = parsed.data;
-
-    // 1. Verify OC exists and belongs to tenant
-    const oc = await prisma.purchaseOrder.findFirst({
-      where: { id: ocId, tenantId },
-      include: { items: true },
+    // 1. Persistir la recepción SIEMPRE (es el registro de auditoría). El
+    //    ref legible se deriva de un id aleatorio para no depender de Date.now
+    //    (Cache Components) ni de contadores.
+    const ref = `REC-${globalThis.crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+    const scheduledDate = data.scheduledDate ? new Date(data.scheduledDate) : null;
+    const receipt = await GoodsReceiptsDB.create(tenantId, {
+      ref,
+      purchaseOrderId: data.orderRef || null,
+      supplierName: data.supplier,
+      status: data.status ?? "en-proceso",
+      inspector: data.inspector || null,
+      scheduledDate: scheduledDate && !Number.isNaN(scheduledDate.getTime()) ? scheduledDate : null,
+      receivedDate: new Date(),
+      items: data.items,
+      photos: data.photos,
+      nonConformities: data.nonConformities,
+      invoiceUrl: data.invoiceUrl ?? null,
     });
 
-    if (!oc) {
-      return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 });
-    }
-
-    // F3: Validar overshipping — receivedQty no puede exceder la cantidad ordenada
-    for (const item of items) {
-      const ocItem = oc.items.find((i) => i.productId === item.productId);
-      if (ocItem && item.receivedQty > ocItem.quantity) {
-        return NextResponse.json(
-          { error: `Producto ${item.productId}: cantidad recibida (${item.receivedQty}) excede la ordenada (${ocItem.quantity})` },
-          { status: 422 },
-        );
-      }
-    }
-
-    // F4: Total server-authoritative — ignorar unitPrice del cliente, usar precio de la OC original
-    // El servidor recomputa el total desde los precios de la PO.
-    let serverTotal = 0;
-    for (const item of items) {
-      if (item.receivedQty <= 0) continue;
-      const ocItem = oc.items.find((i) => i.productId === item.productId);
-      if (ocItem) {
-        serverTotal += item.receivedQty * Number(ocItem.unitCost ?? 0);
-      }
-    }
-
-    // 2. Process in transaction
+    // 2. Best-effort: si hay OC vinculada, actualizar stock (costo promedio
+    //    ponderado) + estado de la OC. Se mapea cada item recibido a su
+    //    productId buscando por NOMBRE dentro de los items de la OC. Va en
+    //    try/catch aparte: un fallo acá NO revierte la recepción ya guardada.
     let stockUpdated = 0;
-    let allComplete = true;
+    if (data.orderRef) {
+      try {
+        const oc = await prisma.purchaseOrder.findFirst({
+          where: { id: data.orderRef, tenantId },
+          include: { items: true },
+        });
+        if (oc) {
+          const norm = (s: string) => s.trim().toLowerCase();
+          await prisma.$transaction(async (tx) => {
+            let allComplete = true;
+            for (const item of data.items) {
+              const ocItem = oc.items.find((i) => norm(i.name) === norm(item.product));
+              if (!ocItem) continue;
+              if (item.receivedQty <= 0) {
+                if (ocItem.quantity > 0) allComplete = false;
+                continue;
+              }
+              if (item.receivedQty < ocItem.quantity) allComplete = false;
 
-     
-    await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        if (item.receivedQty <= 0) {
-          // Check if ordered item was fully received
-          const ocItem = oc.items.find((i) => i.productId === item.productId);
-          if (ocItem && ocItem.quantity > 0) allComplete = false;
-          continue;
+              const product = await tx.product.findFirst({ where: { id: ocItem.productId, tenantId } });
+              if (!product) continue;
+
+              const previousStock = product.stock ?? 0;
+              const authorizedUnitCost = Number(ocItem.unitCost ?? 0);
+              const currentCost = Number(product.costPrice ?? 0);
+              const totalQty = previousStock + item.receivedQty;
+              const weightedAvgCost =
+                totalQty > 0 ? (previousStock * currentCost + item.receivedQty * authorizedUnitCost) / totalQty : authorizedUnitCost;
+              const newStock = previousStock + item.receivedQty;
+
+              await tx.product.update({
+                where: { id: ocItem.productId },
+                data: { stock: newStock, costPrice: authorizedUnitCost > 0 ? weightedAvgCost : undefined },
+              });
+              await tx.inventoryMovement.create({
+                data: {
+                  productId: ocItem.productId, type: "compra", quantity: item.receivedQty,
+                  previousStock, newStock, reference: `OC-${oc.id}`,
+                  notes: item.notes || `Recepción ${ref}`, tenantId, createdBy: auth.username,
+                },
+              });
+              stockUpdated++;
+            }
+            await tx.purchaseOrder.update({
+              where: { id: oc.id },
+              data: {
+                status: (allComplete ? "recibido" : "parcial") as never,
+                notes: `${oc.notes ? oc.notes + " | " : ""}Recepción ${ref}${data.invoiceUrl ? ` · Factura: ${data.invoiceUrl}` : ""}`,
+              },
+            });
+          });
         }
-
-        // a. Update product stock con weighted-avg cost (F5)
-        const product = await tx.product.findFirst({
-          where: { id: item.productId, tenantId },
+      } catch (stockErr) {
+        logger.warn("[compras/recepciones] actualización de stock falló (recepción sí guardada)", {
+          ref, err: stockErr instanceof Error ? stockErr.message : String(stockErr),
         });
-
-        if (!product) continue;
-
-        const previousStock = product.stock ?? 0;
-        // F4: unitCost viene de la OC original, no del cliente
-        const ocItem = oc.items.find((i) => i.productId === item.productId);
-        const authorizedUnitCost = Number(ocItem?.unitCost ?? 0);
-
-        // F5: Weighted-average cost price
-        const currentCost = Number(product.costPrice ?? 0);
-        const totalCost = previousStock * currentCost + item.receivedQty * authorizedUnitCost;
-        const totalQty = previousStock + item.receivedQty;
-        const weightedAvgCost = totalQty > 0 ? totalCost / totalQty : authorizedUnitCost;
-
-        const newStock = previousStock + item.receivedQty;
-
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: newStock,
-            costPrice: authorizedUnitCost > 0 ? weightedAvgCost : undefined,
-          },
-        });
-
-        // b. Create inventory movement
-        await tx.inventoryMovement.create({
-          data: {
-            productId: item.productId,
-            type: "compra",
-            quantity: item.receivedQty,
-            previousStock,
-            newStock,
-            reference: `OC-${ocId}`,
-            notes: notas ?? null,
-            tenantId,
-            createdBy: auth.username,
-          },
-        });
-
-        stockUpdated++;
-
-        // c. Check if this item was fully received
-        const ocItemCheck = oc.items.find((i) => i.productId === item.productId);
-        if (ocItemCheck && item.receivedQty < ocItemCheck.quantity) {
-          allComplete = false;
-        }
       }
+    }
 
-      // 3. Update PurchaseOrder status
-      const newStatus = allComplete ? "recibido" : "parcial";
-      await tx.purchaseOrder.update({
-        where: { id: ocId },
-        data: {
-          status: newStatus as never,
-          notes: notas ? `${oc.notes ? oc.notes + " | " : ""}Recepcion: ${notas}` : oc.notes,
-        },
-      });
-    });
-
-    const finalStatus = allComplete ? "completed" : "partial";
-
-    return NextResponse.json({ ok: true, stockUpdated, status: finalStatus, serverTotal });
+    return NextResponse.json({ ...toReception(receipt), stockUpdated }, { status: 201 });
   } catch (e) {
     logger.error("[compras/recepciones] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error procesando recepcion" }, { status: 500 });

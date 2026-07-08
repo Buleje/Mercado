@@ -902,6 +902,36 @@ model PurchaseItem {
   @@index([purchaseOrderId])
 }
 
+// ─── Recepción de mercadería (Goods Receipt) ────────────
+// 2026-07-08: antes las recepciones NO se persistían — el POST de
+// /api/compras/recepciones movía stock/anotaba la OC pero no guardaba el
+// registro (sin historial, sin GET) y el shape del cliente ni siquiera
+// validaba. Esta tabla las persiste de verdad, con la factura del proveedor
+// adjunta (invoiceUrl). Soft-link a la OC por `purchaseOrderId` (como
+// SupplierReturn.proveedorId) para no acoplar cascadas.
+model GoodsReceipt {
+  id              String    @id @default(cuid())
+  ref             String
+  purchaseOrderId String?
+  supplierId      String?
+  supplierName    String
+  status          String    @default("en-proceso") // programada|en-proceso|aceptada|parcial|rechazada
+  inspector       String?
+  scheduledDate   DateTime?
+  receivedDate    DateTime?
+  itemsJson       Json // ReceptionItem[] {product,expectedQty,receivedQty,condition,notes}
+  photos          Int       @default(0)
+  nonConformities Int       @default(0)
+  invoiceUrl      String?
+  notes           String?
+  tenantId        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, purchaseOrderId])
+}
+
 // ─── Sales (POS) ────────────────────────────────────────
 model Sale {
   id            String   @id
