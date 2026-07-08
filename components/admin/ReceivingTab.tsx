@@ -556,17 +556,21 @@ export default function ReceivingTab() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Proveedor" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {/* Al recibir contra una OC, proveedor y Nro. OC quedan
+                    BLOQUEADOS (derivados de la OC) → trazabilidad garantizada,
+                    no se puede escribir un proveedor/OC inexistente (reporte QA). */}
                 <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
-                  placeholder="Distribuidora ABC" list="recep-proveedores"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
+                  placeholder="Distribuidora ABC" list={selectedOcId ? undefined : "recep-proveedores"} readOnly={!!selectedOcId}
+                  className={cn("w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-white dark:bg-surface")} />
                 <datalist id="recep-proveedores">
                   {supplierNames.map(n => <option key={n} value={n} />)}
                 </datalist>
               </Field>
               <Field label="Nro. Orden de Compra" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
-                  placeholder="OC-001"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono" />
+                  placeholder="OC-001" readOnly={!!selectedOcId}
+                  className={cn("w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-mono", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-white dark:bg-surface")} />
+                {selectedOcId && <p className="mt-1 text-xs text-primary">De la OC seleccionada</p>}
               </Field>
               <Field label="Fecha programada" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm(f => ({ ...f, scheduledDate: e.target.value }))}
