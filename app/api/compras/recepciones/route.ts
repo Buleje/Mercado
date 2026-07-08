@@ -7,9 +7,12 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-// Item del checklist tal como lo arma ReceivingTab (por NOMBRE de producto).
+// Item del checklist tal como lo arma ReceivingTab. `productId` es opcional: si
+// el item se eligió del combobox o vino prefilleado de la OC, trae el id real
+// (matching de stock EXACTO); si es texto libre, se cae al matching por nombre.
 const RecepcionItemSchema = z.object({
   product: z.string().min(1),
+  productId: z.number().int().positive().optional(),
   expectedQty: z.number().nonnegative().default(0),
   receivedQty: z.number().nonnegative().default(0),
   condition: z.enum(["ok", "dañado", "vencido", "faltante"]).default("ok"),
@@ -112,7 +115,10 @@ export async function POST(req: NextRequest) {
           await prisma.$transaction(async (tx) => {
             let allComplete = true;
             for (const item of data.items) {
-              const ocItem = oc.items.find((i) => norm(i.name) === norm(item.product));
+              // Preferir match por productId exacto; caer a nombre si no vino.
+              const ocItem = item.productId != null
+                ? oc.items.find((i) => i.productId === item.productId)
+                : oc.items.find((i) => norm(i.name) === norm(item.product));
               if (!ocItem) continue;
               if (item.receivedQty <= 0) {
                 if (ocItem.quantity > 0) allComplete = false;

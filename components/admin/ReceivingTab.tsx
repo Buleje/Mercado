@@ -10,6 +10,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
 
 interface PendingOC {
   id: string;
@@ -18,7 +19,7 @@ interface PendingOC {
   status?: string;
   total?: number;
   createdAt?: string;
-  items?: Array<{ name?: string; quantity?: number; unit?: string }>;
+  items?: Array<{ productId?: number; name?: string; quantity?: number; unit?: string }>;
 }
 
 type ReceptionStatus = "programada" | "en-proceso" | "aceptada" | "parcial" | "rechazada";
@@ -27,6 +28,7 @@ type ItemCondition = "ok" | "dañado" | "vencido" | "faltante";
 
 type ReceptionItem = {
   product: string;
+  productId?: number;
   expectedQty: number;
   receivedQty: number;
   condition: ItemCondition;
@@ -92,9 +94,9 @@ export default function ReceivingTab() {
   const [invoiceUrl, setInvoiceUrl] = useState("");
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [invoiceError, setInvoiceError] = useState("");
-  // Sugerencias reales para los campos que eran texto libre (reporte QA):
-  // productos del inventario + proveedores registrados → datalists.
-  const [productNames, setProductNames] = useState<string[]>([]);
+  // Datos reales para los campos que eran texto libre (reporte QA): productos
+  // del inventario (combobox con id/unidad) + proveedores (datalist).
+  const [products, setProducts] = useState<ProductOption[]>([]);
   const [supplierNames, setSupplierNames] = useState<string[]>([]);
 
   // Carga recepciones con cache localStorage stale-while-revalidate
@@ -147,20 +149,22 @@ export default function ReceivingTab() {
     if (showNew) void loadPendingOCs();
   }, [showNew, loadPendingOCs]);
 
-  // Sugerencias reales para los datalists: nombres de productos + proveedores.
+  // Carga real para los pickers: productos (combobox) + proveedores (datalist).
   useEffect(() => {
     let cancelled = false;
-    const asNames = (data: unknown, key?: "products" | "suppliers") => {
-      const arr = Array.isArray(data) ? data : (data as Record<string, unknown[]>)?.[key ?? ""] ?? [];
-      return Array.from(new Set((arr as Array<{ name?: string }>).map(x => x.name).filter((n): n is string => !!n))).sort();
-    };
+    const toArr = (data: unknown, key: string) =>
+      (Array.isArray(data) ? data : (data as Record<string, unknown[]>)?.[key] ?? []) as unknown[];
     Promise.all([
       fetch("/api/products").then(r => (r.ok ? r.json() : [])).catch(() => []),
       fetch("/api/suppliers").then(r => (r.ok ? r.json() : [])).catch(() => []),
     ]).then(([prods, sups]) => {
       if (cancelled) return;
-      setProductNames(asNames(prods, "products"));
-      setSupplierNames(asNames(sups, "suppliers"));
+      const prodList = (toArr(prods, "products") as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string }>)
+        .filter(p => !!p.name)
+        .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode }));
+      setProducts(prodList);
+      const supNames = (toArr(sups, "suppliers") as Array<{ name?: string }>).map(s => s.name).filter((n): n is string => !!n);
+      setSupplierNames(Array.from(new Set(supNames)).sort());
     });
     return () => { cancelled = true; };
   }, []);
@@ -263,6 +267,7 @@ export default function ReceivingTab() {
     if (oc.items && oc.items.length > 0) {
       setChecklist(oc.items.map((it) => ({
         product: it.name ?? "",
+        productId: typeof it.productId === "number" ? it.productId : undefined,
         expectedQty: Number(it.quantity ?? 0),
         receivedQty: Number(it.quantity ?? 0),
         condition: "ok" as ItemCondition,
@@ -585,9 +590,13 @@ export default function ReceivingTab() {
               <div className="space-y-2">
                 {checklist.map((row, idx) => (
                   <div key={idx} className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-surface rounded-xl p-2">
-                    <input
-                      value={row.product} onChange={e => updateChecklistRow(idx, "product", e.target.value)}
-                      placeholder="Producto" list="recep-productos" className="flex-1 min-w-32 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs"
+                    <ProductCombobox
+                      id={`recep-prod-${idx}`}
+                      products={products}
+                      value={row.product}
+                      placeholder="Producto"
+                      onChange={(text) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: text, productId: undefined } : r))}
+                      onSelect={(p) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: p.name, productId: typeof p.id === "number" ? p.id : undefined, expectedQty: r.expectedQty } : r))}
                     />
                     <input type="number" min="0" value={row.expectedQty} onChange={e => updateChecklistRow(idx, "expectedQty", +e.target.value)}
                       placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
@@ -606,10 +615,6 @@ export default function ReceivingTab() {
                     )}
                   </div>
                 ))}
-                {/* Sugerencias de productos reales del inventario. */}
-                <datalist id="recep-productos">
-                  {productNames.map(n => <option key={n} value={n} />)}
-                </datalist>
               </div>
             </div>
 

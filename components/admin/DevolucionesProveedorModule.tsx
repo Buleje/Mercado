@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download, Clock, CheckCircle2 } from "@buleje/design-system/icons";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
+import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
@@ -103,9 +104,9 @@ export default function DevolucionesProveedorModule() {
   const [items, setItems] = useState<ItemDevuelto[]>([{ nombre: "", cantidad: 1, unidad: "und" }]);
   const [guardando, setGuardando] = useState(false);
   const [showReportes, setShowReportes] = useState(false);
-  // Nombres de productos reales del inventario → datalist para sugerir al
-  // escribir (reporte QA: el producto era texto libre, propenso a typos).
-  const [productNames, setProductNames] = useState<string[]>([]);
+  // Productos reales del inventario → combobox de búsqueda (reporte QA: el
+  // producto era texto libre, propenso a typos y descuadres).
+  const [products, setProducts] = useState<ProductOption[]>([]);
 
   // Cargar devoluciones con cache localStorage SWR (TTL 60s)
   const fetchDevoluciones = useCallback(async () => {
@@ -154,7 +155,7 @@ export default function DevolucionesProveedorModule() {
   useEffect(() => { fetchDevoluciones(); }, [fetchDevoluciones]);
   useEffect(() => { fetchProveedores(); }, [fetchProveedores]);
 
-  // Cargar nombres de productos del inventario para el datalist (una vez).
+  // Cargar productos del inventario para el combobox (una vez).
   useEffect(() => {
     let cancelled = false;
     fetch("/api/products")
@@ -162,8 +163,10 @@ export default function DevolucionesProveedorModule() {
       .then((data: unknown) => {
         if (cancelled) return;
         const arr = Array.isArray(data) ? data : (data as { products?: unknown[] })?.products ?? [];
-        const names = (arr as Array<{ name?: string }>).map(p => p.name).filter((n): n is string => !!n);
-        setProductNames(Array.from(new Set(names)).sort());
+        const list = (arr as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string }>)
+          .filter(p => !!p.name)
+          .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode }));
+        setProducts(list);
       })
       .catch(err => console.warn("[DevolucionesProveedorModule] products load failed:", err));
     return () => { cancelled = true; };
@@ -488,13 +491,14 @@ export default function DevolucionesProveedorModule() {
             </div>
             {items.map((item, index) => (
               <div key={index} className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  placeholder="Nombre del producto"
-                  list="devol-productos"
+                <ProductCombobox
+                  id={`devol-prod-${index}`}
+                  products={products}
                   value={item.nombre}
-                  onChange={e => actualizarItem(index, "nombre", e.target.value)}
-                  className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  placeholder="Nombre del producto"
+                  inputClassName="py-2 text-sm"
+                  onChange={(text) => actualizarItem(index, "nombre", text)}
+                  onSelect={(p) => actualizarItem(index, "nombre", p.name)}
                 />
                 <input
                   type="number"
@@ -524,10 +528,6 @@ export default function DevolucionesProveedorModule() {
                 )}
               </div>
             ))}
-            {/* Sugerencias de productos reales del inventario. */}
-            <datalist id="devol-productos">
-              {productNames.map(n => <option key={n} value={n} />)}
-            </datalist>
           </div>
 
           {/* Notas */}
