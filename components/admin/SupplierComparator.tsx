@@ -1,7 +1,6 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users, Star, DollarSign, Clock, Package,
@@ -159,7 +158,12 @@ function SupplierRadar({ supplier }: { supplier: SupplierWithScore }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function SupplierComparator() {
+interface SupplierComparatorProps {
+  /** Lleva al flujo de "Nueva orden" con el proveedor preseleccionado. */
+  onCreateOC?: (supplier: { id: string; name: string }) => void;
+}
+
+export default function SupplierComparator({ onCreateOC }: SupplierComparatorProps = {}) {
   const [suppliers, setSuppliers] = useState<SupplierWithScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -234,21 +238,14 @@ export default function SupplierComparator() {
 
   const selectedSupplier = useMemo(() => suppliers.find(s => s.id === selectedId) ?? null, [suppliers, selectedId]);
 
-  const handleCreateOC = useCallback(async (supplier: SupplierWithScore) => {
-    if (!confirm(`¿Crear orden de compra para ${supplier.name}?`)) return;
-    try {
-      const res = await fetch("/api/purchase-orders", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ supplierId: supplier.id, supplierName: supplier.name }),
-      });
-      if (!res.ok) throw new Error("No se pudo crear la OC");
-      const json = await res.json();
-      alert(`Orden de compra creada: ${json.id ?? json.orderNumber ?? "OK"}`);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Error al crear OC");
-    }
-  }, []);
+  // FIX 2026-07-08 (reporte QA Comparador): antes hacía POST a
+  // `/api/purchase-orders` (endpoint INEXISTENTE → 404 silencioso) y usaba
+  // `confirm`/`alert` BLOQUEANTES que colgaban la pestaña. Una OC necesita
+  // productos, así que no tiene sentido crearla vacía por API: llevamos al
+  // usuario al flujo de "Nueva orden" con el proveedor preseleccionado.
+  const handleCreateOC = useCallback((supplier: SupplierWithScore) => {
+    onCreateOC?.({ id: supplier.id, name: supplier.name });
+  }, [onCreateOC]);
 
   // KPIs globales del scoring (antes de los early returns para no violar
   // rules-of-hooks)
@@ -480,11 +477,24 @@ export default function SupplierComparator() {
               </div>
             </div>
 
+            {/* FIX 2026-07-08 (reporte QA): sin datos reales NO mostramos el
+                radar con porcentajes fabricados (contradecía "sin historial
+                suficiente"). Placeholder honesto en su lugar. */}
             <div className="px-3 pt-3">
-              <SupplierRadar supplier={selectedSupplier} />
+              {selectedSupplier.hasData ? (
+                <SupplierRadar supplier={selectedSupplier} />
+              ) : (
+                <div className="h-48 flex flex-col items-center justify-center gap-1 text-center rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                  <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
+                  <p className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted">Sin datos para el radar</p>
+                  <p className="text-xs text-[var(--text-tertiary)]">Se necesita historial de evaluaciones para graficar el desempeño.</p>
+                </div>
+              )}
             </div>
 
-            {/* Metrics bars */}
+            {/* Metrics bars — solo con datos reales (idem radar: no mostrar
+                porcentajes fabricados cuando "sin historial suficiente"). */}
+            {selectedSupplier.hasData && (
             <div className="px-4 pb-4 space-y-2.5 mt-1">
               {[
                 { label: "Calidad", value: selectedSupplier.scoreCalidad, icon: Star, color: "bg-[var(--accent-soft)]" },
@@ -504,6 +514,7 @@ export default function SupplierComparator() {
                 </div>
               ))}
             </div>
+            )}
 
             <div className="px-4 pb-4">
               <button

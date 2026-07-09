@@ -253,6 +253,24 @@ export default function PurchaseOrdersTab() {
    
   useEffect(() => { void load(); }, [load]);
 
+  // "Crear OC" desde el Comparador de proveedores deja el proveedor en un stash;
+  // al montar (con proveedores ya cargados) abrimos el form de Nueva Orden
+  // preseleccionado y limpiamos el stash. Reemplaza el POST roto del comparador.
+  useEffect(() => {
+    if (suppliers.length === 0) return;
+    let stash: { id: string; name: string } | null = null;
+    try {
+      const raw = localStorage.getItem("bsm-new-oc-supplier");
+      if (raw) stash = JSON.parse(raw) as { id: string; name: string };
+    } catch { /* ignore */ }
+    if (!stash) return;
+    try { localStorage.removeItem("bsm-new-oc-supplier"); } catch { /* ignore */ }
+    if (suppliers.some(s => s.id === stash!.id)) {
+      setSupplierId(stash.id);
+      setShowCreate(true);
+    }
+  }, [suppliers]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const addItemFromProduct = (p: DbProduct) => {
     setItems(prev => [...prev, { productId: p.id, name: p.name, quantity: 1, unitCost: p.costPrice ?? p.price, unit: p.unit }]);
     setItemQueries(prev => [...prev, p.name]);

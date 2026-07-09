@@ -108,7 +108,17 @@ export default function ComprasModule({ initialTab }: { initialTab?: string } = 
         {sub === "ordenes-compra" && <PurchaseOrdersTab />}
         {sub === "proveedores" && <SuppliersTab />}
         {sub === "recepcion" && <ReceivingTab />}
-        {sub === "comparador" && <SupplierComparator />}
+        {sub === "comparador" && (
+          <SupplierComparator
+            onCreateOC={(supplier) => {
+              // "Crear OC" desde el comparador → llevar al flujo de Nueva Orden
+              // con el proveedor preseleccionado (una OC necesita productos; no
+              // se crea vacía por API). PurchaseOrdersTab lee este stash al montar.
+              try { localStorage.setItem("bsm-new-oc-supplier", JSON.stringify(supplier)); } catch { /* quota */ }
+              setSub("ordenes-compra");
+            }}
+          />
+        )}
         {sub === "devoluciones" && <DevolucionesProveedorModule />}
       </AdminTabBar>
     </div>

@@ -534,6 +534,19 @@ export default function SuppliersTab() {
                       })()}
                     </div>
                     {s.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 italic">{s.notes}</p>}
+                    {/* Nudge de perfil incompleto (reporte QA): un proveedor
+                        creado rápido desde Punto de Compra queda solo con nombre
+                        (+RUC) y sin contacto/dirección. Aviso suave + acceso a
+                        completar la ficha. */}
+                    {!s.phone && !s.email && !s.address && (
+                      <div className="mt-2 flex items-center gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-3 py-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" aria-hidden />
+                        <span className="text-xs text-[var(--text-secondary)] dark:text-muted flex-1">Perfil incompleto — falta contacto y dirección.</span>
+                        <button type="button" onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="text-xs font-bold text-primary hover:underline shrink-0">
+                          Completar
+                        </button>
+                      </div>
+                    )}
                     {/* Purchase history mini chart */}
                     {(() => {
                       const history = getMonthlyHistory(s.id);
