@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cubicarPieza, parseDictado, parseVozDims, mejoresNumeros, partirEnPiezas } from "@/lib/forestal/cubicacion";
+import { cubicarPieza, parseDictado, parseVozDims, mejoresNumeros, partirEnPiezas, detectarComando } from "@/lib/forestal/cubicacion";
 
 describe("cubicarPieza", () => {
   it("pie tablar comercial 2x8x10 pulg/pulg/pies", () => {
@@ -111,5 +111,28 @@ describe("dictado rápido: varias piezas en una frase", () => {
     const r2 = partirEnPiezas([...r1.resto, 8, 10]); // "2" arrastrado + "ocho diez"
     expect(r2.piezas).toEqual([{ espesor: 2, ancho: 8, largo: 10 }]);
     expect(r2.resto).toEqual([]);
+  });
+});
+
+describe("comandos de voz", () => {
+  it("pausar / continuar", () => {
+    expect(detectarComando("pausa")?.tipo).toBe("pausar");
+    expect(detectarComando("pausar")?.tipo).toBe("pausar");
+    expect(detectarComando("continúa")?.tipo).toBe("continuar");
+    expect(detectarComando("sigue")?.tipo).toBe("continuar");
+  });
+  it("borrar el último", () => {
+    expect(detectarComando("elimina el último")?.tipo).toBe("borrar-ultimo");
+    expect(detectarComando("borra el ultimo")?.tipo).toBe("borrar-ultimo");
+    expect(detectarComando("deshacer")?.tipo).toBe("borrar-ultimo");
+  });
+  it("fijar especie por voz", () => {
+    const c = detectarComando("especie tornillo");
+    expect(c?.tipo).toBe("especie");
+    expect(c && c.tipo === "especie" && c.palabra).toBe("tornillo");
+  });
+  it("un dictado de números NO es comando", () => {
+    expect(detectarComando("dos seis nueve")).toBeNull();
+    expect(detectarComando("2 8 10")).toBeNull();
   });
 });

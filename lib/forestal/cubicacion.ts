@@ -248,6 +248,29 @@ export function mejoresNumeros(alternativas: string[]): number[] {
   return [];
 }
 
+// ─── Comandos de voz ────────────────────────────────────────────────────────
+
+export type Comando =
+  | { tipo: "pausar" }
+  | { tipo: "continuar" }
+  | { tipo: "borrar-ultimo" }
+  | { tipo: "especie"; palabra: string }
+  | null;
+
+/**
+ * Detecta un comando de voz en el dictado (pausar/continuar/borrar último/fijar
+ * especie). Si no hay comando, devuelve null y el texto se trata como números.
+ */
+export function detectarComando(input: string): Comando {
+  const s = " " + stripAccents(input.toLowerCase()) + " ";
+  if (/\b(pausa|pausar|pausalo|pausame|para|pare|paren|paral[oa]|deten|detene|detente|alto)\b/.test(s)) return { tipo: "pausar" };
+  if (/\b(continua|continuar|continu[ae]|reanuda|reanudar|sigue|seguir|segui|adelante|dale)\b/.test(s)) return { tipo: "continuar" };
+  if (/(elimin\w*|borr\w*|quit\w*|saca\w*)\s+(el\s+|la\s+)?ultim/.test(s) || /\bdeshace\b|\bdeshacer\b|\bborra eso\b/.test(s)) return { tipo: "borrar-ultimo" };
+  const esp = s.match(/especie\s+(?:de\s+|es\s+)?([a-z]+)/) || s.match(/madera\s+(?:de\s+)?([a-z]+)/);
+  if (esp) return { tipo: "especie", palabra: esp[1] };
+  return null;
+}
+
 /**
  * Dictado rápido: parte una lista de números en tríos (espesor·ancho·largo).
  * Devuelve todas las piezas completas y cuántos números quedaron sueltos (para

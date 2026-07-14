@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins } from "@buleje/design-system/icons";
 import {
-  cubicarPieza, mejoresNumeros, PT_POR_M3,
+  cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3,
   type PiezaCubicada, type Unidad,
 } from "@/lib/forestal/cubicacion";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
@@ -30,10 +30,6 @@ interface SpeechRecognitionLike {
 const UNIDADES: { v: Unidad; label: string }[] = [
   { v: "pulg", label: "pulg" }, { v: "cm", label: "cm" }, { v: "pies", label: "pies" }, { v: "m", label: "m" },
 ];
-// Micro-pausa (ms) que el texto debe quedar quieto para guardar sin esperar el
-// final completo de Chrome (~1.5s). Más bajo = más rápido pero más riesgo de
-// committear un número que Chrome aún revisa. 400ms = punto veloz y estable.
-const STABLE_MS = 400;
 // Rangos para los dropdowns de carga manual (rápida, sin tipear).
 const RANGO_ESPESOR = Array.from({ length: 10 }, (_, i) => i + 1);   // 1 a 10
 const RANGO_ANCHO = Array.from({ length: 30 }, (_, i) => i + 1);     // 1 a 30
@@ -59,6 +55,7 @@ const storageKey = () => {
   return `buleje-cubicacion-${slug}`;
 };
 const saveLocal = (next: PiezaCubicada[]) => { try { localStorage.setItem(storageKey(), JSON.stringify(next)); } catch { /* quota */ } };
+const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 // Voz que repite lo dictado (SpeechSynthesis). cancel() antes de hablar: en
 // dictado rápido gana el último, sin encolar audio viejo que quede atrás.
 function decir(texto: string) {
@@ -88,6 +85,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
   const [precioPt, setPrecioPt] = useState(""); // S/ por pie tablar → valor del lote
   const [showResumen, setShowResumen] = useState(false);
+  const [paused, setPaused] = useState(false); // "pausar" por voz → ignora números hasta "continúa"
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
   const especieRef = useRef(especie);
@@ -99,23 +97,13 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   // duplicados. lastFinalRef = último índice final procesado (evita reprocesar);
   // se reinicia en cada nueva sesión (Chrome corta/reinicia y los índices vuelven a 0).
   const lastFinalRef = useRef(-1);
-  // Commit por ESTABILIDAD: cuando el texto intermedio deja de cambiar por
-  // STABLE_MS (micro-pausa entre medidas), guardamos los tríos ya estables SIN
-  // esperar el final completo de Chrome (~1.5s). committedRef = piezas ya
-  // emitidas del resultado en curso (evita duplicar); debounceRef = timer.
-  const committedRef = useRef(0);
-  const curResultRef = useRef(-1);
-  const debounceRef = useRef(0);
+  const pausedRef = useRef(false);
   // Modo del dictado: agregar filas nuevas, o EDITAR una fila puntual por voz.
   const modeRef = useRef<{ type: "add" } | { type: "edit"; id: string }>({ type: "add" });
   const readingRef = useRef(false);                    // lectura de la tabla en curso
   const rowsRef = useRef<PiezaCubicada[]>([]);
   useEffect(() => { rowsRef.current = rows; }, [rows]);
-  const resetVoz = () => {
-    carryRef.current = []; lastFinalRef.current = -1;
-    committedRef.current = 0; curResultRef.current = -1;
-    try { window.clearTimeout(debounceRef.current); } catch { /* ignore */ }
-  };
+  const resetVoz = () => { carryRef.current = []; lastFinalRef.current = -1; };
   useEffect(() => { especieRef.current = especie; }, [especie]);
   useEffect(() => { speakRef.current = speakOn; }, [speakOn]);
 
@@ -144,6 +132,13 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     setLastAdded(row);
   }, []);
 
+  // Borra la última fila (comando de voz "elimina el último"). Estable.
+  const borrarUltimo = useCallback(() => {
+    setRows((prev) => { if (!prev.length) return prev; const next = prev.slice(0, -1); saveLocal(next); return next; });
+    setLastAdded(null);
+    carryRef.current = [];
+  }, []);
+
   // Actualiza las medidas de UNA fila (edición por voz). Estable.
   const updateRow = useCallback((id: string, espesor: number, ancho: number, largo: number) => {
     setRows((prev) => {
@@ -167,15 +162,31 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     rec.lang = "es-PE";
     rec.interimResults = true;
     rec.continuous = true;
-    rec.maxAlternatives = 1; // confiamos en la hipótesis #1 → menos latencia
+    rec.maxAlternatives = 1; // confiamos en la hipótesis #1
 
-    // Procesa un resultado (estable por debounce, o final). Guarda los tríos
-    // completos que falten. Maneja add y edit. idx = índice del resultado.
-    const procesar = (idx: number, texto: string, final: boolean) => {
-      if (!final && idx <= lastFinalRef.current) return; // debounce viejo ya cerrado
+    // Procesa SOLO resultados FINALES (estables) → sin duplicados ni valores
+    // erráticos. El interim solo alimenta el caption. Cada final se procesa una
+    // vez (lastFinalRef). Primero mira si es un COMANDO de voz; si no, números.
+    const procesarFinal = (idx: number, texto: string) => {
+      lastFinalRef.current = idx;
+
+      // ── COMANDOS DE VOZ ──
+      const cmd = detectarComando(texto);
+      if (cmd) {
+        if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = []; setLiveText(""); if (speakRef.current) decir("en pausa"); }
+        else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = []; setLiveText(""); if (speakRef.current) decir("sigo"); }
+        else if (cmd.tipo === "borrar-ultimo") { borrarUltimo(); if (speakRef.current) decir("borrado"); }
+        else if (cmd.tipo === "especie") {
+          const found = ESPECIES.find((s) => sinAcentos(s).startsWith(cmd.palabra));
+          if (found) { setEspecie(found); if (speakRef.current) decir(found); }
+          else setErrMsg(`No reconocí la especie "${cmd.palabra}".`);
+        }
+        return;
+      }
+
       const nums = mejoresNumeros([texto]);
 
-      // MODO EDICIÓN: 3 números → reemplaza la fila y sale.
+      // ── MODO EDICIÓN: 3 números reemplazan la fila y sale ──
       if (modeRef.current.type === "edit") {
         if (nums.length >= 3 && nums[0] > 0 && nums[1] > 0 && nums[2] > 0) {
           updateRow(modeRef.current.id, nums[0], nums[1], nums[2]);
@@ -183,64 +194,51 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           modeRef.current = { type: "add" };
           setEditingId(null); wantListeningRef.current = false;
           setListening(false); setLiveText("");
-          window.clearTimeout(debounceRef.current);
           try { rec.stop(); } catch { /* ignore */ }
-        } else if (final) {
+        } else {
           setErrMsg("No entendí 3 números para la fila. Probá de nuevo.");
         }
-        if (final) lastFinalRef.current = idx;
         return;
       }
 
-      // MODO AGREGAR — resultado nuevo → reinicia el contador de piezas.
-      if (idx !== curResultRef.current) { curResultRef.current = idx; committedRef.current = 0; }
+      if (pausedRef.current) return; // en pausa: ignora números
+
+      // ── MODO AGREGAR: chunk en tríos, arrastra el sobrante a la próxima frase ──
       const all = [...carryRef.current, ...nums];
       const totalPiezas = Math.floor(all.length / 3);
       let added = 0;
       let ultima: { espesor: number; ancho: number; largo: number } | null = null;
-      for (let k = committedRef.current; k < totalPiezas; k++) {
+      for (let k = 0; k < totalPiezas; k++) {
         const [espesor, ancho, largo] = all.slice(k * 3, k * 3 + 3);
         if (espesor > 0 && ancho > 0 && largo > 0) {
           addPieza({ cantidad: 1, espesor, ancho, largo, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined });
           ultima = { espesor, ancho, largo }; added++;
         }
       }
-      committedRef.current = totalPiezas;
+      carryRef.current = all.slice(totalPiezas * 3);
+      setLiveText("");
       if (added && ultima) {
-        setAddedFlash(added); setErrMsg(null); setLiveText("");
+        setAddedFlash(added); setErrMsg(null);
         if (speakRef.current) decir(added === 1 ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}` : `${added} piezas`);
-      }
-      if (final) {
-        carryRef.current = all.slice(totalPiezas * 3); // sobrante → próxima frase
-        committedRef.current = 0; curResultRef.current = -1;
-        lastFinalRef.current = idx;
       }
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onresult = (e: any) => {
+      let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
-        if (i <= lastFinalRef.current) continue; // ya cerrado
-        const texto = res[0]?.transcript ?? "";
-        if (res.isFinal) {
-          window.clearTimeout(debounceRef.current);
-          procesar(i, texto, true);
-        } else {
-          setLiveText(texto); // caption en vivo, instantáneo
-          // Debounce: si el texto se estabiliza STABLE_MS, guardamos ya (rápido).
-          window.clearTimeout(debounceRef.current);
-          debounceRef.current = window.setTimeout(() => procesar(i, texto, false), STABLE_MS);
-        }
+        if (!res.isFinal) { interim += (res[0]?.transcript ?? "") + " "; continue; }
+        if (i <= lastFinalRef.current) continue; // ya procesado este final
+        procesarFinal(i, res[0]?.transcript ?? "");
       }
+      if (interim.trim()) setLiveText(interim.trim()); // caption (no guarda)
     };
     rec.onend = () => {
-      // Modo continuo: Chrome corta tras silencios/timeout → reiniciar. La nueva
-      // sesión reinicia los índices a 0, así que reseteamos lastFinalRef. El
-      // carry (sobrante de la última frase) se conserva (solo cambia en finales).
+      // Chrome corta tras silencios/timeout → reiniciar. La nueva sesión reinicia
+      // los índices a 0 → reseteamos lastFinalRef; el carry se conserva.
       if (!wantListeningRef.current) { setListening(false); return; }
-      lastFinalRef.current = -1; committedRef.current = 0; curResultRef.current = -1;
-      window.clearTimeout(debounceRef.current);
+      lastFinalRef.current = -1;
       try { rec.start(); } catch { wantListeningRef.current = false; setListening(false); }
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -250,8 +248,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       // no-speech / network / aborted: transitorio → onend reintenta, sin ruido.
     };
     recRef.current = rec;
-    return () => { wantListeningRef.current = false; window.clearTimeout(debounceRef.current); try { rec.stop(); } catch { /* ignore */ } };
-  }, [addPieza, updateRow]);
+    return () => { wantListeningRef.current = false; try { rec.stop(); } catch { /* ignore */ } };
+  }, [addPieza, updateRow, borrarUltimo]);
 
   const stopLeer = useCallback(() => {
     readingRef.current = false; setReadingId(null);
@@ -263,6 +261,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     if (!rec) return;
     stopLeer();
     modeRef.current = { type: "add" }; setEditingId(null);
+    pausedRef.current = false; setPaused(false);
     if (wantListeningRef.current) {
       wantListeningRef.current = false; rec.stop(); setListening(false);
       resetVoz(); setLiveText("");
@@ -411,7 +410,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               <div className="min-w-0 flex-1 text-center sm:text-left">
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                   <p className="text-sm font-bold text-[var(--text-primary)]">
-                    {listening ? "Escuchando… dictá cada medida y pausá un instante" : "Tocá el micrófono y dictá los números"}
+                    {paused ? "⏸ En pausa — decí «continúa» para seguir" : listening ? "Escuchando… dictá cada medida y pausá un instante" : "Tocá el micrófono y dictá los números"}
                   </p>
                   {/* Toggle de voz que repite */}
                   <button
@@ -436,6 +435,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     {ESPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </label>
+
+                {/* Comandos de voz disponibles */}
+                <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  <span>Comandos por voz:</span>
+                  <span><b className="text-[var(--text-secondary)]">«pausá»</b> / <b className="text-[var(--text-secondary)]">«continuá»</b></span>
+                  <span><b className="text-[var(--text-secondary)]">«eliminá el último»</b></span>
+                  <span><b className="text-[var(--text-secondary)]">«especie tornillo»</b></span>
+                </p>
 
                 {/* Caption en vivo AGRUPADO — cada bloque verde = una pieza, para
                     ver el cuadrado mientras dictás rápido (no una barra continua). */}
