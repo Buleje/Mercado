@@ -251,3 +251,6 @@ ${CLAUDE_PROJECT_DIR}/
 
 # log runtime de qdrant local
 .qdrant-runtime.log
+
+# attachments de vitest browser mode (diffs de VRT fallidos)
+.vitest-attachments/

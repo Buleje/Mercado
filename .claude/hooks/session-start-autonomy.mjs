@@ -12,7 +12,7 @@
  * Budget total: <8s. Si algún paso tarda más, lo dispara fire-and-forget.
  * Exit 0 always (non-blocking).
  */
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync, readdirSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -39,7 +39,23 @@ function checkSuspiciousStashes() {
 const BASE = "http://localhost:3000";
 const TENANT = "main";
 const HOME = process.env.HOME ?? "";
-const CHROMIUM = join(HOME, ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome");
+// Resuelve dinámicamente el chromium más nuevo instalado por Playwright
+// (el path versionado chromium-NNNN cambia con cada upgrade de Playwright).
+const CHROMIUM = (() => {
+  const base = join(HOME, ".cache/ms-playwright");
+  try {
+    const dirs = readdirSync(base)
+      .filter((d) => /^chromium-\d+$/.test(d))
+      .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
+    for (const d of dirs) {
+      for (const sub of ["chrome-linux64/chrome", "chrome-linux/chrome"]) {
+        const p = join(base, d, sub);
+        if (existsSync(p)) return p;
+      }
+    }
+  } catch { /* cae al path inexistente → reporta not_installed */ }
+  return join(base, "chromium-none/chrome-linux64/chrome");
+})();
 const DEV_LOG = "/tmp/dev-server.log";
 
 const lines = [];

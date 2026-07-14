@@ -7,6 +7,48 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+## Aplicadas en sesión 2026-07-06 (tune PC + harness)
+
+### [applied] 2026-07-06 — Edge AutoLaunch bloqueado PERMANENTE
+- Se había re-agregado solo tras quitarlo el 07-04 (Edge lo re-crea al actualizar).
+- Fix durable: Run key removido + policy HKCU `StartupBoostEnabled=0` + `BackgroundModeEnabled=0` → Edge ya no puede re-registrarse.
+
+### [applied] 2026-07-06 — Scheduled tasks bloat Windows disabled (sin admin)
+- ASUS Update Checker + AsusSystemAnalysis (telemetría), OneDrive Reporting ×3 (todos los SIDs), GoogleUserPEH ×3 (Platform Experience Helper).
+- `ASUS Optimization` se DEJÓ (puede manejar Fn keys). Updaters de Edge/Google se dejaron (seguridad).
+
+### [applied] 2026-07-06 — WSL slim: servicios inútiles disabled
+- tailscaled (túnel en "stopped", solo quemaba 72MB + red) · cloud-init ×4 (+ `/etc/cloud/cloud-init.disabled`) · landscape-client · apport · motd-news.timer.
+- Revertir: `sudo systemctl enable --now <svc>`.
+
+### [applied] 2026-07-06 — Telemetría de agentes reparada
+- `subagent-cost-log.mjs`: payloads con `agent_type:""` generaban líneas basura (95 en jsonl + bucket `""` en agregados). Fix: fallback que trata `""` como ausente + descarte de payloads fantasma con muestra en errors.log. Datos históricos purgados.
+
+### [applied] 2026-07-06 — RAG re-indexado (estaba stale desde ~mayo)
+- `node ~/.local/qdrant/rag/index.mjs` re-corrido. Nota: client 1.13 vs server 1.18 warnea versión pero funciona.
+
+### [applied] 2026-07-06 — Ronda profunda (segunda pasada "sigue profundizando")
+- **Windows ronda 2 elevada**: DiagTrack + Xbox ×4 + MapsBroker + RetailDemo + SysMain disabled+stopped · Widgets policy OFF · **SearchHost/Bing web content OFF** (msedgewebview2 362MB→0). Scripts+revert en `C:\Users\Usuario\.claude-tune\`. Windows libre: 8.2→11.4 GB.
+- **WSL**: snapd disabled (era lo más lento del boot, 2.9s) · journal cap 100M (-334MB) · playwright browsers viejos purgados (-630MB) · apt autoremove.
+- **qdrant a systemd**: `qdrant.service` enabled (sobrevive reinicios de WSL, ya no depende del nohup del boot hook) + `qdrant-reindex.timer` semanal (dom 05:00).
+- **MCPs a binarios directos** (mata ~190MB de wrapper npm c/u ≈ 700MB/sesión): lsmcp ya parcheado en `.mcp.json`; firecrawl/context7/playwright requieren tocar `~/.claude.json` → **PENDIENTE post-cierre**: correr `python3 ~/.claude/autonomy-setup/mcp-direct-bin-patch.py` SIN sesiones abiertas. El patch también arregla el `--executable-path` de playwright que apuntaba a chromium-1208 INEXISTENTE (browser habría fallado al lanzar).
+
+### [applied] 2026-07-06 — Ronda 3: DISCO (hallazgo mayor)
+- **32.4 GB de swap.vhdx huérfanos de WSL borrados de `%TEMP%`** (C: 45→83 GB libres). Causa raíz: swap sin ruta fija → `.wslconfig swapFile=D:\WSL\swap.vhdx`. Prevención: Storage Sense ON.
+- VHDX 69.7GB físicos vs 37GB internos → RunOnce `WSLSetSparse` al próximo logon (verificar: debería bajar a ~40GB). fstrim corrido + timer armado.
+- Defender: exclusión D:\WSL + vmmemWSL (menos IO en cada write de la VM) · DODownloadMode=0. Reverts en `.claude-tune\revert-ronda3-*.ps1`.
+- Inventario stale detectado: Tor/BlueStacks/PandoraFMS/LastPass/Docker Desktop YA NO están instalados.
+
+### [applied] 2026-07-13 — Verificación post-reboot + fixes derivados
+- swap ✅ 8G activo · qdrant.service ✅ active · **fstrim.timer estaba MUERTO en WSL2** (`ConditionVirtualization=!container`) → override en `/etc/systemd/system/fstrim.{timer,service}.d/wsl.conf`, ahora active, próxima corrida dom 05:04.
+- vhdx sigue en **70GB** (sparse nunca se aplicó; RunOnce original desapareció sin log) → **RunOnce `WSLSetSparse` re-armado** (`wsl.exe --manage Ubuntu --set-sparse true` al próximo logon de Windows). Verificar tamaño en ~1 semana (sparse+fstrim reclaman gradual).
+- **MCP patch ahora auto-ejecutable**: `mcp-patch-oneshot.timer` (systemd user, cada 10min) corre `mcp-direct-bin-patch.py` apenas no haya sesiones claude y se auto-desactiva. Ya no depende de que Brandon lo corra a mano.
+- Playwright: chromium-1208 fantasma (0 bytes) purgado; el real es 1223. Hook `session-start-autonomy.mjs` ahora resuelve el chromium dinámicamente (no más "not_installed" falso).
+
+### [pending] qdrant client 1.13 vs server 1.18: `cd ~/.local/qdrant/rag && npm i @qdrant/js-client-rest@latest` cuando NO haya re-index corriendo (2026-07-13: re-index activo, se pospuso).
+
+### [pending→nota] Telegram bot: evaluar si el tool nativo `PushNotification` del harness ya cubre el push al móvil antes de armar bot.
+
 ## Aplicadas en sesión 2026-04-28
 
 ### [applied] 2026-04-28 — OOM cap tsc bajado a 4096 MB
@@ -133,6 +175,31 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 ---
 
 ## Tecnologías nuevas a evaluar
+
+### [applied] 2026-07-13 — Modernización agéntica (deep-research verificado)
+- Investigación con workflow deep-research (24 fuentes, 120 claims) + agente claude-code-guide; 11/12 claims clave re-verificados contra changelog oficial.
+- Aplicado: `.claude/rules/agentic-style.md` bullet F (subagentes background default + anidados ×5, additionalContext en Stop hooks, Tool(param:valor), .claude anidados, /doctor, LSP nativo NO existe → lsmcp sigue) + CLAUDE.md regla 15 actualizada a v2.1.205 + memoria `claude-code-novedades-2026-07.md`.
+- Ubuntu: fstrim override WSL2 + RunOnce sparse re-armado + mcp-patch-oneshot.timer + qdrant client 1.13→1.18 (RAG verificado OK) + ast-grep 0.44 + symlink `fd`.
+
+### [applied] 2026-07-13 — Ronda 2 "sigue mejorando" (calidad de código + fricción)
+- **Bugs reales fijados vía lint:fast**: `state-machine.ts` del concierge WhatsApp tragaba errores de handlers SIN log (ahora `logger.error` con state+intent) · `gift-cards.db.ts` condición duplicada `"cancelled"||"cancelled"` · `predictions/route.ts` filtro redundante · `FinancialResults.tsx` `{sign && sign}` · 2× `delay: 0*0.1`.
+- **InicioDashboard.tsx −175 LOC**: 5 cadenas de cálculo muertas que corrían EN CADA RENDER (topCustomers/stockByCategory/sinMov/criticalStock/topProfit) + KPICard/DeltaBadge/COLOR_MAP muertos + imports. 689→514 líneas. Gates: tsgo exit 0 + eslint 0 errores.
+- **VRT ampliado a 4 tests** (+ StoreAvatar iniciales + PaymentMethodChip), 4/4 verdes determinísticos.
+- **Knip auditado**: de 21 deps "muertas" solo 1 real (`@storybook/test` v8 stale, removido −24 packages). `critters` la exige `optimizeCss` (falso positivo) y el resto SÍ se importa → knip necesita config (entry points next/scripts/storybook) antes de confiar. Fix bonus: `preview.ts` importaba tipo de `@storybook/nextjs` NO instalado (resolvía por hoisting) → `@storybook/react`.
+- **Permisos**: +5 patrones (`npx tsc/eslint/oxlint/knip`, `tsgo`) a `permissions.allow` (155→160; backup `.claude/settings.json.bak-perms`). Bash/git/playwright ya estaban cubiertos.
+- Nota: BodegueroSpotlight conserva 4 `no-unreachable` INTENCIONALES (UI guardada post-CMS, documentado en el archivo).
+
+### [pending] Correr `/doctor` quincenal (2.1.203+: checkup con auto-fix + propone podar CLAUDE.md). Primera corrida: próxima sesión.
+### [pending] Configurar knip (`knip.json` con entry points: next.config, scripts/, .storybook, prisma/seed) para que el reporte de deps muertas sea confiable; hoy da 20/21 falsos positivos.
+### [pending] Barrer los ~420 `no-unused-vars` restantes de `lint:fast` por lotes (los 490 hallazgos actuales son casi todos código muerto de baja prioridad; los de correctness ya se fijaron).
+### [applied] 2026-07-13 — **oxlint** adoptado como pre-check (`npm run lint:fast`)
+- Medido en este repo: oxlint **7.6s / 204MB / 506 hallazgos** vs ESLint **98.9s / 1.84GB / 1746 warnings** → 13× más rápido, 9× menos RAM. Instalado como devDep (v1.73).
+- Encontró código muerto que el gate no reporta (ej. 6 vars/función sin usar en `InicioDashboard.tsx`). ESLint sigue siendo el gate autoritativo (reglas custom design-tokens + jsx-a11y).
+### [applied] 2026-07-13 — **Vitest 4 `toMatchScreenshot`** piloto funcionando (`npm run test:vrt`)
+- Deps: `@vitest/browser-playwright` + `vitest-browser-react` + `@tailwindcss/vite`. `vitest.config.ts` ahora usa projects `unit`/`vrt` (unit = suite de siempre, sin cambios; `npm run test` apunta a unit explícito).
+- Piloto: 2 single-sources (PaymentMethodIcon custom + ProductPhotoFallback) — baselines ESTILADOS (tokens+Tailwind renderizan vía @tailwindcss/vite) en `__tests__/vrt/__screenshots__/`, 2ª corrida verde en 2.7s, determinístico local.
+- Gotchas: 1ª corrida SIEMPRE falla (crea baselines para revisar); yape/plin flaky por onError de logo → usar métodos con arte custom o esperar el load; baselines local ≠ CI (correr solo local o en Docker).
+### [pending] **TypeScript 7 GA** (native Go): RC salió jun-2026, GA ~jul-2026. Cuando salga: migrar de tsgo preview a `typescript@7` estable como typechecker principal (mismo motor, sin las divergencias de preview tipo TS2869).
 
 - **Next.js 16 PPR** ✅ ya activo (`cacheComponents: true`)
 - **React Compiler** ✅ activo en annotation mode (opt-in) — ojo: `react-hooks/refs` ahora flaggea reads de `ref.current` en `useMemo` (1 caso ya disabled en `SidebarConfigurator.tsx`).

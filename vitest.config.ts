@@ -1,14 +1,18 @@
-import { defineConfig } from "vitest/config";
+import { defaultExclude, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { playwright } from "@vitest/browser-playwright";
 import path from "path";
 
+// Tests de regresión visual (Vitest 4 Browser Mode + toMatchScreenshot).
+// Corren SOLO vía `npm run test:vrt` — baselines locales en __tests__/vrt/__screenshots__.
+// OJO: baselines son sensibles al entorno (fonts/GPU); no compararlas contra CI.
+const vrtPattern = "__tests__/vrt/**/*.vrt.test.{ts,tsx}";
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   test: {
-    environment: "jsdom",
     globals: true,
-    setupFiles: ["./vitest.setup.ts"],
-    include: ["__tests__/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "lcov", "html"],
@@ -33,6 +37,31 @@ export default defineConfig({
         lines: 7,
       },
     },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          environment: "jsdom",
+          setupFiles: ["./vitest.setup.ts"],
+          include: ["__tests__/**/*.test.{ts,tsx}"],
+          exclude: [vrtPattern, ...defaultExclude],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "vrt",
+          include: [vrtPattern],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright(),
+            instances: [{ browser: "chromium", viewport: { width: 900, height: 700 } }],
+          },
+        },
+      },
+    ],
   },
   // Force the development builds of react / react-dom to be used in tests.
   // Without this, esbuild pre-bundles react with process.env.NODE_ENV=production
