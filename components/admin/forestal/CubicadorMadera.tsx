@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins } from "@buleje/design-system/icons";
 import {
   cubicarPieza, mejoresNumeros, PT_POR_M3,
   type PiezaCubicada, type Unidad,
@@ -86,6 +86,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [editingId, setEditingId] = useState<string | null>(null); // fila que se edita por voz
   const [readingId, setReadingId] = useState<string | null>(null); // fila que se está leyendo
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
+  const [precioPt, setPrecioPt] = useState(""); // S/ por pie tablar → valor del lote
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
   const especieRef = useRef(especie);
@@ -121,6 +122,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     try {
       const raw = localStorage.getItem(storageKey());
       if (raw) setRows(JSON.parse(raw) as PiezaCubicada[]);
+      const pr = localStorage.getItem(`${storageKey()}-precio`);
+      if (pr) setPrecioPt(pr);
     } catch { /* ignore */ }
   }, []);
 
@@ -334,11 +337,17 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const deshacer = () => { if (lastAdded) { borrar(lastAdded.id); setLastAdded(null); } };
   const limpiar = () => { persist([]); setLastAdded(null); };
 
+  // Persistir el precio por PT (por tenant).
+  useEffect(() => { try { localStorage.setItem(`${storageKey()}-precio`, precioPt); } catch { /* ignore */ } }, [precioPt]);
+
   const totales = useMemo(() => ({
     piezas: rows.reduce((a, r) => a + r.cantidad, 0),
     pt: rows.reduce((a, r) => a + r.pieTablar, 0),
     m3: rows.reduce((a, r) => a + r.m3, 0),
   }), [rows]);
+  const precio = Number(precioPt) || 0;
+  const valorLote = totales.pt * precio;
+  const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // Números del dictado en curso, AGRUPADOS en tríos (espesor·ancho·largo) para
   // que se vea cómo se cuadran las piezas en vivo — y no una barra continua que
@@ -353,9 +362,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   }, [listening, liveText]);
 
   const exportarCSV = () => {
-    const head = ["Cantidad", "Espesor", "uEsp", "Ancho", "uAnc", "Largo", "uLar", "Especie", "PieTablar", "m3"];
-    const lines = rows.map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3].join(","));
-    const csv = "﻿" + [head.join(","), ...lines, ["TOTAL", "", "", "", "", "", "", "", totales.pt.toFixed(2), totales.m3.toFixed(3)].join(",")].join("\n");
+    const head = ["Cantidad", "Espesor", "uEsp", "Ancho", "uAnc", "Largo", "uLar", "Especie", "PieTablar", "m3", "ValorS/"];
+    const lines = rows.map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3, (r.pieTablar * precio).toFixed(2)].join(","));
+    const csv = "﻿" + [head.join(","), ...lines, ["TOTAL", "", "", "", "", "", "", "", totales.pt.toFixed(2), totales.m3.toFixed(3), valorLote.toFixed(2)].join(",")].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a");
     a.href = url; a.download = `cubicacion-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -548,8 +557,23 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           </div>
         )}
 
+        {/* Precio → valor del lote (plata) */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
+          <label className="flex items-center gap-2">
+            <Coins className="h-4 w-4 text-[var(--accent)]" />
+            <span className="text-sm font-bold text-[var(--text-primary)]">Precio</span>
+            <span className="text-sm text-[var(--text-tertiary)]">S/</span>
+            <input type="number" inputMode="decimal" value={precioPt} onChange={(e) => setPrecioPt(e.target.value)} placeholder="0.00" className="h-9 w-24 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+            <span className="text-sm text-[var(--text-tertiary)]">por pie tablar</span>
+          </label>
+          <div className="text-right">
+            <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Valor del lote</div>
+            <div className="font-mono text-2xl font-extrabold tabular-nums text-[var(--accent)]">S/ {soles(valorLote)}</div>
+          </div>
+        </div>
+
         {/* Conversiones */}
-        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[var(--rule-soft)] pt-3 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Conv label="Total pie tablar" value={`${fmtPt(totales.pt)} PT`} />
           <Conv label="Total m³" value={`${fmtM3(totales.m3)} m³`} />
           <Conv label="Equivale a" value={`${fmtPt(totales.m3 * PT_POR_M3)} PT`} hint="desde m³" />
