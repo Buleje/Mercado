@@ -2967,7 +2967,9 @@ body[data-marketplace-explorar] .tabular-nums {
 [data-chart-presentation="true"] div[style*="height: 300px"],
 [data-chart-presentation="true"] div[style*="height:300px"],
 [data-chart-presentation="true"] div[style*="height: 260px"],
-[data-chart-presentation="true"] div[style*="height:260px"] {
+[data-chart-presentation="true"] div[style*="height:260px"],
+[data-chart-presentation="true"] div[style*="height: 240px"],
+[data-chart-presentation="true"] div[style*="height:240px"] {
   height: 65vh !important;
   min-height: 480px !important;
 }

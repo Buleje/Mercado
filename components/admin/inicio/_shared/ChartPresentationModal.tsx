@@ -3,32 +3,35 @@
 import { useEffect, useCallback, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 // html-to-image (~35KB gz) lazy-loaded — solo se descarga cuando el usuario
-// hace click en "Exportar PNG". AICommandCenter ya usa el mismo patron.
+// exporta o copia. AICommandCenter ya usa el mismo patron.
 import { toast } from "sonner";
 import {
   X,
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  Maximize,
+  Minimize,
   Download,
+  Copy,
   Play,
   Pause,
+  Timer,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /**
  * ChartPresentationModal — modal fullscreen para "presentar" un chart.
  *
- * Features:
- *  - Fondo blanco total, chart centrado grande.
- *  - Navegacion: flechas laterales + teclas ← → + footer thumbnail strip +
- *    scroll con rueda del mouse (debounced).
- *  - Esc cierra.
- *  - Export PNG del chart activo (icono download).
- *  - Modo TV: autoplay que rota entre charts cada N segundos con progress
- *    bar visible. Pausa al interactuar o pulsar el boton.
- *  - Portal a document.body (fuera del DOM del card).
- *  - Body scroll lock mientras abierto.
+ * Features (v2 2026-07-14, brief Brandon: colores calibrados al DS + sin cortes):
+ *  - Superficies 100% con tokens del DS (light y dark consistentes con el admin).
+ *  - Contenido alto NO se corta: centrado con margen auto → scrollea desde arriba.
+ *  - Navegacion: flechas laterales + ← → + numeros 1-9 + Home/End + thumbnails +
+ *    Shift+rueda (debounced). Esc cierra.
+ *  - Export PNG y COPIAR al portapapeles, con el fondo del tema real (no blanco fijo).
+ *  - Pantalla completa REAL del navegador (tecla F o boton) — ideal para TV.
+ *  - Modo TV: autoplay con intervalo configurable (5/7/10/15s) + progress bar.
+ *  - Portal a document.body + body scroll lock.
  */
 
 export interface ChartPresentationItem {
@@ -42,11 +45,12 @@ interface Props {
   activeId: string | null;
   onClose: () => void;
   onNavigate: (id: string) => void;
-  /** Intervalo del modo TV en ms. Default 7000 (7s). */
+  /** Intervalo inicial del modo TV en ms. Default 7000 (7s). */
   autoplayIntervalMs?: number;
 }
 
 const WHEEL_DEBOUNCE_MS = 350;
+const TV_INTERVALS_MS = [5000, 7000, 10000, 15000];
 
 export function ChartPresentationModal({
   items,
@@ -61,11 +65,17 @@ export function ChartPresentationModal({
   const hasPrev = activeIdx > 0;
   const hasNext = activeIdx >= 0 && activeIdx < items.length - 1;
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const chartAreaRef = useRef<HTMLDivElement | null>(null);
   const wheelLockRef = useRef(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
   const [autoplay, setAutoplay] = useState(false);
   const [autoplayProgress, setAutoplayProgress] = useState(0);
+  const [intervalMs, setIntervalMs] = useState(
+    TV_INTERVALS_MS.includes(autoplayIntervalMs) ? autoplayIntervalMs : 7000,
+  );
+  const [isFs, setIsFs] = useState(false);
 
   const goPrev = useCallback(() => {
     if (hasPrev) onNavigate(items[activeIdx - 1].id);
@@ -80,16 +90,50 @@ export function ChartPresentationModal({
     }
   }, [hasNext, items, activeIdx, onNavigate, autoplay]);
 
+  // ── Pantalla completa real (F) ──
+  const toggleFullscreen = useCallback(() => {
+    // Los rechazos de la Fullscreen API (sin gesto de usuario / permisos) no son
+    // accionables: la UI simplemente queda como estaba. Silenciarlos es intencional.
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => undefined);
+    } else {
+      dialogRef.current?.requestFullscreen?.().catch(() => undefined);
+    }
+  }, []);
+  useEffect(() => {
+    const onFs = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+  // Al desmontar/cerrar, salir de fullscreen si quedó activo (rechazo = no accionable).
+  useEffect(() => {
+    if (activeItem) return;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
+  }, [activeItem]);
+
   // ── Keyboard nav ──
   useEffect(() => {
     if (!activeItem) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowLeft") goPrev();
+      // No robar teclas cuando el usuario está tipeando en un input del chart
+      // presentado (ej. los date-pickers de la tabla de conversión).
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (e.key === "Escape") {
+        // Con fullscreen activo, Esc primero sale del fullscreen (el navegador
+        // ya lo hace solo); el segundo Esc cierra el modal.
+        if (!document.fullscreenElement) onClose();
+      } else if (e.key === "ArrowLeft") goPrev();
       else if (e.key === "ArrowRight") goNext();
+      else if (e.key === "Home" && items.length) onNavigate(items[0].id);
+      else if (e.key === "End" && items.length) onNavigate(items[items.length - 1].id);
+      else if (e.key === "f" || e.key === "F") toggleFullscreen();
       else if (e.key === " ") {
         e.preventDefault();
         setAutoplay((a) => !a);
+      } else if (/^[1-9]$/.test(e.key)) {
+        const target = items[Number(e.key) - 1];
+        if (target) onNavigate(target.id);
       }
     };
     document.addEventListener("keydown", onKey);
@@ -99,7 +143,7 @@ export function ChartPresentationModal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [activeItem, onClose, goPrev, goNext]);
+  }, [activeItem, onClose, goPrev, goNext, items, onNavigate, toggleFullscreen]);
 
   // ── Wheel nav (debounced) ──
   useEffect(() => {
@@ -138,36 +182,43 @@ export function ChartPresentationModal({
     const tickMs = 50;
     const tick = window.setInterval(() => {
       const elapsed = Date.now() - start;
-      const pct = Math.min(100, (elapsed / autoplayIntervalMs) * 100);
+      const pct = Math.min(100, (elapsed / intervalMs) * 100);
       setAutoplayProgress(pct);
-      if (elapsed >= autoplayIntervalMs) {
+      if (elapsed >= intervalMs) {
         window.clearInterval(tick);
         goNext();
       }
     }, tickMs);
     return () => window.clearInterval(tick);
-  }, [autoplay, activeId, activeItem, goNext, autoplayIntervalMs]);
+  }, [autoplay, activeId, activeItem, goNext, intervalMs]);
 
-  // ── Exportar PNG ──
-  const handleExport = useCallback(async () => {
+  // ── Captura PNG (compartida por exportar y copiar) — fondo del TEMA real ──
+  const captureDataUrl = useCallback(async () => {
     const el = chartAreaRef.current;
-    if (!el || !activeItem) return;
+    if (!el) return null;
+    const { toPng } = await import("html-to-image");
+    // Fondo = el del dialog según el tema activo (antes era #fff fijo → los
+    // PNG en dark salían con texto claro sobre blanco, ilegibles).
+    const bg = dialogRef.current ? getComputedStyle(dialogRef.current).backgroundColor : "#ffffff";
+    return toPng(el, {
+      backgroundColor: bg && bg !== "rgba(0, 0, 0, 0)" ? bg : "#ffffff",
+      cacheBust: true,
+      pixelRatio: 2,
+      // Filtrar controles absolutos (flechas, botones) → screenshot limpio.
+      filter: (node) => {
+        if (!(node instanceof HTMLElement)) return true;
+        if (node.dataset.exportHide === "true") return false;
+        return true;
+      },
+    });
+  }, []);
+
+  const handleExport = useCallback(async () => {
+    if (!activeItem) return;
     setIsExporting(true);
     try {
-      // Lazy import: solo se descarga cuando el usuario realmente exporta.
-      const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(el, {
-        backgroundColor: "#ffffff",
-        cacheBust: true,
-        pixelRatio: 2,
-        // Filtrar elementos absolutamente posicionados (flechas, botones)
-        // para que el screenshot muestre solo el chart limpio.
-        filter: (node) => {
-          if (!(node instanceof HTMLElement)) return true;
-          if (node.dataset.exportHide === "true") return false;
-          return true;
-        },
-      });
+      const dataUrl = await captureDataUrl();
+      if (!dataUrl) return;
       const link = document.createElement("a");
       const safeTitle = activeItem.title
         .toLowerCase()
@@ -188,37 +239,84 @@ export function ChartPresentationModal({
     } finally {
       setIsExporting(false);
     }
-  }, [activeItem]);
+  }, [activeItem, captureDataUrl]);
+
+  // Copiar el chart como imagen al portapapeles (pegarlo directo en WhatsApp/Word).
+  const handleCopy = useCallback(async () => {
+    if (!activeItem) return;
+    setIsCopying(true);
+    try {
+      if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) {
+        throw new Error("Este navegador no permite copiar imágenes");
+      }
+      const dataUrl = await captureDataUrl();
+      if (!dataUrl) return;
+      const blob = await (await fetch(dataUrl)).blob();
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      toast.success("Copiado al portapapeles", {
+        description: `${activeItem.title} · pegalo con Ctrl+V donde quieras`,
+        duration: 2500,
+      });
+    } catch (err) {
+      toast.error("No se pudo copiar", {
+        description: err instanceof Error ? err.message : "Error desconocido",
+        duration: 3000,
+      });
+    } finally {
+      setIsCopying(false);
+    }
+  }, [activeItem, captureDataUrl]);
+
+  const cycleInterval = () => {
+    const i = TV_INTERVALS_MS.indexOf(intervalMs);
+    setIntervalMs(TV_INTERVALS_MS[(i + 1) % TV_INTERVALS_MS.length]);
+  };
 
   if (!activeItem || typeof document === "undefined") return null;
 
+  const ctlBtn =
+    "inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+
   return createPortal(
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={`Presentación: ${activeItem.title}`}
-      className="fixed inset-0 z-[9999] bg-white dark:bg-[var(--color-card)] flex flex-col animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] bg-[var(--surface-canvas)] flex flex-col animate-in fade-in duration-200"
     >
       {/* Header barra — titulo + indicador + acciones */}
       <header
-        className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] shrink-0"
+        className="flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0"
         data-export-hide="true"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-[var(--surface-sunken)] shrink-0">
-            <Maximize2 className="h-4 w-4 text-[var(--text-secondary)]" />
+          <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-[var(--accent-soft)] shrink-0">
+            <Maximize2 className="h-4 w-4 text-[var(--accent)]" />
           </span>
           <div className="min-w-0">
-            <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
               Presentación · {activeIdx + 1} de {items.length}
-              {autoplay && <span className="ml-2 text-[var(--data-success-500)]">· Modo TV</span>}
+              {autoplay && <span className="ml-2">· Modo TV</span>}
             </p>
-            <h2 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight truncate">
+            <h2 className="font-display text-xl sm:text-2xl tracking-tight text-[var(--text-primary)] leading-tight truncate">
               {activeItem.title}
             </h2>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+          {/* Copiar al portapapeles */}
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={isCopying}
+            aria-label="Copiar imagen al portapapeles"
+            title="Copiar este gráfico como imagen (pegar con Ctrl+V)"
+            className={cn(ctlBtn, isCopying && "opacity-60 cursor-wait")}
+          >
+            <Copy className="h-4 w-4" />
+            <span className="hidden lg:inline">{isCopying ? "Copiando…" : "Copiar"}</span>
+          </button>
           {/* Export PNG */}
           <button
             type="button"
@@ -226,45 +324,54 @@ export function ChartPresentationModal({
             disabled={isExporting}
             aria-label="Descargar PNG"
             title="Descargar este gráfico como imagen"
-            className={cn(
-              "inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
-              "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-base)]",
-              isExporting && "opacity-60 cursor-wait",
-            )}
+            className={cn(ctlBtn, isExporting && "opacity-60 cursor-wait")}
           >
             <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">{isExporting ? "Exportando…" : "PNG"}</span>
+            <span className="hidden lg:inline">{isExporting ? "Exportando…" : "PNG"}</span>
+          </button>
+          {/* Pantalla completa real */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            aria-label={isFs ? "Salir de pantalla completa" : "Pantalla completa"}
+            title={isFs ? "Salir de pantalla completa (F)" : "Pantalla completa del navegador (F) — ideal para TV"}
+            className={ctlBtn}
+          >
+            {isFs ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            <span className="hidden lg:inline">{isFs ? "Salir" : "Pantalla"}</span>
+          </button>
+          {/* Intervalo del modo TV */}
+          <button
+            type="button"
+            onClick={cycleInterval}
+            aria-label={`Intervalo del modo TV: ${intervalMs / 1000} segundos`}
+            title="Cada cuántos segundos rota el modo TV (click para cambiar)"
+            className={ctlBtn}
+          >
+            <Timer className="h-4 w-4" />
+            <span className="tabular-nums">{intervalMs / 1000}s</span>
           </button>
           {/* Modo TV toggle */}
           <button
             type="button"
             onClick={() => setAutoplay((a) => !a)}
             aria-label={autoplay ? "Pausar modo TV" : "Iniciar modo TV"}
-            title={
-              autoplay
-                ? "Pausar rotación automática"
-                : `Modo TV — rota cada ${Math.round(autoplayIntervalMs / 1000)}s (o pulsa espacio)`
-            }
+            title={autoplay ? "Pausar rotación automática" : `Modo TV — rota cada ${Math.round(intervalMs / 1000)}s (o pulsa espacio)`}
             className={cn(
               "inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
               autoplay
-                ? "bg-[var(--data-success-500)] text-white border-[var(--data-success-500)]"
-                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-base)]",
+                ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
             )}
           >
             {autoplay ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            <span className="hidden sm:inline">{autoplay ? "Pausar" : "Modo TV"}</span>
+            <span className="hidden lg:inline">{autoplay ? "Pausar" : "Modo TV"}</span>
           </button>
           {/* Cerrar */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:border-[var(--rule-base)] transition-colors"
-            aria-label="Cerrar presentación"
-          >
+          <button type="button" onClick={onClose} className={ctlBtn} aria-label="Cerrar presentación">
             <X className="h-4 w-4" />
-            <span className="hidden sm:inline">Cerrar</span>
-            <kbd className="hidden md:inline-block text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
+            <span className="hidden lg:inline">Cerrar</span>
+            <kbd className="hidden xl:inline-block text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
               Esc
             </kbd>
           </button>
@@ -273,12 +380,9 @@ export function ChartPresentationModal({
 
       {/* Autoplay progress bar */}
       {autoplay && (
-        <div
-          className="h-1 bg-[var(--surface-sunken)] shrink-0 overflow-hidden"
-          data-export-hide="true"
-        >
+        <div className="h-1 bg-[var(--surface-sunken)] shrink-0 overflow-hidden" data-export-hide="true">
           <div
-            className="h-full bg-[var(--data-success-500)] transition-[width] duration-75 ease-linear"
+            className="h-full bg-[var(--accent)] transition-[width] duration-75 ease-linear"
             style={{ width: `${autoplayProgress}%` }}
             role="progressbar"
             aria-valuenow={Math.round(autoplayProgress)}
@@ -300,7 +404,7 @@ export function ChartPresentationModal({
           className={cn(
             "absolute left-4 top-1/2 -translate-y-1/2 z-10",
             "inline-flex items-center justify-center h-12 w-12 rounded-full",
-            "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)] shadow-sm",
+            "bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-sm",
             "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
             "transition-all",
             !hasPrev && "opacity-30 cursor-not-allowed",
@@ -311,24 +415,20 @@ export function ChartPresentationModal({
 
         {/* Chart principal — ref para export/wheel.
             data-chart-presentation activa overrides CSS del global para que
-            los wrappers internos de Recharts (altura fija 300px) crezcan a
-            ~65vh y ocupen el espacio real del modal. Sin esto los charts
-            se veían chicos en una superficie grande (Brandon brief). */}
+            los wrappers internos de Recharts (altura fija) crezcan a ~65vh.
+            OJO layout: el hijo centra con my-auto (NO justify-center) — con
+            contenido más alto que la pantalla, justify-center recorta la parte
+            de arriba y no hay scroll que la alcance (bug clásico de flexbox). */}
         <div
           ref={chartAreaRef}
           data-chart-presentation="true"
-          className="flex-1 flex items-stretch justify-center px-8 sm:px-12 py-6 overflow-auto"
+          className="flex-1 flex flex-col px-8 sm:px-12 py-6 overflow-auto"
           onMouseEnter={() => {
             // Pausar autoplay al hover para dejar leer
             if (autoplay) setAutoplay(false);
           }}
         >
-          <div
-            className="w-full max-w-[1600px] mx-auto flex flex-col justify-center"
-            style={{
-              minHeight: "78vh",
-            }}
-          >
+          <div className="w-full max-w-[1600px] mx-auto my-auto">
             {activeItem.render()}
           </div>
         </div>
@@ -343,7 +443,7 @@ export function ChartPresentationModal({
           className={cn(
             "absolute right-4 top-1/2 -translate-y-1/2 z-10",
             "inline-flex items-center justify-center h-12 w-12 rounded-full",
-            "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)] shadow-sm",
+            "bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-sm",
             "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
             "transition-all",
             !hasNext && !autoplay && "opacity-30 cursor-not-allowed",
@@ -355,7 +455,7 @@ export function ChartPresentationModal({
 
       {/* Footer — thumbnail strip navigable */}
       <footer
-        className="border-t border-[var(--rule-soft)] px-6 py-3 bg-[var(--surface-sunken)] shrink-0"
+        className="border-t border-[var(--rule-soft)] px-6 py-3 bg-[var(--surface-raised)] shrink-0"
         data-export-hide="true"
       >
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin pb-1">
@@ -367,10 +467,10 @@ export function ChartPresentationModal({
                 type="button"
                 onClick={() => onNavigate(it.id)}
                 className={cn(
-                  "shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors",
+                  "shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors",
                   isActive
-                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
-                    : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
+                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]",
                 )}
               >
                 <span className="tabular-nums font-bold">{idx + 1}</span>
@@ -380,33 +480,26 @@ export function ChartPresentationModal({
           })}
         </div>
         <p className="mt-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)] flex items-center gap-3 flex-wrap">
-          <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
-              ← →
-            </kbd>{" "}
-            navegar
-          </span>
-          <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
-              Shift+rueda
-            </kbd>{" "}
-            scroll lateral
-          </span>
-          <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
-              Espacio
-            </kbd>{" "}
-            modo TV
-          </span>
-          <span>
-            <kbd className="text-[length:var(--ts-2xs)] font-mono bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
-              Esc
-            </kbd>{" "}
-            cerrar
-          </span>
+          <Hint k="← →" label="navegar" />
+          <Hint k="1-9" label="ir al gráfico" />
+          <Hint k="F" label="pantalla completa" />
+          <Hint k="Espacio" label="modo TV" />
+          <Hint k="Shift+rueda" label="scroll lateral" />
+          <Hint k="Esc" label="cerrar" />
         </p>
       </footer>
     </div>,
     document.body,
+  );
+}
+
+function Hint({ k, label }: { k: string; label: string }) {
+  return (
+    <span>
+      <kbd className="text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-canvas)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
+        {k}
+      </kbd>{" "}
+      {label}
+    </span>
   );
 }
