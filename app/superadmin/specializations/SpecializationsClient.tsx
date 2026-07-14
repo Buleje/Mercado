@@ -14,6 +14,7 @@ import {
   Zap,
 } from "@buleje/design-system/icons";
 import type { Specialization, SpecializationKey } from "@/lib/specializations";
+import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { broadcastSpecsChanged } from "@/hooks/use-enabled-specs";
 import { AdminTabShell } from "@/app/admin/_components/_shared";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
@@ -65,10 +66,12 @@ export default function SpecializationsClient({
     setError(null);
 
     try {
-      const res = await fetch("/api/superadmin/specializations", {
+      // fetchSuperadmin: inyecta el header x-csrf-token (assertCsrf lo exige) y,
+      // ante 401/403 (sesión de plataforma expirada por idle 30 min), redirige
+      // solo al login en vez de dejar el error muerto "invalid or expired token".
+      const res = await fetchSuperadmin("/api/superadmin/specializations", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           tenantId,
           specKey,

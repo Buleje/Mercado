@@ -47,6 +47,7 @@ import {
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { SessionExpiryGuard } from "@/components/shared/SessionExpiryGuard";
 import { FinanceAlertBanner } from "@/components/superadmin/FinanceAlertBanner";
 
@@ -710,7 +711,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      await fetch("/api/superadmin/auth", { method: "DELETE" });
+      await fetch("/api/superadmin/auth", { method: "DELETE", headers: csrfHeaders() });
     } finally {
       // Hard navigation: tras borrar la cookie de sesión, router.push (SPA) podía
       // colgarse al re-renderizar el layout sin sesión. window.location recarga

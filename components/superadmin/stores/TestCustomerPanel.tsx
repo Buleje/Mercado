@@ -14,6 +14,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FlaskConical, Check, ArrowRight, LogOut, Loader2 } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const TEST_CUSTOMER = { phone: "999000111", name: "Cliente Prueba", tenantId: "main" };
 
@@ -84,7 +85,7 @@ export default function TestCustomerPanel() {
     try {
       const res = await fetch("/api/auth/customer/test-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(TEST_CUSTOMER),
       });
       if (res.status === 404) {
@@ -106,7 +107,7 @@ export default function TestCustomerPanel() {
 
   const deactivate = async () => {
     setState("loading");
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {
+    await fetch("/api/auth/logout", { method: "POST", headers: csrfHeaders() }).catch(() => {
       /* best-effort: en dev no bloqueamos la UI si el logout falla */
     });
     clearTestCustomerFromStorage();

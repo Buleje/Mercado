@@ -107,7 +107,13 @@ export async function proxy(request: NextRequest) {
 
   // ── 8. Superadmin pages guard ──────────────────────────────────────────────
   const superadminPages = await guardSuperadminPages(request, pathname, withTenant);
-  if (superadminPages) return superadminPages;
+  if (superadminPages) {
+    // Las páginas superadmin retornan acá y NUNCA llegan al paso 12 → sin esto
+    // la cookie csrf-token no se siembra en /superadmin/* y todo endpoint con
+    // assertCsrf responde 403 "CSRF token inválido" al mutar (bug specializations
+    // 2026-07-14). ensureCsrfCookie es idempotente (no pisa cookie válida).
+    return ensureCsrfCookie(request, superadminPages);
+  }
 
   // ── 9. Admin pages guard (/admin/*) ────────────────────────────────────────
   const adminPages = await guardAdminPages(request, pathname);
