@@ -214,15 +214,33 @@ export function parseVozDims(alternativas: string[]): DictadoParse {
  * reordenada solo por tener más números). Si la #1 pegó 3 dígitos ("269"), los
  * separa a 2,6,9 manteniendo el orden dictado.
  */
+/**
+ * Separa un token de dígitos PEGADOS por dictar rápido ("2810" = "2 8 10") en
+ * números de madera válidos. Regla: un dígito 1-4 seguido de 0 forma una medida
+ * de 2 cifras (10/20/30/40, de "diez/veinte/treinta/cuarenta"); el resto son
+ * dígitos sueltos. No hay medidas de madera de 3+ cifras, así que un token largo
+ * SIEMPRE está pegado. Los de 1-2 cifras (10, 12, 14, 28) se respetan y no entran acá.
+ */
+function separarPegados(s: string): number[] {
+  const out: number[] = [];
+  let i = 0;
+  while (i < s.length) {
+    if (i + 1 < s.length && s[i] >= "1" && s[i] <= "4" && s[i + 1] === "0") {
+      out.push(Number(s.slice(i, i + 2))); i += 2; // 10/20/30/40
+    } else {
+      out.push(Number(s[i])); i += 1;
+    }
+  }
+  return out.filter((n) => n > 0);
+}
+
 export function mejoresNumeros(alternativas: string[]): number[] {
   const alts = alternativas.filter(Boolean);
-  // Cada token de 3 dígitos SIN ceros ("269", "2810" no) es un trío pegado por
-  // hablar rápido — lo separa a 2,6,9 EN CUALQUIER parte de la frase (no hay
-  // medidas de madera de 3 cifras, así que es seguro). Los de 1-2 cifras (10,
-  // 12, 14) se respetan.
+  // Tokens de 3+ dígitos = números pegados por hablar rápido → separar; los de
+  // 1-2 cifras (y decimales) se respetan tal cual.
   const expandir = (a: string) =>
     (normalizeText(a).match(/\d+(?:\.\d+)?/g) ?? []).flatMap((t) =>
-      /^[1-9]{3}$/.test(t) ? t.split("").map(Number) : [parseFloat(t)]);
+      /^\d{3,}$/.test(t) ? separarPegados(t) : [parseFloat(t)]);
   const primary = alts.length ? expandir(alts[0]) : [];
   if (primary.length) return primary; // confía en la hipótesis #1
   // alt[0] sin números → primera alternativa que traiga algo.

@@ -30,6 +30,14 @@ interface SpeechRecognitionLike {
 const UNIDADES: { v: Unidad; label: string }[] = [
   { v: "pulg", label: "pulg" }, { v: "cm", label: "cm" }, { v: "pies", label: "pies" }, { v: "m", label: "m" },
 ];
+// Micro-pausa (ms) que el texto debe quedar quieto para guardar sin esperar el
+// final completo de Chrome (~1.5s). Más bajo = más rápido pero más riesgo de
+// committear un número que Chrome aún revisa. 400ms = punto veloz y estable.
+const STABLE_MS = 400;
+// Rangos para los dropdowns de carga manual (rápida, sin tipear).
+const RANGO_ESPESOR = Array.from({ length: 10 }, (_, i) => i + 1);   // 1 a 10
+const RANGO_ANCHO = Array.from({ length: 30 }, (_, i) => i + 1);     // 1 a 30
+const RANGO_LARGO = Array.from({ length: 39 }, (_, i) => i + 2);     // 2 a 40
 // Especies de madera comunes en la Selva Central peruana (menú de la cubicación).
 const ESPECIES = [
   "Tornillo", "Cedro", "Capirona", "Shihuahuaco", "Cumala", "Moena",
@@ -60,7 +68,7 @@ function decir(texto: string) {
     synth.cancel();
     const u = new SpeechSynthesisUtterance(texto);
     u.lang = "es-PE";
-    u.rate = 1.4; // voz rápida — no traba el dictado veloz
+    u.rate = 1.5; // voz rápida — no traba el dictado veloz
     synth.speak(u);
   } catch { /* TTS no disponible */ }
 }
@@ -69,7 +77,6 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [rows, setRows] = useState<PiezaCubicada[]>([]);
   const [listening, setListening] = useState(false);
   const [liveText, setLiveText] = useState("");        // caption en vivo (interim)
-  const [pendingNums, setPendingNums] = useState<number[]>([]); // números sueltos arrastrados
   const [lastAdded, setLastAdded] = useState<PiezaCubicada | null>(null);
   const [addedFlash, setAddedFlash] = useState(0);     // cuántas piezas entró la última frase
   const [supported, setSupported] = useState(true);
@@ -90,12 +97,23 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   // duplicados. lastFinalRef = último índice final procesado (evita reprocesar);
   // se reinicia en cada nueva sesión (Chrome corta/reinicia y los índices vuelven a 0).
   const lastFinalRef = useRef(-1);
+  // Commit por ESTABILIDAD: cuando el texto intermedio deja de cambiar por
+  // STABLE_MS (micro-pausa entre medidas), guardamos los tríos ya estables SIN
+  // esperar el final completo de Chrome (~1.5s). committedRef = piezas ya
+  // emitidas del resultado en curso (evita duplicar); debounceRef = timer.
+  const committedRef = useRef(0);
+  const curResultRef = useRef(-1);
+  const debounceRef = useRef(0);
   // Modo del dictado: agregar filas nuevas, o EDITAR una fila puntual por voz.
   const modeRef = useRef<{ type: "add" } | { type: "edit"; id: string }>({ type: "add" });
   const readingRef = useRef(false);                    // lectura de la tabla en curso
   const rowsRef = useRef<PiezaCubicada[]>([]);
   useEffect(() => { rowsRef.current = rows; }, [rows]);
-  const resetVoz = () => { carryRef.current = []; lastFinalRef.current = -1; };
+  const resetVoz = () => {
+    carryRef.current = []; lastFinalRef.current = -1;
+    committedRef.current = 0; curResultRef.current = -1;
+    try { window.clearTimeout(debounceRef.current); } catch { /* ignore */ }
+  };
   useEffect(() => { especieRef.current = especie; }, [especie]);
   useEffect(() => { speakRef.current = speakOn; }, [speakOn]);
 
@@ -146,58 +164,79 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     rec.interimResults = true;
     rec.continuous = true;
     rec.maxAlternatives = 1; // confiamos en la hipótesis #1 → menos latencia
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rec.onresult = (e: any) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const res = e.results[i];
-        if (!res.isFinal) { interim += (res[0]?.transcript ?? "") + " "; continue; }
-        if (i <= lastFinalRef.current) continue; // ya procesado este final
-        lastFinalRef.current = i;
-        // MODO EDICIÓN: dictás 3 números para la fila seleccionada y la cambia.
-        if (modeRef.current.type === "edit") {
-          const nums = mejoresNumeros([res[0]?.transcript ?? ""]);
-          if (nums.length >= 3 && nums[0] > 0 && nums[1] > 0 && nums[2] > 0) {
-            updateRow(modeRef.current.id, nums[0], nums[1], nums[2]);
-            if (speakRef.current) decir(`${nums[0]}, ${nums[1]}, ${nums[2]}`);
-            modeRef.current = { type: "add" };
-            setEditingId(null);
-            wantListeningRef.current = false;
-            setListening(false); setLiveText("");
-            try { rec.stop(); } catch { /* ignore */ }
-          } else {
-            setErrMsg("No entendí 3 números para la fila. Probá de nuevo.");
-          }
-          continue;
+
+    // Procesa un resultado (estable por debounce, o final). Guarda los tríos
+    // completos que falten. Maneja add y edit. idx = índice del resultado.
+    const procesar = (idx: number, texto: string, final: boolean) => {
+      if (!final && idx <= lastFinalRef.current) return; // debounce viejo ya cerrado
+      const nums = mejoresNumeros([texto]);
+
+      // MODO EDICIÓN: 3 números → reemplaza la fila y sale.
+      if (modeRef.current.type === "edit") {
+        if (nums.length >= 3 && nums[0] > 0 && nums[1] > 0 && nums[2] > 0) {
+          updateRow(modeRef.current.id, nums[0], nums[1], nums[2]);
+          if (speakRef.current) decir(`${nums[0]}, ${nums[1]}, ${nums[2]}`);
+          modeRef.current = { type: "add" };
+          setEditingId(null); wantListeningRef.current = false;
+          setListening(false); setLiveText("");
+          window.clearTimeout(debounceRef.current);
+          try { rec.stop(); } catch { /* ignore */ }
+        } else if (final) {
+          setErrMsg("No entendí 3 números para la fila. Probá de nuevo.");
         }
-        // Números de la frase FINAL (estable) + los sueltos de la anterior.
-        const all = [...carryRef.current, ...mejoresNumeros([res[0]?.transcript ?? ""])];
-        const totalPiezas = Math.floor(all.length / 3);
-        let added = 0;
-        let ultima: { espesor: number; ancho: number; largo: number } | null = null;
-        for (let k = 0; k < totalPiezas; k++) {
-          const [espesor, ancho, largo] = all.slice(k * 3, k * 3 + 3);
-          if (espesor > 0 && ancho > 0 && largo > 0) {
-            addPieza({ cantidad: 1, espesor, ancho, largo, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined });
-            ultima = { espesor, ancho, largo }; added++;
-          }
-        }
-        carryRef.current = all.slice(totalPiezas * 3); // sobrante 0-2 → próxima frase
-        setPendingNums(carryRef.current);
-        setLiveText("");
-        if (added && ultima) {
-          setAddedFlash(added); setErrMsg(null);
-          if (speakRef.current) decir(added === 1 ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}` : `${added} piezas`);
+        if (final) lastFinalRef.current = idx;
+        return;
+      }
+
+      // MODO AGREGAR — resultado nuevo → reinicia el contador de piezas.
+      if (idx !== curResultRef.current) { curResultRef.current = idx; committedRef.current = 0; }
+      const all = [...carryRef.current, ...nums];
+      const totalPiezas = Math.floor(all.length / 3);
+      let added = 0;
+      let ultima: { espesor: number; ancho: number; largo: number } | null = null;
+      for (let k = committedRef.current; k < totalPiezas; k++) {
+        const [espesor, ancho, largo] = all.slice(k * 3, k * 3 + 3);
+        if (espesor > 0 && ancho > 0 && largo > 0) {
+          addPieza({ cantidad: 1, espesor, ancho, largo, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined });
+          ultima = { espesor, ancho, largo }; added++;
         }
       }
-      if (interim.trim()) setLiveText(interim.trim()); // caption en vivo (no guarda)
+      committedRef.current = totalPiezas;
+      if (added && ultima) {
+        setAddedFlash(added); setErrMsg(null); setLiveText("");
+        if (speakRef.current) decir(added === 1 ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}` : `${added} piezas`);
+      }
+      if (final) {
+        carryRef.current = all.slice(totalPiezas * 3); // sobrante → próxima frase
+        committedRef.current = 0; curResultRef.current = -1;
+        lastFinalRef.current = idx;
+      }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i];
+        if (i <= lastFinalRef.current) continue; // ya cerrado
+        const texto = res[0]?.transcript ?? "";
+        if (res.isFinal) {
+          window.clearTimeout(debounceRef.current);
+          procesar(i, texto, true);
+        } else {
+          setLiveText(texto); // caption en vivo, instantáneo
+          // Debounce: si el texto se estabiliza STABLE_MS, guardamos ya (rápido).
+          window.clearTimeout(debounceRef.current);
+          debounceRef.current = window.setTimeout(() => procesar(i, texto, false), STABLE_MS);
+        }
+      }
     };
     rec.onend = () => {
       // Modo continuo: Chrome corta tras silencios/timeout → reiniciar. La nueva
       // sesión reinicia los índices a 0, así que reseteamos lastFinalRef. El
       // carry (sobrante de la última frase) se conserva (solo cambia en finales).
       if (!wantListeningRef.current) { setListening(false); return; }
-      lastFinalRef.current = -1;
+      lastFinalRef.current = -1; committedRef.current = 0; curResultRef.current = -1;
+      window.clearTimeout(debounceRef.current);
       try { rec.start(); } catch { wantListeningRef.current = false; setListening(false); }
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -207,7 +246,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       // no-speech / network / aborted: transitorio → onend reintenta, sin ruido.
     };
     recRef.current = rec;
-    return () => { wantListeningRef.current = false; try { rec.stop(); } catch { /* ignore */ } };
+    return () => { wantListeningRef.current = false; window.clearTimeout(debounceRef.current); try { rec.stop(); } catch { /* ignore */ } };
   }, [addPieza, updateRow]);
 
   const stopLeer = useCallback(() => {
@@ -222,12 +261,12 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     modeRef.current = { type: "add" }; setEditingId(null);
     if (wantListeningRef.current) {
       wantListeningRef.current = false; rec.stop(); setListening(false);
-      resetVoz(); setPendingNums([]); setLiveText("");
+      resetVoz(); setLiveText("");
       try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
       return;
     }
     wantListeningRef.current = true;
-    resetVoz(); setPendingNums([]); setLiveText(""); setErrMsg(null);
+    resetVoz(); setLiveText(""); setErrMsg(null);
     try { rec.start(); setListening(true); } catch { /* ya corriendo */ }
   }, [stopLeer]);
 
@@ -243,7 +282,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       return;
     }
     modeRef.current = { type: "edit", id: rowId };
-    setEditingId(rowId); setErrMsg(null); setLiveText(""); resetVoz(); setPendingNums([]);
+    setEditingId(rowId); setErrMsg(null); setLiveText(""); resetVoz();
     if (!wantListeningRef.current) {
       wantListeningRef.current = true;
       try { rec.start(); setListening(true); } catch { /* ya corriendo */ }
@@ -301,6 +340,18 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     m3: rows.reduce((a, r) => a + r.m3, 0),
   }), [rows]);
 
+  // Números del dictado en curso, AGRUPADOS en tríos (espesor·ancho·largo) para
+  // que se vea cómo se cuadran las piezas en vivo — y no una barra continua que
+  // confunde en el dictado rápido.
+  const liveGroups = useMemo(() => {
+    if (!listening || !liveText) return null;
+    const nums = mejoresNumeros([liveText]);
+    const triples: number[][] = [];
+    let i = 0;
+    for (; i + 3 <= nums.length; i += 3) triples.push(nums.slice(i, i + 3));
+    return { triples, resto: nums.slice(i) };
+  }, [listening, liveText]);
+
   const exportarCSV = () => {
     const head = ["Cantidad", "Espesor", "uEsp", "Ancho", "uAnc", "Largo", "uLar", "Especie", "PieTablar", "m3"];
     const lines = rows.map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3].join(","));
@@ -351,7 +402,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   </button>
                 </div>
                 <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                  Solo los números: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = espesor 2&Prime; · ancho 6&Prime; · largo 8 pies. Decí los 3 números y hacé una <b>micro-pausa</b> — ahí se guarda la fila. Enseguida dictá la siguiente.
+                  Solo los números: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = espesor 2&Prime; · ancho 6&Prime; · largo 8 pies. Decí los 3 y una <b>micro-pausa</b> los guarda al toque — seguí con la siguiente sin esperar.
                 </p>
                 {/* Especie: menú que se aplica a lo que dictes */}
                 <label className="mt-2 inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
@@ -362,18 +413,27 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   </select>
                 </label>
 
-                {/* Caption en vivo — se ve el texto mientras dictás, aun rápido */}
+                {/* Caption en vivo AGRUPADO — cada bloque verde = una pieza, para
+                    ver el cuadrado mientras dictás rápido (no una barra continua). */}
                 {listening && (
-                  <div className="mt-2 min-h-[2.25rem] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-                    <div className="flex items-center gap-1.5 text-sm text-[var(--text-primary)]">
-                      <Volume2 className={`h-3.5 w-3.5 shrink-0 ${liveText ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`} />
-                      <span className="truncate font-mono">{liveText || <span className="text-[var(--text-tertiary)]">escuchando…</span>}</span>
-                    </div>
-                    {pendingNums.length > 0 && (
-                      <p className="mt-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-800)]">
-                        Pendiente: {pendingNums.join(" · ")} — falta{pendingNums.length === 2 ? " 1 número" : "n 2 números"} para completar la pieza
-                      </p>
+                  <div className="mt-2 min-h-[2.75rem] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
+                    {liveGroups && (liveGroups.triples.length > 0 || liveGroups.resto.length > 0) ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {liveGroups.triples.map((t, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-100)] px-2 py-0.5 font-mono text-sm font-bold text-[var(--data-success-900)]">
+                            {t.join(" · ")}
+                          </span>
+                        ))}
+                        {liveGroups.resto.length > 0 && (
+                          <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--data-warning-500)] px-2 py-0.5 font-mono text-sm text-[var(--data-warning-800)]">
+                            {liveGroups.resto.join(" · ")}<span className="ml-1 opacity-60">· falta{liveGroups.resto.length === 2 ? " 1" : "n 2"}</span>
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]"><Volume2 className="h-3.5 w-3.5" /> escuchando…</div>
                     )}
+                    <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Cada bloque verde = una pieza (espesor · ancho · largo). Si un cuadrado quedó mal, pausá y editá esa fila con su 🎤.</p>
                   </div>
                 )}
                 {errMsg && (
@@ -405,12 +465,12 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           </p>
         )}
 
-        {/* Ingreso manual — usa la especie elegida arriba */}
+        {/* Carga manual rápida — dropdowns (sin tipear). Usa la especie de arriba. */}
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-[var(--rule-soft)] pt-3">
           <ManualField label="Cant." value={manual.cantidad} onChange={(v) => setManual({ ...manual, cantidad: v })} w="w-16" />
-          <ManualField label="Espesor (pulg)" value={manual.espesor} onChange={(v) => setManual({ ...manual, espesor: v })} />
-          <ManualField label="Ancho (pulg)" value={manual.ancho} onChange={(v) => setManual({ ...manual, ancho: v })} />
-          <ManualField label="Largo (pies)" value={manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} />
+          <ManualSelect label="Espesor (pulg)" value={manual.espesor} onChange={(v) => setManual({ ...manual, espesor: v })} opts={RANGO_ESPESOR} />
+          <ManualSelect label="Ancho (pulg)" value={manual.ancho} onChange={(v) => setManual({ ...manual, ancho: v })} opts={RANGO_ANCHO} />
+          <ManualSelect label="Largo (pies)" value={manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} opts={RANGO_LARGO} />
           <button type="button" onClick={addManual} className="inline-flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Plus className="h-4 w-4" /> Agregar a mano</button>
         </div>
       </div>
@@ -516,6 +576,18 @@ function ManualField({ label, value, onChange, w = "w-20" }: { label: string; va
     <label className="flex flex-col gap-0.5">
       <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
       <input type="number" inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} className={`${w} h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]`} />
+    </label>
+  );
+}
+
+function ManualSelect({ label, value, onChange, opts }: { label: string; value: string; onChange: (v: string) => void; opts: number[] }) {
+  return (
+    <label className="flex flex-col gap-0.5">
+      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+        <option value="">—</option>
+        {opts.map((n) => <option key={n} value={n}>{n}</option>)}
+      </select>
     </label>
   );
 }

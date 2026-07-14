@@ -86,6 +86,16 @@ describe("dictado rápido: varias piezas en una frase", () => {
   it("respeta medidas de 2 cifras (10, 12, 14) sin separarlas", () => {
     expect(mejoresNumeros(["dos catorce doce"])).toEqual([2, 14, 12]);
   });
+  it("separa tokens pegados con 10/20/30/40 (dictado continuo)", () => {
+    // '2810' = 2·8·10 (no 2,8,1,0); '2910' = 2·9·10
+    expect(mejoresNumeros(["2810"])).toEqual([2, 8, 10]);
+    expect(mejoresNumeros(["2810 258 2910"])).toEqual([2, 8, 10, 2, 5, 8, 2, 9, 10]);
+    expect(mejoresNumeros(["2810258 2910"])).toEqual([2, 8, 10, 2, 5, 8, 2, 9, 10]);
+  });
+  it("3 medidas continuas '2 8 10 2 5 8 2 9 10' → 9 números en orden", () => {
+    expect(mejoresNumeros(["dos ocho diez dos cinco ocho dos nueve diez"]))
+      .toEqual([2, 8, 10, 2, 5, 8, 2, 9, 10]);
+  });
   it("captura varias piezas desde la hipótesis #1", () => {
     expect(mejoresNumeros(["dos seis ocho dos ocho diez", "dos seis"])).toEqual([2, 6, 8, 2, 8, 10]);
   });
