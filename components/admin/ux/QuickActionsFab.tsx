@@ -9,6 +9,8 @@ import {
   UserPlus,
   CreditCard,
   X,
+  EyeOff,
+  ChevronUp,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tapPress, EASE, DURATION } from "@/components/ui-system";
@@ -67,8 +69,21 @@ const ACTIONS: QuickAction[] = [
   },
 ];
 
+const HIDE_KEY = "admin-quickfab-hidden";
+
 export function QuickActionsFab() {
   const [open, setOpen] = useState(false);
+  // Preferencia persistida: el botón flotante puede ocultarse y queda como un
+  // pequeño asa minimizada en la esquina, para que no tape el contenido.
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    try { setHidden(localStorage.getItem(HIDE_KEY) === "1"); } catch { /* ignore */ }
+  }, []);
+  const setHiddenPersist = useCallback((v: boolean) => {
+    setHidden(v);
+    try { localStorage.setItem(HIDE_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+    if (v) setOpen(false);
+  }, []);
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -160,6 +175,17 @@ export function QuickActionsFab() {
                 </m.div>
               );
             })}
+            {/* Ocultar el botón flotante */}
+            <button
+              type="button"
+              onClick={() => setHiddenPersist(true)}
+              className="group flex items-center gap-3 rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-xl pl-4 pr-5 py-2.5 hover:border-[var(--rule-strong)] transition-colors"
+            >
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-tertiary)]">
+                <EyeOff className="h-4 w-4" strokeWidth={1.75} />
+              </span>
+              <span className="text-sm font-semibold text-[var(--text-secondary)] whitespace-nowrap">Ocultar este botón</span>
+            </button>
             {/* Hint teclado global */}
             <div className="mt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-white/55 bg-black/40 backdrop-blur rounded-full px-3 py-1">
               ESC para cerrar · ⌘K para abrir
@@ -168,28 +194,45 @@ export function QuickActionsFab() {
         )}
       </AnimatePresence>
 
-      {/* FAB button */}
-      <m.button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        whileTap={tapPress}
-        className={cn(
-          "fixed right-6 bottom-6 z-50 h-14 w-14 rounded-full shadow-xl transition-all",
-          "flex items-center justify-center",
-          "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
-          "hover:scale-105 active:scale-95",
-          open && "rotate-45",
-        )}
-        style={{ transformOrigin: "center" }}
-        aria-label={open ? "Cerrar acciones rápidas" : "Abrir acciones rápidas"}
-        aria-expanded={open}
-      >
-        {open ? (
-          <X className="h-5 w-5" strokeWidth={2} aria-hidden />
-        ) : (
-          <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
-        )}
-      </m.button>
+      {hidden ? (
+        /* Minimizado: asa discreta en la esquina. Click = restaurar el botón. */
+        <button
+          type="button"
+          onClick={() => setHiddenPersist(false)}
+          className={cn(
+            "fixed right-0 bottom-24 z-50 flex items-center gap-1 rounded-l-full py-1.5 pl-2.5 pr-2 shadow-lg transition-all",
+            "bg-[var(--text-primary)] text-[var(--surface-canvas)] opacity-60 hover:opacity-100 hover:pr-3",
+          )}
+          aria-label="Mostrar el botón de acciones rápidas"
+          title="Acciones rápidas (oculto) — click para mostrar"
+        >
+          <ChevronUp className="h-3.5 w-3.5 rotate-[-90deg]" strokeWidth={2.5} aria-hidden />
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+        </button>
+      ) : (
+        /* FAB button */
+        <m.button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          whileTap={tapPress}
+          className={cn(
+            "fixed right-6 bottom-6 z-50 h-14 w-14 rounded-full shadow-xl transition-all",
+            "flex items-center justify-center",
+            "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
+            "hover:scale-105 active:scale-95",
+            open && "rotate-45",
+          )}
+          style={{ transformOrigin: "center" }}
+          aria-label={open ? "Cerrar acciones rápidas" : "Abrir acciones rápidas"}
+          aria-expanded={open}
+        >
+          {open ? (
+            <X className="h-5 w-5" strokeWidth={2} aria-hidden />
+          ) : (
+            <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
+          )}
+        </m.button>
+      )}
     </>
   );
 }
