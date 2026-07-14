@@ -51,6 +51,7 @@ import {
   Archive as FolderArchive,
   UserPlus,
   TreePine,
+  Wrench,
   Leaf,
   Megaphone,
   Gift,
@@ -133,6 +134,7 @@ export const ALL_TABS = [
   // ── ESPECIALIZACIONES (ADR-124 / ADR-125) — solo visibles si el tenant las habilita
   { id: "ctp-libro-operaciones" as Tab, label: "Libro CTP (Forestal)", icon: TreePine },
   { id: "loth-libro-operaciones" as Tab, label: "Libro Títulos Hab. (Forestal)", icon: TreePine },
+  { id: "forestal-herramientas" as Tab, label: "Herramientas Forestales", icon: Wrench },
   { id: "cacao-acopio" as Tab, label: "Acopio de Cacao (Agrícola)", icon: Leaf },
 ] as const;
 

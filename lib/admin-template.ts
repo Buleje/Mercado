@@ -123,6 +123,7 @@ export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
   { id: "cacao-acopio",           defaultLabel: "Acopio de Cacao",                category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Acopio y beneficio de cacao (especializacion agricola — requiere spec ON).", scope: "tienda" },
   { id: "ctp-libro-operaciones",  defaultLabel: "Libro CTP (Forestal)",           category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Libro de operaciones CTP forestal (especializacion — requiere spec ON).", scope: "tienda" },
   { id: "loth-libro-operaciones", defaultLabel: "Libro Titulos Hab. (Forestal)",  category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Libro de titulos habilitantes forestal (especializacion — requiere spec ON).", scope: "tienda" },
+  { id: "forestal-herramientas",  defaultLabel: "Herramientas Forestales",        category: "Producción",  defaultVisible: true,  defaultPlan: "pro",        description: "Cubicador de madera por voz (pie tablar + m3) y utilidades forestales (especializacion — requiere spec ON).", scope: "tienda" },
 
   // ── Sistema (siempre core, free y arriba) ─────────────────────────
   { id: "config",             defaultLabel: "Configuracion",      category: "Sistema",       defaultVisible: true,  defaultPlan: "basico",     description: "Usuarios, permisos y configuracion general.", scope: "sistema" },

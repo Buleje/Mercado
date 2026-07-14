@@ -39,6 +39,7 @@ export type SpecializationKey =
   | "spec:forestal:ctp-libro"
   | "spec:forestal:loth-libro"
   | "spec:forestal:gtf-emisor"
+  | "spec:forestal:herramientas"
   | "spec:agricola:cacao-acopio"
   | "spec:salud:recetas-medicas"
   | "spec:textil:cuero";
@@ -74,6 +75,16 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     requires: ["spec:forestal:ctp-libro"],
     recommendedIndustry: "madereria",
     status: "coming-soon",
+  },
+  "spec:forestal:herramientas": {
+    key: "spec:forestal:herramientas",
+    vertical: "forestal",
+    name: "Herramientas Forestales",
+    description:
+      "Utilidades para el negocio forestal. Incluye el cubicador de madera aserrada por voz (pie tablar + m³) con conversiones. Extensible a más herramientas.",
+    moduleId: "forestal-herramientas",
+    recommendedIndustry: "madereria",
+    status: "available",
   },
   "spec:agricola:cacao-acopio": {
     key: "spec:agricola:cacao-acopio",

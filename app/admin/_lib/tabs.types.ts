@@ -75,6 +75,7 @@ export type Tab =
   // `spec:<vertical>:<modulo>` habilitada por superadmin.
   | "ctp-libro-operaciones"  // Forestal: LOE-CTP SERFOR
   | "loth-libro-operaciones" // Forestal: LO-TH Títulos Habilitantes (ADR-125)
+  | "forestal-herramientas"  // Forestal: Herramientas (cubicador por voz, etc.)
   | "cacao-acopio"; // Agrícola: Acopio & Beneficio de Cacao (ADR-128)
 
 /**
@@ -136,5 +137,6 @@ export const VALID_TABS: readonly Tab[] = [
   // Especializaciones (ADR-124 / ADR-125 / ADR-128)
   "ctp-libro-operaciones",
   "loth-libro-operaciones",
+  "forestal-herramientas",
   "cacao-acopio",
 ] as const;

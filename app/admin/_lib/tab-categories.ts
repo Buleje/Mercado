@@ -543,7 +543,7 @@ export const FORESTAL_MODULE: TabCategory = {
   icon: TreePine,
   alwaysGroup: true,
   // Cuando gtf-emisor entre al Tab union (ADR-124 Fase futura) se suma acá.
-  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones"],
+  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones", "forestal-herramientas"],
 };
 
 export const AGRICULTURA_MODULE: TabCategory = {
