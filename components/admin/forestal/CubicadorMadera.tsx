@@ -87,6 +87,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [readingId, setReadingId] = useState<string | null>(null); // fila que se está leyendo
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
   const [precioPt, setPrecioPt] = useState(""); // S/ por pie tablar → valor del lote
+  const [showResumen, setShowResumen] = useState(false);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
   const especieRef = useRef(especie);
@@ -349,6 +350,20 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const valorLote = totales.pt * precio;
   const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  // Resumen: agrupa medidas idénticas (espesor×ancho×largo + unidades) con su
+  // cantidad, pie tablar y valor — para liquidar/vender por tipo de pieza.
+  const resumen = useMemo(() => {
+    const map = new Map<string, { label: string; cantidad: number; pt: number; m3: number }>();
+    for (const r of rows) {
+      const key = `${r.espesor}${r.uEspesor}x${r.ancho}${r.uAncho}x${r.largo}${r.uLargo}${r.especie ?? ""}`;
+      const label = `${r.espesor}×${r.ancho}×${r.largo}${r.especie ? ` · ${r.especie}` : ""}`;
+      const cur = map.get(key) ?? { label, cantidad: 0, pt: 0, m3: 0 };
+      cur.cantidad += r.cantidad; cur.pt += r.pieTablar; cur.m3 += r.m3;
+      map.set(key, cur);
+    }
+    return [...map.values()].sort((a, b) => b.pt - a.pt);
+  }, [rows]);
+
   // Números del dictado en curso, AGRUPADOS en tríos (espesor·ancho·largo) para
   // que se vea cómo se cuadran las piezas en vivo — y no una barra continua que
   // confunde en el dictado rápido.
@@ -490,6 +505,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Table className="h-4 w-4 text-[var(--accent)]" /> Lote cubicado ({rows.length})</h3>
           {rows.length > 0 && (
             <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setShowResumen((v) => !v)} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showResumen ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+                <Table className="h-3.5 w-3.5" /> Resumen
+              </button>
               <button type="button" onClick={leerTabla} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${readingId ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                 {readingId ? <><Square className="h-3.5 w-3.5" /> Detener lectura</> : <><Volume2 className="h-3.5 w-3.5" /> Leer tabla</>}
               </button>
@@ -498,6 +516,29 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             </div>
           )}
         </div>
+
+        {/* Resumen por medida — agrupado, para liquidar por tipo de pieza */}
+        {showResumen && rows.length > 0 && (
+          <div className="mb-3 overflow-x-auto rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]/40">
+            <table className="w-full min-w-[420px] text-sm">
+              <thead>
+                <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <th className="px-3 py-2">Medida (esp × anc × lar)</th><th className="px-3 py-2 text-right">Piezas</th><th className="px-3 py-2 text-right">Pie tablar</th>{precio > 0 && <th className="px-3 py-2 text-right">Valor</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {resumen.map((g) => (
+                  <tr key={g.label} className="border-t border-[var(--accent)]/20">
+                    <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{g.label}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{g.cantidad}</td>
+                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtPt(g.pt)}</td>
+                    {precio > 0 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--accent)]">S/ {soles(g.pt * precio)}</td>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         {editingId && (
           <div className="mb-3 flex items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2 text-sm font-bold text-[var(--accent)]">
             <Mic className="h-4 w-4 animate-pulse" /> Dictá los 3 números para reemplazar esa fila (espesor · ancho · largo)…
