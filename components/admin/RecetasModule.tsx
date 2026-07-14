@@ -104,7 +104,7 @@ function RecetasDashboard() {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#2563EB]" },

@@ -76,7 +76,7 @@ const DESIGN_TO_DB: Record<MockGiftCardDesign, string> = {
 
 /** Mapea enum status DB → status UI (compat con mock). */
 function mapStatus(db: string): MockGiftCardStatus {
-  if (db === "cancelled" || db === "cancelled") return "expirada";
+  if (db === "cancelled") return "expirada";
   if (db === "fully_redeemed") return "canjeada";
   if (db === "expired") return "expirada";
   // pending_delivery | active | partially_redeemed → "activa"

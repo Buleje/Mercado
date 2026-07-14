@@ -210,7 +210,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Emitidas mes", value: String(emitidasMes), valueTone: "neutral" as const },

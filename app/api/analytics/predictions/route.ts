@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
         const daysLeft = avgDailySales > 0 ? Math.floor((p.stock ?? 0) / avgDailySales) : 999;
         return { id: p.id, name: p.name, stock: p.stock ?? 0, daysLeft, image: p.image ?? null };
       })
-      .filter(p => p.daysLeft <= 7 && p.daysLeft < 999)
+      .filter(p => p.daysLeft <= 7)
       .sort((a, b) => a.daysLeft - b.daysLeft)
       .slice(0, 5);
 

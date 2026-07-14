@@ -380,7 +380,7 @@ function PnlRow({
       </span>
       <span className="shrink-0 text-right">
         <span className={`tabular-nums ${strong ? "text-base font-extrabold" : "text-sm font-bold"}`} style={{ color: amountColor }}>
-          {sign && sign}{fmtPen(amount)}
+          {sign}{fmtPen(amount)}
         </span>
         {margin !== undefined && margin !== null && (
           <span className="ml-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">margen {margin.toFixed(0)}%</span>
