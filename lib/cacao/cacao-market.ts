@@ -35,6 +35,7 @@ export interface CacaoMarket {
   price: CacaoPrice | null;
   usdPen: number | null; // soles por dólar
   fxSeries: PricePoint[]; // 1 año de cierres diarios USD/PEN → FX real por día en la tabla de conversión
+  intraday: PricePoint[]; // sesión de HOY en velas de 5 min → pulso intradía del noticiero
   pricePenPerKg: number | null; // referencia: S/ por kg seco (precio/1000 * fx)
   news: CacaoNewsItem[];
   generatedAt: string;
@@ -47,7 +48,7 @@ export interface CacaoMarket {
 let cache: { at: number; data: CacaoMarket } | null = null;
 // Último precio conocido (para degradar con gracia si la fuente cae). In-memory:
 // se pierde en cold start serverless, pero cubre caídas transitorias de la fuente.
-let lastGood: { price: CacaoPrice; usdPen: number | null; fxSeries: PricePoint[]; pricePenPerKg: number | null; at: number } | null = null;
+let lastGood: { price: CacaoPrice; usdPen: number | null; fxSeries: PricePoint[]; intraday: PricePoint[]; pricePenPerKg: number | null; at: number } | null = null;
 let lastGoodNews: { news: CacaoNewsItem[]; at: number } | null = null;
 
 async function safeFetch(url: string, timeoutMs = 9000): Promise<Response | null> {
@@ -127,6 +128,26 @@ async function fetchUsdPen(): Promise<{ current: number | null; series: PricePoi
   }
 }
 
+/** Sesión de HOY en velas de 5 min — el "pulso" intradía del precio ICE. */
+async function fetchIntraday(): Promise<PricePoint[]> {
+  const r = await safeFetch("https://query1.finance.yahoo.com/v8/finance/chart/CC=F?interval=5m&range=1d");
+  if (!r) return [];
+  try {
+    const j = await r.json();
+    const res = j?.chart?.result?.[0];
+    const ts: number[] = res?.timestamp ?? [];
+    const rawCloses: (number | null)[] = res?.indicators?.quote?.[0]?.close ?? [];
+    const series: PricePoint[] = [];
+    for (let i = 0; i < ts.length; i++) {
+      const c = rawCloses[i];
+      if (typeof c === "number" && c > 0) series.push({ t: ts[i] * 1000, c: Math.round(c * 100) / 100 });
+    }
+    return series;
+  } catch {
+    return [];
+  }
+}
+
 function decodeEntities(s: string): string {
   return s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -175,11 +196,11 @@ async function fetchNews(): Promise<CacaoNewsItem[]> {
 
 export async function getCacaoMarket(force = false): Promise<CacaoMarket> {
   if (!force && cache && Date.now() - cache.at < TTL_MS) return cache.data;
-  const [price, fx, news] = await Promise.all([fetchCocoaPrice(), fetchUsdPen(), fetchNews()]);
+  const [price, fx, intraday, news] = await Promise.all([fetchCocoaPrice(), fetchUsdPen(), fetchIntraday(), fetchNews()]);
   const usdPen = fx.current;
   const pricePenPerKg =
     price && usdPen ? Math.round((price.value / 1000) * usdPen * 100) / 100 : null;
-  if (price) lastGood = { price, usdPen, fxSeries: fx.series, pricePenPerKg, at: Date.now() };
+  if (price) lastGood = { price, usdPen, fxSeries: fx.series, intraday, pricePenPerKg, at: Date.now() };
   // Noticias: si el feed vuelve vacío (fuente caída) y hay último conocido, usarlo.
   if (news.length > 0) lastGoodNews = { news, at: Date.now() };
   const newsStale = news.length === 0 && !!lastGoodNews;
@@ -192,6 +213,7 @@ export async function getCacaoMarket(force = false): Promise<CacaoMarket> {
     price: src ? src.price : price,
     usdPen: src ? src.usdPen : usdPen,
     fxSeries: src ? src.fxSeries : fx.series,
+    intraday: src ? src.intraday : intraday,
     pricePenPerKg: src ? src.pricePenPerKg : pricePenPerKg,
     news: effNews,
     generatedAt: new Date().toISOString(),

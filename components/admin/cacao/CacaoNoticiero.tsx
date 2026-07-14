@@ -5,7 +5,7 @@
  * Precio ICE en vivo + conversión a S//kg + análisis computado (sin IA, sin
  * alucinación) + feed de noticias (Google News) + enlaces de referencia.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { SectionTitle, CardTitle } from "@buleje/design-system";
 import {
@@ -15,6 +15,9 @@ import {
 import CacaoPreciosRegionales from "./CacaoPreciosRegionales";
 // Tabla de conversión día a día (sin recharts → eager, liviano)
 import CacaoTablaConversion from "./CacaoTablaConversion";
+// Pulso del mercado: intradía + stats multi-horizonte (sin recharts → eager)
+import CacaoMarketPulse, { type LecturaSesion } from "./CacaoMarketPulse";
+import { computeMarketStats, buildLecturas } from "@/lib/cacao/cacao-lecturas";
 import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
 // Modal de presentación compartido (mismo del dashboard inicio): navega entre
 // los 3 charts de esta vista con ← →, modo TV y export PNG.
@@ -36,9 +39,13 @@ interface Price {
   spark: number[]; series: { t: number; c: number }[];
 }
 interface NewsItem { title: string; source: string | null; link: string; pubDate: string | null }
-interface Market { price: Price | null; usdPen: number | null; fxSeries?: { t: number; c: number }[]; pricePenPerKg: number | null; news: NewsItem[]; generatedAt: string; stale?: boolean; staleAt?: string | null }
+interface Market { price: Price | null; usdPen: number | null; fxSeries?: { t: number; c: number }[]; intraday?: { t: number; c: number }[]; pricePenPerKg: number | null; news: NewsItem[]; generatedAt: string; stale?: boolean; staleAt?: string | null }
 
 const fmt = (v: number | null, d = 0) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d }));
+// El mercado se mueve: auto-lectura cada 5 min (fuerza el fetch, salta el cache del server).
+const AUTO_MS = 5 * 60_000;
+const mmss = (ms: number) => { const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+const lecturasKey = () => `cacao-lecturas-${new Date().toISOString().slice(0, 10)}`;
 function relTime(iso: string | null): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -71,18 +78,68 @@ export default function CacaoNoticiero() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  // Auto-lectura: countdown de 5 min visible; al llegar a 0 fuerza una lectura
+  // nueva y arranca de vuelta. "Actualizar" manual también resetea el reloj.
+  const [auto, setAuto] = useState(true);
+  const [countdown, setCountdown] = useState(AUTO_MS);
+  const nextAtRef = useRef(0);
+  useEffect(() => {
+    if (!auto) return;
+    nextAtRef.current = Date.now() + AUTO_MS;
+    setCountdown(AUTO_MS);
+    const t = window.setInterval(() => {
+      const left = nextAtRef.current - Date.now();
+      if (left <= 0) {
+        nextAtRef.current = Date.now() + AUTO_MS;
+        setCountdown(AUTO_MS);
+        load(true);
+      } else setCountdown(left);
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [auto, load]);
+  const refreshNow = useCallback(() => {
+    nextAtRef.current = Date.now() + AUTO_MS;
+    setCountdown(AUTO_MS);
+    load(true);
+  }, [load]);
+
+  // Registro de lecturas de la sesión (persistido por día en localStorage):
+  // cada actualización con precio distinto queda anotada con su hora.
+  const [lecturas, setLecturas] = useState<LecturaSesion[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(lecturasKey());
+      return raw ? (JSON.parse(raw) as LecturaSesion[]) : [];
+    } catch { return []; }
+  });
+  useEffect(() => {
+    const v = data?.price?.value;
+    if (v == null) return;
+    setLecturas((prev) => {
+      if (prev.length && prev[prev.length - 1].usd === v) return prev;
+      const next = [...prev, { t: Date.now(), usd: v, pen: data?.pricePenPerKg ?? null }].slice(-60);
+      try { localStorage.setItem(lecturasKey(), JSON.stringify(next)); } catch { /* storage lleno/incógnito: el registro es cosmético */ }
+      return next;
+    });
+  }, [data?.price?.value, data?.pricePenPerKg]);
+
   const p = data?.price;
   const up = (p?.changePct ?? 0) > 0, down = (p?.changePct ?? 0) < 0;
   // posición del precio en el rango de 52 semanas (0-100%)
   const pos52 = p && p.weekHigh52 != null && p.weekLow52 != null && p.weekHigh52 > p.weekLow52
     ? Math.round(((p.value - p.weekLow52) / (p.weekHigh52 - p.weekLow52)) * 100) : null;
 
-  // análisis computado (determinístico, sin IA)
+  // análisis computado (determinístico, sin IA) — motor compartido cacao-lecturas:
+  // los mismos números que muestra el Pulso, en lenguaje de bodega.
+  const stats = useMemo(
+    () => (p?.series && p.series.length > 2 ? computeMarketStats(p.series, data?.usdPen ?? null) : null),
+    [p?.series, data?.usdPen],
+  );
   const insights: string[] = [];
   if (p) {
     if (p.changePct != null) insights.push(`Hoy ${up ? "subió" : down ? "bajó" : "sin cambio"} ${Math.abs(p.changePct).toFixed(1)}% vs cierre anterior (USD ${fmt(p.prevClose)}/t).`);
-    if (pos52 != null) insights.push(pos52 >= 80 ? `Cerca de su máximo de 52 semanas (USD ${fmt(p.weekHigh52)}/t) — precios altos para el productor.` : pos52 <= 20 ? `Cerca de su mínimo de 52 semanas (USD ${fmt(p.weekLow52)}/t) — momento de compra barata.` : `En la zona media de su rango anual (${pos52}% entre mín y máx de 52 sem).`);
     if (data?.pricePenPerKg != null) insights.push(`Compra local ≈ S/ ${(data.pricePenPerKg * CHACRA_CC_COMPRA_OFICIAL_FACTOR).toFixed(2)}/kg seco — ${COMPRA_LOCAL_PCT}% del oficial (S/ ${data.pricePenPerKg.toFixed(2)}/kg, FX S/ ${data?.usdPen?.toFixed(2)}/USD).`);
+    if (stats) insights.push(...buildLecturas(stats, data?.pricePenPerKg ?? null));
   }
 
   // Precio efectivo: el del punto del gráfico seleccionado, o el de hoy. El local
@@ -144,7 +201,19 @@ export default function CacaoNoticiero() {
             Precio internacional, conversión a soles y noticias. Datos: ICE (Yahoo Finance) + Google Noticias{p ? ` · ${relTime(p.asOf) || "recién"}` : ""}.
           </p>
         </div>
-        <button type="button" onClick={() => load(true)} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAuto((v) => !v)}
+            aria-pressed={auto}
+            title={auto ? "Lectura automática cada 5 min activada — click para pausar" : "Activar lectura automática cada 5 min"}
+            className={`inline-flex h-10 items-center gap-2 rounded-2xl border-2 px-3.5 text-sm font-bold transition ${auto ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+          >
+            <span className={`h-2 w-2 rounded-full ${auto ? "animate-pulse bg-[var(--accent)]" : "bg-[var(--rule-base)]"}`} aria-hidden />
+            {auto ? <>Auto · <span className="font-mono tabular-nums">{mmss(countdown)}</span></> : "Auto off"}
+          </button>
+          <button type="button" onClick={refreshNow} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+        </div>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo cargar el mercado:</strong> {error}</div></div>}
@@ -223,8 +292,30 @@ export default function CacaoNoticiero() {
           <div className="rounded-2xl border-2 border-l-[6px] border-[var(--rule-base)] border-l-[var(--accent)] bg-[var(--surface-canvas)]/40 p-5">
             <CardTitle className="mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[var(--accent)]" /> Lectura de mercado</CardTitle>
             {insights.length ? <ul className="space-y-2.5 text-sm text-[var(--text-secondary)]">{insights.map((s, i) => <li key={i} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />{s}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">Sin datos de precio para analizar.</p>}
+            <p className="mt-3 border-t border-[var(--rule-soft)] pt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              Lectura de las {data?.generatedAt ? new Date(data.generatedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : "—"} · se renueva sola cada 5 min{auto ? "" : " (auto en pausa)"}.
+            </p>
           </div>
         </div>
+      )}
+
+      {/* Pulso del mercado: sesión intradía real (velas 5 min), rango del día,
+          FX con variación, stats multi-horizonte y registro de lecturas. */}
+      {p && (
+        <CacaoMarketPulse
+          value={p.value}
+          prevClose={p.prevClose}
+          dayHigh={p.dayHigh}
+          dayLow={p.dayLow}
+          asOf={p.asOf}
+          series={p.series}
+          intraday={data?.intraday ?? []}
+          usdPen={data?.usdPen ?? null}
+          fxSeries={data?.fxSeries ?? []}
+          pricePenPerKg={data?.pricePenPerKg ?? null}
+          lecturas={lecturas}
+          onPresent={() => setPresentingId("cacao-pulso")}
+        />
       )}
 
       {/* Flujo de precio (gráfico interactivo) — primero. Click en un punto fija ese
@@ -261,6 +352,19 @@ export default function CacaoNoticiero() {
           (rango/unidad) es independiente del card de la página. */}
       <ChartPresentationModal
         items={[
+          ...(p
+            ? [{
+                id: "cacao-pulso",
+                title: "Pulso del mercado · sesión de hoy",
+                render: () => (
+                  <CacaoMarketPulse
+                    value={p.value} prevClose={p.prevClose} dayHigh={p.dayHigh} dayLow={p.dayLow} asOf={p.asOf}
+                    series={p.series} intraday={data?.intraday ?? []} usdPen={data?.usdPen ?? null}
+                    fxSeries={data?.fxSeries ?? []} pricePenPerKg={data?.pricePenPerKg ?? null} lecturas={lecturas}
+                  />
+                ),
+              }]
+            : []),
           ...(p?.series && p.series.length > 1
             ? (() => {
                 const serie = p.series;
