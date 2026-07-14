@@ -34,6 +34,7 @@ export interface CacaoNewsItem { title: string; source: string | null; link: str
 export interface CacaoMarket {
   price: CacaoPrice | null;
   usdPen: number | null; // soles por dólar
+  fxSeries: PricePoint[]; // 1 año de cierres diarios USD/PEN → FX real por día en la tabla de conversión
   pricePenPerKg: number | null; // referencia: S/ por kg seco (precio/1000 * fx)
   news: CacaoNewsItem[];
   generatedAt: string;
@@ -46,7 +47,7 @@ export interface CacaoMarket {
 let cache: { at: number; data: CacaoMarket } | null = null;
 // Último precio conocido (para degradar con gracia si la fuente cae). In-memory:
 // se pierde en cold start serverless, pero cubre caídas transitorias de la fuente.
-let lastGood: { price: CacaoPrice; usdPen: number | null; pricePenPerKg: number | null; at: number } | null = null;
+let lastGood: { price: CacaoPrice; usdPen: number | null; fxSeries: PricePoint[]; pricePenPerKg: number | null; at: number } | null = null;
 let lastGoodNews: { news: CacaoNewsItem[]; at: number } | null = null;
 
 async function safeFetch(url: string, timeoutMs = 9000): Promise<Response | null> {
@@ -104,15 +105,25 @@ async function fetchCocoaPrice(): Promise<CacaoPrice | null> {
   }
 }
 
-async function fetchUsdPen(): Promise<number | null> {
-  const r = await safeFetch("https://query1.finance.yahoo.com/v8/finance/chart/PEN=X?interval=1d&range=1d");
-  if (!r) return null;
+async function fetchUsdPen(): Promise<{ current: number | null; series: PricePoint[] }> {
+  // range=1y → además del FX de hoy, la serie diaria para convertir cada día
+  // histórico con SU tipo de cambio (tabla de conversión), no con el de hoy.
+  const r = await safeFetch("https://query1.finance.yahoo.com/v8/finance/chart/PEN=X?interval=1d&range=1y");
+  if (!r) return { current: null, series: [] };
   try {
     const j = await r.json();
-    const p = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    return typeof p === "number" && p > 0 && p < 100 ? p : null;
+    const res = j?.chart?.result?.[0];
+    const p = res?.meta?.regularMarketPrice;
+    const ts: number[] = res?.timestamp ?? [];
+    const rawCloses: (number | null)[] = res?.indicators?.quote?.[0]?.close ?? [];
+    const series: PricePoint[] = [];
+    for (let i = 0; i < ts.length; i++) {
+      const c = rawCloses[i];
+      if (typeof c === "number" && c > 0 && c < 100) series.push({ t: ts[i] * 1000, c: Math.round(c * 10000) / 10000 });
+    }
+    return { current: typeof p === "number" && p > 0 && p < 100 ? p : null, series };
   } catch {
-    return null;
+    return { current: null, series: [] };
   }
 }
 
@@ -164,10 +175,11 @@ async function fetchNews(): Promise<CacaoNewsItem[]> {
 
 export async function getCacaoMarket(force = false): Promise<CacaoMarket> {
   if (!force && cache && Date.now() - cache.at < TTL_MS) return cache.data;
-  const [price, usdPen, news] = await Promise.all([fetchCocoaPrice(), fetchUsdPen(), fetchNews()]);
+  const [price, fx, news] = await Promise.all([fetchCocoaPrice(), fetchUsdPen(), fetchNews()]);
+  const usdPen = fx.current;
   const pricePenPerKg =
     price && usdPen ? Math.round((price.value / 1000) * usdPen * 100) / 100 : null;
-  if (price) lastGood = { price, usdPen, pricePenPerKg, at: Date.now() };
+  if (price) lastGood = { price, usdPen, fxSeries: fx.series, pricePenPerKg, at: Date.now() };
   // Noticias: si el feed vuelve vacío (fuente caída) y hay último conocido, usarlo.
   if (news.length > 0) lastGoodNews = { news, at: Date.now() };
   const newsStale = news.length === 0 && !!lastGoodNews;
@@ -179,6 +191,7 @@ export async function getCacaoMarket(force = false): Promise<CacaoMarket> {
   const data: CacaoMarket = {
     price: src ? src.price : price,
     usdPen: src ? src.usdPen : usdPen,
+    fxSeries: src ? src.fxSeries : fx.series,
     pricePenPerKg: src ? src.pricePenPerKg : pricePenPerKg,
     news: effNews,
     generatedAt: new Date().toISOString(),

@@ -8,8 +8,10 @@
  * hay ventas registradas (degrada a vacío si la tabla CacaoVenta no existe aún).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot, Legend } from "recharts";
 import { LineChart as LineIcon, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
+import CacaoChartPresent from "./CacaoChartPresent";
+import { COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
 
 interface Punto { mes: string; precioCompra: number | null; precioVenta: number | null; kgCompra: number; kgVenta: number }
 
@@ -21,14 +23,17 @@ const lastOf = (serie: Punto[], k: "precioCompra" | "precioVenta") => { for (let
 export default function CacaoMiPrecio({
   marketRefSolKg = null,
   marketMensual = [],
+  onPresent,
 }: {
   marketRefSolKg?: number | null;
   marketMensual?: { mes: string; solKg: number }[];
+  /** Abre la vista completa (modal de presentación del padre). Sin él no hay botón. */
+  onPresent?: () => void;
 }) {
   const [serie, setSerie] = useState<Punto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
-  const [palette, setPalette] = useState({ compra: "#0ea5e9", venta: "#16a34a", market: "#9ca3af" });
+  const [palette, setPalette] = useState({ compra: "#0ea5e9", venta: "#16a34a", market: "#9ca3af", bad: "#ef4444" });
 
   useEffect(() => {
     let alive = true;
@@ -51,6 +56,7 @@ export default function CacaoMiPrecio({
       compra: pick(["--data-info-500", "--accent"], "#0ea5e9"),
       venta: pick(["--data-success-600", "--data-success-500"], "#16a34a"),
       market: pick(["--text-tertiary"], "#9ca3af"),
+      bad: pick(["--data-error-500", "--data-error-600"], "#ef4444"),
     });
   }, []);
 
@@ -76,16 +82,38 @@ export default function CacaoMiPrecio({
     const hi = vals.length ? Math.max(...vals) : 1;
     const pad = Math.max(0.5, (hi - lo) * 0.12);
     const yDomain: [number, number] = [Math.max(0, Math.floor(lo - pad)), Math.ceil(hi + pad)];
-    return { compra, venta, margen, chartData, hasVenta, hasMercadoMensual, yDomain };
+    // Mejor/peor precio de cada línea, rotulado en el chart. En compra "mejor" =
+    // el mes que compraste MÁS BARATO; en venta "mejor" = el que vendiste más caro.
+    // Solo si hay variación real (mín ≠ máx) para no rotular series planas.
+    const extremo = (k: "precioCompra" | "precioVenta", pickMax: boolean) => {
+      let idx = -1;
+      for (let i = 0; i < chartData.length; i++) {
+        const v = chartData[i][k];
+        if (v == null) continue;
+        if (idx < 0 || (pickMax ? v > (chartData[idx][k] as number) : v < (chartData[idx][k] as number))) idx = i;
+      }
+      return idx >= 0 ? { label: chartData[idx].label, value: chartData[idx][k] as number } : null;
+    };
+    const compraMin = extremo("precioCompra", false), compraMax = extremo("precioCompra", true);
+    const ventaMax = extremo("precioVenta", true), ventaMin = extremo("precioVenta", false);
+    const varia = (a: { value: number } | null, b: { value: number } | null) => a != null && b != null && a.value !== b.value;
+    return {
+      compra, venta, margen, chartData, hasVenta, hasMercadoMensual, yDomain,
+      compraMin: varia(compraMin, compraMax) ? compraMin : null,
+      compraMax: varia(compraMin, compraMax) ? compraMax : null,
+      ventaMax: varia(ventaMin, ventaMax) ? ventaMax : null,
+      ventaMin: varia(ventaMin, ventaMax) ? ventaMin : null,
+    };
   }, [serie, marketRefSolKg, marketMensual]);
 
-  return (
-    <div ref={rootRef} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+  // Contenido del card como render-función: el modal de presentación pinta una copia viva.
+  const content = () => (
+    <>
       <div className="mb-1 flex items-center gap-2">
         <LineIcon className="h-4 w-4 text-[var(--accent)]" />
         <h3 className="text-sm font-bold text-[var(--text-primary)]">Mi precio en el tiempo · S//kg</h3>
       </div>
-      <p className="mb-4 text-xs text-[var(--text-tertiary)]">A cómo compraste en chacra y a cómo vendiste, mes a mes, contra la referencia internacional.</p>
+      <p className="mb-4 text-xs text-[var(--text-tertiary)]">A cómo compraste en chacra y a cómo vendiste, mes a mes, contra el mercado local (≈{COMPRA_LOCAL_PCT}% del precio oficial).</p>
 
       {loading ? (
         <p className="py-12 text-center text-sm text-[var(--text-tertiary)]">Cargando…</p>
@@ -102,11 +130,11 @@ export default function CacaoMiPrecio({
                 Margen {stats.margen > 0 ? "+" : ""}{stats.margen.toFixed(1)}%
               </span>
             )}
-            {marketRefSolKg != null && <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-sm font-medium text-[var(--text-secondary)]">Mercado: S/ {sol(marketRefSolKg)}/kg</span>}
+            {marketRefSolKg != null && <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-sm font-medium text-[var(--text-secondary)]">Mercado local: S/ {sol(marketRefSolKg)}/kg</span>}
           </div>
 
           <ResponsiveContainer width="100%" height={240} minWidth={0}>
-            <LineChart data={stats.chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+            <LineChart data={stats.chartData} margin={{ top: 14, right: 28, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis dataKey="label" tick={{ fontSize: 10 }} minTickGap={20} stroke="rgba(107,114,128,0.4)" />
               <YAxis tick={{ fontSize: 10 }} width={44} tickFormatter={(v: number) => sol(v, 0)} stroke="rgba(107,114,128,0.4)" domain={stats.yDomain} />
@@ -117,16 +145,28 @@ export default function CacaoMiPrecio({
               />
               <Legend wrapperStyle={{ fontSize: "11px" }} />
               {stats.hasMercadoMensual ? (
-                <Line type="monotone" dataKey="precioMercado" name="Mercado" stroke={palette.market} strokeWidth={1.5} strokeDasharray="4 4" strokeOpacity={0.85} connectNulls dot={false} />
+                <Line type="monotone" dataKey="precioMercado" name="Mercado local" stroke={palette.market} strokeWidth={1.5} strokeDasharray="4 4" strokeOpacity={0.85} connectNulls dot={false} />
               ) : (
-                marketRefSolKg != null && <ReferenceLine y={marketRefSolKg} stroke={palette.market} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "Mercado", position: "insideTopRight", fontSize: 10, fill: palette.market }} />
+                marketRefSolKg != null && <ReferenceLine y={marketRefSolKg} stroke={palette.market} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "Mercado local", position: "insideTopRight", fontSize: 10, fill: palette.market }} />
               )}
               <Line type="monotone" dataKey="precioCompra" name="Compra" stroke={palette.compra} strokeWidth={2} connectNulls dot={{ r: 3 }} activeDot={{ r: 5 }} />
               {stats.hasVenta && <Line type="monotone" dataKey="precioVenta" name="Venta" stroke={palette.venta} strokeWidth={2} connectNulls dot={{ r: 3 }} activeDot={{ r: 5 }} />}
+              {/* Mejor/peor mes rotulado: verde = a favor (compra barata / venta cara), rojo = en contra */}
+              {stats.compraMin && <ReferenceDot x={stats.compraMin.label} y={stats.compraMin.value} r={4} fill={palette.compra} stroke="var(--surface-raised)" strokeWidth={1.5} label={{ value: sol(stats.compraMin.value), position: "bottom", fontSize: 9, fill: palette.venta }} />}
+              {stats.compraMax && <ReferenceDot x={stats.compraMax.label} y={stats.compraMax.value} r={4} fill={palette.compra} stroke="var(--surface-raised)" strokeWidth={1.5} label={{ value: sol(stats.compraMax.value), position: "top", fontSize: 9, fill: palette.bad }} />}
+              {stats.ventaMax && <ReferenceDot x={stats.ventaMax.label} y={stats.ventaMax.value} r={4} fill={palette.venta} stroke="var(--surface-raised)" strokeWidth={1.5} label={{ value: sol(stats.ventaMax.value), position: "top", fontSize: 9, fill: palette.venta }} />}
+              {stats.ventaMin && <ReferenceDot x={stats.ventaMin.label} y={stats.ventaMin.value} r={4} fill={palette.venta} stroke="var(--surface-raised)" strokeWidth={1.5} label={{ value: sol(stats.ventaMin.value), position: "bottom", fontSize: 9, fill: palette.bad }} />}
             </LineChart>
           </ResponsiveContainer>
         </>
       )}
+    </>
+  );
+
+  return (
+    <div ref={rootRef} className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      {onPresent && <CacaoChartPresent title="Mi precio en el tiempo · S//kg" onClick={onPresent} className="absolute right-4 top-4 z-10" />}
+      {content()}
     </div>
   );
 }

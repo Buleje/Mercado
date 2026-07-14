@@ -16,13 +16,26 @@
  * TODO ES ESTIMADO — la UI debe rotularlo. No reemplaza una cotización real.
  */
 
+/**
+ * ANCLA de calibración del precio de compra local (Brandon, 2026-07-14): el
+ * viernes 10-jul-2026 en Ciudad Constitución se compraba el seco a S/ 18.20/kg,
+ * cuando la conversión oficial de ese día (ICE US$ 5,919/t × FX 3.3990) daba
+ * S/ 20.12/kg → factor real ≈ 0.905 del oficial. Reemplaza el 88% estimado a ojo:
+ * la fecha + precio observado quedan acá para re-calibrar cuando haya dato nuevo.
+ */
+const ANCLA_CC = { fecha: "2026-07-10", compraSolKg: 18.2, usdT: 5919, fx: 3.399 } as const;
+const COMPRA_LOCAL = ANCLA_CC.compraSolKg / ((ANCLA_CC.usdT / 1000) * ANCLA_CC.fx); // ≈ 0.905
+
 /** Fracción del precio internacional (grano SECO) que llega a cada eslabón. */
 const FACTOR = {
   internacional: 1.0, // ICE New York = referencia mundial (bulk)
   fob: 0.92, // puesto en Callao, grado exportable
   lima: 0.83, // comprador / planta exportadora en Lima
   acopio: 0.74, // acopiador regional (Oxapampa / Pucallpa)
-  chacra: 0.66, // en chacra Ciudad Constitución, grano seco, al productor
+  // Dato real calibrado con ANCLA_CC. OJO: queda por ENCIMA de los estimados de
+  // acopio/Lima — esos siguen siendo estimados gruesos de otras plazas; este es
+  // el único eslabón con precio observado.
+  chacra: COMPRA_LOCAL,
 } as const;
 
 /** 1 kg de baba (fresco) rinde ~0.40 kg seco → su precio/kg ≈ seco × este factor. */
@@ -40,8 +53,8 @@ const BANDA_PCT: Record<CacaoPlazaId, number> = {
   fob: 0.07,
   lima: 0.1,
   acopio: 0.13,
-  "chacra-cc": 0.16,
-  "baba-cc": 0.2,
+  "chacra-cc": 0.06, // banda angosta: dato real de la zona, no estimado
+  "baba-cc": 0.12, // deriva del dato real de chacra × rendimiento baba
 };
 
 export type CacaoPlazaId = "internacional" | "fob" | "lima" | "acopio" | "chacra-cc" | "baba-cc";
@@ -121,7 +134,7 @@ export function estimarPreciosRegionales(
     mk("acopio", "Acopio regional (Oxapampa / Pucallpa)", "Selva Central", "seco", acopio, false,
       "Acopiador intermedio de la región; paga rápido pero menos que Lima."),
     mk("chacra-cc", "Ciudad Constitución — en chacra (seco)", "Ciudad Constitución", "seco", chacra, true,
-      "Estimado grueso de lo que recibe el productor en CC. NO es una cotización — el precio real lo pone tu comprador según humedad, calidad y flete del día."),
+      `Dato real de la zona (S/ ${ANCLA_CC.compraSolKg.toFixed(2)} el vie 10 jul): acá se compra ≈${Math.round(FACTOR.chacra * 100)}% del precio oficial. El precio final igual depende de humedad, calidad y comprador del día.`),
     mk("baba-cc", "Ciudad Constitución — en baba (fresco)", "Ciudad Constitución", "baba", baba, true,
       "Cacao fresco sin fermentar/secar. ~2,5 kg de baba hacen 1 kg seco."),
   ];
@@ -137,5 +150,12 @@ export function estimarPreciosRegionales(
   };
 }
 
-/** Fracción para convertir el precio internacional (S//kg seco) a "en chacra CC seco". */
-export const CHACRA_CC_SECO_FACTOR = FACTOR.chacra;
+/**
+ * Precio de COMPRA local en Ciudad Constitución como fracción del precio oficial
+ * internacional convertido a soles, calibrado con ANCLA_CC (S/ 18.20 el vie
+ * 10-jul-2026). Single source: lo usan el flujo de precio en modo S//kg, el hero
+ * "Compra local" del noticiero, la tabla de conversión y Mi precio.
+ */
+export const CHACRA_CC_COMPRA_OFICIAL_FACTOR = FACTOR.chacra;
+/** % entero para rotular en UI ("compra local ≈ 90% del oficial"). */
+export const COMPRA_LOCAL_PCT = Math.round(CHACRA_CC_COMPRA_OFICIAL_FACTOR * 100);

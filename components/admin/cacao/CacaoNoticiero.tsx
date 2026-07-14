@@ -13,6 +13,12 @@ import {
 } from "@buleje/design-system/icons";
 // Escalera de precios por plaza (sin recharts → import eager, liviano)
 import CacaoPreciosRegionales from "./CacaoPreciosRegionales";
+// Tabla de conversión día a día (sin recharts → eager, liviano)
+import CacaoTablaConversion from "./CacaoTablaConversion";
+import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
+// Modal de presentación compartido (mismo del dashboard inicio): navega entre
+// los 3 charts de esta vista con ← →, modo TV y export PNG.
+import { ChartPresentationModal } from "@/components/admin/inicio/_shared/ChartPresentationModal";
 
 // recharts fuera del bundle inicial del admin
 const CacaoPriceChart = dynamic(() => import("./CacaoPriceChart"), {
@@ -30,7 +36,7 @@ interface Price {
   spark: number[]; series: { t: number; c: number }[];
 }
 interface NewsItem { title: string; source: string | null; link: string; pubDate: string | null }
-interface Market { price: Price | null; usdPen: number | null; pricePenPerKg: number | null; news: NewsItem[]; generatedAt: string; stale?: boolean; staleAt?: string | null }
+interface Market { price: Price | null; usdPen: number | null; fxSeries?: { t: number; c: number }[]; pricePenPerKg: number | null; news: NewsItem[]; generatedAt: string; stale?: boolean; staleAt?: string | null }
 
 const fmt = (v: number | null, d = 0) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d }));
 function relTime(iso: string | null): string {
@@ -50,6 +56,8 @@ export default function CacaoNoticiero() {
   // Punto del gráfico seleccionado (click): fija ese precio histórico en los KPIs
   // y en "a cuánto se vende". null = precio de hoy (en vivo).
   const [sel, setSel] = useState<{ usd: number; t: number } | null>(null);
+  // Chart abierto en el modal de presentación fullscreen. null = cerrado.
+  const [presentingId, setPresentingId] = useState<string | null>(null);
 
   const load = useCallback(async (force = false) => {
     setLoading(true); setError(null);
@@ -74,7 +82,7 @@ export default function CacaoNoticiero() {
   if (p) {
     if (p.changePct != null) insights.push(`Hoy ${up ? "subió" : down ? "bajó" : "sin cambio"} ${Math.abs(p.changePct).toFixed(1)}% vs cierre anterior (USD ${fmt(p.prevClose)}/t).`);
     if (pos52 != null) insights.push(pos52 >= 80 ? `Cerca de su máximo de 52 semanas (USD ${fmt(p.weekHigh52)}/t) — precios altos para el productor.` : pos52 <= 20 ? `Cerca de su mínimo de 52 semanas (USD ${fmt(p.weekLow52)}/t) — momento de compra barata.` : `En la zona media de su rango anual (${pos52}% entre mín y máx de 52 sem).`);
-    if (data?.pricePenPerKg != null) insights.push(`Referencia internacional ≈ S/ ${data.pricePenPerKg.toFixed(2)}/kg seco (FX S/ ${data?.usdPen?.toFixed(2)}/USD). Tu precio en chacra suele ir por debajo (flete + margen).`);
+    if (data?.pricePenPerKg != null) insights.push(`Compra local ≈ S/ ${(data.pricePenPerKg * CHACRA_CC_COMPRA_OFICIAL_FACTOR).toFixed(2)}/kg seco — ${COMPRA_LOCAL_PCT}% del oficial (S/ ${data.pricePenPerKg.toFixed(2)}/kg, FX S/ ${data?.usdPen?.toFixed(2)}/USD).`);
   }
 
   // Precio efectivo: el del punto del gráfico seleccionado, o el de hoy. El local
@@ -84,11 +92,14 @@ export default function CacaoNoticiero() {
   const effPen = sel && baseUsd && baseUsd > 0 && data?.pricePenPerKg != null
     ? (data.pricePenPerKg * sel.usd) / baseUsd
     : (data?.pricePenPerKg ?? null);
+  // Lo que se paga acá por el grano seco: 88% del oficial (dato real de la zona).
+  const compraLocalPen = effPen != null ? effPen * CHACRA_CC_COMPRA_OFICIAL_FACTOR : null;
+  const mercadoLocalRef = data?.pricePenPerKg != null ? Math.round(data.pricePenPerKg * CHACRA_CC_COMPRA_OFICIAL_FACTOR * 100) / 100 : null;
   const selDate = sel ? new Date(sel.t).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : null;
 
-  // Referencia de mercado MENSUAL (ICE→S//kg) desde la serie de 1 año que ya trae
-  // getCacaoMarket. Permite comparar cada compra contra el mercado de SU mes (no
-  // una línea plana de hoy). FX = el actual (no hay histórico de tipo de cambio).
+  // Mercado LOCAL mensual (ICE→S//kg × 88% oficial) desde la serie de 1 año que
+  // ya trae getCacaoMarket. Permite comparar cada compra contra lo que se pagaba
+  // acá en SU mes (no una línea plana de hoy). FX = el actual (sin histórico).
   const marketMensual = useMemo(() => {
     const s = data?.price?.series;
     const fx = data?.usdPen;
@@ -104,7 +115,7 @@ export default function CacaoNoticiero() {
     }
     return Array.from(byMonth.entries()).map(([mes, v]) => ({
       mes,
-      solKg: Math.round(((v.sum / v.n / 1000) * fx) * 100) / 100,
+      solKg: Math.round(((v.sum / v.n / 1000) * fx * CHACRA_CC_COMPRA_OFICIAL_FACTOR) * 100) / 100,
     }));
   }, [data?.price?.series, data?.usdPen]);
 
@@ -150,7 +161,7 @@ export default function CacaoNoticiero() {
                 <div className="rounded-xl bg-[var(--accent-soft)] p-4">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-                      {sel ? `Precio del ${selDate}` : "Referencia local · grano seco"}
+                      {sel ? `Compra local · ${selDate}` : `Compra local · grano seco (${COMPRA_LOCAL_PCT}% del oficial)`}
                     </p>
                     {sel && (
                       <button type="button" onClick={() => setSel(null)} className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-raised)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95">
@@ -160,7 +171,7 @@ export default function CacaoNoticiero() {
                   </div>
                   <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
                     <div className="flex flex-wrap items-end gap-2">
-                      <span className="font-mono text-4xl font-extrabold leading-none tabular-nums text-[var(--accent)]">S/ {effPen != null ? effPen.toFixed(2) : "—"}</span>
+                      <span className="font-mono text-4xl font-extrabold leading-none tabular-nums text-[var(--accent)]">S/ {compraLocalPen != null ? compraLocalPen.toFixed(2) : "—"}</span>
                       <span className="mb-1.5 text-sm font-bold text-[var(--text-secondary)]">/ kg</span>
                     </div>
                     {!sel && p.spark && p.spark.length > 1 && (
@@ -169,7 +180,7 @@ export default function CacaoNoticiero() {
                       </div>
                     )}
                   </div>
-                  <p className="mt-1.5 text-xs text-[var(--text-secondary)]">Convertido del precio ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD. En chacra suele cerrarse algo por debajo (flete + margen del acopiador).</p>
+                  <p className="mt-1.5 text-xs text-[var(--text-secondary)]">≈ {COMPRA_LOCAL_PCT}% del precio oficial (S/ {effPen != null ? effPen.toFixed(2) : "—"}/kg, ICE al cambio S/ {data.usdPen != null ? data.usdPen.toFixed(2) : "—"}/USD) — lo que se paga acá por el grano seco. Calibrado con S/ 18.20 del vie 10 jul.</p>
                 </div>
 
                 {/* Contexto internacional */}
@@ -224,14 +235,71 @@ export default function CacaoNoticiero() {
           usdPen={data?.usdPen ?? null}
           onPointSelect={(usd, t) => setSel({ usd, t })}
           selectedT={sel?.t ?? null}
+          onPresent={() => setPresentingId("cacao-flujo")}
+        />
+      )}
+
+      {/* Tabla de conversión: ICE × FX del día → S//kg oficial → 88% compra local,
+          con variación vs fila base y filtros de período/rango/semanas. */}
+      {p?.series && p.series.length > 1 && (
+        <CacaoTablaConversion
+          series={p.series}
+          fxSeries={data?.fxSeries ?? []}
+          usdPen={data?.usdPen ?? null}
+          onPresent={() => setPresentingId("cacao-tabla")}
         />
       )}
 
       {/* A cuánto se vende por plaza — compacto, debajo del gráfico. Refleja el
           precio efectivo (hoy o el punto seleccionado). */}
-      {data && <CacaoPreciosRegionales refSolKg={effPen} usdPen={data.usdPen} />}
+      {data && <CacaoPreciosRegionales refSolKg={effPen} usdPen={data.usdPen} onPresent={() => setPresentingId("cacao-plazas")} />}
 
-      <CacaoMiPrecio marketRefSolKg={data?.pricePenPerKg ?? null} marketMensual={marketMensual} />
+      <CacaoMiPrecio marketRefSolKg={mercadoLocalRef} marketMensual={marketMensual} onPresent={() => setPresentingId("cacao-mi-precio")} />
+
+      {/* Vista completa tipo presentación: un solo modal navega los 3 charts
+          (← →, modo TV, PNG). Renderiza instancias frescas — el estado del modal
+          (rango/unidad) es independiente del card de la página. */}
+      <ChartPresentationModal
+        items={[
+          ...(p?.series && p.series.length > 1
+            ? (() => {
+                const serie = p.series;
+                return [{
+                  id: "cacao-flujo",
+                  title: "Flujo de precio del cacao",
+                  render: () => (
+                    <CacaoPriceChart series={serie} usdPen={data?.usdPen ?? null} onPointSelect={(usd, t) => setSel({ usd, t })} selectedT={sel?.t ?? null} />
+                  ),
+                }];
+              })()
+            : []),
+          ...(p?.series && p.series.length > 1
+            ? (() => {
+                const serie = p.series;
+                return [{
+                  id: "cacao-tabla",
+                  title: "Tabla de conversión del cacao",
+                  render: () => <CacaoTablaConversion series={serie} fxSeries={data?.fxSeries ?? []} usdPen={data?.usdPen ?? null} />,
+                }];
+              })()
+            : []),
+          ...(data
+            ? [{
+                id: "cacao-plazas",
+                title: "A cuánto se vende · S//kg por plaza",
+                render: () => <CacaoPreciosRegionales refSolKg={effPen} usdPen={data.usdPen} />,
+              }]
+            : []),
+          {
+            id: "cacao-mi-precio",
+            title: "Mi precio en el tiempo · S//kg",
+            render: () => <CacaoMiPrecio marketRefSolKg={mercadoLocalRef} marketMensual={marketMensual} />,
+          },
+        ]}
+        activeId={presentingId}
+        onClose={() => setPresentingId(null)}
+        onNavigate={setPresentingId}
+      />
     </div>
   );
 }

@@ -7,19 +7,23 @@
  * Escalera de barras proporcionales (sin recharts) + toggle corriente/fino de aroma.
  * Responde "¿a cuánto se vendería aquí en CC vs Lima vs otros?".
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Scale, MapPin, Info, Sparkles } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { estimarPreciosRegionales } from "@/lib/cacao/cacao-precio-regional";
+import CacaoChartPresent from "./CacaoChartPresent";
 
 const sol = (v: number, d = 2) => v.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d });
 
 export default function CacaoPreciosRegionales({
   refSolKg,
   usdPen,
+  onPresent,
 }: {
   refSolKg: number | null;
   usdPen: number | null;
+  /** Abre la vista completa (modal de presentación del padre). Sin él no hay botón. */
+  onPresent?: () => void;
 }) {
   const [fino, setFino] = useState(false);
 
@@ -37,9 +41,11 @@ export default function CacaoPreciosRegionales({
     );
   }
 
-  return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <Header fino={fino} setFino={setFino} />
+  // Contenido del card como render-función: el modal de presentación pinta una
+  // copia viva (mismo toggle fino). presentBtn = null dentro del modal.
+  const content = (presentBtn?: ReactNode) => (
+    <>
+      <Header fino={fino} setFino={setFino} present={presentBtn} />
       <p className="mb-3 text-xs text-[var(--text-tertiary)]">
         Estimado en <b className="text-[var(--text-secondary)]">S//kg</b> desde el precio internacional de hoy
         (S/ {sol(model.refSolKg)}/kg{usdPen ? ` · FX S/ ${sol(usdPen)}/USD` : ""}). Pasá el cursor por cada plaza para el detalle.
@@ -75,16 +81,23 @@ export default function CacaoPreciosRegionales({
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <p>{model.disclaimer}</p>
       </div>
+    </>
+  );
+
+  return (
+    <div className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      {content(onPresent ? <CacaoChartPresent title="A cuánto se vende · S//kg por plaza" onClick={onPresent} /> : undefined)}
     </div>
   );
 }
 
-function Header({ fino, setFino }: { fino: boolean; setFino: (v: boolean) => void }) {
+function Header({ fino, setFino, present }: { fino: boolean; setFino: (v: boolean) => void; present?: ReactNode }) {
   return (
     <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
       <CardTitle className="flex items-center gap-2">
         <Scale className="h-4 w-4 text-[var(--accent)]" /> A cuánto se vende
       </CardTitle>
+      <div className="flex items-center gap-2">
       <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
         <button
           type="button"
@@ -104,6 +117,8 @@ function Header({ fino, setFino }: { fino: boolean; setFino: (v: boolean) => voi
         >
           <Sparkles className="h-3.5 w-3.5" /> Fino de aroma
         </button>
+      </div>
+      {present}
       </div>
     </div>
   );

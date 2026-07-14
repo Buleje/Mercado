@@ -3,14 +3,17 @@
 /**
  * CacaoPriceChart — flujo de precio del cacao con analítica de movimiento.
  * Cargado vía next/dynamic en CacaoNoticiero (recharts fuera del bundle inicial).
- * Selector de rango + área coloreada por tendencia + métricas del período.
- * Toggle de unidad: USD/t internacional ↔ S//kg en chacra Ciudad Constitución (est.),
- * para leer el precio en la moneda y el eslabón que le importa al acopiador.
+ * Selector de rango + área coloreada por tendencia + métricas del período +
+ * picos/valles locales rotulados con su precio.
+ * Toggle de unidad: USD/t internacional ↔ S//kg de compra local Ciudad
+ * Constitución = USD→S/ al FX del día × factor calibrado con precio real
+ * (ver ANCLA_CC en cacao-precio-regional, ≈90% del oficial).
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from "recharts";
 import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown, Activity } from "@buleje/design-system/icons";
-import { CHACRA_CC_SECO_FACTOR } from "@/lib/cacao/cacao-precio-regional";
+import { CHACRA_CC_COMPRA_OFICIAL_FACTOR, COMPRA_LOCAL_PCT } from "@/lib/cacao/cacao-precio-regional";
+import CacaoChartPresent from "./CacaoChartPresent";
 
 interface PricePoint { t: number; c: number }
 const RANGES = [
@@ -25,6 +28,7 @@ export default function CacaoPriceChart({
   usdPen = null,
   onPointSelect,
   selectedT = null,
+  onPresent,
 }: {
   series: PricePoint[];
   usdPen?: number | null;
@@ -32,6 +36,8 @@ export default function CacaoPriceChart({
   onPointSelect?: (usdPerTonne: number, t: number) => void;
   /** Timestamp del punto seleccionado (para marcarlo). null = ninguno. */
   selectedT?: number | null;
+  /** Abre la vista completa (modal de presentación del padre). Sin él no hay botón. */
+  onPresent?: () => void;
 }) {
   const [range, setRange] = useState<string>("3M");
   const [unit, setUnit] = useState<Unit>("usd");
@@ -49,8 +55,8 @@ export default function CacaoPriceChart({
 
   const view = useMemo(() => {
     const days = RANGES.find((r) => r.key === range)?.days ?? 90;
-    // factor de conversión a S//kg en chacra CC: (USD/t ÷ 1000) × FX × factor chacra.
-    const factor = isSol && usdPen ? (usdPen / 1000) * CHACRA_CC_SECO_FACTOR : 1;
+    // conversión a S//kg compra local CC: (USD/t ÷ 1000) × FX × factor calibrado (≈90% oficial).
+    const factor = isSol && usdPen ? (usdPen / 1000) * CHACRA_CC_COMPRA_OFICIAL_FACTOR : 1;
     const fullUnit = series.map((p) => p.c * factor); // serie completa (1 año) en la unidad
     // SMA sobre la serie COMPLETA → el inicio de la ventana usa datos previos.
     const smaAt = (w: number, i: number) => {
@@ -100,6 +106,34 @@ export default function CacaoPriceChart({
       return { t: lastT + step * dayMs, label: dayLabel(lastT + step * dayMs), fc: Math.max(0, mid), fcLo: Math.max(0, mid - band), fcHi: mid + band };
     });
     const chartData = data.map((p) => ({ ...p, label: dayLabel(p.t) }));
+    // Picos y valles LOCALES rotulados con su precio: extremo estricto dentro de
+    // una ventana ±w proporcional al rango (ventana completa → sin bordes) y tope
+    // de 6 por lado para que los rótulos no se amontonen. El máx/mín global del
+    // período ya lleva su marcador grande aparte.
+    const wLoc = Math.max(2, Math.round(nWin / 18));
+    const peakIdx: number[] = [];
+    const valleyIdx: number[] = [];
+    for (let i = wLoc; i <= nWin - 1 - wLoc; i++) {
+      if (i === maxIdx || i === minIdx) continue;
+      let isP = true, isV = true;
+      for (let j = i - wLoc; j <= i + wLoc; j++) {
+        if (j === i) continue;
+        // Empates (plateau): solo el primer punto del plateau cuenta como extremo.
+        if (closes[j] > closes[i] || (closes[j] === closes[i] && j < i)) isP = false;
+        if (closes[j] < closes[i] || (closes[j] === closes[i] && j < i)) isV = false;
+        if (!isP && !isV) break;
+      }
+      if (isP) peakIdx.push(i);
+      else if (isV) valleyIdx.push(i);
+    }
+    const topExtremes = (idxs: number[], desc: boolean) =>
+      idxs
+        .sort((a, b) => (desc ? closes[b] - closes[a] : closes[a] - closes[b]))
+        .slice(0, 6)
+        .sort((a, b) => a - b)
+        .map((i) => ({ label: chartData[i].label, value: closes[i] }));
+    const peaks = topExtremes(peakIdx, true);
+    const valleys = topExtremes(valleyIdx, false);
     // Datos a renderizar: si hay proyección, ancla el último punto real y concatena.
     const renderData = showForecast
       ? [...chartData.map((p, i) => (i === chartData.length - 1 ? { ...p, fc: p.c, fcLo: p.c, fcHi: p.c } : p)), ...forecast]
@@ -114,7 +148,7 @@ export default function CacaoPriceChart({
       yhi = Math.max(yhi, ...forecast.map((f) => f.fcHi));
     }
     const yDomain: [number, number] = [Math.max(0, ylo), yhi];
-    return { chartData, renderData, first, last, max, min, avg, variacion, vol, up, down, n: data.length, yDomain, week52High, week52Low, maxPoint: chartData[maxIdx], minPoint: chartData[minIdx] };
+    return { chartData, renderData, first, last, max, min, avg, variacion, vol, up, down, n: data.length, yDomain, week52High, week52Low, maxPoint: chartData[maxIdx], minPoint: chartData[minIdx], peaks, valleys };
   }, [series, range, isSol, usdPen, show52, showForecast]);
 
   const up = (view?.variacion ?? 0) > 0, down = (view?.variacion ?? 0) < 0;
@@ -137,12 +171,15 @@ export default function CacaoPriceChart({
   const color = up ? palette.up : down ? palette.down : palette.neutral;
   const selLabel = selectedT != null ? view?.chartData.find((d) => d.t === selectedT)?.label ?? null : null;
 
-  return (
-    <div ref={rootRef} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+  const title = isSol ? "Flujo de precio · compra local Ciudad Constitución (S//kg)" : "Flujo de precio · ICE cocoa (USD/t)";
+  // Contenido del card como render-función: el modal de presentación pinta una
+  // copia viva (mismos toggles/estado). presentBtn = null dentro del modal.
+  const content = (presentBtn: ReactNode) => (
+    <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Activity className="h-4 w-4 text-[var(--accent)]" />
-          {isSol ? "Flujo de precio · en chacra Ciudad Constitución (S//kg est.)" : "Flujo de precio · ICE cocoa (USD/t)"}
+          {title}
         </h3>
         <div className="flex flex-wrap items-center gap-2">
           {canSol && (
@@ -161,6 +198,7 @@ export default function CacaoPriceChart({
             <OverlayToggle active={showForecast} onClick={() => setShowForecast((v) => !v)} label="Proy." title="Proyección a 30 días (regresión + banda)" />
             <OverlayToggle active={show52} onClick={() => setShow52((v) => !v)} label="52sem" title="Máximo y mínimo de 52 semanas" />
           </div>
+          {presentBtn}
         </div>
       </div>
 
@@ -174,7 +212,7 @@ export default function CacaoPriceChart({
               {up ? "+" : ""}{view.variacion.toFixed(1)}% en {range}
             </span>
             <span className="text-xs text-[var(--text-tertiary)]">de {money(view.first)} a {money(view.last)}{suffix}</span>
-            {isSol && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">estimado en chacra CC</span>}
+            {isSol && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">compra local ≈ {COMPRA_LOCAL_PCT}% del oficial en soles (FX {usdPen != null ? `S/ ${usdPen.toFixed(2)}` : "—"}/USD)</span>}
           </div>
 
           {onPointSelect && (
@@ -183,7 +221,7 @@ export default function CacaoPriceChart({
           <ResponsiveContainer width="100%" height={240} minWidth={0}>
             <AreaChart
               data={view.renderData}
-              margin={{ top: 5, right: 8, left: 0, bottom: 0 }}
+              margin={{ top: 14, right: 8, left: 0, bottom: 0 }}
               style={onPointSelect ? { cursor: "pointer" } : undefined}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onClick={((e: any) => {
@@ -222,6 +260,13 @@ export default function CacaoPriceChart({
               {showForecast && <Line type="monotone" dataKey="fc" name="Proyección" stroke={palette.accent} strokeWidth={2} strokeDasharray="5 4" dot={false} connectNulls />}
               {view.maxPoint && <ReferenceDot x={view.maxPoint.label} y={view.max} r={4} fill={palette.up} stroke="var(--surface-raised)" strokeWidth={1.5} label={{ value: money(view.max), position: "top", fontSize: 9, fill: palette.up }} />}
               {view.minPoint && <ReferenceDot x={view.minPoint.label} y={view.min} r={4} fill={palette.down} stroke="var(--surface-raised)" strokeWidth={1.5} label={{ value: money(view.min), position: "bottom", fontSize: 9, fill: palette.down }} />}
+              {/* Picos y valles locales con su precio (número pelado; la moneda ya la dan eje y tooltip) */}
+              {view.peaks.map((pt) => (
+                <ReferenceDot key={`pk-${pt.label}`} x={pt.label} y={pt.value} r={3} fill={palette.up} stroke="var(--surface-raised)" strokeWidth={1} label={{ value: fmt(pt.value, dec), position: "top", fontSize: 9, fill: palette.up }} />
+              ))}
+              {view.valleys.map((pt) => (
+                <ReferenceDot key={`vl-${pt.label}`} x={pt.label} y={pt.value} r={3} fill={palette.down} stroke="var(--surface-raised)" strokeWidth={1} label={{ value: fmt(pt.value, dec), position: "bottom", fontSize: 9, fill: palette.down }} />
+              ))}
             </AreaChart>
           </ResponsiveContainer>
 
@@ -235,6 +280,12 @@ export default function CacaoPriceChart({
           </div>
         </>
       )}
+    </>
+  );
+
+  return (
+    <div ref={rootRef} className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      {content(onPresent ? <CacaoChartPresent title={title} onClick={onPresent} /> : null)}
     </div>
   );
 }
