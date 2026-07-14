@@ -9,11 +9,16 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings } from "@buleje/design-system/icons";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3,
   type PiezaCubicada, type Unidad,
 } from "@/lib/forestal/cubicacion";
+import {
+  loadConfig, saveConfig, CONFIG_DEFAULT, frasesToText, textToFrases,
+  type CubicadorConfig,
+} from "@/lib/forestal/cubicador-config";
+import { exportarPDF, exportarExcel } from "@/lib/forestal/cubicador-export";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -58,14 +63,15 @@ const saveLocal = (next: PiezaCubicada[]) => { try { localStorage.setItem(storag
 const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 // Voz que repite lo dictado (SpeechSynthesis). cancel() antes de hablar: en
 // dictado rápido gana el último, sin encolar audio viejo que quede atrás.
-function decir(texto: string) {
+function decir(texto: string, rate = 1.5, voiceURI = "") {
   try {
     const synth = window.speechSynthesis;
     if (!synth) return;
     synth.cancel();
     const u = new SpeechSynthesisUtterance(texto);
     u.lang = "es-PE";
-    u.rate = 1.5; // voz rápida — no traba el dictado veloz
+    u.rate = rate;
+    if (voiceURI) { const v = synth.getVoices().find((x) => x.voiceURI === voiceURI); if (v) u.voice = v; }
     synth.speak(u);
   } catch { /* TTS no disponible */ }
 }
@@ -79,7 +85,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [supported, setSupported] = useState(true);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const [especie, setEspecie] = useState("");
-  const [speakOn, setSpeakOn] = useState(true);        // voz que repite (TTS)
+  const [config, setConfig] = useState<CubicadorConfig>(CONFIG_DEFAULT);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [showAjustes, setShowAjustes] = useState(false);
+  const speakOn = config.speak;
   const [editingId, setEditingId] = useState<string | null>(null); // fila que se edita por voz
   const [readingId, setReadingId] = useState<string | null>(null); // fila que se está leyendo
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
@@ -89,7 +98,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
   const especieRef = useRef(especie);
-  const speakRef = useRef(speakOn);
+  const configRef = useRef(config);
   const wantListeningRef = useRef(false);
   const carryRef = useRef<number[]>([]);               // números sueltos entre frases
   // Guardamos SOLO en resultados FINALES (estables). Los intermedios se revisan
@@ -105,7 +114,22 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   const resetVoz = () => { carryRef.current = []; lastFinalRef.current = -1; };
   useEffect(() => { especieRef.current = especie; }, [especie]);
-  useEffect(() => { speakRef.current = speakOn; }, [speakOn]);
+  useEffect(() => { configRef.current = config; }, [config]);
+  // Cargar config + voces disponibles (getVoices puede llegar async).
+  useEffect(() => {
+    setConfig(loadConfig());
+    const load = () => { try { setVoices(window.speechSynthesis?.getVoices?.() ?? []); } catch { /* ignore */ } };
+    load();
+    try { window.speechSynthesis.onvoiceschanged = load; } catch { /* ignore */ }
+    return () => { try { window.speechSynthesis.onvoiceschanged = null; } catch { /* ignore */ } };
+  }, []);
+  const updateConfig = useCallback((patch: Partial<CubicadorConfig>) => {
+    setConfig((prev) => { const next = { ...prev, ...patch }; saveConfig(next); return next; });
+  }, []);
+  const hablar = useCallback((texto: string) => {
+    if (!configRef.current.speak) return;
+    decir(texto, configRef.current.voiceRate, configRef.current.voiceURI);
+  }, []);
 
   useEffect(() => {
     try {
@@ -171,14 +195,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       lastFinalRef.current = idx;
 
       // ── COMANDOS DE VOZ ──
-      const cmd = detectarComando(texto);
+      const cmd = detectarComando(texto, configRef.current.comandos);
       if (cmd) {
-        if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = []; setLiveText(""); if (speakRef.current) decir("en pausa"); }
-        else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = []; setLiveText(""); if (speakRef.current) decir("sigo"); }
-        else if (cmd.tipo === "borrar-ultimo") { borrarUltimo(); if (speakRef.current) decir("borrado"); }
+        if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = []; setLiveText(""); hablar("en pausa"); }
+        else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = []; setLiveText(""); hablar("sigo"); }
+        else if (cmd.tipo === "borrar-ultimo") { borrarUltimo(); hablar("borrado"); }
         else if (cmd.tipo === "especie") {
           const found = ESPECIES.find((s) => sinAcentos(s).startsWith(cmd.palabra));
-          if (found) { setEspecie(found); if (speakRef.current) decir(found); }
+          if (found) { setEspecie(found); hablar(found); }
           else setErrMsg(`No reconocí la especie "${cmd.palabra}".`);
         }
         return;
@@ -190,7 +214,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       if (modeRef.current.type === "edit") {
         if (nums.length >= 3 && nums[0] > 0 && nums[1] > 0 && nums[2] > 0) {
           updateRow(modeRef.current.id, nums[0], nums[1], nums[2]);
-          if (speakRef.current) decir(`${nums[0]}, ${nums[1]}, ${nums[2]}`);
+          hablar(`${nums[0]}, ${nums[1]}, ${nums[2]}`);
           modeRef.current = { type: "add" };
           setEditingId(null); wantListeningRef.current = false;
           setListening(false); setLiveText("");
@@ -219,7 +243,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       setLiveText("");
       if (added && ultima) {
         setAddedFlash(added); setErrMsg(null);
-        if (speakRef.current) decir(added === 1 ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}` : `${added} piezas`);
+        hablar(added === 1 ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}` : `${added} piezas`);
       }
     };
 
@@ -249,7 +273,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     };
     recRef.current = rec;
     return () => { wantListeningRef.current = false; try { rec.stop(); } catch { /* ignore */ } };
-  }, [addPieza, updateRow, borrarUltimo]);
+  }, [addPieza, updateRow, borrarUltimo, hablar]);
 
   const stopLeer = useCallback(() => {
     readingRef.current = false; setReadingId(null);
@@ -310,7 +334,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       setReadingId(r.id);
       try { document.getElementById(`cub-row-${r.id}`)?.scrollIntoView({ block: "center", behavior: "smooth" }); } catch { /* ignore */ }
       const u = new SpeechSynthesisUtterance(`${r.espesor}, ${r.ancho}, ${r.largo}${r.especie ? `, ${r.especie}` : ""}`);
-      u.lang = "es-PE"; u.rate = 1.05;
+      u.lang = "es-PE"; u.rate = Math.max(0.8, configRef.current.voiceRate - 0.3); // un poco más pausado para seguir
+      if (configRef.current.voiceURI) { const v = synth.getVoices().find((x) => x.voiceURI === configRef.current.voiceURI); if (v) u.voice = v; }
       u.onend = () => { idx++; step(); };
       synth.cancel(); synth.speak(u);
     };
@@ -393,8 +418,49 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <Calculator className="h-4 w-4 text-[var(--accent)]" /> Cubicador de madera por voz
           </h3>
-          {onPresent && <CacaoChartPresent title="Cubicador de madera" onClick={onPresent} />}
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setShowAjustes((v) => !v)} aria-pressed={showAjustes} title="Ajustes de voz y comandos" className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition ${showAjustes ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
+              <Settings className="h-3.5 w-3.5" /> Ajustes
+            </button>
+            {onPresent && <CacaoChartPresent title="Cubicador de madera" onClick={onPresent} />}
+          </div>
         </div>
+
+        {/* Panel de AJUSTES — voz (velocidad/tono/qué dicta) + comandos editables */}
+        {showAjustes && (
+          <div className="mb-4 grid gap-4 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-4 sm:grid-cols-2">
+            <div className="space-y-3">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Voz</div>
+              <label className="block">
+                <span className="text-xs font-bold text-[var(--text-secondary)]">Velocidad: {config.voiceRate.toFixed(1)}×</span>
+                <input type="range" min={0.6} max={2} step={0.1} value={config.voiceRate} onChange={(e) => updateConfig({ voiceRate: Number(e.target.value) })} className="mt-1 w-full accent-[var(--accent)]" />
+              </label>
+              <label className="block">
+                <span className="text-xs font-bold text-[var(--text-secondary)]">Tono / voz</span>
+                <select value={config.voiceURI} onChange={(e) => updateConfig({ voiceURI: e.target.value })} className="mt-1 h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+                  <option value="">Voz por defecto</option>
+                  {voices.filter((v) => v.lang.toLowerCase().startsWith("es")).map((v) => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}
+                </select>
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => updateConfig({ speak: !config.speak })} className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${config.speak ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}>
+                  {config.speak ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} El sistema repite {config.speak ? "SÍ" : "NO"}
+                </button>
+                <button type="button" onClick={() => decir("dos, seis, ocho", config.voiceRate, config.voiceURI)} className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Probar voz</button>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Comandos de voz (separados por coma)</div>
+                <button type="button" onClick={() => updateConfig({ voiceRate: CONFIG_DEFAULT.voiceRate, voiceURI: "", speak: true, comandos: CONFIG_DEFAULT.comandos })} className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]">Restablecer</button>
+              </div>
+              <CmdField label="Pausar" value={frasesToText(config.comandos.pausar)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, pausar: textToFrases(v) } })} />
+              <CmdField label="Continuar" value={frasesToText(config.comandos.continuar)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, continuar: textToFrases(v) } })} />
+              <CmdField label="Borrar último" value={frasesToText(config.comandos.borrarUltimo)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, borrarUltimo: textToFrases(v) } })} />
+              <CmdField label="Especie (prefijos)" value={frasesToText(config.comandos.especie)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, especie: textToFrases(v) } })} />
+            </div>
+          </div>
+        )}
 
         {supported ? (
           <>
@@ -415,7 +481,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   {/* Toggle de voz que repite */}
                   <button
                     type="button"
-                    onClick={() => setSpeakOn((v) => !v)}
+                    onClick={() => updateConfig({ speak: !config.speak })}
                     aria-pressed={speakOn}
                     title={speakOn ? "La voz repite lo dictado — tocá para silenciar" : "Activar voz que repite lo dictado"}
                     className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition ${speakOn ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
@@ -518,7 +584,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               <button type="button" onClick={leerTabla} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${readingId ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                 {readingId ? <><Square className="h-3.5 w-3.5" /> Detener lectura</> : <><Volume2 className="h-3.5 w-3.5" /> Leer tabla</>}
               </button>
-              <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Exportar CSV</button>
+              <button type="button" onClick={() => exportarPDF(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined }).catch(() => setErrMsg("No se pudo generar el PDF."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">PDF</button>
+              <button type="button" onClick={() => exportarExcel(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined }).catch(() => setErrMsg("No se pudo generar el Excel."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Excel</button>
+              <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
               <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)]">Vaciar</button>
             </div>
           )}
@@ -660,6 +728,15 @@ function ManualSelect({ label, value, onChange, opts }: { label: string; value: 
         <option value="">—</option>
         {opts.map((n) => <option key={n} value={n}>{n}</option>)}
       </select>
+    </label>
+  );
+}
+
+function CmdField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block">
+      <span className="text-xs font-bold text-[var(--text-secondary)]">{label}</span>
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
     </label>
   );
 }

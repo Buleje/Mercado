@@ -257,17 +257,41 @@ export type Comando =
   | { tipo: "especie"; palabra: string }
   | null;
 
+/** Frases-gatillo por comando (editables desde Ajustes). especie = prefijos. */
+export interface ComandosCfg {
+  pausar: string[];
+  continuar: string[];
+  borrarUltimo: string[];
+  especie: string[];
+}
+export const COMANDOS_DEFAULT: ComandosCfg = {
+  pausar: ["pausa", "pausar", "para", "pare", "deten", "alto"],
+  continuar: ["continua", "continuar", "reanuda", "sigue", "seguir", "dale", "adelante"],
+  borrarUltimo: ["elimina el ultimo", "borra el ultimo", "quita el ultimo", "ultimo", "deshacer", "deshace", "borra eso"],
+  especie: ["especie", "madera"],
+};
+
+const escRe = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 /**
  * Detecta un comando de voz en el dictado (pausar/continuar/borrar último/fijar
- * especie). Si no hay comando, devuelve null y el texto se trata como números.
+ * especie) según las frases configuradas. Si no hay comando, devuelve null y el
+ * texto se trata como números.
  */
-export function detectarComando(input: string): Comando {
+export function detectarComando(input: string, cfg: ComandosCfg = COMANDOS_DEFAULT): Comando {
   const s = " " + stripAccents(input.toLowerCase()) + " ";
-  if (/\b(pausa|pausar|pausalo|pausame|para|pare|paren|paral[oa]|deten|detene|detente|alto)\b/.test(s)) return { tipo: "pausar" };
-  if (/\b(continua|continuar|continu[ae]|reanuda|reanudar|sigue|seguir|segui|adelante|dale)\b/.test(s)) return { tipo: "continuar" };
-  if (/(elimin\w*|borr\w*|quit\w*|saca\w*)\s+(el\s+|la\s+)?ultim/.test(s) || /\bdeshace\b|\bdeshacer\b|\bborra eso\b/.test(s)) return { tipo: "borrar-ultimo" };
-  const esp = s.match(/especie\s+(?:de\s+|es\s+)?([a-z]+)/) || s.match(/madera\s+(?:de\s+)?([a-z]+)/);
-  if (esp) return { tipo: "especie", palabra: esp[1] };
+  const hit = (list: string[]) =>
+    list.some((w) => { const t = stripAccents(w.toLowerCase()).trim(); return !!t && new RegExp(`(^|\\s)${escRe(t)}(\\s|$)`).test(s); });
+  // Borrar primero (más específico), luego especie, luego pausar/continuar.
+  if (hit(cfg.borrarUltimo)) return { tipo: "borrar-ultimo" };
+  for (const pre of cfg.especie) {
+    const t = stripAccents(pre.toLowerCase()).trim();
+    if (!t) continue;
+    const m = s.match(new RegExp(`${escRe(t)}\\s+(?:de\\s+|es\\s+)?([a-z]+)`));
+    if (m) return { tipo: "especie", palabra: m[1] };
+  }
+  if (hit(cfg.pausar)) return { tipo: "pausar" };
+  if (hit(cfg.continuar)) return { tipo: "continuar" };
   return null;
 }
 
