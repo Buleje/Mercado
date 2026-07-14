@@ -255,6 +255,12 @@ export default function AdminTabBar({
                 // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
                 // Desktop: layout original más compacto.
                 "flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-3 py-2.5 text-sm transition-all duration-[var(--dur-base)] sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-sm",
+                // En wrap + pantalla chica cada tab crece y centra su contenido:
+                // las filas quedan justificadas de borde a borde (sin borde
+                // derecho irregular), que era lo que se veía desalineado.
+                // OJO: grow (no flex-1) — flex-1 pone basis:0% y rompe el wrap
+                // (todas las tabs se aplastan en una sola línea).
+                wrap && "max-sm:grow max-sm:justify-center max-sm:px-2",
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === tab.id
                   ? "border-primary bg-primary/5 font-semibold text-primary"

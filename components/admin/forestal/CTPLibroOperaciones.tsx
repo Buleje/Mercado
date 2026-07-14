@@ -217,7 +217,7 @@ export default function CTPLibroOperaciones() {
       </AdminModuleHeader>
 
       {/* Sub-tabs del Libro CTP: flujo materia prima → producto → salida */}
-      <div className="flex flex-wrap gap-2 border-b-2 border-[var(--rule-soft)] pb-px">
+      <div className="flex flex-wrap gap-2 border-b-2 border-[var(--rule-soft)] pb-px max-sm:gap-1">
         {CTP_VIEWS.map((v) => {
           const Icon = v.icon;
           const active = view === v.key;
@@ -226,7 +226,7 @@ export default function CTPLibroOperaciones() {
               key={v.key}
               type="button"
               onClick={() => setView(v.key)}
-              className={`group inline-flex items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition ${
+              className={`group inline-flex items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition max-sm:grow max-sm:justify-center max-sm:px-2 ${
                 active
                   ? "border-[var(--brand-ink)] text-[var(--brand-ink)]"
                   : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"

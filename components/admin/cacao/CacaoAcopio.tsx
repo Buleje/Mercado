@@ -383,10 +383,12 @@ export default function CacaoAcopio() {
       </AdminModuleHeader>
 
       {/* Sub-nav agrupado en 3 familias (Operación · Gestión · Inteligencia) para
-          no acumular 8 pestañas planas en una sola. */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b-2 border-[var(--rule-soft)] pb-3">
+          no acumular 8 pestañas planas en una sola. En pantalla chica cada grupo
+          ocupa su fila y las pills crecen parejas (filas justificadas, sin borde
+          derecho irregular). */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b-2 border-[var(--rule-soft)] pb-3 max-sm:gap-y-2">
         {CACAO_VIEW_GROUPS.map((group, gi) => (
-          <div key={group.id} className="flex items-center gap-1.5">
+          <div key={group.id} className="flex items-center gap-1.5 max-sm:w-full max-sm:flex-wrap">
             {gi > 0 && (
               <span className="mr-2.5 hidden h-6 w-px bg-[var(--rule-base)] sm:block" aria-hidden />
             )}
@@ -399,7 +401,7 @@ export default function CacaoAcopio() {
                   type="button"
                   onClick={() => selectView(v.key)}
                   title={v.hint}
-                  className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-bold transition ${active ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"}`}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-bold transition max-sm:grow max-sm:justify-center max-sm:px-2 ${active ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"}`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{v.label}</span>
