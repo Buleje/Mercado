@@ -17,7 +17,14 @@ import { withApiHandler } from "@/lib/api-handler";
  *   1. requireAdmin (cookie sesión)
  *   2. isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro")
  *      Si no está habilitado por superadmin → 403.
- *   3. rate limit STRICT (60 req/min/IP)
+ *   3. rate limit GENEROUS bucket 'ctp' — igual que el endpoint hermano
+ *      /api/admin/forestal/ctp (ADR-127).
+ *
+ * 2026-07-15 — Estaba en STRICT (=10 req/15min, no 60/min como decía este
+ * comentario) y SIN bucket propio, así que compartía cupo con cualquier otro
+ * endpoint STRICT del admin: listar + filtrar + buscar tiraba 429 a las ~10
+ * interacciones y el tab parecía roto. La defensa real acá es requireAdmin +
+ * el guard de especialización; el rate limit es secundario.
  */
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────
@@ -107,7 +114,7 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rl = await applyRateLimit(req, "STRICT");
+  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
   if (rl) return rl;
 
   const guard = await ensureSpecializationOrDeny(auth.tenantId);
@@ -129,17 +136,36 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
     return NextResponse.json({ error: "invalid_status" }, { status: 400 });
   }
 
+  // Fechas inválidas → sin límite (no reventar el listado por un query param).
+  const parseDate = (raw: string | null) => {
+    if (!raw) return undefined;
+    const parsed = z.coerce.date().safeParse(raw);
+    return parsed.success ? parsed.data : undefined;
+  };
+
+  const filters = {
+    status: statusParsed?.success ? statusParsed.data : undefined,
+    speciesCommonName: speciesCommonName ?? undefined,
+    gtfNumber: gtfNumber ?? undefined,
+    fromDate: parseDate(fromDate),
+    toDate: parseDate(toDate),
+    search: search ?? undefined,
+    limit,
+    offset,
+  };
+
   try {
-    const result = await WoodEntriesDB.list(auth.tenantId, {
-      status: statusParsed?.success ? statusParsed.data : undefined,
-      speciesCommonName: speciesCommonName ?? undefined,
-      gtfNumber: gtfNumber ?? undefined,
-      fromDate: fromDate ? new Date(fromDate) : undefined,
-      toDate: toDate ? new Date(toDate) : undefined,
-      search: search ?? undefined,
-      limit,
-      offset,
-    });
+    // ?stats=1 → adjunta los agregados del período (calculados en DB) a la misma
+    // respuesta. Van juntos, no en dos requests: así KPIs y tabla describen
+    // exactamente el mismo instante (y es la mitad de tráfico por interacción).
+    if (url.searchParams.get("stats") === "1") {
+      const [result, stats] = await Promise.all([
+        WoodEntriesDB.list(auth.tenantId, filters),
+        WoodEntriesDB.stats(auth.tenantId, filters),
+      ]);
+      return NextResponse.json({ ...result, stats });
+    }
+    const result = await WoodEntriesDB.list(auth.tenantId, filters);
     return NextResponse.json(result);
   } catch (err) {
     logger.error("[wood-entries.GET] failed", { error: String(err) });
@@ -167,7 +193,7 @@ export const POST = withApiHandler("forestal-wood-entries-post", async (req: Nex
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rl = await applyRateLimit(req, "STRICT");
+  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
   if (rl) return rl;
 
   const guard = await ensureSpecializationOrDeny(auth.tenantId);

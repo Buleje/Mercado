@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
+import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -17,7 +18,13 @@ const sectionEnum = z.enum(CTP_SECTIONS);
 const createSchema = z.object({
   section: sectionEnum,
   entryDate: z.coerce.date().optional(),
-  gtfIngreso: z.string().trim().max(60).nullable().optional(),
+  // ADR-134: dejó de ser "la guía" para ser el RESUMEN de las N guías que
+  // alimentaron la corrida ("001-0000120, 001-0000131, …"). Con el max(60)
+  // original —dimensionado para un solo código— 5 guías ya daban 400, y mezclar
+  // guías es justamente la razón de ser del modelo N:M. La columna es TEXT, así
+  // que el único límite era éste. 1000 cubre el tope de 50 consumos por línea.
+  // La VERDAD de la trazabilidad vive en ForestCtpConsumo; esto es el acta legible.
+  gtfIngreso: z.string().trim().max(1000).nullable().optional(),
   materiaPrimaRef: z.string().trim().max(120).nullable().optional(),
   speciesCommon: z.string().trim().max(120).nullable().optional(),
   speciesScientific: z.string().trim().max(150).nullable().optional(),
@@ -31,13 +38,39 @@ const createSchema = z.object({
   gtfNumber: z.string().trim().max(60).nullable().optional(),
   destino: z.string().trim().max(200).nullable().optional(),
   observations: z.string().trim().max(1000).nullable().optional(),
+  // ADR-134: una corrida real mezcla varias guías. La atribución viaja con el
+  // alta; `ForestCtpConsumoDB` valida I1/I2 y tenant antes de escribir.
+  consumos: z
+    .array(
+      z.object({
+        woodEntryId: z.string().trim().min(1),
+        volumeM3: z.coerce.number().positive().max(99999),
+      }),
+    )
+    .max(50)
+    .optional(),
+  costoProceso: z.coerce.number().nonnegative().max(9999999).nullable().optional(),
+  moneda: z.string().trim().max(8).nullable().optional(),
 });
 const patchSchema = z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) });
+
+/** `?from`/`?to` = instantes ISO del período (lib/forestal/ctp-period.ts). Inválido → sin límite. */
+function periodFromUrl(url: URL): { fromDate?: Date; toDate?: Date } {
+  const dateParam = z.coerce.date();
+  const read = (key: string) => {
+    const raw = url.searchParams.get(key);
+    if (!raw) return undefined;
+    const parsed = dateParam.safeParse(raw);
+    return parsed.success ? parsed.data : undefined;
+  };
+  return { fromDate: read("from"), toDate: read("to") };
+}
 
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
   return ok ? null : NextResponse.json({ error: "specialization_disabled", message: "El módulo CTP no está habilitado para este tenant." }, { status: 403 });
 }
+
 
 export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
@@ -47,13 +80,20 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
   const guard = await ensureSpec(auth.tenantId);
   if (guard) return guard;
   const url = new URL(req.url);
+  const period = periodFromUrl(url);
   try {
     if (url.searchParams.get("saldos") === "1") {
-      return NextResponse.json({ saldos: await ForestCtpDB.saldos(auth.tenantId) });
+      return NextResponse.json({ saldos: await ForestCtpDB.saldos(auth.tenantId, period) });
     }
     const availableFor = url.searchParams.get("available");
     if (availableFor && (CTP_SECTIONS as readonly string[]).includes(availableFor)) {
-      return NextResponse.json({ items: await ForestCtpDB.availableSource(auth.tenantId, availableFor as (typeof CTP_SECTIONS)[number]) });
+      // `?excludeCtpEntryId=` al EDITAR una línea: lo que ella misma consume no
+      // cuenta contra el disponible (si no, sus guías se verían agotadas).
+      return NextResponse.json({
+        items: await ForestCtpDB.availableSource(auth.tenantId, availableFor as (typeof CTP_SECTIONS)[number], {
+          excludeCtpEntryId: url.searchParams.get("excludeCtpEntryId") ?? undefined,
+        }),
+      });
     }
     const s = url.searchParams.get("section");
     const section = s && (CTP_SECTIONS as readonly string[]).includes(s) ? (s as (typeof CTP_SECTIONS)[number]) : undefined;
@@ -61,6 +101,7 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
       section,
       search: url.searchParams.get("search") ?? undefined,
       includeAnnulled: url.searchParams.get("includeAnnulled") === "1",
+      ...period,
     });
     return NextResponse.json({ entries, total });
   } catch (err) {
@@ -79,13 +120,13 @@ export const POST = withApiHandler("forestal-ctp-post", async (req: NextRequest)
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+  if (!parsed.success) return ctpValidationResponse(parsed.error);
   try {
     const entry = await ForestCtpDB.create(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
     return NextResponse.json({ entry }, { status: 201 });
   } catch (err) {
-    logger.error("[ctp.POST] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Puede traer `consumos` ⇒ puede violar I1/I2 ⇒ 422 con el motivo, no 500.
+    return ctpErrorResponse(err, "ctp.POST", auth.tenantId);
   }
 });
 
@@ -99,9 +140,9 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
   const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
+  if (!parsed.success) return ctpValidationResponse(parsed.error);
   try {
-    return NextResponse.json({ entry: await ForestCtpDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason) });
+    return NextResponse.json({ entry: await ForestCtpDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown") });
   } catch (err) {
     logger.error("[ctp.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
@@ -118,7 +159,7 @@ export const DELETE = withApiHandler("forestal-ctp-delete", async (req: NextRequ
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
   try {
-    await ForestCtpDB.softDelete(auth.tenantId, id);
+    await ForestCtpDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
     return NextResponse.json({ ok: true });
   } catch (err) {
     logger.error("[ctp.DELETE] failed", { error: String(err), tenantId: auth.tenantId });

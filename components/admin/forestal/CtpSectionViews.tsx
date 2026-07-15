@@ -9,10 +9,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
-  Scale, PackageCheck, Layers, PackagePlus,
+  Scale, PackageCheck, Layers, PackagePlus, Clock, TreePine,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useDebounce } from "@/hooks/use-debounce";
+import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpEntryForm from "./CtpEntryForm";
 
 type CtpSection = "produccion" | "despacho";
@@ -37,12 +39,14 @@ const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
 const n2 = (v: number) => v.toFixed(2);
 
 // ─── Producción / Despacho ───────────────────────────────────────────────────
-export function CtpEntriesView({ section }: { section: CtpSection }) {
+export function CtpEntriesView({ section, period }: { section: CtpSection; period: CtpPeriod }) {
   const meta = SECTION_META[section];
   const [entries, setEntries] = useState<CtpEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  // Sin debounce, `load` se re-creaba en cada tecla → un fetch por caracter.
+  const search = useDebounce(searchInput, 350);
   const [showForm, setShowForm] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
@@ -53,15 +57,15 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const p = new URLSearchParams({ section });
+      const p = applyCtpPeriodParams(new URLSearchParams({ section }), period);
       if (search.trim()) p.set("search", search.trim());
       const r = await fetch(`/api/admin/forestal/ctp?${p}`, { credentials: "include" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       setEntries((await r.json()).entries ?? []);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
-  }, [section, search]);
-  useEffect(() => { load(); }, [load]);
+  }, [section, search, period]);
+  useEffect(() => { void load(); }, [load]);
 
   async function annul() {
     if (!annulId || annulReason.trim().length < 3) return;
@@ -98,8 +102,19 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
     const reg = entries.filter((e) => e.status === "registrado");
     const totalQty = reg.reduce((a, e) => a + Number(e.quantity ?? 0), 0);
     const consumido = reg.reduce((a, e) => a + Number(e.volumeInputM3 ?? 0), 0);
-    const rends = reg.map((e) => Number(e.rendimientoPct ?? 0)).filter((x) => x > 0);
-    const avgRend = rends.length ? rends.reduce((a, b) => a + b, 0) / rends.length : 0;
+    // Rendimiento PONDERADO por volumen consumido: la media simple hacía pesar
+    // igual una línea de 0.5 m³ que una de 50 m³, y el promedio de planta no es eso.
+    let pesoTotal = 0;
+    let sumaPonderada = 0;
+    for (const e of reg) {
+      const rend = Number(e.rendimientoPct ?? 0);
+      const vol = Number(e.volumeInputM3 ?? 0);
+      if (rend > 0 && vol > 0) {
+        sumaPonderada += rend * vol;
+        pesoTotal += vol;
+      }
+    }
+    const avgRend = pesoTotal > 0 ? sumaPonderada / pesoTotal : 0;
     return { count: reg.length, totalQty, consumido, avgRend };
   }, [entries]);
 
@@ -110,14 +125,15 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
         <StatCard label="Líneas registradas" value={String(kpis.count)} icon={Icon} emphasis="neutral" />
         <StatCard label={section === "produccion" ? "Producido total" : "Despachado total"} value={n2(kpis.totalQty)} subValue="suma de cantidades" icon={PackageCheck} emphasis="success" />
         {section === "produccion"
-          ? <StatCard label="Rendimiento prom." value={`${kpis.avgRend.toFixed(1)}%`} subValue={`${n2(kpis.consumido)} m³ consumidos`} icon={Scale} emphasis={kpis.avgRend > 0 ? "success" : "neutral"} />
+          ? <StatCard label="Rendimiento prom." value={`${kpis.avgRend.toFixed(1)}%`} subValue={`ponderado · ${n2(kpis.consumido)} m³ consumidos`} icon={Scale} emphasis={kpis.avgRend > 0 ? "success" : "neutral"} />
           : <StatCard label="Materia prima ref." value={String(new Set(entries.map((e) => e.gtfNumber).filter(Boolean)).size)} subValue="GTF de salida distintos" icon={Truck} emphasis="neutral" />}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} placeholder="Buscar por especie, producto o GTF..." className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
+          <label htmlFor={`ctp-search-${section}`} className="sr-only">Buscar en {meta.label}</label>
+          <input id={`ctp-search-${section}`} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Buscar por especie, producto o GTF..." className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
         <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
@@ -206,7 +222,13 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
         </table>
 
         {!loading && entries.length === 0 && (
-          <div className="p-12 text-center text-[var(--text-tertiary)]"><Icon className="mx-auto mb-3 h-10 w-10 opacity-30" /><p className="text-base font-medium">{meta.empty}</p></div>
+          <div className="p-12 text-center text-[var(--text-tertiary)]">
+            <Icon className="mx-auto mb-3 h-10 w-10 opacity-30" />
+            <p className="text-base font-medium">{search.trim() ? "Ninguna línea coincide con la búsqueda." : meta.empty}</p>
+            {!search.trim() && period.from && (
+              <p className="mt-1 text-sm">Mostrando {period.label} — puede haber líneas fuera de este período.</p>
+            )}
+          </div>
         )}
         {loading && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>}
       </div>
@@ -231,12 +253,20 @@ export function CtpEntriesView({ section }: { section: CtpSection }) {
 }
 
 // ─── Saldos ───────────────────────────────────────────────────────────────────
+interface SpeciesBalance {
+  especie: string; scientific: string | null; cites: boolean;
+  ingresoM3: number; pendienteM3: number; consumidoM3: number; saldoM3: number; ingresosCount: number;
+}
 interface SaldosData {
-  materiaPrima: { ingresoM3: number; ingresosCount: number; consumidoM3: number; saldoM3: number };
+  materiaPrima: {
+    ingresoM3: number; ingresosCount: number; consumidoM3: number; saldoM3: number;
+    pendienteM3: number; especiesEnNegativo: number;
+  };
+  porEspecie: SpeciesBalance[];
   productos: { producto: string; producido: number; despachado: number; stock: number }[];
 }
 
-export function CtpSaldosView() {
+export function CtpSaldosView({ period }: { period: CtpPeriod }) {
   const [data, setData] = useState<SaldosData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -244,29 +274,83 @@ export function CtpSaldosView() {
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const r = await fetch("/api/admin/forestal/ctp?saldos=1", { credentials: "include" });
+      const p = applyCtpPeriodParams(new URLSearchParams({ saldos: "1" }), period);
+      const r = await fetch(`/api/admin/forestal/ctp?${p}`, { credentials: "include" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       setData((await r.json()).saldos);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
-  }, []);
-  useEffect(() => { load(); }, [load]);
+  }, [period]);
+  useEffect(() => { void load(); }, [load]);
+
+  const mp = data?.materiaPrima;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[var(--text-tertiary)]">Balance de planta: materia prima que entra vs. producto que sale.</p>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-[var(--text-tertiary)]">Balance de planta en <strong className="text-[var(--text-secondary)]">{period.label}</strong>: materia prima que entra vs. producto que sale.</p>
+        <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
-      {data && (
+      {data && mp && (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <StatCard label="Ingresado (materia prima)" value={`${n2(data.materiaPrima.ingresoM3)} m³`} subValue={`${data.materiaPrima.ingresosCount} ingresos`} icon={Layers} emphasis="neutral" />
-            <StatCard label="Consumido en producción" value={`${n2(data.materiaPrima.consumidoM3)} m³`} icon={Boxes} emphasis="neutral" />
-            <StatCard label="Saldo de materia prima" value={`${n2(data.materiaPrima.saldoM3)} m³`} subValue={data.materiaPrima.saldoM3 < 0 ? "⚠ sobreconsumo" : "disponible"} icon={Scale} emphasis={data.materiaPrima.saldoM3 < 0 ? "error" : "success"} />
+          {/* La alerta que importa: el balance global puede tapar una especie en rojo. */}
+          {mp.especiesEnNegativo > 0 && (
+            <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+              <div>
+                <strong>{mp.especiesEnNegativo} {mp.especiesEnNegativo === 1 ? "especie tiene" : "especies tienen"} saldo negativo.</strong>{" "}
+                Se transformó más volumen del que ingresó validado. Revisá los ingresos sin validar o las cantidades cargadas en Producción.
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard label="Ingresado (validado)" value={`${n2(mp.ingresoM3)} m³`} subValue={`${mp.ingresosCount} ingresos`} icon={Layers} emphasis="neutral" />
+            <StatCard label="Consumido en producción" value={`${n2(mp.consumidoM3)} m³`} icon={Boxes} emphasis="neutral" />
+            <StatCard label="Saldo de materia prima" value={`${n2(mp.saldoM3)} m³`} subValue={mp.saldoM3 < 0 ? "sobreconsumo" : "disponible"} icon={Scale} emphasis={mp.saldoM3 < 0 ? "error" : "success"} />
+            <StatCard label="Pendiente de validar" value={`${n2(mp.pendienteM3)} m³`} subValue="no computa como saldo" icon={Clock} emphasis={mp.pendienteM3 > 0 ? "warning" : "neutral"} />
+          </div>
+
+          {/* Balance POR ESPECIE — es lo que se fiscaliza; el global solo resume. */}
+          <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+            <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Balance por especie</CardTitle>
+              <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Ingreso validado − consumo en producción. Es el balance que se fiscaliza.</p>
+            </div>
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--surface-sunken)] text-left">
+                <tr>
+                  <Th>Especie</Th>
+                  <Th className="text-right">Ingresado (m³)</Th>
+                  <Th className="text-right">Consumido (m³)</Th>
+                  <Th className="text-right">Saldo (m³)</Th>
+                  <Th className="text-right">Sin validar (m³)</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.porEspecie.map((s) => (
+                  <tr key={s.especie} className={`border-t border-[var(--rule-soft)] ${s.saldoM3 < 0 ? "bg-[var(--data-error-50)]" : ""}`}>
+                    <Td>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-[var(--text-primary)]">{s.especie}</span>
+                        {s.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
+                      </div>
+                      {s.scientific && <div className="text-xs italic text-[var(--text-tertiary)]">{s.scientific}</div>}
+                    </Td>
+                    <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(s.ingresoM3)}</Td>
+                    <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(s.consumidoM3)}</Td>
+                    <Td className="text-right">
+                      <span className={`font-mono font-bold tabular-nums ${s.saldoM3 < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}`}>{n2(s.saldoM3)}</span>
+                    </Td>
+                    <Td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{s.pendienteM3 > 0 ? n2(s.pendienteM3) : "—"}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {data.porEspecie.length === 0 && <div className="p-10 text-center text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-3 h-9 w-9 opacity-30" /><p className="text-sm">Sin movimientos de madera en {period.label}.</p></div>}
           </div>
 
           <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">

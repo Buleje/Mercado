@@ -42,7 +42,7 @@ export const GET = withApiHandler("forestal-wood-entries-id-get", async (req: Ne
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rl = await applyRateLimit(req, "STRICT");
+  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
   if (rl) return rl;
 
   const guard = await ensureSpec(auth.tenantId);
@@ -64,7 +64,7 @@ export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rl = await applyRateLimit(req, "STRICT");
+  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
   if (rl) return rl;
 
   const guard = await ensureSpec(auth.tenantId);
@@ -99,7 +99,7 @@ export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req
         parsed.data.reason,
       );
     } else {
-      entry = await WoodEntriesDB.softDelete(auth.tenantId, id);
+      entry = await WoodEntriesDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
     }
 
     logger.info("[wood-entries.PATCH] action", {

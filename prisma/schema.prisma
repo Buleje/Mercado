@@ -847,6 +847,7 @@ model Supplier {
   purchases   PurchaseOrder[]
   payables    Payable[]
   evaluations SupplierEvaluation[]
+  woodEntries WoodEntry[] // ingresos de madera al CTP (ADR-134)
   portal      SupplierPortal?
 
   @@index([tenantId])
@@ -4927,9 +4928,23 @@ model WoodEntry {
   gtfSeries String? // Serie de la GTF (si aplica)
 
   // ── Proveedor / Titular Habilitante ──────────────────
+  /// SE QUEDA aunque exista `supplierId`: es el acta de la guía, no un mirror
+  /// del maestro de proveedores (ADR-134 D2). Nunca se borra ni se deriva.
   providerName         String
   providerDocument     String? // RUC/DNI/CE/PASAPORTE number
   providerDocumentType DocumentType?
+
+  /// Enlace opcional al maestro de proveedores (ADR-134). NULL = guía de un
+  /// titular que todavía no está en Supplier; el acta de arriba sigue valiendo.
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  // ── Costo de materia prima (ADR-134) ─────────────────
+  /// S/ total de la factura del proveedor. Llega TARDE (D6) ⇒ nullable por diseño.
+  /// El costo unitario NO se almacena: se deriva como costoTotal / volumeM3.
+  /// Sin factura → NULL, nunca 0 (un 0 fingiría margen 100%).
+  costoTotal Decimal? @db.Decimal(12, 2)
+  moneda     String?  @default("PEN")
 
   // ── Origen del material ──────────────────────────────
   originType     WoodOriginType @default(otro)
@@ -4965,10 +4980,16 @@ model WoodEntry {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  /// En qué corridas de producción se consumió este ingreso (ADR-134 D5).
+  /// La invariante I2 (Σ consumos ≤ volumeM3) impide consumirlo dos veces —
+  /// el patrón de blanqueo que fiscaliza SERFOR. Se aplica en la capa DB (D7).
+  consumos ForestCtpConsumo[]
+
   @@index([tenantId, entryDate(sort: Desc)])
   @@index([tenantId, status])
   @@index([tenantId, gtfNumber])
   @@index([tenantId, speciesCommonName])
+  @@index([tenantId, supplierId])
   @@index([deletedAt])
 }
 
@@ -5260,9 +5281,49 @@ model ForestCtpEntry {
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
+  /// Aserrío / secado / mano de obra (ADR-134). Input genuino: sin esto no hay margen.
+  /// costoMateriaPrima y costoTotal NO se almacenan — son derivados de `consumos` (D6).
+  costoProceso Decimal? @db.Decimal(12, 2)
+  moneda       String?  @default("PEN")
+
+  /// Qué ingresos (y cuántos m³ de cada uno) alimentaron esta corrida (ADR-134 D5).
+  consumos ForestCtpConsumo[]
+
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, gtfNumber])
   @@index([deletedAt])
+}
+
+/// ForestCtpConsumo — puente N:M entre una línea del libro CTP y los ingresos de
+/// materia prima que consumió (ADR-134 D5). Una corrida real mezcla varias guías,
+/// y un ingreso puede alimentar varias corridas.
+///
+/// Sin soft-delete: el consumo es detalle editable, no acta. Mientras la línea no
+/// esté congelada, quitar una atribución equivocada es corregir, no borrar historia.
+/// El acta (`volumeInputM3`, `gtfIngreso`) nunca se toca. Congelado ⇒ inmutable.
+model ForestCtpConsumo {
+  id       String @id @default(cuid())
+  tenantId String // denormalizado — regla 3 + detección de fuga (D3)
+
+  ctpEntryId  String
+  ctpEntry    ForestCtpEntry @relation(fields: [ctpEntryId], references: [id], onDelete: Cascade)
+  woodEntryId String
+  woodEntry   WoodEntry      @relation(fields: [woodEntryId], references: [id], onDelete: Restrict)
+
+  /// Hecho físico: m³ de ESE ingreso que entraron en ESA corrida. NOT NULL, > 0.
+  volumeM3 Decimal @db.Decimal(12, 4) // 4 dec = precisión forestal
+
+  /// NULL = costo vivo (on-read). NOT NULL = congelado al cierre del período (D6).
+  costoUnitarioSnap Decimal?  @db.Decimal(12, 2)
+  congeladoAt       DateTime?
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([ctpEntryId, woodEntryId]) // un ingreso aparece 1 vez por línea: se suma, no se duplica
+  @@index([ctpEntryId])
+  @@index([tenantId, woodEntryId])
 }
 
 // ─── Especialización AGRÍCOLA · Cacao (ADR-128) ────────────────────────────────

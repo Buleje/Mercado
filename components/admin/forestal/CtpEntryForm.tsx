@@ -11,6 +11,8 @@ import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
+import CtpConsumosPicker, { sumConsumos, type ConsumoRow } from "./CtpConsumosPicker";
+import { Field, I } from "./ctp-shared";
 
 type CtpSection = "produccion" | "despacho";
 
@@ -21,11 +23,13 @@ interface Props {
 }
 
 interface SourceItem {
-  kind: string; code: string | null; species: string | null; scientific: string | null;
-  cites?: boolean; vol?: number | null; quantity?: number | null; unit?: string | null; productType?: string | null;
+  kind: string; id?: string; code: string | null; species: string | null; scientific: string | null;
+  cites?: boolean; vol?: number | null; disponible?: number | null; costoUnitario?: number | null; moneda?: string | null;
+  quantity?: number | null; unit?: string | null; productType?: string | null;
 }
 
 const PRODUCT_TYPES = ["Madera aserrada", "Madera escuadrada", "Madera cuartoneada", "Tablillas", "Tablones", "Listones", "Durmientes", "Leña", "Carbón vegetal", "Otro"];
+const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
 
 const META: Record<CtpSection, { label: string; help: string; icon: typeof Boxes; sourceTitle: string }> = {
   produccion: { label: "Producción", help: "Transformación de materia prima en producto", icon: Boxes, sourceTitle: "Elegí el ingreso (materia prima)" },
@@ -38,17 +42,22 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
-  const [gtfIngreso, setGtfIngreso] = useState("");
   const [materiaPrimaRef, setMateriaPrimaRef] = useState("");
   const [speciesCommon, setSpeciesCommon] = useState("");
   const [productType, setProductType] = useState(PRODUCT_TYPES[0]);
   const [volumeInputM3, setVolumeInputM3] = useState("");
+  const [volumeTouched, setVolumeTouched] = useState(false);
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState<"m3" | "kg" | "unidad" | "pt">("m3");
   const [pieces, setPieces] = useState("");
   const [gtfNumber, setGtfNumber] = useState("");
   const [destino, setDestino] = useState("");
   const [observations, setObservations] = useState("");
+
+  // Producción: una corrida real mezcla varias guías (ADR-134). Cada fila es
+  // un consumo (ingreso + m³ atribuidos); ver CtpConsumosPicker.
+  const [consumos, setConsumos] = useState<ConsumoRow[]>([]);
+  const [costoProceso, setCostoProceso] = useState("");
 
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loadingSrc, setLoadingSrc] = useState(false);
@@ -67,8 +76,17 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
   function pick(it: SourceItem) {
     if (it.species) setSpeciesCommon(it.species);
     if (section === "produccion") {
-      if (it.code) setGtfIngreso(it.code);
-      if (it.vol) setVolumeInputM3(String(it.vol));
+      const id = it.id;
+      if (!id) return;
+      setConsumos((prev) => {
+        if (prev.some((c) => c.woodEntryId === id)) return prev; // ya agregado: el backend lo rechaza igual (I1)
+        const disponible = it.disponible ?? it.vol ?? 0;
+        return [...prev, {
+          woodEntryId: id, code: it.code, species: it.species,
+          disponible, costoUnitario: it.costoUnitario ?? null, moneda: it.moneda ?? "PEN",
+          volumeM3: disponible > 0 ? String(disponible) : "",
+        }];
+      });
     } else {
       if (it.productType) setProductType(it.productType);
       if (it.quantity) setQuantity(String(it.quantity));
@@ -78,17 +96,48 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
 
   const filtered = useMemo(() => {
     const q = srcQuery.trim().toLowerCase();
-    const list = q ? sources.filter((s) => (s.code ?? "").toLowerCase().includes(q) || (s.species ?? "").toLowerCase().includes(q) || (s.productType ?? "").toLowerCase().includes(q)) : sources;
+    let list = q ? sources.filter((s) => (s.code ?? "").toLowerCase().includes(q) || (s.species ?? "").toLowerCase().includes(q) || (s.productType ?? "").toLowerCase().includes(q)) : sources;
+    if (section === "produccion") {
+      // Un ingreso ya elegido desaparece del buscador: no se puede agregar dos veces.
+      const picked = new Set(consumos.map((c) => c.woodEntryId));
+      list = list.filter((s) => !s.id || !picked.has(s.id));
+    }
     return list.slice(0, 60);
-  }, [sources, srcQuery]);
+  }, [sources, srcQuery, section, consumos]);
+
+  /**
+   * El vacío del picker tiene 3 causas distintas y decirle "no hay ingresos" a
+   * las tres es mentira: el operador que ya eligió todas sus guías creería que
+   * el módulo perdió sus datos.
+   */
+  const emptyPickerMsg = useMemo(() => {
+    if (srcQuery.trim()) return "Ninguna coincide con la búsqueda.";
+    if (section === "despacho") return "Sin productos en stock para despachar.";
+    if (sources.length > 0) return "Ya agregaste todas las guías disponibles.";
+    return "Sin ingresos de materia prima validados y con saldo.";
+  }, [sources, srcQuery, section]);
 
   const rendimiento = useMemo(() => {
     const i = Number(volumeInputM3), o = Number(quantity);
     return section === "produccion" && i > 0 && o > 0 && unit === "m3" ? Math.round((o / i) * 10000) / 100 : null;
   }, [volumeInputM3, quantity, unit, section]);
 
+  // Volumen declarado: se autocompleta con el total atribuido (caso normal),
+  // pero deja de seguirlo apenas el usuario lo edita a mano (atribución parcial legítima).
+  const totalAtribuido = useMemo(() => sumConsumos(consumos), [consumos]);
+  useEffect(() => {
+    if (section === "produccion" && !volumeTouched) setVolumeInputM3(totalAtribuido > 0 ? String(totalAtribuido) : "");
+  }, [totalAtribuido, volumeTouched, section]);
+
+  const consumosOk = section !== "produccion" || consumos.every((c) => {
+    const v = Number(c.volumeM3);
+    return v > 0 && v <= c.disponible + 1e-9;
+  });
+  const sobreAtribuido = section === "produccion" && consumos.length > 0
+    && Math.round((totalAtribuido - (Number(volumeInputM3) || 0)) * 10000) / 10000 > 0;
+
   const isValid = section === "produccion"
-    ? productType.trim().length > 0 && Number(quantity) > 0
+    ? productType.trim().length > 0 && Number(quantity) > 0 && consumosOk && !sobreAtribuido
     : productType.trim().length > 0 && Number(quantity) > 0 && gtfNumber.trim().length > 0;
 
   async function submit(e: React.FormEvent, keepOpen = false) {
@@ -103,9 +152,12 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
         productType, quantity: Number(quantity), unit, observations: observations.trim() || null,
       };
       if (section === "produccion") {
-        payload.gtfIngreso = gtfIngreso.trim() || null;
+        // GTF de ingreso ya no se tipea a mano: se resume de las guías elegidas.
+        payload.gtfIngreso = consumos.length ? consumos.map((c) => c.code).filter(Boolean).join(", ") : null;
         payload.materiaPrimaRef = materiaPrimaRef.trim() || null;
         payload.volumeInputM3 = volumeInputM3 ? Number(volumeInputM3) : null;
+        payload.costoProceso = costoProceso ? Number(costoProceso) : null;
+        if (consumos.length) payload.consumos = consumos.map((c) => ({ woodEntryId: c.woodEntryId, volumeM3: Number(c.volumeM3) }));
       } else {
         payload.pieces = pieces ? Number(pieces) : null;
         payload.gtfNumber = gtfNumber.trim() || null;
@@ -114,7 +166,8 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
       const r = await fetch("/api/admin/forestal/ctp", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       if (keepOpen) {
-        setGtfIngreso(""); setMateriaPrimaRef(""); setVolumeInputM3(""); setQuantity(""); setPieces(""); setGtfNumber(""); setDestino(""); setObservations("");
+        setMateriaPrimaRef(""); setVolumeInputM3(""); setVolumeTouched(false); setQuantity(""); setPieces(""); setGtfNumber(""); setDestino(""); setObservations("");
+        setConsumos([]); setCostoProceso("");
         setSubmitting(false); onSaved({ keepOpen: true }); loadSources();
       } else onSaved();
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); setSubmitting(false); }
@@ -149,7 +202,7 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
             </div>
             <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
               {loadingSrc ? <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
-                : filtered.length === 0 ? <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">{section === "produccion" ? "Sin ingresos de materia prima registrados." : "Sin productos en stock para despachar."}</div>
+                : filtered.length === 0 ? <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">{emptyPickerMsg}</div>
                 : filtered.map((it, i) => (
                   <button key={i} type="button" onClick={() => pick(it)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]">
                     <span className="flex min-w-0 items-center gap-2 truncate">
@@ -157,7 +210,7 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
                       {it.species && <span className="truncate text-sm text-[var(--text-secondary)]">{it.species}</span>}
                       {it.cites && <span className="rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
                     </span>
-                    <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{it.vol != null ? `${it.vol.toFixed(4)} m³` : it.quantity != null ? `stock ${it.quantity.toFixed(2)} ${it.unit ?? ""}` : ""}</span>
+                    <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{it.disponible != null ? `${Number(it.disponible).toFixed(4)} m³ disp.` : it.vol != null ? `${Number(it.vol).toFixed(4)} m³` : it.quantity != null ? `stock ${Number(it.quantity).toFixed(2)} ${it.unit ?? ""}` : ""}</span>
                   </button>
                 ))}
             </div>
@@ -167,11 +220,21 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
 
           {section === "produccion" && (
             <>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="GTF de ingreso"><input value={gtfIngreso} onChange={(e) => setGtfIngreso(e.target.value)} placeholder="001-0000120" className={I} /></Field>
-                <Field label="Ref. materia prima"><input value={materiaPrimaRef} onChange={(e) => setMateriaPrimaRef(e.target.value)} placeholder="lote / acopio" className={I} /></Field>
-              </div>
-              <Field label="Volumen consumido (m³)" hint="Materia prima que entra a transformación"><input type="number" step="0.0001" value={volumeInputM3} onChange={(e) => setVolumeInputM3(e.target.value)} placeholder="2.13" className={`${I} font-mono tabular-nums`} /></Field>
+              <Field label="Ref. materia prima" hint="Lote o acopio de origen (libre)"><input value={materiaPrimaRef} onChange={(e) => setMateriaPrimaRef(e.target.value)} placeholder="lote / acopio" className={I} /></Field>
+              <CtpConsumosPicker
+                consumos={consumos}
+                onChangeVolume={(id, value) => setConsumos((prev) => prev.map((c) => (c.woodEntryId === id ? { ...c, volumeM3: value } : c)))}
+                onRemove={(id) => setConsumos((prev) => prev.filter((c) => c.woodEntryId !== id))}
+                totalAtribuido={totalAtribuido}
+                volumeDeclared={Number(volumeInputM3) || 0}
+                costoProceso={costoProceso}
+                onCostoProcesoChange={setCostoProceso}
+                producedQty={Number(quantity) || 0}
+                producedUnitLabel={UNIT_LABELS[unit] ?? unit}
+              />
+              <Field label="Volumen consumido (m³)" hint="Se autocompleta con el total atribuido; editalo si la atribución es parcial">
+                <input type="number" step="0.0001" value={volumeInputM3} onChange={(e) => { setVolumeInputM3(e.target.value); setVolumeTouched(true); }} placeholder="2.13" className={`${I} font-mono tabular-nums`} />
+              </Field>
             </>
           )}
 
@@ -211,16 +274,5 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
         </footer>
       </div>
     </AdminModal>
-  );
-}
-
-const I = "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--data-success-600)] focus:ring-1 focus:ring-[var(--data-success-600)]/20 placeholder:text-[var(--text-tertiary)]";
-function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 flex items-center gap-1 text-sm font-medium text-[var(--text-primary)]">{label}{required && <span className="text-[var(--data-error-600)]">*</span>}</span>
-      {children}
-      {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}
-    </label>
   );
 }
