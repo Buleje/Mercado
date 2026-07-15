@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { ForestCtpConsumoDB, CtpInvariantError } from "./forest-ctp-consumo.db";
+import { ForestCtpConsumoDB, CtpInvariantError, CONSUMO_VIGENTE } from "./forest-ctp-consumo.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -485,6 +485,7 @@ export class ForestCtpDB {
           tenantId,
           woodEntryId: { in: ing.map((w) => w.id) },
           ...(opts.excludeCtpEntryId ? { ctpEntryId: { not: opts.excludeCtpEntryId } } : {}),
+          ...CONSUMO_VIGENTE, // mismo criterio que I2 y que saldos(): sin líneas muertas
         },
         _sum: { volumeM3: true },
       });

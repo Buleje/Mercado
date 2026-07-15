@@ -27,6 +27,24 @@ const CACHE_PREFIX = "forest-ctp";
 
 /** Redondeo a 4 decimales — precisión forestal (m³). */
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
+
+/**
+ * Un consumo sólo "cuenta" si su LÍNEA sigue viva (registrada y no borrada).
+ *
+ * SINGLE SOURCE — sin esto, el consumo de una línea anulada/borrada seguía
+ * comiendo el ingreso para siempre: `saldos()` (que filtra por el estado de la
+ * línea) decía "5.2 m³ libres" mientras I2 y `availableSource()` (que agregaban
+ * sobre ForestCtpConsumo sin mirar al padre) decían "no queda nada", del mismo
+ * ingreso y en el mismo momento. Dos capas dando números distintos del mismo
+ * hecho ⇒ era bug, no política. Anular una corrida secuestraba su materia prima.
+ *
+ * El soft-delete NO dispara el `onDelete: Cascade` del FK (eso es sólo para
+ * borrado físico), así que el filtro tiene que ser explícito acá.
+ * Encontrado 2026-07-15 al planear ADR-135.
+ */
+export const CONSUMO_VIGENTE = {
+  ctpEntry: { deletedAt: null, status: "registrado" },
+} as const;
 /** Redondeo a 2 decimales — plata. */
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -180,7 +198,12 @@ export class ForestCtpConsumoDB {
       //    que YA consumen OTRAS líneas (excluyendo esta, que se reemplaza).
       const otros = await tx.forestCtpConsumo.groupBy({
         by: ["woodEntryId"],
-        where: { tenantId, woodEntryId: { in: ids }, ctpEntryId: { not: ctpEntryId } },
+        where: {
+          tenantId,
+          woodEntryId: { in: ids },
+          ctpEntryId: { not: ctpEntryId },
+          ...CONSUMO_VIGENTE, // una línea anulada no sigue reservando materia prima
+        },
         _sum: { volumeM3: true },
       });
       const yaConsumido = new Map(otros.map((o) => [o.woodEntryId, Number(o._sum.volumeM3 ?? 0)]));

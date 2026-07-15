@@ -212,6 +212,52 @@ describe.skipIf(!HAS_DB)("I2 · sobre-consumo de un ingreso (patrón de blanqueo
   }, 30_000);
 });
 
+describe.skipIf(!HAS_DB)("Una línea muerta no secuestra su materia prima", () => {
+  /**
+   * REGRESIÓN — bug real encontrado el 2026-07-15 al planear ADR-135.
+   * El soft-delete NO dispara el `onDelete: Cascade` del FK, y los agregados de
+   * I2/`availableSource` sumaban sobre ForestCtpConsumo sin mirar el estado de
+   * la línea padre. Resultado: `saldos()` decía "5.2 m³ libres" y el picker
+   * decía "no queda nada", del MISMO ingreso y en el mismo momento. Anular una
+   * corrida secuestraba su materia prima para siempre, invisible.
+   */
+  it("anular la corrida devuelve el ingreso al disponible (I2 deja de contarlo)", async () => {
+    const ing = await crearIngreso(10);
+    const a = await crearLinea(10);
+    await ForestCtpConsumoDB.setConsumos(TENANT, a.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+
+    // Con la corrida viva, el ingreso está agotado.
+    const b = await crearLinea(10);
+    await expect(
+      ForestCtpConsumoDB.setConsumos(TENANT, b.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P),
+    ).rejects.toMatchObject({ code: "I2_SOBRE_CONSUMO" });
+
+    // Se anula la corrida A → su consumo deja de contar.
+    await ForestCtpDB.annul(TENANT, a.id, "error de carga", P);
+
+    // Ahora los 10 m³ vuelven a estar disponibles para otra corrida.
+    const res = await ForestCtpConsumoDB.setConsumos(TENANT, b.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+    expect(res).toHaveLength(1);
+  }, 30_000);
+
+  it("una corrida borrada tampoco aparece consumiendo en el picker", async () => {
+    const ing = await crearIngreso(7);
+    const a = await crearLinea(7);
+    await ForestCtpConsumoDB.setConsumos(TENANT, a.id, [{ woodEntryId: ing.id, volumeM3: 7 }], P);
+
+    await ForestCtpDB.softDelete(TENANT, a.id, P);
+
+    const items = await ForestCtpDB.availableSource(TENANT, "produccion");
+    // `availableSource` devuelve una unión (ingreso | producto); el filtro por
+    // `kind` la estrecha para que `disponible` exista.
+    const guia = items
+      .filter((i): i is Extract<typeof i, { kind: "ingreso" }> => i.kind === "ingreso")
+      .find((i) => i.id === ing.id);
+    // Vuelve a ofrecerse con su volumen entero.
+    expect(guia?.disponible).toBe(7);
+  }, 30_000);
+});
+
 describe.skipIf(!HAS_DB)("I1 · sobre-atribución vs. el acta", () => {
   it("rechaza atribuir más de lo que la línea declara consumido", async () => {
     const ing = await crearIngreso(50);
