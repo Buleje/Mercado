@@ -41,7 +41,7 @@ interface GtfItem {
   volumeM3?: number | null; quantity?: number | null; pieces?: number | null; unit?: string | null;
 }
 interface GtfRecord {
-  gtfDate?: string | null; titularName?: string | null; tituloHabilitante?: string | null;
+  gtfNumber?: string; gtfDate?: string | null; titularName?: string | null; tituloHabilitante?: string | null;
   parcelaCorta?: string | null; origen?: string | null; transportista?: string | null;
   placaVehiculo?: string | null; volumenTotalM3?: number | null; piezasTotal?: number | null;
   items?: GtfItem[] | null;
@@ -162,6 +162,10 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
   const [loadingGtf, setLoadingGtf] = useState(false);
   const [gtfMsg, setGtfMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [gtfItems, setGtfItems] = useState<GtfItem[]>([]);
+  const [showGuias, setShowGuias] = useState(false);
+  const [guias, setGuias] = useState<GtfRecord[]>([]);
+  const [loadingGuias, setLoadingGuias] = useState(false);
+  const [guiaQuery, setGuiaQuery] = useState("");
 
   // Load draft del localStorage
   useEffect(() => {
@@ -209,6 +213,25 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
     setGtfItems([]);
   };
 
+  // Aplica los datos de una guía al formulario (usado por número y por picker).
+  const aplicarGuia = (gtf: GtfRecord) => {
+    const region = REGIONS_PE.find((rg) => (gtf.origen ?? "").toLowerCase().includes(rg.toLowerCase()));
+    setData((prev) => ({
+      ...prev,
+      gtfNumber: gtf.gtfNumber ?? prev.gtfNumber,
+      gtfDate: gtf.gtfDate ? String(gtf.gtfDate).slice(0, 10) : prev.gtfDate,
+      providerName: gtf.titularName ?? prev.providerName,
+      originCode: gtf.tituloHabilitante ?? gtf.parcelaCorta ?? prev.originCode,
+      originRegion: region ?? prev.originRegion,
+      notes: [prev.notes, gtf.origen ? `Origen guía: ${gtf.origen}` : "", gtf.transportista ? `Transportista: ${gtf.transportista}${gtf.placaVehiculo ? ` · ${gtf.placaVehiculo}` : ""}` : ""].filter(Boolean).join(" · "),
+    }));
+    setShowGuias(false);
+    const items = Array.isArray(gtf.items) ? gtf.items : [];
+    if (items.length === 1) { fillFromItem(items[0]); setGtfMsg({ ok: true, text: `Guía cargada: ${gtf.titularName ?? "titular"} · datos importados.` }); }
+    else if (items.length > 1) { setGtfItems(items); setGtfMsg({ ok: true, text: `Guía cargada. Tiene ${items.length} ítems — elegí cuál registrar en este ingreso.` }); }
+    else { setData((prev) => ({ ...prev, volumeM3: gtf.volumenTotalM3 != null ? String(gtf.volumenTotalM3) : prev.volumeM3, pieces: gtf.piezasTotal != null ? String(gtf.piezasTotal) : prev.pieces })); setGtfMsg({ ok: true, text: "Guía cargada (sin detalle de ítems)." }); }
+  };
+
   // Carga la guía por su N° de registro y autocompleta el ingreso.
   async function cargarGuia() {
     const n = data.gtfNumber.trim();
@@ -218,23 +241,26 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
       const r = await fetch(`/api/admin/forestal/gtf?gtfNumber=${encodeURIComponent(n)}`, { credentials: "include" });
       if (r.status === 404) { setGtfMsg({ ok: false, text: `No hay una guía emitida con el N° ${n}. Revisá el número.` }); return; }
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const gtf = (await r.json()).gtf as GtfRecord;
-      const region = REGIONS_PE.find((rg) => (gtf.origen ?? "").toLowerCase().includes(rg.toLowerCase()));
-      setData((prev) => ({
-        ...prev,
-        gtfDate: gtf.gtfDate ? String(gtf.gtfDate).slice(0, 10) : prev.gtfDate,
-        providerName: gtf.titularName ?? prev.providerName,
-        originCode: gtf.tituloHabilitante ?? gtf.parcelaCorta ?? prev.originCode,
-        originRegion: region ?? prev.originRegion,
-        notes: [prev.notes, gtf.origen ? `Origen guía: ${gtf.origen}` : "", gtf.transportista ? `Transportista: ${gtf.transportista}${gtf.placaVehiculo ? ` · ${gtf.placaVehiculo}` : ""}` : ""].filter(Boolean).join(" · "),
-      }));
-      const items = Array.isArray(gtf.items) ? gtf.items : [];
-      if (items.length === 1) { fillFromItem(items[0]); setGtfMsg({ ok: true, text: `Guía cargada: ${gtf.titularName ?? "titular"} · datos importados.` }); }
-      else if (items.length > 1) { setGtfItems(items); setGtfMsg({ ok: true, text: `Guía cargada. Tiene ${items.length} ítems — elegí cuál registrar en este ingreso.` }); }
-      else { setData((prev) => ({ ...prev, volumeM3: gtf.volumenTotalM3 != null ? String(gtf.volumenTotalM3) : prev.volumeM3, pieces: gtf.piezasTotal != null ? String(gtf.piezasTotal) : prev.pieces })); setGtfMsg({ ok: true, text: "Guía cargada (sin detalle de ítems)." }); }
+      aplicarGuia((await r.json()).gtf as GtfRecord);
     } catch (e) { setGtfMsg({ ok: false, text: e instanceof Error ? e.message : String(e) }); }
     finally { setLoadingGtf(false); }
   }
+
+  // Lista de guías emitidas (picker) — evita teclear el número.
+  async function toggleGuias() {
+    if (showGuias) { setShowGuias(false); return; }
+    setShowGuias(true); setLoadingGuias(true);
+    try {
+      const r = await fetch(`/api/admin/forestal/gtf`, { credentials: "include" });
+      const list = r.ok ? ((await r.json()).gtfs ?? []) : [];
+      setGuias((list as GtfRecord[]).filter((g) => (g as { status?: string }).status !== "anulada"));
+    } catch { setGuias([]); }
+    finally { setLoadingGuias(false); }
+  }
+  const guiasFiltradas = useMemo(() => {
+    const q = guiaQuery.trim().toLowerCase();
+    return (q ? guias.filter((g) => (g.gtfNumber ?? "").toLowerCase().includes(q) || (g.titularName ?? "").toLowerCase().includes(q)) : guias).slice(0, 50);
+  }, [guias, guiaQuery]);
 
   // Especie derivada
   const selectedSpecies = speciesOptions.find((s) => s.slug === data.speciesSlug);
@@ -437,8 +463,33 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                     {loadingGtf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     Cargar guía
                   </button>
+                  <button
+                    type="button"
+                    onClick={toggleGuias}
+                    className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition-colors ${showGuias ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-900)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                  >
+                    <Search className="h-4 w-4" /> Ver guías
+                  </button>
                 </div>
               </Field>
+              {showGuias && (
+                <div className="space-y-2 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] p-2">
+                  <input value={guiaQuery} onChange={(e) => setGuiaQuery(e.target.value)} placeholder="Buscar por N° o titular…" className={`${cls.input} h-9`} />
+                  <div className="max-h-56 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+                    {loadingGuias ? <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando guías…</div>
+                      : guiasFiltradas.length === 0 ? <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">No hay guías emitidas. Se emiten en el Libro de Títulos Habilitantes → GTF.</div>
+                        : guiasFiltradas.map((g, i) => (
+                          <button key={i} type="button" onClick={() => aplicarGuia(g)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]">
+                            <span className="flex min-w-0 flex-col">
+                              <span className="truncate font-mono text-sm font-bold text-[var(--text-primary)]">{g.gtfNumber}</span>
+                              <span className="truncate text-xs text-[var(--text-secondary)]">{g.titularName ?? "—"}{g.origen ? ` · ${g.origen}` : ""}</span>
+                            </span>
+                            <span className="shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{g.volumenTotalM3 != null ? `${g.volumenTotalM3} m³` : ""}{g.gtfDate ? <><br />{String(g.gtfDate).slice(0, 10)}</> : ""}</span>
+                          </button>
+                        ))}
+                  </div>
+                </div>
+              )}
               {gtfMsg && (
                 <div className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${gtfMsg.ok ? "bg-[var(--data-success-50)] text-[var(--data-success-900)]" : "bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
                   {gtfMsg.ok ? <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
