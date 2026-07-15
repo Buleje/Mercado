@@ -58,10 +58,16 @@ export class CtpInvariantError extends Error {
   constructor(
     message: string,
     readonly code:
+      // ── Entrada: ingreso → producción (ADR-134) ──
       | "I1_SOBRE_ATRIBUCION"
       | "I2_SOBRE_CONSUMO"
-      /** Despachar producto que no se produjo — simétrico de I2 en la salida. */
+      /** Despachar producto que no se produjo — el acta, agregado por producto. */
       | "I3_SOBRE_DESPACHO"
+      // ── Salida: producción → despacho (ADR-135) ──
+      /** Atribuir a corridas más de lo que el despacho declara (≅ I1). */
+      | "I4_SOBRE_ATRIBUCION_DESPACHO"
+      /** Una corrida despachada dos veces (≅ I2). Lo que I3 no puede ver. */
+      | "I5_SOBRE_SALIDA_PRODUCCION"
       | "TENANT_MISMATCH"
       | "CONGELADO",
     readonly detail?: Record<string, unknown>,

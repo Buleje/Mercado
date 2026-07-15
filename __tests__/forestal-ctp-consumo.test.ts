@@ -33,6 +33,7 @@ import { prisma } from "@/lib/prisma";
 import { ForestCtpConsumoDB, CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
+import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 
 const TENANT = "main";
 const runId = Math.random().toString(36).slice(2, 8);
@@ -106,6 +107,9 @@ async function purgarDatosDePrueba() {
   // Orden inverso de FKs: el RESTRICT de woodEntryId exige borrar consumos antes.
   await prisma.forestCtpConsumo.deleteMany({
     where: { OR: [{ ctpEntry: linea }, { woodEntry: wood }, { createdBy: { startsWith: `TEST-CTP-` } }] },
+  });
+  await prisma.forestCtpDespachoOrigen.deleteMany({
+    where: { OR: [{ despacho: linea }, { produccion: linea }, { createdBy: { startsWith: `TEST-CTP-` } }] },
   });
   await prisma.forestCtpEntry.deleteMany({ where: linea });
   await prisma.woodEntry.deleteMany({ where: wood });
@@ -455,6 +459,121 @@ describe.skipIf(!HAS_DB)("I3 · sobre-despacho (no se despacha lo que no se prod
     for (const r of res) if (r.status === "fulfilled") lineIds.push(r.value.id);
 
     expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("I4/I5 · cadena de custodia del despacho (ADR-135)", () => {
+  const tipo = () => `${P}-cad-${Math.random().toString(36).slice(2, 6)}`;
+
+  async function corrida(cantidad: number, t: string) {
+    const l = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "produccion", lineNo: 92_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: t, quantity: cantidad, unit: "m3",
+        status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(l.id);
+    return l;
+  }
+  async function despacho(cantidad: number, t: string) {
+    const l = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "despacho", lineNo: 93_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: t, quantity: cantidad, unit: "m3",
+        gtfNumber: `${P}-out`, status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(l.id);
+    return l;
+  }
+
+  it("I4 rechaza atribuir a corridas más de lo que el despacho declara", async () => {
+    const t = tipo();
+    const c = await corrida(50, t);
+    const d = await despacho(5, t);
+    await expect(
+      ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c.id, quantity: 6 }], P),
+    ).rejects.toMatchObject({ code: "I4_SOBRE_ATRIBUCION_DESPACHO" });
+  }, 30_000);
+
+  /**
+   * ESCENARIO B del ADR-135 — la razón de ser de I5.
+   * El agregado de I3 CUADRA (producido 16.2 − despachado 16.2 = 0) mientras
+   * una corrida de 6.2 sostiene 16.2. I3 no puede verlo porque suma por
+   * producto; I5 lo ve porque razona fila por fila. Es la pregunta de EUDR.
+   */
+  it("I5 atrapa la corrida drenada dos veces — lo que I3 no puede ver", async () => {
+    const t = tipo();
+    const c1 = await corrida(6.2, t);
+    await corrida(10, t); // el agregado por producto cuadra gracias a ésta
+    const d1 = await despacho(6.2, t);
+    const d2 = await despacho(10, t);
+
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d1.id, [{ produccionEntryId: c1.id, quantity: 6.2 }], P);
+    // d2 también cita c1: I3 y I4 lo dejan pasar, I5 no.
+    await expect(
+      ForestCtpDespachoDB.setOrigenes(TENANT, d2.id, [{ produccionEntryId: c1.id, quantity: 10 }], P),
+    ).rejects.toMatchObject({ code: "I5_SOBRE_SALIDA_PRODUCCION" });
+  }, 30_000);
+
+  it("rechaza citar otro despacho como origen (orientación)", async () => {
+    const t = tipo();
+    await corrida(10, t);
+    const d1 = await despacho(5, t);
+    const d2 = await despacho(5, t);
+    await expect(
+      ForestCtpDespachoDB.setOrigenes(TENANT, d1.id, [{ produccionEntryId: d2.id, quantity: 5 }], P),
+    ).rejects.toMatchObject({ code: "TENANT_MISMATCH" });
+  }, 30_000);
+
+  it("rechaza mezclar productos distintos (tablones no salen de un despacho de leña)", async () => {
+    const t1 = tipo();
+    const c = await corrida(10, t1);
+    const d = await despacho(5, tipo()); // otro producto
+    await expect(
+      ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c.id, quantity: 5 }], P),
+    ).rejects.toMatchObject({ code: "TENANT_MISMATCH" });
+  }, 30_000);
+
+  it("aguanta concurrencia: dos despachos en paralelo sobre la misma corrida", async () => {
+    const t = tipo();
+    const c = await corrida(10, t);
+    const d1 = await despacho(10, t);
+    const d2 = await despacho(10, t);
+
+    const res = await Promise.allSettled([
+      ForestCtpDespachoDB.setOrigenes(TENANT, d1.id, [{ produccionEntryId: c.id, quantity: 10 }], P),
+      ForestCtpDespachoDB.setOrigenes(TENANT, d2.id, [{ produccionEntryId: c.id, quantity: 10 }], P),
+    ]);
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  }, 30_000);
+
+  it("trazabilidadCompleta: el libro admite huecos, el certificado no", async () => {
+    const t = tipo();
+    const ing = await crearIngreso(10);
+    const c = await corrida(8, t);
+    const d = await despacho(8, t);
+
+    // Atribución PARCIAL → el libro la acepta…
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c.id, quantity: 5 }], P);
+    let tz = await ForestCtpDespachoDB.trazabilidadCompleta(TENANT, d.id);
+    expect(tz.completa).toBe(false);
+    expect(tz.motivo).toBe("atribucion_parcial");
+    expect(tz.sinAtribuir).toBe(3);
+
+    // …atribuido al 100%, pero la corrida no sabe de qué ingreso salió:
+    // la cadena se corta un eslabón más atrás y el certificado mentiría igual.
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c.id, quantity: 8 }], P);
+    tz = await ForestCtpDespachoDB.trazabilidadCompleta(TENANT, d.id);
+    expect(tz.completa).toBe(false);
+    expect(tz.motivo).toBe("corrida_sin_origen");
+
+    // Recién con la cadena entera (ingreso → corrida → despacho) queda completa.
+    await ForestCtpConsumoDB.setConsumos(TENANT, c.id, [{ woodEntryId: ing.id, volumeM3: 10 }], P);
+    tz = await ForestCtpDespachoDB.trazabilidadCompleta(TENANT, d.id);
+    expect(tz.completa).toBe(true);
+    expect(tz.corridas[0].guias).toContain(ing.gtfNumber);
   }, 30_000);
 });
 

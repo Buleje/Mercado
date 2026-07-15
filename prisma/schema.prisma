@@ -5289,9 +5289,49 @@ model ForestCtpEntry {
   /// Qué ingresos (y cuántos m³ de cada uno) alimentaron esta corrida (ADR-134 D5).
   consumos ForestCtpConsumo[]
 
+  /// Dos back-relations porque la misma tabla es despacho en una punta de
+  /// ForestCtpDespachoOrigen y corrida de producción en la otra (ADR-135).
+  /// `origenes`  → si esta línea es un DESPACHO: de qué corridas salió.
+  /// `salidas`   → si esta línea es una CORRIDA: en qué despachos se fue.
+  origenes ForestCtpDespachoOrigen[] @relation("DespachoOrigenDespacho")
+  salidas  ForestCtpDespachoOrigen[] @relation("DespachoOrigenProduccion")
+
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, gtfNumber])
   @@index([deletedAt])
+}
+
+/// ForestCtpDespachoOrigen — puente N:M entre una línea de DESPACHO y las
+/// corridas de producción de las que salió el producto (ADR-135).
+///
+/// Cierra el último tramo de la cadena de custodia: con ForestCtpConsumo
+/// (ingreso→producción) más esta tabla se puede responder de punta a punta
+/// "¿de qué árbol salió esta tabla que despaché?" — lo que exige EUDR.
+/// Un despacho real saca producto de varias corridas, y una corrida alimenta
+/// varios despachos.
+model ForestCtpDespachoOrigen {
+  id       String @id @default(cuid())
+  tenantId String // denormalizado — regla 3 + detección de fuga (ADR-134 D3)
+
+  despachoEntryId   String
+  despacho          ForestCtpEntry @relation("DespachoOrigenDespacho", fields: [despachoEntryId], references: [id], onDelete: Cascade)
+  produccionEntryId String
+  produccion        ForestCtpEntry @relation("DespachoOrigenProduccion", fields: [produccionEntryId], references: [id], onDelete: Restrict)
+
+  /// Hecho físico: cuánto de ESA corrida salió en ESE despacho. NOT NULL, > 0.
+  /// Decimal(14,4) — la precisión se copia de la columna que la ACOTA
+  /// (ForestCtpEntry.quantity), no de la tabla que se parece (ForestCtpConsumo
+  /// es 12,4 porque espeja WoodEntry.volumeM3). Con 12,4 una atribución no
+  /// podría representar la cantidad de la línea que la contiene.
+  quantity Decimal @db.Decimal(14, 4)
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([despachoEntryId, produccionEntryId]) // una corrida 1 vez por despacho: se suma, no se duplica
+  @@index([despachoEntryId])
+  @@index([tenantId, produccionEntryId])
 }
 
 /// ForestCtpConsumo — puente N:M entre una línea del libro CTP y los ingresos de

@@ -38,6 +38,7 @@ export type CtpAuditAction =
   | "ctp_linea_delete"
   // Atribución de origen y costeo — lo más sensible del módulo
   | "ctp_consumos_set"
+  | "ctp_origenes_set"
   | "ctp_costo_congelar";
 
 /**
