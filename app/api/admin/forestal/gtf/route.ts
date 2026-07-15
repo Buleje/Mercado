@@ -50,16 +50,30 @@ async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
   return ok ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
 }
+/** Lectura: LOTH (emisor) o CTP (recibe con la guía) pueden consultar guías. */
+async function ensureReadSpec(tenantId: string) {
+  const loth = await isSpecializationEnabled(tenantId, "spec:forestal:loth-libro");
+  const ctp = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
+  return loth || ctp ? null : NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
+}
 
 export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "GENEROUS", "loth");
   if (rl) return rl;
-  const guard = await ensureSpec(auth.tenantId);
+  const guard = await ensureReadSpec(auth.tenantId);
   if (guard) return guard;
-  const id = new URL(req.url).searchParams.get("id");
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+  const gtfNumber = url.searchParams.get("gtfNumber");
   try {
+    if (gtfNumber) {
+      // Importar al ingreso CTP: buscar la guía emitida por su número.
+      const gtf = await ForestGtfDB.findByNumber(auth.tenantId, gtfNumber);
+      if (!gtf) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ gtf });
+    }
     if (id) {
       const gtf = await ForestGtfDB.getById(auth.tenantId, id);
       if (!gtf) return NextResponse.json({ error: "not_found" }, { status: 404 });

@@ -35,6 +35,18 @@ interface Props {
   onSaved: (opts?: { keepOpen?: boolean }) => void;
 }
 
+// Guía emitida (ForestGtf) — para importar sus datos al ingreso.
+interface GtfItem {
+  species?: string | null; scientific?: string | null; productType?: string | null;
+  volumeM3?: number | null; quantity?: number | null; pieces?: number | null; unit?: string | null;
+}
+interface GtfRecord {
+  gtfDate?: string | null; titularName?: string | null; tituloHabilitante?: string | null;
+  parcelaCorta?: string | null; origen?: string | null; transportista?: string | null;
+  placaVehiculo?: string | null; volumenTotalM3?: number | null; piezasTotal?: number | null;
+  items?: GtfItem[] | null;
+}
+
 // ─── Catálogos ────────────────────────────────────────────────────────────
 
 const ORIGIN_TYPES = [
@@ -146,6 +158,10 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
   const [data, setData] = useState<DraftData>(INITIAL);
   const [speciesQuery, setSpeciesQuery] = useState("");
   const [showSpeciesPicker, setShowSpeciesPicker] = useState(false);
+  // Importar guía por N° de registro (autocompleta el ingreso).
+  const [loadingGtf, setLoadingGtf] = useState(false);
+  const [gtfMsg, setGtfMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [gtfItems, setGtfItems] = useState<GtfItem[]>([]);
 
   // Load draft del localStorage
   useEffect(() => {
@@ -169,6 +185,55 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
 
   function update<K extends keyof DraftData>(field: K, value: DraftData[K]) {
     setData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  const mapProduct = (pt: string | null | undefined, fallback: string): string => {
+    if (!pt) return fallback;
+    const low = pt.toLowerCase();
+    return PRODUCT_TYPES.find((p) => p.label.toLowerCase().includes(low) || low.includes(p.value))?.value ?? fallback;
+  };
+
+  // Rellena especie/producto/volumen/piezas desde un ítem de la guía.
+  const fillFromItem = (it: GtfItem) => {
+    setData((prev) => {
+      const slug = speciesOptions.find((s) => s.commonName.toLowerCase() === (it.species ?? "").toLowerCase())?.slug;
+      return {
+        ...prev,
+        speciesSlug: slug ?? (it.species ? "otro" : prev.speciesSlug),
+        customSpeciesName: slug ? "" : (it.species ?? prev.customSpeciesName),
+        productType: mapProduct(it.productType, prev.productType),
+        volumeM3: it.volumeM3 != null ? String(it.volumeM3) : it.quantity != null ? String(it.quantity) : prev.volumeM3,
+        pieces: it.pieces != null ? String(it.pieces) : prev.pieces,
+      };
+    });
+    setGtfItems([]);
+  };
+
+  // Carga la guía por su N° de registro y autocompleta el ingreso.
+  async function cargarGuia() {
+    const n = data.gtfNumber.trim();
+    if (!n) { setGtfMsg({ ok: false, text: "Escribí el N° de guía primero." }); return; }
+    setLoadingGtf(true); setGtfMsg(null); setGtfItems([]); setError(null);
+    try {
+      const r = await fetch(`/api/admin/forestal/gtf?gtfNumber=${encodeURIComponent(n)}`, { credentials: "include" });
+      if (r.status === 404) { setGtfMsg({ ok: false, text: `No hay una guía emitida con el N° ${n}. Revisá el número.` }); return; }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const gtf = (await r.json()).gtf as GtfRecord;
+      const region = REGIONS_PE.find((rg) => (gtf.origen ?? "").toLowerCase().includes(rg.toLowerCase()));
+      setData((prev) => ({
+        ...prev,
+        gtfDate: gtf.gtfDate ? String(gtf.gtfDate).slice(0, 10) : prev.gtfDate,
+        providerName: gtf.titularName ?? prev.providerName,
+        originCode: gtf.tituloHabilitante ?? gtf.parcelaCorta ?? prev.originCode,
+        originRegion: region ?? prev.originRegion,
+        notes: [prev.notes, gtf.origen ? `Origen guía: ${gtf.origen}` : "", gtf.transportista ? `Transportista: ${gtf.transportista}${gtf.placaVehiculo ? ` · ${gtf.placaVehiculo}` : ""}` : ""].filter(Boolean).join(" · "),
+      }));
+      const items = Array.isArray(gtf.items) ? gtf.items : [];
+      if (items.length === 1) { fillFromItem(items[0]); setGtfMsg({ ok: true, text: `Guía cargada: ${gtf.titularName ?? "titular"} · datos importados.` }); }
+      else if (items.length > 1) { setGtfItems(items); setGtfMsg({ ok: true, text: `Guía cargada. Tiene ${items.length} ítems — elegí cuál registrar en este ingreso.` }); }
+      else { setData((prev) => ({ ...prev, volumeM3: gtf.volumenTotalM3 != null ? String(gtf.volumenTotalM3) : prev.volumeM3, pieces: gtf.piezasTotal != null ? String(gtf.piezasTotal) : prev.pieces })); setGtfMsg({ ok: true, text: "Guía cargada (sin detalle de ítems)." }); }
+    } catch (e) { setGtfMsg({ ok: false, text: e instanceof Error ? e.message : String(e) }); }
+    finally { setLoadingGtf(false); }
   }
 
   // Especie derivada
@@ -351,17 +416,48 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
 
             {/* ─── 1 · GTF ─────────────────────────────────────────── */}
             <Section index={1} title="Guía de Transporte Forestal">
-              <Field label="N° GTF" required>
-                <input
-                  type="text"
-                  value={data.gtfNumber}
-                  onChange={(e) => update("gtfNumber", e.target.value)}
-                  placeholder="0001234"
-                  autoFocus
-                  required
-                  className={cls.input}
-                />
+              <Field label="N° GTF" required hint="Escribí el número y tocá «Cargar guía» para traer todos los datos.">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={data.gtfNumber}
+                    onChange={(e) => { update("gtfNumber", e.target.value); setGtfMsg(null); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); cargarGuia(); } }}
+                    placeholder="0001234"
+                    autoFocus
+                    required
+                    className={`${cls.input} flex-1`}
+                  />
+                  <button
+                    type="button"
+                    onClick={cargarGuia}
+                    disabled={loadingGtf || !data.gtfNumber.trim()}
+                    className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3.5 text-sm font-bold text-white transition-colors hover:bg-[var(--data-success-800)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loadingGtf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    Cargar guía
+                  </button>
+                </div>
               </Field>
+              {gtfMsg && (
+                <div className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${gtfMsg.ok ? "bg-[var(--data-success-50)] text-[var(--data-success-900)]" : "bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
+                  {gtfMsg.ok ? <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+                  <span>{gtfMsg.text}</span>
+                </div>
+              )}
+              {gtfItems.length > 1 && (
+                <div className="space-y-1 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] p-2">
+                  <span className="px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-900)]">Elegí el ítem de la guía</span>
+                  <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+                    {gtfItems.map((it, i) => (
+                      <button key={i} type="button" onClick={() => fillFromItem(it)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]">
+                        <span className="truncate text-sm font-medium text-[var(--text-primary)]">{it.species ?? it.productType ?? "Ítem"}</span>
+                        <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{it.volumeM3 != null ? `${it.volumeM3} m³` : it.quantity != null ? `${it.quantity} ${it.unit ?? ""}` : ""}{it.pieces != null ? ` · ${it.pieces} pz` : ""}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <Grid cols={2}>
                 <Field label="Fecha del GTF">
                   <input

@@ -96,6 +96,17 @@ export class ForestGtfDB {
     return prisma.forestGtf.findFirst({ where: { tenantId, id, deletedAt: null } });
   }
 
+  /** Busca una guía por su número (para importar sus datos al ingreso CTP). */
+  static async findByNumber(tenantId: string, gtfNumber: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const n = gtfNumber.trim();
+    if (!n) return null;
+    return prisma.forestGtf.findFirst({
+      where: { tenantId, gtfNumber: n, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   static async annul(tenantId: string, id: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");
