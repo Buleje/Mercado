@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { ForestCtpConsumoDB } from "./forest-ctp-consumo.db";
+import { ForestCtpConsumoDB, CtpInvariantError } from "./forest-ctp-consumo.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -35,6 +35,23 @@ function dateRange(opts: { fromDate?: Date; toDate?: Date }): Prisma.DateTimeFil
  */
 function speciesKey(raw: string | null | undefined): string {
   return (raw ?? "").trim().toLowerCase().replace(/\s+/g, " ") || "—";
+}
+
+/**
+ * Clave de agrupación de un producto transformado (tipo + especie).
+ *
+ * SINGLE SOURCE: antes `saldos()` usaba `"tipo · especie"` y `availableSource()`
+ * usaba `"tipo|especie"`, sin normalizar ninguna de las dos — o sea que
+ * "Tablones|Tornillo" y "tablones|tornillo " contaban como productos distintos
+ * y el stock se partía en dos. Mismo criterio que `speciesKey`.
+ */
+function productKey(productType: string | null | undefined, species: string | null | undefined): string {
+  return `${speciesKey(productType)}|${speciesKey(species)}`;
+}
+
+/** Etiqueta legible del producto (la clave es para agrupar, esto es para mostrar). */
+function productLabel(productType: string | null | undefined, species: string | null | undefined): string {
+  return `${productType ?? "—"} · ${species ?? "—"}`;
 }
 
 export interface SpeciesBalance {
@@ -81,16 +98,68 @@ export interface CtpEntryInput {
 }
 
 export class ForestCtpDB {
+  /**
+   * I3 — no se puede despachar producto que no existe.
+   *
+   * Simétrico a I2 (que impide consumir materia prima inexistente). Sin esto el
+   * módulo era asimétrico: blindaba la entrada y dejaba la salida abierta, y un
+   * sobre-despacho sólo se veía en rojo en Saldos DESPUÉS de haberse registrado
+   * — o sea, después de que la GTF de salida ya se emitió.
+   *
+   * `tx` obligatorio + lock: el stock de un producto no vive en una fila, se
+   * deriva de N líneas. Se lockean las de producción que lo respaldan, así dos
+   * despachos concurrentes del mismo producto se serializan en vez de leer los
+   * dos el mismo stock y pasar ambos (el TOCTOU que I2 ya sufrió).
+   */
+  private static async assertStockDisponible(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: CtpEntryInput,
+  ): Promise<void> {
+    const pedido = Number(input.quantity ?? 0);
+    if (pedido <= 0) return; // Sin cantidad no hay nada que validar.
+
+    const key = productKey(input.productType, input.speciesCommon);
+
+    // Lock de las líneas de producción del producto = el recurso disputado.
+    await tx.$queryRaw`
+      SELECT "id" FROM "ForestCtpEntry"
+      WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+        AND "status" = 'registrado' AND "section" = 'produccion'
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+
+    const lineas = await tx.forestCtpEntry.findMany({
+      where: { tenantId, deletedAt: null, status: "registrado" },
+      select: { section: true, productType: true, speciesCommon: true, quantity: true, unit: true },
+    });
+
+    let producido = 0;
+    let despachado = 0;
+    for (const l of lineas) {
+      if (productKey(l.productType, l.speciesCommon) !== key) continue;
+      if (l.section === "produccion") producido += Number(l.quantity ?? 0);
+      if (l.section === "despacho") despachado += Number(l.quantity ?? 0);
+    }
+    const stock = r4(producido - despachado);
+
+    if (r4(pedido) > stock) {
+      const label = productLabel(input.productType, input.speciesCommon);
+      throw new CtpInvariantError(
+        stock <= 0
+          ? `No hay stock de ${label} para despachar: se produjeron ${r4(producido)} y ya se despacharon ${r4(despachado)}.`
+          : `Sólo quedan ${stock} de ${label} sin despachar; estás pidiendo ${r4(pedido)}.`,
+        "I3_SOBRE_DESPACHO",
+        { producto: label, stock, pedido: r4(pedido), producido: r4(producido), despachado: r4(despachado) },
+      );
+    }
+  }
+
   static async create(tenantId: string, input: CtpEntryInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!CTP_SECTIONS.includes(input.section)) throw new Error(`invalid section: ${input.section}`);
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
-
-    const max = await prisma.forestCtpEntry.aggregate({
-      where: { tenantId, section: input.section },
-      _max: { lineNo: true },
-    });
-    const lineNo = (max._max.lineNo ?? 0) + 1;
 
     // Rendimiento auto si hay input+output en m³ y no se pasó explícito
     let rendimiento = input.rendimientoPct;
@@ -100,31 +169,45 @@ export class ForestCtpDB {
       rendimiento = Math.round((outQty / inVol) * 10000) / 100;
     }
 
-    const entry = await prisma.forestCtpEntry.create({
-      data: {
-        tenantId,
-        section: input.section,
-        lineNo,
-        entryDate: input.entryDate ?? new Date(),
-        gtfIngreso: input.gtfIngreso?.trim() || null,
-        materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
-        speciesCommon: input.speciesCommon?.trim() || null,
-        speciesScientific: input.speciesScientific?.trim() || null,
-        cites: input.cites ?? false,
-        productType: input.productType?.trim() || null,
-        volumeInputM3: dec(input.volumeInputM3),
-        rendimientoPct: dec(rendimiento),
-        quantity: dec(input.quantity),
-        unit: input.unit?.trim() || null,
-        pieces: input.pieces ?? null,
-        gtfNumber: input.gtfNumber?.trim() || null,
-        destino: input.destino?.trim() || null,
-        observations: input.observations?.trim() || null,
-        costoProceso: dec(input.costoProceso),
-        moneda: input.moneda?.trim() || "PEN",
-        status: "registrado",
-        createdBy: input.createdBy,
-      },
+    // La validación de stock y el INSERT van en UNA transacción: si se valida
+    // fuera, entre el chequeo y el insert entra otro despacho y el guard no sirve.
+    const entry = await prisma.$transaction(async (tx) => {
+      if (input.section === "despacho") {
+        await ForestCtpDB.assertStockDisponible(tx, tenantId, input);
+      }
+
+      const max = await tx.forestCtpEntry.aggregate({
+        where: { tenantId, section: input.section },
+        _max: { lineNo: true },
+      });
+      const lineNo = (max._max.lineNo ?? 0) + 1;
+
+      return tx.forestCtpEntry.create({
+        data: {
+          tenantId,
+          section: input.section,
+          lineNo,
+          entryDate: input.entryDate ?? new Date(),
+          gtfIngreso: input.gtfIngreso?.trim() || null,
+          materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
+          speciesCommon: input.speciesCommon?.trim() || null,
+          speciesScientific: input.speciesScientific?.trim() || null,
+          cites: input.cites ?? false,
+          productType: input.productType?.trim() || null,
+          volumeInputM3: dec(input.volumeInputM3),
+          rendimientoPct: dec(rendimiento),
+          quantity: dec(input.quantity),
+          unit: input.unit?.trim() || null,
+          pieces: input.pieces ?? null,
+          gtfNumber: input.gtfNumber?.trim() || null,
+          destino: input.destino?.trim() || null,
+          observations: input.observations?.trim() || null,
+          costoProceso: dec(input.costoProceso),
+          moneda: input.moneda?.trim() || "PEN",
+          status: "registrado",
+          createdBy: input.createdBy,
+        },
+      });
     });
 
     auditCtp({
@@ -132,7 +215,7 @@ export class ForestCtpDB {
       action: "ctp_linea_create",
       entity: "ForestCtpEntry",
       entityId: entry.id,
-      detail: `Registró la línea #${lineNo} de ${input.section} · ${entry.speciesCommon ?? "sin especie"} · ${entry.productType ?? "sin producto"}${entry.quantity != null ? ` · ${Number(entry.quantity)} ${entry.unit ?? ""}` : ""}`,
+      detail: `Registró la línea #${entry.lineNo} de ${input.section} · ${entry.speciesCommon ?? "sin especie"} · ${entry.productType ?? "sin producto"}${entry.quantity != null ? ` · ${Number(entry.quantity)} ${entry.unit ?? ""}` : ""}`,
       user: input.createdBy,
     });
 
@@ -302,18 +385,20 @@ export class ForestCtpDB {
     }
 
     let consumidoM3 = 0;
-    const prod: Record<string, { producido: number; despachado: number }> = {};
+    // Agrupado por clave normalizada; se guarda la etiqueta de la 1ª aparición.
+    const prod: Record<string, { label: string; producido: number; despachado: number }> = {};
     for (const e of ctp) {
-      const key = `${e.productType ?? "—"} · ${e.speciesCommon ?? "—"}`;
+      const key = productKey(e.productType, e.speciesCommon);
+      prod[key] ??= { label: productLabel(e.productType, e.speciesCommon), producido: 0, despachado: 0 };
       if (e.section === "produccion") {
         const consumido = Number(e.volumeInputM3 ?? 0);
         consumidoM3 += consumido;
         bucket(e.speciesCommon).consumidoM3 += consumido;
-        (prod[key] ??= { producido: 0, despachado: 0 }).producido += Number(e.quantity ?? 0);
+        prod[key].producido += Number(e.quantity ?? 0);
       }
       if (e.section === "despacho") {
         bucket(e.speciesCommon);
-        (prod[key] ??= { producido: 0, despachado: 0 }).despachado += Number(e.quantity ?? 0);
+        prod[key].despachado += Number(e.quantity ?? 0);
       }
     }
 
@@ -343,8 +428,10 @@ export class ForestCtpDB {
         especiesEnNegativo: porEspecie.filter((e) => e.saldoM3 < 0).length,
       },
       porEspecie,
-      productos: Object.entries(prod).map(([k, v]) => ({
-        producto: k,
+      // `label` y no la clave: la clave va normalizada en minúsculas para
+      // agrupar, pero lo que se muestra es "Tablones · Tornillo".
+      productos: Object.values(prod).map((v) => ({
+        producto: v.label,
         producido: r4(v.producido),
         despachado: r4(v.despachado),
         stock: r4(v.producido - v.despachado),
@@ -433,7 +520,7 @@ export class ForestCtpDB {
       });
       const stock = new Map<string, { productType: string | null; species: string | null; scientific: string | null; cites: boolean; unit: string | null; producido: number; despachado: number }>();
       for (const e of entries) {
-        const key = `${e.productType}|${e.speciesCommon}`;
+        const key = productKey(e.productType, e.speciesCommon);
         const cur = stock.get(key) ?? { productType: e.productType, species: e.speciesCommon, scientific: e.speciesScientific, cites: e.cites, unit: e.unit, producido: 0, despachado: 0 };
         if (e.section === "produccion") cur.producido += Number(e.quantity ?? 0);
         if (e.section === "despacho") cur.despachado += Number(e.quantity ?? 0);

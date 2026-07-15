@@ -35,11 +35,17 @@ export interface ConsumoInput {
   volumeM3: number | string;
 }
 
-/** Error de invariante: el caller lo mapea a 409/422, no a 500. */
+/** Error de invariante: el caller lo mapea a 422, no a 500. */
 export class CtpInvariantError extends Error {
   constructor(
     message: string,
-    readonly code: "I1_SOBRE_ATRIBUCION" | "I2_SOBRE_CONSUMO" | "TENANT_MISMATCH" | "CONGELADO",
+    readonly code:
+      | "I1_SOBRE_ATRIBUCION"
+      | "I2_SOBRE_CONSUMO"
+      /** Despachar producto que no se produjo — simétrico de I2 en la salida. */
+      | "I3_SOBRE_DESPACHO"
+      | "TENANT_MISMATCH"
+      | "CONGELADO",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);

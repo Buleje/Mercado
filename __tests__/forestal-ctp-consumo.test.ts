@@ -32,6 +32,7 @@ process.env.AUDIT_CHAIN_ENABLED ??= "false";
 import { prisma } from "@/lib/prisma";
 import { ForestCtpConsumoDB, CtpInvariantError } from "@/lib/db/forest-ctp-consumo.db";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 
 const TENANT = "main";
 const runId = Math.random().toString(36).slice(2, 8);
@@ -343,6 +344,71 @@ describe.skipIf(!HAS_DB)("Corrida real: mezcla de N guías", () => {
     // El acta resumida supera de largo los 60 chars del límite viejo.
     const resumen = guias.map((g) => g.gtfNumber).join(", ");
     expect(resumen.length).toBeGreaterThan(60);
+  }, 30_000);
+});
+
+describe.skipIf(!HAS_DB)("I3 · sobre-despacho (no se despacha lo que no se produjo)", () => {
+  /** Producto único por corrida: el stock se agrupa por tipo+especie. */
+  const prodTipo = `${P}-tablon`;
+
+  async function producir(cantidad: number, tipo = prodTipo) {
+    const l = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "produccion", lineNo: 91_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: tipo, quantity: cantidad, unit: "m3",
+        status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(l.id);
+    return l;
+  }
+  const despachar = (cantidad: number, tipo = prodTipo) =>
+    ForestCtpDB.create(TENANT, {
+      section: "despacho", speciesCommon: "Tornillo", productType: tipo,
+      quantity: cantidad, unit: "m3", gtfNumber: `${P}-salida`, createdBy: P,
+    });
+
+  it("rechaza despachar un producto que nunca se produjo", async () => {
+    await expect(despachar(5, `${P}-fantasma`)).rejects.toMatchObject({ code: "I3_SOBRE_DESPACHO" });
+  }, 30_000);
+
+  it("rechaza despachar más de lo producido", async () => {
+    await producir(10);
+    await expect(despachar(11)).rejects.toMatchObject({ code: "I3_SOBRE_DESPACHO" });
+  }, 30_000);
+
+  it("permite despachos parciales hasta agotar el stock, y ni uno más", async () => {
+    const tipo = `${P}-parcial`;
+    await producir(10, tipo);
+
+    const d1 = await despachar(6, tipo);
+    lineIds.push(d1.id);
+    const d2 = await despachar(4, tipo); // justo hasta 10
+    lineIds.push(d2.id);
+
+    // El stock quedó en 0: el siguiente no pasa.
+    await expect(despachar(0.5, tipo)).rejects.toMatchObject({ code: "I3_SOBRE_DESPACHO" });
+  }, 30_000);
+
+  it("agrupa por tipo+especie SIN importar mayúsculas ni espacios", async () => {
+    // Antes el stock se llaveaba sin normalizar: "Tablones" y "tablones " eran
+    // productos distintos ⇒ se podía despachar el doble cambiando el tipeo.
+    const tipo = `${P}-Norm`;
+    await producir(5, tipo);
+    await expect(despachar(8, `  ${tipo.toUpperCase()}  `)).rejects.toMatchObject({
+      code: "I3_SOBRE_DESPACHO",
+    });
+  }, 30_000);
+
+  /** Misma lección que I2: sin lock, dos despachos concurrentes leen el mismo stock. */
+  it("aguanta concurrencia: dos despachos en paralelo del mismo producto", async () => {
+    const tipo = `${P}-race`;
+    await producir(10, tipo);
+
+    const res = await Promise.allSettled([despachar(10, tipo), despachar(10, tipo)]);
+    for (const r of res) if (r.status === "fulfilled") lineIds.push(r.value.id);
+
+    expect(res.filter((r) => r.status === "fulfilled")).toHaveLength(1);
   }, 30_000);
 });
 
