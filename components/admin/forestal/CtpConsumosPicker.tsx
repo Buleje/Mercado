@@ -125,9 +125,9 @@ export default function CtpConsumosPicker({
       {costo && (
         <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-sm">
           {costo.kind === "sin_factura" ? (
-            <p className="flex items-center gap-1.5 font-semibold text-[var(--data-warning-900)]"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Falta la factura de la guía <span className="font-mono">{costo.code}</span>: no se puede estimar el costo.</p>
+            <p className="flex items-center gap-1.5 font-semibold text-[var(--data-warning-700)]"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Falta la factura de la guía <span className="font-mono">{costo.code}</span>: no se puede estimar el costo.</p>
           ) : costo.kind === "moneda_mixta" ? (
-            <p className="flex items-center gap-1.5 font-semibold text-[var(--data-warning-900)]"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Las guías elegidas tienen monedas distintas: no se puede sumar el costo.</p>
+            <p className="flex items-center gap-1.5 font-semibold text-[var(--data-warning-700)]"><AlertTriangle className="h-3.5 w-3.5 shrink-0" /> Las guías elegidas tienen monedas distintas: no se puede sumar el costo.</p>
           ) : (
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <span className="text-[var(--text-secondary)]">Costo estimado</span>

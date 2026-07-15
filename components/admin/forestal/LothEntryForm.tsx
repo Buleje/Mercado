@@ -454,9 +454,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           </Field>
 
           {/* Picker data-driven: elegí del plan lo disponible para esta sección */}
-          <div className="space-y-2 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] p-3">
+          <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-900)]">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-700)]">
                 {SOURCE_TITLE[section]}
               </span>
               <select
@@ -508,7 +508,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                 ))
               )}
             </div>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-800)]">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-700)]">
               Seleccioná de la lista para autocompletar, o cargá manualmente abajo.
             </p>
           </div>
@@ -528,7 +528,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
           {/* Banner: datos jalados del censo (data-driven) */}
           {fields.has("treeCode") && censusTree && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] px-3 py-2.5 text-xs text-[var(--data-success-900)]">
+            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 py-2.5 text-xs text-[var(--data-success-700)]">
               <Check className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <span className="font-bold">Jalado del censo:</span>{" "}
@@ -539,7 +539,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                 {censusTree.estado === "talado" && (
                   <span className="ml-1 font-bold text-[var(--data-warning-700)]">· ya marcado como talado</span>
                 )}
-                <div className="mt-0.5 text-[var(--data-success-800)] opacity-80">Especie y medidas precargadas — ajustá los Ø y el largo a lo medido en campo.</div>
+                <div className="mt-0.5 text-[var(--data-success-700)] opacity-80">Especie y medidas precargadas — ajustá los Ø y el largo a lo medido en campo.</div>
               </div>
             </div>
           )}
@@ -602,7 +602,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                         onClick={() => { setSpeciesSlug(slug); setShowPicker(false); setSpeciesQuery(""); }}
                         className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
                           active
-                            ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-900)]"
+                            ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
                             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
                         }`}
                       >
@@ -685,7 +685,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                       type="button"
                       onClick={() => setVolumeM3(autoVolume.toFixed(4))}
                       title="Aplicar fórmula Smalian"
-                      className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-lg bg-[var(--data-success-100)] px-2.5 text-xs font-bold text-[var(--data-success-900)] transition-colors hover:bg-[var(--data-success-200)]"
+                      className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-lg bg-[var(--data-success-100)] px-2.5 text-xs font-bold text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-100)]"
                     >
                       <Sparkles className="h-3 w-3" />
                       {autoVolume.toFixed(4)}
@@ -780,7 +780,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                 </p>
               )}
               {gpsLat != null && gpsLng != null && (
-                <p className="flex items-center gap-1.5 text-xs text-[var(--data-success-800)]">
+                <p className="flex items-center gap-1.5 text-xs text-[var(--data-success-700)]">
                   <MapPin className="h-3.5 w-3.5 shrink-0" />
                   <span className="font-mono tabular-nums">{gpsLat.toFixed(6)}, {gpsLng.toFixed(6)}</span>
                   <a
@@ -856,7 +856,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting} className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50">
               Guardar y otro
             </button>
-            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:bg-[var(--data-success-800)] disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
               {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" />Guardando</>) : "Registrar línea"}
             </button>
           </div>

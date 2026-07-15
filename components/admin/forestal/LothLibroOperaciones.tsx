@@ -415,7 +415,7 @@ export default function LothLibroOperaciones() {
               onClick={() => setSection(s)}
               className={`inline-flex items-center gap-2 rounded-xl border-2 px-3.5 py-2 text-sm font-bold transition ${
                 active
-                  ? "border-[var(--data-success-600)] bg-[var(--data-success-50)] text-[var(--data-success-900)]"
+                  ? "border-[var(--data-success-600)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
               }`}
             >
@@ -508,7 +508,7 @@ export default function LothLibroOperaciones() {
                       {!annulled && lateDaysOf(e) > PLAZO_DIAS && (
                         <span
                           title={`Registrado ${lateDaysOf(e)} días después de la actividad — SERFOR exige registro dentro de ${PLAZO_DIAS} días`}
-                          className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-900)]"
+                          className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-700)]"
                         >
                           fuera de plazo · {lateDaysOf(e)}d
                         </span>

@@ -312,13 +312,13 @@ function StatusBadge({ status }: { status: WoodEntryStatus }) {
   const { Icon } = meta;
   const cls =
     meta.tone === "success"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
       : meta.tone === "warning"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
         : meta.tone === "danger"
           ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
           : meta.tone === "info"
-            ? "bg-[var(--data-info-100)] text-[var(--data-info-900)]"
+            ? "bg-[var(--data-info-100)] text-[var(--data-info-700)]"
             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>

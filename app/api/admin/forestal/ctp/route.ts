@@ -51,6 +51,17 @@ const createSchema = z.object({
     .optional(),
   costoProceso: z.coerce.number().nonnegative().max(9999999).nullable().optional(),
   moneda: z.string().trim().max(8).nullable().optional(),
+  // ADR-135: de qué corridas salió el producto de este despacho. Cierra la
+  // cadena de custodia; `ForestCtpDespachoDB` valida I4/I5 antes de escribir.
+  origenes: z
+    .array(
+      z.object({
+        produccionEntryId: z.string().trim().min(1),
+        quantity: z.coerce.number().positive().max(9999999),
+      }),
+    )
+    .max(50)
+    .optional(),
 });
 const patchSchema = z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) });
 

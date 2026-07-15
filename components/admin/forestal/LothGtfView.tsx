@@ -84,7 +84,7 @@ export default function LothGtfView() {
                   <td className="px-4 py-2.5 text-[var(--text-primary)]">{g.titularName ?? "—"}</td>
                   <td className="px-4 py-2.5 text-[var(--text-secondary)]">{g.destino ?? "—"}</td>
                   <td className="px-4 py-2.5 text-right"><span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{g.volumenTotalM3 ? Number(g.volumenTotalM3).toFixed(4) : "—"}</span></td>
-                  <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-900)]">Emitida</span>}</td>
+                  <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">Emitida</span>}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-2">
                       <button type="button" onClick={() => printGtf(g)} title="Imprimir" className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Imprimir</button>
@@ -220,7 +220,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
     <form onSubmit={submit} className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
       {err && <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)]">{err}</div>}
       {libroErr && (
-        <div className="rounded-lg border border-[var(--data-warning-300)] bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-900)]">
+        <div className="rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-700)]">
           No se pudo cargar el Libro de Operaciones ({libroErr}). La validación GTF ↔ libro está desactivada temporalmente.
         </div>
       )}
@@ -260,7 +260,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
           <Field label="Ø mayor"><input type="number" step="0.001" value={it.diamMayorM} onChange={(e) => setItem("diamMayorM", e.target.value)} className={I} /></Field>
           <Field label="Ø menor"><input type="number" step="0.001" value={it.diamMenorM} onChange={(e) => setItem("diamMenorM", e.target.value)} className={I} /></Field>
           <Field label={`Long. ${autoVol > 0 ? `→ ${autoVol.toFixed(4)}` : ""}`}><input type="number" step="0.01" value={it.lengthM} onChange={(e) => setItem("lengthM", e.target.value)} className={I} /></Field>
-          <button type="button" onClick={addItem} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:bg-[var(--data-success-800)]">+ Agregar</button>
+          <button type="button" onClick={addItem} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90">+ Agregar</button>
         </div>
         {items.length > 0 && (
           <div className="mt-3 overflow-x-auto">
@@ -296,7 +296,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         <span className="text-xs text-[var(--text-tertiary)]">{items.length} ítems · {totalVol.toFixed(4)} m³</span>
         <div className="flex gap-2">
           <button type="button" onClick={onClose} className="h-10 rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:bg-[var(--data-success-800)] disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Emitir GTF"}</button>
+          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Emitir GTF"}</button>
         </div>
       </div>
     </form>

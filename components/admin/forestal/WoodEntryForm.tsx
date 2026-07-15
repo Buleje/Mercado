@@ -458,7 +458,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                     type="button"
                     onClick={cargarGuia}
                     disabled={loadingGtf || !data.gtfNumber.trim()}
-                    className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3.5 text-sm font-bold text-white transition-colors hover:bg-[var(--data-success-800)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3.5 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loadingGtf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     Cargar guía
@@ -466,14 +466,14 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                   <button
                     type="button"
                     onClick={toggleGuias}
-                    className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition-colors ${showGuias ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-900)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                    className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition-colors ${showGuias ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                   >
                     <Search className="h-4 w-4" /> Ver guías
                   </button>
                 </div>
               </Field>
               {showGuias && (
-                <div className="space-y-2 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] p-2">
+                <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-2">
                   <input value={guiaQuery} onChange={(e) => setGuiaQuery(e.target.value)} placeholder="Buscar por N° o titular…" className={`${cls.input} h-9`} />
                   <div className="max-h-56 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                     {loadingGuias ? <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando guías…</div>
@@ -491,14 +491,14 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                 </div>
               )}
               {gtfMsg && (
-                <div className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${gtfMsg.ok ? "bg-[var(--data-success-50)] text-[var(--data-success-900)]" : "bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
+                <div className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${gtfMsg.ok ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
                   {gtfMsg.ok ? <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
                   <span>{gtfMsg.text}</span>
                 </div>
               )}
               {gtfItems.length > 1 && (
-                <div className="space-y-1 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] p-2">
-                  <span className="px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-900)]">Elegí el ítem de la guía</span>
+                <div className="space-y-1 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-2">
+                  <span className="px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-700)]">Elegí el ítem de la guía</span>
                   <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                     {gtfItems.map((it, i) => (
                       <button key={i} type="button" onClick={() => fillFromItem(it)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]">
@@ -665,7 +665,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                             }}
                             className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
                               active
-                                ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-900)]"
+                                ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
                                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
                             }`}
                           >
@@ -787,7 +787,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                       type="button"
                       onClick={() => update("volumeM3", autoVolume.toFixed(4))}
                       title="Aplicar cubicación π·r²·L·n"
-                      className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-lg bg-[var(--data-success-100)] px-2.5 text-xs font-bold text-[var(--data-success-900)] transition-colors hover:bg-[var(--data-success-200)]"
+                      className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-lg bg-[var(--data-success-100)] px-2.5 text-xs font-bold text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-100)]"
                     >
                       <Sparkles className="h-3 w-3" />
                       {autoVolume.toFixed(4)}
@@ -915,7 +915,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
             {/* Checklist de validación */}
             <div className="border-t border-[var(--rule-soft)] px-5 py-4">
               {isValid ? (
-                <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-900)]">
+                <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-700)]">
                   <Check className="h-4 w-4 shrink-0" />
                   Listo para registrar
                 </div>
@@ -975,7 +975,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
               type="submit"
               form="wood-entry-form"
               disabled={!isValid || submitting}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:bg-[var(--data-success-800)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? (
                 <>

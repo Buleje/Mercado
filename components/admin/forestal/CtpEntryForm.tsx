@@ -12,6 +12,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import CtpConsumosPicker, { sumConsumos, type ConsumoRow } from "./CtpConsumosPicker";
+import CtpOrigenesPicker, { sumOrigenes, type OrigenRow } from "./CtpOrigenesPicker";
 import { Field, I } from "./ctp-shared";
 
 type CtpSection = "produccion" | "despacho";
@@ -33,7 +34,7 @@ const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", uni
 
 const META: Record<CtpSection, { label: string; help: string; icon: typeof Boxes; sourceTitle: string }> = {
   produccion: { label: "Producción", help: "Transformación de materia prima en producto", icon: Boxes, sourceTitle: "Elegí el ingreso (materia prima)" },
-  despacho: { label: "Despacho de producto", help: "Salida de producto transformado con GTF", icon: Truck, sourceTitle: "Elegí el producto a despachar" },
+  despacho: { label: "Despacho de producto", help: "Salida de producto transformado con GTF", icon: Truck, sourceTitle: "Elegí de qué corridas sale el despacho" },
 };
 
 export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
@@ -58,6 +59,13 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
   // un consumo (ingreso + m³ atribuidos); ver CtpConsumosPicker.
   const [consumos, setConsumos] = useState<ConsumoRow[]>([]);
   const [costoProceso, setCostoProceso] = useState("");
+
+  // Despacho: de qué corridas de producción salió el producto (ADR-135).
+  // Espejo de consumos, del otro lado de la cadena; ver CtpOrigenesPicker.
+  const [origenes, setOrigenes] = useState<OrigenRow[]>([]);
+  const [quantityTouched, setQuantityTouched] = useState(false);
+  // 1ª corrida elegida fija producto/especie/unidad: el backend rechaza mezclar (TENANT_MISMATCH).
+  const despachoLocked = section === "despacho" && origenes.length > 0;
 
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loadingSrc, setLoadingSrc] = useState(false);
@@ -88,9 +96,18 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
         }];
       });
     } else {
-      if (it.productType) setProductType(it.productType);
-      if (it.quantity) setQuantity(String(it.quantity));
-      if (it.unit === "m3" || it.unit === "kg" || it.unit === "unidad" || it.unit === "pt") setUnit(it.unit);
+      const id = it.id;
+      if (!id || origenes.some((o) => o.produccionEntryId === id)) return; // ya agregada: el backend la rechaza igual (I4)
+      if (origenes.length === 0) {
+        // 1ª corrida fija producto/unidad — a partir de acá el picker filtra el resto.
+        if (it.productType) setProductType(it.productType);
+        if (it.unit === "m3" || it.unit === "kg" || it.unit === "unidad" || it.unit === "pt") setUnit(it.unit);
+      }
+      const disponible = it.disponible ?? 0;
+      setOrigenes((prev) => [...prev, {
+        produccionEntryId: id, code: it.code, species: it.species,
+        disponible, quantity: disponible > 0 ? String(disponible) : "",
+      }]);
     }
   }
 
@@ -102,32 +119,51 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
       const picked = new Set(consumos.map((c) => c.woodEntryId));
       list = list.filter((s) => !s.id || !picked.has(s.id));
     }
+    if (section === "despacho") {
+      // Una corrida ya elegida desaparece del buscador: no se puede agregar dos veces.
+      const picked = new Set(origenes.map((o) => o.produccionEntryId));
+      list = list.filter((s) => !s.id || !picked.has(s.id));
+      // El backend rechaza mezclar producto/especie/unidad distintos en un mismo
+      // despacho: mejor filtrar acá que dejar elegir y fallar al guardar (TENANT_MISMATCH).
+      if (origenes.length > 0) {
+        const pt = productType.trim().toLowerCase();
+        const sp = speciesCommon.trim().toLowerCase();
+        list = list.filter((s) => (s.productType ?? "").trim().toLowerCase() === pt && (s.species ?? "").trim().toLowerCase() === sp && (s.unit ?? "") === unit);
+      }
+    }
     return list.slice(0, 60);
-  }, [sources, srcQuery, section, consumos]);
+  }, [sources, srcQuery, section, consumos, origenes, productType, speciesCommon, unit]);
 
   /**
-   * El vacío del picker tiene 3 causas distintas y decirle "no hay ingresos" a
-   * las tres es mentira: el operador que ya eligió todas sus guías creería que
-   * el módulo perdió sus datos.
+   * El vacío del picker tiene varias causas distintas y decirle "no hay nada" a
+   * todas es mentira: el operador que ya eligió todas sus guías/corridas
+   * creería que el módulo perdió sus datos.
    */
   const emptyPickerMsg = useMemo(() => {
     if (srcQuery.trim()) return "Ninguna coincide con la búsqueda.";
-    if (section === "despacho") return "Sin productos en stock para despachar.";
+    if (section === "despacho") {
+      if (sources.length > 0 && origenes.length > 0) return "Ya agregaste todas las corridas de este producto.";
+      return "Sin corridas de producción con saldo para despachar.";
+    }
     if (sources.length > 0) return "Ya agregaste todas las guías disponibles.";
     return "Sin ingresos de materia prima validados y con saldo.";
-  }, [sources, srcQuery, section]);
+  }, [sources, srcQuery, section, origenes]);
 
   const rendimiento = useMemo(() => {
     const i = Number(volumeInputM3), o = Number(quantity);
     return section === "produccion" && i > 0 && o > 0 && unit === "m3" ? Math.round((o / i) * 10000) / 100 : null;
   }, [volumeInputM3, quantity, unit, section]);
 
-  // Volumen declarado: se autocompleta con el total atribuido (caso normal),
+  // Volumen/cantidad declarada: se autocompleta con el total atribuido (caso normal),
   // pero deja de seguirlo apenas el usuario lo edita a mano (atribución parcial legítima).
-  const totalAtribuido = useMemo(() => sumConsumos(consumos), [consumos]);
+  const totalAtribuido = useMemo(
+    () => (section === "produccion" ? sumConsumos(consumos) : sumOrigenes(origenes)),
+    [consumos, origenes, section],
+  );
   useEffect(() => {
     if (section === "produccion" && !volumeTouched) setVolumeInputM3(totalAtribuido > 0 ? String(totalAtribuido) : "");
-  }, [totalAtribuido, volumeTouched, section]);
+    if (section === "despacho" && !quantityTouched) setQuantity(totalAtribuido > 0 ? String(totalAtribuido) : "");
+  }, [totalAtribuido, volumeTouched, quantityTouched, section]);
 
   const consumosOk = section !== "produccion" || consumos.every((c) => {
     const v = Number(c.volumeM3);
@@ -136,9 +172,16 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
   const sobreAtribuido = section === "produccion" && consumos.length > 0
     && Math.round((totalAtribuido - (Number(volumeInputM3) || 0)) * 10000) / 10000 > 0;
 
+  const origenesOk = section !== "despacho" || origenes.every((o) => {
+    const v = Number(o.quantity);
+    return v > 0 && v <= o.disponible + 1e-9;
+  });
+  const sobreAtribuidoDespacho = section === "despacho" && origenes.length > 0
+    && Math.round((totalAtribuido - (Number(quantity) || 0)) * 10000) / 10000 > 0;
+
   const isValid = section === "produccion"
     ? productType.trim().length > 0 && Number(quantity) > 0 && consumosOk && !sobreAtribuido
-    : productType.trim().length > 0 && Number(quantity) > 0 && gtfNumber.trim().length > 0;
+    : productType.trim().length > 0 && Number(quantity) > 0 && gtfNumber.trim().length > 0 && origenesOk && !sobreAtribuidoDespacho;
 
   async function submit(e: React.FormEvent, keepOpen = false) {
     e.preventDefault();
@@ -162,12 +205,14 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
         payload.pieces = pieces ? Number(pieces) : null;
         payload.gtfNumber = gtfNumber.trim() || null;
         payload.destino = destino.trim() || null;
+        if (origenes.length) payload.origenes = origenes.map((o) => ({ produccionEntryId: o.produccionEntryId, quantity: Number(o.quantity) }));
       }
       const r = await fetch("/api/admin/forestal/ctp", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       if (keepOpen) {
         setMateriaPrimaRef(""); setVolumeInputM3(""); setVolumeTouched(false); setQuantity(""); setPieces(""); setGtfNumber(""); setDestino(""); setObservations("");
         setConsumos([]); setCostoProceso("");
+        setOrigenes([]); setQuantityTouched(false);
         setSubmitting(false); onSaved({ keepOpen: true }); loadSources();
       } else onSaved();
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); setSubmitting(false); }
@@ -194,8 +239,8 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
           <Field label="Fecha" required><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={I} /></Field>
 
           {/* Picker data-driven */}
-          <div className="space-y-2 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] p-3">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-900)]">{meta.sourceTitle}</span>
+          <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-700)]">{meta.sourceTitle}</span>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
               <input value={srcQuery} onChange={(e) => setSrcQuery(e.target.value)} placeholder="Buscar..." className={`${I} h-9 pl-8`} />
@@ -207,16 +252,30 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
                   <button key={i} type="button" onClick={() => pick(it)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]">
                     <span className="flex min-w-0 items-center gap-2 truncate">
                       <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{it.code ?? it.productType ?? "—"}</span>
+                      {it.kind === "corrida" && it.productType && <span className="truncate text-xs text-[var(--text-secondary)]">{it.productType}</span>}
                       {it.species && <span className="truncate text-sm text-[var(--text-secondary)]">{it.species}</span>}
                       {it.cites && <span className="rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
                     </span>
-                    <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{it.disponible != null ? `${Number(it.disponible).toFixed(4)} m³ disp.` : it.vol != null ? `${Number(it.vol).toFixed(4)} m³` : it.quantity != null ? `stock ${Number(it.quantity).toFixed(2)} ${it.unit ?? ""}` : ""}</span>
+                    <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{it.disponible != null ? `${Number(it.disponible).toFixed(4)} ${it.unit ? (UNIT_LABELS[it.unit] ?? it.unit) : "m³"} disp.` : it.vol != null ? `${Number(it.vol).toFixed(4)} m³` : it.quantity != null ? `stock ${Number(it.quantity).toFixed(2)} ${it.unit ?? ""}` : ""}</span>
                   </button>
                 ))}
             </div>
           </div>
 
-          <Field label="Especie"><input value={speciesCommon} onChange={(e) => setSpeciesCommon(e.target.value)} placeholder="Tornillo" className={I} /></Field>
+          <Field label="Especie" hint={despachoLocked ? "Lo fija la corrida elegida" : undefined}>
+            <input value={speciesCommon} onChange={(e) => setSpeciesCommon(e.target.value)} disabled={despachoLocked} placeholder="Tornillo" className={`${I} disabled:cursor-not-allowed disabled:opacity-60`} />
+          </Field>
+
+          {section === "despacho" && (
+            <CtpOrigenesPicker
+              origenes={origenes}
+              onChangeQuantity={(id, value) => setOrigenes((prev) => prev.map((o) => (o.produccionEntryId === id ? { ...o, quantity: value } : o)))}
+              onRemove={(id) => setOrigenes((prev) => prev.filter((o) => o.produccionEntryId !== id))}
+              totalAtribuido={totalAtribuido}
+              quantityDeclared={Number(quantity) || 0}
+              unitLabel={UNIT_LABELS[unit] ?? unit}
+            />
+          )}
 
           {section === "produccion" && (
             <>
@@ -238,18 +297,22 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
             </>
           )}
 
-          <Field label="Tipo de producto" required>
-            <select value={productType} onChange={(e) => setProductType(e.target.value)} className={I}>{PRODUCT_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}</select>
+          <Field label="Tipo de producto" required hint={despachoLocked ? "Lo fija la corrida elegida" : undefined}>
+            <select value={productType} onChange={(e) => setProductType(e.target.value)} disabled={despachoLocked} className={`${I} disabled:cursor-not-allowed disabled:opacity-60`}>{PRODUCT_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}</select>
           </Field>
 
           <div className="grid grid-cols-3 gap-3">
             {section === "despacho" && <Field label="N° piezas"><input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={I} /></Field>}
-            <Field label={section === "produccion" ? "Producido" : "Cantidad"} required><input type="number" step="0.0001" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="1.90" className={`${I} font-mono tabular-nums`} /></Field>
-            <Field label="Unidad" required><select value={unit} onChange={(e) => setUnit(e.target.value as typeof unit)} className={I}><option value="m3">m³</option><option value="kg">Kg</option><option value="pt">pt</option><option value="unidad">Unidad</option></select></Field>
+            <Field label={section === "produccion" ? "Producido" : "Cantidad"} required hint={section === "despacho" ? "Se autocompleta con el total atribuido" : undefined}>
+              <input type="number" step="0.0001" value={quantity} onChange={(e) => { setQuantity(e.target.value); if (section === "despacho") setQuantityTouched(true); }} placeholder="1.90" className={`${I} font-mono tabular-nums`} />
+            </Field>
+            <Field label="Unidad" required hint={despachoLocked ? "Lo fija la corrida elegida" : undefined}>
+              <select value={unit} onChange={(e) => setUnit(e.target.value as typeof unit)} disabled={despachoLocked} className={`${I} disabled:cursor-not-allowed disabled:opacity-60`}><option value="m3">m³</option><option value="kg">Kg</option><option value="pt">pt</option><option value="unidad">Unidad</option></select>
+            </Field>
           </div>
 
           {rendimiento != null && (
-            <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-xs text-[var(--data-success-900)]"><Check className="h-3.5 w-3.5" /> Rendimiento: <b>{rendimiento}%</b> (producido / consumido)</div>
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-xs text-[var(--data-success-700)]"><Check className="h-3.5 w-3.5" /> Rendimiento: <b>{rendimiento}%</b> (producido / consumido)</div>
           )}
 
           {section === "despacho" && (
@@ -269,7 +332,7 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
             <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">Cancelar</button>
             <button type="button" onClick={(e) => submit(e, true)} disabled={!isValid || submitting} className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50">Guardar y otro</button>
-            <button type="submit" form="ctp-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:bg-[var(--data-success-800)] disabled:cursor-not-allowed disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar"}</button>
+            <button type="submit" form="ctp-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar"}</button>
           </div>
         </footer>
       </div>

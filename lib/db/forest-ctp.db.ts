@@ -8,6 +8,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { ForestCtpConsumoDB, CtpInvariantError, CONSUMO_VIGENTE } from "./forest-ctp-consumo.db";
+import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -94,6 +95,12 @@ export interface CtpEntryInput {
    * Se escriben con `ForestCtpConsumoDB.setConsumos`, que valida I1/I2 y tenant.
    */
   consumos?: { woodEntryId: string; volumeM3: number | string }[];
+  /**
+   * De qué corridas salió el producto de este despacho (ADR-135).
+   * Se escriben con `ForestCtpDespachoDB.setOrigenes`, que valida I4/I5,
+   * tenant, orientación y que el producto/unidad coincidan.
+   */
+  origenes?: { produccionEntryId: string; quantity: number | string }[];
   createdBy: string;
 }
 
@@ -225,6 +232,10 @@ export class ForestCtpDB {
     // que es justo lo que el operador tiene que ir a corregir.
     if (input.consumos?.length) {
       await ForestCtpConsumoDB.setConsumos(tenantId, entry.id, input.consumos, input.createdBy);
+    }
+    // Ídem para la salida: valida I4/I5 + orientación + producto (ADR-135).
+    if (input.origenes?.length) {
+      await ForestCtpDespachoDB.setOrigenes(tenantId, entry.id, input.origenes, input.createdBy);
     }
 
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
@@ -515,24 +526,57 @@ export class ForestCtpDB {
         .filter((w) => w.disponible > 0);
     }
     if (section === "despacho") {
-      const entries = await prisma.forestCtpEntry.findMany({
-        where: { tenantId, deletedAt: null, status: "registrado" },
-        select: { section: true, productType: true, speciesCommon: true, speciesScientific: true, cites: true, quantity: true, unit: true },
+      // ADR-135: devuelve CORRIDAS, no productos agregados.
+      //
+      // Antes agregaba por `productKey` y no devolvía ids — el mismo bug que
+      // ADR-134 arregló del lado de producción: sin el id de la corrida no hay
+      // puente que construir, y el despacho no puede decir de DÓNDE salió.
+      // Elegir corridas (y no "un producto en stock") es además lo que espeja a
+      // producción, que elige guías y no "una especie disponible".
+      const corridas = await prisma.forestCtpEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado", section: "produccion" },
+        orderBy: { entryDate: "desc" },
+        take: 300,
+        select: {
+          id: true, lineNo: true, entryDate: true, productType: true,
+          speciesCommon: true, speciesScientific: true, cites: true, quantity: true, unit: true,
+        },
       });
-      const stock = new Map<string, { productType: string | null; species: string | null; scientific: string | null; cites: boolean; unit: string | null; producido: number; despachado: number }>();
-      for (const e of entries) {
-        const key = productKey(e.productType, e.speciesCommon);
-        const cur = stock.get(key) ?? { productType: e.productType, species: e.speciesCommon, scientific: e.speciesScientific, cites: e.cites, unit: e.unit, producido: 0, despachado: 0 };
-        if (e.section === "produccion") cur.producido += Number(e.quantity ?? 0);
-        if (e.section === "despacho") cur.despachado += Number(e.quantity ?? 0);
-        stock.set(key, cur);
-      }
-      return [...stock.values()]
-        .filter((s) => s.producido - s.despachado > 0.0001)
-        .map((s) => ({
-          kind: "producto" as const, code: s.productType, productType: s.productType, species: s.species,
-          scientific: s.scientific, cites: s.cites, quantity: Math.round((s.producido - s.despachado) * 10000) / 10000, unit: s.unit,
-        }));
+      if (corridas.length === 0) return [];
+
+      const salido = await prisma.forestCtpDespachoOrigen.groupBy({
+        by: ["produccionEntryId"],
+        where: {
+          tenantId,
+          produccionEntryId: { in: corridas.map((c) => c.id) },
+          ...(opts.excludeCtpEntryId ? { despachoEntryId: { not: opts.excludeCtpEntryId } } : {}),
+          ...ORIGEN_VIGENTE, // un despacho anulado no sigue reservando la corrida
+        },
+        _sum: { quantity: true },
+      });
+      const usado = new Map(salido.map((s) => [s.produccionEntryId, Number(s._sum.quantity ?? 0)]));
+
+      return corridas
+        .map((c) => {
+          const producido = c.quantity ? Number(c.quantity) : 0;
+          return {
+            kind: "corrida" as const,
+            id: c.id,
+            /** Lo que se muestra como identificador de la corrida. */
+            code: `Corrida #${c.lineNo}`,
+            lineNo: c.lineNo,
+            entryDate: c.entryDate,
+            productType: c.productType,
+            species: c.speciesCommon,
+            scientific: c.speciesScientific,
+            cites: c.cites,
+            unit: c.unit,
+            producido,
+            /** Lo que I5 va a exigir igual: mejor mostrarlo que fallar al guardar. */
+            disponible: r4(producido - (usado.get(c.id) ?? 0)),
+          };
+        })
+        .filter((c) => c.disponible > 0);
     }
     return [];
   }

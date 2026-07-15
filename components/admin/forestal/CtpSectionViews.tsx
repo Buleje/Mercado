@@ -145,7 +145,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
       {toProductMsg && (
-        <div className={`flex items-start justify-between gap-3 rounded-xl border-2 p-4 text-sm ${toProductMsg.startsWith("Error") ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-300)] bg-[var(--data-success-50)] text-[var(--data-success-900)]"}`}>
+        <div className={`flex items-start justify-between gap-3 rounded-xl border-2 p-4 text-sm ${toProductMsg.startsWith("Error") ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"}`}>
           <div className="flex items-start gap-2"><PackagePlus className="mt-0.5 h-5 w-5 shrink-0" /><span>{toProductMsg}</span></div>
           <button type="button" onClick={() => setToProductMsg(null)} className="shrink-0 text-xs font-bold underline opacity-70 hover:opacity-100">Cerrar</button>
         </div>
@@ -194,7 +194,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
                 )}
                 <Td>{e.status === "anulado"
                   ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"><XIcon className="h-3 w-3" />Anulado</span>
-                  : <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-900)]">Registrado</span>}
+                  : <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)]">Registrado</span>}
                   {e.annulledReason && <div className="mt-1 text-xs text-[var(--data-error-700)]">{e.annulledReason}</div>}
                 </Td>
                 <Td className="text-right">
@@ -205,7 +205,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
                         disabled={toProductId === e.id}
                         onClick={() => sendToInventory(e.id)}
                         title="Crea el producto como borrador en el catálogo (inactivo)"
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--data-info-300)] bg-[var(--data-info-50)] px-3 text-xs font-bold text-[var(--data-info-900)] hover:bg-[var(--data-info-100)] disabled:opacity-50"
+                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] px-3 text-xs font-bold text-[var(--data-info-700)] hover:bg-[var(--data-info-100)] disabled:opacity-50"
                       >
                         <PackagePlus className="h-3.5 w-3.5" />
                         {toProductId === e.id ? "Creando…" : "Enviar a inventario"}

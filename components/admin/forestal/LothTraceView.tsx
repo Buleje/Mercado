@@ -278,7 +278,7 @@ function GpsPhotoEvidence({ entry }: { entry: LothEntryDTO }) {
           href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-300)] bg-[var(--data-success-50)] px-2 py-0.5 text-xs font-medium text-[var(--data-success-800)] transition-colors hover:bg-[var(--data-success-100)]"
+          className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--data-success-50)] px-2 py-0.5 text-xs font-medium text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-100)]"
         >
           <MapPin className="h-3 w-3 shrink-0" />
           <span className="font-mono tabular-nums">{lat.toFixed(5)}, {lng.toFixed(5)}</span>

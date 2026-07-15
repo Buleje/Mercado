@@ -517,12 +517,12 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     {liveGroups && (liveGroups.triples.length > 0 || liveGroups.resto.length > 0) ? (
                       <div className="flex flex-wrap items-center gap-1.5">
                         {liveGroups.triples.map((t, i) => (
-                          <span key={i} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-100)] px-2 py-0.5 font-mono text-sm font-bold text-[var(--data-success-900)]">
+                          <span key={i} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-100)] px-2 py-0.5 font-mono text-sm font-bold text-[var(--data-success-700)]">
                             {t.join(" · ")}
                           </span>
                         ))}
                         {liveGroups.resto.length > 0 && (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--data-warning-500)] px-2 py-0.5 font-mono text-sm text-[var(--data-warning-800)]">
+                          <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--data-warning-500)] px-2 py-0.5 font-mono text-sm text-[var(--data-warning-700)]">
                             {liveGroups.resto.join(" · ")}<span className="ml-1 opacity-60">· falta{liveGroups.resto.length === 2 ? " 1" : "n 2"}</span>
                           </span>
                         )}
@@ -534,7 +534,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   </div>
                 )}
                 {errMsg && (
-                  <p className="mt-2 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-900)]">
+                  <p className="mt-2 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)]">
                     {errMsg}
                   </p>
                 )}
@@ -544,20 +544,20 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             {/* Última agregada + deshacer (feedback del auto-add) */}
             {lastAdded && (
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2">
-                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-900)]">
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)]">
                   <Check className="h-4 w-4" />
                   {addedFlash > 1 ? `${addedFlash} piezas · última: ` : "Agregada: "}
                   {lastAdded.espesor}&Prime; × {lastAdded.ancho}&Prime; × {lastAdded.largo} pies{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}
                   <span className="font-mono">= {fmtPt(lastAdded.pieTablar)} PT</span>
                 </span>
-                <button type="button" onClick={deshacer} className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-900)] hover:brightness-95">
+                <button type="button" onClick={deshacer} className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95">
                   <RotateCcw className="h-3.5 w-3.5" /> Deshacer
                 </button>
               </div>
             )}
           </>
         ) : (
-          <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-900)]">
+          <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)]">
             Este navegador no soporta dictado por voz (usá Chrome). Podés cargar las medidas a mano abajo.
           </p>
         )}

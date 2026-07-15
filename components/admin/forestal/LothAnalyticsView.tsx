@@ -120,11 +120,11 @@ export default function LothAnalyticsView() {
 
       {/* Anomalías */}
       {data.anomalias.length === 0 ? (
-        <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-200)] bg-[var(--data-success-50)] px-4 py-3 text-sm font-medium text-[var(--data-success-900)]"><CheckCircle2 className="h-4 w-4" /> Sin anomalías detectadas. El libro es consistente.</div>
+        <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-4 py-3 text-sm font-medium text-[var(--data-success-700)]"><CheckCircle2 className="h-4 w-4" /> Sin anomalías detectadas. El libro es consistente.</div>
       ) : (
         <div className="space-y-2">
           {[...errores, ...warns].map((a, i) => (
-            <div key={i} className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-sm ${a.level === "error" ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-warning-300)] bg-[var(--data-warning-50)] text-[var(--data-warning-900)]"}`}>
+            <div key={i} className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-sm ${a.level === "error" ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]"}`}>
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div><b className="uppercase tracking-wide text-[length:var(--ts-2xs)]">{a.level === "error" ? "Grave" : "Alerta"}</b> · {a.message}</div>
             </div>

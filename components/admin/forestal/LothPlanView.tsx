@@ -237,7 +237,7 @@ function PlanForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
       </div>
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onClose} className="h-10 rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-        <button type="submit" disabled={busy || f.titularName.trim().length < 2} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:bg-[var(--data-success-800)] disabled:opacity-50">
+        <button type="submit" disabled={busy || f.titularName.trim().length < 2} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Crear plan"}
         </button>
       </div>
@@ -286,7 +286,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
           <Field label="N° árboles"><input type="number" value={f.arbolesAutorizados} onChange={(e) => set("arbolesAutorizados", e.target.value)} className={cls} /></Field>
           <Field label="Precio S//m³"><input type="number" step="0.01" value={f.precioVentaSoles} onChange={(e) => set("precioVentaSoles", e.target.value)} className={cls} /></Field>
           <Field label="VEN S//m³"><input type="number" step="0.01" value={f.valorEstadoNaturalSoles} onChange={(e) => set("valorEstadoNaturalSoles", e.target.value)} className={cls} /></Field>
-          <button type="submit" disabled={busy} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:bg-[var(--data-success-800)] disabled:opacity-50">Agregar</button>
+          <button type="submit" disabled={busy} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Agregar</button>
         </form>
       )}
       <Table head={["Especie", "Vol. autoriz.", "N° árb.", "Precio/m³", "VEN/m³", ""]}>
@@ -381,7 +381,7 @@ function CensusPanel({ planId, trees, onChange }: { planId: string; trees: Tree[
           <p className="text-xs text-[var(--text-tertiary)]">Pegá una fila por árbol: <code className="font-mono">código,especie,DAP,altura,ff,zonaUTM,X,Y</code> (ej. <code className="font-mono">85-TOR,Tornillo,0.80,18,0.65,18L,545000,9000000</code>)</p>
           <textarea value={csv} onChange={(e) => setCsv(e.target.value)} rows={4} placeholder="85-TOR,Tornillo,0.80,18,0.65&#10;1-SHI,Shihuahuaco,0.96,16,0.65" className={`${cls} h-auto resize-none py-2 font-mono`} />
           <div className="flex items-center gap-3">
-            <button type="button" onClick={doImport} disabled={busy || !csv.trim()} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:bg-[var(--data-success-800)] disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Importar"}</button>
+            <button type="button" onClick={doImport} disabled={busy || !csv.trim()} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Importar"}</button>
             {msg && <span className="text-sm text-[var(--text-secondary)]">{msg}</span>}
           </div>
         </div>
@@ -394,7 +394,7 @@ function CensusPanel({ planId, trees, onChange }: { planId: string; trees: Tree[
           <Field label="Hc (m)"><input type="number" step="0.01" value={f.alturaComercialM} onChange={(e) => set("alturaComercialM", e.target.value)} className={cls} /></Field>
           <Field label="ff"><input type="number" step="0.01" value={f.factorForma} onChange={(e) => set("factorForma", e.target.value)} className={cls} /></Field>
           <Field label={`Vol. est. ${auto > 0 ? auto.toFixed(4) : ""}`}><input disabled value={auto > 0 ? auto.toFixed(4) : ""} placeholder="auto" className={`${cls} opacity-70`} /></Field>
-          <button type="submit" disabled={busy} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:bg-[var(--data-success-800)] disabled:opacity-50">Agregar</button>
+          <button type="submit" disabled={busy} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Agregar</button>
         </form>
       )}
       <Table head={["Código", "Especie", "DAP", "Hc", "Vol. est. m³", "UTM", "Estado", ""]}>
@@ -467,7 +467,7 @@ function BalancePanel({ planId, vigenciaHasta }: { planId: string; vigenciaHasta
           {alerts.length > 0 && (
             <div className="mb-3 space-y-1.5">
               {alerts.map((a, i) => (
-                <div key={i} className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs font-medium ${a.tone === "danger" ? "bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"}`}>
+                <div key={i} className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs font-medium ${a.tone === "danger" ? "bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"}`}>
                   <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {a.text}
                 </div>
               ))}
@@ -657,7 +657,7 @@ function Mono({ children, bold }: { children: React.ReactNode; bold?: boolean })
   return <span className={`font-mono tabular-nums text-[var(--text-primary)] ${bold ? "font-bold" : ""}`}>{children}</span>;
 }
 function AddBtn({ open, onClick }: { open: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white hover:bg-[var(--data-success-800)]"><Plus className="h-3.5 w-3.5" />{open ? "Cerrar" : "Agregar"}</button>;
+  return <button type="button" onClick={onClick} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white hover:opacity-90"><Plus className="h-3.5 w-3.5" />{open ? "Cerrar" : "Agregar"}</button>;
 }
 function Meta({ k, v }: { k: string; v: string | null }) {
   return <div><span className="text-[var(--text-tertiary)]">{k}: </span><span className="font-medium text-[var(--text-primary)]">{v || "—"}</span></div>;
@@ -675,8 +675,8 @@ function CitesPill() {
 }
 function EstadoTag({ estado }: { estado: string }) {
   const m: Record<string, string> = {
-    en_pie: "bg-[var(--data-success-100)] text-[var(--data-success-900)]",
-    talado: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]",
+    en_pie: "bg-[var(--data-success-100)] text-[var(--data-success-700)]",
+    talado: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]",
     descartado: "bg-[var(--data-error-100)] text-[var(--data-error-700)]",
   };
   const label: Record<string, string> = { en_pie: "En pie", talado: "Talado", descartado: "Descartado" };
