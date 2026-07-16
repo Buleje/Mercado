@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, Bot, AlertCircle, MessageCircle, FileText } from "@buleje/design-system/icons";
+import { Send, Loader2, Bot, AlertCircle, MessageCircle, FileText, Zap } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WaTemplatePicker from "./WaTemplatePicker";
+import {
+  PREDEFINED_QUICK_REPLIES,
+  loadCustomQuickReplies,
+  renderQuickReply,
+} from "./quick-replies";
 import type { WaMessage } from "./useWhatsAppInbox";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -35,6 +40,8 @@ interface Props {
   sendErrorCode: number | null;
   /** Número del negocio del hilo (multi-número). */
   phoneNumberId: string | null;
+  /** Nombre del cliente — para armar respuestas rápidas ({nombre}). */
+  customerName?: string;
   onSend: (body: string) => Promise<boolean>;
   onSendTemplate: (tpl: { name: string; language: string; params: string[] }) => Promise<boolean>;
 }
@@ -48,11 +55,24 @@ export default function WaChatView({
   sendError,
   sendErrorCode,
   phoneNumberId,
+  customerName,
   onSend,
   onSendTemplate,
 }: Props) {
   const [draft, setDraft] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showQuick, setShowQuick] = useState(false);
+  const draftRef = useRef<HTMLTextAreaElement>(null);
+
+  // Respuestas rápidas: predefinidas + custom del editor de Plantillas.
+  // Las custom se recargan cada vez que se abre el panel (pueden editarse
+  // en el sub-tab Plantillas sin recargar la página).
+  const [quickReplies, setQuickReplies] = useState(PREDEFINED_QUICK_REPLIES);
+  useEffect(() => {
+    if (showQuick) {
+      setQuickReplies([...loadCustomQuickReplies(), ...PREDEFINED_QUICK_REPLIES]);
+    }
+  }, [showQuick]);
   const endRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
 
@@ -156,12 +176,60 @@ export default function WaChatView({
         />
       )}
 
+      {/* Respuestas rápidas: un click y el texto queda en el composer */}
+      {showQuick && (
+        <div className="border-t border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between px-4 pt-2.5">
+            <p className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
+              <Zap className="h-4 w-4 text-primary" />
+              Respuestas rápidas
+            </p>
+            <span className="text-[length:var(--ts-2xs)] text-slate-400">
+              se editan en Plantillas WhatsApp
+            </span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto p-3">
+            {quickReplies.map((q) => (
+              <button
+                key={q.id}
+                type="button"
+                title={q.texto}
+                onClick={() => {
+                  setDraft(renderQuickReply(q.texto, customerName));
+                  setShowQuick(false);
+                  draftRef.current?.focus();
+                }}
+                className="shrink-0 rounded-full border-2 border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-primary/60 hover:text-primary dark:border-slate-700 dark:text-slate-200"
+              >
+                {q.nombre}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Composer */}
       <div className="border-t border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-end gap-2">
           <button
             type="button"
-            onClick={() => setShowTemplates((s) => !s)}
+            onClick={() => { setShowQuick((s) => !s); setShowTemplates(false); }}
+            disabled={!canSend}
+            className={cn(
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
+              showQuick
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+              !canSend && "cursor-not-allowed opacity-40",
+            )}
+            aria-label="Respuestas rápidas"
+            title="Respuestas rápidas (un click y queda en el mensaje)"
+          >
+            <Zap className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => { setShowTemplates((s) => !s); setShowQuick(false); }}
             disabled={!canSend}
             className={cn(
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
@@ -176,6 +244,7 @@ export default function WaChatView({
             <FileText className="h-5 w-5" />
           </button>
           <textarea
+            ref={draftRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {

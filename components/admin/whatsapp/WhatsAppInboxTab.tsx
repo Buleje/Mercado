@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MessageCircle,
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Settings,
+  Bot,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WaConversationList from "./inbox/WaConversationList";
@@ -20,6 +21,37 @@ function prettyPhone(phone: string): string {
     return `+51 ${phone.slice(2, 5)} ${phone.slice(5, 8)} ${phone.slice(8)}`;
   }
   return `+${phone}`;
+}
+
+/**
+ * Altura del inbox medida en runtime: viewport − offset real del contenedor.
+ * El calc() fijo fallaba según banners/zoom y el composer quedaba bajo el fold
+ * (bug reportado por Brandon 2026-07-16).
+ */
+function useFillHeight(minPx = 420) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = ref.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      setHeight(Math.max(minPx, window.innerHeight - top - 12));
+    };
+    measure();
+    // Re-medir: banners de alerta y headers cargan tarde y corren el offset
+    const t1 = setTimeout(measure, 500);
+    const t2 = setTimeout(measure, 2000);
+    window.addEventListener("resize", measure);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener("resize", measure);
+    };
+  }, [minPx]);
+
+  return { ref, height };
 }
 
 interface Props {
@@ -53,7 +85,12 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
     sending,
     sendError,
     sendErrorCode,
+    pausedPhones,
+    toggleBotPause,
   } = useWhatsAppInbox();
+
+  // Bug fix: altura real disponible (el calc fijo escondía el composer)
+  const { ref: fillRef, height: fillHeight } = useFillHeight();
 
   // Mobile: mostrar lista o chat (no ambos)
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
@@ -80,7 +117,11 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-22rem)] min-h-[480px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/20">
+    <div
+      ref={fillRef}
+      style={fillHeight ? { height: `${fillHeight}px` } : undefined}
+      className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/20"
+    >
       {/* Header: estado de conexión + no leídos */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-center gap-2">
@@ -228,7 +269,34 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                     )}
                   </span>
                 </div>
+                {/* Pausar/reanudar el bot IA en ESTE hilo */}
+                {(() => {
+                  const paused = pausedPhones.includes(selected.customerPhone);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => void toggleBotPause(selected.customerPhone, !paused)}
+                      className={cn(
+                        "ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+                        paused
+                          ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10"
+                          : "border-[var(--data-success-500)]/40 bg-[var(--data-success-100)] text-[var(--data-success-700)]",
+                      )}
+                      title={paused
+                        ? "El bot NO responde en este hilo — click para reactivarlo"
+                        : "El bot responde solo — click para pausarlo y atender vos"}
+                    >
+                      <Bot className="h-4 w-4" />
+                      {paused ? "Bot pausado" : "Bot activo"}
+                    </button>
+                  );
+                })()}
               </div>
+              {pausedPhones.includes(selected.customerPhone) && (
+                <div className="border-b border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10">
+                  🤖💤 Bot pausado en este hilo — los mensajes llegan pero respondés vos
+                </div>
+              )}
               <WaChatView
                 messages={messages}
                 loading={loadingMsgs}
@@ -237,6 +305,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 sendError={sendError}
                 sendErrorCode={sendErrorCode}
                 phoneNumberId={selected.phoneNumberId}
+                customerName={selected.customerName}
                 onSend={sendMessage}
                 onSendTemplate={sendTemplate}
               />

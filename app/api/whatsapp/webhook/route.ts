@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { redactPhone, truncate } from "@/lib/logger-pii";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
 import { handleIncomingMessage as handleConciergeMessage } from "@/lib/whatsapp/concierge/concierge-router";
-import { WhatsAppMessagesDB } from "@/lib/db/whatsapp-messages.db";
+import { WhatsAppMessagesDB, getBotPausedPhones } from "@/lib/db/whatsapp-messages.db";
 import { emitAdminSSE } from "@/lib/sse-emitter";
 import { sendPushToPhone } from "@/lib/push-sender";
 
@@ -379,6 +379,25 @@ async function handleSingleMessage(
         tenantId: effectiveTenantId,
       });
     });
+
+  // ── Pausa del bot por hilo (el dueño está atendiendo a mano) ──────────────
+  // Si el hilo está pausado, NO se responde automático: el mensaje ya quedó
+  // persistido + notificado arriba; el humano contesta desde el inbox.
+  try {
+    const paused = await getBotPausedPhones(effectiveTenantId);
+    if (paused.includes(senderPhone)) {
+      logger.info("[whatsapp/webhook] Bot pausado en este hilo — sin auto-respuesta", {
+        tenantId: effectiveTenantId,
+        from: redactPhone(senderPhone),
+      });
+      return;
+    }
+  } catch (err) {
+    // Fallo leyendo la pausa → seguir con el bot (mejor responder que callar)
+    logger.warn("[whatsapp/webhook] No se pudo leer pausa del bot", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
 
   // ── ADR-058: AI-first routing con fallback al engine legacy ───────────────
   // El Concierge AI (ADR-046) jamás lanza — captura todo internamente y

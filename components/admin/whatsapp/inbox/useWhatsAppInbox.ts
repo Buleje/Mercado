@@ -59,6 +59,8 @@ export function useWhatsAppInbox() {
   const [conversations, setConversations] = useState<WaConversation[]>([]);
   const [connection, setConnection] = useState<WaConnection | null>(null);
   const [numbers, setNumbers] = useState<WaNumber[]>([]);
+  // Hilos con el bot IA pausado (el operador atiende a mano)
+  const [pausedPhones, setPausedPhones] = useState<string[]>([]);
   // Multi-número: filtrar el inbox por un número del negocio (null = todos)
   const [numberFilter, setNumberFilter] = useState<string | null>(null);
   const numberFilterRef = useRef<string | null>(null);
@@ -88,12 +90,14 @@ export function useWhatsAppInbox() {
         conversations: WaConversation[];
         numbers: WaNumber[];
         connection: WaConnection;
+        pausedPhones?: string[];
       };
       // Evitar pisar la lista si el usuario cambió el filtro durante el fetch
       if (numberFilterRef.current === filter) {
         setConversations(json.conversations);
         setNumbers(json.numbers ?? []);
         setConnection(json.connection);
+        setPausedPhones(json.pausedPhones ?? []);
         setConvsError(false);
       }
     } catch {
@@ -210,6 +214,24 @@ export function useWhatsAppInbox() {
     [doSend],
   );
 
+  /** Pausa/reanuda el bot IA en un hilo (optimista, corrige con la respuesta). */
+  const toggleBotPause = useCallback(async (phone: string, paused: boolean) => {
+    setPausedPhones((prev) =>
+      paused ? Array.from(new Set([...prev, phone])) : prev.filter((p) => p !== phone),
+    );
+    try {
+      const res = await tenantFetch("/api/admin/whatsapp/bot-pause", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ phone, paused }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { pausedPhones?: string[] };
+      if (res.ok && json.pausedPhones) setPausedPhones(json.pausedPhones);
+    } catch {
+      /* el próximo poll corrige el estado */
+    }
+  }, []);
+
   // Poll de conversaciones (recarga inmediata al cambiar el filtro de número)
   useEffect(() => {
     setLoadingConvs(true);
@@ -259,6 +281,8 @@ export function useWhatsAppInbox() {
     sending,
     sendError,
     sendErrorCode,
+    pausedPhones,
+    toggleBotPause,
     refresh: loadConversations,
   };
 }

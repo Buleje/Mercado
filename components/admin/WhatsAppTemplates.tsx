@@ -3,70 +3,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { Copy, Check, Plus, Pencil, MessageSquare, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+// Single source con el inbox WhatsApp (respuestas rápidas del composer)
+import {
+  PREDEFINED_QUICK_REPLIES,
+  QUICK_REPLIES_LS_KEY,
+  loadCustomQuickReplies,
+  type QuickReply,
+} from "@/components/admin/whatsapp/inbox/quick-replies";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type WATemplate = {
-  id: string;
-  nombre: string;
-  texto: string;
-  variables: string[];
-  custom?: boolean;
-};
+type WATemplate = QuickReply;
 
-// ── Predefined templates ──────────────────────────────────────────────────────
+const PREDEFINED: WATemplate[] = PREDEFINED_QUICK_REPLIES;
 
-const PREDEFINED: WATemplate[] = [
-  {
-    id: "cobro-fiado",
-    nombre: "Cobrar fiado",
-    texto: "Hola {nombre}, te recordamos que tienes un pendiente de S/{monto} en Buleje. ¿Cuándo puedes pasar? 😊",
-    variables: ["nombre", "monto"],
-  },
-  {
-    id: "confirmar-pedido",
-    nombre: "Confirmar pedido",
-    texto: "✅ Hola {nombre}, tu pedido #{pedido} ha sido confirmado. Lo tendremos listo pronto. 🛒",
-    variables: ["nombre", "pedido"],
-  },
-  {
-    id: "cumpleanos",
-    nombre: "Feliz cumpleaños",
-    texto: "🎂 ¡Feliz cumpleaños {nombre}! Te regalamos un 10% de descuento. Usa el código: CUMPLE-{codigo}. ¡Te esperamos! 🎁",
-    variables: ["nombre", "codigo"],
-  },
-  {
-    id: "reactivacion",
-    nombre: "Reactivar cliente",
-    texto: "Hola {nombre}, ¡te extrañamos! Tenemos ofertas especiales esperándote en Buleje. ¡Visítanos! 🛍",
-    variables: ["nombre"],
-  },
-  {
-    id: "stock-disponible",
-    nombre: "Producto disponible",
-    texto: "📦 Hola {nombre}, {producto} ya está disponible en Buleje. ¡No te quedes sin el tuyo! 🏃",
-    variables: ["nombre", "producto"],
-  },
-  {
-    id: "agradecimiento",
-    nombre: "Agradecimiento",
-    texto: "🙏 Hola {nombre}, gracias por tu compra de hoy (S/{monto}). ¡Vuelve pronto a Buleje! 😊",
-    variables: ["nombre", "monto"],
-  },
-];
-
-const LS_KEY = "buleje-whatsapp-templates";
-
-function loadCustomTemplates(): WATemplate[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? (JSON.parse(raw) as WATemplate[]) : [];
-  } catch { return []; }
-}
+const loadCustomTemplates = loadCustomQuickReplies;
 
 function saveCustomTemplates(templates: WATemplate[]) {
-  localStorage.setItem(LS_KEY, JSON.stringify(templates));
+  localStorage.setItem(QUICK_REPLIES_LS_KEY, JSON.stringify(templates));
 }
 
 // ── Variable highlight ────────────────────────────────────────────────────────

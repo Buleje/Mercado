@@ -47,7 +47,7 @@ type GraphError = { error?: { code?: number; message?: string } };
  * honesto para que el operador sepa por qué no salió.
  */
 export async function POST(req: NextRequest) {
-  const _rl = applyRateLimit(req, "MODERATE", "admin-whatsapp-send");
+  const _rl = applyRateLimit(req, "GENEROUS", "admin-whatsapp-send");
   if (_rl) return _rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;

@@ -17,7 +17,7 @@ import { getApprovedTemplates } from "@/lib/whatsapp/templates";
  * a completarlo en Bot WhatsApp.
  */
 export async function GET(req: NextRequest) {
-  const _rl = applyRateLimit(req, "MODERATE", "admin-whatsapp-templates");
+  const _rl = applyRateLimit(req, "GENEROUS", "admin-whatsapp-templates");
   if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;

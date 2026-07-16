@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { WhatsAppMessagesDB, listWhatsAppConfigs } from "@/lib/db/whatsapp-messages.db";
+import {
+  WhatsAppMessagesDB,
+  listWhatsAppConfigs,
+  getBotPausedPhones,
+} from "@/lib/db/whatsapp-messages.db";
 
 /**
  * GET /api/admin/whatsapp/conversations — inbox WhatsApp del admin.
@@ -11,7 +15,7 @@ import { WhatsAppMessagesDB, listWhatsAppConfigs } from "@/lib/db/whatsapp-messa
  * ?phoneNumberId= filtra por número del negocio (multi-número, migración 311).
  */
 export async function GET(req: NextRequest) {
-  const _rl = applyRateLimit(req, "MODERATE", "admin-whatsapp-inbox");
+  const _rl = applyRateLimit(req, "GENEROUS", "admin-whatsapp-inbox");
   if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -20,13 +24,15 @@ export async function GET(req: NextRequest) {
   const filter = rawFilter && /^\d{1,50}$/.test(rawFilter) ? rawFilter : undefined;
 
   try {
-    const [conversations, configs] = await Promise.all([
+    const [conversations, configs, pausedPhones] = await Promise.all([
       WhatsAppMessagesDB.listConversations(auth.tenantId, filter),
       listWhatsAppConfigs(auth.tenantId),
+      getBotPausedPhones(auth.tenantId),
     ]);
 
     return NextResponse.json({
       conversations,
+      pausedPhones,
       numbers: configs.map((c) => ({
         id: c.id,
         label: c.label,

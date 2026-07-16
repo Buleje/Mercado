@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidate, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 
 /**
  * lib/db/whatsapp-messages.db.ts — WhatsApp Inbox (Meta Cloud API)
@@ -132,6 +133,35 @@ export async function getConfigForPhoneNumberId(
 export async function getWhatsAppConfig(tenantId: string): Promise<DbWhatsAppConfig | null> {
   const configs = await listWhatsAppConfigs(tenantId);
   return configs.find((c) => c.isActive) ?? configs[0] ?? null;
+}
+
+// ── Pausa del bot por conversación ────────────────────────────────────────────
+// Cuando el dueño atiende un hilo a mano, el bot IA se calla en ESE hilo.
+// Persistido en PlatformSetting `wa-bot-paused:{tenantId}` (lista de teléfonos)
+// — cero migración, sobrevive a la expiración de WhatsAppConversation (TTL 30min).
+
+function botPausedKey(tenantId: string): string {
+  return `wa-bot-paused:${tenantId}`;
+}
+
+/** Teléfonos con el bot pausado en este tenant. */
+export async function getBotPausedPhones(tenantId: string): Promise<string[]> {
+  const list = await PlatformSettingsDB.get<string[]>(botPausedKey(tenantId));
+  return Array.isArray(list) ? list : [];
+}
+
+/** Pausa/reanuda el bot para un cliente. Devuelve la lista resultante. */
+export async function setBotPaused(
+  tenantId: string,
+  customerPhone: string,
+  paused: boolean,
+): Promise<string[]> {
+  const current = await getBotPausedPhones(tenantId);
+  const next = paused
+    ? Array.from(new Set([...current, customerPhone]))
+    : current.filter((p) => p !== customerPhone);
+  await PlatformSettingsDB.set(botPausedKey(tenantId), next, `wa-inbox:${tenantId}`);
+  return next;
 }
 
 export const WhatsAppMessagesDB = {

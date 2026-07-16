@@ -14,7 +14,7 @@ const PhoneSchema = z.string().regex(/^\d{8,15}$/, "Teléfono inválido");
  * GET /api/admin/whatsapp/messages?phone=519xxxxxxxx — hilo con un cliente.
  */
 export async function GET(req: NextRequest) {
-  const _rl = applyRateLimit(req, "MODERATE", "admin-whatsapp-inbox");
+  const _rl = applyRateLimit(req, "GENEROUS", "admin-whatsapp-inbox");
   if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
  * Body: { phone }
  */
 export async function PATCH(req: NextRequest) {
-  const _rl = applyRateLimit(req, "MODERATE", "admin-whatsapp-inbox");
+  const _rl = applyRateLimit(req, "GENEROUS", "admin-whatsapp-inbox");
   if (_rl) return _rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
