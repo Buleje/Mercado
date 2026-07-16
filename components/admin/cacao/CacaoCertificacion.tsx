@@ -109,7 +109,7 @@ export default function CacaoCertificacion() {
               <p className="text-xs font-bold text-[var(--text-tertiary)]">Faltan geolocalizar ({sinGeo.length}):</p>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {sinGeo.slice(0, 12).map((p) => (
-                  <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]"><MapPin className="h-3 w-3" />{p.nombre}</span>
+                  <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"><MapPin className="h-3 w-3" />{p.nombre}</span>
                 ))}
                 {sinGeo.length > 12 && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">+{sinGeo.length - 12} más</span>}
               </div>
@@ -171,7 +171,7 @@ export default function CacaoCertificacion() {
                   <Td className="text-right">
                     {geo
                       ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"><ShieldCheck className="h-3 w-3" />Listo</span>
-                      : <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]">Falta geo</span>}
+                      : <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">Falta geo</span>}
                   </Td>
                 </tr>
               );

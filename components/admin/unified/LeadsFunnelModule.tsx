@@ -187,7 +187,7 @@ export default function LeadsFunnelModule() {
       </AdminModuleHeader>
 
       {error && (
-        <div className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-900)] border border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-300)] rounded-xl p-4 text-base">
+        <div className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-700)] border border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] rounded-xl p-4 text-base">
           {error}
         </div>
       )}

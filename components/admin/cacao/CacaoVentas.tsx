@@ -570,9 +570,9 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
 function PagoBadge({ estado, saldo }: { estado: string; saldo: number }) {
   const cls =
     estado === "pagado"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
       : estado === "parcial"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
   return (
     <span className="inline-flex items-center gap-1.5">

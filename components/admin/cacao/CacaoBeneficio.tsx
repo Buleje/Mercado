@@ -77,12 +77,12 @@ const n2 = (v: string | number | null) => (v == null || v === "" ? "—" : Numbe
 const ESTADO: Record<string, { label: string; cls: string }> = {
   fermentando: {
     label: "Fermentando",
-    cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]",
+    cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]",
   },
-  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-900)]" },
+  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)]" },
   terminado: {
     label: "Terminado",
-    cls: "bg-[var(--data-success-100)] text-[var(--data-success-900)]",
+    cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)]",
   },
 };
 const FILTERS: { v: string; label: string }[] = [
@@ -368,7 +368,7 @@ export default function CacaoBeneficio() {
         <button
           type="button"
           onClick={() => setFilter("atencion")}
-          className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-left text-sm text-[var(--data-warning-900)] transition hover:bg-[var(--data-warning-100)]"
+          className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-left text-sm text-[var(--data-warning-700)] transition hover:bg-[var(--data-warning-100)]"
         >
           <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning-700)]" />
           <span className="flex-1">

@@ -268,11 +268,11 @@ export default function CacaoProducerDrawer({
                       Estado de cuenta
                     </span>
                     {agg.saldo > 0 ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
                         <AlertTriangle className="h-3 w-3" /> Debés S/ {n2(agg.saldo)}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-900)]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">
                         <Check className="h-3 w-3" /> Al día
                       </span>
                     )}
@@ -532,7 +532,7 @@ export default function CacaoProducerDrawer({
                                   setPayMonto(String(debido));
                                 }}
                                 title={`Saldo S/ ${n2(saldo)}`}
-                                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--data-warning-400)] bg-[var(--data-warning-50)] px-2 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)] hover:brightness-95"
+                                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] hover:brightness-95"
                               >
                                 <HandCoins className="h-3.5 w-3.5" /> Pagar
                               </button>
@@ -560,7 +560,7 @@ export default function CacaoProducerDrawer({
               type="button"
               disabled={saving}
               onClick={() => patch({ status: inactive ? "activo" : "inactivo" })}
-              className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3.5 text-sm font-bold ${inactive ? "border-[var(--data-success-300)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+              className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3.5 text-sm font-bold ${inactive ? "border-[var(--data-success-500)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
             >
               <Power className="h-4 w-4" /> {inactive ? "Activar" : "Desactivar"}
             </button>
@@ -580,7 +580,7 @@ export default function CacaoProducerDrawer({
                   ].join("\n");
                   shareCacaoText(`Estado de cuenta — ${producer.nombre}`, t);
                 }}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-400)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
               >
                 <MessageCircle className="h-4 w-4" />
                 Compartir
@@ -791,9 +791,9 @@ function GradoMini({ grado }: { grado: string | null }) {
   const g = grado as CacaoGrado;
   const cls =
     g === "I"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
       : g === "II"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
         : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
   return (
     <span className={`rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${cls}`}>

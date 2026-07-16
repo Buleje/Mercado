@@ -520,7 +520,7 @@ async function TenantLandingContent({ params, searchParams }: TenantLandingProps
     },
     enterprise: {
       label: "Business",
-      className: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-900)]/30 dark:text-amber-400",
+      className: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-700)]/30 dark:text-amber-400",
     },
   };
   const badge = planBadge[tenant.plan] ?? planBadge.free;

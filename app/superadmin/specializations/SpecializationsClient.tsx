@@ -196,7 +196,7 @@ export default function SpecializationsClient({
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider ${
                       spec.status === "available"
-                        ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+                        ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
                         : spec.status === "beta"
                           ? "bg-[#0d9488] text-[#0d9488]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"

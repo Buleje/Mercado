@@ -187,12 +187,12 @@ export default function CacaoNoticiero() {
               (data?.stale ? (
                 <span
                   title={data.staleAt ? `Último dato: ${relTime(data.staleAt)}` : "Fuente no disponible"}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-900)]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-700)]"
                 >
                   <AlertCircle className="h-3 w-3" /> Desactualizado
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-900)]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-700)]">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--data-success-600)]" /> En vivo
                 </span>
               ))}
@@ -262,7 +262,7 @@ export default function CacaoNoticiero() {
                     </div>
                   </div>
                   {!sel && (
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${up ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]" : down ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
                       {up ? <TrendingUp className="h-4 w-4" /> : down ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                       {p.changePct != null ? `${up ? "+" : ""}${p.changePct}% hoy` : "—"}
                     </span>

@@ -111,7 +111,7 @@ export default function CacaoReconcileModal({ onClose, onDone }: { onClose: () =
     <AdminModal open onClose={close} variant="wide" icon={Link2} title="Vincular lotes al padrón" description="Lotes registrados con un nombre libre que aún no suman al historial de ningún productor.">
       <div className="space-y-4 p-5">
         {!loading && groups.length > 0 && (
-          <div className="flex items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-900)]">
+          <div className="flex items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)]">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <span><strong>{totals.lotes}</strong> lote{totals.lotes === 1 ? "" : "s"} · <strong>S/ {n2(totals.pagado)}</strong> sin vincular. Elegí el productor del padrón (o creá uno) y vinculá.</span>
           </div>

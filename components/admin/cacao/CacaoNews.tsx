@@ -60,7 +60,7 @@ function ageGroup(iso: string | null): Bucket {
   return "historico";
 }
 const SENT_META: Record<Sent, { label: string; cls: string; border: string; Icon: typeof TrendingUp }> = {
-  alcista: { label: "Alcista", cls: "bg-[var(--data-success-100)] text-[var(--data-success-900)]", border: "border-l-[var(--data-success-500)]", Icon: TrendingUp },
+  alcista: { label: "Alcista", cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)]", border: "border-l-[var(--data-success-500)]", Icon: TrendingUp },
   bajista: { label: "Bajista", cls: "bg-[var(--data-error-100)] text-[var(--data-error-700)]", border: "border-l-[var(--data-error-500)]", Icon: TrendingDown },
   neutral: { label: "Neutral", cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", border: "border-l-[var(--rule-base)]", Icon: Minus },
 };
@@ -178,7 +178,7 @@ export default function CacaoNews() {
           <SectionTitle className="mt-0.5 flex items-center gap-2">
             Noticias del cacao
             {stale.on && (
-              <span title={stale.at ? `Último feed: ${relTime(stale.at)}` : "Fuente no disponible"} className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-900)]">
+              <span title={stale.at ? `Último feed: ${relTime(stale.at)}` : "Fuente no disponible"} className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-700)]">
                 <AlertCircle className="h-3 w-3" /> Desactualizado
               </span>
             )}

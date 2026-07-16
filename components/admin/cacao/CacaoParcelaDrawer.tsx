@@ -172,7 +172,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
                         <span className="text-sm font-bold text-[var(--text-primary)]">{LABOR_LABEL[l.tipo]}</span>
                         {l.estado === "hecho"
                           ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"><Check className="h-3 w-3" />Hecho {fdate(l.fechaHecho)}</span>
-                          : <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${vencido ? "bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"}`}><Calendar className="h-3 w-3" />{vencido ? "Vencida" : "Programada"} {fdate(l.fechaPlan)}</span>}
+                          : <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${vencido ? "bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"}`}><Calendar className="h-3 w-3" />{vencido ? "Vencida" : "Programada"} {fdate(l.fechaPlan)}</span>}
                       </div>
                       {(l.detalle || l.responsable || l.cantidad != null || l.insumo || l.costo != null) && (
                         <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{[l.detalle, l.responsable && `por ${l.responsable}`, l.cantidad != null && `${l.cantidad}${l.unidad ? ` ${l.unidad}` : ""}`, l.insumo && (l.dosis ? `${l.insumo} (${l.dosis})` : l.insumo), l.costo != null && `S/ ${money(l.costo)}`].filter(Boolean).join(" · ")}</p>

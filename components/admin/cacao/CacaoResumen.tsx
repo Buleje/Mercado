@@ -225,10 +225,10 @@ export default function CacaoResumen() {
 
       {/* Alerta humedad */}
       {trends && trends.humedadFueraCount > 0 && (
-        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-300)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-900)]">
+        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)]">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
           <div><strong>{trends.humedadFueraCount} lote{trends.humedadFueraCount > 1 ? "s" : ""} con humedad fuera de norma</strong> (&gt; 7%).{" "}
-            <span className="text-[var(--data-warning-800)]">{trends.humedadFuera.map((h) => `${h.loteCode} (${h.humedadPct.toFixed(1)}%)`).join(" · ")}</span></div>
+            <span className="text-[var(--data-warning-700)]">{trends.humedadFuera.map((h) => `${h.loteCode} (${h.humedadPct.toFixed(1)}%)`).join(" · ")}</span></div>
         </div>
       )}
     </div>

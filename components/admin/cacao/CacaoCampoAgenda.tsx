@@ -26,7 +26,7 @@ const fdate = (iso: string) => { try { return new Date(iso).toLocaleDateString("
 const monthKey = (iso: string) => { try { const d = new Date(iso); return d.toLocaleDateString("es-PE", { month: "long", year: "numeric", timeZone: "UTC" }); } catch { return "—"; } };
 const ESTADO = {
   hecho: { label: "Hecha", icon: CheckCircle2, bg: "var(--data-success-50)", fg: "var(--data-success-700)" },
-  pendiente: { label: "Programada", icon: Clock, bg: "var(--data-warning-50)", fg: "var(--data-warning-800)" },
+  pendiente: { label: "Programada", icon: Clock, bg: "var(--data-warning-50)", fg: "var(--data-warning-700)" },
   vencido: { label: "Vencida", icon: AlertTriangle, bg: "var(--data-error-50)", fg: "var(--data-error-700)" },
 } as const;
 
@@ -103,7 +103,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {sugeridas.slice(0, 9).map((s) => {
               const Icon = ICON[s.tipo]; const key = `${s.parcelaId}:${s.tipo}`;
-              const tono = s.atrasada ? "text-[var(--data-error-700)]" : s.nunca ? "text-[var(--data-warning-800)]" : "text-[var(--text-tertiary)]";
+              const tono = s.atrasada ? "text-[var(--data-error-700)]" : s.nunca ? "text-[var(--data-warning-700)]" : "text-[var(--text-tertiary)]";
               return (
                 <div key={key} className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5">
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--surface-raised)] text-[var(--accent)]"><Icon className="h-4 w-4" /></span>

@@ -638,7 +638,7 @@ export default function CacaoAcopio() {
                         {l.productorNombre && !l.productorId && (
                           <span
                             title="Productor no vinculado al padrón"
-                            className="ml-1.5 inline-flex rounded bg-[var(--data-warning-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]"
+                            className="ml-1.5 inline-flex rounded bg-[var(--data-warning-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"
                           >
                             sin vincular
                           </span>
@@ -1025,9 +1025,9 @@ function SortTh({
 function PagoBadge({ estado, saldo }: { estado: string; saldo: number }) {
   const cls =
     estado === "pagado"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
       : estado === "parcial"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
         : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]";
   const label = ESTADO_PAGO_LABEL[estado as CacaoEstadoPago] ?? estado;
   return (
@@ -1070,9 +1070,9 @@ function GradoBadge({ grado }: { grado: string | null }) {
   const g = grado as CacaoGrado;
   const cls =
     g === "I"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
       : g === "II"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
         : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>

@@ -281,7 +281,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
             {/* ── Columna formulario ── */}
             <form id="cacao-lote-form" onSubmit={submit} className="space-y-5 px-5 py-5">
               {!online && (
-                <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-300)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-900)]">
+                <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)]">
                   <WifiOff className="h-4 w-4 shrink-0" />
                   Sin conexión. Podés seguir cargando; si al guardar falla la red, el lote queda como
                   borrador y lo reintentás.
@@ -448,7 +448,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                       value={humedadPct}
                       onChange={(e) => setHumedadPct(e.target.value)}
                       placeholder="7.0"
-                      className={`${I} font-mono tabular-nums ${humOk === false ? "border-[var(--data-warning-400)]" : humOk === true ? "border-[var(--data-success-400)]" : ""}`}
+                      className={`${I} font-mono tabular-nums ${humOk === false ? "border-[var(--data-warning-500)]" : humOk === true ? "border-[var(--data-success-500)]" : ""}`}
                     />
                   </Field>
                 </div>
@@ -570,7 +570,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                 <GradoBadge grado={grado} />
                 {humedadPct && (
                   <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${humOk ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"}`}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${humOk ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"}`}
                   >
                     <Droplets className="h-3.5 w-3.5" />
                     {Number(humedadPct).toFixed(1)}%
@@ -750,9 +750,9 @@ function GradoBadge({ grado }: { grado: "I" | "II" | "fuera_norma" | null }) {
     );
   const cls =
     grado === "I"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
       : grado === "II"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
         : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
   return (
     <span

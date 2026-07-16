@@ -171,7 +171,7 @@ export default function CacaoTablaConversion({
                     <td className={`px-3 py-2.5 text-right font-mono font-bold tabular-nums ${esBase ? "text-[var(--text-secondary)]" : varPct > 0 ? "text-[var(--data-success-700)]" : varPct < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>
                       {esBase ? "0%" : `${varPct > 0 ? "+" : ""}${varPct.toFixed(2)}%`}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-base font-extrabold tabular-nums text-[var(--data-success-900)]">S/ {r.compraKg.toFixed(2)}/kg</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-base font-extrabold tabular-nums text-[var(--data-success-700)]">S/ {r.compraKg.toFixed(2)}/kg</td>
                   </tr>
                 );
               })}

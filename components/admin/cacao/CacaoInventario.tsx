@@ -91,9 +91,9 @@ function relTime(iso: string | null): string {
 const ESTADO: Record<string, { label: string; cls: string }> = {
   fermentando: {
     label: "Fermentando",
-    cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]",
+    cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]",
   },
-  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-900)]" },
+  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)]" },
 };
 
 export default function CacaoInventario() {
@@ -253,7 +253,7 @@ export default function CacaoInventario() {
 
       {/* Alerta de stock mínimo */}
       {inv.bajoStockMinimo && inv.stockMinimoKg != null && (
-        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-400)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-900)]">
+        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)]">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <p>
             Stock bajo el mínimo: <b>{n2(inv.kgSecoDisponible)} kg</b> disponibles &lt; mínimo de{" "}
@@ -521,7 +521,7 @@ export default function CacaoInventario() {
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${sale ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--data-success-100)] text-[var(--data-success-900)]"}`}
+                      className={`inline-flex rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${sale ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--data-success-100)] text-[var(--data-success-700)]"}`}
                     >
                       {CACAO_AJUSTE_LABEL[a.tipo as CacaoAjusteTipo] ?? a.tipo}
                     </span>

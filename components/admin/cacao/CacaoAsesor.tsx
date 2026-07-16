@@ -19,8 +19,8 @@ interface Local { miPrecioKg: number | null; kg: number; lotes: number; refKg: n
 interface Resp { advisor: Advisor | null; narrative: string | null; local?: Local; generatedAt?: string }
 
 const SIGNAL = {
-  vender: { label: "VENDER", Icon: TrendingUp, ring: "var(--data-success-500)", soft: "var(--data-success-50)", text: "var(--data-success-900)", accent: "var(--data-success-700)" },
-  aguantar: { label: "AGUANTAR", Icon: Clock, ring: "var(--data-warning-500)", soft: "var(--data-warning-50)", text: "var(--data-warning-900)", accent: "var(--data-warning-700)" },
+  vender: { label: "VENDER", Icon: TrendingUp, ring: "var(--data-success-500)", soft: "var(--data-success-50)", text: "var(--data-success-700)", accent: "var(--data-success-700)" },
+  aguantar: { label: "AGUANTAR", Icon: Clock, ring: "var(--data-warning-500)", soft: "var(--data-warning-50)", text: "var(--data-warning-700)", accent: "var(--data-warning-700)" },
   neutral: { label: "NEUTRAL", Icon: Minus, ring: "var(--rule-strong)", soft: "var(--surface-sunken)", text: "var(--text-primary)", accent: "var(--text-secondary)" },
 } as const;
 
@@ -81,7 +81,7 @@ export default function CacaoAsesor() {
             <>
               <button type="button" onClick={descargarPDF} disabled={pdfBusy} title="Descargar PDF" className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[var(--accent)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60">{pdfBusy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}<span className="hidden sm:inline">PDF</span></button>
               <button type="button" onClick={() => printCacaoAsesor(a, data?.local ?? null, data?.narrative ?? null)} title="Informe imprimible" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" /><span className="hidden sm:inline">Imprimir</span></button>
-              <button type="button" onClick={() => shareCacaoText("Asesor de cacao", asesorTexto(a, data?.local ?? null))} title="Compartir por WhatsApp" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--data-success-400)] px-3 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]"><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Compartir</span></button>
+              <button type="button" onClick={() => shareCacaoText("Asesor de cacao", asesorTexto(a, data?.local ?? null))} title="Compartir por WhatsApp" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--data-success-500)] px-3 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]"><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Compartir</span></button>
             </>
           )}
           <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
@@ -151,7 +151,7 @@ export default function CacaoAsesor() {
                 </div>
                 <div className="flex h-3 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                   <div style={{ width: `${a.direccion.probabilidadSuba}%`, background: "var(--data-success-500)" }} />
-                  <div style={{ width: `${100 - a.direccion.probabilidadSuba}%`, background: "var(--data-error-400)" }} />
+                  <div style={{ width: `${100 - a.direccion.probabilidadSuba}%`, background: "var(--data-error-500)" }} />
                 </div>
               </div>
               <div className="space-y-1">
@@ -299,7 +299,7 @@ export default function CacaoAsesor() {
               <Card icon={Newspaper} title="Señal de las noticias">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${
-                    a.news.senal === "alcista" ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+                    a.news.senal === "alcista" ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
                       : a.news.senal === "bajista" ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
                         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
                     {a.news.senal === "alcista" ? <TrendingUp className="h-4 w-4" /> : a.news.senal === "bajista" ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}

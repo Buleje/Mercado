@@ -1176,7 +1176,7 @@ export function AdminSidebar({
                                   <span className="truncate">{subTabLabel}</span>
                                   <ScopeBadge tabId={subTabId} variant="dot" />
                                   {isFeaturedSub && subAlertCount === 0 && subTabId !== "asistente-ia" && (
-                                    <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--data-warning-500)]/20 text-[var(--data-warning-700)] dark:text-[var(--data-warning-400)] leading-none">
+                                    <span className="ml-auto shrink-0 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-md bg-[var(--data-warning-500)]/20 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] leading-none">
                                       Destacado
                                     </span>
                                   )}

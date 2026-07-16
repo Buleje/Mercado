@@ -221,7 +221,7 @@ function OperationCard({ op }: { op: Operation }) {
           <li key={s.n} className="relative flex gap-3 pb-4 last:pb-0">
             {/* línea conectora */}
             {i < stages.length - 1 && (
-              <span className={`absolute left-[13px] top-7 bottom-0 w-px ${s.done ? "bg-[var(--data-success-300)]" : "bg-[var(--rule-soft)]"}`} />
+              <span className={`absolute left-[13px] top-7 bottom-0 w-px ${s.done ? "bg-[var(--data-success-500)]" : "bg-[var(--rule-soft)]"}`} />
             )}
             {/* número */}
             <span

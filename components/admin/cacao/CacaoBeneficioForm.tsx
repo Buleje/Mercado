@@ -18,9 +18,9 @@ const I = "w-full h-11 rounded-lg border border-[var(--rule-base)] bg-[var(--sur
 const FERM_LABEL: Record<string, string> = { cajon: "Cajón", saco: "Saco", monton: "Montón", tina: "Tina" };
 const SEC_LABEL: Record<string, string> = { solar: "Solar", tunel: "Túnel", mecanico: "Mecánico" };
 const ESTADO_CFG: Record<string, { label: string; cls: string }> = {
-  fermentando: { label: "Fermentando", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" },
-  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-900)]" },
-  terminado: { label: "Terminado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-900)]" },
+  fermentando: { label: "Fermentando", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" },
+  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)]" },
+  terminado: { label: "Terminado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)]" },
 };
 
 export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
@@ -140,7 +140,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
                   <Field label="Días"><input type="number" value={secDias} onChange={(e) => setSecDias(e.target.value)} placeholder="7" className={`${I} font-mono tabular-nums`} /></Field>
                   <Field label="Método"><select value={metodoSecado} onChange={(e) => setMetodo(e.target.value)} className={I}><option value="">—</option>{CACAO_SECADO.map((s) => <option key={s} value={s}>{SEC_LABEL[s]}</option>)}</select></Field>
                   <Field label="Humedad inicial %"><input type="number" step="0.1" value={humedadInicial} onChange={(e) => setHumIni(e.target.value)} placeholder="55" className={`${I} font-mono tabular-nums`} /></Field>
-                  <Field label="Humedad final %"><input type="number" step="0.1" value={humedadFinal} onChange={(e) => setHumFin(e.target.value)} placeholder="7.0" className={`${I} font-mono tabular-nums ${humOk === false ? "border-[var(--data-warning-400)]" : ""}`} /></Field>
+                  <Field label="Humedad final %"><input type="number" step="0.1" value={humedadFinal} onChange={(e) => setHumFin(e.target.value)} placeholder="7.0" className={`${I} font-mono tabular-nums ${humOk === false ? "border-[var(--data-warning-500)]" : ""}`} /></Field>
                 </div>
               </Section>
 
@@ -159,7 +159,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
 
               <div className="flex items-center justify-between">
                 <span className={`inline-flex rounded-full px-3 py-1.5 text-base font-extrabold ${est.cls}`}>{est.label}</span>
-                {humedadFinal && <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${humOk ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"}`}><Droplets className="h-3.5 w-3.5" />{Number(humedadFinal).toFixed(1)}%</span>}
+                {humedadFinal && <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${humOk ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"}`}><Droplets className="h-3.5 w-3.5" />{Number(humedadFinal).toFixed(1)}%</span>}
               </div>
 
               <div className="mt-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">

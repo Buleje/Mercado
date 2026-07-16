@@ -935,7 +935,7 @@ export default function ChatConversationView({
                             <div className="flex flex-col items-center gap-1 px-3 pt-3">
                               <div className="flex items-center gap-0.5">
                                 {[0, 1, 2, 3, 4].map((i) => (
-                                  <Star key={i} className="h-5 w-5 fill-[var(--data-warning-400)] text-[var(--data-warning-500)]" aria-hidden />
+                                  <Star key={i} className="h-5 w-5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" aria-hidden />
                                 ))}
                               </div>
                               <p className="text-center text-sm font-bold text-[var(--text-primary)]">

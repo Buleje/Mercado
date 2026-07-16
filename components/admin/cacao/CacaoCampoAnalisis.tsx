@@ -80,7 +80,7 @@ export default function CacaoCampoAnalisis({ onOpenParcela }: { onOpenParcela: (
       {mejor && (
         <div className="flex items-center gap-3 rounded-2xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--data-success-500)] text-white"><Trophy className="h-5 w-5" /></span>
-          <p className="text-[var(--data-success-800)]">Sección más productiva: <strong>{mejor.codigo}</strong> con <strong>{n1(mejor.rendKgHa)} kg/ha</strong>{mejor.roi != null && <> · ROI <strong>{n2(mejor.roi)}×</strong></>}.</p>
+          <p className="text-[var(--data-success-700)]">Sección más productiva: <strong>{mejor.codigo}</strong> con <strong>{n1(mejor.rendKgHa)} kg/ha</strong>{mejor.roi != null && <> · ROI <strong>{n2(mejor.roi)}×</strong></>}.</p>
         </div>
       )}
 

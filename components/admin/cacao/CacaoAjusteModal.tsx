@@ -125,7 +125,7 @@ export default function CacaoAjusteModal({ variedades, onClose, onSaved }: Props
                   key={t}
                   type="button"
                   onClick={() => setTipo(t)}
-                  className={`rounded-lg border-2 px-2 py-2 text-xs font-bold transition ${tipo === t ? (cacaoAjusteSigno(t) < 0 ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-900)]") : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                  className={`rounded-lg border-2 px-2 py-2 text-xs font-bold transition ${tipo === t ? (cacaoAjusteSigno(t) < 0 ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]") : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                 >
                   {CACAO_AJUSTE_LABEL[t]}
                 </button>
@@ -144,7 +144,7 @@ export default function CacaoAjusteModal({ variedades, onClose, onSaved }: Props
                 value={cantidadKg}
                 onChange={(e) => setCantidad(e.target.value)}
                 placeholder="0.00"
-                className={`${I} font-mono tabular-nums ${sale ? "border-[var(--data-error-300)]" : "border-[var(--data-success-300)]"}`}
+                className={`${I} font-mono tabular-nums ${sale ? "border-[var(--data-error-500)]" : "border-[var(--data-success-500)]"}`}
               />
             </Field>
             <Field label="Variedad">

@@ -207,7 +207,7 @@ export function CheckoutPaymentSection({
             "relative h-2.5 w-2.5 rounded-full shrink-0",
             isOpen
               ? "bg-white animate-pulse"
-              : "bg-[var(--data-warning-300)]",
+              : "bg-[var(--data-warning-500)]",
           )}
           aria-hidden="true"
         />

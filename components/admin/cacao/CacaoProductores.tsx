@@ -113,7 +113,7 @@ export default function CacaoProductores() {
       {/* Lotes de acopio sin vínculo al padrón: no suman al historial ni a los
           pagos del productor. Se ofrece reconciliar en 1 click. */}
       {orphan && orphan.lotes > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-900)]">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)]">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <div className="min-w-[180px] flex-1">
             <strong>{orphan.lotes} lote{orphan.lotes === 1 ? "" : "s"}</strong> (S/ {n2(orphan.pagado)}) de acopio sin vincular al padrón. No suman al historial ni a los pagos del productor.
@@ -154,7 +154,7 @@ export default function CacaoProductores() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-[var(--text-primary)]">{p.nombre}</span>
                     {p.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[p.certificacion] ?? p.certificacion}</span>}
-                    {p.stats.saldo > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]"><AlertTriangle className="h-3 w-3" />Debés S/ {n2(p.stats.saldo)}</span>}
+                    {p.stats.saldo > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"><AlertTriangle className="h-3 w-3" />Debés S/ {n2(p.stats.saldo)}</span>}
                   </div>
                   <span className="text-xs text-[var(--text-tertiary)]"><span className="font-mono">{p.codigo ?? "—"}</span>{p.variedad ? ` · ${p.variedad}` : ""}{p.status === "inactivo" ? " · inactivo" : ""}</span>
                 </Td>

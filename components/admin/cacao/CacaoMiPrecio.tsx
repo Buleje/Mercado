@@ -122,10 +122,10 @@ export default function CacaoMiPrecio({
       ) : (
         <>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-info-100)] px-2.5 py-1 text-sm font-bold text-[var(--data-info-900)]">Compra: S/ {sol(stats.compra)}/kg</span>
-            {stats.venta != null && <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2.5 py-1 text-sm font-bold text-[var(--data-success-900)]">Venta: S/ {sol(stats.venta)}/kg</span>}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-info-100)] px-2.5 py-1 text-sm font-bold text-[var(--data-info-700)]">Compra: S/ {sol(stats.compra)}/kg</span>
+            {stats.venta != null && <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2.5 py-1 text-sm font-bold text-[var(--data-success-700)]">Venta: S/ {sol(stats.venta)}/kg</span>}
             {stats.margen != null && (
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${stats.margen > 0 ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : stats.margen < 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${stats.margen > 0 ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]" : stats.margen < 0 ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}>
                 {stats.margen > 0 ? <TrendingUp className="h-4 w-4" /> : stats.margen < 0 ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
                 Margen {stats.margen > 0 ? "+" : ""}{stats.margen.toFixed(1)}%
               </span>

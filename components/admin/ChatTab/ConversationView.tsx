@@ -348,7 +348,7 @@ function MessageBubble({
               "mb-1 flex items-center gap-2 rounded-lg border px-2.5 py-1.5",
               isSeller ? "border-white/30 bg-white/10 text-white" : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
             )}>
-              <Star className={cn("h-4 w-4 shrink-0", isSeller ? "fill-white text-white" : "fill-[var(--data-warning-400)] text-[var(--data-warning-500)]")} aria-hidden />
+              <Star className={cn("h-4 w-4 shrink-0", isSeller ? "fill-white text-white" : "fill-[var(--data-warning-500)] text-[var(--data-warning-500)]")} aria-hidden />
               <span className="text-[length:var(--ts-xs)] font-bold">Pediste una reseña</span>
             </div>
           )}

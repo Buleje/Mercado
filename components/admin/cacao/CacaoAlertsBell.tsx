@@ -100,7 +100,7 @@ export default function CacaoAlertsBell({ onNavigate }: { onNavigate: (view: Cac
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-label={`Alertas${count ? ` (${count})` : ""}`}
-        className={`relative inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-3.5 text-sm font-bold transition ${count ? "border-[var(--data-warning-400)] bg-[var(--data-warning-50)] text-[var(--data-warning-900)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}
+        className={`relative inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-3.5 text-sm font-bold transition ${count ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}
       >
         <Bell className="h-4 w-4" />
         <span className="hidden sm:inline">Alertas</span>

@@ -39,7 +39,64 @@ type Rule = {
   strictUpgrade?: boolean;
 };
 
+// ─── Tokens --data-* que NO existen ────────────────────────────────────────
+//
+// POR QUÉ ESTA REGLA:
+// la paleta `--data-{success,warning,error,info}` es una escala SEMÁNTICA de 5
+// pasos (50 bg-soft · 100 bg-soft-hover · 500 default · 600 hover · 700 pressed),
+// NO una rampa Tailwind 50→900. Escribir `--data-success-900` no rompe el build
+// ni el type-check: la `var()` simplemente no resuelve, la declaración se
+// descarta y el elemento **hereda el color del padre**.
+//
+// En light suele pasar desapercibido (hereda texto oscuro sobre fondo claro).
+// En DARK hereda texto claro sobre un fondo claro ⇒ ilegible. Así estuvieron los
+// badges del Libro CTP (medido con getComputedStyle 2026-07-15: el color del
+// badge era idéntico al del padre) y así siguen ~128 usos en el resto del repo.
+//
+// El linter daba 0 violaciones porque sólo miraba el FORMATO del token, nunca si
+// existía. Los tonos válidos se leen de globals.css: si mañana se agrega uno, la
+// regla lo acepta sola (single source, no una lista que se desincroniza).
+
+/** Tonos realmente definidos, leídos de la fuente. */
+function tonosDefinidos(): string[] {
+  const cssPath = resolve(process.cwd(), "app/globals.css");
+  if (!existsSync(cssPath)) return [];
+  const css = readFileSync(cssPath, "utf8");
+  const tonos = new Set<string>();
+  for (const m of css.matchAll(/--data-(?:success|warning|error|info)-(\d+)\s*:/g)) {
+    tonos.add(m[1]);
+  }
+  return [...tonos].sort((a, b) => Number(a) - Number(b));
+}
+
+const TONOS = tonosDefinidos();
+/**
+ * `--data-<tono>-<N>` con N no definido y SIN fallback.
+ *
+ * El `(?=\s*\))` es lo que separa roto de feo: `var(--data-x-900)` no resuelve y
+ * hereda el color del padre (el bug), mientras que `var(--data-x-900, #a7f3d0)`
+ * pinta el fallback y funciona. Eso último es un hex hardcodeado —otro problema,
+ * de otras reglas—, no un color heredado. Sin esta distinción la regla gritaba
+ * sobre 16 usos que renderizan bien.
+ *
+ * Sin tonos leídos (globals.css movido) → no matchea nada, no rompe el gate.
+ */
+const UNDEFINED_DATA_TOKEN = TONOS.length
+  ? new RegExp(`--data-(?:success|warning|error|info)-(?!(?:${TONOS.join("|")})\\b)\\d+(?=\\s*\\))`, "g")
+  : /(?!)/g;
+
 const RULES: Rule[] = [
+  {
+    id: "ds-undefined-data-token",
+    pattern: UNDEFINED_DATA_TOKEN,
+    message:
+      `Este token --data-* NO existe en globals.css (definidos: ${TONOS.join(", ") || "ninguno"}). ` +
+      "La var() no resuelve y el elemento HEREDA el color del padre — en dark mode eso es texto claro " +
+      "sobre fondo claro. La paleta es semántica, no una rampa Tailwind: 50=bg-soft · 100=bg-soft-hover · " +
+      "500=default · 600=hover · 700=pressed. Mapeá al rol: texto oscuro → 700 · fondo tenue → 50/100 · " +
+      "borde → 500. Para un hover sobre un botón -700 no hay tono más oscuro: usá hover:opacity-90.",
+    severity: "error",
+  },
   {
     id: "no-decorative-gradient",
     pattern: /bg-(linear|gradient)-to-[a-z]+\s+from-(indigo|purple|violet|pink|fuchsia|rose|emerald|cyan|teal|amber|orange|yellow|red|green|blue|sky|slate)-\d{2,3}/g,

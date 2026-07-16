@@ -126,7 +126,7 @@ export default function CacaoLiquidaciones() {
                     </span>
                   </button>
                   {dias != null && dias >= 30 && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-900)]"><Clock className="h-3 w-3" />{dias} días</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"><Clock className="h-3 w-3" />{dias} días</span>
                   )}
                   <div className="text-right">
                     <div className="font-mono text-lg font-bold tabular-nums text-[var(--data-warning-700)]">S/ {n2(g.totalSaldo)}</div>
