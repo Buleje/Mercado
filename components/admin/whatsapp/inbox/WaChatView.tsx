@@ -91,9 +91,11 @@ export default function WaChatView({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Mensajes */}
-      <div className="flex-1 space-y-1 overflow-y-auto px-4 py-3">
+    // flex-1 min-h-0 (NO h-full): comparte el main con el header del hilo;
+    // h-full = 100% del main y desbordaba justo la altura del header.
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Mensajes (min-h-0: puede encogerse — el scroll es interno) */}
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-3">
         {loading && <p className="p-4 text-sm text-slate-500">Cargando mensajes…</p>}
         {!loading && messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center">

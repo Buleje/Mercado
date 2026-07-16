@@ -70,8 +70,8 @@ export default function WaConversationList({ conversations, selectedPhone, onSel
         </div>
       </div>
 
-      {/* Lista */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Lista (min-h-0: scroll interno, no empuja el contenedor) */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {loading && (
           <p className="p-4 text-sm text-slate-500">Cargando conversaciones…</p>
         )}

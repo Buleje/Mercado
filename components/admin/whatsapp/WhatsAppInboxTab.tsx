@@ -27,27 +27,55 @@ function prettyPhone(phone: string): string {
  * Altura del inbox medida en runtime: viewport − offset real del contenedor.
  * El calc() fijo fallaba según banners/zoom y el composer quedaba bajo el fold
  * (bug reportado por Brandon 2026-07-16).
+ *
+ * v2: ResizeObserver sobre <body> — el banner de alertas del admin se monta
+ * ~3s tarde (fetch con delay inicial) y corría el offset DESPUÉS de las
+ * re-mediciones a tiempo fijo → composer cortado. Ahora CUALQUIER cambio de
+ * layout re-mide al instante. Se usa el offset ABSOLUTO del documento
+ * (rect.top + scrollY): invariante al scroll → sin feedback loop, y la página
+ * entera queda sin scroll (el hilo scrollea adentro).
  */
 function useFillHeight(minPx = 420) {
   const ref = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
 
   useEffect(() => {
+    let raf = 0;
     const measure = () => {
-      const el = ref.current;
-      if (!el) return;
-      const top = el.getBoundingClientRect().top;
-      setHeight(Math.max(minPx, window.innerHeight - top - 12));
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const el = ref.current;
+        if (!el) return;
+        // Corrección por delta: mover el borde INFERIOR del contenedor hasta
+        // el borde del viewport. Funciona igual scrollee la ventana o un
+        // contenedor interno (ej. el auto-scroll del hash #whatsapp-inbox),
+        // y converge en 1 paso tras cada cambio de layout.
+        const rect = el.getBoundingClientRect();
+        const vh = window.visualViewport?.height ?? window.innerHeight;
+        const delta = Math.floor(vh - 16 - rect.bottom);
+        if (Math.abs(delta) < 2) return; // ya está clavado — evitar re-renders
+        // Clamp: nunca más alto que el viewport (medición con página scrolleada)
+        setHeight(Math.min(vh - 32, Math.max(minPx, el.offsetHeight + delta)));
+      });
     };
     measure();
-    // Re-medir: banners de alerta y headers cargan tarde y corren el offset
-    const t1 = setTimeout(measure, 500);
-    const t2 = setTimeout(measure, 2000);
+
+    // Cualquier cambio de tamaño del body (banners que aparecen/desaparecen,
+    // headers que cargan tarde) re-mide al instante. Los timeouts cubren el
+    // auto-scroll del hash de la URL, que no dispara ResizeObserver.
+    const ro = new ResizeObserver(measure);
+    ro.observe(document.body);
     window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    const t1 = setTimeout(measure, 1000);
+    const t2 = setTimeout(measure, 3500);
     return () => {
+      cancelAnimationFrame(raf);
       clearTimeout(t1);
       clearTimeout(t2);
+      ro.disconnect();
       window.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
     };
   }, [minPx]);
 
@@ -214,11 +242,14 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
         </div>
       )}
 
-      {/* Layout 2 columnas (desktop) / alternado (mobile) */}
-      <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-[340px_1fr]">
+      {/* Layout 2 columnas (desktop) / alternado (mobile).
+          grid-rows-[minmax(0,1fr)]: sin esto la fila implícita se dimensiona
+          al CONTENIDO (mensajes largos) y desborda el contenedor → composer
+          clipeado por overflow-hidden (bug real de Brandon, medido en consola). */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] overflow-hidden md:grid-cols-[340px_1fr]">
         <aside
           className={cn(
-            "h-full overflow-hidden border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/40",
+            "h-full min-h-0 overflow-hidden border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/40",
             mobileView === "chat" && "hidden md:block",
           )}
         >
@@ -232,7 +263,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
 
         <main
           className={cn(
-            "flex h-full flex-col overflow-hidden",
+            "flex h-full min-h-0 flex-col overflow-hidden",
             mobileView === "list" && "hidden md:flex",
           )}
         >
