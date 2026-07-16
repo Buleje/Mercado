@@ -53,7 +53,7 @@
   "crons": [
     {
       "path": "/api/cron/campaigns-dispatch",
-      "schedule": "15 * * * *"
+      "schedule": "15 5 * * *"
     },
     {
       "path": "/api/cron/automations",
@@ -329,7 +329,7 @@
     },
     {
       "path": "/api/cron/sunat-retry",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 4 * * *"
     },
     {
       "path": "/api/cron/loyalty-points-reminder",
