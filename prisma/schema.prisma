@@ -1702,6 +1702,29 @@ model WhatsAppConversation {
   @@index([expiresAt])
 }
 
+// ─── WhatsApp Inbox: log de mensajes (Meta Cloud API) ────
+// Historial in/out por tenant+cliente para el inbox del admin (MensajesHub →
+// sub-tab WhatsApp). phoneNumberId = número del negocio receptor (listo para
+// multi-número). Migración manual 310. Acceso vía lib/db/whatsapp-messages.db.ts.
+model WhatsAppMessage {
+  id            String   @id @default(cuid())
+  tenantId      String
+  phoneNumberId String // Phone Number ID de Meta del número del negocio
+  customerPhone String // E.164 sin + (mismo formato que WhatsAppConversation)
+  customerName  String   @default("Cliente")
+  direction     String // "in" | "out"
+  sentBy        String   @default("customer") // customer | ai | admin
+  body          String   @db.Text
+  waMessageId   String?  @unique // id de Meta (dedupe de webhooks re-entregados)
+  status        String   @default("received") // received | sent | failed
+  read          Boolean  @default(false) // leído por el admin (solo aplica a inbound)
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId, customerPhone, createdAt])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, read])
+}
+
 // ─── Stripe Webhook Queue ────────────────────────────────
 // Stores events that failed to be processed (e.g. DB unavailable).
 // A cron job (POST /api/billing/webhook-replay) drains this queue.

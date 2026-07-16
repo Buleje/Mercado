@@ -7,6 +7,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { invalidateByPrefix } from "@/lib/cache";
 
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
 
@@ -185,6 +186,10 @@ export async function PUT(req: NextRequest) {
       isActive: config.isActive,
     });
 
+    // Invalidar el cache del inbox (getWhatsAppConfig) para que "Probar conexión"
+    // y los envíos lean la config recién guardada, no la de hasta 30s atrás.
+    await invalidateByPrefix(`whatsapp-inbox:${auth.tenantId}`);
+
     logActivity(
       "Configurar",
       "whatsapp_config",
@@ -256,6 +261,9 @@ export async function DELETE(req: NextRequest) {
       tenantId: auth.tenantId,
       phoneNumberId: config.phoneNumberId,
     });
+
+    // El inbox cachea la config (getWhatsAppConfig) — reflejar la desactivación ya
+    await invalidateByPrefix(`whatsapp-inbox:${auth.tenantId}`);
 
     logActivity(
       "Desactivar",

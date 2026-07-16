@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { redactPhone, truncate } from "@/lib/logger-pii";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
 import { handleIncomingMessage as handleConciergeMessage } from "@/lib/whatsapp/concierge/concierge-router";
+import { WhatsAppMessagesDB } from "@/lib/db/whatsapp-messages.db";
 
 // ─── Feature flag (ADR-058) ───────────────────────────────────────────────────
 //
@@ -41,6 +42,8 @@ interface MetaChange {
     metadata?: { display_phone_number: string; phone_number_id: string };
     messages?: MetaTextMessage[];
     statuses?: { recipient_id: string; status: string }[];
+    // Meta adjunta el nombre de perfil del remitente (para el inbox del admin)
+    contacts?: { wa_id: string; profile?: { name?: string } }[];
   };
   field: string;
 }
@@ -87,7 +90,7 @@ async function sendReply(
   token: string,
   toPhone: string,
   message: string
-): Promise<void> {
+): Promise<boolean> {
   const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
   const res = await fetch(url, {
     method: "POST",
@@ -111,6 +114,7 @@ async function sendReply(
       phoneNumberId,
     });
   }
+  return res.ok;
 }
 
 // ─── GET — Meta webhook verification ─────────────────────────────────────────
@@ -233,8 +237,14 @@ export async function processWebhookPayload(rawBody: string): Promise<void> {
 
       const tenantConfig = await resolveTenant(phoneNumberId);
 
+      // Nombre de perfil del remitente (Meta lo manda en value.contacts)
+      const contactNames = new Map<string, string>();
+      for (const c of value.contacts ?? []) {
+        if (c.profile?.name) contactNames.set(normalizePhone(c.wa_id), c.profile.name);
+      }
+
       for (const message of value.messages ?? []) {
-        await handleSingleMessage(message, phoneNumberId, tenantConfig);
+        await handleSingleMessage(message, phoneNumberId, tenantConfig, contactNames);
       }
     }
   }
@@ -249,7 +259,8 @@ async function handleSingleMessage(
     whatsappToken: string;
     businessName: string | null;
     yapeNumber: string | null;
-  } | null
+  } | null,
+  contactNames: Map<string, string> = new Map()
 ): Promise<void> {
   const senderPhone = normalizePhone(message.from);
 
@@ -302,6 +313,23 @@ async function handleSingleMessage(
     tenantId: effectiveTenantId,
     textPreview: truncate(text, 60),
     aiFirst: isAiFirstEnabled(),
+  });
+
+  // Inbox admin (migración 310): persistir el mensaje entrante. Fire-and-forget
+  // — el log jamás bloquea la respuesta al cliente. Dedupe por waMessageId.
+  WhatsAppMessagesDB.append(effectiveTenantId, {
+    phoneNumberId,
+    customerPhone: senderPhone,
+    customerName: contactNames.get(senderPhone),
+    direction: "in",
+    sentBy: "customer",
+    body: text,
+    waMessageId: message.id,
+  }).catch((err) => {
+    logger.error("[whatsapp/webhook] persistencia inbound falló", {
+      error: err instanceof Error ? err.message : String(err),
+      tenantId: effectiveTenantId,
+    });
   });
 
   // ── ADR-058: AI-first routing con fallback al engine legacy ───────────────
@@ -362,13 +390,33 @@ async function handleSingleMessage(
     }
   }
 
-  await sendReply(phoneNumberId, effectiveToken, senderPhone, replyText).catch(
-    (replyErr) => {
-      logger.warn("[whatsapp/webhook] sendReply falló", {
-        error: replyErr instanceof Error ? replyErr.message : String(replyErr),
-        to: senderPhone,
-        path: pathUsed,
-      });
-    }
-  );
+  const sentOk = await sendReply(
+    phoneNumberId,
+    effectiveToken,
+    senderPhone,
+    replyText
+  ).catch((replyErr) => {
+    logger.warn("[whatsapp/webhook] sendReply falló", {
+      error: replyErr instanceof Error ? replyErr.message : String(replyErr),
+      to: senderPhone,
+      path: pathUsed,
+    });
+    return false;
+  });
+
+  // Inbox admin: persistir la respuesta del bot (fire-and-forget).
+  WhatsAppMessagesDB.append(effectiveTenantId, {
+    phoneNumberId,
+    customerPhone: senderPhone,
+    customerName: contactNames.get(senderPhone),
+    direction: "out",
+    sentBy: "ai",
+    body: replyText,
+    status: sentOk ? "sent" : "failed",
+  }).catch((err) => {
+    logger.error("[whatsapp/webhook] persistencia outbound falló", {
+      error: err instanceof Error ? err.message : String(err),
+      tenantId: effectiveTenantId,
+    });
+  });
 }

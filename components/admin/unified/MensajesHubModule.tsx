@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { MessageCircle, Inbox, FileText, Settings, BellRing } from "@buleje/design-system/icons";
+import { MessageCircle, MessageSquare, Inbox, FileText, Settings, BellRing } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -25,11 +25,15 @@ const WhatsAppBotConfig = dynamic(() => import("@/components/admin/whatsapp/What
 // Avisos WhatsApp por pedido (NotificationsTab) — estaba huérfano; real (/api/notifications
 // + /api/orders), CSRF, log de enviados. Montado tras verificar. Brandon 2026-06-20.
 const NotificationsTab = dynamic(() => import("@/components/admin/NotificationsTab"), { loading: S });
+// Inbox WhatsApp real (Meta Cloud API) — Brandon 2026-07-16: conversaciones del
+// número del negocio, con respuesta desde el panel. Log en WhatsAppMessage (migración 310).
+const WhatsAppInboxTab = dynamic(() => import("@/components/admin/whatsapp/WhatsAppInboxTab"), { loading: S });
 
 const MODULE_ID = "mensajes-hub";
 
 const TABS = [
-  { id: "chat",    label: "Chat con clientes", icon: MessageCircle },
+  { id: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+  { id: "chat",    label: "Chat con clientes", icon: MessageSquare },
   { id: "soporte", label: "Soporte",           icon: Inbox },
   { id: "avisos", label: "Avisos por pedido", icon: BellRing },
   { id: "plantillas", label: "Plantillas WhatsApp", icon: FileText },
@@ -49,10 +53,11 @@ export default function MensajesHubModule({ initialTab }: { initialTab?: string 
       <AdminModuleHeader
         eyebrow="Comunicación · Mensajes"
         title="Mensajes"
-        description="Bandeja unificada: chats con clientes y soporte de la plataforma."
+        description="Bandeja unificada: WhatsApp del negocio, chats con clientes y soporte."
         icon={MessageCircle}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+        {sub === "whatsapp" && <WhatsAppInboxTab onGoToConfig={() => setSub("bot")} />}
         {sub === "chat" && <ChatTab />}
         {sub === "soporte" && <UnifiedSupportInbox />}
         {sub === "avisos" && <NotificationsTab />}

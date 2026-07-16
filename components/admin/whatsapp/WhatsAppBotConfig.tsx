@@ -8,7 +8,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Zap,
 } from "@buleje/design-system/icons";
+import WaConnectionGuide from "./WaConnectionGuide";
 
 /**
  * WhatsAppBotConfig — form de configuración del bot WhatsApp por tenant.
@@ -37,6 +39,9 @@ export default function WhatsAppBotConfig() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState(false);
+  // Probar conexión: consulta el número real en Meta con las credenciales guardadas
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [form, setForm] = useState({
     phoneNumberId: "",
     whatsappToken: "",
@@ -114,6 +119,35 @@ export default function WhatsAppBotConfig() {
     }
   };
 
+  const testConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/admin/whatsapp/test", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        phone?: string | null;
+        verifiedName?: string | null;
+        error?: string;
+      };
+      if (res.ok && json.ok) {
+        setTestResult({
+          ok: true,
+          text: `Conectado: ${json.phone ?? "número OK"}${json.verifiedName ? ` · ${json.verifiedName}` : ""}`,
+        });
+      } else {
+        setTestResult({ ok: false, text: json.error ?? "Meta rechazó las credenciales." });
+      }
+    } catch {
+      setTestResult({ ok: false, text: "Error de red al probar la conexión." });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 p-6 text-sm text-[var(--text-tertiary)]">
@@ -156,6 +190,9 @@ export default function WhatsAppBotConfig() {
           </p>
         </div>
       </div>
+
+      {/* Guía de conexión paso a paso (webhook URL + verify token con copiar) */}
+      <WaConnectionGuide verifyToken={form.webhookVerifyToken.trim()} />
 
       {/* Form */}
       <div className={ADMIN_TOKENS.cardPadded}>
@@ -233,7 +270,33 @@ export default function WhatsAppBotConfig() {
           </p>
         )}
 
-        <div className="flex justify-end pt-1">
+        {testResult && (
+          <p
+            className={[
+              "flex items-center gap-1.5 text-sm font-medium",
+              testResult.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
+            ].join(" ")}
+          >
+            {testResult.ok ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 shrink-0" />
+            )}
+            {testResult.text}
+          </p>
+        )}
+
+        <div className="flex flex-wrap justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={testConnection}
+            disabled={testing || !config}
+            className={ADMIN_TOKENS.btnSecondary}
+            title={config ? "Consulta tu número en Meta con las credenciales guardadas" : "Guardá la configuración primero"}
+          >
+            {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            {testing ? "Probando…" : "Probar conexión"}
+          </button>
           <button
             type="button"
             onClick={save}
