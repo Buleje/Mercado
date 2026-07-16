@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, Bot, AlertCircle, MessageCircle } from "@buleje/design-system/icons";
+import { Send, Loader2, Bot, AlertCircle, MessageCircle, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import WaTemplatePicker from "./WaTemplatePicker";
 import type { WaMessage } from "./useWhatsAppInbox";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -30,12 +31,28 @@ interface Props {
   canSend: boolean;
   sending: boolean;
   sendError: string | null;
+  /** 131047 = fuera de ventana 24h → se sugiere plantilla. */
+  sendErrorCode: number | null;
+  /** Número del negocio del hilo (multi-número). */
+  phoneNumberId: string | null;
   onSend: (body: string) => Promise<boolean>;
+  onSendTemplate: (tpl: { name: string; language: string; params: string[] }) => Promise<boolean>;
 }
 
-/** Columna derecha del inbox: burbujas del hilo + composer. */
-export default function WaChatView({ messages, loading, canSend, sending, sendError, onSend }: Props) {
+/** Columna derecha del inbox: burbujas del hilo + composer + plantillas. */
+export default function WaChatView({
+  messages,
+  loading,
+  canSend,
+  sending,
+  sendError,
+  sendErrorCode,
+  phoneNumberId,
+  onSend,
+  onSendTemplate,
+}: Props) {
   const [draft, setDraft] = useState("");
+  const [showTemplates, setShowTemplates] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const lastCountRef = useRef(0);
 
@@ -111,15 +128,53 @@ export default function WaChatView({ messages, loading, canSend, sending, sendEr
 
       {/* Error de envío (ventana 24h, token vencido, etc.) */}
       {sendError && (
-        <div className="flex items-start gap-2 border-t border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-4 py-2.5 dark:bg-[var(--data-error-500)]/10">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-error-500)]" />
-          <p className="text-sm font-medium text-[var(--data-error-500)]">{sendError}</p>
+        <div className="flex flex-wrap items-start justify-between gap-2 border-t border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-4 py-2.5 dark:bg-[var(--data-error-500)]/10">
+          <p className="flex items-start gap-2 text-sm font-medium text-[var(--data-error-500)]">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            {sendError}
+          </p>
+          {sendErrorCode === 131047 && !showTemplates && (
+            <button
+              type="button"
+              onClick={() => setShowTemplates(true)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-bold text-white transition hover:opacity-90"
+            >
+              <FileText className="h-4 w-4" />
+              Usar plantilla
+            </button>
+          )}
         </div>
+      )}
+
+      {/* Plantillas aprobadas (única vía fuera de la ventana de 24h) */}
+      {showTemplates && (
+        <WaTemplatePicker
+          phoneNumberId={phoneNumberId}
+          sending={sending}
+          onSend={onSendTemplate}
+          onClose={() => setShowTemplates(false)}
+        />
       )}
 
       {/* Composer */}
       <div className="border-t border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-end gap-2">
+          <button
+            type="button"
+            onClick={() => setShowTemplates((s) => !s)}
+            disabled={!canSend}
+            className={cn(
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
+              showTemplates
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+              !canSend && "cursor-not-allowed opacity-40",
+            )}
+            aria-label="Plantillas de WhatsApp"
+            title="Plantillas aprobadas (para responder fuera de 24h)"
+          >
+            <FileText className="h-5 w-5" />
+          </button>
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}

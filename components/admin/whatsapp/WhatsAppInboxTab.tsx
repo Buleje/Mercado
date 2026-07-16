@@ -39,6 +39,9 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
   const {
     conversations,
     connection,
+    numbers,
+    numberFilter,
+    setNumberFilter,
     loadingConvs,
     convsError,
     selectedPhone,
@@ -46,8 +49,10 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
     messages,
     loadingMsgs,
     sendMessage,
+    sendTemplate,
     sending,
     sendError,
+    sendErrorCode,
   } = useWhatsAppInbox();
 
   // Mobile: mostrar lista o chat (no ambos)
@@ -63,6 +68,11 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
   );
 
   const connected = connection?.connected && connection.active;
+  // Etiqueta legible de un número del negocio (para chips y header del hilo)
+  const numberLabel = (phoneNumberId: string) => {
+    const n = numbers.find((x) => x.phoneNumberId === phoneNumberId);
+    return n?.label || n?.businessName || `Nº ${phoneNumberId.slice(-4)}`;
+  };
 
   function handleSelect(phone: string) {
     selectConversation(phone);
@@ -129,6 +139,40 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
         </div>
       )}
 
+      {/* Filtro por número del negocio (solo con 2+ números conectados) */}
+      {numbers.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-700 dark:bg-slate-900">
+          <button
+            type="button"
+            onClick={() => setNumberFilter(null)}
+            className={cn(
+              "h-9 rounded-full border-2 px-3.5 text-sm font-bold transition",
+              numberFilter === null
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-slate-200 text-slate-600 hover:border-primary/50 dark:border-slate-700 dark:text-slate-300",
+            )}
+          >
+            Todos
+          </button>
+          {numbers.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => setNumberFilter(n.phoneNumberId)}
+              className={cn(
+                "h-9 rounded-full border-2 px-3.5 text-sm font-bold transition",
+                numberFilter === n.phoneNumberId
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-slate-200 text-slate-600 hover:border-primary/50 dark:border-slate-700 dark:text-slate-300",
+                !n.isActive && "opacity-50",
+              )}
+            >
+              {n.label || n.businessName || `Nº ${n.phoneNumberId.slice(-4)}`}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Layout 2 columnas (desktop) / alternado (mobile) */}
       <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-[340px_1fr]">
         <aside
@@ -169,13 +213,20 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                       ? selected.customerName
                       : prettyPhone(selected.customerPhone)}
                   </p>
-                  <a
-                    href={`tel:+${selected.customerPhone}`}
-                    className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-slate-500 underline-offset-2 hover:text-primary hover:underline"
-                  >
-                    <Phone className="h-3 w-3" />
-                    {prettyPhone(selected.customerPhone)}
-                  </a>
+                  <span className="flex items-center gap-2">
+                    <a
+                      href={`tel:+${selected.customerPhone}`}
+                      className="inline-flex items-center gap-1 text-[length:var(--ts-xs)] text-slate-500 underline-offset-2 hover:text-primary hover:underline"
+                    >
+                      <Phone className="h-3 w-3" />
+                      {prettyPhone(selected.customerPhone)}
+                    </a>
+                    {numbers.length > 1 && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-primary">
+                        vía {numberLabel(selected.phoneNumberId)}
+                      </span>
+                    )}
+                  </span>
                 </div>
               </div>
               <WaChatView
@@ -184,7 +235,10 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 canSend={Boolean(connected)}
                 sending={sending}
                 sendError={sendError}
+                sendErrorCode={sendErrorCode}
+                phoneNumberId={selected.phoneNumberId}
                 onSend={sendMessage}
+                onSendTemplate={sendTemplate}
               />
             </>
           ) : (

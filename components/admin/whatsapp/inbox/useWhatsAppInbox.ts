@@ -12,11 +12,21 @@ export type WaSentBy = "customer" | "ai" | "admin";
 export interface WaConversation {
   customerPhone: string;
   customerName: string;
+  /** Número del negocio por el que habla este cliente (multi-número). */
+  phoneNumberId: string;
   lastMessage: string;
   lastDirection: WaDirection;
   lastSentBy: WaSentBy;
   lastAt: string;
   unread: number;
+}
+
+export interface WaNumber {
+  id: string;
+  label: string | null;
+  phoneNumberId: string;
+  businessName: string | null;
+  isActive: boolean;
 }
 
 export interface WaMessage {
@@ -48,6 +58,11 @@ const MSGS_POLL_MS = 5_000;
 export function useWhatsAppInbox() {
   const [conversations, setConversations] = useState<WaConversation[]>([]);
   const [connection, setConnection] = useState<WaConnection | null>(null);
+  const [numbers, setNumbers] = useState<WaNumber[]>([]);
+  // Multi-número: filtrar el inbox por un número del negocio (null = todos)
+  const [numberFilter, setNumberFilter] = useState<string | null>(null);
+  const numberFilterRef = useRef<string | null>(null);
+  numberFilterRef.current = numberFilter;
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [convsError, setConvsError] = useState(false);
 
@@ -57,21 +72,30 @@ export function useWhatsAppInbox() {
 
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  // 131047 = fuera de ventana 24h → la UI ofrece mandar plantilla
+  const [sendErrorCode, setSendErrorCode] = useState<number | null>(null);
 
   const selectedRef = useRef<string | null>(null);
   selectedRef.current = selectedPhone;
 
   const loadConversations = useCallback(async () => {
     try {
-      const res = await tenantFetch("/api/admin/whatsapp/conversations");
+      const filter = numberFilterRef.current;
+      const qs = filter ? `?phoneNumberId=${encodeURIComponent(filter)}` : "";
+      const res = await tenantFetch(`/api/admin/whatsapp/conversations${qs}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as {
         conversations: WaConversation[];
+        numbers: WaNumber[];
         connection: WaConnection;
       };
-      setConversations(json.conversations);
-      setConnection(json.connection);
-      setConvsError(false);
+      // Evitar pisar la lista si el usuario cambió el filtro durante el fetch
+      if (numberFilterRef.current === filter) {
+        setConversations(json.conversations);
+        setNumbers(json.numbers ?? []);
+        setConnection(json.connection);
+        setConvsError(false);
+      }
     } catch {
       setConvsError(true);
     } finally {
@@ -128,25 +152,31 @@ export function useWhatsAppInbox() {
     [loadMessages, markRead],
   );
 
-  const sendMessage = useCallback(
-    async (body: string): Promise<boolean> => {
+  /** POST a /send con texto libre o plantilla; maneja errores y refresca. */
+  const doSend = useCallback(
+    async (payload: Record<string, unknown>): Promise<boolean> => {
       const phone = selectedRef.current;
-      if (!phone || !body.trim()) return false;
+      if (!phone) return false;
       setSending(true);
       setSendError(null);
+      setSendErrorCode(null);
       try {
+        const conv = conversations.find((c) => c.customerPhone === phone);
         const res = await tenantFetch("/api/admin/whatsapp/send", {
           method: "POST",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             phone,
-            message: body.trim(),
-            customerName: conversations.find((c) => c.customerPhone === phone)?.customerName,
+            customerName: conv?.customerName,
+            // Multi-número: responder por el mismo número por el que habla el cliente
+            phoneNumberId: conv?.phoneNumberId,
+            ...payload,
           }),
         });
-        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        const json = (await res.json().catch(() => ({}))) as { error?: string; code?: number };
         if (!res.ok) {
           setSendError(json.error ?? "No se pudo enviar el mensaje.");
+          setSendErrorCode(json.code ?? null);
           // El intento fallido quedó en el log del servidor → refrescar el hilo
           void loadMessages(phone, false);
           return false;
@@ -164,12 +194,46 @@ export function useWhatsAppInbox() {
     [conversations, loadConversations, loadMessages],
   );
 
-  // Poll de conversaciones
+  const sendMessage = useCallback(
+    async (body: string): Promise<boolean> => {
+      if (!body.trim()) return false;
+      return doSend({ message: body.trim() });
+    },
+    [doSend],
+  );
+
+  /** Plantilla aprobada de Meta — única vía fuera de la ventana de 24h. */
+  const sendTemplate = useCallback(
+    async (tpl: { name: string; language: string; params: string[] }): Promise<boolean> => {
+      return doSend({ template: tpl });
+    },
+    [doSend],
+  );
+
+  // Poll de conversaciones (recarga inmediata al cambiar el filtro de número)
   useEffect(() => {
+    setLoadingConvs(true);
     void loadConversations();
     const t = setInterval(() => void loadConversations(), CONVS_POLL_MS);
     return () => clearInterval(t);
-  }, [loadConversations]);
+  }, [loadConversations, numberFilter]);
+
+  // SSE: mensaje entrante → refresco instantáneo de lista + hilo abierto
+  // (mismo canal que ChatTab; si SSE falla, el polling de arriba cubre)
+  useEffect(() => {
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource("/api/admin/sse");
+      es.addEventListener("wa_message_new", () => {
+        void loadConversations();
+        const phone = selectedRef.current;
+        if (phone) void loadMessages(phone, false);
+      });
+    } catch {
+      /* SSE no disponible — polling cubre */
+    }
+    return () => es?.close();
+  }, [loadConversations, loadMessages]);
 
   // Poll del hilo abierto
   useEffect(() => {
@@ -181,6 +245,9 @@ export function useWhatsAppInbox() {
   return {
     conversations,
     connection,
+    numbers,
+    numberFilter,
+    setNumberFilter,
     loadingConvs,
     convsError,
     selectedPhone,
@@ -188,8 +255,10 @@ export function useWhatsAppInbox() {
     messages,
     loadingMsgs,
     sendMessage,
+    sendTemplate,
     sending,
     sendError,
+    sendErrorCode,
     refresh: loadConversations,
   };
 }

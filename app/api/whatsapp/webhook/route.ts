@@ -6,6 +6,8 @@ import { redactPhone, truncate } from "@/lib/logger-pii";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
 import { handleIncomingMessage as handleConciergeMessage } from "@/lib/whatsapp/concierge/concierge-router";
 import { WhatsAppMessagesDB } from "@/lib/db/whatsapp-messages.db";
+import { emitAdminSSE } from "@/lib/sse-emitter";
+import { sendPushToPhone } from "@/lib/push-sender";
 
 // ─── Feature flag (ADR-058) ───────────────────────────────────────────────────
 //
@@ -250,6 +252,38 @@ export async function processWebhookPayload(rawBody: string): Promise<void> {
   }
 }
 
+/**
+ * Web push al dueño del tenant cuando entra un mensaje de WhatsApp.
+ * Best-effort: cualquier fallo solo se loggea (patrón pedidos marketplace).
+ */
+async function notifyOwnerOfMessage(
+  tenantId: string,
+  customerName: string,
+  text: string
+): Promise<void> {
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { ownerPhone: true },
+    });
+    if (!tenant?.ownerPhone) return;
+    await sendPushToPhone(
+      tenant.ownerPhone,
+      {
+        title: `WhatsApp: ${customerName}`,
+        body: truncate(text, 90),
+        url: "/admin?tab=marketplace-chat",
+      },
+      tenantId
+    );
+  } catch (err) {
+    logger.warn("[whatsapp/webhook] push al dueño falló", {
+      tenantId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
 async function handleSingleMessage(
   message: MetaTextMessage,
   phoneNumberId: string,
@@ -325,12 +359,26 @@ async function handleSingleMessage(
     sentBy: "customer",
     body: text,
     waMessageId: message.id,
-  }).catch((err) => {
-    logger.error("[whatsapp/webhook] persistencia inbound falló", {
-      error: err instanceof Error ? err.message : String(err),
-      tenantId: effectiveTenantId,
+  })
+    .then((persisted) => {
+      // Si es null fue un webhook re-entregado (dedupe) — no notificar dos veces
+      if (!persisted) return;
+
+      // 1) SSE: refresco instantáneo del inbox y del badge del sidebar
+      emitAdminSSE(effectiveTenantId, "wa_message_new", {
+        customerPhone: senderPhone,
+        phoneNumberId,
+      });
+
+      // 2) Web push al dueño (mismo patrón que pedidos de marketplace)
+      void notifyOwnerOfMessage(effectiveTenantId, persisted.customerName, text);
+    })
+    .catch((err) => {
+      logger.error("[whatsapp/webhook] persistencia inbound falló", {
+        error: err instanceof Error ? err.message : String(err),
+        tenantId: effectiveTenantId,
+      });
     });
-  });
 
   // ── ADR-058: AI-first routing con fallback al engine legacy ───────────────
   // El Concierge AI (ADR-046) jamás lanza — captura todo internamente y

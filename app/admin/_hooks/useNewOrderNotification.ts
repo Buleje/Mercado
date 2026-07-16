@@ -51,3 +51,39 @@ export function useNewOrderNotification(
     prevPendingOrders.current = current;
   }, [quickStats, permission, sendNotification]);
 }
+
+/**
+ * Notificación de navegador cuando SUBE el contador de mensajes WhatsApp sin
+ * leer (mismo patrón prev-ref que los pedidos). El conteo llega por
+ * /api/admin/stats (waUnread) y se refresca al instante vía SSE wa_message_new.
+ */
+export function useNewWaMessageNotification(
+  quickStats: QuickStats | null,
+  permission: NotificationPermission,
+  sendNotification: SendNotification
+): void {
+  const prevUnread = useRef<number | null>(null);
+
+  useEffect(() => {
+    const current = quickStats?.waUnread ?? 0;
+    if (!quickStats || prevUnread.current === null) {
+      prevUnread.current = current;
+      return;
+    }
+
+    const previous = prevUnread.current;
+    if (current > previous && permission === "granted") {
+      const newCount = current - previous;
+      sendNotification(
+        `${newCount} ${newCount === 1 ? "mensaje nuevo" : "mensajes nuevos"} de WhatsApp`,
+        {
+          body: "Un cliente te escribió — respondé desde Mensajes → WhatsApp",
+          tag: "new-wa-messages",
+          requireInteraction: false,
+        }
+      );
+    }
+
+    prevUnread.current = current;
+  }, [quickStats, permission, sendNotification]);
+}

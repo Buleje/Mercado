@@ -22,7 +22,7 @@ import {
   useAdminTabs, useAdminModals, useKeyboardShortcuts, useAdminLayout,
   useFavoritesAndRecent, useImpersonation, useDemoCleanup, useAdminAuth,
   useWebhookPendingCount, useChangelogBadge, useHiddenTabs, useCategoryOrder,
-  useOnboardingTrigger, useAdminAlerts, useNewOrderNotification,
+  useOnboardingTrigger, useAdminAlerts, useNewOrderNotification, useNewWaMessageNotification,
   useNotificationPermissionPrompt, useMobileTableCards, useOnboardingTourTrigger,
   useDocumentTitle, useSwipeNavigation, useAdminNavigateEvent, useSidebarShortcuts,
   useClearDataFlow, useCustomShortcuts, useCommandItems, useAdminTabsDerived,
@@ -190,6 +190,7 @@ function AdminPage() {
   const { alerts, quickStats } = useAdminAlerts(authReady);
 
   useNewOrderNotification(quickStats, permission, sendNotification);
+  useNewWaMessageNotification(quickStats, permission, sendNotification);
   useNotificationPermissionPrompt(authReady, hasAsked, permission, requestPermission);
   useMobileTableCards(authReady, tab);
 

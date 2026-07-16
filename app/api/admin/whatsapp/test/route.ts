@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
-import { getWhatsAppConfig } from "@/lib/db/whatsapp-messages.db";
+import { getWhatsAppConfig, listWhatsAppConfigs } from "@/lib/db/whatsapp-messages.db";
 
 /**
  * POST /api/admin/whatsapp/test — prueba de conexión con Meta Cloud API.
@@ -21,7 +21,11 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
 
-  const config = await getWhatsAppConfig(auth.tenantId);
+  // Multi-número: ?id= prueba un número específico; sin id = primer activo.
+  const id = req.nextUrl.searchParams.get("id");
+  const config = id
+    ? (await listWhatsAppConfigs(auth.tenantId)).find((c) => c.id === id) ?? null
+    : await getWhatsAppConfig(auth.tenantId);
   if (!config) {
     return NextResponse.json(
       { error: "Todavía no guardaste la configuración." },

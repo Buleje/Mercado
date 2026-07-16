@@ -1670,18 +1670,23 @@ model Navigation {
 }
 
 // ─── WhatsApp Commerce: Tenant Config ───────────────────
+// Multi-número (migración 311): un tenant puede conectar VARIOS números
+// (ej. ventas + delivery). phoneNumberId es único global — un número pertenece
+// a una sola config. wabaId habilita plantillas aprobadas (fuera de ventana 24h).
 model TenantWhatsAppConfig {
   id                 String   @id @default(cuid())
-  tenantId           String   @unique
-  phoneNumberId      String // Phone Number ID de Meta Business
+  tenantId           String
+  label              String? // "Ventas", "Delivery" — para el selector del inbox
+  phoneNumberId      String   @unique // Phone Number ID de Meta Business
   whatsappToken      String // Token de acceso (Bearer)
   webhookVerifyToken String // Token de verificación del webhook
+  wabaId             String? // WhatsApp Business Account ID (plantillas)
   businessName       String? // Nombre que aparece al responder
   yapeNumber         String? // Número Yape para instrucciones de pago
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
 
-  @@index([phoneNumberId])
+  @@index([tenantId])
 }
 
 // ─── WhatsApp Commerce: Sesiones de conversación ────────

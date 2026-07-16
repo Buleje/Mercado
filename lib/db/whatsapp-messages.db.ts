@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getOrSet, invalidateByPrefix } from "@/lib/cache";
+import { getOrSet, invalidate, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 
 /**
@@ -39,6 +39,8 @@ export type DbWhatsAppMessage = {
 export type DbWhatsAppConversationSummary = {
   customerPhone: string;
   customerName: string;
+  /** Número del negocio por el que habla este cliente (multi-número). */
+  phoneNumberId: string;
   lastMessage: string;
   lastDirection: WaDirection;
   lastSentBy: WaSentBy;
@@ -79,46 +81,78 @@ function mapMessage(m: PWhatsAppMessage): DbWhatsAppMessage {
 }
 
 export type DbWhatsAppConfig = {
+  id: string;
   tenantId: string;
+  label: string | null;
   phoneNumberId: string;
   whatsappToken: string;
   webhookVerifyToken: string;
+  wabaId: string | null;
   businessName: string | null;
   yapeNumber: string | null;
   isActive: boolean;
 };
 
 /**
- * Config del número WhatsApp del tenant (TenantWhatsAppConfig).
- * Cache corto: la usan el inbox (envíos) y el test de conexión.
+ * Números WhatsApp del tenant (TenantWhatsAppConfig, multi-número desde 311).
+ * Cache corto: los usan el inbox (envíos), el selector y el test de conexión.
+ * Los writes (whatsapp-config route) invalidan `whatsapp-inbox:{tenantId}`.
  */
-export async function getWhatsAppConfig(tenantId: string): Promise<DbWhatsAppConfig | null> {
+export async function listWhatsAppConfigs(tenantId: string): Promise<DbWhatsAppConfig[]> {
   return getOrSet(`${CACHE_PREFIX}:${tenantId}:config`, 30, async () => {
-    const row = await prisma.tenantWhatsAppConfig.findUnique({ where: { tenantId } });
-    if (!row) return null;
-    return {
+    const rows = await prisma.tenantWhatsAppConfig.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "asc" },
+    });
+    return rows.map((row) => ({
+      id: row.id,
       tenantId: row.tenantId,
+      label: row.label,
       phoneNumberId: row.phoneNumberId,
       whatsappToken: row.whatsappToken,
       webhookVerifyToken: row.webhookVerifyToken,
+      wabaId: row.wabaId,
       businessName: row.businessName,
       yapeNumber: row.yapeNumber,
       isActive: row.isActive,
-    };
+    }));
   });
+}
+
+/** Config del número por el que habla una conversación; null si no existe. */
+export async function getConfigForPhoneNumberId(
+  tenantId: string,
+  phoneNumberId: string,
+): Promise<DbWhatsAppConfig | null> {
+  const configs = await listWhatsAppConfigs(tenantId);
+  return configs.find((c) => c.phoneNumberId === phoneNumberId) ?? null;
+}
+
+/** Primer número activo del tenant (fallback de envío / compat single-número). */
+export async function getWhatsAppConfig(tenantId: string): Promise<DbWhatsAppConfig | null> {
+  const configs = await listWhatsAppConfigs(tenantId);
+  return configs.find((c) => c.isActive) ?? configs[0] ?? null;
 }
 
 export const WhatsAppMessagesDB = {
   /**
    * Lista de conversaciones agrupadas por customerPhone, ordenadas por el
-   * mensaje más reciente. Incluye contador de no leídos (inbound sin leer).
+   * mensaje más reciente. Incluye contador de no leídos (inbound sin leer) y
+   * el número del negocio del último mensaje. Filtro opcional por número.
    */
-  async listConversations(tenantId: string): Promise<DbWhatsAppConversationSummary[]> {
-    return getOrSet(`${CACHE_PREFIX}:${tenantId}:convs`, 5, async () => {
+  async listConversations(
+    tenantId: string,
+    phoneNumberId?: string,
+  ): Promise<DbWhatsAppConversationSummary[]> {
+    const cacheKey = `${CACHE_PREFIX}:${tenantId}:convs:${phoneNumberId ?? "all"}`;
+    return getOrSet(cacheKey, 5, async () => {
+      const filterSql = phoneNumberId ? `AND m."phoneNumberId" = $2` : "";
+      const params: string[] = phoneNumberId ? [tenantId, phoneNumberId] : [tenantId];
       const rows = await prisma.$queryRawUnsafe<
         Array<{
           customerPhone: string;
           customerName: string;
+          phoneNumberId: string;
           lastMessage: string;
           lastDirection: string;
           lastSentBy: string;
@@ -129,6 +163,7 @@ export const WhatsAppMessagesDB = {
         `SELECT DISTINCT ON (m."customerPhone")
            m."customerPhone" AS "customerPhone",
            m."customerName"  AS "customerName",
+           m."phoneNumberId" AS "phoneNumberId",
            m."body"          AS "lastMessage",
            m."direction"     AS "lastDirection",
            m."sentBy"        AS "lastSentBy",
@@ -137,14 +172,15 @@ export const WhatsAppMessagesDB = {
              WHERE u."tenantId" = $1 AND u."customerPhone" = m."customerPhone"
                AND u."direction" = 'in' AND u."read" = false) AS "unread"
          FROM "WhatsAppMessage" m
-         WHERE m."tenantId" = $1
+         WHERE m."tenantId" = $1 ${filterSql}
          ORDER BY m."customerPhone", m."createdAt" DESC`,
-        tenantId,
+        ...params,
       );
       return rows
         .map((r) => ({
           customerPhone: r.customerPhone,
           customerName: r.customerName,
+          phoneNumberId: r.phoneNumberId,
           lastMessage: r.lastMessage,
           lastDirection: r.lastDirection as WaDirection,
           lastSentBy: r.lastSentBy as WaSentBy,
@@ -209,7 +245,9 @@ export const WhatsAppMessagesDB = {
           read: data.direction === "out",
         },
       });
-      await invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      // El badge del sidebar (waUnread) vive en el cache de /api/admin/stats
+      invalidate(`admin:stats:${tenantId}`);
       return mapMessage(row);
     } catch (err) {
       // P2002 = waMessageId duplicado → webhook re-entregado, ignorar silencioso
@@ -230,7 +268,10 @@ export const WhatsAppMessagesDB = {
       where: { tenantId, customerPhone, direction: "in", read: false },
       data: { read: true },
     });
-    if (res.count > 0) await invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    if (res.count > 0) {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      invalidate(`admin:stats:${tenantId}`);
+    }
     return res.count;
   },
 };

@@ -29,6 +29,8 @@ export type AdminStatsPayload = {
   overdueFiados: number;
   /** Pedidos pendientes pagados con Yape esperando que el dueño verifique el pago. */
   pendingYape: number;
+  /** Mensajes de WhatsApp entrantes sin leer (badge de Mensajes en el sidebar). */
+  waUnread: number;
   generatedAt: string;
 };
 
@@ -59,6 +61,7 @@ export const AdminStatsDB = {
       overduePayables,
       overdueFiados,
       pendingYape,
+      waUnread,
     ] = await withDbRetry(() =>
       Promise.all([
         // Pedidos activos en estado pendiente
@@ -123,6 +126,12 @@ export const AdminStatsDB = {
         prisma.order.count({
           where: { tenantId, status: "pendiente", paymentMethod: "yape" },
         }),
+
+        // Mensajes WhatsApp entrantes sin leer (inbox de Mensajes, migración 310)
+
+        prisma.whatsAppMessage.count({
+          where: { tenantId, direction: "in", read: false },
+        }),
       ])
     );
 
@@ -154,6 +163,7 @@ export const AdminStatsDB = {
       overduePayables,
       overdueFiados,
       pendingYape,
+      waUnread,
       generatedAt: now.toISOString(),
     };
   },
