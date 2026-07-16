@@ -53,6 +53,7 @@ const TAB_LOADERS: Record<string, Loader> = {
   colas: () => import("@/components/admin/unified/SistemaHubModule"),
   // Otros hubs / módulos.
   mensajes: () => import("@/components/admin/unified/MensajesHubModule"),
+  "whatsapp-inbox": () => import("@/components/admin/unified/MensajesHubModule"),
   crecimiento: () => import("@/components/admin/unified/CrecimientoHubModule"),
   campanas: () => import("@/components/admin/unified/CrecimientoHubModule"),
   equipo: () => import("@/components/admin/unified/EquipoHubModule"),

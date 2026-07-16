@@ -50,6 +50,7 @@ export type Tab =
   | "delivery-partners"
   | "delivery-live"         // Bloque D1 marketplace: tracking vivo + rutas + mapa Leaflet
   | "marketplace-chat"      // Bloque D2 marketplace: chat buyer ↔ seller
+  | "whatsapp-inbox"        // Inbox WhatsApp del negocio (Meta Cloud API) — abre MensajesHub sub-tab whatsapp
   | "store-customizer"
   | "mi-perfil"
   // Módulo rendimiento técnico
@@ -124,6 +125,7 @@ export const VALID_TABS: readonly Tab[] = [
   "delivery-partners",
   "delivery-live",
   "marketplace-chat",
+  "whatsapp-inbox",
   "store-customizer",
   "colas",
   "support-inbox",

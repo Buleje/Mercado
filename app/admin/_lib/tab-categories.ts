@@ -426,6 +426,7 @@ export const BASIC_MODULES: TabCategory[] = [
     icon: Heart,
     tabs: [
       "clientes",
+      "whatsapp-inbox",
       "marketplace-chat",
     ],
   },
@@ -617,7 +618,7 @@ export const EASY_MODE_TABS: ReadonlySet<Tab> = new Set<Tab>([
   // Marketplace
   "marketplace", "delivery-partners", "delivery-live",
   // Comunicación
-  "marketplace-chat",
+  "marketplace-chat", "whatsapp-inbox",
   // Mi Tienda
   "store-customizer", "pagina-inicio",
   // Config (siempre visible)

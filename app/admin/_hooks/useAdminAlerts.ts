@@ -64,8 +64,12 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
         const a: Record<string, number> = {};
         if (d.lowStockProducts > 0) a["inventario"] = d.lowStockProducts;
         if (d.pendingOrders > 0) a.pedidos = d.pendingOrders;
-        // Mensajes WhatsApp sin leer → badge del tab Mensajes (id marketplace-chat)
-        if ((d.waUnread ?? 0) > 0) a["marketplace-chat"] = d.waUnread!;
+        // Mensajes WhatsApp sin leer → badge en el tab WhatsApp del sidebar
+        // (y en Mensajes/marketplace-chat, que también contiene el inbox)
+        if ((d.waUnread ?? 0) > 0) {
+          a["whatsapp-inbox"] = d.waUnread!;
+          a["marketplace-chat"] = d.waUnread!;
+        }
         setAlerts(a);
         setQuickStats({
           pendingOrders: d.pendingOrders,

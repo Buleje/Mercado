@@ -83,6 +83,8 @@ const CORE_BASE: ModuleId[] = [
   "rendimiento",
   "mi-perfil",
   "support-inbox",
+  // Inbox WhatsApp del negocio — universal: toda vertical habla con clientes por WhatsApp
+  "whatsapp-inbox",
 ];
 
 /** Set extendido — todos los tabs actuales (35). */

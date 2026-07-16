@@ -133,6 +133,8 @@ export const PLAN_BASICO: PlanDefinition = {
     // Inicio (limitado: solo dashboard + asistente)
     "vendor-dashboard",
     "asistente-ia",
+    // WhatsApp del negocio (core: el bot toma pedidos 24/7 en todos los planes)
+    "whatsapp-inbox",
     // Ventas (POS + pedidos basicos)
     "ventas-caja",
     "pedidos",

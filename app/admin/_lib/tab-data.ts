@@ -121,6 +121,7 @@ export const ALL_TABS = [
   { id: "delivery-partners" as Tab,   label: "Delivery Partners",   icon: Truck },
   { id: "delivery-live" as Tab,       label: "Delivery en Vivo",    icon: Activity },
   { id: "marketplace-chat" as Tab,    label: "Chat Clientes",       icon: MessageCircle },
+  { id: "whatsapp-inbox" as Tab,      label: "WhatsApp",            icon: MessageCircle },
   // — MI TIENDA —
   { id: "store-customizer" as Tab,    label: "Identidad y tema",    icon: Palette },
   { id: "pagina-inicio" as Tab,       label: "Mi tienda pública",   icon: Globe },

@@ -287,6 +287,8 @@ export function TabRouter({
   if (tab === "delivery-partners") return <DeliveryPartnersModule key="delivery-partners" />;
   if (tab === "delivery-live")     return <DeliveryPartnersModule key="delivery-live" initialTab="pedidos-vivo" />;
   if (tab === "marketplace-chat")  return <MensajesHubModule key="marketplace-chat" initialTab="chat" />;
+  // Inbox WhatsApp del negocio — entrada directa del sidebar (Brandon 2026-07-16)
+  if (tab === "whatsapp-inbox")    return <MensajesHubModule key="whatsapp-inbox" initialTab="whatsapp" />;
 
   // ── Programas de crecimiento — ahora sub-tabs del hub Crecimiento (movidos
   //    desde Marketplace, 2026-06-21: single home + visible en sidebar) ──
