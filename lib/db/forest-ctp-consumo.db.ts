@@ -29,6 +29,21 @@ const CACHE_PREFIX = "forest-ctp";
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
 /**
+ * Timeout de las transacciones del libro. El default de Prisma para
+ * transacciones interactivas es **5s**, y estos guards hacen ~6 round-trips
+ * dentro de la tx (lock FOR UPDATE + findMany + groupBy + delete + createMany +
+ * findMany). Contra un pooler remoto eso pasa los 5s con datos reales: visto
+ * 2026-07-15 con "A commit cannot be executed on an expired transaction ...
+ * 5253 ms passed".
+ *
+ * No se puede achicar el trabajo sin perder la garantía: los round-trips SON la
+ * validación (leer el saldo bajo lock y escribir en el mismo instante). Así que
+ * se le da margen. `maxWait` cubre la espera por una conexión del pool cuando
+ * hay varias transacciones peleando por las mismas filas.
+ */
+export const CTP_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
+
+/**
  * Un consumo sólo "cuenta" si su LÍNEA sigue viva (registrada y no borrada).
  *
  * SINGLE SOURCE — sin esto, el consumo de una línea anulada/borrada seguía
@@ -272,7 +287,7 @@ export class ForestCtpConsumoDB {
 
       try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
       return result;
-    });
+    }, CTP_TX_OPTS);
   }
 
   /** Consumos de una línea, con la guía y especie de cada ingreso. */
@@ -421,6 +436,6 @@ export class ForestCtpConsumoDB {
 
       try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
       return tx.forestCtpConsumo.findMany({ where: { tenantId, ctpEntryId } });
-    });
+    }, CTP_TX_OPTS);
   }
 }

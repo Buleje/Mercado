@@ -577,6 +577,125 @@ describe.skipIf(!HAS_DB)("I4/I5 · cadena de custodia del despacho (ADR-135)", (
   }, 30_000);
 });
 
+describe.skipIf(!HAS_DB)("COGS · costo de lo despachado (ADR-135 D7)", () => {
+  /**
+   * Escenario completo de punta a punta, que es lo que el módulo no podía
+   * responder antes: guías con precios distintos → 2 corridas → 1 despacho.
+   * La ponderación es DOBLE y encadenada: cada corrida promedia sus guías por
+   * volumen, y el despacho promedia las corridas por lo que sacó de cada una.
+   */
+  it("pondera dos veces: guías dentro de la corrida, corridas dentro del despacho", async () => {
+    const tipo = `${P}-cogs`;
+    // Corrida A: 2 guías a precios distintos → 4 m³ producidos
+    const g1 = await crearIngreso(3, 1200); // S/400/m³
+    const g2 = await crearIngreso(2, 1000); // S/500/m³
+    const cA = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "produccion", lineNo: 94_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 5, quantity: 4, unit: "m3",
+        status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(cA.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, cA.id, [
+      { woodEntryId: g1.id, volumeM3: 3 },
+      { woodEntryId: g2.id, volumeM3: 2 },
+    ], P);
+    // materia prima A = 3×400 + 2×500 = 2200 → /4 producidos = S/550 por m³
+
+    // Corrida B: 1 guía cara → 2 m³
+    const g3 = await crearIngreso(2, 1600); // S/800/m³
+    const cB = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "produccion", lineNo: 94_500 + lineIds.length,
+        speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 2, quantity: 2, unit: "m3",
+        status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(cB.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, cB.id, [{ woodEntryId: g3.id, volumeM3: 2 }], P);
+    // materia prima B = 2×800 = 1600 → /2 = S/800 por m³
+
+    // Despacho: 3 de A + 1 de B = 4
+    const d = await prisma.forestCtpEntry.create({
+      data: {
+        tenantId: TENANT, section: "despacho", lineNo: 95_000 + lineIds.length,
+        speciesCommon: "Tornillo", productType: tipo, quantity: 4, unit: "m3",
+        gtfNumber: `${P}-out`, status: "registrado", createdBy: P,
+      },
+    });
+    lineIds.push(d.id);
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [
+      { produccionEntryId: cA.id, quantity: 3 },
+      { produccionEntryId: cB.id, quantity: 1 },
+    ], P);
+
+    const c = await ForestCtpDespachoDB.cogsDeDespacho(TENANT, d.id);
+    // 3×550 + 1×800 = 2450 · /4 despachados = S/612.50
+    expect(c.cogs).toBe(2450);
+    expect(c.costoUnitario).toBe(612.5);
+    expect(c.motivo).toBe("ok");
+    // Ningún precio individual (400/500/800/550) da 612.50: la doble ponderación
+    // es el único camino a ese número.
+    expect([400, 500, 800, 550]).not.toContain(c.costoUnitario);
+  }, 30_000);
+
+  it("una corrida sin factura envenena el COGS entero: null, nunca 0", async () => {
+    const tipo = `${P}-cogsnull`;
+    const conF = await crearIngreso(2, 800);
+    const cA = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "produccion", lineNo: 96_000 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 2, quantity: 2, unit: "m3", status: "registrado", createdBy: P },
+    });
+    lineIds.push(cA.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, cA.id, [{ woodEntryId: conF.id, volumeM3: 2 }], P);
+
+    const sinF = await crearIngreso(2); // sin costoTotal
+    const cB = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "produccion", lineNo: 96_500 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 2, quantity: 2, unit: "m3", status: "registrado", createdBy: P },
+    });
+    lineIds.push(cB.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, cB.id, [{ woodEntryId: sinF.id, volumeM3: 2 }], P);
+
+    const d = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "despacho", lineNo: 97_000 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, quantity: 4, unit: "m3", gtfNumber: `${P}-o2`, status: "registrado", createdBy: P },
+    });
+    lineIds.push(d.id);
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [
+      { produccionEntryId: cA.id, quantity: 2 },
+      { produccionEntryId: cB.id, quantity: 2 },
+    ], P);
+
+    const c = await ForestCtpDespachoDB.cogsDeDespacho(TENANT, d.id);
+    expect(c.cogs).toBeNull();
+    expect(c.motivo).toBe("falta_costo");
+    // El detalle igual muestra lo que SÍ se sabe: la corrida con factura tiene costo.
+    expect(c.detalle.find((x) => x.lineNo === cA.lineNo)?.costo).toBe(800);
+    expect(c.detalle.find((x) => x.lineNo === cB.lineNo)?.costo).toBeNull();
+  }, 30_000);
+
+  it("no costea lo que no sabe de dónde salió: atribución parcial → null", async () => {
+    const tipo = `${P}-cogsparc`;
+    const g = await crearIngreso(4, 1600); // S/400/m³
+    const c1 = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "produccion", lineNo: 98_000 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, volumeInputM3: 4, quantity: 4, unit: "m3", status: "registrado", createdBy: P },
+    });
+    lineIds.push(c1.id);
+    await ForestCtpConsumoDB.setConsumos(TENANT, c1.id, [{ woodEntryId: g.id, volumeM3: 4 }], P);
+
+    const d = await prisma.forestCtpEntry.create({
+      data: { tenantId: TENANT, section: "despacho", lineNo: 98_500 + lineIds.length, speciesCommon: "Tornillo", productType: tipo, quantity: 4, unit: "m3", gtfNumber: `${P}-o3`, status: "registrado", createdBy: P },
+    });
+    lineIds.push(d.id);
+    // Sólo 2 de los 4 declarados tienen origen.
+    await ForestCtpDespachoDB.setOrigenes(TENANT, d.id, [{ produccionEntryId: c1.id, quantity: 2 }], P);
+
+    const c = await ForestCtpDespachoDB.cogsDeDespacho(TENANT, d.id);
+    expect(c.cogs).toBeNull();
+    expect(c.motivo).toBe("sin_atribucion");
+    expect(c.sinAtribuir).toBe(2);
+  }, 30_000);
+});
+
 describe.skipIf(!HAS_DB)("Auditoría — quién hizo qué (Ley 29733 + SERFOR)", () => {
   /**
    * Hasta 2026-07-15 el módulo no escribía NI UNA entrada de auditoría: se podía

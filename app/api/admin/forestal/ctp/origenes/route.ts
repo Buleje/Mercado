@@ -55,11 +55,12 @@ export const GET = withApiHandler("forestal-ctp-origenes-get", async (req: NextR
   if (!despachoEntryId) return NextResponse.json({ error: "despachoEntryId_required" }, { status: 400 });
 
   try {
-    const [origenes, trazabilidad] = await Promise.all([
+    const [origenes, trazabilidad, cogs] = await Promise.all([
       ForestCtpDespachoDB.listByDespacho(auth.tenantId, despachoEntryId),
       ForestCtpDespachoDB.trazabilidadCompleta(auth.tenantId, despachoEntryId),
+      ForestCtpDespachoDB.cogsDeDespacho(auth.tenantId, despachoEntryId),
     ]);
-    return NextResponse.json({ origenes, trazabilidad });
+    return NextResponse.json({ origenes, trazabilidad, cogs });
   } catch (err) {
     return ctpErrorResponse(err, "ctp-origenes.GET", auth.tenantId);
   }

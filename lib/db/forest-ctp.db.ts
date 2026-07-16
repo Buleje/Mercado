@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { ForestCtpConsumoDB, CtpInvariantError, CONSUMO_VIGENTE } from "./forest-ctp-consumo.db";
+import { ForestCtpConsumoDB, CtpInvariantError, CONSUMO_VIGENTE, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
@@ -215,7 +215,7 @@ export class ForestCtpDB {
           createdBy: input.createdBy,
         },
       });
-    });
+    }, CTP_TX_OPTS);
 
     auditCtp({
       tenantId,

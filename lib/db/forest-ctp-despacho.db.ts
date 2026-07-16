@@ -27,10 +27,13 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { CtpInvariantError } from "./forest-ctp-consumo.db";
+import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 
 const CACHE_PREFIX = "forest-ctp";
+/** 4 decimales — precisión forestal (volúmenes/cantidades). */
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
+/** 2 decimales — plata. */
+const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Un origen sólo cuenta si su línea de despacho sigue viva (espejo de CONSUMO_VIGENTE). */
 export const ORIGEN_VIGENTE = {
@@ -40,6 +43,26 @@ export const ORIGEN_VIGENTE = {
 export interface OrigenInput {
   produccionEntryId: string;
   quantity: number | string;
+}
+
+export interface CogsDespacho {
+  /** Costo de lo que salió. null = no se puede saber (falta factura / monedas mezcladas). NUNCA 0. */
+  cogs: number | null;
+  /** Costo por unidad despachada — el número con el que se compara el precio de venta. */
+  costoUnitario: number | null;
+  moneda: string | null;
+  /** Por qué es null, para que la UI lo explique en vez de mostrar "—". */
+  motivo: "ok" | "sin_atribucion" | "falta_costo" | "monedas_mezcladas" | "sin_cantidad";
+  /** Lo despachado que NO tiene corrida atribuida: su costo es desconocido por definición. */
+  sinAtribuir: number;
+  detalle: {
+    lineNo: number;
+    quantity: number;
+    /** S/ por unidad de esa corrida (ya incluye materia prima ponderada + proceso). */
+    costoUnitario: number | null;
+    costo: number | null;
+    congelado: boolean;
+  }[];
 }
 
 export interface TrazabilidadDespacho {
@@ -243,7 +266,7 @@ export class ForestCtpDespachoDB {
 
       try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
       return result;
-    });
+    }, CTP_TX_OPTS);
   }
 
   /** Orígenes de un despacho, con la corrida de cada uno. */
@@ -261,6 +284,87 @@ export class ForestCtpDespachoDB {
         },
       },
     });
+  }
+
+  /**
+   * COGS — cuánto costó la madera que salió en este despacho (ADR-135 D7).
+   *
+   *   COGS = Σ (origen.quantity × costoUnitario(corrida))
+   *
+   * El puente NO tiene costo propio a propósito: un 2º snap acá serían dos
+   * relojes de congelado desincronizándose, y el COGS dependería de cuál se
+   * leyó. Se deriva de la corrida, que ya congela al cierre (ADR-134 D6).
+   *
+   * Doble ponderación encadenada: cada corrida ya promedió sus guías por
+   * volumen, y acá se promedian las corridas por lo despachado de cada una.
+   *
+   * Misma regla de oro: **falta un costo ⇒ null, NUNCA 0** (un 0 fingiría
+   * margen 100%, que es peor que no saber). Y lo despachado sin corrida
+   * atribuida hace el COGS desconocido por definición: no se puede costear lo
+   * que no se sabe de dónde salió.
+   */
+  static async cogsDeDespacho(tenantId: string, despachoEntryId: string): Promise<CogsDespacho> {
+    if (!tenantId) throw new Error("tenantId is required");
+
+    const [despacho, origenes] = await Promise.all([
+      prisma.forestCtpEntry.findFirst({
+        where: { id: despachoEntryId, tenantId, deletedAt: null },
+        select: { quantity: true, moneda: true },
+      }),
+      ForestCtpDespachoDB.listByDespacho(tenantId, despachoEntryId),
+    ]);
+    if (!despacho) throw new Error("Línea de despacho no encontrada");
+
+    const declarado = despacho.quantity ? Number(despacho.quantity) : 0;
+    const atribuido = r4(origenes.reduce((a, o) => a + Number(o.quantity), 0));
+    const sinAtribuir = r4(Math.max(0, declarado - atribuido));
+    const base = { sinAtribuir, moneda: despacho.moneda ?? "PEN" };
+
+    if (origenes.length === 0) {
+      return { ...base, cogs: null, costoUnitario: null, motivo: "sin_atribucion", detalle: [] };
+    }
+
+    // El costo de cada corrida ya viene ponderado por sus guías (ADR-134 D6).
+    const costos = await Promise.all(
+      origenes.map((o) => ForestCtpConsumoDB.costoDeLinea(tenantId, o.produccionEntryId)),
+    );
+
+    const detalle = origenes.map((o, i) => {
+      const c = costos[i];
+      const unit = c.costoUnitario;
+      return {
+        lineNo: o.produccion.lineNo,
+        quantity: Number(o.quantity),
+        costoUnitario: unit,
+        costo: unit != null ? r2(unit * Number(o.quantity)) : null,
+        congelado: c.congelado,
+      };
+    });
+
+    const monedas = new Set(costos.map((c) => c.moneda ?? "PEN"));
+    if (monedas.size > 1) {
+      return { ...base, cogs: null, costoUnitario: null, motivo: "monedas_mezcladas", detalle };
+    }
+    // Una sola corrida sin costo envenena el total: sumar las demás daría un
+    // COGS que parece completo y no lo es.
+    if (detalle.some((d) => d.costo == null)) {
+      return { ...base, cogs: null, costoUnitario: null, motivo: "falta_costo", detalle };
+    }
+    // Y si hay volumen sin atribuir, tampoco se puede afirmar el costo del
+    // despacho entero — sólo el de la parte que sí tiene origen.
+    if (sinAtribuir > 0) {
+      return { ...base, cogs: null, costoUnitario: null, motivo: "sin_atribucion", detalle };
+    }
+
+    const cogs = r2(detalle.reduce((a, d) => a + (d.costo ?? 0), 0));
+    return {
+      ...base,
+      moneda: [...monedas][0],
+      cogs,
+      costoUnitario: declarado > 0 ? r2(cogs / declarado) : null,
+      motivo: declarado > 0 ? "ok" : "sin_cantidad",
+      detalle,
+    };
   }
 
   /**
