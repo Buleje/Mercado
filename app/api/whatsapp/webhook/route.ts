@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -195,12 +195,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Responder 200 inmediatamente para cumplir el timeout de Meta (< 5s)
-  // El procesamiento real se hace en fire-and-forget
-  processWebhookPayload(rawBody).catch((err) => {
-    logger.error("[whatsapp/webhook] Error en procesamiento asíncrono", {
-      error: err,
-    });
+  // Responder 200 inmediatamente para cumplir el timeout de Meta (< 5s).
+  // PROD BUG 2026-07-16: fire-and-forget "pelado" MUERE en Vercel serverless
+  // (la función se congela al responder) → mensajes entrantes se PERDÍAN en
+  // producción. `after()` (Next 16) mantiene viva la función hasta terminar.
+  after(async () => {
+    try {
+      await processWebhookPayload(rawBody);
+    } catch (err) {
+      logger.error("[whatsapp/webhook] Error en procesamiento asíncrono", {
+        error: err,
+      });
+    }
   });
 
   return NextResponse.json({ success: true }, { status: 200 });
@@ -349,36 +355,36 @@ async function handleSingleMessage(
     aiFirst: isAiFirstEnabled(),
   });
 
-  // Inbox admin (migración 310): persistir el mensaje entrante. Fire-and-forget
-  // — el log jamás bloquea la respuesta al cliente. Dedupe por waMessageId.
-  WhatsAppMessagesDB.append(effectiveTenantId, {
-    phoneNumberId,
-    customerPhone: senderPhone,
-    customerName: contactNames.get(senderPhone),
-    direction: "in",
-    sentBy: "customer",
-    body: text,
-    waMessageId: message.id,
-  })
-    .then((persisted) => {
-      // Si es null fue un webhook re-entregado (dedupe) — no notificar dos veces
-      if (!persisted) return;
-
+  // Inbox admin (migración 310): persistir el mensaje entrante.
+  // AWAITED (no fire-and-forget): en Vercel serverless las promesas sueltas
+  // mueren al terminar el handler — se perdían mensajes en prod (2026-07-16).
+  // La respuesta a Meta ya salió (after()), así que esto no bloquea nada.
+  try {
+    const persisted = await WhatsAppMessagesDB.append(effectiveTenantId, {
+      phoneNumberId,
+      customerPhone: senderPhone,
+      customerName: contactNames.get(senderPhone),
+      direction: "in",
+      sentBy: "customer",
+      body: text,
+      waMessageId: message.id,
+    });
+    // null = webhook re-entregado (dedupe) — no notificar dos veces
+    if (persisted) {
       // 1) SSE: refresco instantáneo del inbox y del badge del sidebar
       emitAdminSSE(effectiveTenantId, "wa_message_new", {
         customerPhone: senderPhone,
         phoneNumberId,
       });
-
-      // 2) Web push al dueño (mismo patrón que pedidos de marketplace)
-      void notifyOwnerOfMessage(effectiveTenantId, persisted.customerName, text);
-    })
-    .catch((err) => {
-      logger.error("[whatsapp/webhook] persistencia inbound falló", {
-        error: err instanceof Error ? err.message : String(err),
-        tenantId: effectiveTenantId,
-      });
+      // 2) Web push al dueño (best-effort, try/catch interno)
+      await notifyOwnerOfMessage(effectiveTenantId, persisted.customerName, text);
+    }
+  } catch (err) {
+    logger.error("[whatsapp/webhook] persistencia inbound falló", {
+      error: err instanceof Error ? err.message : String(err),
+      tenantId: effectiveTenantId,
     });
+  }
 
   // ── Pausa del bot por hilo (el dueño está atendiendo a mano) ──────────────
   // Si el hilo está pausado, NO se responde automático: el mensaje ya quedó
@@ -471,19 +477,22 @@ async function handleSingleMessage(
     return false;
   });
 
-  // Inbox admin: persistir la respuesta del bot (fire-and-forget).
-  WhatsAppMessagesDB.append(effectiveTenantId, {
-    phoneNumberId,
-    customerPhone: senderPhone,
-    customerName: contactNames.get(senderPhone),
-    direction: "out",
-    sentBy: "ai",
-    body: replyText,
-    status: sentOk ? "sent" : "failed",
-  }).catch((err) => {
+  // Inbox admin: persistir la respuesta del bot (awaited — ver nota arriba
+  // sobre promesas sueltas en Vercel serverless).
+  try {
+    await WhatsAppMessagesDB.append(effectiveTenantId, {
+      phoneNumberId,
+      customerPhone: senderPhone,
+      customerName: contactNames.get(senderPhone),
+      direction: "out",
+      sentBy: "ai",
+      body: replyText,
+      status: sentOk ? "sent" : "failed",
+    });
+  } catch (err) {
     logger.error("[whatsapp/webhook] persistencia outbound falló", {
       error: err instanceof Error ? err.message : String(err),
       tenantId: effectiveTenantId,
     });
-  });
+  }
 }
