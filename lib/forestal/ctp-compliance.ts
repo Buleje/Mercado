@@ -116,6 +116,8 @@ export interface CtpComplianceCounts {
    */
   citesSinPermiso?: number;
   rendimientoAlto?: number;
+  /** Títulos habilitantes / permisos CITES vencidos en la Ficha (informativo). */
+  documentosVencidos?: number;
 }
 
 /**

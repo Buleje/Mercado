@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpComplianceScore, type CtpComplianceCounts } from "@/lib/forestal/ctp-compliance";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
+import { estadoVencimiento } from "@/lib/forestal/ctp-ficha-types";
 import type { WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
 
 interface SaldosSummary {
@@ -33,6 +34,8 @@ export interface CtpComplianceData {
   citesSinPermisoEspecies: string[];
   /** Corridas con rendimiento sobre el referencial SERFOR (informativo). */
   rendimientoAltoLineas: number[];
+  /** Títulos habilitantes / permisos CITES vencidos en la Ficha (informativo). */
+  documentosVencidosLabels: string[];
 }
 
 interface UseCtpComplianceResult {
@@ -89,9 +92,16 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
       // CITES sin permiso: especies CITES del período que no matchean ningún
       // permiso cargado en la Ficha (match laxo por substring, tolerante a tipeo).
       let citesSinPermisoEspecies: string[] = [];
+      const documentosVencidosLabels: string[] = [];
       if (fichaRes.ok) {
-        const ficha: { ficha?: { citesPermisos?: { especie: string }[] } } = await fichaRes.json();
-        const permisos = (ficha.ficha?.citesPermisos ?? []).map((p) => norm(p.especie)).filter(Boolean);
+        const body: {
+          ficha?: {
+            citesPermisos?: { especie: string; vencimiento?: string }[];
+            titulos?: { tipo: string; codigo: string; vencimiento?: string }[];
+          };
+        } = await fichaRes.json();
+        const f = body.ficha;
+        const permisos = (f?.citesPermisos ?? []).map((p) => norm(p.especie)).filter(Boolean);
         citesSinPermisoEspecies = (saldos.porEspecie ?? [])
           .filter((e) => e.cites)
           .filter((e) => {
@@ -99,6 +109,17 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
             return !permisos.some((p) => s.includes(p) || p.includes(s));
           })
           .map((e) => e.especie);
+        // Documentos vencidos: un título/permiso caducado invalida el origen.
+        for (const p of f?.citesPermisos ?? []) {
+          if (p.vencimiento && estadoVencimiento(p.vencimiento) === "vencido") {
+            documentosVencidosLabels.push(`CITES ${p.especie || "—"}`);
+          }
+        }
+        for (const t of f?.titulos ?? []) {
+          if (t.vencimiento && estadoVencimiento(t.vencimiento) === "vencido") {
+            documentosVencidosLabels.push(t.codigo || t.tipo || "título");
+          }
+        }
       }
       // Rendimiento alto: corridas de producción sobre el referencial SERFOR.
       let rendimientoAltoLineas: number[] = [];
@@ -119,6 +140,7 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         despachosSinTraza: trazaBody.traza.incompletos,
         citesSinPermiso: citesSinPermisoEspecies.length,
         rendimientoAlto: rendimientoAltoLineas.length,
+        documentosVencidos: documentosVencidosLabels.length,
       };
 
       setData({
@@ -129,6 +151,7 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         despachosSinTrazaLineas: trazaBody.traza.lineas,
         citesSinPermisoEspecies,
         rendimientoAltoLineas,
+        documentosVencidosLabels,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

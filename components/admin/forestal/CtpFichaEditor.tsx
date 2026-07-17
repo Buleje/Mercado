@@ -17,7 +17,8 @@ import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field, I } from "./ctp-shared";
 import {
-  emptyCtpFicha, ctpFichaFaltantes, type CtpFicha, type CtpTituloHabilitante, type CtpCitesPermiso,
+  emptyCtpFicha, ctpFichaFaltantes, estadoVencimiento,
+  type CtpFicha, type CtpTituloHabilitante, type CtpCitesPermiso,
 } from "@/lib/forestal/ctp-ficha-types";
 
 const TITULO_TIPOS: { value: string; label: string }[] = [
@@ -34,17 +35,6 @@ const tituloLabel = (t: string) => TITULO_TIPOS.find((x) => x.value === t)?.labe
 const FIELD_LABELS: Partial<Record<keyof CtpFicha, string>> = {
   nombreCtp: "Nombre del CTP", codigoCtp: "Código de CTP", ruc: "RUC", razonSocial: "Razón social",
 };
-
-/** Estado de vigencia de un permiso CITES según su fecha de vencimiento. */
-function permisoEstado(vencimiento: string): "vencido" | "por_vencer" | "vigente" | null {
-  if (!vencimiento) return null;
-  const v = new Date(`${vencimiento}T23:59:59`); // vence al final de ese día
-  if (Number.isNaN(v.getTime())) return null;
-  const dias = Math.floor((v.getTime() - Date.now()) / 86_400_000);
-  if (dias < 0) return "vencido";
-  if (dias <= 30) return "por_vencer";
-  return "vigente";
-}
 
 export default function CtpFichaEditor() {
   const [ficha, setFicha] = useState<CtpFicha>(emptyCtpFicha());
@@ -239,7 +229,7 @@ function FichaReadView({ ficha: f }: { ficha: CtpFicha }) {
           ) : (
             <ul className="space-y-1.5">
               {f.titulos.map((t, i) => {
-                const estado = permisoEstado(t.vencimiento);
+                const estado = estadoVencimiento(t.vencimiento);
                 return (
                   <li key={i} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-bold text-[var(--text-secondary)]">{tituloLabel(t.tipo)}</span>
@@ -259,7 +249,7 @@ function FichaReadView({ ficha: f }: { ficha: CtpFicha }) {
             <CardTitle as="h3" className="mb-3 text-sm font-bold text-[var(--text-primary)]">Permisos CITES</CardTitle>
             <ul className="space-y-1.5">
               {f.citesPermisos.map((p, i) => {
-                const estado = permisoEstado(p.vencimiento);
+                const estado = estadoVencimiento(p.vencimiento);
                 return (
                   <li key={i} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="rounded-full bg-[var(--data-error-100)] px-2.5 py-0.5 text-xs font-bold text-[var(--data-error-700)]">{p.especie || "—"}</span>

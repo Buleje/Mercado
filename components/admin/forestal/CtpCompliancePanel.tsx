@@ -193,6 +193,21 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           navigateLabel="Ver producción"
           severity="warning"
         />
+        <ComplianceRow
+          count={data.counts.documentosVencidos ?? 0}
+          icon={AlertCircle}
+          title={(n) => `${n} ${n === 1 ? "documento vencido" : "documentos vencidos"} en la Ficha`}
+          okTitle="Títulos habilitantes y permisos CITES vigentes"
+          description={
+            data.documentosVencidosLabels.length > 0
+              ? `Un título habilitante o permiso CITES vencido invalida el origen de la materia prima: ${data.documentosVencidosLabels.slice(0, 4).join(", ")}${data.documentosVencidosLabels.length > 4 ? ` y ${data.documentosVencidosLabels.length - 4} más` : ""}.`
+              : "Hay un documento habilitante vencido en la Ficha del CTP."
+          }
+          action="Renová o actualizá su vencimiento en la pestaña Ficha CTP."
+          onNavigate={() => onNavigate("ficha")}
+          navigateLabel="Ir a Ficha CTP"
+          severity="error"
+        />
       </div>
     </div>
   );

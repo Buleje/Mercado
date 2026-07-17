@@ -112,3 +112,21 @@ export const CTP_FICHA_REQUIRED: (keyof CtpFicha)[] = ["nombreCtp", "codigoCtp",
 export function ctpFichaFaltantes(f: CtpFicha): (keyof CtpFicha)[] {
   return CTP_FICHA_REQUIRED.filter((k) => !s(f[k]));
 }
+
+export type EstadoVencimiento = "vencido" | "por_vencer" | "vigente";
+
+/**
+ * Estado de vigencia de una fecha `YYYY-MM-DD` respecto a HOY: `vencido`,
+ * `por_vencer` (≤30 días) o `vigente`; null si no hay fecha. Usá sólo desde
+ * cliente (llama a `Date.now()` — no en un render server cacheado). Single
+ * source para permisos CITES y títulos habilitantes de la Ficha.
+ */
+export function estadoVencimiento(vencimiento: string): EstadoVencimiento | null {
+  if (!vencimiento) return null;
+  const v = new Date(`${vencimiento}T23:59:59`); // vence al final de ese día
+  if (Number.isNaN(v.getTime())) return null;
+  const dias = Math.floor((v.getTime() - Date.now()) / 86_400_000);
+  if (dias < 0) return "vencido";
+  if (dias <= 30) return "por_vencer";
+  return "vigente";
+}
