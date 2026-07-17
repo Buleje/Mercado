@@ -32,6 +32,9 @@ export type DbWhatsAppMessage = {
   sentBy: WaSentBy;
   body: string;
   waMessageId: string | null;
+  /** Media entrante (foto/audio/video/doc): asset en el CDN de Meta. */
+  mediaId: string | null;
+  mediaMime: string | null;
   status: WaStatus;
   read: boolean;
   createdAt: string;
@@ -59,6 +62,8 @@ type PWhatsAppMessage = {
   sentBy: string;
   body: string;
   waMessageId: string | null;
+  mediaId: string | null;
+  mediaMime: string | null;
   status: string;
   read: boolean;
   createdAt: Date;
@@ -75,6 +80,8 @@ function mapMessage(m: PWhatsAppMessage): DbWhatsAppMessage {
     sentBy: m.sentBy as WaSentBy,
     body: m.body,
     waMessageId: m.waMessageId,
+    mediaId: m.mediaId,
+    mediaMime: m.mediaMime,
     status: m.status as WaStatus,
     read: m.read,
     createdAt: m.createdAt.toISOString(),
@@ -335,6 +342,8 @@ export const WhatsAppMessagesDB = {
       sentBy: WaSentBy;
       body: string;
       waMessageId?: string | null;
+      mediaId?: string | null;
+      mediaMime?: string | null;
       status?: WaStatus;
     },
   ): Promise<DbWhatsAppMessage | null> {
@@ -349,6 +358,8 @@ export const WhatsAppMessagesDB = {
           sentBy: data.sentBy,
           body: data.body,
           waMessageId: data.waMessageId ?? null,
+          mediaId: data.mediaId ?? null,
+          mediaMime: data.mediaMime ?? null,
           status: data.status ?? (data.direction === "in" ? "received" : "sent"),
           // Los salientes nacen "leídos" (los escribió el negocio o su IA)
           read: data.direction === "out",
@@ -369,6 +380,18 @@ export const WhatsAppMessagesDB = {
       });
       throw err;
     }
+  },
+
+  /** Mensaje del tenant que referencia un mediaId (tenancy del proxy de media). */
+  async findByMediaId(
+    tenantId: string,
+    mediaId: string,
+  ): Promise<{ phoneNumberId: string; mediaMime: string | null } | null> {
+    const row = await prisma.whatsAppMessage.findFirst({
+      where: { tenantId, mediaId },
+      select: { phoneNumberId: true, mediaMime: true },
+    });
+    return row ?? null;
   },
 
   /**

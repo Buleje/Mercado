@@ -25,6 +25,13 @@ function isAiFirstEnabled(): boolean {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface MetaMediaRef {
+  id: string;
+  mime_type?: string;
+  caption?: string;
+  filename?: string;
+}
+
 interface MetaTextMessage {
   from: string;
   id: string;
@@ -36,6 +43,24 @@ interface MetaTextMessage {
     button_reply?: { id: string; title: string };
     list_reply?: { id: string; title: string };
   };
+  // Media entrante (el binario vive en el CDN de Meta ~30 días)
+  image?: MetaMediaRef;
+  audio?: MetaMediaRef;
+  video?: MetaMediaRef;
+  document?: MetaMediaRef;
+  sticker?: MetaMediaRef;
+}
+
+/** Placeholder legible para el inbox cuando el mensaje es solo media. */
+function mediaPlaceholder(type: string, media: MetaMediaRef): string {
+  switch (type) {
+    case "image": return "📷 Foto";
+    case "audio": return "🎙️ Audio";
+    case "video": return "🎬 Video";
+    case "document": return media.filename ? `📄 ${media.filename}` : "📄 Documento";
+    case "sticker": return "💟 Sticker";
+    default: return "📎 Adjunto";
+  }
 }
 
 interface MetaChange {
@@ -310,11 +335,17 @@ async function handleSingleMessage(
     message.interactive?.button_reply?.title ??
     message.interactive?.list_reply?.title ??
     "";
-
   text = text.trim();
-  if (!text) {
-    logger.info("[whatsapp/webhook] Mensaje sin texto — ignorado", {
+
+  // Media entrante (foto/audio/video/documento/sticker) — 2026-07-17: antes se
+  // descartaba; ahora se persiste y el operador la ve en el inbox (proxy).
+  const media =
+    message.image ?? message.video ?? message.audio ?? message.document ?? message.sticker;
+
+  if (!text && !media) {
+    logger.info("[whatsapp/webhook] Mensaje sin texto ni media — ignorado", {
       from: redactPhone(senderPhone),
+      type: message.type,
     });
     return;
   }
@@ -359,6 +390,8 @@ async function handleSingleMessage(
   // AWAITED (no fire-and-forget): en Vercel serverless las promesas sueltas
   // mueren al terminar el handler — se perdían mensajes en prod (2026-07-16).
   // La respuesta a Meta ya salió (after()), así que esto no bloquea nada.
+  const inboundBody =
+    text || (media ? `${mediaPlaceholder(message.type, media)}${media.caption ? ` — ${media.caption}` : ""}` : "");
   try {
     const persisted = await WhatsAppMessagesDB.append(effectiveTenantId, {
       phoneNumberId,
@@ -366,8 +399,10 @@ async function handleSingleMessage(
       customerName: contactNames.get(senderPhone),
       direction: "in",
       sentBy: "customer",
-      body: text,
+      body: inboundBody,
       waMessageId: message.id,
+      mediaId: media?.id ?? null,
+      mediaMime: media?.mime_type ?? null,
     });
     // null = webhook re-entregado (dedupe) — no notificar dos veces
     if (persisted) {
@@ -377,13 +412,24 @@ async function handleSingleMessage(
         phoneNumberId,
       });
       // 2) Web push al dueño (best-effort, try/catch interno)
-      await notifyOwnerOfMessage(effectiveTenantId, persisted.customerName, text);
+      await notifyOwnerOfMessage(effectiveTenantId, persisted.customerName, inboundBody);
     }
   } catch (err) {
     logger.error("[whatsapp/webhook] persistencia inbound falló", {
       error: err instanceof Error ? err.message : String(err),
       tenantId: effectiveTenantId,
     });
+  }
+
+  // Media pura (sin texto): el bot NO responde — la atiende el operador.
+  // (El concierge está diseñado para texto; una foto del Yape no es un pedido.)
+  if (!text) {
+    logger.info("[whatsapp/webhook] Media sin texto — persistida, sin auto-respuesta", {
+      tenantId: effectiveTenantId,
+      from: redactPhone(senderPhone),
+      type: message.type,
+    });
+    return;
   }
 
   // ── Pausa del bot por hilo (el dueño está atendiendo a mano) ──────────────

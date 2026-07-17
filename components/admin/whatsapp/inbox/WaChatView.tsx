@@ -127,6 +127,53 @@ export default function WaChatView({
                     failed && "border-2 border-[var(--data-error-500)]",
                   )}
                 >
+                  {/* Media entrante: foto/audio/video/documento (proxy autenticado) */}
+                  {m.mediaId && m.mediaMime?.startsWith("image/") && (
+                    <a
+                      href={`/api/admin/whatsapp/media/${m.mediaId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Ver foto completa"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/api/admin/whatsapp/media/${m.mediaId}`}
+                        alt={m.body || "Foto del cliente"}
+                        loading="lazy"
+                        className="mb-1 max-h-64 w-auto max-w-full rounded-xl"
+                      />
+                    </a>
+                  )}
+                  {m.mediaId && m.mediaMime?.startsWith("audio/") && (
+                     
+                    <audio
+                      controls
+                      preload="none"
+                      src={`/api/admin/whatsapp/media/${m.mediaId}`}
+                      className="mb-1 h-10 w-64 max-w-full"
+                    />
+                  )}
+                  {m.mediaId && m.mediaMime?.startsWith("video/") && (
+                     
+                    <video
+                      controls
+                      preload="none"
+                      src={`/api/admin/whatsapp/media/${m.mediaId}`}
+                      className="mb-1 max-h-64 w-auto max-w-full rounded-xl"
+                    />
+                  )}
+                  {m.mediaId &&
+                    m.mediaMime &&
+                    !/^(image|audio|video)\//.test(m.mediaMime) && (
+                      <a
+                        href={`/api/admin/whatsapp/media/${m.mediaId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mb-1 inline-block rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-primary underline underline-offset-2 dark:bg-slate-700"
+                      >
+                        📄 Abrir documento
+                      </a>
+                    )}
                   <p className="whitespace-pre-wrap break-words text-sm text-slate-900 dark:text-white">
                     {m.body}
                   </p>

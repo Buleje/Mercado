@@ -36,6 +36,9 @@ export interface WaMessage {
   direction: WaDirection;
   sentBy: WaSentBy;
   body: string;
+  /** Media entrante — se sirve vía /api/admin/whatsapp/media/[mediaId]. */
+  mediaId: string | null;
+  mediaMime: string | null;
   status: "received" | "sent" | "failed";
   read: boolean;
   createdAt: string;

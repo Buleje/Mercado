@@ -1721,6 +1721,8 @@ model WhatsAppMessage {
   sentBy        String   @default("customer") // customer | ai | admin
   body          String   @db.Text
   waMessageId   String?  @unique // id de Meta (dedupe de webhooks re-entregados)
+  mediaId       String? // asset en el CDN de Meta (~30 días) — proxy /api/admin/whatsapp/media
+  mediaMime     String? // image/jpeg | audio/ogg | video/mp4 | application/pdf…
   status        String   @default("received") // received | sent | failed
   read          Boolean  @default(false) // leído por el admin (solo aplica a inbound)
   createdAt     DateTime @default(now())
