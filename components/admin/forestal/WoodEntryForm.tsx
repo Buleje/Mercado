@@ -26,6 +26,7 @@ import {
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { ctpFichaFaltantes, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import {
   listSpecies,
   findSpeciesByCommonName,
@@ -165,6 +166,17 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
   const [gtfItems, setGtfItems] = useState<GtfItem[]>([]);
   const [showGuias, setShowGuias] = useState(false);
   const [scanning, setScanning] = useState(false);
+  // Ficha del CTP: para avisar si está incompleta (G) y ofrecer permisos CITES (H).
+  const [ficha, setFicha] = useState<CtpFicha | null>(null);
+  const [citesPermiso, setCitesPermiso] = useState("");
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive && j?.ficha) setFicha(j.ficha as CtpFicha); })
+      .catch((err) => console.warn("[wood-form] ficha fetch failed", err));
+    return () => { alive = false; };
+  }, []);
   const [guias, setGuias] = useState<GtfRecord[]>([]);
   const [loadingGuias, setLoadingGuias] = useState(false);
   const [guiaQuery, setGuiaQuery] = useState("");
@@ -330,6 +342,16 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
     return 0;
   }, [data.pieces, data.avgLengthM, data.avgDiameterCm, data.productType]);
 
+  // (E) Divergencia >15% entre volumen declarado y cubicaje calculado.
+  const cubicajeDivergente =
+    autoVolume > 0 && Number(data.volumeM3) > 0
+      ? Math.abs(Number(data.volumeM3) - autoVolume) / autoVolume > 0.15
+      : false;
+  // (G) Datos legales mínimos de la Ficha del CTP que faltan.
+  const fichaFaltante = ficha ? ctpFichaFaltantes(ficha) : [];
+  // (H) Permisos CITES cargados en la Ficha.
+  const permisosCites = ficha?.citesPermisos ?? [];
+
   // Filtro especies
   const filteredSpecies = useMemo(() => {
     const q = speciesQuery.trim().toLowerCase();
@@ -352,8 +374,12 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
     if (data.providerName.trim().length < 2) m.push("Titular habilitante");
     if (finalSpeciesName.length === 0) m.push("Especie forestal");
     if (!(Number(data.volumeM3) > 0)) m.push("Volumen (m³)");
+    // (E) Divergencia grande volumen vs cubicaje → exigir justificación escrita.
+    if (cubicajeDivergente && data.notes.trim().length < 3) m.push("Justificación de la diferencia de volumen (Observaciones)");
+    // (H) Especie CITES → exigir vincular un permiso CITES de la Ficha (si hay).
+    if (finalCites && permisosCites.length > 0 && !citesPermiso.trim()) m.push("Permiso CITES vinculado");
     return m;
-  }, [data.gtfNumber, data.entryDate, data.providerName, finalSpeciesName, data.volumeM3]);
+  }, [data.gtfNumber, data.entryDate, data.providerName, finalSpeciesName, data.volumeM3, cubicajeDivergente, data.notes, finalCites, permisosCites.length, citesPermiso]);
 
   const isValid = missing.length === 0;
 
@@ -391,7 +417,8 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
         avgDiameterCm: data.avgDiameterCm ? Number(data.avgDiameterCm) : null,
         humidityPct: data.humidityPct ? Number(data.humidityPct) : null,
         defectsNotes: data.defectsNotes.trim() || null,
-        notes: data.notes.trim() || null,
+        // (H) El permiso CITES vinculado queda en el acta del ingreso (notes).
+        notes: [data.notes.trim(), finalCites && citesPermiso.trim() ? `Permiso CITES: ${citesPermiso.trim()}` : ""].filter(Boolean).join(" · ") || null,
         photos: null,
       };
 
@@ -478,6 +505,14 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
               <div className="mb-6 flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>{error}</div>
+              </div>
+            )}
+
+            {/* (G) La Ficha del CTP debe estar completa para que los documentos tengan validez legal. */}
+            {fichaFaltante.length > 0 && (
+              <div className="mb-6 flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm text-[var(--data-warning-700)]">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div><strong>Ficha del CTP incompleta.</strong> Faltan datos legales (Código CTP, RUC…) que los documentos SERFOR necesitan. Completala en la pestaña «Ficha CTP» — podés registrar igual, pero el libro no tendrá identidad legal completa.</div>
               </div>
             )}
 
@@ -792,6 +827,26 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                   </div>
                 </div>
               )}
+              {/* (H) Vincular un permiso CITES cargado en la Ficha del CTP. */}
+              {finalCites && (
+                <div className="mt-2">
+                  {permisosCites.length > 0 ? (
+                    <Field label="Permiso CITES vinculado" required hint="Del listado cargado en la Ficha del CTP">
+                      <select className={cls.input} value={citesPermiso} onChange={(e) => setCitesPermiso(e.target.value)}>
+                        <option value="">Elegí el permiso CITES…</option>
+                        {permisosCites.map((p, i) => (
+                          <option key={i} value={p.numero}>{p.especie} · {p.numero}{p.vencimiento ? ` (vence ${p.vencimiento})` : ""}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  ) : (
+                    <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs font-medium text-[var(--data-error-700)]">
+                      <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>No hay permisos CITES cargados en la Ficha del CTP. Cargá el permiso de esta especie en «Ficha CTP» antes de registrar — sin permiso archivado, un ingreso CITES no tiene respaldo legal.</span>
+                    </p>
+                  )}
+                </div>
+              )}
             </Section>
 
             {/* ─── 5 · Producto y medidas ──────────────────────────── */}
@@ -849,6 +904,12 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                     </button>
                   )}
                 </div>
+                {cubicajeDivergente && (
+                  <p className="mt-1.5 flex items-start gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-medium text-[var(--data-warning-700)]">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>El volumen declarado ({Number(data.volumeM3).toFixed(2)} m³) difiere más de 15% del cubicaje calculado ({autoVolume.toFixed(2)} m³). Verificá las medidas o justificá la diferencia en Observaciones (obligatorio).</span>
+                  </p>
+                )}
               </Field>
 
               <Grid cols={3}>

@@ -287,6 +287,13 @@ interface CtpFichaLite {
   direccion: string; region: string; provincia: string; distrito: string;
   telefono: string; email: string; gtfSerie: string;
 }
+/** Grafo de cadena de custodia (para armar la sección Consumos del export). */
+interface GrafoLite {
+  ingresos: { id: string; gtf: string; species: string | null }[];
+  corridas: { id: string; lineNo: number; label: string; unit: string | null }[];
+  consumos: { from: string; to: string; volumeM3: number }[];
+}
+
 /** Ingreso con los campos de origen que el formato oficial necesita (superset del interno). */
 interface IngresoOficial extends Ingreso {
   gtfSeries: string | null; originType: string; originCode: string | null; originRegion: string | null;
@@ -304,7 +311,7 @@ const TITULO_OFICIAL: Record<string, string> = {
 const originOf = (t: string) => ORIGIN_OFICIAL[t] ?? t ?? "—";
 
 export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> {
-  const [ing, prod, desp, sal, fic] = await Promise.all([
+  const [ing, prod, desp, sal, fic, gra] = await Promise.all([
     getJson<{ entries?: IngresoOficial[] }>(
       withPeriod("/api/admin/forestal/wood-entries", { limit: "5000" }, period), {},
     ),
@@ -312,13 +319,33 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     getJson<{ entries?: CtpRow[] }>(withPeriod("/api/admin/forestal/ctp", { section: "despacho" }, period), {}),
     getJson<{ saldos?: Saldos }>(withPeriod("/api/admin/forestal/ctp", { saldos: "1" }, period), {}),
     getJson<{ ficha?: CtpFichaLite }>("/api/admin/forestal/ctp-ficha", {}),
+    getJson<{ grafo?: GrafoLite }>(withPeriod("/api/admin/forestal/ctp", { grafo: "1" }, period), {}),
   ]);
-  const ingresos = (ing.entries ?? []).filter((e) => e.status !== "anulado");
+  // Rechazados y anulados NO forman parte del libro oficial (QA 2026-07-17).
+  const ingresos = (ing.entries ?? []).filter((e) => e.status !== "anulado" && e.status !== "rechazado");
   const produccion = (prod.entries ?? []).filter((e) => e.status === "registrado");
   const despacho = (desp.entries ?? []).filter((e) => e.status === "registrado");
   const saldos = sal.saldos ?? null;
   const ficha = fic.ficha ?? null;
   const codigoCtp = ficha?.codigoCtp || "—";
+  const grafo = gra.grafo ?? null;
+
+  // (F) Consumos como sección propia (RDE D000025-2023: ingresos, CONSUMOS,
+  // producción, salidas). Se arman del grafo: cada consumo = GTF de ingreso →
+  // corrida, con el volumen atribuido.
+  const ingXId = new Map((grafo?.ingresos ?? []).map((i) => [i.id, i]));
+  const corXId = new Map((grafo?.corridas ?? []).map((c) => [c.id, c]));
+  const consumos = (grafo?.consumos ?? []).map((c) => {
+    const i = ingXId.get(c.from);
+    const cor = corXId.get(c.to);
+    return {
+      gtf: i?.gtf ?? "—",
+      especie: i?.species ?? "—",
+      corrida: cor ? `Corrida #${cor.lineNo}${cor.label ? ` · ${cor.label}` : ""}` : "—",
+      unidad: cor?.unit ?? "m³",
+      volumen: c.volumeM3,
+    };
+  });
 
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -348,6 +375,9 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
   kv("Serie GTF autorizada", ficha?.gtfSerie ?? "");
   kv("Período del libro", period.label);
   kv("Generado", new Date().toLocaleString("es-PE"));
+  // Apartado Retrozado (RDE): el módulo no registra retrozado por ahora — se
+  // declara explícitamente para no dar a entender que no hubo si sí lo hubo.
+  kv("Retrozado", "No registrado en este módulo (declarar aparte si aplica)");
   wc.addRow([]);
   const th = wc.addRow(["TÍTULOS HABILITANTES (origen de la materia prima)", ""]);
   th.getCell(1).font = { bold: true };
@@ -394,8 +424,25 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     if (e.speciesCites) row.getCell("ci").font = { color: { argb: "FFB91C1C" }, bold: true };
   });
 
-  // ── Registro 2: Transformación ──
-  const w2 = wb.addWorksheet("2. Transformación");
+  // ── Registro 2: Consumos (sección propia, RDE D000025-2023) ──
+  const wco = wb.addWorksheet("2. Consumos");
+  wco.columns = [
+    { header: "N°", key: "n", width: 6 },
+    { header: "N° Fuente (GTF ingreso)", key: "g", width: 24 },
+    { header: "Especie", key: "e", width: 18 },
+    { header: "Producción destino", key: "c", width: 30 },
+    { header: "Unidad de Medida", key: "u", width: 14 },
+    { header: "Cantidad consumida", key: "q", width: 16 },
+  ];
+  styleHead(wco);
+  consumos.forEach((c, i) => {
+    const row = wco.addRow({ n: i + 1, g: c.gtf, e: c.especie, c: c.corrida, u: c.unidad, q: c.volumen });
+    row.getCell("q").numFmt = "0.0000";
+  });
+  if (consumos.length === 0) wco.addRow({ g: "Sin consumos atribuidos en el período" });
+
+  // ── Registro 3: Producción (transformación) ──
+  const w2 = wb.addWorksheet("3. Producción");
   w2.columns = [
     { header: "N°", key: "n", width: 6 }, { header: "Fecha", key: "f", width: 13 },
     { header: "Código de CTP", key: "cc", width: 14 }, { header: "Tipo de Producto", key: "tp", width: 16 },
@@ -413,8 +460,8 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     row.getCell("f").numFmt = "dd/mm/yyyy"; row.getCell("q").numFmt = "0.0000"; row.getCell("r").numFmt = "0.0";
   }
 
-  // ── Registro 3: Salida ──
-  const w3 = wb.addWorksheet("3. Salida");
+  // ── Registro 4: Salida ──
+  const w3 = wb.addWorksheet("4. Salida");
   w3.columns = [
     { header: "N°", key: "n", width: 6 }, { header: "Fecha", key: "f", width: 13 },
     { header: "Tipo de Documento", key: "td", width: 16 }, { header: "N° de Documento (GTF)", key: "nd", width: 18 },
@@ -433,9 +480,9 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     row.getCell("f").numFmt = "dd/mm/yyyy"; row.getCell("q").numFmt = "0.0000";
   }
 
-  // ── Registro 4: Existencias (saldo del libro por especie + stock de productos) ──
+  // ── Registro 5: Existencias (saldo del libro por especie + stock de productos) ──
   if (saldos) {
-    const w4 = wb.addWorksheet("4. Existencias");
+    const w4 = wb.addWorksheet("5. Existencias");
     w4.columns = [
       { header: "Especie / Producto", key: "e", width: 30 }, { header: "Nombre científico", key: "sc", width: 20 },
       { header: "CITES", key: "ci", width: 7 }, { header: "Ingresado/Producido", key: "i", width: 18 },
