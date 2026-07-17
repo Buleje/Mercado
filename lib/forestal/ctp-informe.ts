@@ -14,8 +14,20 @@
  */
 
 import { applyCtpPeriodParams, type CtpPeriod } from "./ctp-period";
-import type { CtpFicha } from "./ctp-ficha-types";
+import { estadoVencimiento, type CtpFicha } from "./ctp-ficha-types";
 import { evaluarRendimiento } from "./ctp-rendimiento";
+
+const TITULO_LABEL_INF: Record<string, string> = {
+  concesion: "Concesión forestal", permiso: "Permiso forestal", autorizacion: "Autorización",
+  plantacion: "Plantación registrada", dema: "DEMA", predio: "Predio privado", otro: "Otro",
+};
+/** Sufijo HTML de vigencia para una fecha de vencimiento (vencido/por vencer). */
+function vigenciaHtml(vencimiento: string): string {
+  if (!vencimiento) return "—";
+  const est = estadoVencimiento(vencimiento);
+  const tag = est === "vencido" ? ' <span class="neg">vencido</span>' : est === "por_vencer" ? ' <span class="warn">por vencer</span>' : "";
+  return `${vencimiento}${tag}`;
+}
 
 const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -93,6 +105,15 @@ export async function printInformePeriodo(period: CtpPeriod): Promise<void> {
     )
     .join("") || `<tr><td colspan="4" class="empty">Sin productos transformados en el período.</td></tr>`;
 
+  const filasTit = (ficha?.titulos ?? [])
+    .filter((t) => t.codigo || t.tipo)
+    .map((t) => `<tr><td>${esc(TITULO_LABEL_INF[t.tipo] ?? t.tipo)}</td><td class="mono">${esc(t.codigo || "—")}</td><td>${vigenciaHtml(t.vencimiento)}</td></tr>`)
+    .join("") || `<tr><td colspan="3" class="empty">Sin títulos habilitantes cargados.</td></tr>`;
+  const filasCites = (ficha?.citesPermisos ?? [])
+    .filter((p) => p.especie || p.numero)
+    .map((p) => `<tr><td>${esc(p.especie || "—")}</td><td class="mono">${esc(p.numero || "—")}</td><td>${vigenciaHtml(p.vencimiento)}</td></tr>`)
+    .join("");
+
   const alerta = (label: string, n: number) =>
     `<div class="al"><span>${esc(label)}</span><b class="${n > 0 ? "neg" : "ok"}">${n}</b></div>`;
 
@@ -120,6 +141,7 @@ export async function printInformePeriodo(period: CtpPeriod): Promise<void> {
     .mono { font-family: monospace; font-variant-numeric: tabular-nums; }
     .right { text-align: right; }
     .neg { color: #b91c1c; font-weight: 700; }
+    .warn { color: #b45309; font-weight: 700; }
     .ok { color: #14532d; }
     .cites { color: #b91c1c; font-weight: 700; font-size: 9px; }
     .sci { color: #6b7280; font-size: 9.5px; }
@@ -150,6 +172,15 @@ export async function printInformePeriodo(period: CtpPeriod): Promise<void> {
       <div class="kpi"><div class="l">Corridas de producción</div><div class="v">${produccion.length}</div></div>
       <div class="kpi"><div class="l">Despachos</div><div class="v">${despachos.length}</div></div>
       <div class="kpi"><div class="l">Materia prima consumida (m³)</div><div class="v">${n4(saldos?.materiaPrima.consumidoM3 ?? 0)}</div></div>
+    </div>
+
+    <div class="box">
+      <h2>Habilitación legal</h2>
+      <table>
+        <thead><tr><th>Título habilitante</th><th>N°</th><th>Vencimiento</th></tr></thead>
+        <tbody>${filasTit}</tbody>
+      </table>
+      ${filasCites ? `<table style="margin-top:8px"><thead><tr><th>Permiso CITES · especie</th><th>N°</th><th>Vencimiento</th></tr></thead><tbody>${filasCites}</tbody></table>` : ""}
     </div>
 
     <div class="box">
