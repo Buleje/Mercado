@@ -30,6 +30,7 @@ import {
   Share2,
   ShieldCheck,
   TreePine,
+  TrendingUp,
   Truck,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -43,8 +44,9 @@ import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpAsistente from "./CtpAsistente";
+import CtpAnalisis from "./CtpAnalisis";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "analisis" | "ficha";
 
 const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
   { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
@@ -53,6 +55,7 @@ const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string
   { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual" },
   { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
   { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
+  { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias" },
   { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
 ];
 
@@ -172,6 +175,7 @@ export default function CTPLibroOperaciones() {
       {view === "radar" && <CtpTrazaRadar period={period} />}
       {view === "saldos" && <CtpSaldosView period={period} />}
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
+      {view === "analisis" && <CtpAnalisis />}
       {view === "ficha" && <CtpFichaEditor />}
     </div>
   );

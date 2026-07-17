@@ -114,6 +114,15 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (kardexEspecie) {
       return NextResponse.json({ kardex: await ForestCtpDB.kardexEspecie(auth.tenantId, kardexEspecie, period) });
     }
+    // Reorden predictivo (all-time, ritmo últimos 90 días).
+    if (url.searchParams.get("reorden") === "1") {
+      return NextResponse.json({ reorden: await ForestCtpDB.proyeccionReorden(auth.tenantId) });
+    }
+    // Tendencias mensuales (últimos N meses; ignora el período).
+    if (url.searchParams.get("tendencias") === "1") {
+      const meses = Number(url.searchParams.get("meses") ?? "6");
+      return NextResponse.json({ tendencias: await ForestCtpDB.tendenciasMensuales(auth.tenantId, Number.isFinite(meses) ? meses : 6) });
+    }
     const availableFor = url.searchParams.get("available");
     if (availableFor && (CTP_SECTIONS as readonly string[]).includes(availableFor)) {
       // `?excludeCtpEntryId=` al EDITAR una línea: lo que ella misma consume no

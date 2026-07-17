@@ -680,6 +680,89 @@ export class ForestCtpDB {
     });
     return { especie, movimientos, ingresoTotal: r4(ingresoTotal), consumoTotal: r4(consumoTotal), saldo: r4(ingresoTotal - consumoTotal) };
   }
+
+  /**
+   * Reorden predictivo: por especie, cuántos DÍAS de materia prima quedan al
+   * ritmo de consumo reciente. saldo actual (all-time) ÷ (consumo últimos 90
+   * días / 90). null si la especie no se consume (no se agota) — no se inventa
+   * una urgencia donde no la hay.
+   */
+  static async proyeccionReorden(tenantId: string): Promise<ReordenProyeccion[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const desde = new Date(Date.now() - 90 * 86_400_000);
+    const [ingresos, corridas] = await Promise.all([
+      prisma.woodEntry.findMany({ where: { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] } }, select: { speciesCommonName: true, speciesScientificName: true, speciesCites: true, volumeM3: true } }),
+      prisma.forestCtpEntry.findMany({ where: { tenantId, deletedAt: null, status: "registrado", section: "produccion" }, select: { speciesCommon: true, volumeInputM3: true, entryDate: true } }),
+    ]);
+    const map = new Map<string, { especie: string; scientific: string | null; cites: boolean; ingreso: number; consumo: number; consumo90: number }>();
+    const get = (raw: string | null, sci?: string | null, cites?: boolean) => {
+      const k = speciesKey(raw);
+      let m = map.get(k);
+      if (!m) { m = { especie: raw?.trim() || "Sin especie", scientific: sci?.trim() || null, cites: false, ingreso: 0, consumo: 0, consumo90: 0 }; map.set(k, m); }
+      if (sci && !m.scientific) m.scientific = sci.trim();
+      if (cites) m.cites = true;
+      return m;
+    };
+    for (const i of ingresos) get(i.speciesCommonName, i.speciesScientificName, i.speciesCites).ingreso += Number(i.volumeM3 ?? 0);
+    for (const c of corridas) { const m = get(c.speciesCommon); const v = Number(c.volumeInputM3 ?? 0); m.consumo += v; if (c.entryDate >= desde) m.consumo90 += v; }
+    return [...map.values()]
+      .map((m) => {
+        const saldo = r4(m.ingreso - m.consumo);
+        const ratePorDia = m.consumo90 / 90;
+        const diasHastaAgotar = ratePorDia > 0 && saldo > 0 ? Math.round(saldo / ratePorDia) : null;
+        return { especie: m.especie, scientific: m.scientific, cites: m.cites, saldo, consumo90: r4(m.consumo90), ratePorDia: r4(ratePorDia), diasHastaAgotar };
+      })
+      .filter((r) => r.saldo > 0 || r.consumo90 > 0)
+      .sort((a, b) => (a.diasHastaAgotar ?? Number.POSITIVE_INFINITY) - (b.diasHastaAgotar ?? Number.POSITIVE_INFINITY));
+  }
+
+  /**
+   * Tendencias mensuales (últimos `meses`): volumen ingresado, producido,
+   * consumido y rendimiento ponderado por mes. Derivado de las fechas de los
+   * registros existentes — sin snapshots ni tabla nueva. Meses sin datos van
+   * en 0 para que la serie no tenga huecos.
+   */
+  static async tendenciasMensuales(tenantId: string, meses = 6): Promise<TendenciaMes[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const n = Math.min(Math.max(meses, 1), 24);
+    const now = new Date();
+    const startMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (n - 1), 1));
+    const keyOf = (d: Date) => d.toISOString().slice(0, 7);
+    const [ingresos, corridas] = await Promise.all([
+      prisma.woodEntry.findMany({ where: { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] }, entryDate: { gte: startMonth } }, select: { entryDate: true, volumeM3: true } }),
+      prisma.forestCtpEntry.findMany({ where: { tenantId, deletedAt: null, status: "registrado", section: "produccion", entryDate: { gte: startMonth } }, select: { entryDate: true, quantity: true, volumeInputM3: true, rendimientoPct: true } }),
+    ]);
+    const buckets = new Map<string, { ingresoM3: number; producido: number; consumidoM3: number; rendW: number; rendPeso: number }>();
+    for (let i = 0; i < n; i++) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (n - 1) + i, 1));
+      buckets.set(keyOf(d), { ingresoM3: 0, producido: 0, consumidoM3: 0, rendW: 0, rendPeso: 0 });
+    }
+    for (const i of ingresos) { const b = buckets.get(keyOf(i.entryDate)); if (b) b.ingresoM3 += Number(i.volumeM3 ?? 0); }
+    for (const c of corridas) {
+      const b = buckets.get(keyOf(c.entryDate));
+      if (!b) continue;
+      b.producido += Number(c.quantity ?? 0);
+      const vin = Number(c.volumeInputM3 ?? 0);
+      b.consumidoM3 += vin;
+      const rend = Number(c.rendimientoPct ?? 0);
+      if (rend > 0 && vin > 0) { b.rendW += rend * vin; b.rendPeso += vin; }
+    }
+    return [...buckets.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([mes, b]) => ({ mes, ingresoM3: r4(b.ingresoM3), producido: r4(b.producido), consumidoM3: r4(b.consumidoM3), rendimiento: b.rendPeso > 0 ? Math.round((b.rendW / b.rendPeso) * 10) / 10 : 0 }));
+  }
+}
+
+export interface ReordenProyeccion {
+  especie: string; scientific: string | null; cites: boolean;
+  saldo: number; consumo90: number; ratePorDia: number;
+  /** Días hasta agotar al ritmo reciente; null si no se consume. */
+  diasHastaAgotar: number | null;
+}
+
+export interface TendenciaMes {
+  mes: string; // YYYY-MM
+  ingresoM3: number; producido: number; consumidoM3: number; rendimiento: number;
 }
 
 export interface KardexEspecie {
