@@ -9,13 +9,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
-  Scale, PackageCheck, Layers, PackagePlus, Clock, TreePine,
+  Scale, PackageCheck, Layers, PackagePlus, Clock, TreePine, Link2,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpEntryForm from "./CtpEntryForm";
+import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 
 type CtpSection = "produccion" | "despacho";
 
@@ -53,6 +54,8 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   const [pending, setPending] = useState(false);
   const [toProductId, setToProductId] = useState<string | null>(null);
   const [toProductMsg, setToProductMsg] = useState<string | null>(null);
+  // Cadena de custodia (solo despacho): trazabilidad + COGS + certificado.
+  const [chainEntry, setChainEntry] = useState<CtpEntry | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -200,6 +203,17 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
                 <Td className="text-right">
                   {e.status === "registrado" ? (
                     <div className="inline-flex items-center gap-2">
+                      {section === "despacho" && (
+                        <button
+                          type="button"
+                          onClick={() => setChainEntry(e)}
+                          title="Cadena de custodia: origen, costo y certificado de trazabilidad"
+                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-xs font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
+                        >
+                          <Link2 className="h-3.5 w-3.5" />
+                          Cadena
+                        </button>
+                      )}
                       <button
                         type="button"
                         disabled={toProductId === e.id}
@@ -234,6 +248,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       </div>
 
       {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); }} />}
+      {chainEntry && <CtpDespachoDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
 
       {annulId && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setAnnulId(null)}>
