@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   AlertCircle,
   BarChart3,
@@ -16,7 +17,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Filter,
   Plus,
   RefreshCw,
   Search,
@@ -25,6 +25,7 @@ import {
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import BulkActionsBar from "@/components/admin/shared/BulkActionsBar";
+import { staggerContainer, staggerChild } from "@/components/ui-system/motion";
 import { useDebounce } from "@/hooks/use-debounce";
 import { CTP_PAGE_SIZE, useCtpIngresos } from "@/hooks/use-ctp-ingresos";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -41,6 +42,15 @@ const STATUS_ORDER: WoodEntryStatus[] = [
   "rechazado",
   "anulado",
 ];
+
+/** Clases del chip ACTIVO por tono de estado + color del punto (identidad DS). */
+const TONE_CHIP: Record<string, { active: string; dot: string }> = {
+  success: { active: "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]", dot: "bg-[var(--data-success-500)]" },
+  warning: { active: "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]", dot: "bg-[var(--data-warning-500)]" },
+  danger: { active: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]", dot: "bg-[var(--data-error-500)]" },
+  info: { active: "border-[var(--data-info-500)] bg-[var(--data-info-50)] text-[var(--data-info-700)]", dot: "bg-[var(--data-info-500)]" },
+  muted: { active: "border-[var(--rule-strong)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]", dot: "bg-[var(--text-tertiary)]" },
+};
 
 export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
   const [searchInput, setSearchInput] = useState("");
@@ -97,41 +107,54 @@ export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          label="Ingresos del período"
-          value={stats ? stats.totalCount.toLocaleString("es-PE") : "—"}
-          subValue={stats ? `${stats.totalPieces.toLocaleString("es-PE")} piezas` : undefined}
-          icon={Boxes}
-          emphasis="neutral"
-        />
-        <StatCard
-          label="Volumen del período"
-          value={stats ? `${Number(stats.totalVolumeM3).toFixed(2)} m³` : "—"}
-          subValue={stats ? `${stats.speciesCount} especies` : undefined}
-          icon={TreePine}
-          emphasis="success"
-        />
-        <StatCard
-          label="Pendientes validar"
-          value={stats ? String(stats.byStatus.pendiente) : "—"}
-          subValue={stats?.byStatus.pendiente ? "Requieren acción" : "Todo al día"}
-          icon={Clock}
-          emphasis={stats?.byStatus.pendiente ? "warning" : "neutral"}
-        />
-        <StatCard
-          label="Especies CITES"
-          value={stats ? String(stats.citesCount) : "—"}
-          subValue={stats ? `${Number(stats.citesVolumeM3).toFixed(2)} m³ protegidos` : undefined}
-          icon={AlertCircle}
-          emphasis={stats?.citesCount ? "error" : "neutral"}
-        />
-      </div>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+      >
+        <motion.div variants={staggerChild}>
+          <StatCard
+            label="Ingresos del período"
+            value={stats ? stats.totalCount.toLocaleString("es-PE") : "—"}
+            subValue={stats ? `${stats.totalPieces.toLocaleString("es-PE")} piezas` : undefined}
+            icon={Boxes}
+            emphasis="neutral"
+          />
+        </motion.div>
+        <motion.div variants={staggerChild}>
+          <StatCard
+            label="Volumen del período"
+            value={stats ? `${Number(stats.totalVolumeM3).toFixed(2)} m³` : "—"}
+            subValue={stats ? `${stats.speciesCount} especies` : undefined}
+            icon={TreePine}
+            emphasis="success"
+          />
+        </motion.div>
+        <motion.div variants={staggerChild}>
+          <StatCard
+            label="Pendientes validar"
+            value={stats ? String(stats.byStatus.pendiente) : "—"}
+            subValue={stats?.byStatus.pendiente ? "Requieren acción" : "Todo al día"}
+            icon={Clock}
+            emphasis={stats?.byStatus.pendiente ? "warning" : "neutral"}
+          />
+        </motion.div>
+        <motion.div variants={staggerChild}>
+          <StatCard
+            label="Especies CITES"
+            value={stats ? String(stats.citesCount) : "—"}
+            subValue={stats ? `${Number(stats.citesVolumeM3).toFixed(2)} m³ protegidos` : undefined}
+            icon={AlertCircle}
+            emphasis={stats?.citesCount ? "error" : "neutral"}
+          />
+        </motion.div>
+      </motion.div>
 
       {showDashboard && <SpeciesAggregateChart period={period} />}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <label htmlFor="ctp-ing-search" className="sr-only">
             Buscar ingresos
@@ -145,55 +168,52 @@ export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
             className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
           />
         </div>
-        <div className="flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
-          <Filter className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <label htmlFor="ctp-ing-status" className="sr-only">
-            Filtrar por estado
-          </label>
-          <select
-            id="ctp-ing-status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-transparent text-base font-medium text-[var(--text-primary)] outline-none"
-          >
-            <option value="">Todos los estados{stats ? ` (${stats.totalCount})` : ""}</option>
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_META[s].label}
-                {stats ? ` (${stats.byStatus[s]})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
         <button
           type="button"
           onClick={() => setShowDashboard((v) => !v)}
+          aria-pressed={showDashboard}
           className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
             showDashboard
-              ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white"
+              ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
               : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           }`}
         >
           <BarChart3 className="h-4 w-4" />
-          {showDashboard ? "Cerrar dashboard" : "Dashboard"}
+          <span className="max-sm:sr-only">{showDashboard ? "Cerrar dashboard" : "Dashboard"}</span>
         </button>
         <button
           type="button"
           onClick={() => void reload()}
           disabled={loading}
+          aria-label="Recargar"
           className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Recargar
+          <span className="max-sm:sr-only">Recargar</span>
         </button>
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:shadow-md hover:brightness-110"
         >
           <Plus className="h-5 w-5" />
           Nuevo ingreso
         </button>
+      </div>
+
+      {/* Chips de estado: distribución del período de un vistazo + filtro de 1 clic. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusChip label="Todos" count={stats?.totalCount} active={statusFilter === ""} tone="accent" onClick={() => setStatusFilter("")} />
+        {STATUS_ORDER.map((s) => (
+          <StatusChip
+            key={s}
+            label={STATUS_META[s].label}
+            count={stats?.byStatus[s]}
+            active={statusFilter === s}
+            tone={STATUS_META[s].tone}
+            onClick={() => setStatusFilter(statusFilter === s ? "" : s)}
+          />
+        ))}
       </div>
 
       {error && (
@@ -302,6 +322,48 @@ export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
 
       {detail && <CtpEntryDetailModal entry={detail} onClose={() => setDetail(null)} />}
     </div>
+  );
+}
+
+/** Chip de filtro por estado: punto de color + etiqueta + count. Reusa el tono
+ *  del estado (STATUS_META) para leerse igual que los badges de la tabla. */
+function StatusChip({
+  label,
+  count,
+  active,
+  tone,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  active: boolean;
+  tone: "accent" | "success" | "warning" | "danger" | "info" | "muted";
+  onClick: () => void;
+}) {
+  const activeCls =
+    tone === "accent"
+      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+      : TONE_CHIP[tone].active;
+  const dotCls = tone === "accent" ? "bg-[var(--accent)]" : TONE_CHIP[tone].dot;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex h-9 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-bold transition ${
+        active
+          ? activeCls
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+      }`}
+    >
+      <span className={`h-2 w-2 rounded-full ${dotCls}`} aria-hidden="true" />
+      {label}
+      {count != null && (
+        <span className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-black/5 dark:bg-white/10" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
+          {count}
+        </span>
+      )}
+    </button>
   );
 }
 
