@@ -11,10 +11,12 @@ import {
   Bot,
   Plus,
   X,
+  Archive,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WaConversationList from "./inbox/WaConversationList";
 import WaChatView from "./inbox/WaChatView";
+import WaCustomerCard from "./inbox/WaCustomerCard";
 import { useWhatsAppInbox } from "./inbox/useWhatsAppInbox";
 
 /** "519xxxxxxxx" → "+51 9xx xxx xxx". */
@@ -128,9 +130,24 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
     sendErrorCode,
     pausedPhones,
     toggleBotPause,
+    archivedPhones,
+    toggleArchive,
+    customerContext,
     draftContact,
     startConversation,
   } = useWhatsAppInbox();
+
+  // Vista de archivadas (toggle en la lista)
+  const [showArchived, setShowArchived] = useState(false);
+  const visibleConversations = useMemo(
+    () =>
+      conversations.filter((c) =>
+        showArchived
+          ? archivedPhones.includes(c.customerPhone)
+          : !archivedPhones.includes(c.customerPhone),
+      ),
+    [conversations, archivedPhones, showArchived],
+  );
 
   // Bug fix: altura real disponible (el calc fijo escondía el composer)
   const { ref: fillRef, height: fillHeight } = useFillHeight();
@@ -375,10 +392,13 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           )}
         >
           <WaConversationList
-            conversations={conversations}
+            conversations={visibleConversations}
             selectedPhone={selectedPhone}
             onSelect={handleSelect}
             loading={loadingConvs}
+            archivedCount={archivedPhones.length}
+            showArchived={showArchived}
+            onToggleShowArchived={() => setShowArchived((s) => !s)}
           />
         </aside>
 
@@ -421,6 +441,29 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                     )}
                   </span>
                 </div>
+                {/* Archivar / desarchivar el hilo */}
+                {(() => {
+                  const archived = archivedPhones.includes(selected.customerPhone);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void toggleArchive(selected.customerPhone, !archived);
+                        if (!archived) setMobileView("list");
+                      }}
+                      className={cn(
+                        "ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+                        archived
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+                      )}
+                      title={archived ? "Volver a la bandeja principal" : "Archivar conversación (sigue recibiendo mensajes)"}
+                    >
+                      <Archive className="h-4 w-4" />
+                      {archived ? "Archivada" : "Archivar"}
+                    </button>
+                  );
+                })()}
                 {/* Pausar/reanudar el bot IA en ESTE hilo */}
                 {(() => {
                   const paused = pausedPhones.includes(selected.customerPhone);
@@ -429,7 +472,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                       type="button"
                       onClick={() => void toggleBotPause(selected.customerPhone, !paused)}
                       className={cn(
-                        "ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+                        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                         paused
                           ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10"
                           : "border-[var(--data-success-500)]/40 bg-[var(--data-success-100)] text-[var(--data-success-700)]",
@@ -449,6 +492,8 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                   🤖💤 Bot pausado en este hilo — los mensajes llegan pero respondés vos
                 </div>
               )}
+              {/* Ficha CRM: pedidos + fiado del cliente (best-effort) */}
+              <WaCustomerCard context={customerContext} />
               <WaChatView
                 messages={messages}
                 loading={loadingMsgs}

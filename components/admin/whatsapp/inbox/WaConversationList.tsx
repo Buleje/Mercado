@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, MessageCircle, Bot, User } from "@buleje/design-system/icons";
+import { Search, MessageCircle, Bot, User, Archive } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { WaConversation } from "./useWhatsAppInbox";
 
@@ -40,10 +40,22 @@ interface Props {
   selectedPhone: string | null;
   onSelect: (phone: string) => void;
   loading: boolean;
+  /** Archivadas: contador + vista alternada. */
+  archivedCount?: number;
+  showArchived?: boolean;
+  onToggleShowArchived?: () => void;
 }
 
 /** Columna izquierda del inbox: buscador + lista de conversaciones. */
-export default function WaConversationList({ conversations, selectedPhone, onSelect, loading }: Props) {
+export default function WaConversationList({
+  conversations,
+  selectedPhone,
+  onSelect,
+  loading,
+  archivedCount = 0,
+  showArchived = false,
+  onToggleShowArchived,
+}: Props) {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -57,7 +69,7 @@ export default function WaConversationList({ conversations, selectedPhone, onSel
   return (
     <div className="flex h-full flex-col">
       {/* Buscador */}
-      <div className="border-b border-slate-200 p-3 dark:border-slate-700">
+      <div className="space-y-2 border-b border-slate-200 p-3 dark:border-slate-700">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -68,6 +80,21 @@ export default function WaConversationList({ conversations, selectedPhone, onSel
             className="h-12 w-full rounded-2xl border-2 border-slate-200 bg-white pl-9 pr-3 text-base text-slate-900 outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           />
         </div>
+        {(archivedCount > 0 || showArchived) && (
+          <button
+            type="button"
+            onClick={onToggleShowArchived}
+            className={cn(
+              "inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+              showArchived
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-slate-200 text-slate-500 hover:border-primary/50 dark:border-slate-700 dark:text-slate-400",
+            )}
+          >
+            <Archive className="h-4 w-4" />
+            {showArchived ? "← Volver a la bandeja" : `Archivadas (${archivedCount})`}
+          </button>
+        )}
       </div>
 
       {/* Lista (min-h-0: scroll interno, no empuja el contenedor) */}

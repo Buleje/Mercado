@@ -48,6 +48,15 @@ export interface WaConnection {
   businessName?: string | null;
 }
 
+/** Ficha CRM del cliente del hilo (pedidos + fiado + fidelización). */
+export interface WaCustomerContext {
+  customer: { name: string; loyaltyTier?: string; loyaltyPoints?: number } | null;
+  ordersCount: number;
+  totalSpent: number;
+  lastOrderAt: string | null;
+  fiadoSaldo: number;
+}
+
 const CONVS_POLL_MS = 8_000;
 const MSGS_POLL_MS = 5_000;
 
@@ -61,6 +70,10 @@ export function useWhatsAppInbox() {
   const [numbers, setNumbers] = useState<WaNumber[]>([]);
   // Hilos con el bot IA pausado (el operador atiende a mano)
   const [pausedPhones, setPausedPhones] = useState<string[]>([]);
+  // Conversaciones archivadas (fuera de la lista principal)
+  const [archivedPhones, setArchivedPhones] = useState<string[]>([]);
+  // Ficha CRM del cliente del hilo abierto
+  const [customerContext, setCustomerContext] = useState<WaCustomerContext | null>(null);
   // Multi-número: filtrar el inbox por un número del negocio (null = todos)
   const [numberFilter, setNumberFilter] = useState<string | null>(null);
   const numberFilterRef = useRef<string | null>(null);
@@ -95,6 +108,7 @@ export function useWhatsAppInbox() {
         numbers: WaNumber[];
         connection: WaConnection;
         pausedPhones?: string[];
+        archivedPhones?: string[];
       };
       // Evitar pisar la lista si el usuario cambió el filtro durante el fetch
       if (numberFilterRef.current === filter) {
@@ -102,6 +116,7 @@ export function useWhatsAppInbox() {
         setNumbers(json.numbers ?? []);
         setConnection(json.connection);
         setPausedPhones(json.pausedPhones ?? []);
+        setArchivedPhones(json.archivedPhones ?? []);
         setConvsError(false);
       }
     } catch {
@@ -147,17 +162,34 @@ export function useWhatsAppInbox() {
     [],
   );
 
+  /** Ficha CRM del cliente — se carga al abrir el hilo, no en cada poll. */
+  const loadCustomerContext = useCallback(async (phone: string) => {
+    setCustomerContext(null);
+    try {
+      const res = await tenantFetch(
+        `/api/admin/whatsapp/customer-context?phone=${encodeURIComponent(phone)}`,
+      );
+      if (!res.ok) return;
+      const json = (await res.json()) as WaCustomerContext;
+      if (selectedRef.current === phone) setCustomerContext(json);
+    } catch {
+      /* la ficha es best-effort: sin ella el chat funciona igual */
+    }
+  }, []);
+
   const selectConversation = useCallback(
     (phone: string | null) => {
       setSelectedPhone(phone);
       setMessages([]);
       setSendError(null);
+      setCustomerContext(null);
       if (phone) {
         void loadMessages(phone, true);
         void markRead(phone);
+        void loadCustomerContext(phone);
       }
     },
-    [loadMessages, markRead],
+    [loadMessages, markRead, loadCustomerContext],
   );
 
   /**
@@ -232,6 +264,24 @@ export function useWhatsAppInbox() {
     [doSend],
   );
 
+  /** Archiva/desarchiva una conversación (optimista). */
+  const toggleArchive = useCallback(async (phone: string, archived: boolean) => {
+    setArchivedPhones((prev) =>
+      archived ? Array.from(new Set([...prev, phone])) : prev.filter((p) => p !== phone),
+    );
+    try {
+      const res = await tenantFetch("/api/admin/whatsapp/archive", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ phone, archived }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { archivedPhones?: string[] };
+      if (res.ok && json.archivedPhones) setArchivedPhones(json.archivedPhones);
+    } catch {
+      /* el próximo poll corrige */
+    }
+  }, []);
+
   /** Pausa/reanuda el bot IA en un hilo (optimista, corrige con la respuesta). */
   const toggleBotPause = useCallback(async (phone: string, paused: boolean) => {
     setPausedPhones((prev) =>
@@ -301,6 +351,9 @@ export function useWhatsAppInbox() {
     sendErrorCode,
     pausedPhones,
     toggleBotPause,
+    archivedPhones,
+    toggleArchive,
+    customerContext,
     draftContact,
     startConversation,
     refresh: loadConversations,

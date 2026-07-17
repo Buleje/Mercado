@@ -7,6 +7,7 @@ import {
   WhatsAppMessagesDB,
   listWhatsAppConfigs,
   getBotPausedPhones,
+  getArchivedPhones,
 } from "@/lib/db/whatsapp-messages.db";
 
 /**
@@ -24,15 +25,17 @@ export async function GET(req: NextRequest) {
   const filter = rawFilter && /^\d{1,50}$/.test(rawFilter) ? rawFilter : undefined;
 
   try {
-    const [conversations, configs, pausedPhones] = await Promise.all([
+    const [conversations, configs, pausedPhones, archivedPhones] = await Promise.all([
       WhatsAppMessagesDB.listConversations(auth.tenantId, filter),
       listWhatsAppConfigs(auth.tenantId),
       getBotPausedPhones(auth.tenantId),
+      getArchivedPhones(auth.tenantId),
     ]);
 
     return NextResponse.json({
       conversations,
       pausedPhones,
+      archivedPhones,
       numbers: configs.map((c) => ({
         id: c.id,
         label: c.label,

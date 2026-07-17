@@ -139,6 +139,16 @@ export default function WaChatView({
                     {failed && (
                       <span className="font-bold text-[var(--data-error-500)]">· no se envió</span>
                     )}
+                    {failed && canSend && (
+                      <button
+                        type="button"
+                        disabled={sending}
+                        onClick={() => void onSend(m.body)}
+                        className="ml-1 font-bold text-primary underline underline-offset-2 hover:opacity-80 disabled:opacity-40"
+                      >
+                        Reintentar
+                      </button>
+                    )}
                   </p>
                 </div>
               </div>

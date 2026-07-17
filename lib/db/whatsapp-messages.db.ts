@@ -164,6 +164,32 @@ export async function setBotPaused(
   return next;
 }
 
+// ── Conversaciones archivadas ─────────────────────────────────────────────────
+// Ordena el inbox: lo archivado no aparece en la lista principal (pero sigue
+// recibiendo mensajes; si el cliente escribe, el operador puede desarchivar).
+
+function archivedKey(tenantId: string): string {
+  return `wa-archived:${tenantId}`;
+}
+
+export async function getArchivedPhones(tenantId: string): Promise<string[]> {
+  const list = await PlatformSettingsDB.get<string[]>(archivedKey(tenantId));
+  return Array.isArray(list) ? list : [];
+}
+
+export async function setArchived(
+  tenantId: string,
+  customerPhone: string,
+  archived: boolean,
+): Promise<string[]> {
+  const current = await getArchivedPhones(tenantId);
+  const next = archived
+    ? Array.from(new Set([...current, customerPhone]))
+    : current.filter((p) => p !== customerPhone);
+  await PlatformSettingsDB.set(archivedKey(tenantId), next, `wa-inbox:${tenantId}`);
+  return next;
+}
+
 export const WhatsAppMessagesDB = {
   /**
    * Lista de conversaciones agrupadas por customerPhone, ordenadas por el
