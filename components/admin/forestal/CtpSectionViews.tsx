@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
-  Scale, PackageCheck, Layers, PackagePlus, Clock, TreePine, Link2,
+  Scale, PackageCheck, Layers, PackagePlus, Clock, TreePine, Link2, Calculator,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -19,6 +19,7 @@ import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpEntryForm from "./CtpEntryForm";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
+import CtpSimuladorModal from "./CtpSimuladorModal";
 
 type CtpSection = "produccion" | "despacho";
 
@@ -52,6 +53,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   // Sin debounce, `load` se re-creaba en cada tecla → un fetch por caracter.
   const search = useDebounce(searchInput, 350);
   const [showForm, setShowForm] = useState(false);
+  const [showSim, setShowSim] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [pending, setPending] = useState(false);
@@ -144,10 +146,16 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
         <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
         </button>
+        {section === "produccion" && (
+          <button type="button" onClick={() => setShowSim(true)} title="Previsualizá producido, costo y margen antes de registrar una corrida" className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--brand-ink)] hover:bg-[var(--surface-canvas)]">
+            <Calculator className="h-5 w-5" /> Simular
+          </button>
+        )}
         <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90">
           <Plus className="h-5 w-5" /> {meta.cta}
         </button>
       </div>
+      {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
       {toProductMsg && (
