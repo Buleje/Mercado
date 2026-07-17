@@ -77,9 +77,13 @@ export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
   const rangeFrom = total === 0 ? 0 : page * CTP_PAGE_SIZE + 1;
   const rangeTo = Math.min((page + 1) * CTP_PAGE_SIZE, total);
 
+  // Confirma el motivo: rechaza si el ingreso está pendiente, o ANULA si ya
+  // estaba validado (corrección post-validación). Reusa el mismo input de motivo.
   async function reject(id: string) {
+    const entry = entries.find((e) => e.id === id);
+    const action = entry?.status === "validado" ? "annul" : "reject";
     setBusy(`${id}:reject`);
-    await runAction(id, "reject", rejectReason.trim());
+    await runAction(id, action, rejectReason.trim());
     setRejectingId(null);
     setRejectReason("");
     setBusy(null);

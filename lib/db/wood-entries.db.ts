@@ -270,8 +270,16 @@ export class WoodEntriesDB {
 
     const { status: _ignored, limit: _l, offset: _o, ...periodFilters } = filters;
     const where = buildListWhere(tenantId, periodFilters);
+    // Las cifras OFICIALES (total, volumen, CITES, especies, fuera de plazo) NO
+    // deben contar ingresos RECHAZADOS ni ANULADOS: no forman parte del libro y
+    // no pueden aparecer en lo que se declara a SERFOR (QA 2026-07-17). El
+    // desglose `byStatus` sí usa `where` completo para poder mostrar cuántos
+    // fueron rechazados. `pendiente` sí cuenta: es material registrado real.
+    const whereVigente: Prisma.WoodEntryWhereInput = { ...where, status: { notIn: ["rechazado", "anulado"] } };
 
     const lateConditions = buildLateConditions(tenantId, periodFilters);
+    // Un ingreso rechazado/anulado fuera de plazo es irrelevante — no cuenta.
+    lateConditions.push(Prisma.sql`"status" NOT IN (${Prisma.join(["rechazado", "anulado"])})`);
     // Fuera de plazo = días HÁBILES(operación → registro) > PLAZO (2, RDE D000025-2023).
     // Fórmula cerrada IDÉNTICA a `diasHabilesDeRegistro()` en ctp-compliance.ts:
     //   n  = días calendario = GREATEST(0, floor(epoch(createdAt-entryDate)/86400))
@@ -291,14 +299,15 @@ export class WoodEntriesDB {
 
     const [agg, byStatusRows, speciesRows, citesAgg, lateRows] = await Promise.all([
       prisma.woodEntry.aggregate({
-        where,
+        where: whereVigente,
         _sum: { volumeM3: true, pieces: true },
         _count: { _all: true },
       }),
+      // byStatus usa `where` completo (incluye rechazado/anulado): es el desglose.
       prisma.woodEntry.groupBy({ by: ["status"], where, _count: { _all: true } }),
-      prisma.woodEntry.groupBy({ by: ["speciesCommonName"], where, _count: { _all: true } }),
+      prisma.woodEntry.groupBy({ by: ["speciesCommonName"], where: whereVigente, _count: { _all: true } }),
       prisma.woodEntry.aggregate({
-        where: { ...where, speciesCites: true },
+        where: { ...whereVigente, speciesCites: true },
         _sum: { volumeM3: true },
         _count: { _all: true },
       }),
@@ -392,6 +401,41 @@ export class WoodEntriesDB {
       entityId: id,
       detail: `Rechazó el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · motivo: ${reason.trim()}`,
       user: validatorId,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    return entry;
+  }
+
+  /**
+   * Anular un ingreso YA VALIDADO (validado → anulado) con motivo obligatorio.
+   * A diferencia de `reject` (que se usa ANTES de validar), esto corrige un
+   * ingreso que ya entró al saldo: al pasar a "anulado" sale de los saldos y de
+   * las cifras oficiales, dejando motivo y autor para la fiscalización.
+   *
+   * BLOQUEA si el ingreso ya se consumió en una corrida viva: anularlo dejaría
+   * consumos apuntando a materia prima que desapareció del saldo (rompe I2). El
+   * operador debe corregir/anular esas corridas primero (QA 2026-07-17).
+   */
+  static async annul(tenantId: string, id: string, user: string, reason: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!reason?.trim()) throw new Error("annul reason is required");
+    const consumido = await prisma.forestCtpConsumo.count({
+      where: { tenantId, woodEntryId: id, ctpEntry: { deletedAt: null, status: "registrado" } },
+    });
+    if (consumido > 0) {
+      throw new Error("Este ingreso ya se consumió en una corrida de producción. Corregí o anulá esas corridas antes de anular el ingreso.");
+    }
+    const entry = await prisma.woodEntry.update({
+      where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
+      data: { status: "anulado", rejectionReason: reason.trim() },
+    });
+    auditCtp({
+      tenantId,
+      action: "ctp_ingreso_annul",
+      entity: "WoodEntry",
+      entityId: id,
+      detail: `Anuló el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · ${m3(Number(entry.volumeM3))} · motivo: ${reason.trim()}`,
+      user,
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
     return entry;

@@ -39,6 +39,7 @@ export type CtpAuditAction =
   | "ctp_ingreso_create"
   | "ctp_ingreso_validate"
   | "ctp_ingreso_reject"
+  | "ctp_ingreso_annul"
   | "ctp_ingreso_delete"
   // Líneas de producción / despacho
   | "ctp_linea_create"

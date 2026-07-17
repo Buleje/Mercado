@@ -16,7 +16,7 @@ import type { WoodEntry, WoodEntryStats } from "@/components/admin/forestal/ctp-
 
 export const CTP_PAGE_SIZE = 50;
 
-export type CtpEntryAction = "validate" | "reject" | "delete";
+export type CtpEntryAction = "validate" | "reject" | "annul" | "delete";
 
 interface UseCtpIngresosArgs {
   period: CtpPeriod;

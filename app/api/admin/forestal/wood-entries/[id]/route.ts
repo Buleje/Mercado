@@ -22,6 +22,8 @@ interface RouteCtx {
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("validate") }),
   z.object({ action: z.literal("reject"), reason: z.string().trim().min(3).max(500) }),
+  // Anular un ingreso YA validado (con motivo). Distinto de reject (pre-validación).
+  z.object({ action: z.literal("annul"), reason: z.string().trim().min(3).max(500) }),
   z.object({ action: z.literal("delete") }),
 ]);
 
@@ -98,6 +100,8 @@ export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req
         auth.username,
         parsed.data.reason,
       );
+    } else if (parsed.data.action === "annul") {
+      entry = await WoodEntriesDB.annul(auth.tenantId, id, auth.username ?? "unknown", parsed.data.reason);
     } else {
       entry = await WoodEntriesDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
     }
@@ -112,6 +116,10 @@ export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req
     return NextResponse.json({ entry });
   } catch (err) {
     logger.error("[wood-entries.PATCH] failed", { error: String(err), id });
+    // El guard de anular (ingreso ya consumido) es un error de negocio → 422 con motivo.
+    if (parsed.data.action === "annul") {
+      return NextResponse.json({ error: "annul_blocked", message: err instanceof Error ? err.message : "No se pudo anular el ingreso." }, { status: 422 });
+    }
     return NextResponse.json(
       { error: "internal_error" },
       { status: 500 },

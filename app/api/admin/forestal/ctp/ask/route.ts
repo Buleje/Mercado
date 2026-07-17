@@ -98,6 +98,14 @@ async function askLLM(context: string, question: string): Promise<string | null>
   return null;
 }
 
+/** GET → { available } : ¿hay API key de IA configurada? El widget lo usa para
+ *  ocultarse en vez de mostrar una función rota (QA 2026-07-17). */
+export const GET = withApiHandler("forestal-ctp-ask-status", async (req: NextRequest) => {
+  const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+  return NextResponse.json({ available: Boolean(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY) });
+});
+
 export const POST = withApiHandler("forestal-ctp-ask", async (req: NextRequest) => {
   const rl = await applyRateLimit(req, "STRICT", "ctp-ask");
   if (rl) return rl;

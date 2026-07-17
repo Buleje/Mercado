@@ -8,7 +8,7 @@
  * el resumen real del libro que arma el server (`/ctp/ask`). No inventa cifras.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Sparkles, Send, Loader2, X as XIcon } from "@buleje/design-system/icons";
 
@@ -20,11 +20,25 @@ const EJEMPLOS = [
 ];
 
 export default function CtpAsistente() {
+  const [available, setAvailable] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // No mostrar un botón para una función rota: probamos si hay IA configurada.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/admin/forestal/ctp/ask", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : { available: false }))
+      .then((j) => { if (alive) setAvailable(Boolean(j.available)); })
+      .catch((err) => { console.warn("[ctp-asistente] probe failed", err); if (alive) setAvailable(false); });
+    return () => { alive = false; };
+  }, []);
+
+  // Oculto mientras se comprueba, o si no hay API key (evita expectativa rota).
+  if (available !== true) return null;
 
   async function ask(question?: string) {
     const text = (question ?? q).trim();
