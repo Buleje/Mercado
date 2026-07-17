@@ -70,7 +70,7 @@ export default function CtpFichaEditor() {
   const set = <K extends keyof CtpFicha>(k: K, v: CtpFicha[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const setTitulo = (i: number, patch: Partial<CtpTituloHabilitante>) =>
     setDraft((d) => ({ ...d, titulos: d.titulos.map((t, j) => (j === i ? { ...t, ...patch } : t)) }));
-  const addTitulo = () => setDraft((d) => ({ ...d, titulos: [...d.titulos, { tipo: "concesion", codigo: "" }] }));
+  const addTitulo = () => setDraft((d) => ({ ...d, titulos: [...d.titulos, { tipo: "concesion", codigo: "", vencimiento: "" }] }));
   const removeTitulo = (i: number) => setDraft((d) => ({ ...d, titulos: d.titulos.filter((_, j) => j !== i) }));
   const setCites = (i: number, patch: Partial<CtpCitesPermiso>) =>
     setDraft((d) => ({ ...d, citesPermisos: d.citesPermisos.map((p, j) => (j === i ? { ...p, ...patch } : p)) }));
@@ -144,11 +144,12 @@ export default function CtpFichaEditor() {
             <div className="space-y-2">
               {draft.titulos.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Sin títulos cargados. Agregá las concesiones/permisos que abastecen el CTP.</p>}
               {draft.titulos.map((t, i) => (
-                <div key={i} className="flex items-center gap-2">
+                <div key={i} className="flex flex-wrap items-center gap-2">
                   <select className={`${I} max-w-[13rem]`} value={t.tipo} onChange={(e) => setTitulo(i, { tipo: e.target.value })}>
                     {TITULO_TIPOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                  <input className={I} value={t.codigo} onChange={(e) => setTitulo(i, { codigo: e.target.value })} placeholder="N° del título habilitante" />
+                  <input className={`${I} min-w-[10rem] flex-1`} value={t.codigo} onChange={(e) => setTitulo(i, { codigo: e.target.value })} placeholder="N° del título habilitante" />
+                  <input type="date" className={`${I} max-w-[10rem]`} value={t.vencimiento} onChange={(e) => setTitulo(i, { vencimiento: e.target.value })} title="Vencimiento" />
                   <button type="button" onClick={() => removeTitulo(i)} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
@@ -237,12 +238,19 @@ function FichaReadView({ ficha: f }: { ficha: CtpFicha }) {
             <p className="text-sm text-[var(--text-tertiary)]">Sin títulos cargados.</p>
           ) : (
             <ul className="space-y-1.5">
-              {f.titulos.map((t, i) => (
-                <li key={i} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-bold text-[var(--text-secondary)]">{tituloLabel(t.tipo)}</span>
-                  <span className="font-mono text-[var(--text-primary)]">{t.codigo || "—"}</span>
-                </li>
-              ))}
+              {f.titulos.map((t, i) => {
+                const estado = permisoEstado(t.vencimiento);
+                return (
+                  <li key={i} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-0.5 text-xs font-bold text-[var(--text-secondary)]">{tituloLabel(t.tipo)}</span>
+                    <span className="flex items-center gap-2">
+                      {estado === "vencido" && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">vencido</span>}
+                      {estado === "por_vencer" && <span className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">por vencer</span>}
+                      <span className="font-mono text-[var(--text-primary)]">{t.codigo || "—"}{t.vencimiento ? ` · vence ${t.vencimiento}` : ""}</span>
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

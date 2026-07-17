@@ -17,6 +17,7 @@ import { withApiHandler } from "@/lib/api-handler";
 const tituloSchema = z.object({
   tipo: z.string().trim().max(40),
   codigo: z.string().trim().max(80),
+  vencimiento: z.string().trim().max(10).optional().default(""),
 });
 
 const citesPermisoSchema = z.object({

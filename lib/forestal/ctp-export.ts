@@ -15,6 +15,7 @@ import {
   type CtpPeriod,
 } from "./ctp-period";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo } from "./ctp-compliance";
+import { evaluarRendimiento } from "./ctp-rendimiento";
 
 interface Ingreso {
   entryDate: string; gtfNumber: string; gtfDate: string | null; providerName: string;
@@ -58,7 +59,7 @@ const withPeriod = (path: string, base: Record<string, string>, period: CtpPerio
   `${path}?${applyCtpPeriodParams(new URLSearchParams(base), period)}`;
 
 export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
-  const [ing, prod, desp, sal, trz] = await Promise.all([
+  const [ing, prod, desp, sal, trz, fic] = await Promise.all([
     getJson<{ entries?: Ingreso[]; stats?: WoodEntryStats }>(
       withPeriod("/api/admin/forestal/wood-entries", { limit: "1000", stats: "1" }, period),
       {},
@@ -70,6 +71,7 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
       withPeriod("/api/admin/forestal/ctp", { traza: "1" }, period),
       {},
     ),
+    getJson<{ ficha?: CtpFichaLite }>("/api/admin/forestal/ctp-ficha", {}),
   ]);
   const ingresos = ing.entries ?? [];
   const stats = ing.stats ?? null;
@@ -77,6 +79,19 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
   const despacho = desp.entries ?? [];
   const saldos = sal.saldos ?? null;
   const traza = trz.traza ?? null;
+  const ficha = fic.ficha ?? null;
+
+  // Señales informativas (mismas que el panel Cumplimiento — consistencia panel↔Excel).
+  const normEsp = (x: string | null | undefined) => (x ?? "").trim().toLowerCase();
+  const permisosCites = (ficha?.citesPermisos ?? []).map((p) => normEsp(p.especie)).filter(Boolean);
+  const citesSinPermiso = (saldos?.porEspecie ?? [])
+    .filter((e) => e.cites)
+    .filter((e) => { const s = normEsp(e.especie); return !permisosCites.some((p) => s.includes(p) || p.includes(s)); })
+    .map((e) => e.especie);
+  const rendimientoAltoLineas = produccion
+    .filter((e) => e.status === "registrado")
+    .filter((e) => evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null).estado === "alto")
+    .map((e) => e.lineNo);
 
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -130,6 +145,17 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
   kv(
     "Despachos sin cadena de custodia completa",
     traza ? `${traza.incompletos}${traza.incompletos > 0 ? ` (línea${traza.lineas.length === 1 ? "" : "s"} #${traza.lineas.join(", #")})` : ""}` : 0,
+  );
+  // Informativas (no restan score): mismas señales que el panel de Cumplimiento.
+  kv(
+    "Especies CITES sin permiso en la Ficha",
+    citesSinPermiso.length > 0 ? `${citesSinPermiso.length} (${citesSinPermiso.join(", ")})` : 0,
+  );
+  kv(
+    "Corridas con rendimiento sobre referencial SERFOR",
+    rendimientoAltoLineas.length > 0
+      ? `${rendimientoAltoLineas.length} (línea${rendimientoAltoLineas.length === 1 ? "" : "s"} #${rendimientoAltoLineas.join(", #")})`
+      : 0,
   );
 
   // ── Ingresos ──
@@ -255,7 +281,7 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
 interface CtpFichaLite {
   nombreCtp: string; codigoCtp: string; ruc: string; razonSocial: string;
   arffs: string; registroArffs: string; registroArffsFecha: string;
-  titulos: { tipo: string; codigo: string }[];
+  titulos: { tipo: string; codigo: string; vencimiento: string }[];
   citesPermisos: { especie: string; numero: string; vencimiento: string }[];
   representante: string; representanteDni: string;
   direccion: string; region: string; provincia: string; distrito: string;
@@ -326,7 +352,7 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
   const th = wc.addRow(["TÍTULOS HABILITANTES (origen de la materia prima)", ""]);
   th.getCell(1).font = { bold: true };
   if (ficha?.titulos?.length) {
-    for (const t of ficha.titulos) wc.addRow([TITULO_OFICIAL[t.tipo] ?? t.tipo, t.codigo || "—"]);
+    for (const t of ficha.titulos) wc.addRow([TITULO_OFICIAL[t.tipo] ?? t.tipo, [t.codigo || "—", t.vencimiento && `vence ${t.vencimiento}`].filter(Boolean).join(" · ")]);
   } else {
     wc.addRow(["Sin títulos habilitantes cargados en la ficha", ""]);
   }

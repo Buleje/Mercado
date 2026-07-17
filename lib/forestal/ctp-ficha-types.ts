@@ -13,6 +13,8 @@ export interface CtpTituloHabilitante {
   tipo: string;
   /** Número/código del título tal como lo emitió la ARFFS/SERFOR. */
   codigo: string;
+  /** YYYY-MM-DD de vencimiento (opcional). Un título vencido invalida el origen. */
+  vencimiento: string;
 }
 
 /** Permiso CITES de una especie protegida (caoba, cedro, shihuahuaco…). No es
@@ -80,7 +82,7 @@ export function normalizeCtpFicha(raw: unknown): CtpFicha {
     ? (r.titulos as unknown[])
         .map((t) => {
           const o = (t ?? {}) as Record<string, unknown>;
-          return { tipo: s(o.tipo), codigo: s(o.codigo) };
+          return { tipo: s(o.tipo), codigo: s(o.codigo), vencimiento: s(o.vencimiento) };
         })
         .filter((t) => t.tipo || t.codigo)
     : [];

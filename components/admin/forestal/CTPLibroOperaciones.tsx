@@ -23,6 +23,7 @@ import {
   Boxes,
   Building2,
   FileSpreadsheet,
+  FileText,
   Loader2,
   PackageOpen,
   Scale,
@@ -32,6 +33,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
+import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
 import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
 import CtpIngresosView from "./CtpIngresosView";
@@ -57,16 +59,18 @@ export default function CTPLibroOperaciones() {
   // El cierre mensual está a un click en el selector.
   const [periodKey, setPeriodKey] = useState<CtpPeriodKey>("trimestre");
   const [custom, setCustom] = useState<CtpCustomRange>({ from: "", to: "" });
-  const [exporting, setExporting] = useState<null | "interno" | "oficial">(null);
+  const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe">(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
   const period = useMemo(() => resolveCtpPeriod(periodKey, custom), [periodKey, custom]);
 
-  async function exportar(kind: "interno" | "oficial") {
+  async function exportar(kind: "interno" | "oficial" | "informe") {
     setExporting(kind);
     setExportError(null);
     try {
-      await (kind === "oficial" ? exportarLibroCtpOficial(period) : exportarLibroCtp(period));
+      if (kind === "informe") await printInformePeriodo(period);
+      else if (kind === "oficial") await exportarLibroCtpOficial(period);
+      else await exportarLibroCtp(period);
     } catch (err) {
       setExportError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -92,6 +96,16 @@ export default function CTPLibroOperaciones() {
           >
             {exporting === "interno" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
             <span>Exportar libro</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => exportar("informe")}
+            disabled={exporting !== null}
+            title="Informe de operaciones del período para presentar a la ARFFS (imprimible): ficha del CTP + movimientos + existencias + cumplimiento"
+            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+          >
+            {exporting === "informe" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+            <span>Informe ARFFS</span>
           </button>
           <button
             type="button"
