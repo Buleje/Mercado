@@ -21,6 +21,7 @@ import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpSimuladorModal from "./CtpSimuladorModal";
 import CtpKardexModal from "./CtpKardexModal";
+import CtpPatioAging from "./CtpPatioAging";
 
 type CtpSection = "produccion" | "despacho";
 
@@ -421,6 +422,9 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
             </table>
             {data.productos.length === 0 && <div className="p-10 text-center text-[var(--text-tertiary)]"><PackageCheck className="mx-auto mb-3 h-9 w-9 opacity-30" /><p className="text-sm">Sin productos transformados todavía.</p></div>}
           </div>
+
+          {/* Gemelo del patio: materia prima parada por antigüedad (self-fetch). */}
+          <CtpPatioAging />
         </>
       )}
       {loading && !data && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando saldos…</p></div>}
