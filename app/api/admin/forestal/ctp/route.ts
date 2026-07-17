@@ -105,6 +105,10 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (url.searchParams.get("traza") === "1") {
       return NextResponse.json({ traza: await ForestCtpDespachoDB.trazabilidadDelPeriodo(auth.tenantId, period) });
     }
+    // Grafo de cadena de custodia del período (Radar de trazabilidad).
+    if (url.searchParams.get("grafo") === "1") {
+      return NextResponse.json({ grafo: await ForestCtpDB.grafoTrazabilidad(auth.tenantId, period) });
+    }
     const availableFor = url.searchParams.get("available");
     if (availableFor && (CTP_SECTIONS as readonly string[]).includes(availableFor)) {
       // `?excludeCtpEntryId=` al EDITAR una línea: lo que ella misma consume no

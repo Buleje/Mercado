@@ -580,4 +580,72 @@ export class ForestCtpDB {
     }
     return [];
   }
+
+  /**
+   * Grafo de la cadena de custodia del período: 3 capas (ingresos → corridas →
+   * despachos) con sus enlaces (consumos / orígenes). Es la versión visual de
+   * las mismas tablas puente que enforcean I1–I5; el Radar de trazabilidad lo
+   * dibuja. Read-only. Los edges se filtran a endpoints VIVOS (soft-delete no
+   * cascada) para no dibujar líneas colgando de un nodo que ya no está.
+   */
+  static async grafoTrazabilidad(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<TrazaGrafo> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const range = dateRange(opts);
+    const woodWhere: Prisma.WoodEntryWhereInput = {
+      tenantId, deletedAt: null, status: { in: ["validado", "procesado", "pendiente"] },
+    };
+    const ctpWhere: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null, status: "registrado" };
+    if (range) { woodWhere.entryDate = range; ctpWhere.entryDate = range; }
+
+    const [ing, ctp] = await Promise.all([
+      prisma.woodEntry.findMany({
+        where: woodWhere,
+        select: { id: true, gtfNumber: true, speciesCommonName: true, volumeM3: true, speciesCites: true },
+        orderBy: { entryDate: "asc" }, take: 300,
+      }),
+      prisma.forestCtpEntry.findMany({
+        where: ctpWhere,
+        select: { id: true, section: true, lineNo: true, productType: true, speciesCommon: true, quantity: true, unit: true, destino: true, gtfNumber: true, cites: true },
+        orderBy: { lineNo: "asc" }, take: 300,
+      }),
+    ]);
+    const corridas = ctp.filter((e) => e.section === "produccion");
+    const despachos = ctp.filter((e) => e.section === "despacho");
+    const ingIds = new Set(ing.map((w) => w.id));
+    const corridaIds = corridas.map((c) => c.id);
+    const despachoIds = despachos.map((d) => d.id);
+
+    const [consumos, origenes] = await Promise.all([
+      corridaIds.length
+        ? prisma.forestCtpConsumo.findMany({ where: { tenantId, ctpEntryId: { in: corridaIds } }, select: { woodEntryId: true, ctpEntryId: true, volumeM3: true } })
+        : Promise.resolve([]),
+      despachoIds.length
+        ? prisma.forestCtpDespachoOrigen.findMany({ where: { tenantId, despachoEntryId: { in: despachoIds } }, select: { produccionEntryId: true, despachoEntryId: true, quantity: true } })
+        : Promise.resolve([]),
+    ]);
+    const corridaIdSet = new Set(corridaIds);
+
+    return {
+      ingresos: ing.map((w) => ({ id: w.id, gtf: w.gtfNumber, species: w.speciesCommonName, volumeM3: Number(w.volumeM3 ?? 0), cites: w.speciesCites })),
+      corridas: corridas.map((c) => ({ id: c.id, lineNo: c.lineNo, label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`, quantity: Number(c.quantity ?? 0), unit: c.unit, cites: c.cites })),
+      despachos: despachos.map((d) => ({ id: d.id, lineNo: d.lineNo, label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, quantity: Number(d.quantity ?? 0), destino: d.destino, gtf: d.gtfNumber })),
+      // Edge sólo si ambos extremos siguen en el grafo (endpoint vivo).
+      consumos: consumos
+        .filter((c) => ingIds.has(c.woodEntryId) && corridaIdSet.has(c.ctpEntryId))
+        .map((c) => ({ from: c.woodEntryId, to: c.ctpEntryId, volumeM3: Number(c.volumeM3 ?? 0) })),
+      origenes: origenes
+        .filter((o) => corridaIdSet.has(o.produccionEntryId))
+        .map((o) => ({ from: o.produccionEntryId, to: o.despachoEntryId, quantity: Number(o.quantity ?? 0) })),
+    };
+  }
+}
+
+export interface TrazaGrafo {
+  ingresos: { id: string; gtf: string; species: string | null; volumeM3: number; cites: boolean }[];
+  corridas: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; cites: boolean }[];
+  despachos: { id: string; lineNo: number; label: string; quantity: number; destino: string | null; gtf: string | null }[];
+  /** woodEntryId → corridaId (m³ consumido). */
+  consumos: { from: string; to: string; volumeM3: number }[];
+  /** corridaId → despachoId (cantidad atribuida). */
+  origenes: { from: string; to: string; quantity: number }[];
 }

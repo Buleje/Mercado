@@ -27,6 +27,7 @@ import {
   Loader2,
   PackageOpen,
   Scale,
+  Share2,
   ShieldCheck,
   TreePine,
   Truck,
@@ -40,13 +41,15 @@ import CtpIngresosView from "./CtpIngresosView";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
+import CtpTrazaRadar from "./CtpTrazaRadar";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "saldos" | "cumplimiento" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "ficha";
 
 const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
   { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
   { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación" },
   { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto" },
+  { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual" },
   { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
   { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
   { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
@@ -163,6 +166,7 @@ export default function CTPLibroOperaciones() {
       {view === "ingresos" && <CtpIngresosView period={period} />}
       {view === "produccion" && <CtpEntriesView section="produccion" period={period} />}
       {view === "despacho" && <CtpEntriesView section="despacho" period={period} />}
+      {view === "radar" && <CtpTrazaRadar period={period} />}
       {view === "saldos" && <CtpSaldosView period={period} />}
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
       {view === "ficha" && <CtpFichaEditor />}
