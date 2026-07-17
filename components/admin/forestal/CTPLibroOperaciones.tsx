@@ -42,6 +42,7 @@ import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpTrazaRadar from "./CtpTrazaRadar";
+import CtpAsistente from "./CtpAsistente";
 
 type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "ficha";
 
@@ -130,6 +131,8 @@ export default function CTPLibroOperaciones() {
         onKeyChange={setPeriodKey}
         onCustomChange={setCustom}
       />
+
+      <CtpAsistente />
 
       {exportError && (
         <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">

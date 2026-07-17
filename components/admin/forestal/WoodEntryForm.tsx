@@ -21,6 +21,7 @@ import {
   Search,
   Check,
   ShieldAlert,
+  Camera,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
@@ -163,6 +164,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
   const [gtfMsg, setGtfMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [gtfItems, setGtfItems] = useState<GtfItem[]>([]);
   const [showGuias, setShowGuias] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [guias, setGuias] = useState<GtfRecord[]>([]);
   const [loadingGuias, setLoadingGuias] = useState(false);
   const [guiaQuery, setGuiaQuery] = useState("");
@@ -231,6 +233,45 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
     else if (items.length > 1) { setGtfItems(items); setGtfMsg({ ok: true, text: `Guía cargada. Tiene ${items.length} ítems — elegí cuál registrar en este ingreso.` }); }
     else { setData((prev) => ({ ...prev, volumeM3: gtf.volumenTotalM3 != null ? String(gtf.volumenTotalM3) : prev.volumeM3, pieces: gtf.piezasTotal != null ? String(gtf.piezasTotal) : prev.pieces })); setGtfMsg({ ok: true, text: "Guía cargada (sin detalle de ítems)." }); }
   };
+
+  // Escanea una foto de la GTF (OCR con IA) y pre-llena el ingreso. La especie
+  // NO se auto-selecciona (tiene peso legal): se detecta y el operador la elige.
+  async function scanGtf(file: File) {
+    setScanning(true);
+    setGtfMsg(null);
+    try {
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("No se pudo leer la imagen"));
+        fr.readAsDataURL(file);
+      });
+      const r = await fetch("/api/admin/forestal/gtf-ocr", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ image: b64 }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
+      setData((prev) => ({
+        ...prev,
+        gtfNumber: j.gtfNumber || prev.gtfNumber,
+        gtfSeries: j.gtfSeries || prev.gtfSeries,
+        gtfDate: j.fecha || prev.gtfDate,
+        providerName: j.proveedor || prev.providerName,
+        providerDocument: j.ruc || prev.providerDocument,
+        volumeM3: j.volumenM3 ? String(j.volumenM3) : prev.volumeM3,
+        originCode: j.origen || prev.originCode,
+      }));
+      const esp = [j.especie, j.especieCientifica].filter(Boolean).join(" · ");
+      setGtfMsg({ ok: true, text: `GTF escaneada.${esp ? ` Especie detectada: ${esp} — seleccionala en el picker.` : ""} Revisá los datos antes de guardar.` });
+    } catch (e) {
+      setGtfMsg({ ok: false, text: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setScanning(false);
+    }
+  }
 
   // Carga la guía por su N° de registro y autocompleta el ingreso.
   async function cargarGuia() {
@@ -470,6 +511,20 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                   >
                     <Search className="h-4 w-4" /> Ver guías
                   </button>
+                  <label
+                    title="Escaneá una foto de la GTF para pre-llenar el ingreso con IA"
+                    className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition-colors ${scanning ? "border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70" : "border-[var(--brand-ink)] text-[var(--brand-ink)] hover:bg-[var(--surface-canvas)]"}`}
+                  >
+                    {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Escanear
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      disabled={scanning}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) void scanGtf(f); e.target.value = ""; }}
+                    />
+                  </label>
                 </div>
               </Field>
               {showGuias && (
