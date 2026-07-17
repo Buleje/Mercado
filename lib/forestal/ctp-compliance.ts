@@ -56,7 +56,7 @@ export function estaFueraDePlazo(entry: {
   return registro - actividad > PLAZO_REGISTRO_DIAS * MS_POR_DIA;
 }
 
-/** Las 5 alertas de cumplimiento del período — las mismas que hoy solo se ven en el Excel exportado. */
+/** Las 6 alertas de cumplimiento del período — las mismas que exporta el Excel. */
 export interface CtpComplianceCounts {
   /** Ingresos registrados con más de PLAZO_REGISTRO_DIAS días entre entryDate y createdAt. */
   fueraPlazo: number;
@@ -68,6 +68,8 @@ export interface CtpComplianceCounts {
   especiesEnNegativo: number;
   /** Productos transformados con stock negativo (se despachó más de lo producido). */
   stockNegativo: number;
+  /** Despachos sin cadena de custodia completa: no pueden emitir certificado (ADR-135 D3). */
+  despachosSinTraza: number;
 }
 
 /**
@@ -83,6 +85,12 @@ export interface CtpComplianceCounts {
  *
  * `fueraPlazo` sí resta aunque el pasado no se pueda cambiar: es una infracción
  * real al plazo SERFOR, y sale sola del score cuando el período avanza.
+ *
+ * `despachosSinTraza` tampoco resta (por ahora): el libro ADMITE huecos en la
+ * atribución por diseño (I4 es `≤`, ADR-135) y todavía no existe UI para
+ * completar la atribución después del alta — restaría puntos por algo que el
+ * operador no puede corregir sin anular y recrear. El gate real ya existe: el
+ * certificado no se emite. Cuando haya "editar atribución", se promueve.
  */
 const CATEGORIAS_QUE_RESTAN = [
   "fueraPlazo",

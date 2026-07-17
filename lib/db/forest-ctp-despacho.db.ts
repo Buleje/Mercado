@@ -428,4 +428,83 @@ export class ForestCtpDespachoDB {
 
     return { completa: motivo === "ok", declarado, atribuido, sinAtribuir, motivo, corridas };
   }
+
+  /**
+   * Agregado del período para el panel Cumplimiento: cuántos despachos NO
+   * podrían emitir su certificado (ADR-135 D3).
+   *
+   * Mismos criterios que `trazabilidadCompleta()` — sin atribución, atribución
+   * parcial o corrida citada sin materia prima propia. Si el panel y la ficha
+   * usaran predicados distintos, el módulo se contradeciría en la cifra que ve
+   * un fiscalizador (la misma lección que ya dejó el fuera-de-plazo).
+   */
+  static async trazabilidadDelPeriodo(
+    tenantId: string,
+    period?: { fromDate?: Date; toDate?: Date },
+  ): Promise<{ total: number; incompletos: number; lineas: number[] }> {
+    if (!tenantId) throw new Error("tenantId is required");
+
+    const despachos = await prisma.forestCtpEntry.findMany({
+      where: {
+        tenantId,
+        section: "despacho",
+        status: "registrado",
+        deletedAt: null,
+        ...(period?.fromDate || period?.toDate
+          ? {
+              entryDate: {
+                ...(period.fromDate && { gte: period.fromDate }),
+                ...(period.toDate && { lte: period.toDate }),
+              },
+            }
+          : {}),
+      },
+      select: { id: true, lineNo: true, quantity: true },
+    });
+    if (despachos.length === 0) return { total: 0, incompletos: 0, lineas: [] };
+
+    const ids = despachos.map((d) => d.id);
+    const [sumas, vinculos] = await Promise.all([
+      prisma.forestCtpDespachoOrigen.groupBy({
+        by: ["despachoEntryId"],
+        where: { tenantId, despachoEntryId: { in: ids } },
+        _sum: { quantity: true },
+      }),
+      prisma.forestCtpDespachoOrigen.findMany({
+        where: { tenantId, despachoEntryId: { in: ids } },
+        select: { despachoEntryId: true, produccionEntryId: true },
+      }),
+    ]);
+
+    // Un eslabón más atrás (igual que trazabilidadCompleta): corridas sin consumo propio.
+    const corridaIds = [...new Set(vinculos.map((v) => v.produccionEntryId))];
+    const consumos = corridaIds.length
+      ? await prisma.forestCtpConsumo.groupBy({
+          by: ["ctpEntryId"],
+          where: { tenantId, ctpEntryId: { in: corridaIds } },
+          _count: { _all: true },
+        })
+      : [];
+    const corridasConOrigen = new Set(consumos.filter((c) => c._count._all > 0).map((c) => c.ctpEntryId));
+
+    const atribuidoPor = new Map(sumas.map((s) => [s.despachoEntryId, r4(Number(s._sum.quantity ?? 0))]));
+    const corridasPor = new Map<string, string[]>();
+    for (const v of vinculos) {
+      const arr = corridasPor.get(v.despachoEntryId) ?? [];
+      arr.push(v.produccionEntryId);
+      corridasPor.set(v.despachoEntryId, arr);
+    }
+
+    const lineas: number[] = [];
+    for (const d of despachos) {
+      const corridas = corridasPor.get(d.id) ?? [];
+      const declarado = d.quantity ? Number(d.quantity) : 0;
+      const sinAtribuir = r4(Math.max(0, declarado - (atribuidoPor.get(d.id) ?? 0)));
+      const incompleto =
+        corridas.length === 0 || sinAtribuir > 0 || corridas.some((c) => !corridasConOrigen.has(c));
+      if (incompleto) lineas.push(d.lineNo);
+    }
+    lineas.sort((a, b) => a - b);
+    return { total: despachos.length, incompletos: lineas.length, lineas };
+  }
 }

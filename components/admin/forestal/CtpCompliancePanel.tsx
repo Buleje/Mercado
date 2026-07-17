@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Clock,
   Gauge,
+  Link2,
   PackageX,
   RefreshCw,
   ScrollText,
@@ -27,7 +28,7 @@ import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import { ctpComplianceTone } from "@/lib/forestal/ctp-compliance";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
-type ComplianceNavTarget = "ingresos" | "saldos";
+type ComplianceNavTarget = "ingresos" | "saldos" | "despacho";
 
 interface CtpCompliancePanelProps {
   period: CtpPeriod;
@@ -153,6 +154,21 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           onNavigate={() => onNavigate("saldos")}
           navigateLabel="Ver saldos"
           severity="error"
+        />
+        <ComplianceRow
+          count={data.counts.despachosSinTraza}
+          icon={Link2}
+          title={(n) => `${n} ${n === 1 ? "despacho" : "despachos"} sin cadena de custodia completa`}
+          okTitle="Todos los despachos tienen cadena de custodia completa"
+          description={
+            data.despachosSinTrazaLineas.length > 0
+              ? `No pueden emitir certificado de trazabilidad: ${data.despachosSinTrazaLineas.length === 1 ? "línea" : "líneas"} #${data.despachosSinTrazaLineas.slice(0, 5).join(", #")}${data.despachosSinTrazaLineas.length > 5 ? ` y ${data.despachosSinTrazaLineas.length - 5} más` : ""}.`
+              : "Hay volumen despachado sin corrida de origen atribuida."
+          }
+          action="Abrí el botón 'Cadena' del despacho para ver dónde se corta."
+          onNavigate={() => onNavigate("despacho")}
+          navigateLabel="Ver despachos"
+          severity="warning"
         />
       </div>
     </div>

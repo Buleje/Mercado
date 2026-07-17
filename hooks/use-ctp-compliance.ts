@@ -23,6 +23,8 @@ export interface CtpComplianceData {
   totalIngresos: number;
   /** Productos puntuales con stock negativo — para el detalle de la alerta. */
   productosNegativos: string[];
+  /** Líneas de despacho sin cadena completa — para el detalle de la alerta. */
+  despachosSinTrazaLineas: number[];
 }
 
 interface UseCtpComplianceResult {
@@ -52,16 +54,21 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         period,
       );
       const saldosParams = applyCtpPeriodParams(new URLSearchParams({ saldos: "1" }), period);
+      const trazaParams = applyCtpPeriodParams(new URLSearchParams({ traza: "1" }), period);
 
-      const [woodRes, saldosRes] = await Promise.all([
+      const [woodRes, saldosRes, trazaRes] = await Promise.all([
         fetch(`/api/admin/forestal/wood-entries?${woodParams}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/ctp?${saldosParams}`, { credentials: "include" }),
+        fetch(`/api/admin/forestal/ctp?${trazaParams}`, { credentials: "include" }),
       ]);
       if (!woodRes.ok) throw new Error(await errorFrom(woodRes));
       if (!saldosRes.ok) throw new Error(await errorFrom(saldosRes));
+      if (!trazaRes.ok) throw new Error(await errorFrom(trazaRes));
 
       const wood: { stats: WoodEntryStats } = await woodRes.json();
       const saldosBody: { saldos: SaldosSummary } = await saldosRes.json();
+      const trazaBody: { traza: { total: number; incompletos: number; lineas: number[] } } =
+        await trazaRes.json();
       const saldos = saldosBody.saldos;
 
       const productosNegativos = saldos.productos.filter((p) => p.stock < 0).map((p) => p.producto);
@@ -72,6 +79,7 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         citesCount: wood.stats.citesCount,
         especiesEnNegativo: saldos.materiaPrima.especiesEnNegativo,
         stockNegativo: productosNegativos.length,
+        despachosSinTraza: trazaBody.traza.incompletos,
       };
 
       setData({
@@ -79,6 +87,7 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         score: ctpComplianceScore(counts),
         totalIngresos: wood.stats.totalCount,
         productosNegativos,
+        despachosSinTrazaLineas: trazaBody.traza.lineas,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

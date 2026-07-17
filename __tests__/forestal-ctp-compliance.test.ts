@@ -33,6 +33,7 @@ const sinAlertas: CtpComplianceCounts = {
   citesCount: 0,
   especiesEnNegativo: 0,
   stockNegativo: 0,
+  despachosSinTraza: 0,
 };
 
 describe("estaFueraDePlazo — debe espejar el SQL: (createdAt - entryDate) > 15 days", () => {
@@ -78,6 +79,13 @@ describe("ctpComplianceScore", () => {
     expect(ctpComplianceScore({ ...sinAlertas, citesCount: 7 })).toBe(100);
   });
 
+  /** ADR-135: el libro admite huecos por diseño y aún no hay UI para completar
+   *  la atribución post-alta — el gate real es que el certificado no se emite.
+   *  Cuando exista "editar atribución", promover a CATEGORIAS_QUE_RESTAN. */
+  it("despachosSinTraza NO resta (informativo): el certificado ya es el gate", () => {
+    expect(ctpComplianceScore({ ...sinAlertas, despachosSinTraza: 4 })).toBe(100);
+  });
+
   it("cada categoría corregible resta 5 por caso, con tope de 25", () => {
     expect(ctpComplianceScore({ ...sinAlertas, fueraPlazo: 1 })).toBe(95);
     expect(ctpComplianceScore({ ...sinAlertas, fueraPlazo: 5 })).toBe(75);
@@ -93,6 +101,7 @@ describe("ctpComplianceScore", () => {
         citesCount: 99,
         especiesEnNegativo: 99,
         stockNegativo: 99,
+        despachosSinTraza: 99,
       }),
     ).toBe(0);
   });

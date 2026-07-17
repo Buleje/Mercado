@@ -58,7 +58,7 @@ const withPeriod = (path: string, base: Record<string, string>, period: CtpPerio
   `${path}?${applyCtpPeriodParams(new URLSearchParams(base), period)}`;
 
 export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
-  const [ing, prod, desp, sal] = await Promise.all([
+  const [ing, prod, desp, sal, trz] = await Promise.all([
     getJson<{ entries?: Ingreso[]; stats?: WoodEntryStats }>(
       withPeriod("/api/admin/forestal/wood-entries", { limit: "1000", stats: "1" }, period),
       {},
@@ -66,12 +66,17 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
     getJson<{ entries?: CtpRow[] }>(withPeriod("/api/admin/forestal/ctp", { section: "produccion" }, period), {}),
     getJson<{ entries?: CtpRow[] }>(withPeriod("/api/admin/forestal/ctp", { section: "despacho" }, period), {}),
     getJson<{ saldos?: Saldos }>(withPeriod("/api/admin/forestal/ctp", { saldos: "1" }, period), {}),
+    getJson<{ traza?: { total: number; incompletos: number; lineas: number[] } }>(
+      withPeriod("/api/admin/forestal/ctp", { traza: "1" }, period),
+      {},
+    ),
   ]);
   const ingresos = ing.entries ?? [];
   const stats = ing.stats ?? null;
   const produccion = prod.entries ?? [];
   const despacho = desp.entries ?? [];
   const saldos = sal.saldos ?? null;
+  const traza = trz.traza ?? null;
 
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
@@ -121,6 +126,11 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
   kv("Especies CITES (requieren permiso)", citesN);
   kv("Productos con stock negativo (sobre-despacho)", stockNeg);
   kv("Especies con saldo negativo (sobre-consumo)", saldos?.materiaPrima.especiesEnNegativo ?? 0);
+  // ADR-135 D3: despachos que no podrían emitir certificado de trazabilidad.
+  kv(
+    "Despachos sin cadena de custodia completa",
+    traza ? `${traza.incompletos}${traza.incompletos > 0 ? ` (línea${traza.lineas.length === 1 ? "" : "s"} #${traza.lineas.join(", #")})` : ""}` : 0,
+  );
 
   // ── Ingresos ──
   const wi = wb.addWorksheet("Ingresos");

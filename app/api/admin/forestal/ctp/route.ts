@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
+import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
@@ -95,6 +96,10 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
   try {
     if (url.searchParams.get("saldos") === "1") {
       return NextResponse.json({ saldos: await ForestCtpDB.saldos(auth.tenantId, period) });
+    }
+    // ADR-135 D3: despachos del período que no podrían emitir certificado.
+    if (url.searchParams.get("traza") === "1") {
+      return NextResponse.json({ traza: await ForestCtpDespachoDB.trazabilidadDelPeriodo(auth.tenantId, period) });
     }
     const availableFor = url.searchParams.get("available");
     if (availableFor && (CTP_SECTIONS as readonly string[]).includes(availableFor)) {
