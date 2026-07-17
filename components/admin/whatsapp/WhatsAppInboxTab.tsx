@@ -12,11 +12,13 @@ import {
   Plus,
   X,
   Archive,
+  MailOpen,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WaConversationList from "./inbox/WaConversationList";
 import WaChatView from "./inbox/WaChatView";
 import WaCustomerCard from "./inbox/WaCustomerCard";
+import { WaLabelPicker } from "./inbox/WaLabels";
 import { useWhatsAppInbox } from "./inbox/useWhatsAppInbox";
 
 /** "519xxxxxxxx" → "+51 9xx xxx xxx". */
@@ -132,6 +134,9 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
     toggleBotPause,
     archivedPhones,
     toggleArchive,
+    labelsMap,
+    toggleLabel,
+    markUnreadAndClose,
     customerContext,
     draftContact,
     startConversation,
@@ -399,6 +404,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
             archivedCount={archivedPhones.length}
             showArchived={showArchived}
             onToggleShowArchived={() => setShowArchived((s) => !s)}
+            labelsMap={labelsMap}
           />
         </aside>
 
@@ -441,6 +447,19 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                     )}
                   </span>
                 </div>
+                {/* Dejar como no leída (recordatorio de volver) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    void markUnreadAndClose(selected.customerPhone);
+                    setMobileView("list");
+                  }}
+                  className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400"
+                  title="Dejar como no leída (queda resaltada en la bandeja)"
+                  aria-label="Dejar como no leída"
+                >
+                  <MailOpen className="h-4 w-4" />
+                </button>
                 {/* Archivar / desarchivar el hilo */}
                 {(() => {
                   const archived = archivedPhones.includes(selected.customerPhone);
@@ -452,7 +471,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                         if (!archived) setMobileView("list");
                       }}
                       className={cn(
-                        "ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+                        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                         archived
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
@@ -492,6 +511,13 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                   🤖💤 Bot pausado en este hilo — los mensajes llegan pero respondés vos
                 </div>
               )}
+              {/* Etiquetas de triage del hilo (compartidas entre cajeros) */}
+              <div className="border-b border-slate-200 bg-white px-4 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+                <WaLabelPicker
+                  value={labelsMap[selected.customerPhone] ?? []}
+                  onToggle={(id) => void toggleLabel(selected.customerPhone, id)}
+                />
+              </div>
               {/* Ficha CRM: pedidos + fiado del cliente (best-effort) */}
               <WaCustomerCard context={customerContext} />
               <WaChatView

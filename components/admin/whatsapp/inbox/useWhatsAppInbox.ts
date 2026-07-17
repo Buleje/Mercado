@@ -72,6 +72,11 @@ export function useWhatsAppInbox() {
   const [pausedPhones, setPausedPhones] = useState<string[]>([]);
   // Conversaciones archivadas (fuera de la lista principal)
   const [archivedPhones, setArchivedPhones] = useState<string[]>([]);
+  // Etiquetas de triage por teléfono ({ phone: ["pedido","vip"] })
+  const [labelsMap, setLabelsMap] = useState<Record<string, string[]>>({});
+  // Anti-carrera: si el usuario tocó etiquetas hace <5s, el poll NO pisa el
+  // estado optimista (el POST puede seguir en vuelo).
+  const labelsTouchedAt = useRef(0);
   // Ficha CRM del cliente del hilo abierto
   const [customerContext, setCustomerContext] = useState<WaCustomerContext | null>(null);
   // Multi-número: filtrar el inbox por un número del negocio (null = todos)
@@ -109,6 +114,7 @@ export function useWhatsAppInbox() {
         connection: WaConnection;
         pausedPhones?: string[];
         archivedPhones?: string[];
+        labelsMap?: Record<string, string[]>;
       };
       // Evitar pisar la lista si el usuario cambió el filtro durante el fetch
       if (numberFilterRef.current === filter) {
@@ -117,6 +123,9 @@ export function useWhatsAppInbox() {
         setConnection(json.connection);
         setPausedPhones(json.pausedPhones ?? []);
         setArchivedPhones(json.archivedPhones ?? []);
+        if (Date.now() - labelsTouchedAt.current > 5000) {
+          setLabelsMap(json.labelsMap ?? {});
+        }
         setConvsError(false);
       }
     } catch {
@@ -264,6 +273,50 @@ export function useWhatsAppInbox() {
     [doSend],
   );
 
+  /** Alterna una etiqueta de la conversación (optimista). */
+  const toggleLabel = useCallback(
+    async (phone: string, labelId: string) => {
+      const current = labelsMap[phone] ?? [];
+      const next = current.includes(labelId)
+        ? current.filter((l) => l !== labelId)
+        : [...current, labelId];
+      labelsTouchedAt.current = Date.now();
+      setLabelsMap((prev) => ({ ...prev, [phone]: next }));
+      try {
+        const res = await tenantFetch("/api/admin/whatsapp/labels", {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ phone, labels: next }),
+        });
+        const json = (await res.json().catch(() => ({}))) as {
+          labelsMap?: Record<string, string[]>;
+        };
+        if (res.ok && json.labelsMap) setLabelsMap(json.labelsMap);
+      } catch {
+        /* el próximo poll corrige */
+      }
+    },
+    [labelsMap],
+  );
+
+  /** "Dejar como no leída": resalta en la bandeja y cierra el hilo. */
+  const markUnreadAndClose = useCallback(async (phone: string) => {
+    setSelectedPhone(null);
+    setMessages([]);
+    setConversations((prev) =>
+      prev.map((c) => (c.customerPhone === phone ? { ...c, unread: Math.max(1, c.unread) } : c)),
+    );
+    try {
+      await tenantFetch("/api/admin/whatsapp/messages", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ phone, action: "unread" }),
+      });
+    } catch {
+      /* el próximo poll corrige */
+    }
+  }, []);
+
   /** Archiva/desarchiva una conversación (optimista). */
   const toggleArchive = useCallback(async (phone: string, archived: boolean) => {
     setArchivedPhones((prev) =>
@@ -353,6 +406,9 @@ export function useWhatsAppInbox() {
     toggleBotPause,
     archivedPhones,
     toggleArchive,
+    labelsMap,
+    toggleLabel,
+    markUnreadAndClose,
     customerContext,
     draftContact,
     startConversation,

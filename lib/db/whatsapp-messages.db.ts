@@ -190,6 +190,32 @@ export async function setArchived(
   return next;
 }
 
+// ── Etiquetas de triage por conversación ──────────────────────────────────────
+// Nuevo/Pedido/Pagado/Pendiente/Reclamo/VIP — compartidas entre cajeros.
+// PlatformSetting `wa-labels:{tenantId}` = { [customerPhone]: string[] }.
+
+function labelsKey(tenantId: string): string {
+  return `wa-labels:${tenantId}`;
+}
+
+export async function getLabelsMap(tenantId: string): Promise<Record<string, string[]>> {
+  const map = await PlatformSettingsDB.get<Record<string, string[]>>(labelsKey(tenantId));
+  return map && typeof map === "object" ? map : {};
+}
+
+export async function setConversationLabels(
+  tenantId: string,
+  customerPhone: string,
+  labels: string[],
+): Promise<Record<string, string[]>> {
+  const map = await getLabelsMap(tenantId);
+  const next = { ...map };
+  if (labels.length === 0) delete next[customerPhone];
+  else next[customerPhone] = labels;
+  await PlatformSettingsDB.set(labelsKey(tenantId), next, `wa-inbox:${tenantId}`);
+  return next;
+}
+
 export const WhatsAppMessagesDB = {
   /**
    * Lista de conversaciones agrupadas por customerPhone, ordenadas por el
@@ -316,6 +342,23 @@ export const WhatsAppMessagesDB = {
       });
       throw err;
     }
+  },
+
+  /**
+   * "Dejar como no leída": marca el ÚLTIMO entrante como no leído para que la
+   * conversación vuelva a resaltar en la bandeja (recordatorio de volver).
+   */
+  async markUnread(tenantId: string, customerPhone: string): Promise<number> {
+    const last = await prisma.whatsAppMessage.findFirst({
+      where: { tenantId, customerPhone, direction: "in" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+    if (!last) return 0;
+    await prisma.whatsAppMessage.update({ where: { id: last.id }, data: { read: false } });
+    invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    invalidate(`admin:stats:${tenantId}`);
+    return 1;
   },
 
   /** Marca como leídos todos los mensajes entrantes de una conversación. */

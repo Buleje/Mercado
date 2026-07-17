@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * PATCH /api/admin/whatsapp/messages — marcar conversación como leída.
- * Body: { phone }
+ * PATCH /api/admin/whatsapp/messages — marcar conversación como leída o
+ * "dejar como no leída" (recordatorio de volver). Body: { phone, action? }.
  */
 export async function PATCH(req: NextRequest) {
   const _rl = applyRateLimit(req, "GENEROUS", "admin-whatsapp-inbox");
@@ -55,13 +55,18 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const parsed = z.object({ phone: PhoneSchema }).safeParse(raw);
+  const parsed = z
+    .object({ phone: PhoneSchema, action: z.enum(["read", "unread"]).default("read") })
+    .safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: "phone requerido (solo dígitos)" }, { status: 400 });
   }
 
   try {
-    const count = await WhatsAppMessagesDB.markRead(auth.tenantId, parsed.data.phone);
+    const count =
+      parsed.data.action === "unread"
+        ? await WhatsAppMessagesDB.markUnread(auth.tenantId, parsed.data.phone)
+        : await WhatsAppMessagesDB.markRead(auth.tenantId, parsed.data.phone);
     return NextResponse.json({ ok: true, marked: count });
   } catch (e) {
     logger.error("[admin/whatsapp/messages] PATCH error", {

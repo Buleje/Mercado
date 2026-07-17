@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, MessageCircle, Bot, User, Archive } from "@buleje/design-system/icons";
+import { Search, MessageCircle, Bot, User, Archive, ArrowDownUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { WA_LABELS, WaLabelChips } from "./WaLabels";
 import type { WaConversation } from "./useWhatsAppInbox";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -35,6 +36,8 @@ function prettyPhone(phone: string): string {
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
+type SortMode = "recientes" | "no-leidos" | "nombre";
+
 interface Props {
   conversations: WaConversation[];
   selectedPhone: string | null;
@@ -44,9 +47,11 @@ interface Props {
   archivedCount?: number;
   showArchived?: boolean;
   onToggleShowArchived?: () => void;
+  /** Etiquetas por teléfono (chips en filas + filtro). */
+  labelsMap?: Record<string, string[]>;
 }
 
-/** Columna izquierda del inbox: buscador + lista de conversaciones. */
+/** Columna izquierda del inbox: buscador + orden + filtros + lista. */
 export default function WaConversationList({
   conversations,
   selectedPhone,
@@ -55,16 +60,39 @@ export default function WaConversationList({
   archivedCount = 0,
   showArchived = false,
   onToggleShowArchived,
+  labelsMap = {},
 }: Props) {
   const [search, setSearch] = useState("");
+  const [sortMode, setSortMode] = useState<SortMode>("recientes");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [labelFilter, setLabelFilter] = useState<string>("");
+
+  const totalUnread = useMemo(
+    () => conversations.filter((c) => c.unread > 0).length,
+    [conversations],
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return conversations;
-    return conversations.filter(
-      (c) => c.customerName.toLowerCase().includes(q) || c.customerPhone.includes(q),
-    );
-  }, [conversations, search]);
+    let list = conversations;
+    if (q) {
+      list = list.filter(
+        (c) => c.customerName.toLowerCase().includes(q) || c.customerPhone.includes(q),
+      );
+    }
+    if (unreadOnly) list = list.filter((c) => c.unread > 0);
+    if (labelFilter) {
+      list = list.filter((c) => (labelsMap[c.customerPhone] ?? []).includes(labelFilter));
+    }
+    // Ordenar (sobre copia — no mutar el estado del hook)
+    const sorted = [...list];
+    if (sortMode === "no-leidos") {
+      sorted.sort((a, b) => (b.unread > 0 ? 1 : 0) - (a.unread > 0 ? 1 : 0) || (a.lastAt < b.lastAt ? 1 : -1));
+    } else if (sortMode === "nombre") {
+      sorted.sort((a, b) => a.customerName.localeCompare(b.customerName, "es"));
+    }
+    return sorted;
+  }, [conversations, search, unreadOnly, labelFilter, labelsMap, sortMode]);
 
   return (
     <div className="flex h-full flex-col">
@@ -80,21 +108,65 @@ export default function WaConversationList({
             className="h-12 w-full rounded-2xl border-2 border-slate-200 bg-white pl-9 pr-3 text-base text-slate-900 outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           />
         </div>
-        {(archivedCount > 0 || showArchived) && (
+        {/* Clasificar: no leídos + etiqueta + archivadas */}
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
-            onClick={onToggleShowArchived}
+            onClick={() => setUnreadOnly((s) => !s)}
             className={cn(
-              "inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
-              showArchived
+              "inline-flex h-9 items-center gap-1 rounded-full border-2 px-3 text-sm font-bold transition",
+              unreadOnly
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-slate-200 text-slate-500 hover:border-primary/50 dark:border-slate-700 dark:text-slate-400",
             )}
           >
-            <Archive className="h-4 w-4" />
-            {showArchived ? "← Volver a la bandeja" : `Archivadas (${archivedCount})`}
+            No leídos{totalUnread > 0 ? ` (${totalUnread})` : ""}
           </button>
-        )}
+          <select
+            value={labelFilter}
+            onChange={(e) => setLabelFilter(e.target.value)}
+            aria-label="Filtrar por etiqueta"
+            className={cn(
+              "h-9 rounded-full border-2 bg-white px-2.5 text-sm font-bold outline-none transition dark:bg-slate-900",
+              labelFilter
+                ? "border-primary text-primary"
+                : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400",
+            )}
+          >
+            <option value="">Etiqueta: todas</option>
+            {WA_LABELS.map((l) => (
+              <option key={l.id} value={l.id}>{l.nombre}</option>
+            ))}
+          </select>
+          <span className="relative inline-flex items-center">
+            <ArrowDownUp className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden />
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+              aria-label="Ordenar conversaciones"
+              className="h-9 rounded-full border-2 border-slate-200 bg-white pl-8 pr-2.5 text-sm font-bold text-slate-500 outline-none transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+            >
+              <option value="recientes">Recientes</option>
+              <option value="no-leidos">No leídos 1º</option>
+              <option value="nombre">Nombre A-Z</option>
+            </select>
+          </span>
+          {(archivedCount > 0 || showArchived) && (
+            <button
+              type="button"
+              onClick={onToggleShowArchived}
+              className={cn(
+                "inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+                showArchived
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-slate-200 text-slate-500 hover:border-primary/50 dark:border-slate-700 dark:text-slate-400",
+              )}
+            >
+              <Archive className="h-4 w-4" />
+              {showArchived ? "← Bandeja" : `Archivadas (${archivedCount})`}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Lista (min-h-0: scroll interno, no empuja el contenedor) */}
@@ -106,8 +178,8 @@ export default function WaConversationList({
           <div className="flex flex-col items-center gap-2 p-8 text-center">
             <MessageCircle className="h-8 w-8 text-slate-300 dark:text-slate-600" />
             <p className="text-sm text-slate-500">
-              {search
-                ? "Nada coincide con tu búsqueda"
+              {search || unreadOnly || labelFilter
+                ? "Nada coincide con los filtros"
                 : "Cuando un cliente escriba a tu WhatsApp, la conversación aparece acá."}
             </p>
           </div>
@@ -135,13 +207,16 @@ export default function WaConversationList({
 
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
-                      <span
-                        className={cn(
-                          "truncate text-sm text-slate-900 dark:text-white",
-                          unread ? "font-bold" : "font-semibold",
-                        )}
-                      >
-                        {c.customerName !== "Cliente" ? c.customerName : prettyPhone(c.customerPhone)}
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span
+                          className={cn(
+                            "truncate text-sm text-slate-900 dark:text-white",
+                            unread ? "font-bold" : "font-semibold",
+                          )}
+                        >
+                          {c.customerName !== "Cliente" ? c.customerName : prettyPhone(c.customerPhone)}
+                        </span>
+                        <WaLabelChips labels={labelsMap[c.customerPhone] ?? []} />
                       </span>
                       <span
                         className={cn(
