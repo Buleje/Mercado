@@ -35,6 +35,17 @@ const FIELD_LABELS: Partial<Record<keyof CtpFicha, string>> = {
   nombreCtp: "Nombre del CTP", codigoCtp: "Código de CTP", ruc: "RUC", razonSocial: "Razón social",
 };
 
+/** Estado de vigencia de un permiso CITES según su fecha de vencimiento. */
+function permisoEstado(vencimiento: string): "vencido" | "por_vencer" | "vigente" | null {
+  if (!vencimiento) return null;
+  const v = new Date(`${vencimiento}T23:59:59`); // vence al final de ese día
+  if (Number.isNaN(v.getTime())) return null;
+  const dias = Math.floor((v.getTime() - Date.now()) / 86_400_000);
+  if (dias < 0) return "vencido";
+  if (dias <= 30) return "por_vencer";
+  return "vigente";
+}
+
 export default function CtpFichaEditor() {
   const [ficha, setFicha] = useState<CtpFicha>(emptyCtpFicha());
   const [draft, setDraft] = useState<CtpFicha>(emptyCtpFicha());
@@ -239,12 +250,19 @@ function FichaReadView({ ficha: f }: { ficha: CtpFicha }) {
           <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             <CardTitle as="h3" className="mb-3 text-sm font-bold text-[var(--text-primary)]">Permisos CITES</CardTitle>
             <ul className="space-y-1.5">
-              {f.citesPermisos.map((p, i) => (
-                <li key={i} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                  <span className="rounded-full bg-[var(--data-error-100)] px-2.5 py-0.5 text-xs font-bold text-[var(--data-error-700)]">{p.especie || "—"}</span>
-                  <span className="font-mono text-[var(--text-primary)]">{p.numero || "—"}{p.vencimiento ? ` · vence ${p.vencimiento}` : ""}</span>
-                </li>
-              ))}
+              {f.citesPermisos.map((p, i) => {
+                const estado = permisoEstado(p.vencimiento);
+                return (
+                  <li key={i} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="rounded-full bg-[var(--data-error-100)] px-2.5 py-0.5 text-xs font-bold text-[var(--data-error-700)]">{p.especie || "—"}</span>
+                    <span className="flex items-center gap-2">
+                      {estado === "vencido" && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">vencido</span>}
+                      {estado === "por_vencer" && <span className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">por vencer</span>}
+                      <span className="font-mono text-[var(--text-primary)]">{p.numero || "—"}{p.vencimiento ? ` · vence ${p.vencimiento}` : ""}</span>
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
