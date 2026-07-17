@@ -382,6 +382,43 @@ export const WhatsAppMessagesDB = {
     }
   },
 
+  /**
+   * Búsqueda global en el CONTENIDO de los mensajes (todas las conversaciones).
+   * Devuelve los últimos matches con su hilo para saltar directo.
+   */
+  async searchMessages(
+    tenantId: string,
+    q: string,
+  ): Promise<
+    Array<{
+      customerPhone: string;
+      customerName: string;
+      body: string;
+      direction: WaDirection;
+      createdAt: string;
+    }>
+  > {
+    const rows = await prisma.whatsAppMessage.findMany({
+      where: { tenantId, body: { contains: q, mode: "insensitive" } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        customerPhone: true,
+        customerName: true,
+        body: true,
+        direction: true,
+        createdAt: true,
+      },
+    });
+    return rows.map((r) => ({
+      customerPhone: r.customerPhone,
+      customerName: r.customerName,
+      body: r.body.slice(0, 120),
+      direction: r.direction as WaDirection,
+      createdAt: r.createdAt.toISOString(),
+    }));
+  },
+
   /** Mensaje del tenant que referencia un mediaId (tenancy del proxy de media). */
   async findByMediaId(
     tenantId: string,

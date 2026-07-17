@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, MessageCircle, Bot, User, Archive, ArrowDownUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import { WA_LABELS, WaLabelChips } from "./WaLabels";
 import type { WaConversation } from "./useWhatsAppInbox";
 
@@ -66,6 +67,33 @@ export default function WaConversationList({
   const [sortMode, setSortMode] = useState<SortMode>("recientes");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [labelFilter, setLabelFilter] = useState<string>("");
+
+  // Búsqueda global DENTRO de los mensajes (3+ chars, server-side, debounced)
+  const [msgHits, setMsgHits] = useState<
+    Array<{ customerPhone: string; customerName: string; body: string; createdAt: string }>
+  >([]);
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 3) {
+      setMsgHits([]);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const res = await tenantFetch(`/api/admin/whatsapp/search?q=${encodeURIComponent(q)}`);
+        const json = (await res.json().catch(() => ({}))) as { results?: typeof msgHits };
+        if (!cancelled) setMsgHits(json.results ?? []);
+      } catch {
+        /* sin resultados */
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+     
+  }, [search]);
 
   const totalUnread = useMemo(
     () => conversations.filter((c) => c.unread > 0).length,
@@ -256,6 +284,33 @@ export default function WaConversationList({
             );
           })}
         </ul>
+
+        {/* Matches dentro de mensajes ("¿quién me habló del arroz?") */}
+        {msgHits.length > 0 && (
+          <div className="border-t border-slate-200 dark:border-slate-700">
+            <p className="px-3 pb-1 pt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-slate-400">
+              En mensajes
+            </p>
+            <ul>
+              {msgHits.map((h, i) => (
+                <li key={`${h.customerPhone}-${i}`}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(h.customerPhone)}
+                    className="flex w-full flex-col gap-0.5 px-3 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  >
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {h.customerName !== "Cliente" ? h.customerName : prettyPhone(h.customerPhone)}
+                    </span>
+                    <span className="truncate text-[length:var(--ts-xs)] text-slate-500">
+                      “{h.body}”
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, Bot, AlertCircle, MessageCircle, FileText, Zap, ShoppingBag, Paperclip } from "@buleje/design-system/icons";
+import { Send, Loader2, Bot, AlertCircle, MessageCircle, FileText, Zap, ShoppingBag, Paperclip, Sparkles } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
+import { csrfHeaders } from "@/lib/csrf-client";
 import WaTemplatePicker from "./WaTemplatePicker";
 import WaProductPicker from "./WaProductPicker";
 import {
@@ -43,6 +45,8 @@ interface Props {
   phoneNumberId: string | null;
   /** Nombre del cliente — para armar respuestas rápidas ({nombre}). */
   customerName?: string;
+  /** Teléfono del cliente — para pedir sugerencias IA del hilo. */
+  customerPhone?: string;
   onSend: (body: string) => Promise<boolean>;
   onSendTemplate: (tpl: { name: string; language: string; params: string[] }) => Promise<boolean>;
   /** Compartir producto: imagen pública + caption con precio. */
@@ -61,12 +65,35 @@ export default function WaChatView({
   sendErrorCode,
   phoneNumberId,
   customerName,
+  customerPhone,
   onSend,
   onSendTemplate,
   onSendImageLink,
   onSendMediaFile,
 }: Props) {
   const [draft, setDraft] = useState("");
+  // Copiloto IA: 3 respuestas sugeridas on-demand (nunca se envían solas)
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggest, setLoadingSuggest] = useState(false);
+
+  async function fetchSuggestions() {
+    if (!customerPhone || loadingSuggest) return;
+    setLoadingSuggest(true);
+    setSuggestions([]);
+    try {
+      const res = await tenantFetch("/api/admin/whatsapp/suggest", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ phone: customerPhone }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { suggestions?: string[] };
+      if (res.ok && Array.isArray(json.suggestions)) setSuggestions(json.suggestions);
+    } catch {
+      /* sin sugerencias — el composer sigue normal */
+    } finally {
+      setLoadingSuggest(false);
+    }
+  }
   const [showTemplates, setShowTemplates] = useState(false);
   const [showQuick, setShowQuick] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
@@ -289,9 +316,43 @@ export default function WaChatView({
         </div>
       )}
 
+      {/* Sugerencias IA (click = queda en el composer para editar/enviar) */}
+      {suggestions.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto border-t border-slate-200 bg-white px-3 pt-2.5 dark:border-slate-700 dark:bg-slate-900">
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                setDraft(s);
+                setSuggestions([]);
+                draftRef.current?.focus();
+              }}
+              className="shrink-0 max-w-[280px] truncate rounded-full border-2 border-primary/40 bg-primary/5 px-3.5 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10"
+              title={s}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Composer */}
       <div className="border-t border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
         <div className="flex items-end gap-2">
+          <button
+            type="button"
+            onClick={() => void fetchSuggestions()}
+            disabled={!canSend || loadingSuggest}
+            className={cn(
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-primary/40 bg-primary/5 text-primary transition hover:bg-primary/10",
+              (!canSend || loadingSuggest) && "cursor-not-allowed opacity-40",
+            )}
+            aria-label="Sugerir respuesta con IA"
+            title="La IA lee el hilo y te propone 3 respuestas (vos elegís)"
+          >
+            {loadingSuggest ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+          </button>
           <button
             type="button"
             onClick={() => { setShowQuick((s) => !s); setShowTemplates(false); setShowProducts(false); }}

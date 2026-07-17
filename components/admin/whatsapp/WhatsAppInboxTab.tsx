@@ -17,8 +17,12 @@ import {
   VolumeX,
   Download,
   Timer,
+  ScrollText,
+  Loader2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
+import { csrfHeaders } from "@/lib/csrf-client";
 import WaConversationList from "./inbox/WaConversationList";
 import WaChatView from "./inbox/WaChatView";
 import WaCustomerCard from "./inbox/WaCustomerCard";
@@ -190,6 +194,29 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
 
   // Mobile: mostrar lista o chat (no ambos)
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+
+  // Resumen IA del hilo (para retomar conversaciones largas)
+  const [summary, setSummary] = useState<string | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  useEffect(() => setSummary(null), [selectedPhone]); // cambia el hilo → fuera resumen
+
+  async function fetchSummary(phone: string) {
+    if (loadingSummary) return;
+    setLoadingSummary(true);
+    try {
+      const res = await tenantFetch("/api/admin/whatsapp/summary", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ phone }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { summary?: string; error?: string };
+      setSummary(json.summary ?? json.error ?? "No se pudo generar el resumen.");
+    } catch {
+      setSummary("No se pudo generar el resumen.");
+    } finally {
+      setLoadingSummary(false);
+    }
+  }
 
   // Form "nueva conversación" (➕): teléfono + nombre
   const [showNewChat, setShowNewChat] = useState(false);
@@ -509,11 +536,22 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                     )}
                   </span>
                 </div>
+                {/* Resumen IA del hilo */}
+                <button
+                  type="button"
+                  onClick={() => void fetchSummary(selected.customerPhone)}
+                  disabled={loadingSummary}
+                  className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/5 text-primary transition hover:bg-primary/10 disabled:opacity-40"
+                  title="Resumen IA del hilo (qué pidió, montos, qué falta)"
+                  aria-label="Resumir conversación"
+                >
+                  {loadingSummary ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScrollText className="h-4 w-4" />}
+                </button>
                 {/* Exportar conversación (.txt) */}
                 <button
                   type="button"
                   onClick={() => exportThreadTxt(selected.customerName, selected.customerPhone, messages)}
-                  className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400"
                   title="Descargar la conversación (.txt)"
                   aria-label="Exportar conversación"
                 >
@@ -583,6 +621,23 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                   🤖💤 Bot pausado en este hilo — los mensajes llegan pero respondés vos
                 </div>
               )}
+              {/* Resumen IA (dismissible) */}
+              {summary && (
+                <div className="flex items-start gap-2 border-b border-primary/30 bg-primary/5 px-4 py-2">
+                  <ScrollText className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                  <p className="min-w-0 flex-1 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">
+                    {summary}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSummary(null)}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                    aria-label="Cerrar resumen"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               {/* Etiquetas de triage del hilo (compartidas entre cajeros) */}
               <div className="border-b border-slate-200 bg-white px-4 py-1.5 dark:border-slate-700 dark:bg-slate-900">
                 <WaLabelPicker
@@ -607,6 +662,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 sendErrorCode={sendErrorCode}
                 phoneNumberId={selected.phoneNumberId}
                 customerName={selected.customerName}
+                customerPhone={selected.customerPhone}
                 onSend={sendMessage}
                 onSendTemplate={sendTemplate}
                 onSendImageLink={sendImageLink}
