@@ -18,6 +18,8 @@ const esc = (v: unknown) =>
 const n4 = (v: number) => v.toFixed(4);
 
 export interface CertificadoDespacho {
+  /** id del despacho — target del QR de verificación pública. */
+  id: string;
   lineNo: number;
   entryDate: string;
   productType: string | null;
@@ -43,22 +45,31 @@ export interface CertificadoEmisor {
   ruc?: string | null;
 }
 
-export function printCertificadoTrazabilidad(
+export async function printCertificadoTrazabilidad(
   despacho: CertificadoDespacho,
   cadena: CertificadoCadena,
   emisor: CertificadoEmisor,
-): void {
+): Promise<void> {
   // Gate ADR-135 D3: sin cadena completa no hay certificado. Nunca se emite
   // un documento que afirme una trazabilidad que los datos no sostienen.
   if (!cadena.completa) {
     throw new Error("La cadena de custodia no está completa: no se puede emitir el certificado.");
   }
 
+  // QR → /verificar/despacho/[id]: el receptor escanea y contrasta la cadena
+  // EN VIVO contra el libro, sin confiar en el papel (mismo patrón que las
+  // etiquetas de trozas). QR real vía `qrcode`, como loth-labels.
+  const verifyUrl = `${window.location.origin}/verificar/despacho/${encodeURIComponent(despacho.id)}`;
+  const QR = (await import("qrcode")).default;
+  const qrDataUrl = await QR.toDataURL(verifyUrl, { margin: 1, width: 180, errorCorrectionLevel: "M" });
+
   const emitido = new Date();
   const fecha = emitido.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
   const hora = emitido.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
   const nroCert = `CTP-D${despacho.lineNo}-${emitido.getFullYear()}${String(emitido.getMonth() + 1).padStart(2, "0")}${String(emitido.getDate()).padStart(2, "0")}`;
-  const fechaDespacho = new Date(despacho.entryDate).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+  // timeZone UTC: entryDate es date-only a medianoche UTC — sin esto el
+  // certificado decía "28" cuando el libro registró "29" (off-by-one Lima).
+  const fechaDespacho = new Date(despacho.entryDate).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
   const totalGuias = new Set(cadena.corridas.flatMap((c) => c.guias)).size;
 
   const filas = cadena.corridas
@@ -95,9 +106,14 @@ export function printCertificadoTrazabilidad(
     .mono { font-family: monospace; font-variant-numeric: tabular-nums; }
     .right { text-align: right; }
     .cites { color: #b91c1c; font-weight: 700; }
-    .firma { margin-top: 60px; display: flex; justify-content: space-between; gap: 40px; }
+    .firma { margin-top: 48px; display: flex; justify-content: space-between; gap: 40px; }
     .firma div { flex: 1; text-align: center; border-top: 1px solid #374151; padding-top: 6px; font-size: 11px; color: #4b5563; }
-    .foot { margin-top: 28px; font-size: 9.5px; color: #9ca3af; border-top: 1px dashed #d1d5db; padding-top: 8px; }
+    .verif { margin-top: 22px; display: flex; align-items: center; gap: 14px; border: 1px dashed #14532d; border-radius: 8px; padding: 10px 14px; }
+    .verif img { width: 86px; height: 86px; }
+    .verif .vt { font-size: 11px; color: #374151; line-height: 1.5; }
+    .verif .vt b { color: #14532d; }
+    .verif .vu { font-family: monospace; font-size: 9px; color: #6b7280; word-break: break-all; }
+    .foot { margin-top: 20px; font-size: 9.5px; color: #9ca3af; border-top: 1px dashed #d1d5db; padding-top: 8px; }
   </style></head><body>
     <div class="head">
       <div>
@@ -139,6 +155,15 @@ export function printCertificadoTrazabilidad(
     <div class="firma">
       <div>Responsable del CTP</div>
       <div>Recibí conforme</div>
+    </div>
+
+    <div class="verif">
+      <img src="${qrDataUrl}" alt="QR de verificación" />
+      <div class="vt">
+        <b>Verificable en línea:</b> escaneá el QR para contrastar esta cadena de custodia
+        en vivo contra el Libro de Operaciones del establecimiento.
+        <div class="vu">${esc(verifyUrl)}</div>
+      </div>
     </div>
 
     <p class="foot">Documento interno de cadena de custodia generado desde el Libro de Operaciones CTP.

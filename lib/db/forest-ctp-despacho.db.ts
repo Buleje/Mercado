@@ -507,4 +507,27 @@ export class ForestCtpDespachoDB {
     lineas.sort((a, b) => a - b);
     return { total: despachos.length, incompletos: lineas.length, lineas };
   }
+
+  /**
+   * Verificación PÚBLICA de un despacho — target del QR del certificado
+   * (ADR-135 D3). Sin auth: el id es un cuid no adivinable y solo se expone
+   * la cadena de origen, NUNCA costos ni precios (mismo criterio que
+   * /verificar/[code] de trozas). Anulado ⇒ se dice, no se esconde.
+   */
+  static async verificacionPublica(tenantId: string, despachoEntryId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+
+    const despacho = await prisma.forestCtpEntry.findFirst({
+      where: { id: despachoEntryId, tenantId, section: "despacho", deletedAt: null },
+      select: {
+        id: true, lineNo: true, entryDate: true, status: true,
+        productType: true, speciesCommon: true, speciesScientific: true, cites: true,
+        quantity: true, unit: true, pieces: true, gtfNumber: true, destino: true,
+      },
+    });
+    if (!despacho) return null;
+
+    const trazabilidad = await ForestCtpDespachoDB.trazabilidadCompleta(tenantId, despachoEntryId);
+    return { despacho, trazabilidad };
+  }
 }
