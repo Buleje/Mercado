@@ -27,6 +27,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 
 const CACHE_PREFIX = "forest-ctp";
@@ -529,5 +530,94 @@ export class ForestCtpDespachoDB {
 
     const trazabilidad = await ForestCtpDespachoDB.trazabilidadCompleta(tenantId, despachoEntryId);
     return { despacho, trazabilidad };
+  }
+
+  /**
+   * Emite la GTF de SALIDA formal de un despacho: le asigna serie + correlativo
+   * a partir de la **serie autorizada por la ARFFS** (ficha del CTP), en lugar
+   * del texto libre que se tipeaba en `gtfNumber`. El CTP está habilitado a
+   * emitir su propia GTF de salida (FAQ GTF SERFOR); esto le da número trazable.
+   *
+   * El correlativo se saca DENTRO de la tx con LOCK sobre los despachos del
+   * tenant (el recurso disputado) para que dos emisiones concurrentes no repitan
+   * número — mismo patrón que `lineNo` (forest-ctp) y `loteCode` (forest-lote).
+   * Se deriva del MÁXIMO correlativo existente de esa serie (parseado del propio
+   * `gtfNumber`), así no hace falta una columna nueva ni una migración.
+   *
+   * Idempotente: si el despacho ya tiene una GTF de esta serie, la devuelve sin
+   * re-numerar (`yaEmitida:true`). NO exige cadena completa: la GTF ampara el
+   * transporte; el gate de trazabilidad total vive en el certificado (ADR-135 D3).
+   */
+  static async emitirGtf(
+    tenantId: string,
+    despachoEntryId: string,
+    user: string,
+  ): Promise<
+    | { ok: true; gtf: string; serie: string; correlativo: number; yaEmitida: boolean }
+    | { ok: false; reason: "serie_no_configurada" | "no_despacho" | "anulado" }
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!despachoEntryId) throw new Error("despachoEntryId is required");
+    if (!user?.trim()) throw new Error("user is required");
+
+    const ficha = await ForestCtpFichaDB.get(tenantId);
+    const serie = ficha.gtfSerie.trim();
+    if (!serie) return { ok: false, reason: "serie_no_configurada" };
+    // Escapar la serie: va a un RegExp y podría traer metacaracteres.
+    const escaped = serie.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`^${escaped}-(\\d{6})$`);
+
+    return prisma.$transaction(async (tx) => {
+      const desp = await tx.forestCtpEntry.findFirst({
+        where: { id: despachoEntryId, tenantId, deletedAt: null },
+        select: { id: true, section: true, status: true, lineNo: true, gtfNumber: true, productType: true, speciesCommon: true },
+      });
+      if (!desp || desp.section !== "despacho") return { ok: false as const, reason: "no_despacho" as const };
+      if (desp.status !== "registrado") return { ok: false as const, reason: "anulado" as const };
+
+      // Ya tiene una GTF formal de esta serie ⇒ devolverla, no re-numerar.
+      const already = desp.gtfNumber?.match(re);
+      if (already) {
+        return { ok: true as const, gtf: desp.gtfNumber!, serie, correlativo: parseInt(already[1], 10), yaEmitida: true };
+      }
+
+      // Lock de los despachos del tenant = serializa la asignación del correlativo.
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestCtpEntry"
+        WHERE "tenantId" = ${tenantId} AND "section" = 'despacho' AND "deletedAt" IS NULL
+        ORDER BY "id"
+        FOR UPDATE
+      `;
+      const rows = await tx.forestCtpEntry.findMany({
+        where: { tenantId, section: "despacho", deletedAt: null, gtfNumber: { startsWith: `${serie}-` } },
+        select: { gtfNumber: true },
+      });
+      let maxN = 0;
+      for (const r of rows) {
+        const m = r.gtfNumber?.match(re);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxN) maxN = n;
+        }
+      }
+      const correlativo = maxN + 1;
+      const gtf = `${serie}-${String(correlativo).padStart(6, "0")}`;
+
+      await tx.forestCtpEntry.updateMany({
+        where: { id: despachoEntryId, tenantId },
+        data: { gtfNumber: gtf },
+      });
+
+      auditCtp({
+        tenantId,
+        action: "ctp_gtf_emitir",
+        entity: "ForestCtpEntry",
+        entityId: despachoEntryId,
+        detail: `Emitió la GTF de salida ${gtf} para el despacho #${desp.lineNo} (${desp.speciesCommon ?? "—"} · ${desp.productType ?? "—"})`,
+        user,
+      });
+      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+      return { ok: true as const, gtf, serie, correlativo, yaEmitida: false };
+    }, CTP_TX_OPTS);
   }
 }

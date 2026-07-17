@@ -65,7 +65,7 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
           {fueraDePlazo && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-3 py-1 text-xs font-bold text-[var(--data-warning-700)]">
               <AlertCircle className="h-3.5 w-3.5" />
-              Registrado {dias} días después (plazo: {PLAZO_REGISTRO_DIAS})
+              Registrado {dias} días después (plazo: {PLAZO_REGISTRO_DIAS} días hábiles)
             </span>
           )}
         </div>

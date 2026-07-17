@@ -14,17 +14,21 @@ import { describe, it, expect } from "vitest";
 import {
   PLAZO_REGISTRO_DIAS,
   diasDeRegistro,
+  diasHabilesDeRegistro,
   estaFueraDePlazo,
   ctpComplianceScore,
   ctpComplianceTone,
   type CtpComplianceCounts,
 } from "@/lib/forestal/ctp-compliance";
 
-const BASE = new Date("2026-05-01T00:00:00.000Z");
-/** Ingreso registrado `horas` después de la operación. */
-const conRetraso = (horas: number) => ({
-  entryDate: BASE,
-  createdAt: new Date(BASE.getTime() + horas * 3_600_000),
+// 2026-06-01 es LUNES (getUTCDay=1); 2026-06-05 es VIERNES. Fechas ancla para
+// razonar días hábiles sin ambigüedad.
+const LUNES = new Date("2026-06-01T00:00:00.000Z");
+const VIERNES = new Date("2026-06-05T00:00:00.000Z");
+/** Ingreso operado en `base` y registrado `dias` calendario después. */
+const registrado = (base: Date, dias: number) => ({
+  entryDate: base,
+  createdAt: new Date(base.getTime() + dias * 86_400_000),
 });
 
 const sinAlertas: CtpComplianceCounts = {
@@ -36,36 +40,50 @@ const sinAlertas: CtpComplianceCounts = {
   despachosSinTraza: 0,
 };
 
-describe("estaFueraDePlazo — debe espejar el SQL: (createdAt - entryDate) > 15 days", () => {
-  it("justo en el plazo (15.0 días) NO está fuera", () => {
-    expect(estaFueraDePlazo(conRetraso(PLAZO_REGISTRO_DIAS * 24))).toBe(false);
+describe("estaFueraDePlazo — 2 días HÁBILES (RDE D000025-2023), espejo del SQL de stats().lateCount", () => {
+  it("las fechas ancla son lunes y viernes (sanity)", () => {
+    expect(LUNES.getUTCDay()).toBe(1);
+    expect(VIERNES.getUTCDay()).toBe(5);
   });
 
-  /** REGRESIÓN: con `diasDeRegistro(e) > 15` el floor daba `15 > 15` = false ⇒ el
-   *  badge de la tabla decía "en plazo" mientras el panel lo contaba como tarde. */
-  it("15 días + 1 hora SÍ está fuera (el floor decía que no — ese era el bug)", () => {
-    expect(estaFueraDePlazo(conRetraso(PLAZO_REGISTRO_DIAS * 24 + 1))).toBe(true);
+  it("lunes → registrado lunes (0 hábiles) NO está fuera", () => {
+    expect(diasHabilesDeRegistro(registrado(LUNES, 0))).toBe(0);
+    expect(estaFueraDePlazo(registrado(LUNES, 0))).toBe(false);
   });
 
-  it("15.5 días está fuera, aunque se muestre como '15d'", () => {
-    const e = conRetraso(15.5 * 24);
-    expect(estaFueraDePlazo(e)).toBe(true);
-    expect(diasDeRegistro(e)).toBe(15); // el número que se muestra va floored, para humanos
+  it("lunes → miércoles (2 hábiles) NO está fuera; jueves (3 hábiles) SÍ", () => {
+    expect(diasHabilesDeRegistro(registrado(LUNES, 2))).toBe(2); // mar, mié
+    expect(estaFueraDePlazo(registrado(LUNES, 2))).toBe(false);
+    expect(diasHabilesDeRegistro(registrado(LUNES, 3))).toBe(3); // + jue
+    expect(estaFueraDePlazo(registrado(LUNES, 3))).toBe(true);
   });
 
-  it("16 días está fuera y 3 días no", () => {
-    expect(estaFueraDePlazo(conRetraso(16 * 24))).toBe(true);
-    expect(estaFueraDePlazo(conRetraso(3 * 24))).toBe(false);
+  it("el fin de semana NO cuenta: viernes → martes siguiente son 2 hábiles (no 4)", () => {
+    // vie +3 = lun (1 hábil), +4 = mar (2), +5 = mié (3 → fuera)
+    expect(diasHabilesDeRegistro(registrado(VIERNES, 3))).toBe(1);
+    expect(diasHabilesDeRegistro(registrado(VIERNES, 4))).toBe(2);
+    expect(estaFueraDePlazo(registrado(VIERNES, 4))).toBe(false);
+    expect(diasHabilesDeRegistro(registrado(VIERNES, 5))).toBe(3);
+    expect(estaFueraDePlazo(registrado(VIERNES, 5))).toBe(true);
+  });
+
+  it("una semana entera = 5 hábiles (está fuera)", () => {
+    expect(diasHabilesDeRegistro(registrado(LUNES, 7))).toBe(5);
+    expect(estaFueraDePlazo(registrado(LUNES, 7))).toBe(true);
+  });
+
+  it("el número que se MUESTRA sigue siendo días calendario (floored)", () => {
+    expect(diasDeRegistro(registrado(LUNES, 3))).toBe(3);
   });
 
   it("fechas inválidas no marcan falsos positivos", () => {
     expect(estaFueraDePlazo({ entryDate: "no-es-fecha", createdAt: "tampoco" })).toBe(false);
-    expect(diasDeRegistro({ entryDate: "no-es-fecha", createdAt: "tampoco" })).toBe(0);
+    expect(diasHabilesDeRegistro({ entryDate: "no-es-fecha", createdAt: "tampoco" })).toBe(0);
   });
 
-  it("un registro anterior a la operación no da días negativos", () => {
-    expect(diasDeRegistro(conRetraso(-48))).toBe(0);
-    expect(estaFueraDePlazo(conRetraso(-48))).toBe(false);
+  it("un registro anterior a la operación no da días negativos ni fuera de plazo", () => {
+    expect(diasHabilesDeRegistro(registrado(LUNES, -2))).toBe(0);
+    expect(estaFueraDePlazo(registrado(LUNES, -2))).toBe(false);
   });
 });
 

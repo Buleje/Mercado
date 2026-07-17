@@ -19,8 +19,16 @@
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 
-/** Entidades del libro — coinciden con los modelos Prisma para poder cruzarlas. */
-export type CtpAuditEntity = "WoodEntry" | "ForestCtpEntry" | "ForestCtpConsumo" | "ForestProdLote";
+/** Entidades del libro — coinciden con los modelos Prisma para poder cruzarlas.
+ * `ForestCtpFicha` no es un modelo Prisma: la ficha legal del CTP vive en el KV
+ * `PlatformSetting` (key `ctp-ficha:{tenantId}`), pero se audita igual porque es
+ * la identidad legal que encabeza cada certificado, GTF y export ante SERFOR. */
+export type CtpAuditEntity =
+  | "WoodEntry"
+  | "ForestCtpEntry"
+  | "ForestCtpConsumo"
+  | "ForestProdLote"
+  | "ForestCtpFicha";
 
 /**
  * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
@@ -44,7 +52,11 @@ export type CtpAuditAction =
   | "ctp_lote_create"
   | "ctp_lote_miembros_set"
   | "ctp_lote_status"
-  | "ctp_lote_delete";
+  | "ctp_lote_delete"
+  // Ficha legal del CTP (identidad SERFOR — Código de CTP, registro ARFFS, TH)
+  | "ctp_ficha_update"
+  // GTF de salida formal (serie autorizada ARFFS + correlativo auto)
+  | "ctp_gtf_emitir";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no

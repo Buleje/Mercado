@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Banknote,
   FileCheck,
+  FileText,
   Link2,
   Loader2,
   Pencil,
@@ -30,6 +31,9 @@ import {
   Truck,
 } from "@buleje/design-system/icons";
 import { printCertificadoTrazabilidad } from "@/lib/forestal/ctp-certificado";
+import { printGtfSalida } from "@/lib/forestal/ctp-gtf-print";
+import { csrfHeaders } from "@/lib/csrf-client";
+import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
 
 export interface DespachoResumen {
@@ -94,6 +98,11 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  // GTF de salida formal: el N° puede cambiar (texto libre → serie-correlativo)
+  // al emitir, así que vive en estado local sembrado con el del despacho.
+  const [gtf, setGtf] = useState<string | null>(entry.gtfNumber);
+  const [gtfBusy, setGtfBusy] = useState<null | "emitir" | "imprimir">(null);
+  const [gtfError, setGtfError] = useState<string | null>(null);
 
   const unitLabel = entry.unit ? (UNIT_LABELS[entry.unit] ?? entry.unit) : "";
 
@@ -119,19 +128,75 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
     setPrinting(true);
     setPrintError(null);
     try {
-      // Razón social del emisor: se pide recién acá (no en cada apertura del modal).
-      const emisor = await fetch("/api/settings", { credentials: "include" })
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null) as { businessName?: string; ruc?: string } | null;
+      // Emisor = Ficha legal del CTP (Código CTP, ARFFS, dirección). Se pide recién
+      // acá (no en cada apertura del modal). Fallback a /api/settings para el nombre
+      // si la ficha todavía no se cargó.
+      const [ficha, settings] = await Promise.all([
+        fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch((err) => { console.warn("[ctp] ficha fetch failed", err); return null; }) as Promise<{ ficha?: CtpFicha } | null>,
+        fetch("/api/settings", { credentials: "include" })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch((err) => { console.warn("[ctp] settings fetch failed", err); return null; }) as Promise<{ businessName?: string; ruc?: string } | null>,
+      ]);
+      const f = ficha?.ficha;
+      const direccion = f ? [f.direccion, f.distrito, f.provincia, f.region].filter(Boolean).join(", ") : "";
       await printCertificadoTrazabilidad(
         { ...entry, unitLabel },
         traza,
-        { businessName: emisor?.businessName ?? null, ruc: emisor?.ruc ?? null },
+        {
+          businessName: f?.nombreCtp || f?.razonSocial || settings?.businessName || null,
+          ruc: f?.ruc || settings?.ruc || null,
+          codigoCtp: f?.codigoCtp || null,
+          arffs: f?.arffs || null,
+          direccion: direccion || null,
+        },
       );
     } catch (e) {
       setPrintError(e instanceof Error ? e.message : String(e));
     } finally {
       setPrinting(false);
+    }
+  }
+
+  async function emitirGtf() {
+    setGtfBusy("emitir");
+    setGtfError(null);
+    try {
+      const r = await fetch("/api/admin/forestal/ctp", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...csrfHeaders() },
+        credentials: "include",
+        body: JSON.stringify({ id: entry.id, action: "emitir_gtf" }),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(body.message ?? `HTTP ${r.status}`);
+      setGtf(body.gtf);
+    } catch (e) {
+      setGtfError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGtfBusy(null);
+    }
+  }
+
+  async function imprimirGtf() {
+    if (!gtf) return;
+    setGtfBusy("imprimir");
+    setGtfError(null);
+    try {
+      const ficha = (await fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)) as { ficha?: CtpFicha } | null;
+      if (!ficha?.ficha) throw new Error("No se pudo leer la Ficha del CTP.");
+      await printGtfSalida(
+        { ...entry, gtfNumber: gtf, unitLabel },
+        ficha.ficha,
+        traza ? { corridas: traza.corridas } : null,
+      );
+    } catch (e) {
+      setGtfError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGtfBusy(null);
     }
   }
 
@@ -295,7 +360,43 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
               )}
             </section>
 
-            {/* 4. Certificado — gate ADR-135 D3 */}
+            {/* 4. GTF de salida formal — serie autorizada ARFFS + correlativo auto */}
+            <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[var(--text-tertiary)]" />
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">GTF de salida</CardTitle>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">N° de guía</p>
+                  <p className="mt-0.5 font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{gtf || "— sin emitir —"}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void emitirGtf()}
+                    disabled={gtfBusy !== null}
+                    title="Asigna serie + correlativo desde la serie autorizada en la Ficha del CTP"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+                  >
+                    {gtfBusy === "emitir" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                    {gtf ? "Re-emitir" : "Emitir GTF"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void imprimirGtf()}
+                    disabled={!gtf || gtfBusy !== null}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {gtfBusy === "imprimir" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                    Imprimir GTF
+                  </button>
+                </div>
+              </div>
+              {gtfError && <p className="mt-2 text-xs font-bold text-[var(--data-error-700)]">{gtfError}</p>}
+            </section>
+
+            {/* 5. Certificado — gate ADR-135 D3 */}
             <div className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-4">
               <button
                 type="button"

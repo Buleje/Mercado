@@ -65,7 +65,7 @@ export interface WoodEntryStats {
   speciesCount: number;
   citesCount: number;
   citesVolumeM3: number;
-  /** Ingresos registrados fuera del plazo SERFOR (createdAt - entryDate > 15 días). */
+  /** Ingresos registrados fuera del plazo SERFOR (>2 días hábiles op→registro). */
   lateCount: number;
   byStatus: Record<WoodEntryStatus, number>;
 }

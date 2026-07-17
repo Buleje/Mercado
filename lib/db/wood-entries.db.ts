@@ -110,7 +110,8 @@ function buildListWhere(
 }
 
 /**
- * Condiciones SQL de "fuera de plazo" (`createdAt - entryDate > 15 días`).
+ * Condiciones SQL de "fuera de plazo" (días HÁBILES(createdAt - entryDate) > 2,
+ * RDE D000025-2023). El cálculo de días hábiles se agrega en `stats()`.
  * Prisma no expresa comparación columna-columna con su API fluida (mismo
  * caso que el low-stock de `analytics.db.ts`), así que se arma a mano con
  * `Prisma.sql` — placeholders reales ($1 $2…), nunca interpolación de string.
@@ -144,7 +145,7 @@ export interface WoodEntryStats {
   speciesCount: number;
   citesCount: number;
   citesVolumeM3: number;
-  /** Ingresos registrados fuera del plazo SERFOR (createdAt - entryDate > 15 días). */
+  /** Ingresos registrados fuera del plazo SERFOR (>2 días hábiles op→registro). */
   lateCount: number;
   byStatus: Record<WoodEntryStatus, number>;
 }
@@ -271,8 +272,21 @@ export class WoodEntriesDB {
     const where = buildListWhere(tenantId, periodFilters);
 
     const lateConditions = buildLateConditions(tenantId, periodFilters);
+    // Fuera de plazo = días HÁBILES(operación → registro) > PLAZO (2, RDE D000025-2023).
+    // Fórmula cerrada IDÉNTICA a `diasHabilesDeRegistro()` en ctp-compliance.ts:
+    //   n  = días calendario = GREATEST(0, floor(epoch(createdAt-entryDate)/86400))
+    //   w0 = isodow(entryDate)  ·  hábiles = floor(n/7)*5 + Σ_{i=1..n%7}[dow(i) ≤ 5]
+    // No descuenta feriados (ADR-137). entryDate es timestamp s/tz a medianoche UTC,
+    // así que epoch e isodow se calculan sobre el valor guardado (UTC), como el JS.
     lateConditions.push(
-      Prisma.sql`("createdAt" - "entryDate") > (${PLAZO_REGISTRO_DIAS} * interval '1 day')`,
+      Prisma.sql`(
+        (GREATEST(0, floor(extract(epoch from ("createdAt" - "entryDate")) / 86400)::int) / 7) * 5
+        + (
+          SELECT count(*)::int
+          FROM generate_series(1, GREATEST(0, floor(extract(epoch from ("createdAt" - "entryDate")) / 86400)::int) % 7) AS gi
+          WHERE ((extract(isodow from "entryDate")::int - 1 + gi) % 7) + 1 <= 5
+        )
+      ) > ${PLAZO_REGISTRO_DIAS}`,
     );
 
     const [agg, byStatusRows, speciesRows, citesAgg, lateRows] = await Promise.all([

@@ -64,7 +64,11 @@ const createSchema = z.object({
     .max(50)
     .optional(),
 });
-const patchSchema = z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) });
+const patchSchema = z.discriminatedUnion("action", [
+  z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) }),
+  // Emitir la GTF de salida formal (serie autorizada ARFFS + correlativo auto).
+  z.object({ id: z.string().trim().min(1), action: z.literal("emitir_gtf") }),
+]);
 
 /** `?from`/`?to` = instantes ISO del período (lib/forestal/ctp-period.ts). Inválido → sin límite. */
 function periodFromUrl(url: URL): { fromDate?: Date; toDate?: Date } {
@@ -158,6 +162,19 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return ctpValidationResponse(parsed.error);
   try {
+    if (parsed.data.action === "emitir_gtf") {
+      const result = await ForestCtpDespachoDB.emitirGtf(auth.tenantId, parsed.data.id, auth.username ?? "unknown");
+      if (!result.ok) {
+        const message =
+          result.reason === "serie_no_configurada"
+            ? "No hay serie de GTF configurada. Cargá la «Serie GTF autorizada» en la pestaña Ficha CTP."
+            : result.reason === "anulado"
+              ? "El despacho está anulado: no se puede emitir su GTF."
+              : "No se encontró la línea de despacho.";
+        return NextResponse.json({ error: result.reason, message }, { status: 422 });
+      }
+      return NextResponse.json({ gtf: result.gtf, correlativo: result.correlativo, yaEmitida: result.yaEmitida });
+    }
     return NextResponse.json({ entry: await ForestCtpDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown") });
   } catch (err) {
     logger.error("[ctp.PATCH] failed", { error: String(err), tenantId: auth.tenantId });

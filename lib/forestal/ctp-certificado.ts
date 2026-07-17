@@ -43,6 +43,10 @@ export interface CertificadoCadena {
 export interface CertificadoEmisor {
   businessName: string | null;
   ruc?: string | null;
+  /** Identidad legal SERFOR (Ficha del CTP) — le da peso fiscalizable al header. */
+  codigoCtp?: string | null;
+  arffs?: string | null;
+  direccion?: string | null;
 }
 
 export async function printCertificadoTrazabilidad(
@@ -119,6 +123,8 @@ export async function printCertificadoTrazabilidad(
       <div>
         <div class="emp">${esc(emisor.businessName || "Centro de Transformación Primaria")}</div>
         ${emisor.ruc ? `<div class="ruc">RUC ${esc(emisor.ruc)}</div>` : ""}
+        ${emisor.codigoCtp ? `<div class="ruc">Código de CTP: ${esc(emisor.codigoCtp)}${emisor.arffs ? ` · ${esc(emisor.arffs)}` : ""}</div>` : ""}
+        ${emisor.direccion ? `<div class="ruc">${esc(emisor.direccion)}</div>` : ""}
       </div>
       <div class="nro">Certificado N°<b>${esc(nroCert)}</b>${esc(fecha)} · ${esc(hora)}</div>
     </div>

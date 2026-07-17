@@ -21,6 +21,7 @@
 import { useMemo, useState } from "react";
 import {
   Boxes,
+  Building2,
   FileSpreadsheet,
   Loader2,
   PackageOpen,
@@ -30,14 +31,15 @@ import {
   Truck,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { exportarLibroCtp } from "@/lib/forestal/ctp-export";
+import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
 import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
 import CtpIngresosView from "./CtpIngresosView";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
+import CtpFichaEditor from "./CtpFichaEditor";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "saldos" | "cumplimiento";
+type CtpView = "ingresos" | "produccion" | "despacho" | "saldos" | "cumplimiento" | "ficha";
 
 const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
   { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
@@ -45,6 +47,7 @@ const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string
   { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto" },
   { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
   { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
+  { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
 ];
 
 export default function CTPLibroOperaciones() {
@@ -54,20 +57,20 @@ export default function CTPLibroOperaciones() {
   // El cierre mensual está a un click en el selector.
   const [periodKey, setPeriodKey] = useState<CtpPeriodKey>("trimestre");
   const [custom, setCustom] = useState<CtpCustomRange>({ from: "", to: "" });
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<null | "interno" | "oficial">(null);
   const [exportError, setExportError] = useState<string | null>(null);
 
   const period = useMemo(() => resolveCtpPeriod(periodKey, custom), [periodKey, custom]);
 
-  async function exportar() {
-    setExporting(true);
+  async function exportar(kind: "interno" | "oficial") {
+    setExporting(kind);
     setExportError(null);
     try {
-      await exportarLibroCtp(period);
+      await (kind === "oficial" ? exportarLibroCtpOficial(period) : exportarLibroCtp(period));
     } catch (err) {
       setExportError(err instanceof Error ? err.message : String(err));
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }
 
@@ -79,16 +82,28 @@ export default function CTPLibroOperaciones() {
         description="Registro de ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial)."
         icon={TreePine}
       >
-        <button
-          type="button"
-          onClick={exportar}
-          disabled={exporting}
-          title="Descarga el libro del período (Ingresos, Producción, Despacho, Saldos) en Excel"
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-        >
-          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
-          <span>Exportar libro</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportar("interno")}
+            disabled={exporting !== null}
+            title="Descarga el libro del período (Ingresos, Producción, Despacho, Saldos) en Excel — vista interna"
+            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+          >
+            {exporting === "interno" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+            <span>Exportar libro</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => exportar("oficial")}
+            disabled={exporting !== null}
+            title="Formato oficial LO-CTP (RDE D000025-2023-SERFOR): portada con datos del CTP + los 3 registros con columnas oficiales + existencias"
+            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
+          >
+            {exporting === "oficial" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+            <span>Formato oficial SERFOR</span>
+          </button>
+        </div>
       </AdminModuleHeader>
 
       <CtpPeriodPicker
@@ -136,6 +151,7 @@ export default function CTPLibroOperaciones() {
       {view === "despacho" && <CtpEntriesView section="despacho" period={period} />}
       {view === "saldos" && <CtpSaldosView period={period} />}
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
+      {view === "ficha" && <CtpFichaEditor />}
     </div>
   );
 }

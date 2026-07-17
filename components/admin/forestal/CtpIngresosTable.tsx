@@ -132,7 +132,7 @@ export default function CtpIngresosTable({
                     <div className="font-bold text-[var(--text-primary)]">{formatDate(e.entryDate)}</div>
                     {tarde && (
                       <div
-                        title={`Registrado ${diasDeRegistro(e)} días después de la operación (plazo ${PLAZO_REGISTRO_DIAS})`}
+                        title={`Registrado ${diasDeRegistro(e)} días después de la operación (plazo ${PLAZO_REGISTRO_DIAS} días hábiles)`}
                         className="text-xs font-bold text-[var(--data-warning-700)]"
                       >
                         fuera de plazo

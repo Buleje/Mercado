@@ -26,6 +26,7 @@ import {
   Snowflake,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
 
 export interface ProduccionResumen {
@@ -201,6 +202,17 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
               <MiniStat label="Atribuido (m³)" value={n4(costo.atribuidoM3)} tone={costo.atribuidoM3 > 0 ? "ok" : undefined} />
               <MiniStat label="Rendimiento" value={entry.rendimientoPct ? `${Number(entry.rendimientoPct).toFixed(1)}%` : "—"} />
             </div>
+
+            {(() => {
+              const { estado, ref } = evaluarRendimiento(entry.productType, entry.rendimientoPct != null ? Number(entry.rendimientoPct) : null);
+              return estado === "alto" ? (
+                <WarningAlert
+                  icon={AlertCircle}
+                  title="Rendimiento sobre el referencial SERFOR"
+                  description={`El referencial es ${ref}% (RDE D000259-2024). Un rendimiento muy por encima puede indicar sobre-declaración — verificá el volumen consumido y el producido antes de despachar.`}
+                />
+              ) : null;
+            })()}
 
             {/* 2. Las guías que alimentaron la corrida */}
             <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">

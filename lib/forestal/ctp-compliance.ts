@@ -12,17 +12,24 @@
  * pueden importar de acá sin problema.
  */
 
-/** SERFOR: el registro debe hacerse dentro de los 15 días de la actividad. */
-export const PLAZO_REGISTRO_DIAS = 15;
+/**
+ * SERFOR: el registro en el Libro de Operaciones debe hacerse dentro de los
+ * **2 días HÁBILES** de la operación (RDE N° D000025-2023-MIDAGRI-SERFOR-DE).
+ *
+ * Antes acá vivía `15` días CALENDARIO — era incorrecto. El cambio a días
+ * hábiles se hace en ESTE archivo y en el SQL de `WoodEntriesDB.stats()` en el
+ * MISMO commit: los dos comparten la definición para no contradecirse (ADR-137).
+ */
+export const PLAZO_REGISTRO_DIAS = 2;
 
 const MS_POR_DIA = 86_400_000;
 
 /**
- * Días entre la operación y su registro — para MOSTRAR ("registrado 18 días
- * después"). Va floored porque nadie lee "17.6 días".
+ * Días CALENDARIO entre la operación y su registro — sólo para MOSTRAR
+ * ("registrado 3 días después"). Va floored porque nadie lee "2.6 días".
  *
- * OJO: no uses `diasDeRegistro(e) > PLAZO_REGISTRO_DIAS` para decidir si algo
- * está fuera de plazo — usá `estaFueraDePlazo()`. Ver el porqué ahí abajo.
+ * OJO: no uses esto para decidir fuera-de-plazo (el plazo es en días HÁBILES) —
+ * usá `estaFueraDePlazo()` / `diasHabilesDeRegistro()`.
  */
 export function diasDeRegistro(entry: {
   entryDate: string | Date;
@@ -34,26 +41,56 @@ export function diasDeRegistro(entry: {
   return Math.max(0, Math.floor((registro - actividad) / MS_POR_DIA));
 }
 
+/** isodow en UTC: 1=Lunes … 7=Domingo (entryDate se guarda a medianoche UTC). */
+function isodowUTC(d: Date): number {
+  return ((d.getUTCDay() + 6) % 7) + 1;
+}
+
 /**
- * ¿El registro se hizo fuera del plazo SERFOR? Predicado ÚNICO — lo usan el
- * badge de la tabla, el detalle y el Excel.
+ * Días HÁBILES (lun–vie) transcurridos entre la operación y el registro.
  *
- * Debe coincidir EXACTO con el SQL de `WoodEntriesDB.stats().lateCount`:
- *   ("createdAt" - "entryDate") > (15 * interval '1 day')
+ * Fórmula cerrada sobre `(díasCalendario, isodowDeLaOperación)` — pura
+ * aritmética entera, para poder replicarla IDÉNTICA en el SQL de
+ * `WoodEntriesDB.stats().lateCount` y que el badge, el panel y el Excel nunca
+ * digan cosas distintas ante un fiscalizador (la lección del fuera-de-plazo).
  *
- * Por eso compara milisegundos y NO `diasDeRegistro(e) > 15`: ese floor hacía
- * que un ingreso a 15.5 días fuera "en plazo" para la tabla y "fuera de plazo"
- * para el panel y el Excel — el mismo módulo contradiciéndose en la cifra que
- * se le muestra a un fiscalizador.
+ * ⚠️ NO descuenta feriados nacionales (limitación conocida, ADR-137): un
+ * registro tardío sólo por un feriado puede marcarse. Es una advertencia del
+ * score, no un bloqueo.
+ */
+export function diasHabilesDeRegistro(entry: {
+  entryDate: string | Date;
+  createdAt: string | Date;
+}): number {
+  const actividad = new Date(entry.entryDate);
+  const registro = new Date(entry.createdAt);
+  const s = actividad.getTime();
+  const e = registro.getTime();
+  if (Number.isNaN(s) || Number.isNaN(e) || e <= s) return 0;
+  const n = Math.floor((e - s) / MS_POR_DIA); // días calendario (entryDate = medianoche UTC)
+  const w0 = isodowUTC(actividad);
+  const full = Math.floor(n / 7);
+  const rem = n % 7;
+  let count = full * 5;
+  for (let i = 1; i <= rem; i++) {
+    const dow = ((w0 - 1 + i) % 7) + 1;
+    if (dow <= 5) count++;
+  }
+  return count;
+}
+
+/**
+ * ¿El registro se hizo fuera del plazo SERFOR (2 días hábiles)? Predicado ÚNICO
+ * — lo usan el badge de la tabla, el detalle y el Excel.
+ *
+ * Debe coincidir EXACTO con el SQL de `WoodEntriesDB.stats().lateCount`, que
+ * calcula los mismos días hábiles con la misma fórmula cerrada.
  */
 export function estaFueraDePlazo(entry: {
   entryDate: string | Date;
   createdAt: string | Date;
 }): boolean {
-  const actividad = new Date(entry.entryDate).getTime();
-  const registro = new Date(entry.createdAt).getTime();
-  if (Number.isNaN(actividad) || Number.isNaN(registro)) return false;
-  return registro - actividad > PLAZO_REGISTRO_DIAS * MS_POR_DIA;
+  return diasHabilesDeRegistro(entry) > PLAZO_REGISTRO_DIAS;
 }
 
 /** Las 6 alertas de cumplimiento del período — las mismas que exporta el Excel. */

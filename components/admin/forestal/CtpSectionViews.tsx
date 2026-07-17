@@ -15,6 +15,7 @@ import { StatCard, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpEntryForm from "./CtpEntryForm";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
@@ -187,7 +188,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
                   <>
                     <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n4(e.volumeInputM3)}</Td>
                     <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(e.quantity)} <span className="text-xs font-normal text-[var(--text-tertiary)]">{e.unit}</span></Td>
-                    <Td className="text-right"><span className="font-mono text-xs font-bold tabular-nums text-[var(--data-info-700)]">{e.rendimientoPct ? `${Number(e.rendimientoPct).toFixed(1)}%` : "—"}</span></Td>
+                    <Td className="text-right"><RendimientoCell productType={e.productType} rendimientoPct={e.rendimientoPct} /></Td>
                   </>
                 ) : (
                   <>
@@ -306,7 +307,7 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--text-tertiary)]">Balance de planta en <strong className="text-[var(--text-secondary)]">{period.label}</strong>: materia prima que entra vs. producto que sale.</p>
+        <p className="text-sm text-[var(--text-tertiary)]"><strong className="text-[var(--text-secondary)]">Existencias del Libro (LO-CTP)</strong> en {period.label}: materia prima que entra vs. producto que sale. Es el saldo que se declara ante SERFOR — va en la hoja «Existencias» del export oficial.</p>
         <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
       </div>
 
@@ -367,6 +368,17 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
                   </tr>
                 ))}
               </tbody>
+              {data.porEspecie.length > 0 && (
+                <tfoot>
+                  <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
+                    <Td className="text-[var(--text-primary)]">Total ({data.porEspecie.length} especie{data.porEspecie.length === 1 ? "" : "s"})</Td>
+                    <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(mp.ingresoM3)}</Td>
+                    <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(mp.consumidoM3)}</Td>
+                    <Td className="text-right"><span className={`font-mono tabular-nums ${mp.saldoM3 < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}`}>{n2(mp.saldoM3)}</span></Td>
+                    <Td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">{mp.pendienteM3 > 0 ? n2(mp.pendienteM3) : "—"}</Td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
             {data.porEspecie.length === 0 && <div className="p-10 text-center text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-3 h-9 w-9 opacity-30" /><p className="text-sm">Sin movimientos de madera en {period.label}.</p></div>}
           </div>
@@ -394,6 +406,26 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
       )}
       {loading && !data && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando saldos…</p></div>}
     </div>
+  );
+}
+
+/** Celda de rendimiento con alerta de sobre-declaración vs. el referencial SERFOR. */
+function RendimientoCell({ productType, rendimientoPct }: { productType: string | null; rendimientoPct: string | null }) {
+  const pct = rendimientoPct != null ? Number(rendimientoPct) : null;
+  const { estado, ref } = evaluarRendimiento(productType, pct);
+  const alto = estado === "alto";
+  return (
+    <span className="inline-flex items-center justify-end gap-1">
+      {alto && (
+        <AlertCircle
+          className="h-3.5 w-3.5 text-[var(--data-warning-600)]"
+          aria-label={`Rendimiento sobre el referencial SERFOR (${ref}%): revisá que no haya sobre-declaración`}
+        />
+      )}
+      <span className={`font-mono text-xs font-bold tabular-nums ${alto ? "text-[var(--data-warning-700)]" : "text-[var(--data-info-700)]"}`}>
+        {pct != null ? `${pct.toFixed(1)}%` : "—"}
+      </span>
+    </span>
   );
 }
 
