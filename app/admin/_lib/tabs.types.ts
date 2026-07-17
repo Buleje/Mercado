@@ -75,6 +75,7 @@ export type Tab =
   // Estos tabs SOLO aparecen si el tenant tiene la TenantFeatureFlag
   // `spec:<vertical>:<modulo>` habilitada por superadmin.
   | "ctp-libro-operaciones"  // Forestal: LOE-CTP SERFOR
+  | "forestal-lotes"         // Forestal: Lotes de producción/comercialización (ADR-136)
   | "loth-libro-operaciones" // Forestal: LO-TH Títulos Habilitantes (ADR-125)
   | "forestal-herramientas"  // Forestal: Herramientas (cubicador por voz, etc.)
   | "cacao-acopio"; // Agrícola: Acopio & Beneficio de Cacao (ADR-128)
@@ -136,8 +137,9 @@ export const VALID_TABS: readonly Tab[] = [
   "socio-members",
   "lives-admin",
   "leads-funnel",
-  // Especializaciones (ADR-124 / ADR-125 / ADR-128)
+  // Especializaciones (ADR-124 / ADR-125 / ADR-128 / ADR-136)
   "ctp-libro-operaciones",
+  "forestal-lotes",
   "loth-libro-operaciones",
   "forestal-herramientas",
   "cacao-acopio",

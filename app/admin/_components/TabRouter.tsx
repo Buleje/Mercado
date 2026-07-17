@@ -61,6 +61,8 @@ const RecetasModule             = dynamic(() => import("@/components/admin/Recet
 const DropshipModule            = dynamic(() => import("@/components/admin/unified/DropshipModule"),     { loading: TabSpinner });
 // ADR-124 — Especialización forestal CTP
 const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/forestal/CTPLibroOperaciones"), { loading: TabSpinner });
+// ADR-136 — Lotes de producción / comercialización forestal
+const ForestLotesModule         = dynamic(() => import("@/components/admin/forestal/ForestLotesModule"), { loading: TabSpinner });
 // ADR-125 — Especialización forestal Títulos Habilitantes (LO-TH)
 const LothLibroOperaciones      = dynamic(() => import("@/components/admin/forestal/LothLibroOperaciones"), { loading: TabSpinner });
 const ForestalHerramientas      = dynamic(() => import("@/components/admin/forestal/ForestalHerramientas"), { loading: TabSpinner });
@@ -224,6 +226,7 @@ export function TabRouter({
   // El módulo se renderiza siempre que el tab esté en el sidebar (gating en
   // sidebar pendiente Phase 4 — useEnabledSpecs hook).
   if (tab === "ctp-libro-operaciones") return <CTPLibroOperaciones />;
+  if (tab === "forestal-lotes") return <ForestLotesModule />;
   if (tab === "loth-libro-operaciones") return <LothLibroOperaciones />;
   if (tab === "forestal-herramientas") return <ForestalHerramientas />;
   if (tab === "cacao-acopio") return <CacaoAcopio />;

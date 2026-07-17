@@ -20,7 +20,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 
 /** Entidades del libro — coinciden con los modelos Prisma para poder cruzarlas. */
-export type CtpAuditEntity = "WoodEntry" | "ForestCtpEntry" | "ForestCtpConsumo";
+export type CtpAuditEntity = "WoodEntry" | "ForestCtpEntry" | "ForestCtpConsumo" | "ForestProdLote";
 
 /**
  * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
@@ -39,7 +39,12 @@ export type CtpAuditAction =
   // Atribución de origen y costeo — lo más sensible del módulo
   | "ctp_consumos_set"
   | "ctp_origenes_set"
-  | "ctp_costo_congelar";
+  | "ctp_costo_congelar"
+  // Lotes de producción / comercialización (ADR-136)
+  | "ctp_lote_create"
+  | "ctp_lote_miembros_set"
+  | "ctp_lote_status"
+  | "ctp_lote_delete";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no

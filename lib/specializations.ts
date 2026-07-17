@@ -37,6 +37,7 @@ export interface Specialization {
 
 export type SpecializationKey =
   | "spec:forestal:ctp-libro"
+  | "spec:forestal:lotes"
   | "spec:forestal:loth-libro"
   | "spec:forestal:gtf-emisor"
   | "spec:forestal:herramientas"
@@ -52,6 +53,17 @@ export const SPECIALIZATIONS: Record<SpecializationKey, Specialization> = {
     description:
       "Registra ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial).",
     moduleId: "ctp-libro-operaciones",
+    recommendedIndustry: "madereria",
+    status: "available",
+  },
+  "spec:forestal:lotes": {
+    key: "spec:forestal:lotes",
+    vertical: "forestal",
+    name: "Lotes de Producción",
+    description:
+      "Agrupa corridas de producción del CTP en lotes comerciales con código, grado de calidad, estado y cadena de custodia heredada. Certificado y QR verificable por lote. Requiere el Libro CTP.",
+    moduleId: "forestal-lotes",
+    requires: ["spec:forestal:ctp-libro"],
     recommendedIndustry: "madereria",
     status: "available",
   },

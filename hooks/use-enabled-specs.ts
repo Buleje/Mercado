@@ -199,6 +199,7 @@ export function broadcastSpecsChanged(payload?: {
  */
 export const SPEC_GATED_MODULE_IDS = new Set<string>([
   "ctp-libro-operaciones",
+  "forestal-lotes",
   "loth-libro-operaciones",
   "gtf-emisor",
   "forestal-herramientas",

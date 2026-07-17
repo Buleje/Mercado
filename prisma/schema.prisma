@@ -5326,6 +5326,10 @@ model ForestCtpEntry {
   origenes ForestCtpDespachoOrigen[] @relation("DespachoOrigenDespacho")
   salidas  ForestCtpDespachoOrigen[] @relation("DespachoOrigenProduccion")
 
+  /// En qué lotes comerciales se empaquetó esta corrida (ADR-136).
+  /// Invariante L1 (Σ miembros ≤ quantity) impide empaquetar más de lo producido.
+  loteMiembros ForestProdLoteMiembro[] @relation("LoteMiembroProduccion")
+
   @@index([tenantId, section, entryDate(sort: Desc)])
   @@index([tenantId, gtfNumber])
   @@index([deletedAt])
@@ -5394,6 +5398,87 @@ model ForestCtpConsumo {
   @@unique([ctpEntryId, woodEntryId]) // un ingreso aparece 1 vez por línea: se suma, no se duplica
   @@index([ctpEntryId])
   @@index([tenantId, woodEntryId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Lotes de producción / comercialización forestal (ADR-136)
+// Capa COMERCIAL sobre el CTP: agrupa corridas de producción ya hechas en un
+// lote con código, grado de calidad y estado — la unidad que un comprador o
+// exportador referencia. Hereda la cadena de custodia de sus corridas (cada
+// corrida → sus guías de ingreso vía ForestCtpConsumo), así que un lote puede
+// certificar su origen igual que un despacho.
+//
+// Frontera con el despacho (v1): el lote es organizativo/comercial; NO es un
+// segundo sistema de stock que compita con ForestCtpDespachoOrigen. La única
+// invariante es L1 (mirror de I5): Σ miembros(corrida) ≤ corrida.quantity — no
+// se puede empaquetar más de lo que una corrida produjo. El "disponible para
+// lote" descuenta lo ya puesto en OTROS lotes (no en despachos) — despacho por
+// lote es un follow-up que unificaría ambos reclamos.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Lote comercial de producto forestal terminado.
+model ForestProdLote {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Correlativo legible por tenant: L-2026-001. Único por tenant.
+  loteCode String
+
+  productType       String? // producto terminado (Madera aserrada, etc.)
+  speciesCommon     String?
+  speciesScientific String?
+  cites             Boolean @default(false)
+  unit              String  @default("m3") // m3 | kg | pt | unidad
+
+  /// Grado de calidad comercial (A/B/C/Exportación) — libre, opcional.
+  grade   String?
+  /// Comprador o destino comercial del lote.
+  destino String?
+
+  /// abierto = admite miembros · cerrado = congelado para comercializar ·
+  /// despachado = ya salió · anulado = soft-cancel con motivo (no se borra).
+  status         String    @default("abierto")
+  annulledReason String?
+  notes          String?
+  closedAt       DateTime?
+
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  miembros ForestProdLoteMiembro[]
+
+  @@unique([tenantId, loteCode])
+  @@index([tenantId, status])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, createdAt(sort: Desc)])
+}
+
+/// Puente N:M lote ↔ corrida de producción. Cuánto de ESA corrida entró en ESE
+/// lote. La invariante L1 (Σ miembros por corrida ≤ corrida.quantity) se valida
+/// app-level con lock sobre la corrida (el recurso disputado), igual que I5.
+model ForestProdLoteMiembro {
+  id       String @id @default(cuid())
+  tenantId String // denormalizado — regla 3 + detección de fuga
+
+  loteId String
+  lote   ForestProdLote @relation(fields: [loteId], references: [id], onDelete: Cascade)
+
+  produccionEntryId String
+  produccion        ForestCtpEntry @relation("LoteMiembroProduccion", fields: [produccionEntryId], references: [id], onDelete: Restrict)
+
+  /// Cantidad de la corrida empaquetada en el lote. NOT NULL, > 0.
+  /// Decimal(14,4) = la precisión de ForestCtpEntry.quantity que la acota.
+  quantity Decimal @db.Decimal(14, 4)
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([loteId, produccionEntryId]) // una corrida 1 vez por lote: se suma, no se duplica
+  @@index([loteId])
+  @@index([tenantId, produccionEntryId])
 }
 
 // ─── Especialización AGRÍCOLA · Cacao (ADR-128) ────────────────────────────────
