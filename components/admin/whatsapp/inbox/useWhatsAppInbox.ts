@@ -71,6 +71,10 @@ export function useWhatsAppInbox() {
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
   const [messages, setMessages] = useState<WaMessage[]>([]);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
+  // Conversación NUEVA (aún sin mensajes): contacto elegido a mano por el operador
+  const [draftContact, setDraftContact] = useState<{ phone: string; name: string } | null>(null);
+  const draftRef = useRef<{ phone: string; name: string } | null>(null);
+  draftRef.current = draftContact;
 
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -156,6 +160,18 @@ export function useWhatsAppInbox() {
     [loadMessages, markRead],
   );
 
+  /**
+   * Inicia un chat con un número que todavía no escribió (estilo ➕ de WhatsApp).
+   * El hilo queda "borrador" hasta que sale el primer mensaje/plantilla.
+   */
+  const startConversation = useCallback(
+    (phone: string, name: string) => {
+      setDraftContact({ phone, name: name.trim() || "Cliente" });
+      selectConversation(phone);
+    },
+    [selectConversation],
+  );
+
   /** POST a /send con texto libre o plantilla; maneja errores y refresca. */
   const doSend = useCallback(
     async (payload: Record<string, unknown>): Promise<boolean> => {
@@ -166,12 +182,14 @@ export function useWhatsAppInbox() {
       setSendErrorCode(null);
       try {
         const conv = conversations.find((c) => c.customerPhone === phone);
+        // Conversación nueva: usar el nombre del borrador (aún no está en la lista)
+        const draft = draftRef.current?.phone === phone ? draftRef.current : null;
         const res = await tenantFetch("/api/admin/whatsapp/send", {
           method: "POST",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             phone,
-            customerName: conv?.customerName,
+            customerName: conv?.customerName ?? draft?.name,
             // Multi-número: responder por el mismo número por el que habla el cliente
             phoneNumberId: conv?.phoneNumberId,
             ...payload,
@@ -283,6 +301,8 @@ export function useWhatsAppInbox() {
     sendErrorCode,
     pausedPhones,
     toggleBotPause,
+    draftContact,
+    startConversation,
     refresh: loadConversations,
   };
 }

@@ -9,6 +9,8 @@ import {
   AlertCircle,
   Settings,
   Bot,
+  Plus,
+  X,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WaConversationList from "./inbox/WaConversationList";
@@ -21,6 +23,17 @@ function prettyPhone(phone: string): string {
     return `+51 ${phone.slice(2, 5)} ${phone.slice(5, 8)} ${phone.slice(8)}`;
   }
   return `+${phone}`;
+}
+
+/**
+ * Normaliza el teléfono tipeado a E.164 sin + (formato del webhook).
+ * "917013738" (9 dígitos PE) → "51917013738"; internacional se acepta tal cual.
+ */
+function normalizePhoneInput(raw: string): string | null {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 9 && digits.startsWith("9")) return `51${digits}`;
+  if (digits.length >= 8 && digits.length <= 15) return digits;
+  return null;
 }
 
 /**
@@ -115,6 +128,8 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
     sendErrorCode,
     pausedPhones,
     toggleBotPause,
+    draftContact,
+    startConversation,
   } = useWhatsAppInbox();
 
   // Bug fix: altura real disponible (el calc fijo escondía el composer)
@@ -123,10 +138,44 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
   // Mobile: mostrar lista o chat (no ambos)
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
-  const selected = useMemo(
-    () => conversations.find((c) => c.customerPhone === selectedPhone) ?? null,
-    [conversations, selectedPhone],
-  );
+  // Form "nueva conversación" (➕): teléfono + nombre
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [newPhone, setNewPhone] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newPhoneError, setNewPhoneError] = useState(false);
+
+  const selected = useMemo(() => {
+    const found = conversations.find((c) => c.customerPhone === selectedPhone);
+    if (found) return found;
+    // Conversación nueva sin mensajes aún: hilo sintético desde el borrador
+    if (draftContact && draftContact.phone === selectedPhone) {
+      return {
+        customerPhone: draftContact.phone,
+        customerName: draftContact.name,
+        phoneNumberId: numbers.find((n) => n.isActive)?.phoneNumberId ?? "",
+        lastMessage: "",
+        lastDirection: "out" as const,
+        lastSentBy: "admin" as const,
+        lastAt: "",
+        unread: 0,
+      };
+    }
+    return null;
+  }, [conversations, selectedPhone, draftContact, numbers]);
+
+  function handleStartNewChat() {
+    const phone = normalizePhoneInput(newPhone);
+    if (!phone) {
+      setNewPhoneError(true);
+      return;
+    }
+    setNewPhoneError(false);
+    startConversation(phone, newName);
+    setShowNewChat(false);
+    setNewPhone("");
+    setNewName("");
+    setMobileView("chat");
+  }
   const totalUnread = useMemo(
     () => conversations.reduce((acc, c) => acc + c.unread, 0),
     [conversations],
@@ -164,6 +213,16 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {connected && (
+            <button
+              type="button"
+              onClick={() => setShowNewChat((s) => !s)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-bold text-white transition hover:opacity-90"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva conversación
+            </button>
+          )}
           {connected ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-3 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--data-success-700)]">
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -181,6 +240,68 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           )}
         </div>
       </header>
+
+      {/* Form nueva conversación (➕) */}
+      {showNewChat && (
+        <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+          <div className="min-w-[220px] flex-1">
+            <label htmlFor="wa-new-phone" className="mb-1 block text-[length:var(--ts-xs)] font-bold text-slate-500">
+              Número de WhatsApp
+            </label>
+            <input
+              id="wa-new-phone"
+              type="tel"
+              value={newPhone}
+              onChange={(e) => { setNewPhone(e.target.value); setNewPhoneError(false); }}
+              onKeyDown={(e) => { if (e.key === "Enter") handleStartNewChat(); }}
+              placeholder="917 013 738 (agrega 51 si no es Perú)"
+              className={cn(
+                "h-12 w-full rounded-2xl border-2 bg-white px-4 text-base text-slate-900 outline-none transition focus:border-primary dark:bg-slate-950 dark:text-white",
+                newPhoneError
+                  ? "border-[var(--data-error-500)]"
+                  : "border-slate-200 dark:border-slate-700",
+              )}
+            />
+            {newPhoneError && (
+              <p className="mt-1 text-[length:var(--ts-xs)] font-semibold text-[var(--data-error-500)]">
+                Número inválido — 9 dígitos (Perú) o internacional con código de país
+              </p>
+            )}
+          </div>
+          <div className="min-w-[180px] flex-1">
+            <label htmlFor="wa-new-name" className="mb-1 block text-[length:var(--ts-xs)] font-bold text-slate-500">
+              Nombre (opcional)
+            </label>
+            <input
+              id="wa-new-name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleStartNewChat(); }}
+              placeholder="Juan Pérez"
+              className="h-12 w-full rounded-2xl border-2 border-slate-200 bg-white px-4 text-base text-slate-900 outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleStartNewChat}
+            className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-bold text-white transition hover:opacity-90"
+          >
+            <MessageCircle className="h-5 w-5" />
+            Abrir chat
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowNewChat(false)}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-slate-200 text-slate-500 transition hover:border-slate-300 dark:border-slate-700"
+            aria-label="Cerrar nueva conversación"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <p className="w-full text-[length:var(--ts-xs)] text-slate-500">
+            💡 Si esta persona nunca te escribió, WhatsApp exige iniciar con una <strong>plantilla</strong> (botón 📄 del chat). Con el número de prueba de Meta solo puedes escribir a tus contactos registrados.
+          </p>
+        </div>
+      )}
 
       {/* Banner: no conectado */}
       {!loadingConvs && !connected && (

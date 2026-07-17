@@ -198,9 +198,11 @@ export async function POST(req: NextRequest) {
     const friendly =
       code === 131047
         ? "Pasaron más de 24h desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas fuera de esa ventana."
-        : code === 190
-          ? "El token de WhatsApp expiró. Genera uno nuevo en Meta y guárdalo en Bot WhatsApp."
-          : "WhatsApp rechazó el mensaje. Revisa la configuración del número.";
+        : code === 131030
+          ? "Tu número de PRUEBA de Meta solo puede escribir a contactos registrados (máx 5). Registra este número en Meta (API Setup → Para) o pasa a un número real."
+          : code === 190
+            ? "El token de WhatsApp expiró. Genera uno nuevo en Meta y guárdalo en Bot WhatsApp."
+            : "WhatsApp rechazó el mensaje. Revisa la configuración del número.";
     return NextResponse.json({ error: friendly, code }, { status: 422 });
   }
 

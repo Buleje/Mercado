@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { m, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -71,7 +72,13 @@ const ACTIONS: QuickAction[] = [
 
 const HIDE_KEY = "admin-quickfab-hidden";
 
+// Tabs con composer de chat pegado al borde inferior: el FAB fijo abajo-derecha
+// TAPA el botón de enviar (bug real medido con Playwright 2026-07-16).
+const CHAT_TABS = new Set(["whatsapp-inbox", "marketplace-chat", "support-inbox"]);
+
 export function QuickActionsFab() {
+  const searchParams = useSearchParams();
+  const activeTab = searchParams?.get("tab") ?? "";
   const [open, setOpen] = useState(false);
   // Preferencia persistida: el botón flotante puede ocultarse y queda como un
   // pequeño asa minimizada en la esquina, para que no tape el contenido.
@@ -110,6 +117,10 @@ export function QuickActionsFab() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  // En tabs de chat el FAB tapa el botón de enviar del composer → no renderizar.
+  // (Después de todos los hooks — rules of hooks.)
+  if (CHAT_TABS.has(activeTab)) return null;
 
   return (
     <>
