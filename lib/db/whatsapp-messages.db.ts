@@ -190,6 +190,33 @@ export async function setArchived(
   return next;
 }
 
+// ── Notas internas por conversación ───────────────────────────────────────────
+// Memoria del equipo ("quedó en pasar el viernes") — el cliente NUNCA las ve.
+// PlatformSetting `wa-notes:{tenantId}` = { [customerPhone]: string }.
+
+function notesKey(tenantId: string): string {
+  return `wa-notes:${tenantId}`;
+}
+
+export async function getNotesMap(tenantId: string): Promise<Record<string, string>> {
+  const map = await PlatformSettingsDB.get<Record<string, string>>(notesKey(tenantId));
+  return map && typeof map === "object" ? map : {};
+}
+
+export async function setConversationNote(
+  tenantId: string,
+  customerPhone: string,
+  note: string,
+): Promise<Record<string, string>> {
+  const map = await getNotesMap(tenantId);
+  const next = { ...map };
+  const trimmed = note.trim();
+  if (!trimmed) delete next[customerPhone];
+  else next[customerPhone] = trimmed.slice(0, 500);
+  await PlatformSettingsDB.set(notesKey(tenantId), next, `wa-inbox:${tenantId}`);
+  return next;
+}
+
 // ── Etiquetas de triage por conversación ──────────────────────────────────────
 // Nuevo/Pedido/Pagado/Pendiente/Reclamo/VIP — compartidas entre cajeros.
 // PlatformSetting `wa-labels:{tenantId}` = { [customerPhone]: string[] }.
@@ -342,6 +369,60 @@ export const WhatsAppMessagesDB = {
       });
       throw err;
     }
+  },
+
+  /**
+   * Estadísticas del día (zona Lima, UTC-5 fijo): volumen, quién respondió
+   * (bot vs humano) y tiempo de primera respuesta promedio.
+   */
+  async statsToday(tenantId: string): Promise<{
+    recibidos: number;
+    respondidos: number;
+    porBot: number;
+    porHumano: number;
+    chatsActivos: number;
+    respPromedioMin: number | null;
+  }> {
+    return getOrSet(`${CACHE_PREFIX}:${tenantId}:stats-hoy`, 60, async () => {
+      const LIMA_OFFSET_MS = 5 * 3_600_000; // Perú no tiene DST
+      const lima = new Date(Date.now() - LIMA_OFFSET_MS);
+      const start = new Date(
+        Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate()) + LIMA_OFFSET_MS,
+      );
+      const msgs = await prisma.whatsAppMessage.findMany({
+        where: { tenantId, createdAt: { gte: start } },
+        orderBy: { createdAt: "asc" },
+        select: { direction: true, sentBy: true, customerPhone: true, createdAt: true },
+        take: 2000,
+      });
+
+      const recibidos = msgs.filter((m) => m.direction === "in").length;
+      const salientes = msgs.filter((m) => m.direction === "out");
+      const porBot = salientes.filter((m) => m.sentBy === "ai").length;
+      const porHumano = salientes.filter((m) => m.sentBy === "admin").length;
+      const chatsActivos = new Set(msgs.map((m) => m.customerPhone)).size;
+
+      // Tiempo de respuesta: para cada entrante, el próximo saliente del mismo hilo
+      const diffs: number[] = [];
+      for (let i = 0; i < msgs.length; i++) {
+        const m = msgs[i];
+        if (m.direction !== "in") continue;
+        for (let j = i + 1; j < msgs.length; j++) {
+          const r = msgs[j];
+          if (r.customerPhone === m.customerPhone) {
+            if (r.direction === "out") {
+              diffs.push(r.createdAt.getTime() - m.createdAt.getTime());
+            }
+            break; // el siguiente mensaje del hilo (in u out) corta la ventana
+          }
+        }
+      }
+      const respPromedioMin = diffs.length
+        ? Math.round((diffs.reduce((a, b) => a + b, 0) / diffs.length / 60000) * 10) / 10
+        : null;
+
+      return { recibidos, respondidos: diffs.length, porBot, porHumano, chatsActivos, respPromedioMin };
+    });
   },
 
   /**

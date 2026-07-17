@@ -13,13 +13,37 @@ import {
   X,
   Archive,
   MailOpen,
+  Volume2,
+  VolumeX,
+  Download,
+  Timer,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WaConversationList from "./inbox/WaConversationList";
 import WaChatView from "./inbox/WaChatView";
 import WaCustomerCard from "./inbox/WaCustomerCard";
+import WaNoteBar from "./inbox/WaNoteBar";
 import { WaLabelPicker } from "./inbox/WaLabels";
-import { useWhatsAppInbox } from "./inbox/useWhatsAppInbox";
+import { useWhatsAppInbox, type WaMessage } from "./inbox/useWhatsAppInbox";
+
+/** Exporta el hilo como .txt (respaldo/reclamos) — client-side, sin server. */
+function exportThreadTxt(customerName: string, phone: string, messages: WaMessage[]) {
+  const lines = messages.map((m) => {
+    const who = m.direction === "in" ? customerName : m.sentBy === "ai" ? "Bot IA" : "Negocio";
+    const ts = new Date(m.createdAt).toLocaleString("es-PE");
+    return `[${ts}] ${who}: ${m.body}${m.status === "failed" ? " (no se envió)" : ""}`;
+  });
+  const blob = new Blob(
+    [`Conversación WhatsApp — ${customerName} (+${phone})\n\n${lines.join("\n")}\n`],
+    { type: "text/plain;charset=utf-8" },
+  );
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `whatsapp-${phone}-${new Date().toISOString().slice(0, 10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 /** "519xxxxxxxx" → "+51 9xx xxx xxx". */
 function prettyPhone(phone: string): string {
@@ -137,6 +161,11 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
     labelsMap,
     toggleLabel,
     markUnreadAndClose,
+    notesMap,
+    saveNote,
+    stats,
+    soundOn,
+    toggleSound,
     customerContext,
     draftContact,
     startConversation,
@@ -235,6 +264,20 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleSound}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full border-2 transition",
+              soundOn
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-slate-200 text-slate-400 dark:border-slate-700",
+            )}
+            title={soundOn ? "Sonido de mensaje nuevo: activado" : "Sonido de mensaje nuevo: apagado"}
+            aria-label="Alternar sonido de notificación"
+          >
+            {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </button>
           {connected && (
             <button
               type="button"
@@ -262,6 +305,23 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           )}
         </div>
       </header>
+
+      {/* Mini-dashboard del día */}
+      {stats && (stats.recibidos > 0 || stats.porBot + stats.porHumano > 0) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-slate-200 bg-white px-4 py-1.5 text-[length:var(--ts-xs)] font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+          <span className="font-bold text-slate-700 dark:text-slate-200">Hoy:</span>
+          <span>📥 {stats.recibidos} recibidos</span>
+          <span>💬 {stats.respondidos} respondidos</span>
+          <span>🤖 {stats.porBot} bot · 🙋 {stats.porHumano} tú</span>
+          <span>👥 {stats.chatsActivos} chats</span>
+          {stats.respPromedioMin !== null && (
+            <span className="inline-flex items-center gap-1">
+              <Timer className="h-3.5 w-3.5" aria-hidden />
+              resp. ~{stats.respPromedioMin} min
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Form nueva conversación (➕) */}
       {showNewChat && (
@@ -447,6 +507,16 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                     )}
                   </span>
                 </div>
+                {/* Exportar conversación (.txt) */}
+                <button
+                  type="button"
+                  onClick={() => exportThreadTxt(selected.customerName, selected.customerPhone, messages)}
+                  className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400"
+                  title="Descargar la conversación (.txt)"
+                  aria-label="Exportar conversación"
+                >
+                  <Download className="h-4 w-4" />
+                </button>
                 {/* Dejar como no leída (recordatorio de volver) */}
                 <button
                   type="button"
@@ -454,7 +524,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                     void markUnreadAndClose(selected.customerPhone);
                     setMobileView("list");
                   }}
-                  className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400"
                   title="Dejar como no leída (queda resaltada en la bandeja)"
                   aria-label="Dejar como no leída"
                 >
@@ -520,6 +590,12 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               </div>
               {/* Ficha CRM: pedidos + fiado del cliente (best-effort) */}
               <WaCustomerCard context={customerContext} />
+              {/* Nota interna del equipo */}
+              <WaNoteBar
+                phone={selected.customerPhone}
+                note={notesMap[selected.customerPhone] ?? ""}
+                onSave={(phone, note) => void saveNote(phone, note)}
+              />
               <WaChatView
                 messages={messages}
                 loading={loadingMsgs}

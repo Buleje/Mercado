@@ -48,6 +48,39 @@ export interface WaConnection {
   businessName?: string | null;
 }
 
+/** Mini-dashboard del día. */
+export interface WaStats {
+  recibidos: number;
+  respondidos: number;
+  porBot: number;
+  porHumano: number;
+  chatsActivos: number;
+  respPromedioMin: number | null;
+}
+
+const SOUND_LS_KEY = "wa-inbox-sound";
+
+/** Beep corto con WebAudio (sin assets) — notificación de mensaje nuevo. */
+function playBeep() {
+  try {
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new Ctx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.start();
+    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+    osc.stop(ctx.currentTime + 0.35);
+    osc.onended = () => void ctx.close();
+  } catch {
+    /* sin audio disponible — silencio */
+  }
+}
+
 /** Ficha CRM del cliente del hilo (pedidos + fiado + fidelización). */
 export interface WaCustomerContext {
   customer: { name: string; loyaltyTier?: string; loyaltyPoints?: number } | null;
@@ -77,6 +110,30 @@ export function useWhatsAppInbox() {
   // Anti-carrera: si el usuario tocó etiquetas hace <5s, el poll NO pisa el
   // estado optimista (el POST puede seguir en vuelo).
   const labelsTouchedAt = useRef(0);
+  // Notas internas por teléfono (solo equipo)
+  const [notesMap, setNotesMap] = useState<Record<string, string>>({});
+  const notesTouchedAt = useRef(0);
+  // Mini-dashboard del día
+  const [stats, setStats] = useState<WaStats | null>(null);
+  // Sonido de mensaje nuevo (persistido)
+  const [soundOn, setSoundOn] = useState(true);
+  const soundOnRef = useRef(true);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(SOUND_LS_KEY);
+      const on = v !== "0";
+      setSoundOn(on);
+      soundOnRef.current = on;
+    } catch { /* default on */ }
+  }, []);
+  const toggleSound = useCallback(() => {
+    setSoundOn((prev) => {
+      const next = !prev;
+      soundOnRef.current = next;
+      try { localStorage.setItem(SOUND_LS_KEY, next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
   // Ficha CRM del cliente del hilo abierto
   const [customerContext, setCustomerContext] = useState<WaCustomerContext | null>(null);
   // Multi-número: filtrar el inbox por un número del negocio (null = todos)
@@ -115,6 +172,7 @@ export function useWhatsAppInbox() {
         pausedPhones?: string[];
         archivedPhones?: string[];
         labelsMap?: Record<string, string[]>;
+        notesMap?: Record<string, string>;
       };
       // Evitar pisar la lista si el usuario cambió el filtro durante el fetch
       if (numberFilterRef.current === filter) {
@@ -125,6 +183,9 @@ export function useWhatsAppInbox() {
         setArchivedPhones(json.archivedPhones ?? []);
         if (Date.now() - labelsTouchedAt.current > 5000) {
           setLabelsMap(json.labelsMap ?? {});
+        }
+        if (Date.now() - notesTouchedAt.current > 5000) {
+          setNotesMap(json.notesMap ?? {});
         }
         setConvsError(false);
       }
@@ -273,6 +334,30 @@ export function useWhatsAppInbox() {
     [doSend],
   );
 
+  /** Guarda la nota interna de la conversación (vacía = borrar). */
+  const saveNote = useCallback(async (phone: string, note: string) => {
+    notesTouchedAt.current = Date.now();
+    setNotesMap((prev) => {
+      const next = { ...prev };
+      if (!note.trim()) delete next[phone];
+      else next[phone] = note.trim();
+      return next;
+    });
+    try {
+      const res = await tenantFetch("/api/admin/whatsapp/notes", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ phone, note }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        notesMap?: Record<string, string>;
+      };
+      if (res.ok && json.notesMap) setNotesMap(json.notesMap);
+    } catch {
+      /* el próximo poll corrige */
+    }
+  }, []);
+
   /** Alterna una etiqueta de la conversación (optimista). */
   const toggleLabel = useCallback(
     async (phone: string, labelId: string) => {
@@ -362,12 +447,13 @@ export function useWhatsAppInbox() {
   }, [loadConversations, numberFilter]);
 
   // SSE: mensaje entrante → refresco instantáneo de lista + hilo abierto
-  // (mismo canal que ChatTab; si SSE falla, el polling de arriba cubre)
+  // + beep de notificación (toggle 🔔 persistido)
   useEffect(() => {
     let es: EventSource | null = null;
     try {
       es = new EventSource("/api/admin/sse");
       es.addEventListener("wa_message_new", () => {
+        if (soundOnRef.current) playBeep();
         void loadConversations();
         const phone = selectedRef.current;
         if (phone) void loadMessages(phone, false);
@@ -377,6 +463,21 @@ export function useWhatsAppInbox() {
     }
     return () => es?.close();
   }, [loadConversations, loadMessages]);
+
+  // Mini-dashboard del día (refresco cada 60s — el server cachea igual)
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await tenantFetch("/api/admin/whatsapp/stats");
+        if (res.ok) setStats((await res.json()) as WaStats);
+      } catch {
+        /* best-effort */
+      }
+    };
+    void load();
+    const t = setInterval(() => void load(), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   // Poll del hilo abierto
   useEffect(() => {
@@ -409,6 +510,11 @@ export function useWhatsAppInbox() {
     labelsMap,
     toggleLabel,
     markUnreadAndClose,
+    notesMap,
+    saveNote,
+    stats,
+    soundOn,
+    toggleSound,
     customerContext,
     draftContact,
     startConversation,
