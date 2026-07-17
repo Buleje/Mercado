@@ -165,7 +165,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
               ? `No pueden emitir certificado de trazabilidad: ${data.despachosSinTrazaLineas.length === 1 ? "línea" : "líneas"} #${data.despachosSinTrazaLineas.slice(0, 5).join(", #")}${data.despachosSinTrazaLineas.length > 5 ? ` y ${data.despachosSinTrazaLineas.length - 5} más` : ""}.`
               : "Hay volumen despachado sin corrida de origen atribuida."
           }
-          action="Abrí el botón 'Cadena' del despacho para ver dónde se corta."
+          action="Completala con 'Editar atribución' dentro del botón 'Cadena' del despacho."
           onNavigate={() => onNavigate("despacho")}
           navigateLabel="Ver despachos"
           severity="warning"

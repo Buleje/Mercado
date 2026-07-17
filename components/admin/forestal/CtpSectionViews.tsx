@@ -17,6 +17,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpEntryForm from "./CtpEntryForm";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
+import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 
 type CtpSection = "produccion" | "despacho";
 
@@ -35,7 +36,8 @@ const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta:
   despacho: { label: "Despacho", icon: Truck, cta: "Nuevo despacho", empty: "Sin despachos registrados. Registrá la salida de producto con su GTF." },
 };
 
-const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; } };
+// timeZone UTC: entryDate es date-only guardada a medianoche UTC — en hora Lima se corría un día.
+const fmtDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; } };
 const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
 const n2 = (v: number) => v.toFixed(2);
 
@@ -203,17 +205,17 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
                 <Td className="text-right">
                   {e.status === "registrado" ? (
                     <div className="inline-flex items-center gap-2">
-                      {section === "despacho" && (
-                        <button
-                          type="button"
-                          onClick={() => setChainEntry(e)}
-                          title="Cadena de custodia: origen, costo y certificado de trazabilidad"
-                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-xs font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
-                        >
-                          <Link2 className="h-3.5 w-3.5" />
-                          Cadena
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setChainEntry(e)}
+                        title={section === "despacho"
+                          ? "Cadena de custodia: origen, costo y certificado de trazabilidad"
+                          : "Corrida: materia prima consumida, costo y congelado"}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-xs font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        Cadena
+                      </button>
                       <button
                         type="button"
                         disabled={toProductId === e.id}
@@ -248,7 +250,8 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       </div>
 
       {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); }} />}
-      {chainEntry && <CtpDespachoDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
+      {chainEntry && section === "despacho" && <CtpDespachoDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
+      {chainEntry && section === "produccion" && <CtpProduccionDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
 
       {annulId && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setAnnulId(null)}>

@@ -86,20 +86,21 @@ export interface CtpComplianceCounts {
  * `fueraPlazo` sí resta aunque el pasado no se pueda cambiar: es una infracción
  * real al plazo SERFOR, y sale sola del score cuando el período avanza.
  *
- * `despachosSinTraza` tampoco resta (por ahora): el libro ADMITE huecos en la
- * atribución por diseño (I4 es `≤`, ADR-135) y todavía no existe UI para
- * completar la atribución después del alta — restaría puntos por algo que el
- * operador no puede corregir sin anular y recrear. El gate real ya existe: el
- * certificado no se emite. Cuando haya "editar atribución", se promueve.
+ * `despachosSinTraza` resta desde que existe "Editar atribución" en la ficha
+ * del despacho (CtpAtribucionEditor): el operador ya puede completar la cadena
+ * sin anular y recrear, así que el hueco es corregible — el criterio que
+ * define esta lista. El libro sigue ADMITIENDO huecos al guardar (I4 es `≤`,
+ * ADR-135); lo que resta es dejarlos abiertos al cierre del período.
  */
 const CATEGORIAS_QUE_RESTAN = [
   "fueraPlazo",
   "pendientes",
   "especiesEnNegativo",
   "stockNegativo",
+  "despachosSinTraza",
 ] as const satisfies readonly (keyof CtpComplianceCounts)[];
 
-/** Tope de puntos que puede restar una sola categoría (4 categorías × 25 = 100). */
+/** Tope de puntos que puede restar una sola categoría (5 categorías × 25 = 125, con piso en 0). */
 const TOPE_PUNTOS_POR_ALERTA = 25;
 /** Puntos que resta cada caso dentro de una categoría (tope a partir del 5º caso). */
 const PUNTOS_POR_CASO = 5;

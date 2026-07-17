@@ -112,6 +112,11 @@ export function formatDate(iso: string | null): string {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      // Fechas DATE-ONLY (entryDate/gtfDate) se guardan como medianoche UTC:
+      // renderizarlas en hora Lima (UTC-5) las corría un día hacia atrás. El
+      // operador registró "29" y el libro decía "28" — off-by-one en un
+      // registro fiscalizable. Para fecha+hora usá formatDateTime (local).
+      timeZone: "UTC",
     });
   } catch {
     return iso;

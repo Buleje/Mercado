@@ -23,12 +23,14 @@ import {
   FileCheck,
   Link2,
   Loader2,
+  Pencil,
   Printer,
   RefreshCw,
   Snowflake,
   Truck,
 } from "@buleje/design-system/icons";
 import { printCertificadoTrazabilidad } from "@/lib/forestal/ctp-certificado";
+import CtpAtribucionEditor from "./CtpAtribucionEditor";
 
 export interface DespachoResumen {
   id: string;
@@ -91,6 +93,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
   const [error, setError] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const unitLabel = entry.unit ? (UNIT_LABELS[entry.unit] ?? entry.unit) : "";
 
@@ -120,7 +123,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
       const emisor = await fetch("/api/settings", { credentials: "include" })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null) as { businessName?: string; ruc?: string } | null;
-      printCertificadoTrazabilidad(
+      await printCertificadoTrazabilidad(
         { ...entry, unitLabel },
         traza,
         { businessName: emisor?.businessName ?? null, ruc: emisor?.ruc ?? null },
@@ -187,12 +190,40 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
 
             {/* 2. La cadena: corrida → guías de ingreso, con costo por tramo */}
             <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">
-              <div className="flex items-center gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-                <Link2 className="h-4 w-4 text-[var(--text-tertiary)]" />
-                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Origen del volumen</CardTitle>
+              <div className="flex items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Origen del volumen</CardTitle>
+                </div>
+                {!editing && (
+                  <button
+                    type="button"
+                    onClick={() => setEditing(true)}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                  >
+                    <Pencil className="h-3 w-3" /> Editar atribución
+                  </button>
+                )}
               </div>
-              {traza.corridas.length === 0 ? (
-                <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin corridas atribuidas. La atribución se hace al registrar el despacho.</p>
+              {editing ? (
+                <div className="p-3">
+                  <CtpAtribucionEditor
+                    kind="origenes"
+                    entryId={entry.id}
+                    unitLabel={unitLabel || "unid."}
+                    declared={traza.declarado}
+                    current={traza.corridas.map((c) => ({
+                      id: c.produccionEntryId,
+                      label: `Corrida #${c.lineNo}`,
+                      sub: null,
+                      quantity: c.quantity,
+                    }))}
+                    onSaved={() => { setEditing(false); void load(); }}
+                    onCancel={() => setEditing(false)}
+                  />
+                </div>
+              ) : traza.corridas.length === 0 ? (
+                <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Sin corridas atribuidas. Usá &quot;Editar atribución&quot; para declarar de dónde salió.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">

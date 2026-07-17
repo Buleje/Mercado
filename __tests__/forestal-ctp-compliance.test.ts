@@ -79,11 +79,11 @@ describe("ctpComplianceScore", () => {
     expect(ctpComplianceScore({ ...sinAlertas, citesCount: 7 })).toBe(100);
   });
 
-  /** ADR-135: el libro admite huecos por diseño y aún no hay UI para completar
-   *  la atribución post-alta — el gate real es que el certificado no se emite.
-   *  Cuando exista "editar atribución", promover a CATEGORIAS_QUE_RESTAN. */
-  it("despachosSinTraza NO resta (informativo): el certificado ya es el gate", () => {
-    expect(ctpComplianceScore({ ...sinAlertas, despachosSinTraza: 4 })).toBe(100);
+  /** ADR-135: desde que existe "Editar atribución" (CtpAtribucionEditor) el
+   *  hueco es corregible sin anular y recrear ⇒ resta como las demás. */
+  it("despachosSinTraza resta 5 por caso con tope 25: la cadena abierta al cierre es corregible", () => {
+    expect(ctpComplianceScore({ ...sinAlertas, despachosSinTraza: 4 })).toBe(80);
+    expect(ctpComplianceScore({ ...sinAlertas, despachosSinTraza: 50 })).toBe(75);
   });
 
   it("cada categoría corregible resta 5 por caso, con tope de 25", () => {
@@ -93,7 +93,7 @@ describe("ctpComplianceScore", () => {
     expect(ctpComplianceScore({ ...sinAlertas, fueraPlazo: 50 })).toBe(75);
   });
 
-  it("las 4 categorías corregibles al tope dan 0, nunca negativo", () => {
+  it("las 5 categorías corregibles al tope dan 0, nunca negativo", () => {
     expect(
       ctpComplianceScore({
         fueraPlazo: 99,
