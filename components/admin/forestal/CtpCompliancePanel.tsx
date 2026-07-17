@@ -28,7 +28,7 @@ import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import { ctpComplianceTone } from "@/lib/forestal/ctp-compliance";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
-type ComplianceNavTarget = "ingresos" | "saldos" | "despacho";
+type ComplianceNavTarget = "ingresos" | "saldos" | "despacho" | "produccion" | "ficha";
 
 interface CtpCompliancePanelProps {
   period: CtpPeriod;
@@ -101,7 +101,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           icon={Clock}
           title={(n) => `${n} ${n === 1 ? "ingreso registrado" : "ingresos registrados"} fuera de plazo`}
           okTitle="Ningún ingreso fuera de plazo"
-          description="SERFOR exige registrar el ingreso dentro de los 15 días de la actividad."
+          description="SERFOR exige registrar el ingreso dentro de los 2 días hábiles de la operación (RDE D000025-2023)."
           action="Revisá la columna 'Días registro' en la pestaña Ingresos."
           onNavigate={() => onNavigate("ingresos")}
           navigateLabel="Ver ingresos"
@@ -123,10 +123,18 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           icon={ScrollText}
           title={(n) => `${n} ${n === 1 ? "ingreso es de especie CITES" : "ingresos son de especies CITES"}`}
           okTitle="Sin especies CITES en el período"
-          description="Las especies CITES requieren permiso de aprovechamiento archivado."
-          action="Verificá que cada una tenga su permiso CITES a mano para una fiscalización."
-          onNavigate={() => onNavigate("ingresos")}
-          navigateLabel="Ver ingresos"
+          description={
+            data.citesSinPermisoEspecies.length > 0
+              ? `Sin permiso CITES cargado en la Ficha: ${data.citesSinPermisoEspecies.slice(0, 3).join(", ")}${data.citesSinPermisoEspecies.length > 3 ? ` y ${data.citesSinPermisoEspecies.length - 3} más` : ""}.`
+              : "Las especies CITES requieren permiso de aprovechamiento archivado."
+          }
+          action={
+            data.citesSinPermisoEspecies.length > 0
+              ? "Cargá su N° de permiso CITES en la pestaña Ficha CTP."
+              : "Verificá que cada una tenga su permiso CITES a mano para una fiscalización."
+          }
+          onNavigate={() => onNavigate(data.citesSinPermisoEspecies.length > 0 ? "ficha" : "ingresos")}
+          navigateLabel={data.citesSinPermisoEspecies.length > 0 ? "Ir a Ficha CTP" : "Ver ingresos"}
           severity="warning"
         />
         <ComplianceRow
@@ -168,6 +176,21 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           action="Completala con 'Editar atribución' dentro del botón 'Cadena' del despacho."
           onNavigate={() => onNavigate("despacho")}
           navigateLabel="Ver despachos"
+          severity="warning"
+        />
+        <ComplianceRow
+          count={data.counts.rendimientoAlto ?? 0}
+          icon={Gauge}
+          title={(n) => `${n} ${n === 1 ? "corrida con rendimiento" : "corridas con rendimiento"} sobre el referencial SERFOR`}
+          okTitle="Rendimientos dentro del referencial SERFOR"
+          description={
+            data.rendimientoAltoLineas.length > 0
+              ? `Posible sobre-declaración (ref. 56% aserrada / 41% tablillas, RDE D000259-2024): ${data.rendimientoAltoLineas.length === 1 ? "corrida" : "corridas"} #${data.rendimientoAltoLineas.slice(0, 5).join(", #")}${data.rendimientoAltoLineas.length > 5 ? ` y ${data.rendimientoAltoLineas.length - 5} más` : ""}.`
+              : "Se declaró más producto del que la troza suele rendir."
+          }
+          action="Verificá el volumen consumido vs. producido en la pestaña Producción."
+          onNavigate={() => onNavigate("produccion")}
+          navigateLabel="Ver producción"
           severity="warning"
         />
       </div>

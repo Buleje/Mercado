@@ -107,6 +107,15 @@ export interface CtpComplianceCounts {
   stockNegativo: number;
   /** Despachos sin cadena de custodia completa: no pueden emitir certificado (ADR-135 D3). */
   despachosSinTraza: number;
+  /**
+   * INFORMATIVOS (opcionales, NO restan score — como `citesCount`). Son señales
+   * para revisar, no infracciones corregibles con una acción del operador:
+   *  - `citesSinPermiso`: especies CITES del período sin permiso cargado en la Ficha.
+   *  - `rendimientoAlto`: corridas con rendimiento sobre el referencial SERFOR
+   *    (posible sobre-declaración; ver ctp-rendimiento.ts).
+   */
+  citesSinPermiso?: number;
+  rendimientoAlto?: number;
 }
 
 /**

@@ -10,12 +10,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpComplianceScore, type CtpComplianceCounts } from "@/lib/forestal/ctp-compliance";
+import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import type { WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
 
 interface SaldosSummary {
   materiaPrima: { especiesEnNegativo: number };
   productos: { producto: string; stock: number }[];
+  porEspecie: { especie: string; cites: boolean }[];
 }
+
+const norm = (x: string | null | undefined) => (x ?? "").trim().toLowerCase();
 
 export interface CtpComplianceData {
   counts: CtpComplianceCounts;
@@ -25,6 +29,10 @@ export interface CtpComplianceData {
   productosNegativos: string[];
   /** Líneas de despacho sin cadena completa — para el detalle de la alerta. */
   despachosSinTrazaLineas: number[];
+  /** Especies CITES del período sin permiso cargado en la Ficha (informativo). */
+  citesSinPermisoEspecies: string[];
+  /** Corridas con rendimiento sobre el referencial SERFOR (informativo). */
+  rendimientoAltoLineas: number[];
 }
 
 interface UseCtpComplianceResult {
@@ -55,11 +63,15 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
       );
       const saldosParams = applyCtpPeriodParams(new URLSearchParams({ saldos: "1" }), period);
       const trazaParams = applyCtpPeriodParams(new URLSearchParams({ traza: "1" }), period);
+      const prodParams = applyCtpPeriodParams(new URLSearchParams({ section: "produccion" }), period);
 
-      const [woodRes, saldosRes, trazaRes] = await Promise.all([
+      const [woodRes, saldosRes, trazaRes, fichaRes, prodRes] = await Promise.all([
         fetch(`/api/admin/forestal/wood-entries?${woodParams}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/ctp?${saldosParams}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/ctp?${trazaParams}`, { credentials: "include" }),
+        // Ficha + producción son INFORMATIVAS: si fallan, el panel core sigue.
+        fetch(`/api/admin/forestal/ctp-ficha`, { credentials: "include" }),
+        fetch(`/api/admin/forestal/ctp?${prodParams}`, { credentials: "include" }),
       ]);
       if (!woodRes.ok) throw new Error(await errorFrom(woodRes));
       if (!saldosRes.ok) throw new Error(await errorFrom(saldosRes));
@@ -73,6 +85,31 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
 
       const productosNegativos = saldos.productos.filter((p) => p.stock < 0).map((p) => p.producto);
 
+      // ── Señales informativas (best-effort) ──
+      // CITES sin permiso: especies CITES del período que no matchean ningún
+      // permiso cargado en la Ficha (match laxo por substring, tolerante a tipeo).
+      let citesSinPermisoEspecies: string[] = [];
+      if (fichaRes.ok) {
+        const ficha: { ficha?: { citesPermisos?: { especie: string }[] } } = await fichaRes.json();
+        const permisos = (ficha.ficha?.citesPermisos ?? []).map((p) => norm(p.especie)).filter(Boolean);
+        citesSinPermisoEspecies = (saldos.porEspecie ?? [])
+          .filter((e) => e.cites)
+          .filter((e) => {
+            const s = norm(e.especie);
+            return !permisos.some((p) => s.includes(p) || p.includes(s));
+          })
+          .map((e) => e.especie);
+      }
+      // Rendimiento alto: corridas de producción sobre el referencial SERFOR.
+      let rendimientoAltoLineas: number[] = [];
+      if (prodRes.ok) {
+        const prod: { entries?: { lineNo: number; productType: string | null; rendimientoPct: string | null }[] } =
+          await prodRes.json();
+        rendimientoAltoLineas = (prod.entries ?? [])
+          .filter((r) => evaluarRendimiento(r.productType, r.rendimientoPct != null ? Number(r.rendimientoPct) : null).estado === "alto")
+          .map((r) => r.lineNo);
+      }
+
       const counts: CtpComplianceCounts = {
         fueraPlazo: wood.stats.lateCount,
         pendientes: wood.stats.byStatus.pendiente,
@@ -80,6 +117,8 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         especiesEnNegativo: saldos.materiaPrima.especiesEnNegativo,
         stockNegativo: productosNegativos.length,
         despachosSinTraza: trazaBody.traza.incompletos,
+        citesSinPermiso: citesSinPermisoEspecies.length,
+        rendimientoAlto: rendimientoAltoLineas.length,
       };
 
       setData({
@@ -88,6 +127,8 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         totalIngresos: wood.stats.totalCount,
         productosNegativos,
         despachosSinTrazaLineas: trazaBody.traza.lineas,
+        citesSinPermisoEspecies,
+        rendimientoAltoLineas,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
