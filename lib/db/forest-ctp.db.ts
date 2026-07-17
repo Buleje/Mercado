@@ -638,6 +638,56 @@ export class ForestCtpDB {
         .map((o) => ({ from: o.produccionEntryId, to: o.despachoEntryId, quantity: Number(o.quantity ?? 0) })),
     };
   }
+
+  /**
+   * Kardex (cuenta corriente) de la materia prima de UNA especie: cada
+   * movimiento cronológico con su saldo corriente. Es el detalle que forma el
+   * saldo neto que muestra Saldos — un fiscalizador lo reconstruye a mano; acá
+   * sale derecho. El saldo final coincide EXACTO con `saldos().porEspecie.saldoM3`
+   * (mismos criterios: ingresos validado/procesado en +, volumeInputM3 de las
+   * corridas de esa especie en −, misma `speciesKey` normalizada).
+   */
+  static async kardexEspecie(tenantId: string, especie: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<KardexEspecie> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const target = speciesKey(especie);
+    const range = dateRange(opts);
+    const woodWhere: Prisma.WoodEntryWhereInput = { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] } };
+    const prodWhere: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null, status: "registrado", section: "produccion" };
+    if (range) { woodWhere.entryDate = range; prodWhere.entryDate = range; }
+
+    const [ingresos, corridas] = await Promise.all([
+      prisma.woodEntry.findMany({ where: woodWhere, select: { entryDate: true, gtfNumber: true, speciesCommonName: true, volumeM3: true } }),
+      prisma.forestCtpEntry.findMany({ where: prodWhere, select: { entryDate: true, lineNo: true, productType: true, speciesCommon: true, volumeInputM3: true } }),
+    ]);
+
+    const movs = [
+      ...ingresos
+        .filter((i) => speciesKey(i.speciesCommonName) === target)
+        .map((i) => ({ fecha: i.entryDate, tipo: "ingreso" as const, doc: `GTF ${i.gtfNumber}`, entra: Number(i.volumeM3 ?? 0), sale: 0 })),
+      ...corridas
+        .filter((c) => speciesKey(c.speciesCommon) === target && c.volumeInputM3 != null)
+        .map((c) => ({ fecha: c.entryDate, tipo: "consumo" as const, doc: `Corrida #${c.lineNo}${c.productType ? ` · ${c.productType}` : ""}`, entra: 0, sale: Number(c.volumeInputM3 ?? 0) })),
+    ].sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
+
+    let saldo = 0;
+    let ingresoTotal = 0;
+    let consumoTotal = 0;
+    const movimientos = movs.map((m) => {
+      saldo = r4(saldo + m.entra - m.sale);
+      ingresoTotal += m.entra;
+      consumoTotal += m.sale;
+      return { fecha: m.fecha, tipo: m.tipo, doc: m.doc, entra: r4(m.entra), sale: r4(m.sale), saldo };
+    });
+    return { especie, movimientos, ingresoTotal: r4(ingresoTotal), consumoTotal: r4(consumoTotal), saldo: r4(ingresoTotal - consumoTotal) };
+  }
+}
+
+export interface KardexEspecie {
+  especie: string;
+  movimientos: { fecha: Date; tipo: "ingreso" | "consumo"; doc: string; entra: number; sale: number; saldo: number }[];
+  ingresoTotal: number;
+  consumoTotal: number;
+  saldo: number;
 }
 
 export interface TrazaGrafo {

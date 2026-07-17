@@ -109,6 +109,11 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (url.searchParams.get("grafo") === "1") {
       return NextResponse.json({ grafo: await ForestCtpDB.grafoTrazabilidad(auth.tenantId, period) });
     }
+    // Kardex (cuenta corriente) de la materia prima de una especie.
+    const kardexEspecie = url.searchParams.get("kardex");
+    if (kardexEspecie) {
+      return NextResponse.json({ kardex: await ForestCtpDB.kardexEspecie(auth.tenantId, kardexEspecie, period) });
+    }
     const availableFor = url.searchParams.get("available");
     if (availableFor && (CTP_SECTIONS as readonly string[]).includes(availableFor)) {
       // `?excludeCtpEntryId=` al EDITAR una línea: lo que ella misma consume no

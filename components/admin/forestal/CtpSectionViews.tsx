@@ -20,6 +20,7 @@ import CtpEntryForm from "./CtpEntryForm";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpSimuladorModal from "./CtpSimuladorModal";
+import CtpKardexModal from "./CtpKardexModal";
 
 type CtpSection = "produccion" | "despacho";
 
@@ -297,6 +298,7 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
   const [data, setData] = useState<SaldosData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [kardexEspecie, setKardexEspecie] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -359,11 +361,20 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
               </thead>
               <tbody>
                 {data.porEspecie.map((s) => (
-                  <tr key={s.especie} className={`border-t border-[var(--rule-soft)] ${s.saldoM3 < 0 ? "bg-[var(--data-error-50)]" : ""}`}>
+                  <tr
+                    key={s.especie}
+                    tabIndex={0}
+                    role="button"
+                    title={`Ver kardex de ${s.especie}`}
+                    onClick={() => setKardexEspecie(s.especie)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setKardexEspecie(s.especie); } }}
+                    className={`cursor-pointer border-t border-[var(--rule-soft)] outline-none transition-colors hover:bg-[var(--surface-canvas)] focus-visible:bg-[var(--surface-canvas)] ${s.saldoM3 < 0 ? "bg-[var(--data-error-50)]" : ""}`}
+                  >
                     <Td>
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-[var(--text-primary)]">{s.especie}</span>
                         {s.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">· ver kardex</span>
                       </div>
                       {s.scientific && <div className="text-xs italic text-[var(--text-tertiary)]">{s.scientific}</div>}
                     </Td>
@@ -413,6 +424,8 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
         </>
       )}
       {loading && !data && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando saldos…</p></div>}
+
+      {kardexEspecie && <CtpKardexModal especie={kardexEspecie} period={period} onClose={() => setKardexEspecie(null)} />}
     </div>
   );
 }
