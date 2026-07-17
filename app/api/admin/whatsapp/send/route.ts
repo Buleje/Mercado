@@ -26,13 +26,21 @@ const SendSchema = z
         params: z.array(z.string().max(500)).max(10).default([]),
       })
       .optional(),
+    // …o imagen por URL pública (compartir producto del catálogo)
+    media: z
+      .object({
+        link: z.string().url().max(1000),
+        caption: z.string().max(1024).optional(),
+      })
+      .optional(),
     customerName: z.string().max(80).optional(),
     // Multi-número: por cuál número del negocio sale la respuesta (el del hilo).
     phoneNumberId: z.string().regex(/^\d{1,50}$/).optional(),
   })
-  .refine((d) => Boolean(d.message) !== Boolean(d.template), {
-    message: "Enviá texto o una plantilla (uno de los dos)",
-  });
+  .refine(
+    (d) => [d.message, d.template, d.media].filter(Boolean).length === 1,
+    { message: "Enviá texto, una plantilla o una imagen (uno solo)" },
+  );
 
 type GraphError = { error?: { code?: number; message?: string } };
 
@@ -68,7 +76,7 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { phone, message, template, customerName, phoneNumberId } = parsed.data;
+  const { phone, message, template, media, customerName, phoneNumberId } = parsed.data;
 
   // El hilo dice por qué número habla el cliente; fallback: primer número activo.
   const config = phoneNumberId
@@ -136,6 +144,14 @@ export async function POST(req: NextRequest) {
             }
           : {}),
       },
+    };
+  } else if (media) {
+    logBody = media.caption ? `📷 ${media.caption}` : "📷 Foto";
+    sendPayload = {
+      messaging_product: "whatsapp",
+      to: phone,
+      type: "image",
+      image: { link: media.link, ...(media.caption ? { caption: media.caption } : {}) },
     };
   } else {
     sendPayload = {
@@ -219,6 +235,10 @@ export async function POST(req: NextRequest) {
     sentBy: "admin",
     body: logBody,
     waMessageId,
+    // Imagen por URL: guardamos el link en mediaId (el panel lo renderiza
+    // directo; el proxy solo atiende ids numéricos de Meta — sin colisión)
+    mediaId: media?.link ?? null,
+    mediaMime: media ? "image/external" : null,
     status: "sent",
   });
 

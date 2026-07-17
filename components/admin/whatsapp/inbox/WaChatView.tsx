@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, Bot, AlertCircle, MessageCircle, FileText, Zap } from "@buleje/design-system/icons";
+import { Send, Loader2, Bot, AlertCircle, MessageCircle, FileText, Zap, ShoppingBag, Paperclip } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import WaTemplatePicker from "./WaTemplatePicker";
+import WaProductPicker from "./WaProductPicker";
 import {
   PREDEFINED_QUICK_REPLIES,
   loadCustomQuickReplies,
@@ -44,6 +45,10 @@ interface Props {
   customerName?: string;
   onSend: (body: string) => Promise<boolean>;
   onSendTemplate: (tpl: { name: string; language: string; params: string[] }) => Promise<boolean>;
+  /** Compartir producto: imagen pública + caption con precio. */
+  onSendImageLink: (link: string, caption: string) => Promise<boolean>;
+  /** Adjuntar archivo del PC (imagen/PDF/audio). */
+  onSendMediaFile: (file: File) => Promise<boolean>;
 }
 
 /** Columna derecha del inbox: burbujas del hilo + composer + plantillas. */
@@ -58,11 +63,15 @@ export default function WaChatView({
   customerName,
   onSend,
   onSendTemplate,
+  onSendImageLink,
+  onSendMediaFile,
 }: Props) {
   const [draft, setDraft] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
   const [showQuick, setShowQuick] = useState(false);
+  const [showProducts, setShowProducts] = useState(false);
   const draftRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   // Respuestas rápidas: predefinidas + custom del editor de Plantillas.
   // Las custom se recargan cada vez que se abre el panel (pueden editarse
@@ -127,23 +136,23 @@ export default function WaChatView({
                     failed && "border-2 border-[var(--data-error-500)]",
                   )}
                 >
-                  {/* Media entrante: foto/audio/video/documento (proxy autenticado) */}
-                  {m.mediaId && m.mediaMime?.startsWith("image/") && (
-                    <a
-                      href={`/api/admin/whatsapp/media/${m.mediaId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Ver foto completa"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`/api/admin/whatsapp/media/${m.mediaId}`}
-                        alt={m.body || "Foto del cliente"}
-                        loading="lazy"
-                        className="mb-1 max-h-64 w-auto max-w-full rounded-xl"
-                      />
-                    </a>
-                  )}
+                  {/* Media: foto entrante (proxy) o enviada por URL (directa) */}
+                  {m.mediaId && m.mediaMime?.startsWith("image/") && (() => {
+                    const src = m.mediaId.startsWith("http")
+                      ? m.mediaId
+                      : `/api/admin/whatsapp/media/${m.mediaId}`;
+                    return (
+                      <a href={src} target="_blank" rel="noopener noreferrer" title="Ver foto completa">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={src}
+                          alt={m.body || "Foto"}
+                          loading="lazy"
+                          className="mb-1 max-h-64 w-auto max-w-full rounded-xl"
+                        />
+                      </a>
+                    );
+                  })()}
                   {m.mediaId && m.mediaMime?.startsWith("audio/") && (
                      
                     <audio
@@ -235,6 +244,19 @@ export default function WaChatView({
         />
       )}
 
+      {/* Compartir producto del catálogo 🛒 */}
+      {showProducts && (
+        <WaProductPicker
+          sending={sending}
+          onSendImage={onSendImageLink}
+          onInsertText={(text) => {
+            setDraft(text);
+            draftRef.current?.focus();
+          }}
+          onClose={() => setShowProducts(false)}
+        />
+      )}
+
       {/* Respuestas rápidas: un click y el texto queda en el composer */}
       {showQuick && (
         <div className="border-t border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
@@ -272,7 +294,7 @@ export default function WaChatView({
         <div className="flex items-end gap-2">
           <button
             type="button"
-            onClick={() => { setShowQuick((s) => !s); setShowTemplates(false); }}
+            onClick={() => { setShowQuick((s) => !s); setShowTemplates(false); setShowProducts(false); }}
             disabled={!canSend}
             className={cn(
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
@@ -288,7 +310,47 @@ export default function WaChatView({
           </button>
           <button
             type="button"
-            onClick={() => { setShowTemplates((s) => !s); setShowQuick(false); }}
+            onClick={() => { setShowProducts((s) => !s); setShowQuick(false); setShowTemplates(false); }}
+            disabled={!canSend}
+            className={cn(
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
+              showProducts
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+              !canSend && "cursor-not-allowed opacity-40",
+            )}
+            aria-label="Compartir producto"
+            title="Compartir producto del catálogo (foto + precio)"
+          >
+            <ShoppingBag className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={!canSend || sending}
+            className={cn(
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+              (!canSend || sending) && "cursor-not-allowed opacity-40",
+            )}
+            aria-label="Adjuntar archivo"
+            title="Adjuntar imagen, PDF o audio (máx 10MB)"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf,audio/mpeg,audio/ogg"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = ""; // permitir re-adjuntar el mismo archivo
+              if (f) void onSendMediaFile(f);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => { setShowTemplates((s) => !s); setShowQuick(false); setShowProducts(false); }}
             disabled={!canSend}
             className={cn(
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",

@@ -151,6 +151,8 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
     loadingMsgs,
     sendMessage,
     sendTemplate,
+    sendImageLink,
+    sendMediaFile,
     sending,
     sendError,
     sendErrorCode,
@@ -607,6 +609,8 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 customerName={selected.customerName}
                 onSend={sendMessage}
                 onSendTemplate={sendTemplate}
+                onSendImageLink={sendImageLink}
+                onSendMediaFile={sendMediaFile}
               />
             </>
           ) : (

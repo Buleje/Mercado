@@ -337,6 +337,53 @@ export function useWhatsAppInbox() {
     [doSend],
   );
 
+  /** Imagen por URL pública (compartir producto del catálogo). */
+  const sendImageLink = useCallback(
+    async (link: string, caption: string): Promise<boolean> => {
+      return doSend({ media: { link, caption } });
+    },
+    [doSend],
+  );
+
+  /** Adjuntar archivo del PC (imagen/PDF/audio) — multipart a send-media. */
+  const sendMediaFile = useCallback(
+    async (file: File, caption = ""): Promise<boolean> => {
+      const phone = selectedRef.current;
+      if (!phone) return false;
+      setSending(true);
+      setSendError(null);
+      setSendErrorCode(null);
+      try {
+        const conv = conversations.find((c) => c.customerPhone === phone);
+        const form = new FormData();
+        form.append("file", file);
+        form.append("phone", phone);
+        if (conv?.phoneNumberId) form.append("phoneNumberId", conv.phoneNumberId);
+        if (caption) form.append("caption", caption);
+        const res = await tenantFetch("/api/admin/whatsapp/send-media", {
+          method: "POST",
+          headers: csrfHeaders(), // sin Content-Type: el browser arma el boundary
+          body: form,
+        });
+        const json = (await res.json().catch(() => ({}))) as { error?: string; code?: number };
+        if (!res.ok) {
+          setSendError(json.error ?? "No se pudo enviar el archivo.");
+          setSendErrorCode(json.code ?? null);
+          return false;
+        }
+        await loadMessages(phone, false);
+        void loadConversations();
+        return true;
+      } catch {
+        setSendError("Sin conexión. Intenta de nuevo.");
+        return false;
+      } finally {
+        setSending(false);
+      }
+    },
+    [conversations, loadConversations, loadMessages],
+  );
+
   /** Guarda la nota interna de la conversación (vacía = borrar). */
   const saveNote = useCallback(async (phone: string, note: string) => {
     notesTouchedAt.current = Date.now();
@@ -503,6 +550,8 @@ export function useWhatsAppInbox() {
     loadingMsgs,
     sendMessage,
     sendTemplate,
+    sendImageLink,
+    sendMediaFile,
     sending,
     sendError,
     sendErrorCode,
