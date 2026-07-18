@@ -22,12 +22,13 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   AlertCircle,
   CheckCircle2,
+  Download,
   FileSpreadsheet,
   Loader2,
   Upload,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { parseProduccionXlsx, parseSalidaXlsx, parseWoodEntriesXlsx } from "@/lib/forestal/ctp-import";
+import { descargarPlantillaLoCtp, parseProduccionXlsx, parseSalidaXlsx, parseWoodEntriesXlsx } from "@/lib/forestal/ctp-import";
 
 type Registro = "ingresos" | "produccion" | "salida";
 type ImportMode = Registro | "completo";
@@ -186,6 +187,14 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
     setPhase("idle"); setDetalle([]); setResumen(null); setCombined(null); setCreadosPorReg({});
   }
 
+  async function descargarPlantilla() {
+    try {
+      await descargarPlantillaLoCtp();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   const counts = combined ? { ingresos: combined.ingresos.length, produccion: combined.produccion.length, salida: combined.salida.length } : null;
   const totalCombined = counts ? counts.ingresos + counts.produccion + counts.salida : 0;
   const singleNoun = isCombined ? "" : REGISTRO_NOUN[mode as Registro];
@@ -241,6 +250,18 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               </div>
             </button>
             <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+              <p className="text-sm text-[var(--text-secondary)]">¿No tenés el Excel? Bajá la plantilla oficial con las 4 hojas y una fila de ejemplo por hoja.</p>
+              <button
+                type="button"
+                onClick={() => void descargarPlantilla()}
+                disabled={phase === "parsing"}
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+              >
+                <Download className="h-4 w-4" />
+                Descargar plantilla
+              </button>
+            </div>
             <p className="text-xs text-[var(--text-tertiary)]">Nada se guarda hasta que confirmes. Las filas inválidas se marcan y no se importan; las que ya existen se saltan (ingresos por GTF, corridas por fecha+producto+especie+cantidad).</p>
           </>
         )}

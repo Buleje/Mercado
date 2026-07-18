@@ -396,3 +396,105 @@ export async function parseSalidaXlsx(buffer: ArrayBuffer): Promise<SalidaParseR
 
   return { ok: true, salida };
 }
+
+// ─── Plantilla descargable (ADR-138) ─────────────────────────────────────────
+// El Excel LO-CTP vacío para arrancar SIN el export SNIFFS. Mismas cabeceras que
+// `exportarLibroCtpOficial` (ctp-export) → una plantilla llena importa 1:1. Trae
+// una fila de ejemplo por hoja (en gris) que muestra cómo se enlazan las hojas.
+
+function styleTemplateHead(ws: ExcelJS.Worksheet): void {
+  const head = ws.getRow(1);
+  head.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F5132" } };
+  head.height = 22;
+  ws.views = [{ state: "frozen", ySplit: 1 }];
+}
+function markExample(row: ExcelJS.Row): void {
+  row.eachCell((c) => { c.font = { italic: true, color: { argb: "FF9CA3AF" } }; });
+}
+
+export async function descargarPlantillaLoCtp(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+
+  // Hoja guía (el parser la ignora: solo lee «1. Ingreso» … «4. Salida»).
+  const wIns = wb.addWorksheet("Instrucciones");
+  wIns.getColumn(1).width = 96;
+  const lines: [string, boolean][] = [
+    ["Plantilla — Libro de Operaciones del CTP (LO-CTP · SERFOR, RDE D000025-2023)", true],
+    ["", false],
+    ["Completá las 4 hojas y subila con «Importar libro» → «Libro completo».", false],
+    ["Cada hoja trae UNA fila de ejemplo (en gris): reemplazala por tus datos y borrala si no la usás.", false],
+    ["", false],
+    ["1. Ingreso — materia prima que entra al CTP. La GTF (N° de Documento) es el origen legal: obligatoria.", false],
+    ["2. Consumos — qué GTF de ingreso alimenta cada corrida. «Producción destino» debe decir «Corrida #N» (N = fila de la hoja 3).", false],
+    ["3. Producción — la transformación: producto terminado + rendimiento. Se importa DESPUÉS de los ingresos.", false],
+    ["4. Salida — los despachos. Se validan contra lo producido (no se despacha más de lo transformado).", false],
+    ["", false],
+    ["Orden de importación (automático en «Libro completo»): Ingreso → Producción → Salida.", false],
+    ["Las filas que ya existan se saltan; las que difieran se marcan (no se sobrescriben).", false],
+  ];
+  for (const [t, bold] of lines) {
+    const r = wIns.addRow([t]);
+    if (bold) r.font = { bold: true, size: 13 };
+  }
+
+  // 1. Ingreso
+  const w1 = wb.addWorksheet("1. Ingreso");
+  w1.columns = [
+    { header: "N° Registro", key: "n", width: 11 }, { header: "Fecha", key: "f", width: 13 },
+    { header: "Tipo de Documento", key: "td", width: 16 }, { header: "N° de Documento", key: "nd", width: 16 },
+    { header: "N° Fuente de Origen/Procedencia", key: "fo", width: 22 },
+    { header: "Código de Origen/Procedencia", key: "co", width: 22 },
+    { header: "Código de CTP", key: "cc", width: 14 }, { header: "Tipo de Producto", key: "tp", width: 14 },
+    { header: "Especie", key: "e", width: 16 }, { header: "Nombre científico", key: "sc", width: 20 },
+    { header: "CITES", key: "ci", width: 7 }, { header: "N° Permiso CITES", key: "cp", width: 18 },
+    { header: "Unidad de Medida", key: "u", width: 14 },
+    { header: "Cantidad", key: "q", width: 12 }, { header: "Observaciones", key: "o", width: 30 },
+  ];
+  styleTemplateHead(w1);
+  markExample(w1.addRow({ n: 1, f: "01/06/2026", td: "GTF", nd: "GTF-EJEMPLO-001", fo: "CONC-001", co: "Concesión forestal · Ucayali", cc: "CTP-XX-000000", tp: "rolliza", e: "Tornillo", sc: "Cedrelinga cateniformis", ci: "", cp: "", u: "m³", q: 20, o: "Proveedor Ejemplo SAC" }));
+
+  // 2. Consumos
+  const wco = wb.addWorksheet("2. Consumos");
+  wco.columns = [
+    { header: "N°", key: "n", width: 6 }, { header: "N° Fuente (GTF ingreso)", key: "g", width: 24 },
+    { header: "Especie", key: "e", width: 18 }, { header: "Producción destino", key: "c", width: 30 },
+    { header: "Unidad de Medida", key: "u", width: 14 }, { header: "Cantidad consumida", key: "q", width: 16 },
+  ];
+  styleTemplateHead(wco);
+  markExample(wco.addRow({ n: 1, g: "GTF-EJEMPLO-001", e: "Tornillo", c: "Corrida #1 · Madera aserrada · Tornillo", u: "m³", q: 20 }));
+
+  // 3. Producción
+  const w2 = wb.addWorksheet("3. Producción");
+  w2.columns = [
+    { header: "N°", key: "n", width: 6 }, { header: "Fecha", key: "f", width: 13 },
+    { header: "Código de CTP", key: "cc", width: 14 }, { header: "Tipo de Producto", key: "tp", width: 16 },
+    { header: "Especie", key: "e", width: 16 }, { header: "N° Fuente (GTF ingreso)", key: "fo", width: 24 },
+    { header: "Unidad de Medida", key: "u", width: 14 }, { header: "Cantidad", key: "q", width: 12 },
+    { header: "Rendimiento %", key: "r", width: 13 }, { header: "Observaciones", key: "o", width: 30 },
+  ];
+  styleTemplateHead(w2);
+  markExample(w2.addRow({ n: 1, f: "03/06/2026", cc: "CTP-XX-000000", tp: "Madera aserrada", e: "Tornillo", fo: "GTF-EJEMPLO-001", u: "m3", q: 12, r: 60, o: "" }));
+
+  // 4. Salida
+  const w3 = wb.addWorksheet("4. Salida");
+  w3.columns = [
+    { header: "N°", key: "n", width: 6 }, { header: "Fecha", key: "f", width: 13 },
+    { header: "Tipo de Documento", key: "td", width: 16 }, { header: "N° de Documento (GTF)", key: "nd", width: 18 },
+    { header: "Código de CTP", key: "cc", width: 14 }, { header: "Tipo de Producto", key: "tp", width: 16 },
+    { header: "Especie", key: "e", width: 16 }, { header: "Unidad de Medida", key: "u", width: 14 },
+    { header: "Cantidad", key: "q", width: 12 }, { header: "Destino", key: "de", width: 24 },
+    { header: "Observaciones", key: "o", width: 24 },
+  ];
+  styleTemplateHead(w3);
+  markExample(w3.addRow({ n: 1, f: "05/06/2026", td: "GTF", nd: "GTF-SAL-EJEMPLO-001", cc: "CTP-XX-000000", tp: "Madera aserrada", e: "Tornillo", u: "m3", q: 10, de: "Cliente Ejemplo SAC", o: "" }));
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "plantilla-LO-CTP.xlsx";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
