@@ -74,7 +74,7 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
           <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <strong>Motivo del rechazo:</strong> {entry.rejectionReason}
+              <strong>{entry.status === "anulado" ? "Motivo de la anulación:" : "Motivo del rechazo:"}</strong> {entry.rejectionReason}
             </div>
           </div>
         )}
