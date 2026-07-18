@@ -178,6 +178,9 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
 
         {costo && consumos && !loading && (
           <>
+            {/* Trazabilidad (izq) · costo (der) en 2 columnas. */}
+            <div className="grid gap-4 md:grid-cols-2 md:items-start">
+            <div className="space-y-4">
             {/* 1. Veredicto: ¿la corrida sabe de dónde salió? */}
             {consumos.length === 0 ? (
               <WarningAlert
@@ -296,6 +299,8 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
               )}
             </section>
 
+            </div>
+            <div className="space-y-4">
             {/* 3. Costo de la corrida (interno) */}
             <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
               <div className="mb-2 flex items-center gap-2">
@@ -354,6 +359,8 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
               </div>
             )}
 
+            </div>
+            </div>
             {/* Rec #10 QA: historial de cambios de esta corrida (audit trail). */}
             <CtpHistorial entityId={entry.id} />
           </>
