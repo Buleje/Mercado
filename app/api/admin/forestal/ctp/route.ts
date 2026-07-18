@@ -114,6 +114,11 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (kardexEspecie) {
       return NextResponse.json({ kardex: await ForestCtpDB.kardexEspecie(auth.tenantId, kardexEspecie, period) });
     }
+    // Trazabilidad hacia adelante de UN ingreso: ¿a dónde fue esta madera?
+    const trazaForward = url.searchParams.get("trazaForward");
+    if (trazaForward) {
+      return NextResponse.json({ trazaForward: await ForestCtpDB.trazaForwardIngreso(auth.tenantId, trazaForward) });
+    }
     // Historial de cambios de UNA línea del libro (rec #10 QA): todo lo que el
     // audit trail registró sobre ese registro — defensa ante fiscalización.
     const historialId = url.searchParams.get("historial");

@@ -751,6 +751,108 @@ export class ForestCtpDB {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([mes, b]) => ({ mes, ingresoM3: r4(b.ingresoM3), producido: r4(b.producido), consumidoM3: r4(b.consumidoM3), rendimiento: b.rendPeso > 0 ? Math.round((b.rendW / b.rendPeso) * 10) / 10 : 0 }));
   }
+
+  /**
+   * Trazabilidad HACIA ADELANTE de un ingreso: ¿a dónde fue esta madera?
+   * GTF de ingreso → corridas de producción que la consumieron (puente
+   * ForestCtpConsumo) → despachos que salieron de esas corridas (puente
+   * ForestCtpDespachoOrigen). Complementa al Radar (que dibuja el período
+   * entero) con el detalle de UN ingreso — la pregunta que hace un fiscalizador:
+   * "esta guía, ¿dónde terminó?". Read-only, tenant-scoped, 3 queries batched.
+   *
+   * `sinConsumirM3` = volumen que aún no entró a ninguna corrida (Σ consumos ≤
+   * volumeM3, invariante I2). No es un hueco de trazabilidad: es patio.
+   */
+  static async trazaForwardIngreso(tenantId: string, woodEntryId: string): Promise<TrazaForwardIngreso | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!woodEntryId) throw new Error("woodEntryId is required");
+
+    const wood = await prisma.woodEntry.findFirst({
+      where: { id: woodEntryId, tenantId, deletedAt: null },
+      select: { volumeM3: true },
+    });
+    if (!wood) return null;
+
+    // Corridas que consumieron ESTE ingreso (con cuánto de él entró a cada una).
+    const consumos = await prisma.forestCtpConsumo.findMany({
+      where: { tenantId, woodEntryId },
+      select: { ctpEntryId: true, volumeM3: true },
+    });
+    const corridaIds = consumos.map((c) => c.ctpEntryId);
+
+    const [corridaRows, origenRows] = await Promise.all([
+      corridaIds.length
+        ? prisma.forestCtpEntry.findMany({
+            where: { id: { in: corridaIds }, tenantId, deletedAt: null },
+            select: { id: true, lineNo: true, entryDate: true, productType: true, speciesCommon: true, quantity: true, unit: true, status: true },
+          })
+        : Promise.resolve([]),
+      corridaIds.length
+        ? prisma.forestCtpDespachoOrigen.findMany({
+            where: { tenantId, produccionEntryId: { in: corridaIds } },
+            select: { produccionEntryId: true, despachoEntryId: true, quantity: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const despachoIds = [...new Set(origenRows.map((o) => o.despachoEntryId))];
+    const despachoRows = despachoIds.length
+      ? await prisma.forestCtpEntry.findMany({
+          where: { id: { in: despachoIds }, tenantId, deletedAt: null },
+          select: { id: true, lineNo: true, entryDate: true, destino: true, gtfNumber: true, unit: true, status: true },
+        })
+      : [];
+    const despachoById = new Map(despachoRows.map((d) => [d.id, d]));
+    const corridaById = new Map(corridaRows.map((c) => [c.id, c]));
+
+    const volumeM3 = Number(wood.volumeM3 ?? 0);
+    const consumidoM3 = consumos.reduce((a, c) => a + Number(c.volumeM3 ?? 0), 0);
+
+    const corridas = consumos
+      .map((c) => {
+        const corrida = corridaById.get(c.ctpEntryId);
+        if (!corrida) return null;
+        const despachos = origenRows
+          .filter((o) => o.produccionEntryId === c.ctpEntryId)
+          .map((o) => {
+            const d = despachoById.get(o.despachoEntryId);
+            if (!d) return null;
+            return {
+              despachoEntryId: o.despachoEntryId,
+              lineNo: d.lineNo,
+              entryDate: d.entryDate.toISOString(),
+              destino: d.destino,
+              gtfNumber: d.gtfNumber,
+              quantity: r4(Number(o.quantity ?? 0)),
+              unit: d.unit,
+              status: d.status,
+            };
+          })
+          .filter((d): d is NonNullable<typeof d> => d !== null)
+          .sort((a, b) => a.lineNo - b.lineNo);
+        return {
+          produccionEntryId: c.ctpEntryId,
+          lineNo: corrida.lineNo,
+          entryDate: corrida.entryDate.toISOString(),
+          productType: corrida.productType,
+          speciesCommon: corrida.speciesCommon,
+          volumeConsumidoM3: r4(Number(c.volumeM3 ?? 0)),
+          quantity: corrida.quantity != null ? r4(Number(corrida.quantity)) : null,
+          unit: corrida.unit,
+          status: corrida.status,
+          despachos,
+        };
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null)
+      .sort((a, b) => a.lineNo - b.lineNo);
+
+    return {
+      volumeM3: r4(volumeM3),
+      consumidoM3: r4(consumidoM3),
+      sinConsumirM3: r4(Math.max(0, volumeM3 - consumidoM3)),
+      corridas,
+    };
+  }
 }
 
 export interface ReordenProyeccion {
@@ -763,6 +865,38 @@ export interface ReordenProyeccion {
 export interface TendenciaMes {
   mes: string; // YYYY-MM
   ingresoM3: number; producido: number; consumidoM3: number; rendimiento: number;
+}
+
+/** Trazabilidad hacia adelante de un ingreso: corridas que lo consumieron y
+ *  los despachos que salieron de esas corridas. Ver `trazaForwardIngreso`. */
+export interface TrazaForwardIngreso {
+  volumeM3: number;
+  consumidoM3: number;
+  sinConsumirM3: number;
+  corridas: {
+    produccionEntryId: string;
+    lineNo: number;
+    entryDate: string; // ISO
+    productType: string | null;
+    speciesCommon: string | null;
+    /** m³ de ESTE ingreso que entraron a la corrida. */
+    volumeConsumidoM3: number;
+    /** producido total de la corrida (todas sus materias primas). */
+    quantity: number | null;
+    unit: string | null;
+    status: string;
+    despachos: {
+      despachoEntryId: string;
+      lineNo: number;
+      entryDate: string; // ISO
+      destino: string | null;
+      gtfNumber: string | null;
+      /** cantidad de la corrida que salió en este despacho. */
+      quantity: number;
+      unit: string | null;
+      status: string;
+    }[];
+  }[];
 }
 
 export interface KardexEspecie {
