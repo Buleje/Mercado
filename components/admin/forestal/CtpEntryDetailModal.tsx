@@ -54,20 +54,38 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
       icon={TreePine}
     >
       <div className="space-y-5">
-        {/* Estado + alertas de cumplimiento arriba: es lo que se pregunta primero */}
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusChip status={entry.status} />
-          {entry.speciesCites && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-100)] px-3 py-1 text-xs font-bold text-[var(--data-error-700)]">
-              <ShieldAlert className="h-3.5 w-3.5" />
-              CITES · requiere permiso
-            </span>
-          )}
-          {fueraDePlazo && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-3 py-1 text-xs font-bold text-[var(--data-warning-700)]">
-              <AlertCircle className="h-3.5 w-3.5" />
-              Registrado {dias} días después (plazo: {PLAZO_REGISTRO_DIAS} días hábiles)
-            </span>
+        {/* Hero: la especie y el volumen — lo que se pregunta primero — con el
+            estado y las alertas de cumplimiento, sobre una banda editorial. */}
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--accent-soft)] to-[var(--surface-canvas)] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="truncate text-xl font-bold text-[var(--text-primary)]">{entry.speciesCommonName}</h2>
+              {entry.speciesScientificName && (
+                <p className="truncate text-sm italic text-[var(--text-tertiary)]">{entry.speciesScientificName}</p>
+              )}
+            </div>
+            <StatusChip status={entry.status} />
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
+            <HeroStat value={Number(entry.volumeM3).toFixed(2)} unit="m³" label="Volumen" big />
+            <HeroStat value={String(entry.pieces)} label="Piezas" />
+            <HeroStat value={productLabel(entry.productType)} label="Producto" />
+          </div>
+
+          {(entry.speciesCites || fueraDePlazo) && (
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--rule-soft)] pt-3">
+              {entry.speciesCites && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-100)] px-3 py-1 text-xs font-bold text-[var(--data-error-700)]">
+                  <ShieldAlert className="h-3.5 w-3.5" /> CITES · requiere permiso
+                </span>
+              )}
+              {fueraDePlazo && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-3 py-1 text-xs font-bold text-[var(--data-warning-700)]">
+                  <AlertCircle className="h-3.5 w-3.5" /> Registrado {dias} días después (plazo {PLAZO_REGISTRO_DIAS} días hábiles)
+                </span>
+              )}
+            </div>
           )}
         </div>
 
@@ -194,6 +212,18 @@ function StatusChip({ status }: { status: WoodEntry["status"] }) {
   );
 }
 
+function HeroStat({ value, unit, label, big }: { value: string; unit?: string; label: string; big?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-baseline gap-1">
+        <span className={`font-mono font-bold tabular-nums text-[var(--text-primary)] ${big ? "text-3xl" : "text-xl"}`}>{value}</span>
+        {unit && <span className="text-sm text-[var(--text-tertiary)]">{unit}</span>}
+      </div>
+      <div className="mt-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</div>
+    </div>
+  );
+}
+
 function Section({
   title,
   icon: Icon,
@@ -204,10 +234,12 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-[var(--text-tertiary)]" />
-        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+    <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
+      <div className="mb-3 flex items-center gap-2 border-b border-[var(--rule-soft)] pb-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-dark)]">
+          <Icon className="h-4 w-4" />
+        </span>
+        <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
           {title}
         </CardTitle>
       </div>
