@@ -45,6 +45,7 @@ import CtpFichaEditor from "./CtpFichaEditor";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
+import CtpHealthChip from "./CtpHealthChip";
 
 type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "analisis" | "ficha";
 
@@ -167,6 +168,12 @@ export default function CTPLibroOperaciones() {
             </button>
           );
         })}
+        {/* Semáforo del período: siempre visible salvo en la propia pestaña. */}
+        {view !== "cumplimiento" && (
+          <span className="ml-auto self-center pb-1">
+            <CtpHealthChip period={period} onNavigate={() => setView("cumplimiento")} />
+          </span>
+        )}
       </div>
 
       {view === "ingresos" && <CtpIngresosView period={period} />}
