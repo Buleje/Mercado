@@ -114,6 +114,18 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (kardexEspecie) {
       return NextResponse.json({ kardex: await ForestCtpDB.kardexEspecie(auth.tenantId, kardexEspecie, period) });
     }
+    // Historial de cambios de UNA línea del libro (rec #10 QA): todo lo que el
+    // audit trail registró sobre ese registro — defensa ante fiscalización.
+    const historialId = url.searchParams.get("historial");
+    if (historialId) {
+      const { ActivityLogDB } = await import("@/lib/db/activity-log.db");
+      const rows = await ActivityLogDB.list(auth.tenantId, { entityId: historialId, limit: 50 });
+      return NextResponse.json({
+        historial: rows
+          .filter((r) => r.action.startsWith("ctp_"))
+          .map((r) => ({ id: r.id, action: r.action, detail: r.detail, user: r.user, createdAt: r.createdAt })),
+      });
+    }
     // Reorden predictivo (all-time, ritmo últimos 90 días).
     if (url.searchParams.get("reorden") === "1") {
       return NextResponse.json({ reorden: await ForestCtpDB.proyeccionReorden(auth.tenantId) });

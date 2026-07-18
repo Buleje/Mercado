@@ -35,6 +35,7 @@ import { printGtfSalida } from "@/lib/forestal/ctp-gtf-print";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
+import CtpHistorial from "./CtpHistorial";
 
 export interface DespachoResumen {
   id: string;
@@ -414,6 +415,9 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
               )}
               {printError && <p className="text-center text-xs font-bold text-[var(--data-error-700)]">{printError}</p>}
             </div>
+
+            {/* Rec #10 QA: historial de cambios de este despacho (audit trail). */}
+            <CtpHistorial entityId={entry.id} />
           </>
         )}
       </div>

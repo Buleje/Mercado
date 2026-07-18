@@ -12,6 +12,7 @@
 
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
+import CtpHistorial from "./CtpHistorial";
 import {
   AlertCircle,
   FileText,
@@ -158,6 +159,9 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
           <Field label="Validado por" value={entry.validatedBy} />
           <Field label="Validado el" value={formatDateTime(entry.validatedAt)} />
         </Section>
+
+        {/* Rec #10 QA: todo lo que pasó con este registro, del audit trail. */}
+        <CtpHistorial entityId={entry.id} />
 
         <p className="border-t-2 border-[var(--rule-soft)] pt-4 text-xs text-[var(--text-tertiary)]">
           Registro interno del CTP. No reemplaza al LOE-CTP oficial de SERFOR.

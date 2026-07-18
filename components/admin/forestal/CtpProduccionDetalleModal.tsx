@@ -28,6 +28,7 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
+import CtpHistorial from "./CtpHistorial";
 
 export interface ProduccionResumen {
   id: string;
@@ -352,6 +353,9 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                 {freezeError && <p className="text-center text-xs font-bold text-[var(--data-error-700)]">{freezeError}</p>}
               </div>
             )}
+
+            {/* Rec #10 QA: historial de cambios de esta corrida (audit trail). */}
+            <CtpHistorial entityId={entry.id} />
           </>
         )}
       </div>
