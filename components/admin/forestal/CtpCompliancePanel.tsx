@@ -20,6 +20,7 @@ import {
   PackageX,
   RefreshCw,
   ScrollText,
+  ShieldAlert,
   ThumbsUp,
   TreePine,
 } from "@buleje/design-system/icons";
@@ -135,6 +136,21 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           }
           onNavigate={() => onNavigate(data.citesSinPermisoEspecies.length > 0 ? "ficha" : "ingresos")}
           navigateLabel={data.citesSinPermisoEspecies.length > 0 ? "Ir a Ficha CTP" : "Ver ingresos"}
+          severity="warning"
+        />
+        <ComplianceRow
+          count={data.citesSinPermisoIngresos.length}
+          icon={ShieldAlert}
+          title={(n) => `${n} ${n === 1 ? "ingreso CITES sin permiso vinculado" : "ingresos CITES sin permiso vinculado"}`}
+          okTitle="Cada ingreso CITES tiene su permiso vinculado"
+          description={
+            data.citesSinPermisoIngresos.length > 0
+              ? `Un ingreso de especie protegida sin su N° de permiso vinculado no acredita origen legal ante una fiscalización: GTF ${data.citesSinPermisoIngresos.slice(0, 4).join(", ")}${data.citesSinPermisoIngresos.length > 4 ? ` y ${data.citesSinPermisoIngresos.length - 4} más` : ""}.`
+              : "Cada acta de ingreso CITES acredita su permiso."
+          }
+          action="Cargá el permiso en la Ficha CTP y vinculalo al registrar el ingreso."
+          onNavigate={() => onNavigate("ingresos")}
+          navigateLabel="Ver ingresos"
           severity="warning"
         />
         <ComplianceRow

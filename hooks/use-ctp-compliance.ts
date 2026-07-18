@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
-import { ctpComplianceScore, type CtpComplianceCounts } from "@/lib/forestal/ctp-compliance";
+import { ctpComplianceScore, parseCitesPermiso, type CtpComplianceCounts } from "@/lib/forestal/ctp-compliance";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { estadoVencimiento } from "@/lib/forestal/ctp-ficha-types";
 import type { WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
@@ -32,6 +32,8 @@ export interface CtpComplianceData {
   despachosSinTrazaLineas: number[];
   /** Especies CITES del período sin permiso cargado en la Ficha (informativo). */
   citesSinPermisoEspecies: string[];
+  /** GTF de ingresos CITES (vivos) sin un permiso vinculado en el acta (informativo). */
+  citesSinPermisoIngresos: string[];
   /** Corridas con rendimiento sobre el referencial SERFOR (informativo). */
   rendimientoAltoLineas: number[];
   /** Títulos habilitantes / permisos CITES vencidos en la Ficha (informativo). */
@@ -59,9 +61,10 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
     setLoading(true);
     setError(null);
     try {
-      // limit=1: esta vista no necesita la lista de entries, solo `stats`.
+      // stats para los agregados + entries del período para el chequeo CITES
+      // por-ingreso (cada acta trae su permiso en notes; el stats agregado no).
       const woodParams = applyCtpPeriodParams(
-        new URLSearchParams({ stats: "1", limit: "1" }),
+        new URLSearchParams({ stats: "1", limit: "1000" }),
         period,
       );
       const saldosParams = applyCtpPeriodParams(new URLSearchParams({ saldos: "1" }), period);
@@ -80,8 +83,20 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
       if (!saldosRes.ok) throw new Error(await errorFrom(saldosRes));
       if (!trazaRes.ok) throw new Error(await errorFrom(trazaRes));
 
-      const wood: { stats: WoodEntryStats } = await woodRes.json();
+      const wood: {
+        stats: WoodEntryStats;
+        entries?: { gtfNumber: string; speciesCites: boolean; status: string; notes: string | null }[];
+      } = await woodRes.json();
       const saldosBody: { saldos: SaldosSummary } = await saldosRes.json();
+
+      // CITES por-ingreso: actas CITES vivas (no rechazadas/anuladas) que no
+      // vincularon un permiso en sus notas. Informativo — NO resta score, como
+      // el resto de señales CITES (un score que castiga lo incorregible enseña
+      // a ignorarlo). El faltante estructural se ve acá y en el export.
+      const citesSinPermisoIngresos = (wood.entries ?? [])
+        .filter((e) => e.speciesCites && e.status !== "rechazado" && e.status !== "anulado" && !parseCitesPermiso(e.notes))
+        .map((e) => e.gtfNumber)
+        .filter(Boolean);
       const trazaBody: { traza: { total: number; incompletos: number; lineas: number[] } } =
         await trazaRes.json();
       const saldos = saldosBody.saldos;
@@ -150,6 +165,7 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         productosNegativos,
         despachosSinTrazaLineas: trazaBody.traza.lineas,
         citesSinPermisoEspecies,
+        citesSinPermisoIngresos,
         rendimientoAltoLineas,
         documentosVencidosLabels,
       });
