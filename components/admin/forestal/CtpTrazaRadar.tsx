@@ -235,16 +235,18 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
           )}
 
           {/* Leyenda */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--text-tertiary)]">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
             <Legend swatch="var(--accent)" icon={PackageOpen} text="Ingreso (GTF)" />
             <Legend swatch="var(--data-info-500)" icon={Boxes} text="Producción" />
             <Legend swatch="var(--data-success-600)" icon={Truck} text="Despacho" />
-            <span className="inline-flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-[var(--data-warning-600)]" /> Hueco en la cadena</span>
-            <span className="inline-flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5 text-[var(--data-error-600)]" /> CITES</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-50)] px-2.5 py-1 text-[var(--data-warning-700)]"><AlertTriangle className="h-3.5 w-3.5" /> Hueco en la cadena</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-50)] px-2.5 py-1 text-[var(--data-error-700)]"><ShieldAlert className="h-3.5 w-3.5" /> CITES</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            <span>Ingreso · {g.ingresos.length}</span><span>Producción · {g.corridas.length}</span><span>Despacho · {g.despachos.length}</span>
+            <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Ingreso · {g.ingresos.length}</span>
+            <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Producción · {g.corridas.length}</span>
+            <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Despacho · {g.despachos.length}</span>
           </div>
 
           {/* Barra del nodo fijado: abre la ficha completa (drill-in). */}
@@ -265,13 +267,19 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+          <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)]">
             {/* Click en el fondo = soltar el pin. */}
             <svg
               viewBox={`0 0 ${layout.W} ${layout.H}`} width={layout.W} className="max-w-none" style={{ minWidth: "100%" }}
               role="img" aria-label="Grafo de cadena de custodia"
               onClick={() => setPinned(null)}
             >
+              <defs>
+                {/* Sombra suave editorial para los nodos. */}
+                <filter id="ctp-node-shadow" x="-20%" y="-20%" width="140%" height="150%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0f172a" floodOpacity="0.10" />
+                </filter>
+              </defs>
               {g.consumos.map((e) => <Edge key={`c:${e.from}->${e.to}`} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={!active || active.edges.has(`c:${e.from}->${e.to}`)} dim={!!active && !active.edges.has(`c:${e.from}->${e.to}`)} amber={edgeAmber(e.to)} />)}
               {g.origenes.map((e) => <Edge key={`o:${e.from}->${e.to}`} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={!active || active.edges.has(`o:${e.from}->${e.to}`)} dim={!!active && !active.edges.has(`o:${e.from}->${e.to}`)} amber={edgeAmber(e.from) || edgeAmber(e.to)} />)}
               {layout.cols.flat().map((n) => (
@@ -291,19 +299,28 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
 
 function SummaryChip({ icon: Icon, tone, value, label }: { icon: typeof CheckCircle2; tone: "success" | "warning" | "danger"; value: number; label: string }) {
   const dim = value === 0;
-  const cls = dim
-    ? "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]"
+  // card + badge del ícono; en dim queda neutro (no grita un 0).
+  const card = dim
+    ? "border-[var(--rule-soft)] bg-[var(--surface-raised)]"
     : tone === "success"
-      ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
+      ? "border-[var(--data-success-500)] bg-linear-to-br from-[var(--data-success-50)] to-[var(--surface-raised)]"
       : tone === "warning"
-        ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]"
-        : "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]";
+        ? "border-[var(--data-warning-500)] bg-linear-to-br from-[var(--data-warning-50)] to-[var(--surface-raised)]"
+        : "border-[var(--data-error-500)] bg-linear-to-br from-[var(--data-error-50)] to-[var(--surface-raised)]";
+  const accent = dim
+    ? "text-[var(--text-tertiary)]"
+    : tone === "success" ? "text-[var(--data-success-700)]" : tone === "warning" ? "text-[var(--data-warning-700)]" : "text-[var(--data-error-700)]";
+  const badge = dim
+    ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+    : tone === "success" ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]" : tone === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" : "bg-[var(--data-error-100)] text-[var(--data-error-700)]";
   return (
-    <div className={`flex items-center gap-3 rounded-xl border-2 px-3 py-2 ${cls}`}>
-      <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+    <div className={`flex items-center gap-3 rounded-2xl border-2 px-3.5 py-3 shadow-[var(--shadow-sm)] ${card}`}>
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${badge}`}>
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
       <div className="min-w-0">
-        <div className="font-mono text-lg font-bold tabular-nums leading-none">{value}</div>
-        <div className="mt-0.5 text-[length:var(--ts-2xs)] font-medium leading-tight opacity-80">{label}</div>
+        <div className={`font-mono text-2xl font-bold tabular-nums leading-none ${accent}`}>{value}</div>
+        <div className="mt-1 text-[length:var(--ts-2xs)] font-semibold uppercase tracking-wide leading-tight text-[var(--text-tertiary)]">{label}</div>
       </div>
     </div>
   );
@@ -311,8 +328,8 @@ function SummaryChip({ icon: Icon, tone, value, label }: { icon: typeof CheckCir
 
 function Legend({ swatch, icon: Icon, text }: { swatch: string; icon: typeof Boxes; text: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="h-3 w-3 rounded-sm" style={{ background: swatch }} aria-hidden="true" />
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1">
+      <span className="h-2.5 w-2.5 rounded-full" style={{ background: swatch }} aria-hidden="true" />
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {text}
     </span>
@@ -339,11 +356,13 @@ function Edge({ a, b, on, dim, amber }: { a?: Placed; b?: Placed; on: boolean; d
 function Node({ n, dim, pinned, onHover, onPin }: { n: Placed; dim: boolean; pinned: boolean; onHover: (id: string | null) => void; onPin: (id: string) => void }) {
   const warn = n.status === "warn";
   const muted = n.status === "muted";
-  const stroke = n.cites ? "var(--data-error-500)" : warn ? "var(--data-warning-500)" : KIND_ACCENT[n.kind];
+  const accent = KIND_ACCENT[n.kind];
+  const fill = warn ? "var(--data-warning-50)" : muted ? "var(--surface-sunken)" : "var(--surface-raised)";
+  const stroke = pinned ? "var(--accent)" : n.cites ? "var(--data-error-500)" : warn ? "var(--data-warning-500)" : "var(--rule-base)";
   return (
     <g
       transform={`translate(${n.x} ${n.y})`}
-      opacity={dim ? 0.22 : muted ? 0.6 : 1}
+      opacity={dim ? 0.2 : muted ? 0.65 : 1}
       onMouseEnter={() => onHover(n.id)}
       onMouseLeave={() => onHover(null)}
       onClick={(ev) => { ev.stopPropagation(); onPin(n.id); }}
@@ -351,14 +370,25 @@ function Node({ n, dim, pinned, onHover, onPin }: { n: Placed; dim: boolean; pin
       role="button"
       aria-label={`${n.top} — ${n.sub}`}
     >
-      <rect width={NODE_W} height={NODE_H} rx={12} fill="var(--surface-canvas)" stroke={stroke} strokeWidth={pinned ? 3 : warn ? 2 : 1.5} />
-      {/* barra de color por columna */}
-      <rect width={4} height={NODE_H} rx={2} fill={KIND_ACCENT[n.kind]} />
-      <text x={14} y={20} fontSize={11} fontWeight={700} fill="var(--text-primary)">{trunc(n.top, 22)}</text>
-      <text x={14} y={35} fontSize={9.5} fill="var(--text-tertiary)">{trunc(n.sub, 24)}</text>
-      {n.vol && <text x={14} y={45} fontSize={8.5} fontWeight={700} fill={KIND_ACCENT[n.kind]}>{trunc(n.vol, 18)}</text>}
-      {warn && <circle cx={NODE_W - 12} cy={NODE_H - 12} r={4} fill="var(--data-warning-500)" />}
-      {n.cites && <text x={NODE_W - 10} y={19} fontSize={8} fontWeight={700} fill="var(--data-error-600)" textAnchor="end">CITES</text>}
+      <rect width={NODE_W} height={NODE_H} rx={14} fill={fill} stroke={stroke} strokeWidth={pinned ? 2.5 : warn ? 2 : 1.5} filter={dim ? undefined : "url(#ctp-node-shadow)"} />
+      {/* pill de acento por columna (inset, no borde a sangre) */}
+      <rect x={9} y={11} width={3.5} height={NODE_H - 22} rx={1.75} fill={accent} />
+      <text x={20} y={20} fontSize={11} fontWeight={700} fill="var(--text-primary)">{trunc(n.top, 21)}</text>
+      <text x={20} y={34} fontSize={9.5} fill="var(--text-tertiary)">{trunc(n.sub, 23)}</text>
+      {n.vol && <text x={20} y={44} fontSize={8.5} fontWeight={700} fill={accent}>{trunc(n.vol, 16)}</text>}
+      {/* chip de aviso (hueco) */}
+      {warn && (
+        <>
+          <circle cx={NODE_W - 13} cy={NODE_H - 13} r={5.5} fill="var(--data-warning-500)" />
+          <text x={NODE_W - 13} y={NODE_H - 10} fontSize={8} fontWeight={800} fill="#fff" textAnchor="middle">!</text>
+        </>
+      )}
+      {n.cites && (
+        <>
+          <rect x={NODE_W - 44} y={9} width={35} height={14} rx={7} fill="var(--data-error-100)" />
+          <text x={NODE_W - 26.5} y={19} fontSize={8} fontWeight={800} fill="var(--data-error-700)" textAnchor="middle">CITES</text>
+        </>
+      )}
     </g>
   );
 }
