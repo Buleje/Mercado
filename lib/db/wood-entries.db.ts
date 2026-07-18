@@ -254,6 +254,22 @@ export class WoodEntriesDB {
   }
 
   /**
+   * Qué GTF de la lista YA existen (vivas) para el tenant. Para la importación
+   * idempotente del LO-CTP (ADR-138): un ingreso se identifica por su `gtfNumber`;
+   * re-importar el mismo archivo salta los que ya están, no duplica.
+   */
+  static async existingGtfNumbers(tenantId: string, gtfs: string[]): Promise<Set<string>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const clean = [...new Set(gtfs.map((g) => g.trim()).filter(Boolean))];
+    if (clean.length === 0) return new Set();
+    const rows = await prisma.woodEntry.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: { in: clean } },
+      select: { gtfNumber: true },
+    });
+    return new Set(rows.map((r) => r.gtfNumber));
+  }
+
+  /**
    * Agregados del período, calculados en DB sobre TODO el conjunto filtrado
    * (no sobre la página cargada — sumar en el cliente miente en cuanto hay más
    * registros que `limit`).

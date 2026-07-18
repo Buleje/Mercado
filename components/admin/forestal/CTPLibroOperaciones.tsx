@@ -32,6 +32,7 @@ import {
   TreePine,
   TrendingUp,
   Truck,
+  Upload,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
@@ -42,6 +43,7 @@ import CtpIngresosView from "./CtpIngresosView";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
+import CtpImportModal from "./CtpImportModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
@@ -72,6 +74,10 @@ export default function CTPLibroOperaciones() {
   const [exportError, setExportError] = useState<string | null>(null);
   // Puente inverso: GTF que el Libro de Títulos Habilitantes mandó a ingresar.
   const [pendingIngresoGtf, setPendingIngresoGtf] = useState<string | null>(null);
+  // Importación del LO-CTP (ADR-138) — etapa 1: ingresos.
+  const [showImport, setShowImport] = useState(false);
+  // Remonta la vista de Ingresos tras importar → re-fetch de la lista.
+  const [ingresosKey, setIngresosKey] = useState(0);
 
   const period = useMemo(() => resolveCtpPeriod(periodKey, custom), [periodKey, custom]);
 
@@ -124,6 +130,15 @@ export default function CTPLibroOperaciones() {
         icon={TreePine}
       >
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            title="Importar el Libro de Operaciones desde el Excel oficial LO-CTP (SERFOR) — etapa 1: ingresos"
+            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          >
+            <Upload className="h-4 w-4" />
+            <span>Importar libro</span>
+          </button>
           <button
             type="button"
             onClick={() => exportar("interno")}
@@ -205,6 +220,7 @@ export default function CTPLibroOperaciones() {
 
       {view === "ingresos" && (
         <CtpIngresosView
+          key={ingresosKey}
           period={period}
           openGtf={pendingIngresoGtf}
           onOpenConsumed={() => setPendingIngresoGtf(null)}
@@ -217,6 +233,13 @@ export default function CTPLibroOperaciones() {
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
       {view === "analisis" && <CtpAnalisis />}
       {view === "ficha" && <CtpFichaEditor />}
+
+      {showImport && (
+        <CtpImportModal
+          onClose={() => setShowImport(false)}
+          onImported={() => { setIngresosKey((k) => k + 1); setView("ingresos"); }}
+        />
+      )}
     </div>
   );
 }
