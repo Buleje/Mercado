@@ -34,6 +34,7 @@ import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import WoodEntryForm from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
+import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresosTable from "./CtpIngresosTable";
 import CtpGuiasBandeja from "./CtpGuiasBandeja";
 import { STATUS_META, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
@@ -70,6 +71,7 @@ export default function CtpIngresosView({
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [page, setPage] = useState(0);
   const [detail, setDetail] = useState<WoodEntry | null>(null);
+  const [chainEntry, setChainEntry] = useState<WoodEntry | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -302,6 +304,7 @@ export default function CtpIngresosView({
         onConfirmReject={reject}
         onValidate={validate}
         onDetail={setDetail}
+        onChain={setChainEntry}
       />
 
       {total > 0 && (
@@ -350,6 +353,7 @@ export default function CtpIngresosView({
       )}
 
       {detail && <CtpEntryDetailModal entry={detail} onClose={() => setDetail(null)} />}
+      {chainEntry && <CtpIngresoCadenaModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
     </div>
   );
 }

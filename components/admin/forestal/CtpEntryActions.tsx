@@ -7,7 +7,7 @@
  * (single source): si cambia una regla de estado, cambia en un solo lugar.
  */
 
-import { Eye, ThumbsDown, ThumbsUp, XCircle } from "@buleje/design-system/icons";
+import { Eye, Share2, ThumbsDown, ThumbsUp, XCircle } from "@buleje/design-system/icons";
 import type { WoodEntry } from "./ctp-shared";
 
 export interface CtpEntryActionsProps {
@@ -21,6 +21,9 @@ export interface CtpEntryActionsProps {
   onConfirmReject: (id: string) => void;
   onValidate: (id: string) => void;
   onDetail: (entry: WoodEntry) => void;
+  /** Cadena hacia adelante (¿a dónde fue la madera?). Solo tiene sentido si el
+   *  ingreso pudo consumirse — se muestra en validado/procesado. */
+  onChain?: (entry: WoodEntry) => void;
   /** mobile-card estira los botones al ancho completo; la tabla los deja inline. */
   block?: boolean;
 }
@@ -36,6 +39,7 @@ export default function CtpEntryActions({
   onConfirmReject,
   onValidate,
   onDetail,
+  onChain,
   block = false,
 }: CtpEntryActionsProps) {
   if (rejectingId === e.id) {
@@ -87,6 +91,17 @@ export default function CtpEntryActions({
         <Eye className="h-3.5 w-3.5" />
         Ver
       </button>
+      {onChain && (e.status === "validado" || e.status === "procesado") && (
+        <button
+          type="button"
+          onClick={() => onChain(e)}
+          title="Cadena: a dónde fue esta madera (corridas y despachos)"
+          className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)] hover:bg-[var(--data-info-100)] ${btn}`}
+        >
+          <Share2 className="h-3.5 w-3.5" />
+          Cadena
+        </button>
+      )}
       {e.status === "pendiente" && (
         <>
           <button

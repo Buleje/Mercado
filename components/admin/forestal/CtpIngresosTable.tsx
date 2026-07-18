@@ -48,6 +48,7 @@ export interface CtpIngresosTableProps {
   onConfirmReject: (id: string) => void;
   onValidate: (id: string) => void;
   onDetail: (entry: WoodEntry) => void;
+  onChain: (entry: WoodEntry) => void;
 }
 
 export default function CtpIngresosTable(props: CtpIngresosTableProps) {
@@ -74,6 +75,7 @@ export default function CtpIngresosTable(props: CtpIngresosTableProps) {
     onConfirmReject: props.onConfirmReject,
     onValidate: props.onValidate,
     onDetail,
+    onChain: props.onChain,
   };
   const toggleSelect = (id: string, checked: boolean) =>
     setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
