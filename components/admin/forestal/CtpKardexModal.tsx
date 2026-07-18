@@ -46,10 +46,13 @@ export default function CtpKardexModal({ especie, period, onClose }: { especie: 
 
         {k && !loading && (
           <>
-            <div className="grid grid-cols-3 gap-3">
+            {/* Resumen (sidebar) + movimientos (tabla) lado a lado. */}
+            <div className="grid gap-4 lg:grid-cols-[15rem_1fr] lg:items-start">
+            <div className="space-y-3">
               <Stat label="Ingresado" value={`${n4(k.ingresoTotal)} m³`} tone="ok" />
               <Stat label="Consumido" value={`${n4(k.consumoTotal)} m³`} />
               <Stat label="Saldo" value={`${n4(k.saldo)} m³`} tone={k.saldo < 0 ? "bad" : "ok"} />
+              <p className="text-xs text-[var(--text-tertiary)]">El saldo final coincide con la pestaña Saldos. Consumo = m³ declarados en las corridas de producción de esta especie.</p>
             </div>
 
             <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -92,7 +95,7 @@ export default function CtpKardexModal({ especie, period, onClose }: { especie: 
               </table>
               {k.movimientos.length === 0 && <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">Sin movimientos de {especie} en {period.label}.</div>}
             </div>
-            <p className="text-xs text-[var(--text-tertiary)]">El saldo final coincide con la pestaña Saldos. Consumo = m³ declarados en las corridas de producción de esta especie.</p>
+            </div>
           </>
         )}
       </div>

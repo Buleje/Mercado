@@ -108,14 +108,20 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
 
         {!loading && !error && (
           <>
-            {/* Preview — arriba, siempre visible */}
-            <div className="grid grid-cols-2 gap-3 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-canvas)] p-4 lg:grid-cols-4">
+            {/* Form (izq) + preview sticky (der) en 2 columnas. */}
+            <div className="grid gap-4 lg:grid-cols-[1fr_18rem] lg:items-start">
+            {/* Preview — arriba en mobile, sticky a la derecha en desktop. */}
+            <div className="order-1 lg:order-2 lg:sticky lg:top-0">
+            <div className="grid grid-cols-2 gap-3 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-canvas)] p-4">
               <Stat label="Materia prima" value={`${n4(sim.inputM3)} m³`} sub={`${sim.nGuias} guía${sim.nGuias === 1 ? "" : "s"}`} />
               <Stat label={`Producido (${rend}%)`} value={`${n4(sim.producidoM3)} m³`} sub={`${sim.producidoPt.toFixed(0)} pt`} tone="ok" />
               <Stat label="COGS estimado" value={sim.cogsTotal != null ? money(sim.cogsTotal) : "—"} sub={sim.costoUnit != null ? `${money(sim.costoUnit)}/m³` : cogsMotivo(sim.motivo)} tone={sim.cogsTotal != null ? undefined : "muted"} />
               <Stat label="Margen a precio meta" value={sim.margenPct != null ? `${sim.margenPct.toFixed(1)}%` : "—"} sub={sim.margenPct == null ? "cargá precio y costo" : sim.margenPct < 0 ? "pérdida" : "ganancia"} tone={sim.margenPct == null ? "muted" : sim.margenPct < 0 ? "bad" : "ok"} />
             </div>
+            </div>
 
+            {/* Form: parámetros + guías (izquierda en desktop). */}
+            <div className="order-2 space-y-4 lg:order-1">
             {/* Parámetros */}
             <div className="grid gap-3 sm:grid-cols-3">
               <Field label="Producto" hint={ref != null ? `Referencial SERFOR: ${ref}%` : "Sin referencial estándar"}>
@@ -162,6 +168,8 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
             </div>
 
             <p className="text-xs text-[var(--text-tertiary)]">Es una simulación — no registra nada. Cuando decidas, cargá la corrida real en «{"Nueva producción"}» con estas guías.</p>
+            </div>
+            </div>
           </>
         )}
       </div>
