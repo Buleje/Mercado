@@ -144,7 +144,7 @@ export default function CtpIngresosTable({
                     <button
                       type="button"
                       onClick={() => onDetail(e)}
-                      className="font-mono text-xs font-bold text-[var(--brand-ink)] underline-offset-2 hover:underline"
+                      className="font-mono text-sm font-bold text-[var(--brand-ink)] underline-offset-2 hover:underline"
                     >
                       {e.gtfNumber}
                     </button>
@@ -190,7 +190,7 @@ export default function CtpIngresosTable({
                   <Td>
                     <StatusBadge status={e.status} />
                     {e.rejectionReason && (
-                      <div className="mt-1 text-xs text-[var(--data-error-700)]">{e.rejectionReason}</div>
+                      <div className="mt-1 text-sm text-[var(--data-error-700)]">{e.rejectionReason}</div>
                     )}
                   </Td>
                   <Td className="text-right">
@@ -214,14 +214,14 @@ export default function CtpIngresosTable({
                             type="button"
                             disabled={rejectReason.trim().length < 3 || busy === `${e.id}:reject`}
                             onClick={() => onConfirmReject(e.id)}
-                            className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-error-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                            className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
                           >
                             {e.status === "validado" ? "Confirmar anulación" : "Confirmar rechazo"}
                           </button>
                           <button
                             type="button"
                             onClick={onCancelReject}
-                            className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)]"
+                            className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)]"
                           >
                             Cancelar
                           </button>
@@ -233,7 +233,7 @@ export default function CtpIngresosTable({
                           type="button"
                           onClick={() => onDetail(e)}
                           title="Ver ficha completa"
-                          className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                          className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           Ver
@@ -245,7 +245,7 @@ export default function CtpIngresosTable({
                               disabled={busy === `${e.id}:validate`}
                               onClick={() => onValidate(e.id)}
                               title="Validar ingreso"
-                              className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-success-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                              className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-success-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
                             >
                               <ThumbsUp className="h-3 w-3" />
                               Validar
@@ -254,7 +254,7 @@ export default function CtpIngresosTable({
                               type="button"
                               onClick={() => onStartReject(e.id)}
                               title="Rechazar"
-                              className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
+                              className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
                             >
                               <ThumbsDown className="h-3 w-3" />
                               Rechazar
@@ -266,7 +266,7 @@ export default function CtpIngresosTable({
                             type="button"
                             onClick={() => onStartReject(e.id)}
                             title="Anular ingreso validado (corrección con motivo)"
-                            className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
+                            className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
                           >
                             <XCircle className="h-3.5 w-3.5" />
                             Anular
