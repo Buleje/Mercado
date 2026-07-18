@@ -11,11 +11,11 @@ import {
   Clock,
   X as XIcon,
 } from "@buleje/design-system/icons";
-import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
+import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 
 // Re-exportados: single source vive en lib/forestal/ctp-compliance.ts (lo
 // consume también lib/forestal/ctp-export.ts, que no puede importar de acá).
-export { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo };
+export { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso };
 
 /**
  * Puente inverso monte→planta (rec #9 QA, lado Títulos Habilitantes):
@@ -137,17 +137,6 @@ const PRODUCT_LABELS: Record<string, string> = {
 
 export const originLabel = (type: string): string => ORIGIN_LABELS[type] ?? type;
 export const productLabel = (type: string): string => PRODUCT_LABELS[type] ?? type;
-
-/**
- * N° de permiso CITES del ingreso. Se guarda en `notes` ("… · Permiso CITES: X")
- * en vez de una columna aparte (mismo patrón sin-migración que la GTF de salida).
- * Single source para leerlo estructurado en el detalle y el export.
- */
-export function parseCitesPermiso(notes: string | null): string | null {
-  if (!notes) return null;
-  const m = notes.match(/Permiso CITES:\s*([^·]+?)\s*(?:·|$)/i);
-  return m ? m[1].trim() || null : null;
-}
 
 export function formatDate(iso: string | null): string {
   if (!iso) return "—";

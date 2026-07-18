@@ -14,13 +14,14 @@ import {
   ctpPeriodFileSuffix,
   type CtpPeriod,
 } from "./ctp-period";
-import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo } from "./ctp-compliance";
+import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "./ctp-compliance";
 import { evaluarRendimiento } from "./ctp-rendimiento";
 
 interface Ingreso {
   entryDate: string; gtfNumber: string; gtfDate: string | null; providerName: string;
   speciesCommonName: string; speciesScientificName: string | null; speciesCites: boolean;
   productType: string; volumeM3: string; pieces: number; status: string; createdAt: string;
+  notes: string | null;
 }
 interface WoodEntryStats {
   totalCount: number; totalVolumeM3: number; totalPieces: number; speciesCount: number;
@@ -164,6 +165,7 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
     { header: "Fecha ingreso", key: "f", width: 14 }, { header: "N° GTF", key: "g", width: 16 },
     { header: "Titular", key: "t", width: 26 }, { header: "Especie", key: "e", width: 16 },
     { header: "Científico", key: "sc", width: 22 }, { header: "CITES", key: "c", width: 7 },
+    { header: "Permiso CITES", key: "cp", width: 18 },
     { header: "Producto", key: "p", width: 14 }, { header: "Volumen m³", key: "v", width: 12 },
     { header: "Piezas", key: "pz", width: 9 }, { header: "Estado", key: "st", width: 12 },
     { header: "Días registro", key: "d", width: 12 },
@@ -171,9 +173,11 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
   styleHead(wi);
   for (const e of ingresos) {
     const late = diasDeRegistro(e);
+    // Permiso CITES vinculado (de notes) — vacío si no es CITES, "—" si es CITES sin permiso.
+    const permisoCites = e.speciesCites ? (parseCitesPermiso(e.notes) ?? "—") : "";
     const row = wi.addRow({
       f: day(e.entryDate), g: e.gtfNumber, t: e.providerName, e: e.speciesCommonName,
-      sc: e.speciesScientificName ?? "", c: e.speciesCites ? "SÍ" : "", p: e.productType,
+      sc: e.speciesScientificName ?? "", c: e.speciesCites ? "SÍ" : "", cp: permisoCites, p: e.productType,
       v: Number(e.volumeM3 ?? 0), pz: e.pieces ?? 0, st: e.status, d: late,
     });
     row.getCell("f").numFmt = "dd/mm/yyyy";
@@ -182,6 +186,8 @@ export async function exportarLibroCtp(period: CtpPeriod): Promise<void> {
     // predicado único, que matchea el lateCount del Resumen y del panel.
     if (estaFueraDePlazo(e)) row.getCell("d").font = { color: { argb: "FFB91C1C" }, bold: true };
     if (e.speciesCites) row.getCell("c").font = { color: { argb: "FFB91C1C" }, bold: true };
+    // CITES sin permiso vinculado → rojo: es lo que un fiscalizador marca primero.
+    if (e.speciesCites && permisoCites === "—") row.getCell("cp").font = { color: { argb: "FFB91C1C" }, bold: true };
   }
 
   // ── Producción ──
@@ -408,20 +414,23 @@ export async function exportarLibroCtpOficial(period: CtpPeriod): Promise<void> 
     { header: "Código de Origen/Procedencia", key: "co", width: 22 },
     { header: "Código de CTP", key: "cc", width: 14 }, { header: "Tipo de Producto", key: "tp", width: 14 },
     { header: "Especie", key: "e", width: 16 }, { header: "Nombre científico", key: "sc", width: 20 },
-    { header: "CITES", key: "ci", width: 7 }, { header: "Unidad de Medida", key: "u", width: 14 },
+    { header: "CITES", key: "ci", width: 7 }, { header: "N° Permiso CITES", key: "cp", width: 18 },
+    { header: "Unidad de Medida", key: "u", width: 14 },
     { header: "Cantidad", key: "q", width: 12 }, { header: "Observaciones", key: "o", width: 30 },
   ];
   styleHead(w1);
   ingresos.forEach((e, i) => {
+    const permisoCites = e.speciesCites ? (parseCitesPermiso(e.notes) ?? "—") : "";
     const row = w1.addRow({
       n: i + 1, f: day(e.entryDate), td: "GTF", nd: [e.gtfSeries, e.gtfNumber].filter(Boolean).join("-") || e.gtfNumber,
       fo: e.originCode ?? "", co: [originOf(e.originType), e.originRegion].filter(Boolean).join(" · "),
       cc: codigoCtp, tp: e.productType, e: e.speciesCommonName, sc: e.speciesScientificName ?? "",
-      ci: e.speciesCites ? "SÍ" : "", u: "m³", q: Number(e.volumeM3 ?? 0),
+      ci: e.speciesCites ? "SÍ" : "", cp: permisoCites, u: "m³", q: Number(e.volumeM3 ?? 0),
       o: [e.providerName, e.notes].filter(Boolean).join(" · "),
     });
     row.getCell("f").numFmt = "dd/mm/yyyy"; row.getCell("q").numFmt = "0.0000";
     if (e.speciesCites) row.getCell("ci").font = { color: { argb: "FFB91C1C" }, bold: true };
+    if (e.speciesCites && permisoCites === "—") row.getCell("cp").font = { color: { argb: "FFB91C1C" }, bold: true };
   });
 
   // ── Registro 2: Consumos (sección propia, RDE D000025-2023) ──

@@ -93,6 +93,17 @@ export function estaFueraDePlazo(entry: {
   return diasHabilesDeRegistro(entry) > PLAZO_REGISTRO_DIAS;
 }
 
+/**
+ * N° de permiso CITES de un ingreso. Se guarda en `notes` ("… · Permiso CITES: X")
+ * en vez de una columna aparte (mismo patrón sin-migración que la GTF de salida).
+ * Single source (lib) para leerlo estructurado en el detalle, el form y el export.
+ */
+export function parseCitesPermiso(notes: string | null): string | null {
+  if (!notes) return null;
+  const m = notes.match(/Permiso CITES:\s*([^·]+?)\s*(?:·|$)/i);
+  return m ? m[1].trim() || null : null;
+}
+
 /** Las 6 alertas de cumplimiento del período — las mismas que exporta el Excel. */
 export interface CtpComplianceCounts {
   /** Ingresos registrados con más de PLAZO_REGISTRO_DIAS días entre entryDate y createdAt. */
