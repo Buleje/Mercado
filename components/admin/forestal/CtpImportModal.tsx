@@ -2,11 +2,19 @@
 
 /**
  * CtpImportModal — importar el Libro de Operaciones CTP desde el Excel oficial
- * LO-CTP (ADR-138). Etapa 1: ingresos.
+ * LO-CTP (ADR-138). Cubre los 3 registros (Ingresos · Producción · Salida) y el
+ * modo «Libro completo» que los importa de una en orden de dependencia.
  *
  * Flujo: subir .xlsx → parseo client-side (ctp-import) → PREVIEW en el server
  * (valida + idempotencia, sin escribir) → el operador confirma → COMMIT (crea las
  * nuevas, salta las que ya existen). Nunca escribe a ciegas.
+ *
+ * «Libro completo»: parsea las 3 hojas a la vez y ENCADENA 3 commits en orden
+ * (Ingresos→Producción→Salida) — es el único orden que respeta las dependencias
+ * (Producción resuelve la GTF del ingreso; Salida valida I3 contra lo producido).
+ * El preview del libro completo es client-side (contar filas): un preview server
+ * de Producción daría falsos «GTF no encontrado» porque los ingresos del MISMO
+ * archivo aún no están en la DB. El commit es la validación autoritativa.
  */
 
 import { useRef, useState } from "react";
@@ -22,25 +30,32 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { parseProduccionXlsx, parseSalidaXlsx, parseWoodEntriesXlsx } from "@/lib/forestal/ctp-import";
 
 type Registro = "ingresos" | "produccion" | "salida";
-const REGISTRO_LABEL: Record<Registro, string> = { ingresos: "Ingresos", produccion: "Producción", salida: "Salida" };
+type ImportMode = Registro | "completo";
+const REGISTRO_ORDER: Registro[] = ["ingresos", "produccion", "salida"];
+const MODE_LABEL: Record<ImportMode, string> = { completo: "Libro completo", ingresos: "Ingresos", produccion: "Producción", salida: "Salida" };
 const REGISTRO_NOUN: Record<Registro, string> = { ingresos: "ingresos", produccion: "corridas", salida: "despachos" };
 
 type Action = "crear" | "creado" | "existe" | "error";
-interface ResultRow { row?: number; gtf: string | null; action: Action; message: string }
+interface ResultRow { row?: number; gtf: string | null; action: Action; message: string; seccion?: string }
 interface Resumen { total: number; crear: number; creados: number; saltados: number; errores: number }
+interface Combined { ingresos: unknown[]; produccion: unknown[]; salida: unknown[] }
 
 const IMPORT_URL = "/api/admin/forestal/wood-entries/import";
 
 export default function CtpImportModal({ onClose, onImported }: { onClose: () => void; onImported: (registro: Registro) => void }) {
   const [phase, setPhase] = useState<"idle" | "parsing" | "preview" | "committing" | "done">("idle");
-  const [registro, setRegistro] = useState<Registro>("ingresos");
+  const [mode, setMode] = useState<ImportMode>("completo");
   const [fileName, setFileName] = useState<string | null>(null);
   const [format, setFormat] = useState<string | null>(null);
   const [rows, setRows] = useState<unknown[]>([]);
+  const [combined, setCombined] = useState<Combined | null>(null);
   const [detalle, setDetalle] = useState<ResultRow[]>([]);
   const [resumen, setResumen] = useState<Resumen | null>(null);
+  const [creadosPorReg, setCreadosPorReg] = useState<Partial<Record<Registro, number>>>({});
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const isCombined = mode === "completo";
 
   async function onFile(file: File) {
     setError(null);
@@ -48,14 +63,36 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
     setFileName(file.name);
     try {
       const buf = await file.arrayBuffer();
+
+      if (isCombined) {
+        // Parsear las 3 hojas; una hoja ausente = 0 filas (no es error).
+        const [ing, prod, sal] = await Promise.all([
+          parseWoodEntriesXlsx(buf).catch(() => null),
+          parseProduccionXlsx(buf).catch(() => null),
+          parseSalidaXlsx(buf).catch(() => null),
+        ]);
+        const c: Combined = {
+          ingresos: ing?.ok ? ing.ingresos : [],
+          produccion: prod?.ok ? prod.produccion : [],
+          salida: sal?.ok ? sal.salida : [],
+        };
+        if (c.ingresos.length + c.produccion.length + c.salida.length === 0) {
+          throw new Error("El archivo no tiene filas en «1. Ingreso», «3. Producción» ni «4. Salida».");
+        }
+        setCombined(c);
+        setFormat(ing?.ok ? ing.format : "oficial");
+        setPhase("preview");
+        return;
+      }
+
       let parsedRows: unknown[];
-      if (registro === "produccion") {
+      if (mode === "produccion") {
         const res = await parseProduccionXlsx(buf);
         if (!res.ok) throw new Error(res.error ?? "No se pudo leer el archivo.");
         if (res.produccion.length === 0) throw new Error("El archivo no tiene filas de producción en la hoja «3. Producción».");
         parsedRows = res.produccion;
         setFormat("oficial");
-      } else if (registro === "salida") {
+      } else if (mode === "salida") {
         const res = await parseSalidaXlsx(buf);
         if (!res.ok) throw new Error(res.error ?? "No se pudo leer el archivo.");
         if (res.salida.length === 0) throw new Error("El archivo no tiene filas de salida en la hoja «4. Salida».");
@@ -73,7 +110,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ mode: "preview", registro, [registro]: parsedRows }),
+        body: JSON.stringify({ mode: "preview", registro: mode, [mode]: parsedRows }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
@@ -94,25 +131,67 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ mode: "commit", registro, [registro]: rows }),
+        body: JSON.stringify({ mode: "commit", registro: mode, [mode as Registro]: rows }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
       setDetalle(j.detalle ?? []);
       setResumen(j.resumen ?? null);
       setPhase("done");
-      onImported(registro);
+      onImported(mode as Registro);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setPhase("preview");
     }
   }
 
-  const canCommit = phase === "preview" && (resumen?.crear ?? 0) > 0;
-  const noun = REGISTRO_NOUN[registro];
+  /** Libro completo: encadena los 3 commits en orden de dependencia y agrega. */
+  async function commitCombined() {
+    if (!combined) return;
+    setPhase("committing");
+    setError(null);
+    const allDetalle: ResultRow[] = [];
+    const agg: Resumen = { total: 0, crear: 0, creados: 0, saltados: 0, errores: 0 };
+    const porReg: Partial<Record<Registro, number>> = {};
+    try {
+      for (const reg of REGISTRO_ORDER) {
+        const regRows = combined[reg];
+        if (regRows.length === 0) continue;
+        const r = await fetch(IMPORT_URL, {
+          method: "POST",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify({ mode: "commit", registro: reg, [reg]: regRows }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(`${MODE_LABEL[reg]}: ${j.message ?? j.error ?? `HTTP ${r.status}`}`);
+        const res: Resumen = j.resumen ?? { total: 0, crear: 0, creados: 0, saltados: 0, errores: 0 };
+        agg.total += res.total; agg.creados += res.creados; agg.saltados += res.saltados; agg.errores += res.errores;
+        porReg[reg] = res.creados;
+        for (const d of (j.detalle ?? []) as ResultRow[]) allDetalle.push({ ...d, seccion: MODE_LABEL[reg] });
+      }
+      agg.crear = agg.creados;
+      setDetalle(allDetalle);
+      setResumen(agg);
+      setCreadosPorReg(porReg);
+      setPhase("done");
+      onImported("ingresos"); // remonta las 3 vistas (key) y aterriza en el tope del libro
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setPhase("preview");
+    }
+  }
+
+  function reset() {
+    setPhase("idle"); setDetalle([]); setResumen(null); setCombined(null); setCreadosPorReg({});
+  }
+
+  const counts = combined ? { ingresos: combined.ingresos.length, produccion: combined.produccion.length, salida: combined.salida.length } : null;
+  const totalCombined = counts ? counts.ingresos + counts.produccion + counts.salida : 0;
+  const singleNoun = isCombined ? "" : REGISTRO_NOUN[mode as Registro];
 
   return (
-    <AdminModal open onClose={onClose} variant="info" title="Importar Libro de Operaciones" description="Excel oficial LO-CTP (SERFOR) — elegí el registro a importar" icon={Upload}>
+    <AdminModal open onClose={onClose} variant="info" title="Importar Libro de Operaciones" description="Excel oficial LO-CTP (SERFOR) — el libro completo de una, o un registro a la vez" icon={Upload}>
       <div className="space-y-4 p-5">
         {error && (
           <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
@@ -124,18 +203,18 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         {(phase === "idle" || phase === "parsing") && (
           <>
             <div>
-              <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">¿Qué registro importás?</p>
-              <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1">
-                {(["ingresos", "produccion", "salida"] as Registro[]).map((r) => (
+              <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">¿Qué importás?</p>
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1">
+                {(["completo", "ingresos", "produccion", "salida"] as ImportMode[]).map((m) => (
                   <button
-                    key={r}
+                    key={m}
                     type="button"
-                    onClick={() => setRegistro(r)}
+                    onClick={() => setMode(m)}
                     disabled={phase === "parsing"}
-                    aria-pressed={registro === r}
-                    className={`inline-flex h-9 items-center rounded-lg px-4 text-sm font-bold transition ${registro === r ? "bg-[var(--brand-ink)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                    aria-pressed={mode === m}
+                    className={`inline-flex h-9 items-center rounded-lg px-4 text-sm font-bold transition ${mode === m ? "bg-[var(--brand-ink)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
                   >
-                    {REGISTRO_LABEL[r]}
+                    {MODE_LABEL[m]}
                   </button>
                 ))}
               </div>
@@ -151,11 +230,13 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                 <p className="text-base font-bold text-[var(--text-primary)]">{phase === "parsing" ? `Leyendo ${fileName}…` : "Elegí el Excel del libro (.xlsx)"}</p>
                 <p className="mt-1 text-sm text-[var(--text-tertiary)]">
                   El mismo que exportás como «Formato oficial SERFOR».{" "}
-                  {registro === "produccion"
-                    ? "Se leen las corridas de «3. Producción» y su materia prima de «2. Consumos» — importá los Ingresos primero."
-                    : registro === "salida"
-                      ? "Se leen los despachos de «4. Salida». Importá la Producción primero (se valida contra el stock producido)."
-                      : "Se leen los ingresos de la hoja «1. Ingreso»."}
+                  {mode === "completo"
+                    ? "Se leen las 3 hojas (Ingreso, Producción, Salida) y se importan en orden — Producción resuelve la GTF del ingreso y Salida valida contra lo producido."
+                    : mode === "produccion"
+                      ? "Se leen las corridas de «3. Producción» y su materia prima de «2. Consumos» — importá los Ingresos primero."
+                      : mode === "salida"
+                        ? "Se leen los despachos de «4. Salida». Importá la Producción primero (se valida contra el stock producido)."
+                        : "Se leen los ingresos de la hoja «1. Ingreso»."}
                 </p>
               </div>
             </button>
@@ -164,8 +245,36 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
           </>
         )}
 
-        {/* Preview / done: resumen + tabla */}
-        {(phase === "preview" || phase === "committing" || phase === "done") && resumen && (
+        {/* Libro completo: preview client-side + confirmación */}
+        {isCombined && (phase === "preview" || phase === "committing") && counts && (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]"><FileSpreadsheet className="h-3.5 w-3.5" /> {fileName} · formato {format}</span>
+              {counts.ingresos > 0 && <Chip tone="info" label={`${counts.ingresos} ingresos`} />}
+              {counts.produccion > 0 && <Chip tone="info" label={`${counts.produccion} corridas`} />}
+              {counts.salida > 0 && <Chip tone="info" label={`${counts.salida} despachos`} />}
+            </div>
+            <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+              <p className="text-sm font-bold text-[var(--text-primary)]">Se importa el libro en orden de dependencia:</p>
+              <ol className="mt-2 space-y-1.5 text-sm text-[var(--text-secondary)]">
+                <li className="flex items-center gap-2"><StepDot n={1} on={counts.ingresos > 0} /> <span><strong className="text-[var(--text-primary)]">Ingresos</strong> — {counts.ingresos} fila{counts.ingresos === 1 ? "" : "s"}</span></li>
+                <li className="flex items-center gap-2"><StepDot n={2} on={counts.produccion > 0} /> <span><strong className="text-[var(--text-primary)]">Producción</strong> — {counts.produccion} corrida{counts.produccion === 1 ? "" : "s"} (usa las GTF recién ingresadas)</span></li>
+                <li className="flex items-center gap-2"><StepDot n={3} on={counts.salida > 0} /> <span><strong className="text-[var(--text-primary)]">Salida</strong> — {counts.salida} despacho{counts.salida === 1 ? "" : "s"} (valida contra lo producido)</span></li>
+              </ol>
+              <p className="mt-3 text-xs text-[var(--text-tertiary)]">Las filas que ya existan se saltan; las que fallen una validación (p. ej. despachar más de lo producido) se reportan sin cortar el resto.</p>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
+              <button type="button" onClick={() => void commitCombined()} disabled={phase === "committing" || totalCombined === 0} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+                {phase === "committing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {phase === "committing" ? "Importando el libro…" : "Importar libro completo"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Preview / done de un registro suelto + done del libro completo: resumen + tabla */}
+        {resumen && ((isCombined && phase === "done") || (!isCombined && (phase === "preview" || phase === "committing" || phase === "done"))) && (
           <>
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]"><FileSpreadsheet className="h-3.5 w-3.5" /> {fileName} · formato {format}</span>
@@ -178,6 +287,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-[var(--surface-sunken)] text-left">
                   <tr>
+                    {isCombined && <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Registro</th>}
                     <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Fila</th>
                     <th className="px-3 py-2 font-bold text-[var(--text-primary)]">GTF</th>
                     <th className="px-3 py-2 font-bold text-[var(--text-primary)]">Estado</th>
@@ -187,6 +297,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                 <tbody>
                   {detalle.map((d, i) => (
                     <tr key={i} className="border-t border-[var(--rule-soft)]">
+                      {isCombined && <td className="px-3 py-2 text-xs font-bold text-[var(--text-secondary)]">{d.seccion ?? "—"}</td>}
                       <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{d.row ?? "—"}</td>
                       <td className="px-3 py-2 font-mono text-xs font-bold text-[var(--text-primary)]">{d.gtf ?? "—"}</td>
                       <td className="px-3 py-2"><ActionBadge action={d.action} /></td>
@@ -200,15 +311,20 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             <div className="flex flex-wrap items-center justify-between gap-3">
               {phase === "done" ? (
                 <>
-                  <p className="inline-flex items-center gap-2 text-sm font-bold text-[var(--data-success-700)]"><CheckCircle2 className="h-5 w-5" /> Importad{registro === "produccion" ? "as" : "os"} {resumen.creados} {noun}{registro === "ingresos" ? " (quedan pendientes de validar)" : registro === "salida" ? " (sin atribuir — completá la cadena luego)" : ""}.</p>
+                  <p className="inline-flex items-center gap-2 text-sm font-bold text-[var(--data-success-700)]">
+                    <CheckCircle2 className="h-5 w-5" />
+                    {isCombined
+                      ? `Libro importado: ${describeCombined(creadosPorReg)}.`
+                      : `Importad${mode === "produccion" ? "as" : "os"} ${resumen.creados} ${singleNoun}${mode === "ingresos" ? " (quedan pendientes de validar)" : mode === "salida" ? " (sin atribuir — completá la cadena luego)" : ""}.`}
+                  </p>
                   <button type="button" onClick={onClose} className="inline-flex h-11 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90">Cerrar</button>
                 </>
               ) : (
                 <>
-                  <button type="button" onClick={() => { setPhase("idle"); setDetalle([]); setResumen(null); }} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
-                  <button type="button" onClick={() => void commit()} disabled={!canCommit} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+                  <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
+                  <button type="button" onClick={() => void commit()} disabled={!((resumen?.crear ?? 0) > 0) || phase === "committing"} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
                     {phase === "committing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                    {phase === "committing" ? "Importando…" : `Importar ${resumen.crear} ${noun}`}
+                    {phase === "committing" ? "Importando…" : `Importar ${resumen.crear} ${singleNoun}`}
                   </button>
                 </>
               )}
@@ -217,6 +333,21 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         )}
       </div>
     </AdminModal>
+  );
+}
+
+/** «3 ingresos · 2 corridas · 1 despacho» a partir de los creados por registro. */
+function describeCombined(porReg: Partial<Record<Registro, number>>): string {
+  const parts: string[] = [];
+  if (porReg.ingresos) parts.push(`${porReg.ingresos} ingresos`);
+  if (porReg.produccion) parts.push(`${porReg.produccion} corridas`);
+  if (porReg.salida) parts.push(`${porReg.salida} despachos`);
+  return parts.length ? parts.join(" · ") : "nada nuevo (todo ya existía)";
+}
+
+function StepDot({ n, on }: { n: number; on: boolean }) {
+  return (
+    <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-bold ${on ? "bg-[var(--brand-ink)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>{n}</span>
   );
 }
 
