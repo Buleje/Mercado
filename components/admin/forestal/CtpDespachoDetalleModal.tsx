@@ -208,7 +208,7 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      variant="info"
       title={`Despacho · línea #${entry.lineNo}`}
       description={`${entry.speciesCommon ?? "—"} · ${entry.quantity ? n4(Number(entry.quantity)) : "—"} ${unitLabel}${entry.gtfNumber ? ` · GTF ${entry.gtfNumber}` : ""}`}
       icon={Truck}

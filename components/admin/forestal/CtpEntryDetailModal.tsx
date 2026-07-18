@@ -52,7 +52,7 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      variant="info"
       title={`Ingreso · ${entry.gtfNumber}`}
       description={`${entry.speciesCommonName} · ${Number(entry.volumeM3).toFixed(4)} m³`}
       icon={TreePine}
@@ -111,81 +111,79 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
           </div>
         )}
 
-        <Section title="Guía de transporte forestal" icon={FileText}>
-          <Field label="N° GTF" value={entry.gtfNumber} mono />
-          <Field label="Serie" value={entry.gtfSeries} mono />
-          <Field label="Fecha de la GTF" value={formatDate(entry.gtfDate)} />
-          <Field label="Fecha de ingreso" value={formatDate(entry.entryDate)} />
-        </Section>
+        {/* Datos en 2 columnas balanceadas (masonry limpio): el modal grande
+            deja ver casi todo sin scroll. En mobile cae a 1 columna. */}
+        <div className="grid gap-4 md:grid-cols-2 md:items-start">
+          <div className="space-y-4">
+            <Section title="Guía de transporte forestal" icon={FileText}>
+              <Field label="N° GTF" value={entry.gtfNumber} mono />
+              <Field label="Serie" value={entry.gtfSeries} mono />
+              <Field label="Fecha de la GTF" value={formatDate(entry.gtfDate)} />
+              <Field label="Fecha de ingreso" value={formatDate(entry.entryDate)} />
+            </Section>
 
-        <Section title="Titular / proveedor" icon={User}>
-          <Field label="Nombre o razón social" value={entry.providerName} span2 />
-          <Field label="Documento" value={entry.providerDocument} mono />
-          <Field label="Tipo" value={entry.providerDocumentType} />
-        </Section>
+            <Section title="Origen del material" icon={MapPin}>
+              <Field label="Tipo de origen" value={originLabel(entry.originType)} />
+              <Field label="Código (concesión / predio)" value={entry.originCode} mono />
+              <Field label="Región" value={entry.originRegion} />
+              <Field label="Distrito" value={entry.originDistrict} />
+            </Section>
 
-        <Section title="Origen del material" icon={MapPin}>
-          <Field label="Tipo de origen" value={originLabel(entry.originType)} />
-          <Field label="Código (concesión / predio)" value={entry.originCode} mono />
-          <Field label="Región" value={entry.originRegion} />
-          <Field label="Distrito" value={entry.originDistrict} />
-        </Section>
+            <Section title="Medidas" icon={Scale}>
+              <Field label="Volumen" value={`${Number(entry.volumeM3).toFixed(4)} m³`} mono />
+              <Field label="Piezas" value={String(entry.pieces)} mono />
+              <Field label="Largo promedio" value={entry.avgLengthM ? `${Number(entry.avgLengthM).toFixed(2)} m` : null} mono />
+              <Field label="Diámetro promedio" value={entry.avgDiameterCm ? `${Number(entry.avgDiameterCm).toFixed(2)} cm` : null} mono />
+              <Field label="Humedad" value={entry.humidityPct ? `${Number(entry.humidityPct).toFixed(2)} %` : null} mono />
+              <Field label="Defectos observados" value={entry.defectsNotes} span2 />
+            </Section>
+          </div>
 
-        <Section title="Especie y producto" icon={TreePine}>
-          <Field label="Nombre común" value={entry.speciesCommonName} />
-          <Field label="Nombre científico" value={entry.speciesScientificName} italic />
-          <Field label="Producto" value={productLabel(entry.productType)} />
-          <Field label="CITES" value={entry.speciesCites ? "Sí — especie protegida" : "No"} />
-        </Section>
+          <div className="space-y-4">
+            <Section title="Titular / proveedor" icon={User}>
+              <Field label="Nombre o razón social" value={entry.providerName} span2 />
+              <Field label="Documento" value={entry.providerDocument} mono />
+              <Field label="Tipo" value={entry.providerDocumentType} />
+            </Section>
 
-        <Section title="Medidas" icon={Scale}>
-          <Field label="Volumen" value={`${Number(entry.volumeM3).toFixed(4)} m³`} mono />
-          <Field label="Piezas" value={String(entry.pieces)} mono />
-          <Field
-            label="Largo promedio"
-            value={entry.avgLengthM ? `${Number(entry.avgLengthM).toFixed(2)} m` : null}
-            mono
-          />
-          <Field
-            label="Diámetro promedio"
-            value={entry.avgDiameterCm ? `${Number(entry.avgDiameterCm).toFixed(2)} cm` : null}
-            mono
-          />
-          <Field
-            label="Humedad"
-            value={entry.humidityPct ? `${Number(entry.humidityPct).toFixed(2)} %` : null}
-            mono
-          />
-          <Field label="Defectos observados" value={entry.defectsNotes} span2 />
-        </Section>
+            <Section title="Especie y producto" icon={TreePine}>
+              <Field label="Nombre común" value={entry.speciesCommonName} />
+              <Field label="Nombre científico" value={entry.speciesScientificName} italic />
+              <Field label="Producto" value={productLabel(entry.productType)} />
+              <Field label="CITES" value={entry.speciesCites ? "Sí — especie protegida" : "No"} />
+            </Section>
 
-        {(entry.notes || photos.length > 0) && (
-          <Section title="Observaciones" icon={FileText}>
-            <Field label="Notas" value={entry.notes} span2 />
-            {photos.length > 0 && (
-              <div className="col-span-2">
-                <FieldLabel>Fotos ({photos.length})</FieldLabel>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {photos.map((url) => (
-                    <a
-                      key={url}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block h-20 w-20 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] hover:border-[var(--brand-ink)]"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="Foto del ingreso" className="h-full w-full object-cover" />
-                    </a>
-                  ))}
-                </div>
-              </div>
+            {(entry.notes || photos.length > 0) && (
+              <Section title="Observaciones" icon={FileText}>
+                <Field label="Notas" value={entry.notes} span2 />
+                {photos.length > 0 && (
+                  <div className="col-span-2">
+                    <FieldLabel>Fotos ({photos.length})</FieldLabel>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {photos.map((url) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block h-20 w-20 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] hover:border-[var(--brand-ink)]"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt="Foto del ingreso" className="h-full w-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Section>
             )}
-          </Section>
-        )}
+          </div>
+        </div>
 
-        {/* Trazabilidad hacia adelante: a dónde fue esta madera (corridas → despachos). */}
-        <TrazaForwardSection entryId={entry.id} />
+        {/* Trazabilidad hacia adelante + auditoría, en 2 columnas para ahorrar scroll. */}
+        <div className="grid gap-4 md:grid-cols-2 md:items-start">
+          {/* ¿A dónde fue esta madera? — corridas → despachos. */}
+          <TrazaForwardSection entryId={entry.id} />
 
         <Section title="Trazabilidad" icon={FileText}>
           <Field label="Registrado por" value={entry.createdBy} />
@@ -193,6 +191,7 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
           <Field label="Validado por" value={entry.validatedBy} />
           <Field label="Validado el" value={formatDateTime(entry.validatedAt)} />
         </Section>
+        </div>
 
         {/* Rec #10 QA: todo lo que pasó con este registro, del audit trail. */}
         <CtpHistorial entityId={entry.id} />

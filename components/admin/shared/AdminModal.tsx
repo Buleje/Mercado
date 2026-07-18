@@ -57,7 +57,7 @@ function useAdminAccent(open: boolean): React.CSSProperties {
   return vars;
 }
 
-type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm" | "pos";
+type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm" | "pos" | "info";
 
 interface AdminModalProps {
   open: boolean;
@@ -88,6 +88,11 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   default: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[32rem] sm:rounded-2xl sm:max-h-[85vh]",
   "centered-sm": "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[24rem] sm:rounded-2xl sm:max-h-[85vh]",
   wide: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-2xl sm:rounded-2xl sm:max-h-[85vh]",
+  // Brandon 2026-07-18: variant `info` para fichas de datos densas (detalle,
+  // cadena, kardex…). Ancho grande (64rem en rem EXPLÍCITO, inmune al override
+  // de --container) + 92vh para que las secciones se lean en 2 columnas SIN
+  // scrollear de más. Bottom-sheet en mobile como el resto de las centradas.
+  info: "w-full rounded-t-2xl max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-[64rem] sm:rounded-2xl sm:max-h-[92vh]",
   // Brandon 2026-05-16: variant `pos` para checkouts con 2-columnas desktop.
   // max-w-6xl + 92vh para que en PC quepa TODO el flujo de cobro sin scroll.
   pos: "w-full rounded-t-2xl max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-2xl",
@@ -99,6 +104,7 @@ const VARIANT_POSITION: Record<Variant, string> = {
   default: "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
   "centered-sm": "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
   wide: "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+  info: "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
   pos: "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
   fullscreen: "top-0 left-0",
   side: "top-0 right-0",

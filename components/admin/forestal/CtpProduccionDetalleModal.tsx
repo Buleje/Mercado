@@ -152,7 +152,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      variant="info"
       title={`Producción · línea #${entry.lineNo}`}
       description={`${entry.productType ?? "—"} · ${entry.speciesCommon ?? "—"} · ${entry.quantity ? n4(Number(entry.quantity)) : "—"} ${unitLabel}`}
       icon={Boxes}

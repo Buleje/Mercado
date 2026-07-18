@@ -19,7 +19,7 @@ export default function CtpIngresoCadenaModal({ entry, onClose }: { entry: WoodE
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      variant="info"
       title={`Cadena · ${entry.gtfNumber}`}
       description={`${entry.speciesCommonName} · ${Number(entry.volumeM3).toFixed(4)} m³`}
       icon={Share2}
