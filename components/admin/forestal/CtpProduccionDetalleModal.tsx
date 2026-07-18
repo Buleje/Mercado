@@ -152,12 +152,12 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
     <AdminModal
       open
       onClose={onClose}
-      variant="side"
+      variant="wide"
       title={`Producción · línea #${entry.lineNo}`}
       description={`${entry.productType ?? "—"} · ${entry.speciesCommon ?? "—"} · ${entry.quantity ? n4(Number(entry.quantity)) : "—"} ${unitLabel}`}
       icon={Boxes}
     >
-      <div className="space-y-4">
+      <div className="space-y-4 p-5">
         {loading && (
           <div className="p-8 text-center text-[var(--text-tertiary)]">
             <Loader2 className="mx-auto h-6 w-6 animate-spin" />

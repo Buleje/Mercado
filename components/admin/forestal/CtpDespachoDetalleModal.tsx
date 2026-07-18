@@ -208,12 +208,12 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
     <AdminModal
       open
       onClose={onClose}
-      variant="side"
+      variant="wide"
       title={`Despacho · línea #${entry.lineNo}`}
       description={`${entry.speciesCommon ?? "—"} · ${entry.quantity ? n4(Number(entry.quantity)) : "—"} ${unitLabel}${entry.gtfNumber ? ` · GTF ${entry.gtfNumber}` : ""}`}
       icon={Truck}
     >
-      <div className="space-y-4">
+      <div className="space-y-4 p-5">
         {loading && (
           <div className="p-8 text-center text-[var(--text-tertiary)]">
             <Loader2 className="mx-auto h-6 w-6 animate-spin" />

@@ -52,12 +52,12 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
     <AdminModal
       open
       onClose={onClose}
-      variant="side"
+      variant="wide"
       title={`Ingreso · ${entry.gtfNumber}`}
       description={`${entry.speciesCommonName} · ${Number(entry.volumeM3).toFixed(4)} m³`}
       icon={TreePine}
     >
-      <div className="space-y-5">
+      <div className="space-y-5 p-5">
         {/* Hero: la especie y el volumen — lo que se pregunta primero — con el
             estado y las alertas de cumplimiento, sobre una banda editorial. */}
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--accent-soft)] to-[var(--surface-canvas)] p-4">

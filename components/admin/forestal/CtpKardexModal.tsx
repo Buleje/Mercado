@@ -39,8 +39,8 @@ export default function CtpKardexModal({ especie, period, onClose }: { especie: 
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <AdminModal open onClose={onClose} variant="side" title={`Kardex · ${especie}`} description={`Movimientos de materia prima en ${period.label}`} icon={Scale}>
-      <div className="space-y-4">
+    <AdminModal open onClose={onClose} variant="wide" title={`Kardex · ${especie}`} description={`Movimientos de materia prima en ${period.label}`} icon={Scale}>
+      <div className="space-y-4 p-5">
         {loading && <div className="p-8 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando movimientos…</p></div>}
         {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 

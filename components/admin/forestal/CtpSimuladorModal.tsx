@@ -96,8 +96,8 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
   }, [guias, sel, rend, procesoStr, precioStr]);
 
   return (
-    <AdminModal open onClose={onClose} variant="side" title="Simulador de corrida" description="Previsualizá producido, costo y margen antes de registrar" icon={Calculator}>
-      <div className="space-y-4">
+    <AdminModal open onClose={onClose} variant="wide" title="Simulador de corrida" description="Previsualizá producido, costo y margen antes de registrar" icon={Calculator}>
+      <div className="space-y-4 p-5">
         {loading && <div className="p-8 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando guías disponibles…</p></div>}
         {error && (
           <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">

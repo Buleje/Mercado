@@ -183,6 +183,7 @@ export default function CTPLibroOperaciones() {
               key={v.key}
               type="button"
               onClick={() => setView(v.key)}
+              title={v.hint}
               className={`group inline-flex items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition max-sm:grow max-sm:justify-center max-sm:px-2 ${
                 active
                   ? "border-[var(--brand-ink)] text-[var(--brand-ink)]"
@@ -191,9 +192,6 @@ export default function CTPLibroOperaciones() {
             >
               <Icon className="h-4 w-4" />
               <span>{v.label}</span>
-              <span className="hidden text-xs font-normal text-[var(--text-tertiary)] sm:inline">
-                · {v.hint}
-              </span>
             </button>
           );
         })}

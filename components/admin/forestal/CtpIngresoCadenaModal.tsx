@@ -19,12 +19,14 @@ export default function CtpIngresoCadenaModal({ entry, onClose }: { entry: WoodE
     <AdminModal
       open
       onClose={onClose}
-      variant="side"
+      variant="wide"
       title={`Cadena · ${entry.gtfNumber}`}
       description={`${entry.speciesCommonName} · ${Number(entry.volumeM3).toFixed(4)} m³`}
       icon={Share2}
     >
-      <TrazaForwardSection entryId={entry.id} />
+      <div className="p-5">
+        <TrazaForwardSection entryId={entry.id} />
+      </div>
     </AdminModal>
   );
 }
