@@ -79,6 +79,10 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
       if (!gtf) return NextResponse.json({ error: "not_found" }, { status: 404 });
       return NextResponse.json({ gtf });
     }
+    // Bandeja monte→planta: guías de trozas emitidas sin ingreso vigente en el CTP.
+    if (url.searchParams.get("sinIngresar") === "1") {
+      return NextResponse.json({ gtfs: await ForestGtfDB.sinIngresarAlCtp(auth.tenantId) });
+    }
     return NextResponse.json({ gtfs: await ForestGtfDB.list(auth.tenantId) });
   } catch (err) {
     logger.error("[gtf.GET] failed", { error: String(err), tenantId: auth.tenantId });

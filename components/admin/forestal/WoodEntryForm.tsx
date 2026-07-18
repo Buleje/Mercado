@@ -11,7 +11,7 @@
  * - Un solo color de acento (verde forestal), cero emojis, cero gradientes.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   TreePine,
   AlertTriangle,
@@ -35,6 +35,8 @@ import {
 interface Props {
   onClose: () => void;
   onSaved: (opts?: { keepOpen?: boolean }) => void;
+  /** Bandeja monte→planta: abre el form con esta guía ya cargada (sin doble digitación). */
+  initialGtfNumber?: string;
 }
 
 // Guía emitida (ForestGtf) — para importar sus datos al ingreso.
@@ -151,7 +153,7 @@ const INITIAL: DraftData = {
 // COMPONENT
 // ═════════════════════════════════════════════════════════════════════════
 
-export default function WoodEntryForm({ onClose, onSaved }: Props) {
+export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Props) {
   const speciesOptions = useMemo(() => listSpecies(), []);
 
   const [submitting, setSubmitting] = useState(false);
@@ -181,8 +183,10 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
   const [loadingGuias, setLoadingGuias] = useState(false);
   const [guiaQuery, setGuiaQuery] = useState("");
 
-  // Load draft del localStorage
+  // Load draft del localStorage. Si el form abre desde la bandeja monte→planta
+  // (initialGtfNumber), la intención es explícita: la guía pisa al borrador.
   useEffect(() => {
+    if (initialGtfNumber) return;
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
@@ -192,7 +196,19 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
         }
       }
     } catch {}
-  }, []);
+  }, [initialGtfNumber]);
+
+  // Bandeja monte→planta: pre-cargar la guía apenas abre el form. Ref guard:
+  // StrictMode monta doble en dev y sin él la guía se aplicaba 2 veces
+  // (las notas quedaban con "Origen guía: …" duplicado).
+  const initLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!initialGtfNumber || initLoadedRef.current) return;
+    initLoadedRef.current = true;
+    setData((prev) => ({ ...INITIAL, entryDate: prev.entryDate, gtfNumber: initialGtfNumber }));
+    void cargarGuia(initialGtfNumber);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar con la guía
+  }, [initialGtfNumber]);
 
   // Auto-guardar borrador
   useEffect(() => {
@@ -285,9 +301,10 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
     }
   }
 
-  // Carga la guía por su N° de registro y autocompleta el ingreso.
-  async function cargarGuia() {
-    const n = data.gtfNumber.trim();
+  // Carga la guía por su N° de registro y autocompleta el ingreso. Acepta un
+  // número explícito (bandeja monte→planta) o usa el tipeado en el campo.
+  async function cargarGuia(num?: string) {
+    const n = (num ?? data.gtfNumber).trim();
     if (!n) { setGtfMsg({ ok: false, text: "Escribí el N° de guía primero." }); return; }
     setLoadingGtf(true); setGtfMsg(null); setGtfItems([]); setError(null);
     try {
@@ -532,7 +549,7 @@ export default function WoodEntryForm({ onClose, onSaved }: Props) {
                   />
                   <button
                     type="button"
-                    onClick={cargarGuia}
+                    onClick={() => void cargarGuia()}
                     disabled={loadingGtf || !data.gtfNumber.trim()}
                     className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3.5 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                   >

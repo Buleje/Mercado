@@ -35,6 +35,7 @@ import WoodEntryForm from "./WoodEntryForm";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import CtpIngresosTable from "./CtpIngresosTable";
+import CtpGuiasBandeja from "./CtpGuiasBandeja";
 import { STATUS_META, type WoodEntry, type WoodEntryStatus } from "./ctp-shared";
 
 const STATUS_ORDER: WoodEntryStatus[] = [
@@ -66,6 +67,9 @@ export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  // Bandeja monte→planta: guía elegida para pre-cargar el form + key para refrescarla tras guardar.
+  const [formGtf, setFormGtf] = useState<string | null>(null);
+  const [bandejaKey, setBandejaKey] = useState(0);
 
   const { entries, stats, total, loading, error, setError, reload, runAction, validateMany } =
     useCtpIngresos({ period, status: statusFilter, search, page });
@@ -218,6 +222,9 @@ export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
         ))}
       </div>
 
+      {/* Puente monte→planta: guías emitidas en Títulos Habilitantes sin ingresar. */}
+      <CtpGuiasBandeja key={bandejaKey} onIngresar={(n) => { setFormGtf(n); setShowForm(true); }} />
+
       {error && (
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)]">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
@@ -314,9 +321,12 @@ export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
 
       {showForm && (
         <WoodEntryForm
-          onClose={() => setShowForm(false)}
+          initialGtfNumber={formGtf ?? undefined}
+          onClose={() => { setShowForm(false); setFormGtf(null); }}
           onSaved={() => {
             setShowForm(false);
+            setFormGtf(null);
+            setBandejaKey((k) => k + 1); // la guía ingresada sale de la bandeja
             void reload();
           }}
         />

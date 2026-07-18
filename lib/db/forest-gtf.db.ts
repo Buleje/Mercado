@@ -96,6 +96,35 @@ export class ForestGtfDB {
     return prisma.forestGtf.findFirst({ where: { tenantId, id, deletedAt: null } });
   }
 
+  /**
+   * Guías de trozas EMITIDAS en el Libro de Títulos Habilitantes que todavía no
+   * tienen ingreso VIGENTE en el CTP — la bandeja "monte → planta" (rec #9 del
+   * QA 2026-07-17: cerrar la trazabilidad sin doble digitación).
+   *
+   * Un ingreso rechazado o anulado NO cuenta como ingresada: esa madera sigue
+   * fuera del libro, así que la guía vuelve a la bandeja hasta registrarse bien.
+   */
+  static async sinIngresarAlCtp(tenantId: string) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [gtfs, entries] = await Promise.all([
+      prisma.forestGtf.findMany({
+        where: { tenantId, deletedAt: null, status: "emitida", tipo: "trozas" },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        select: {
+          id: true, gtfNumber: true, gtfDate: true, titularName: true,
+          tituloHabilitante: true, volumenTotalM3: true, piezasTotal: true, origen: true,
+        },
+      }),
+      prisma.woodEntry.findMany({
+        where: { tenantId, deletedAt: null, status: { notIn: ["rechazado", "anulado"] } },
+        select: { gtfNumber: true },
+      }),
+    ]);
+    const ingresadas = new Set(entries.map((e) => e.gtfNumber.trim()));
+    return gtfs.filter((g) => !ingresadas.has(g.gtfNumber.trim()));
+  }
+
   /** Busca una guía por su número (para importar sus datos al ingreso CTP). */
   static async findByNumber(tenantId: string, gtfNumber: string) {
     if (!tenantId) throw new Error("tenantId is required");
