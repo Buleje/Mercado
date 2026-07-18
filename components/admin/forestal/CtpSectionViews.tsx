@@ -19,13 +19,14 @@ import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpEntryForm from "./CtpEntryForm";
 import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
+import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import CtpSimuladorModal from "./CtpSimuladorModal";
 import CtpKardexModal from "./CtpKardexModal";
 import CtpPatioAging from "./CtpPatioAging";
 
-type CtpSection = "produccion" | "despacho";
+export type CtpSection = "produccion" | "despacho";
 
-interface CtpEntry {
+export interface CtpEntry {
   id: string; section: CtpSection; lineNo: number; entryDate: string;
   gtfIngreso: string | null; materiaPrimaRef: string | null;
   speciesCommon: string | null; speciesScientific: string | null; cites: boolean;
@@ -167,7 +168,9 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      {/* ── Desktop: tabla (≥640px). El `hidden` a <640px gana sobre la
+             auto-conversión genérica del shell, dejando lugar a las cards. ── */}
+      <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
         <table className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
@@ -247,18 +250,36 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
             ))}
           </tbody>
         </table>
-
-        {!loading && entries.length === 0 && (
-          <div className="p-12 text-center text-[var(--text-tertiary)]">
-            <Icon className="mx-auto mb-3 h-10 w-10 opacity-30" />
-            <p className="text-base font-medium">{search.trim() ? "Ninguna línea coincide con la búsqueda." : meta.empty}</p>
-            {!search.trim() && period.from && (
-              <p className="mt-1 text-sm">Mostrando {period.label} — puede haber líneas fuera de este período.</p>
-            )}
-          </div>
-        )}
-        {loading && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>}
       </div>
+
+      {/* ── Mobile: cards a medida (<640px) ── */}
+      {entries.length > 0 && (
+        <div className="space-y-3 sm:hidden">
+          {entries.map((e) => (
+            <CtpSeccionCardMobile
+              key={e.id}
+              entry={e}
+              section={section}
+              toProductId={toProductId}
+              onChain={setChainEntry}
+              onSendInventory={sendToInventory}
+              onAnnul={(id) => { setAnnulId(id); setAnnulReason(""); }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Estados compartidos (vacío / cargando) ── */}
+      {!loading && entries.length === 0 && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+          <Icon className="mx-auto mb-3 h-10 w-10 opacity-30" />
+          <p className="text-base font-medium">{search.trim() ? "Ninguna línea coincide con la búsqueda." : meta.empty}</p>
+          {!search.trim() && period.from && (
+            <p className="mt-1 text-sm">Mostrando {period.label} — puede haber líneas fuera de este período.</p>
+          )}
+        </div>
+      )}
+      {loading && <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>}
 
       {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); }} />}
       {chainEntry && section === "despacho" && <CtpDespachoDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
