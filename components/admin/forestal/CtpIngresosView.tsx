@@ -9,7 +9,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+// `m` (no `motion`): la app usa LazyMotion strict, que lanza error si se usa el
+// componente `motion` completo (rompe tree-shaking). Alias a `motion` para el JSX.
+import { m as motion } from "framer-motion";
 import {
   AlertCircle,
   BarChart3,
