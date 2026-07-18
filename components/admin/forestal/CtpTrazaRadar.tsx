@@ -21,15 +21,20 @@ import {
   AlertTriangle,
   Boxes,
   CheckCircle2,
+  Eye,
+  FileDown,
   Filter,
   PackageOpen,
   RefreshCw,
   ShieldAlert,
   TreePine,
   Truck,
+  X as XIcon,
 } from "@buleje/design-system/icons";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { printCadenaCustodia } from "@/lib/forestal/ctp-traza-print";
 import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
+import CtpNodeDetailLoader, { type DetailTarget } from "./CtpNodeDetailLoader";
 
 const NODE_W = 180;
 const NODE_H = 50;
@@ -64,6 +69,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
   const [onlyBroken, setOnlyBroken] = useState(false);
+  const [detail, setDetail] = useState<DetailTarget | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -171,15 +177,32 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const isEmpty = g && g.ingresos.length === 0 && g.corridas.length === 0 && g.despachos.length === 0;
   const edgeAmber = (id: string) => analysis?.warnIds.has(id) ?? false;
 
+  // De un id de nodo → el objetivo para abrir su ficha completa.
+  const targetFor = (id: string): DetailTarget | null => {
+    const w = g?.ingresos.find((n) => n.id === id);
+    if (w) return { kind: "ingreso", id, gtf: w.gtf };
+    if (g?.corridas.some((n) => n.id === id)) return { kind: "corrida", id };
+    if (g?.despachos.some((n) => n.id === id)) return { kind: "despacho", id };
+    return null;
+  };
+  const pinnedNode = pinned && layout ? layout.pos.get(pinned) : null;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm text-[var(--text-tertiary)]">
           Cadena de custodia de <strong className="text-[var(--text-secondary)]">{period.label}</strong>: GTF de ingreso → corrida → despacho. Tocá un nodo para fijar de dónde salió y a dónde fue.
         </p>
-        <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {g && !isEmpty && (
+            <button type="button" onClick={() => printCadenaCustodia(g, period.label)} title="Documento imprimible de la cadena de custodia (para adjuntar a un informe ARFFS)" className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+              <FileDown className="h-4 w-4" /> Exportar
+            </button>
+          )}
+          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
+          </button>
+        </div>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
@@ -224,6 +247,24 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             <span>Ingreso · {g.ingresos.length}</span><span>Producción · {g.corridas.length}</span><span>Despacho · {g.despachos.length}</span>
           </div>
 
+          {/* Barra del nodo fijado: abre la ficha completa (drill-in). */}
+          {pinnedNode && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2">
+              <div className="min-w-0 text-sm">
+                <span className="font-bold text-[var(--text-primary)]">{pinnedNode.top}</span>
+                <span className="text-[var(--text-tertiary)]"> · {pinnedNode.sub}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <button type="button" onClick={() => { const t = targetFor(pinnedNode.id); if (t) setDetail(t); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
+                  <Eye className="h-3.5 w-3.5" /> Ver ficha completa
+                </button>
+                <button type="button" onClick={() => setPinned(null)} title="Soltar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+                  <XIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
             {/* Click en el fondo = soltar el pin. */}
             <svg
@@ -240,6 +281,8 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
           </div>
         </>
       )}
+
+      {detail && <CtpNodeDetailLoader target={detail} onClose={() => setDetail(null)} />}
     </div>
   );
 }
