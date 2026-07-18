@@ -19,10 +19,11 @@ import {
   Upload,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { parseProduccionXlsx, parseWoodEntriesXlsx } from "@/lib/forestal/ctp-import";
+import { parseProduccionXlsx, parseSalidaXlsx, parseWoodEntriesXlsx } from "@/lib/forestal/ctp-import";
 
-type Registro = "ingresos" | "produccion";
-const REGISTRO_LABEL: Record<Registro, string> = { ingresos: "Ingresos", produccion: "Producción" };
+type Registro = "ingresos" | "produccion" | "salida";
+const REGISTRO_LABEL: Record<Registro, string> = { ingresos: "Ingresos", produccion: "Producción", salida: "Salida" };
+const REGISTRO_NOUN: Record<Registro, string> = { ingresos: "ingresos", produccion: "corridas", salida: "despachos" };
 
 type Action = "crear" | "creado" | "existe" | "error";
 interface ResultRow { row?: number; gtf: string | null; action: Action; message: string }
@@ -53,6 +54,12 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         if (!res.ok) throw new Error(res.error ?? "No se pudo leer el archivo.");
         if (res.produccion.length === 0) throw new Error("El archivo no tiene filas de producción en la hoja «3. Producción».");
         parsedRows = res.produccion;
+        setFormat("oficial");
+      } else if (registro === "salida") {
+        const res = await parseSalidaXlsx(buf);
+        if (!res.ok) throw new Error(res.error ?? "No se pudo leer el archivo.");
+        if (res.salida.length === 0) throw new Error("El archivo no tiene filas de salida en la hoja «4. Salida».");
+        parsedRows = res.salida;
         setFormat("oficial");
       } else {
         const res = await parseWoodEntriesXlsx(buf);
@@ -102,7 +109,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
   }
 
   const canCommit = phase === "preview" && (resumen?.crear ?? 0) > 0;
-  const noun = registro === "produccion" ? "corridas" : "ingresos";
+  const noun = REGISTRO_NOUN[registro];
 
   return (
     <AdminModal open onClose={onClose} variant="info" title="Importar Libro de Operaciones" description="Excel oficial LO-CTP (SERFOR) — elegí el registro a importar" icon={Upload}>
@@ -119,7 +126,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             <div>
               <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">¿Qué registro importás?</p>
               <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1">
-                {(["ingresos", "produccion"] as Registro[]).map((r) => (
+                {(["ingresos", "produccion", "salida"] as Registro[]).map((r) => (
                   <button
                     key={r}
                     type="button"
@@ -146,7 +153,9 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                   El mismo que exportás como «Formato oficial SERFOR».{" "}
                   {registro === "produccion"
                     ? "Se leen las corridas de «3. Producción» y su materia prima de «2. Consumos» — importá los Ingresos primero."
-                    : "Se leen los ingresos de la hoja «1. Ingreso»."}
+                    : registro === "salida"
+                      ? "Se leen los despachos de «4. Salida». Importá la Producción primero (se valida contra el stock producido)."
+                      : "Se leen los ingresos de la hoja «1. Ingreso»."}
                 </p>
               </div>
             </button>
@@ -191,7 +200,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             <div className="flex flex-wrap items-center justify-between gap-3">
               {phase === "done" ? (
                 <>
-                  <p className="inline-flex items-center gap-2 text-sm font-bold text-[var(--data-success-700)]"><CheckCircle2 className="h-5 w-5" /> Importad{registro === "produccion" ? "as" : "os"} {resumen.creados} {noun}{registro === "ingresos" ? " (quedan pendientes de validar)" : ""}.</p>
+                  <p className="inline-flex items-center gap-2 text-sm font-bold text-[var(--data-success-700)]"><CheckCircle2 className="h-5 w-5" /> Importad{registro === "produccion" ? "as" : "os"} {resumen.creados} {noun}{registro === "ingresos" ? " (quedan pendientes de validar)" : registro === "salida" ? " (sin atribuir — completá la cadena luego)" : ""}.</p>
                   <button type="button" onClick={onClose} className="inline-flex h-11 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90">Cerrar</button>
                 </>
               ) : (

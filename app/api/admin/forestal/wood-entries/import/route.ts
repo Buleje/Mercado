@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { WoodEntriesDB, type WoodOriginType, type WoodProductType } from "@/lib/db/wood-entries.db";
-import { ForestCtpDB, produccionKey } from "@/lib/db/forest-ctp.db";
+import { ForestCtpDB, produccionKey, despachoKey } from "@/lib/db/forest-ctp.db";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -51,12 +51,24 @@ const produccionSchema = z.object({
   row: z.number().optional(),
 });
 
+const salidaSchema = z.object({
+  entryDate: z.string().trim().nullable().optional(),
+  gtfNumber: z.string().trim().max(120).nullable().optional(),
+  productType: z.string().trim().min(1, "Sin tipo de producto").max(120),
+  speciesCommon: z.string().trim().max(120).optional().default("—"),
+  unit: z.string().trim().max(20).optional().default("m3"),
+  quantity: z.number().positive("Cantidad despachada inválida (≤ 0)"),
+  destino: z.string().trim().max(200).nullable().optional(),
+  row: z.number().optional(),
+});
+
 const bodySchema = z.object({
   mode: z.enum(["preview", "commit"]),
-  registro: z.enum(["ingresos", "produccion"]).optional().default("ingresos"),
+  registro: z.enum(["ingresos", "produccion", "salida"]).optional().default("ingresos"),
   // Filas sueltas: las que fallan validación se REPORTAN (no rompen el request).
   ingresos: z.array(z.record(z.string(), z.unknown())).max(5000).optional().default([]),
   produccion: z.array(z.record(z.string(), z.unknown())).max(5000).optional().default([]),
+  salida: z.array(z.record(z.string(), z.unknown())).max(5000).optional().default([]),
 });
 
 type ResultRow = { row?: number; gtf: string | null; action: "crear" | "creado" | "existe" | "error"; message: string };
@@ -83,7 +95,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
   }
-  const { mode, registro, ingresos, produccion } = parsed.data;
+  const { mode, registro, ingresos, produccion, salida } = parsed.data;
 
   // ── Registro: PRODUCCIÓN (etapa 2) ──────────────────────────────────────
   if (registro === "produccion") {
@@ -153,6 +165,59 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       }
     }
     return NextResponse.json({ mode, registro, resumen: { total: produccion.length, crear: mode === "commit" ? creados : creables, creados, saltados, errores }, detalle });
+  }
+
+  // ── Registro: SALIDA / despachos (etapa 2b) ─────────────────────────────
+  if (registro === "salida") {
+    const existingKeys = await ForestCtpDB.existingDespachoKeys(auth.tenantId);
+    const detalle: ResultRow[] = [];
+    let creables = 0, saltados = 0, errores = 0, creados = 0;
+    for (const raw of salida) {
+      const row = typeof raw.row === "number" ? raw.row : undefined;
+      const v = salidaSchema.safeParse(raw);
+      if (!v.success) {
+        errores++;
+        detalle.push({ row, gtf: String(raw.gtfNumber ?? "").trim() || null, action: "error", message: v.error.issues.map((i) => i.message).join(" · ") });
+        continue;
+      }
+      const d = v.data;
+      const gtfLabel = d.gtfNumber || `${d.productType} · ${d.speciesCommon}`;
+      const key = despachoKey(d.gtfNumber ?? null, d.entryDate ?? "", d.productType, d.speciesCommon, d.quantity, d.destino ?? null);
+      if (existingKeys.has(key)) {
+        saltados++;
+        detalle.push({ row, gtf: gtfLabel, action: "existe", message: "Ya existe un despacho igual — se salta" });
+        continue;
+      }
+      if (mode === "preview") {
+        creables++;
+        detalle.push({ row, gtf: gtfLabel, action: "crear", message: `${d.quantity} ${d.unit}${d.destino ? ` → ${d.destino}` : ""} · sin atribuir (atribuí luego)` });
+        continue;
+      }
+      try {
+        // Sin origenes: el formato oficial de Salida no lleva la corrida. Se crea
+        // "sin atribuir" (el operador la completa con «Editar atribución»). El
+        // create valida I3 (no despachar más de lo producido de ese producto).
+        await ForestCtpDB.create(auth.tenantId, {
+          section: "despacho",
+          entryDate: d.entryDate ? new Date(d.entryDate) : undefined,
+          productType: d.productType,
+          speciesCommon: d.speciesCommon,
+          unit: d.unit,
+          quantity: d.quantity,
+          gtfNumber: d.gtfNumber ?? null,
+          destino: d.destino ?? null,
+          createdBy: auth.username ?? "import",
+        });
+        existingKeys.add(key);
+        creados++;
+        detalle.push({ row, gtf: gtfLabel, action: "creado", message: "Despacho importado (sin atribuir)" });
+      } catch (e) {
+        errores++;
+        logger.error("[wood-entries.import] salida row failed", { gtf: gtfLabel, error: String(e) });
+        detalle.push({ row, gtf: gtfLabel, action: "error", message: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    return NextResponse.json({ mode, registro, resumen: { total: salida.length, crear: mode === "commit" ? creados : creables, creados, saltados, errores }, detalle });
   }
 
   // ── Registro: INGRESOS (etapa 1, default) ───────────────────────────────

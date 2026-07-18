@@ -115,6 +115,19 @@ export function produccionKey(entryDate: Date | string, productType: string | nu
   return [d, (productType ?? "").trim().toLowerCase(), (speciesCommon ?? "").trim().toLowerCase(), q].join("|");
 }
 
+/**
+ * Clave de un despacho para el dedup de importación (ADR-138 etapa 2b): por su
+ * GTF de salida si la tiene (identificador natural), o composite fecha+producto+
+ * especie+cantidad+destino si aún no se emitió GTF. Misma fórmula en DB y endpoint.
+ */
+export function despachoKey(gtfNumber: string | null, entryDate: Date | string, productType: string | null, speciesCommon: string | null, quantity: unknown, destino: string | null): string {
+  const g = (gtfNumber ?? "").trim();
+  if (g) return `gtf:${g.toLowerCase()}`;
+  const d = entryDate instanceof Date ? entryDate.toISOString().slice(0, 10) : String(entryDate ?? "").slice(0, 10);
+  const q = quantity == null || quantity === "" ? "" : Number(quantity).toFixed(4);
+  return [d, (productType ?? "").trim().toLowerCase(), (speciesCommon ?? "").trim().toLowerCase(), q, (destino ?? "").trim().toLowerCase()].join("|");
+}
+
 export class ForestCtpDB {
   /**
    * I3 — no se puede despachar producto que no existe.
@@ -776,6 +789,16 @@ export class ForestCtpDB {
       select: { entryDate: true, productType: true, speciesCommon: true, quantity: true },
     });
     return new Set(rows.map((r) => produccionKey(r.entryDate, r.productType, r.speciesCommon, r.quantity)));
+  }
+
+  /** Claves de los despachos vivos — dedup idempotente del import (ADR-138 2b). */
+  static async existingDespachoKeys(tenantId: string): Promise<Set<string>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestCtpEntry.findMany({
+      where: { tenantId, section: "despacho", deletedAt: null, status: "registrado" },
+      select: { gtfNumber: true, entryDate: true, productType: true, speciesCommon: true, quantity: true, destino: true },
+    });
+    return new Set(rows.map((r) => despachoKey(r.gtfNumber, r.entryDate, r.productType, r.speciesCommon, r.quantity, r.destino)));
   }
 
   /**

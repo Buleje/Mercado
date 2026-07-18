@@ -227,7 +227,7 @@ export default function CTPLibroOperaciones() {
         />
       )}
       {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
-      {view === "despacho" && <CtpEntriesView section="despacho" period={period} />}
+      {view === "despacho" && <CtpEntriesView key={`desp-${ingresosKey}`} section="despacho" period={period} />}
       {view === "radar" && <CtpTrazaRadar period={period} />}
       {view === "saldos" && <CtpSaldosView period={period} />}
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
@@ -237,7 +237,7 @@ export default function CTPLibroOperaciones() {
       {showImport && (
         <CtpImportModal
           onClose={() => setShowImport(false)}
-          onImported={(reg) => { setIngresosKey((k) => k + 1); setView(reg === "produccion" ? "produccion" : "ingresos"); }}
+          onImported={(reg) => { setIngresosKey((k) => k + 1); setView(reg === "produccion" ? "produccion" : reg === "salida" ? "despacho" : "ingresos"); }}
         />
       )}
     </div>

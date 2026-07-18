@@ -328,3 +328,71 @@ export async function parseProduccionXlsx(buffer: ArrayBuffer): Promise<Producci
 
   return { ok: true, produccion };
 }
+
+// ─── Etapa 2b: Salida (despachos) ────────────────────────────────────────────
+
+export interface ImportedSalida {
+  row: number;
+  entryDate: string | null;
+  gtfNumber: string | null; // GTF de salida (puede faltar si no se emitió)
+  productType: string;
+  speciesCommon: string;
+  unit: string;
+  quantity: number;
+  destino: string | null;
+  issues: string[];
+}
+export interface SalidaParseResult {
+  ok: boolean;
+  salida: ImportedSalida[];
+  error?: string;
+}
+
+export async function parseSalidaXlsx(buffer: ArrayBuffer): Promise<SalidaParseResult> {
+  const wb = new ExcelJS.Workbook();
+  try {
+    await wb.xlsx.load(buffer);
+  } catch (e) {
+    return { ok: false, salida: [], error: `No se pudo leer el Excel: ${e instanceof Error ? e.message : String(e)}` };
+  }
+
+  const ws = wb.worksheets.find((w) => /4\.?\s*salida|^salida$|^despachos?$/i.test(norm(w.name).replace(/\s+/g, " ")))
+    ?? wb.worksheets.find((w) => { const h = (w.getRow(1).values as unknown[]).map(norm).join(" "); return /destino/.test(h) && /cantidad/.test(h); });
+  if (!ws) return { ok: false, salida: [], error: "No se encontró una hoja de Salida (esperada «4. Salida»)." };
+
+  const { find, get } = makeFinder(ws);
+  const cGtf = find("n de documento", "gtf salida", "gtf");
+  const cFecha = find("fecha");
+  const cProd = find("tipo de producto", "producto");
+  const cEsp = find("especie");
+  const cUnit = find("unidad");
+  const cCant = find("cantidad");
+  const cDest = find("destino");
+
+  const salida: ImportedSalida[] = [];
+  ws.eachRow((row, rowNum) => {
+    if (rowNum === 1) return;
+    const producto = cellText(get(row, cProd)).trim();
+    const especie = cellText(get(row, cEsp)).trim();
+    const cantidad = toNumber(get(row, cCant));
+    if (!producto && !especie && cantidad === 0) return;
+
+    const issues: string[] = [];
+    if (!(cantidad > 0)) issues.push("Cantidad despachada inválida (≤ 0)");
+    if (!producto) issues.push("Sin tipo de producto");
+
+    salida.push({
+      row: rowNum,
+      entryDate: toISODate(get(row, cFecha)),
+      gtfNumber: cellText(get(row, cGtf)).trim() || null,
+      productType: producto || "—",
+      speciesCommon: especie || "—",
+      unit: mapUnit(cellText(get(row, cUnit))),
+      quantity: cantidad,
+      destino: cellText(get(row, cDest)).trim() || null,
+      issues,
+    });
+  });
+
+  return { ok: true, salida };
+}
