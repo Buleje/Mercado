@@ -6,27 +6,26 @@
  * Extraída de CtpIngresosView para que ninguno de los dos pase de ~300 LOC
  * (regla del repo): la vista se queda con KPIs, filtros y paginación; acá vive
  * el render de las filas y sus acciones por registro.
+ *
+ * Dual-render: la <table> se muestra solo en ≥640px (hidden sm:block) y en
+ * mobile se sirven cards a medida (CtpIngresoCardMobile). El `hidden` de Tailwind
+ * a <640px gana sobre la conversión genérica table→card del shell admin, así que
+ * la tabla NO se auto-convierte y no compite con las cards premium.
  */
 
-import {
-  Eye,
-  RefreshCw,
-  ThumbsDown,
-  ThumbsUp,
-  TreePine,
-  XCircle,
-} from "@buleje/design-system/icons";
+import { RefreshCw, TreePine } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import CtpEntryActions from "./CtpEntryActions";
+import CtpIngresoCardMobile from "./CtpIngresoCardMobile";
 import {
   PLAZO_REGISTRO_DIAS,
-  STATUS_META,
+  StatusBadge,
   diasDeRegistro,
   estaFueraDePlazo,
   formatDate,
   originLabel,
   productLabel,
   type WoodEntry,
-  type WoodEntryStatus,
 } from "./ctp-shared";
 
 export interface CtpIngresosTableProps {
@@ -51,25 +50,34 @@ export interface CtpIngresosTableProps {
   onDetail: (entry: WoodEntry) => void;
 }
 
-export default function CtpIngresosTable({
-  entries,
-  loading,
-  period,
-  filtered,
-  pendingIds,
-  selectedIds,
-  selectedPending,
-  setSelectedIds,
-  busy,
-  rejectingId,
-  rejectReason,
-  setRejectReason,
-  onStartReject,
-  onCancelReject,
-  onConfirmReject,
-  onValidate,
-  onDetail,
-}: CtpIngresosTableProps) {
+export default function CtpIngresosTable(props: CtpIngresosTableProps) {
+  const {
+    entries,
+    loading,
+    period,
+    filtered,
+    pendingIds,
+    selectedIds,
+    selectedPending,
+    setSelectedIds,
+    onDetail,
+  } = props;
+
+  // Acciones por fila/card: el mismo componente para desktop y mobile.
+  const actionProps = {
+    busy: props.busy,
+    rejectingId: props.rejectingId,
+    rejectReason: props.rejectReason,
+    setRejectReason: props.setRejectReason,
+    onStartReject: props.onStartReject,
+    onCancelReject: props.onCancelReject,
+    onConfirmReject: props.onConfirmReject,
+    onValidate: props.onValidate,
+    onDetail,
+  };
+  const toggleSelect = (id: string, checked: boolean) =>
+    setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
+
   return (
     <>
       {/* sr-only + aria-labelledby (no aria-label inline): el shell admin
@@ -81,7 +89,9 @@ export default function CtpIngresosTable({
       <span id="ctp-select-all-label" className="sr-only">
         Seleccionar todos los ingresos pendientes de esta página
       </span>
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+
+      {/* ── Desktop: tabla (≥640px) ── */}
+      <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
         <table className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
@@ -120,11 +130,7 @@ export default function CtpIngresosTable({
                         type="checkbox"
                         aria-label={`Seleccionar ingreso ${e.gtfNumber}`}
                         checked={selectedIds.includes(e.id)}
-                        onChange={(ev) =>
-                          setSelectedIds((prev) =>
-                            ev.target.checked ? [...prev, e.id] : prev.filter((id) => id !== e.id),
-                          )
-                        }
+                        onChange={(ev) => toggleSelect(e.id, ev.target.checked)}
                         className="h-4 w-4 accent-[var(--brand-ink)]"
                       />
                     )}
@@ -194,118 +200,53 @@ export default function CtpIngresosTable({
                     )}
                   </Td>
                   <Td className="text-right">
-                    {rejectingId === e.id ? (
-                      // w-full sm:w-auto/w-48: en desktop es idéntico a antes
-                      // (192px fijo); en mobile-card el valor de la celda solo
-                      // tiene ~58% del ancho (42% se lo lleva el label), y un
-                      // ancho fijo de 192px desborda en pantallas chicas.
-                      <div className="inline-flex w-full flex-col items-end gap-2 sm:w-auto">
-                        <input
-                          type="text"
-                          value={rejectReason}
-                          onChange={(ev) => setRejectReason(ev.target.value)}
-                          placeholder={e.status === "validado" ? "Motivo de anulación (min 3)" : "Motivo (min 3 chars)"}
-                          aria-label={e.status === "validado" ? "Motivo de la anulación" : "Motivo del rechazo"}
-                          className="h-9 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm outline-none focus:border-[var(--data-error-500)] sm:w-48"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            disabled={rejectReason.trim().length < 3 || busy === `${e.id}:reject`}
-                            onClick={() => onConfirmReject(e.id)}
-                            className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-                          >
-                            {e.status === "validado" ? "Confirmar anulación" : "Confirmar rechazo"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={onCancelReject}
-                            className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)]"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="inline-flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onDetail(e)}
-                          title="Ver ficha completa"
-                          className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          Ver
-                        </button>
-                        {e.status === "pendiente" && (
-                          <>
-                            <button
-                              type="button"
-                              disabled={busy === `${e.id}:validate`}
-                              onClick={() => onValidate(e.id)}
-                              title="Validar ingreso"
-                              className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-success-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-                            >
-                              <ThumbsUp className="h-3 w-3" />
-                              Validar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onStartReject(e.id)}
-                              title="Rechazar"
-                              className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
-                            >
-                              <ThumbsDown className="h-3 w-3" />
-                              Rechazar
-                            </button>
-                          </>
-                        )}
-                        {e.status === "validado" && (
-                          <button
-                            type="button"
-                            onClick={() => onStartReject(e.id)}
-                            title="Anular ingreso validado (corrección con motivo)"
-                            className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                            Anular
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <CtpEntryActions entry={e} {...actionProps} />
                   </Td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-
-        {!loading && entries.length === 0 && (
-          <div className="p-12 text-center text-[var(--text-tertiary)]">
-            <TreePine className="mx-auto mb-3 h-10 w-10 opacity-30" />
-            <p className="text-base font-medium">
-              {filtered
-                ? "Ningún ingreso coincide con el filtro."
-                : `Sin ingresos en ${period.label}.`}
-            </p>
-            <p className="mt-1 text-sm">
-              {filtered
-                ? "Probá limpiar la búsqueda o ampliar el período."
-                : period.from
-                  ? 'Puede haber registros fuera de este período: elegí "Todo el histórico" arriba, o registrá uno con "Nuevo ingreso".'
-                  : 'Hacé click en "Nuevo ingreso" para registrar el primer movimiento de madera.'}
-            </p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="p-8 text-center text-[var(--text-tertiary)]">
-            <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
-            <p className="mt-2 text-sm">Cargando registros...</p>
-          </div>
-        )}
       </div>
+
+      {/* ── Mobile: cards a medida (<640px) ── */}
+      {entries.length > 0 && (
+        <div className="space-y-3 sm:hidden">
+          {entries.map((e) => (
+            <CtpIngresoCardMobile
+              key={e.id}
+              entry={e}
+              selected={selectedIds.includes(e.id)}
+              onToggleSelect={toggleSelect}
+              {...actionProps}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Estados compartidos (vacío / cargando) ── */}
+      {!loading && entries.length === 0 && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+          <TreePine className="mx-auto mb-3 h-10 w-10 opacity-30" />
+          <p className="text-base font-medium">
+            {filtered ? "Ningún ingreso coincide con el filtro." : `Sin ingresos en ${period.label}.`}
+          </p>
+          <p className="mt-1 text-sm">
+            {filtered
+              ? "Probá limpiar la búsqueda o ampliar el período."
+              : period.from
+                ? 'Puede haber registros fuera de este período: elegí "Todo el histórico" arriba, o registrá uno con "Nuevo ingreso".'
+                : 'Hacé click en "Nuevo ingreso" para registrar el primer movimiento de madera.'}
+          </p>
+        </div>
+      )}
+
+      {loading && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center text-[var(--text-tertiary)]">
+          <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
+          <p className="mt-2 text-sm">Cargando registros...</p>
+        </div>
+      )}
     </>
   );
 }
@@ -317,25 +258,4 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
 
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
-}
-
-function StatusBadge({ status }: { status: WoodEntryStatus }) {
-  const meta = STATUS_META[status];
-  const { Icon } = meta;
-  const cls =
-    meta.tone === "success"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
-      : meta.tone === "warning"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
-        : meta.tone === "danger"
-          ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
-          : meta.tone === "info"
-            ? "bg-[var(--data-info-100)] text-[var(--data-info-700)]"
-            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>
-      <Icon className="h-3 w-3" />
-      {meta.label}
-    </span>
-  );
 }
