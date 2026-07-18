@@ -210,3 +210,121 @@ export async function parseWoodEntriesXlsx(buffer: ArrayBuffer): Promise<ParseRe
 
   return { ok: true, format, sheet: ws.name, ingresos };
 }
+
+// ─── Etapa 2: Producción + Consumos (ADR-138) ────────────────────────────────
+
+export interface ImportedConsumo { gtfIngreso: string; volumeM3: number }
+export interface ImportedProduccion {
+  row: number;
+  sourceLineNo: number | null; // «N°» de la corrida en el archivo (para matchear consumos)
+  entryDate: string | null;
+  productType: string;
+  speciesCommon: string;
+  gtfIngreso: string | null;
+  unit: string; // m3 · pt · kg · unidad
+  quantity: number;
+  rendimientoPct: number | null;
+  consumos: ImportedConsumo[]; // matcheados de la hoja «2. Consumos» por lineNo
+  issues: string[];
+}
+export interface ProduccionParseResult {
+  ok: boolean;
+  produccion: ImportedProduccion[];
+  error?: string;
+}
+
+const UNIT_MAP: Record<string, string> = { m3: "m3", "m 3": "m3", pt: "pt", "pie tablar": "pt", "pies tablares": "pt", kg: "kg", unidad: "unidad", unid: "unidad", und: "unidad" };
+function mapUnit(cell: string): string {
+  const n = norm(cell);
+  return UNIT_MAP[n] ?? (n.includes("m3") || n.includes("m 3") ? "m3" : n.includes("pt") || n.includes("tabla") ? "pt" : "m3");
+}
+
+/** Header→columna finder con prioridad por keyword (mismo criterio que ingresos). */
+function makeFinder(ws: ExcelJS.Worksheet) {
+  const headers: string[] = [];
+  ws.getRow(1).eachCell((cell, col) => { headers[col] = norm(cell.value); });
+  const find = (...keys: string[]): number | null => {
+    for (const k of keys) for (let c = 1; c < headers.length; c++) if (headers[c]?.includes(k)) return c;
+    return null;
+  };
+  const get = (row: ExcelJS.Row, c: number | null): unknown => (c ? row.getCell(c).value : null);
+  return { find, get, headers };
+}
+
+export async function parseProduccionXlsx(buffer: ArrayBuffer): Promise<ProduccionParseResult> {
+  const wb = new ExcelJS.Workbook();
+  try {
+    await wb.xlsx.load(buffer);
+  } catch (e) {
+    return { ok: false, produccion: [], error: `No se pudo leer el Excel: ${e instanceof Error ? e.message : String(e)}` };
+  }
+
+  const wProd = wb.worksheets.find((w) => /3\.?\s*produccion|^produccion$/i.test(norm(w.name).replace(/\s+/g, " ")))
+    ?? wb.worksheets.find((w) => { const h = (w.getRow(1).values as unknown[]).map(norm).join(" "); return /rendimiento|producido|producto/.test(h) && /cantidad/.test(h); });
+  if (!wProd) return { ok: false, produccion: [], error: "No se encontró una hoja de Producción (esperada «3. Producción»)." };
+
+  // Consumos (opcional): matchea GTF ingreso → corrida por su lineNo.
+  const wCons = wb.worksheets.find((w) => /2\.?\s*consumo/i.test(norm(w.name)));
+  const consumosByCorrida = new Map<number, ImportedConsumo[]>();
+  if (wCons) {
+    const { find, get } = makeFinder(wCons);
+    const cG = find("n fuente", "gtf ingreso", "gtf");
+    const cDest = find("produccion destino", "destino", "corrida");
+    const cVol = find("cantidad consumida", "cantidad", "volumen", "m3");
+    wCons.eachRow((row, rowNum) => {
+      if (rowNum === 1) return;
+      const gtf = cellText(get(row, cG)).trim();
+      const vol = toNumber(get(row, cVol));
+      const destTxt = cellText(get(row, cDest));
+      const m = destTxt.match(/#\s*(\d+)/); // «Corrida #3 · …» → 3
+      if (!gtf || !(vol > 0) || !m) return;
+      const lineNo = Number(m[1]);
+      const arr = consumosByCorrida.get(lineNo) ?? [];
+      arr.push({ gtfIngreso: gtf, volumeM3: vol });
+      consumosByCorrida.set(lineNo, arr);
+    });
+  }
+
+  const { find, get } = makeFinder(wProd);
+  const cN = find("n", "numero", "linea");
+  const cFecha = find("fecha");
+  const cProd = find("tipo de producto", "producto");
+  const cEsp = find("especie");
+  const cGtf = find("n fuente", "gtf ingreso", "gtf");
+  const cUnit = find("unidad");
+  const cCant = find("cantidad", "producido");
+  const cRend = find("rendimiento");
+
+  const produccion: ImportedProduccion[] = [];
+  wProd.eachRow((row, rowNum) => {
+    if (rowNum === 1) return;
+    const producto = cellText(get(row, cProd)).trim();
+    const especie = cellText(get(row, cEsp)).trim();
+    const cantidad = toNumber(get(row, cCant));
+    if (!producto && !especie && cantidad === 0) return;
+
+    const sourceLineNo = cN ? (Number(String(cellText(get(row, cN))).replace(/[^\d]/g, "")) || null) : null;
+    const consumos = sourceLineNo != null ? (consumosByCorrida.get(sourceLineNo) ?? []) : [];
+    const rendCell = cRend ? toNumber(get(row, cRend)) : 0;
+
+    const issues: string[] = [];
+    if (!(cantidad > 0)) issues.push("Cantidad producida inválida (≤ 0)");
+    if (consumos.length === 0) issues.push("Sin materia prima atribuida (revisá la hoja «2. Consumos»)");
+
+    produccion.push({
+      row: rowNum,
+      sourceLineNo,
+      entryDate: toISODate(get(row, cFecha)),
+      productType: producto || "—",
+      speciesCommon: especie || "—",
+      gtfIngreso: cellText(get(row, cGtf)).trim() || null,
+      unit: mapUnit(cellText(get(row, cUnit))),
+      quantity: cantidad,
+      rendimientoPct: rendCell > 0 ? rendCell : null,
+      consumos,
+      issues,
+    });
+  });
+
+  return { ok: true, produccion };
+}

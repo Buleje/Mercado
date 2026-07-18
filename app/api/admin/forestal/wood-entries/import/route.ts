@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { WoodEntriesDB, type WoodOriginType, type WoodProductType } from "@/lib/db/wood-entries.db";
+import { ForestCtpDB, produccionKey } from "@/lib/db/forest-ctp.db";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -37,10 +38,25 @@ const ingresoSchema = z.object({
   row: z.number().optional(),
 });
 
+const consumoSchema = z.object({ gtfIngreso: z.string().trim().min(1), volumeM3: z.number().positive() });
+const produccionSchema = z.object({
+  entryDate: z.string().trim().nullable().optional(),
+  productType: z.string().trim().min(1, "Sin tipo de producto").max(120),
+  speciesCommon: z.string().trim().min(1, "Sin especie").max(120),
+  gtfIngreso: z.string().trim().max(120).nullable().optional(),
+  unit: z.string().trim().max(20).optional().default("m3"),
+  quantity: z.number().positive("Cantidad producida inválida (≤ 0)"),
+  rendimientoPct: z.number().nullable().optional(),
+  consumos: z.array(consumoSchema).optional().default([]),
+  row: z.number().optional(),
+});
+
 const bodySchema = z.object({
   mode: z.enum(["preview", "commit"]),
+  registro: z.enum(["ingresos", "produccion"]).optional().default("ingresos"),
   // Filas sueltas: las que fallan validación se REPORTAN (no rompen el request).
-  ingresos: z.array(z.record(z.string(), z.unknown())).max(5000),
+  ingresos: z.array(z.record(z.string(), z.unknown())).max(5000).optional().default([]),
+  produccion: z.array(z.record(z.string(), z.unknown())).max(5000).optional().default([]),
 });
 
 type ResultRow = { row?: number; gtf: string | null; action: "crear" | "creado" | "existe" | "error"; message: string };
@@ -67,8 +83,79 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
   }
-  const { mode, ingresos } = parsed.data;
+  const { mode, registro, ingresos, produccion } = parsed.data;
 
+  // ── Registro: PRODUCCIÓN (etapa 2) ──────────────────────────────────────
+  if (registro === "produccion") {
+    // Resolver GTF de ingreso → woodEntryId (los ingresos deben existir ya).
+    const allGtfs = produccion.flatMap((r) => (Array.isArray(r.consumos) ? (r.consumos as { gtfIngreso?: unknown }[]).map((c) => String(c.gtfIngreso ?? "").trim()) : []));
+    const idByGtf = await WoodEntriesDB.idByGtf(auth.tenantId, allGtfs);
+    const existingKeys = await ForestCtpDB.existingProduccionKeys(auth.tenantId);
+
+    const detalle: ResultRow[] = [];
+    let creables = 0, saltados = 0, errores = 0, creados = 0;
+    for (const raw of produccion) {
+      const row = typeof raw.row === "number" ? raw.row : undefined;
+      const v = produccionSchema.safeParse(raw);
+      if (!v.success) {
+        errores++;
+        detalle.push({ row, gtf: null, action: "error", message: v.error.issues.map((i) => i.message).join(" · ") });
+        continue;
+      }
+      const d = v.data;
+      const label = `${d.productType} · ${d.speciesCommon}`;
+      const key = produccionKey(d.entryDate ?? "", d.productType, d.speciesCommon, d.quantity);
+      if (existingKeys.has(key)) {
+        saltados++;
+        detalle.push({ row, gtf: label, action: "existe", message: "Ya existe una corrida igual — se salta" });
+        continue;
+      }
+      // Resolver consumos; si un GTF de ingreso falta, es error (importá ingresos primero).
+      const resolved: { woodEntryId: string; volumeM3: number }[] = [];
+      const missing: string[] = [];
+      for (const c of d.consumos) {
+        const id = idByGtf.get(c.gtfIngreso);
+        if (id) resolved.push({ woodEntryId: id, volumeM3: c.volumeM3 });
+        else missing.push(c.gtfIngreso);
+      }
+      if (missing.length) {
+        errores++;
+        detalle.push({ row, gtf: label, action: "error", message: `GTF de ingreso no encontrado: ${[...new Set(missing)].join(", ")} — importá los ingresos primero` });
+        continue;
+      }
+      if (mode === "preview") {
+        creables++;
+        detalle.push({ row, gtf: label, action: "crear", message: `${d.quantity} ${d.unit} · ${resolved.length} consumo${resolved.length === 1 ? "" : "s"}` });
+        continue;
+      }
+      try {
+        const volumeInputM3 = resolved.reduce((a, c) => a + c.volumeM3, 0);
+        await ForestCtpDB.create(auth.tenantId, {
+          section: "produccion",
+          entryDate: d.entryDate ? new Date(d.entryDate) : undefined,
+          productType: d.productType,
+          speciesCommon: d.speciesCommon,
+          gtfIngreso: d.gtfIngreso ?? null,
+          unit: d.unit,
+          quantity: d.quantity,
+          volumeInputM3: volumeInputM3 > 0 ? volumeInputM3 : null,
+          rendimientoPct: d.rendimientoPct ?? null,
+          consumos: resolved,
+          createdBy: auth.username ?? "import",
+        });
+        existingKeys.add(key);
+        creados++;
+        detalle.push({ row, gtf: label, action: "creado", message: `Corrida importada (${resolved.length} consumo${resolved.length === 1 ? "" : "s"})` });
+      } catch (e) {
+        errores++;
+        logger.error("[wood-entries.import] produccion row failed", { label, error: String(e) });
+        detalle.push({ row, gtf: label, action: "error", message: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    return NextResponse.json({ mode, registro, resumen: { total: produccion.length, crear: mode === "commit" ? creados : creables, creados, saltados, errores }, detalle });
+  }
+
+  // ── Registro: INGRESOS (etapa 1, default) ───────────────────────────────
   // Idempotencia: qué GTF ya existen para el tenant.
   const gtfs = ingresos.map((r) => String(r.gtfNumber ?? "").trim()).filter(Boolean);
   const existing = await WoodEntriesDB.existingGtfNumbers(auth.tenantId, gtfs);

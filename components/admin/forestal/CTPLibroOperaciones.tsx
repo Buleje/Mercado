@@ -226,7 +226,7 @@ export default function CTPLibroOperaciones() {
           onOpenConsumed={() => setPendingIngresoGtf(null)}
         />
       )}
-      {view === "produccion" && <CtpEntriesView section="produccion" period={period} />}
+      {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
       {view === "despacho" && <CtpEntriesView section="despacho" period={period} />}
       {view === "radar" && <CtpTrazaRadar period={period} />}
       {view === "saldos" && <CtpSaldosView period={period} />}
@@ -237,7 +237,7 @@ export default function CTPLibroOperaciones() {
       {showImport && (
         <CtpImportModal
           onClose={() => setShowImport(false)}
-          onImported={() => { setIngresosKey((k) => k + 1); setView("ingresos"); }}
+          onImported={(reg) => { setIngresosKey((k) => k + 1); setView(reg === "produccion" ? "produccion" : "ingresos"); }}
         />
       )}
     </div>

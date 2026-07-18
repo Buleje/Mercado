@@ -270,6 +270,26 @@ export class WoodEntriesDB {
   }
 
   /**
+   * Mapa `gtfNumber → woodEntry.id` (vivos) para el tenant. Para resolver los
+   * consumos importados (que referencian el ingreso por su GTF) al id real que
+   * necesita `setConsumos` (ADR-138 etapa 2). Ante GTF duplicado gana el más
+   * reciente por `entryDate` (raro; un libro sano no repite GTF de ingreso).
+   */
+  static async idByGtf(tenantId: string, gtfs: string[]): Promise<Map<string, string>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const clean = [...new Set(gtfs.map((g) => g.trim()).filter(Boolean))];
+    if (clean.length === 0) return new Map();
+    const rows = await prisma.woodEntry.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: { in: clean } },
+      orderBy: { entryDate: "asc" },
+      select: { id: true, gtfNumber: true },
+    });
+    const map = new Map<string, string>();
+    for (const r of rows) map.set(r.gtfNumber, r.id); // asc → el último (más reciente) gana
+    return map;
+  }
+
+  /**
    * Agregados del período, calculados en DB sobre TODO el conjunto filtrado
    * (no sobre la página cargada — sumar en el cliente miente en cuanto hay más
    * registros que `limit`).

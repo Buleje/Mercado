@@ -104,6 +104,17 @@ export interface CtpEntryInput {
   createdBy: string;
 }
 
+/**
+ * Clave estable de una corrida para el dedup de importación (ADR-138 etapa 2):
+ * fecha date-only + producto + especie + cantidad(4 dec). La usan la DB class y
+ * el endpoint de import — misma fórmula a ambos lados o el dedup no matchea.
+ */
+export function produccionKey(entryDate: Date | string, productType: string | null, speciesCommon: string | null, quantity: unknown): string {
+  const d = entryDate instanceof Date ? entryDate.toISOString().slice(0, 10) : String(entryDate ?? "").slice(0, 10);
+  const q = quantity == null || quantity === "" ? "" : Number(quantity).toFixed(4);
+  return [d, (productType ?? "").trim().toLowerCase(), (speciesCommon ?? "").trim().toLowerCase(), q].join("|");
+}
+
 export class ForestCtpDB {
   /**
    * I3 — no se puede despachar producto que no existe.
@@ -750,6 +761,21 @@ export class ForestCtpDB {
     return [...buckets.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([mes, b]) => ({ mes, ingresoM3: r4(b.ingresoM3), producido: r4(b.producido), consumidoM3: r4(b.consumidoM3), rendimiento: b.rendPeso > 0 ? Math.round((b.rendW / b.rendPeso) * 10) / 10 : 0 }));
+  }
+
+  /**
+   * Claves compuestas de las corridas de producción vivas — para la importación
+   * idempotente (ADR-138 etapa 2): una corrida no tiene GTF propio, así que se
+   * deduplica por `fecha|producto|especie|cantidad` (evita re-crear + el estado
+   * parcial de re-importar, donde I2 rechazaría los consumos ya atribuidos).
+   */
+  static async existingProduccionKeys(tenantId: string): Promise<Set<string>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestCtpEntry.findMany({
+      where: { tenantId, section: "produccion", deletedAt: null, status: "registrado" },
+      select: { entryDate: true, productType: true, speciesCommon: true, quantity: true },
+    });
+    return new Set(rows.map((r) => produccionKey(r.entryDate, r.productType, r.speciesCommon, r.quantity)));
   }
 
   /**

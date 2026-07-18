@@ -19,7 +19,10 @@ import {
   Upload,
 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { parseWoodEntriesXlsx, type ImportedIngreso } from "@/lib/forestal/ctp-import";
+import { parseProduccionXlsx, parseWoodEntriesXlsx } from "@/lib/forestal/ctp-import";
+
+type Registro = "ingresos" | "produccion";
+const REGISTRO_LABEL: Record<Registro, string> = { ingresos: "Ingresos", produccion: "Producción" };
 
 type Action = "crear" | "creado" | "existe" | "error";
 interface ResultRow { row?: number; gtf: string | null; action: Action; message: string }
@@ -27,11 +30,12 @@ interface Resumen { total: number; crear: number; creados: number; saltados: num
 
 const IMPORT_URL = "/api/admin/forestal/wood-entries/import";
 
-export default function CtpImportModal({ onClose, onImported }: { onClose: () => void; onImported: () => void }) {
+export default function CtpImportModal({ onClose, onImported }: { onClose: () => void; onImported: (registro: Registro) => void }) {
   const [phase, setPhase] = useState<"idle" | "parsing" | "preview" | "committing" | "done">("idle");
+  const [registro, setRegistro] = useState<Registro>("ingresos");
   const [fileName, setFileName] = useState<string | null>(null);
   const [format, setFormat] = useState<string | null>(null);
-  const [ingresos, setIngresos] = useState<ImportedIngreso[]>([]);
+  const [rows, setRows] = useState<unknown[]>([]);
   const [detalle, setDetalle] = useState<ResultRow[]>([]);
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,16 +46,27 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
     setPhase("parsing");
     setFileName(file.name);
     try {
-      const res = await parseWoodEntriesXlsx(await file.arrayBuffer());
-      if (!res.ok) throw new Error(res.error ?? "No se pudo leer el archivo.");
-      if (res.ingresos.length === 0) throw new Error("El archivo no tiene filas de ingreso en la hoja «1. Ingreso» / «Ingresos».");
-      setIngresos(res.ingresos);
-      setFormat(res.format);
+      const buf = await file.arrayBuffer();
+      let parsedRows: unknown[];
+      if (registro === "produccion") {
+        const res = await parseProduccionXlsx(buf);
+        if (!res.ok) throw new Error(res.error ?? "No se pudo leer el archivo.");
+        if (res.produccion.length === 0) throw new Error("El archivo no tiene filas de producción en la hoja «3. Producción».");
+        parsedRows = res.produccion;
+        setFormat("oficial");
+      } else {
+        const res = await parseWoodEntriesXlsx(buf);
+        if (!res.ok) throw new Error(res.error ?? "No se pudo leer el archivo.");
+        if (res.ingresos.length === 0) throw new Error("El archivo no tiene filas de ingreso en la hoja «1. Ingreso» / «Ingresos».");
+        parsedRows = res.ingresos;
+        setFormat(res.format);
+      }
+      setRows(parsedRows);
       const r = await fetch(IMPORT_URL, {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ mode: "preview", ingresos: res.ingresos }),
+        body: JSON.stringify({ mode: "preview", registro, [registro]: parsedRows }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
@@ -72,14 +87,14 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ mode: "commit", ingresos }),
+        body: JSON.stringify({ mode: "commit", registro, [registro]: rows }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
       setDetalle(j.detalle ?? []);
       setResumen(j.resumen ?? null);
       setPhase("done");
-      onImported();
+      onImported(registro);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setPhase("preview");
@@ -87,9 +102,10 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
   }
 
   const canCommit = phase === "preview" && (resumen?.crear ?? 0) > 0;
+  const noun = registro === "produccion" ? "corridas" : "ingresos";
 
   return (
-    <AdminModal open onClose={onClose} variant="info" title="Importar Libro de Operaciones" description="Excel oficial LO-CTP (SERFOR) · etapa 1: ingresos" icon={Upload}>
+    <AdminModal open onClose={onClose} variant="info" title="Importar Libro de Operaciones" description="Excel oficial LO-CTP (SERFOR) — elegí el registro a importar" icon={Upload}>
       <div className="space-y-4 p-5">
         {error && (
           <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
@@ -97,9 +113,26 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
           </div>
         )}
 
-        {/* Dropzone / selector */}
+        {/* Selector de registro + dropzone */}
         {(phase === "idle" || phase === "parsing") && (
           <>
+            <div>
+              <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">¿Qué registro importás?</p>
+              <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1">
+                {(["ingresos", "produccion"] as Registro[]).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setRegistro(r)}
+                    disabled={phase === "parsing"}
+                    aria-pressed={registro === r}
+                    className={`inline-flex h-9 items-center rounded-lg px-4 text-sm font-bold transition ${registro === r ? "bg-[var(--brand-ink)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                  >
+                    {REGISTRO_LABEL[r]}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -109,11 +142,16 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               {phase === "parsing" ? <Loader2 className="h-9 w-9 animate-spin text-[var(--brand-ink)]" /> : <FileSpreadsheet className="h-9 w-9 text-[var(--brand-ink)]" />}
               <div>
                 <p className="text-base font-bold text-[var(--text-primary)]">{phase === "parsing" ? `Leyendo ${fileName}…` : "Elegí el Excel del libro (.xlsx)"}</p>
-                <p className="mt-1 text-sm text-[var(--text-tertiary)]">El mismo que exportás como «Formato oficial SERFOR». Se leen los ingresos de la hoja «1. Ingreso».</p>
+                <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                  El mismo que exportás como «Formato oficial SERFOR».{" "}
+                  {registro === "produccion"
+                    ? "Se leen las corridas de «3. Producción» y su materia prima de «2. Consumos» — importá los Ingresos primero."
+                    : "Se leen los ingresos de la hoja «1. Ingreso»."}
+                </p>
               </div>
             </button>
             <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
-            <p className="text-xs text-[var(--text-tertiary)]">Nada se guarda hasta que confirmes. Las filas sin GTF o con volumen inválido se marcan y no se importan; las que ya existen (misma GTF) se saltan.</p>
+            <p className="text-xs text-[var(--text-tertiary)]">Nada se guarda hasta que confirmes. Las filas inválidas se marcan y no se importan; las que ya existen se saltan (ingresos por GTF, corridas por fecha+producto+especie+cantidad).</p>
           </>
         )}
 
@@ -153,7 +191,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
             <div className="flex flex-wrap items-center justify-between gap-3">
               {phase === "done" ? (
                 <>
-                  <p className="inline-flex items-center gap-2 text-sm font-bold text-[var(--data-success-700)]"><CheckCircle2 className="h-5 w-5" /> Importados {resumen.creados} ingresos (quedan pendientes de validar).</p>
+                  <p className="inline-flex items-center gap-2 text-sm font-bold text-[var(--data-success-700)]"><CheckCircle2 className="h-5 w-5" /> Importad{registro === "produccion" ? "as" : "os"} {resumen.creados} {noun}{registro === "ingresos" ? " (quedan pendientes de validar)" : ""}.</p>
                   <button type="button" onClick={onClose} className="inline-flex h-11 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90">Cerrar</button>
                 </>
               ) : (
@@ -161,7 +199,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                   <button type="button" onClick={() => { setPhase("idle"); setDetalle([]); setResumen(null); }} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
                   <button type="button" onClick={() => void commit()} disabled={!canCommit} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
                     {phase === "committing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                    {phase === "committing" ? "Importando…" : `Importar ${resumen.crear} ingresos`}
+                    {phase === "committing" ? "Importando…" : `Importar ${resumen.crear} ${noun}`}
                   </button>
                 </>
               )}
