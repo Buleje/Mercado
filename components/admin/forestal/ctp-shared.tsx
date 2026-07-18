@@ -17,6 +17,17 @@ import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo } from "@/lib/for
 // consume también lib/forestal/ctp-export.ts, que no puede importar de acá).
 export { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo };
 
+/**
+ * Puente inverso monte→planta (rec #9 QA, lado Títulos Habilitantes):
+ * cuando el Libro de Títulos Habilitantes manda "Ingresar al CTP", deja el N°
+ * de GTF en sessionStorage y navega al módulo CTP con `admin:navigate`. El
+ * shell del CTP lo levanta (al montar y al re-activarse el tab) y abre Ingresos
+ * pre-llenado. sessionStorage y no el `detail` del evento porque el módulo CTP
+ * es lazy: puede no estar montado cuando el evento se dispara — la key persiste.
+ */
+export const CTP_INGRESAR_GTF_KEY = "ctp-ingresar-gtf";
+export const CTP_MODULE_TAB_ID = "ctp-libro-operaciones";
+
 export type WoodEntryStatus =
   | "pendiente"
   | "validado"

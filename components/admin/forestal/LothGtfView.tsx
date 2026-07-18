@@ -7,9 +7,10 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { FileText, Plus, Printer, Ban, Loader2, Trash2, Truck } from "@buleje/design-system/icons";
+import { FileText, Plus, Printer, Ban, Loader2, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
+import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
 interface GtfItem {
   code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
@@ -35,16 +36,32 @@ export default function LothGtfView() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [annulId, setAnnulId] = useState<string | null>(null);
+  // Puente inverso: GTF de trozas emitidas que aún no ingresaron al CTP —
+  // mismo conjunto que la bandeja del lado planta (single source: ?sinIngresar=1).
+  const [sinIngresar, setSinIngresar] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/admin/forestal/gtf", { credentials: "include" });
-      if (r.ok) setGtfs((await r.json()).gtfs ?? []);
+      const [rGtf, rPend] = await Promise.all([
+        fetch("/api/admin/forestal/gtf", { credentials: "include" }),
+        fetch("/api/admin/forestal/gtf?sinIngresar=1", { credentials: "include" }),
+      ]);
+      if (rGtf.ok) setGtfs((await rGtf.json()).gtfs ?? []);
+      if (rPend.ok) {
+        const pend = ((await rPend.json()).gtfs ?? []) as { gtfNumber: string }[];
+        setSinIngresar(new Set(pend.map((g) => g.gtfNumber)));
+      }
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  /** Manda la guía al Libro CTP: deja el N° en sessionStorage y navega al módulo. */
+  function ingresarAlCtp(gtfNumber: string) {
+    try { sessionStorage.setItem(CTP_INGRESAR_GTF_KEY, gtfNumber); } catch { /* modo privado: el form abre vacío, no rompe */ }
+    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: CTP_MODULE_TAB_ID } }));
+  }
 
   async function annul(id: string, reason: string) {
     await fetch("/api/admin/forestal/gtf", {
@@ -87,6 +104,16 @@ export default function LothGtfView() {
                   <td className="px-4 py-2.5">{g.status === "anulada" ? <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">ANULADA</span> : <span className="rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">Emitida</span>}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-2">
+                      {g.tipo !== "producto" && g.status !== "anulada" && sinIngresar.has(g.gtfNumber) && (
+                        <button
+                          type="button"
+                          onClick={() => ingresarAlCtp(g.gtfNumber)}
+                          title="Registrar estas trozas como ingreso en el Libro de Operaciones del CTP"
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-2.5 text-xs font-bold text-[var(--accent-dark)] hover:bg-[var(--accent-muted)]"
+                        >
+                          <LogIn className="h-3.5 w-3.5" /> Ingresar al CTP
+                        </button>
+                      )}
                       <button type="button" onClick={() => printGtf(g)} title="Imprimir" className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Imprimir</button>
                       {g.status !== "anulada" && (annulId === g.id ? (
                         <AnnulInline onConfirm={(r) => annul(g.id, r)} onCancel={() => setAnnulId(null)} />

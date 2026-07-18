@@ -55,7 +55,16 @@ const TONE_CHIP: Record<string, { active: string; dot: string }> = {
   muted: { active: "border-[var(--rule-strong)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]", dot: "bg-[var(--text-tertiary)]" },
 };
 
-export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
+export default function CtpIngresosView({
+  period,
+  openGtf,
+  onOpenConsumed,
+}: {
+  period: CtpPeriod;
+  /** Puente inverso: GTF que el shell mandó a ingresar (abre el form pre-llenado). */
+  openGtf?: string | null;
+  onOpenConsumed?: () => void;
+}) {
   const [searchInput, setSearchInput] = useState("");
   const search = useDebounce(searchInput, 350);
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -79,6 +88,14 @@ export default function CtpIngresosView({ period }: { period: CtpPeriod }) {
     setPage(0);
     setSelectedIds([]);
   }, [search, statusFilter, period]);
+
+  // Puente inverso desde Títulos Habilitantes: abre el form con la guía elegida.
+  useEffect(() => {
+    if (!openGtf) return;
+    setFormGtf(openGtf);
+    setShowForm(true);
+    onOpenConsumed?.();
+  }, [openGtf, onOpenConsumed]);
 
   const pendingIds = useMemo(
     () => entries.filter((e) => e.status === "pendiente").map((e) => e.id),

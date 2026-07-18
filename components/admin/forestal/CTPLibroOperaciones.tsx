@@ -18,7 +18,7 @@
  * un cierre de período la revisa último, no primero.
  */
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   Building2,
@@ -46,6 +46,7 @@ import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
+import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
 type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "analisis" | "ficha";
 
@@ -69,8 +70,36 @@ export default function CTPLibroOperaciones() {
   const [custom, setCustom] = useState<CtpCustomRange>({ from: "", to: "" });
   const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe">(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  // Puente inverso: GTF que el Libro de Títulos Habilitantes mandó a ingresar.
+  const [pendingIngresoGtf, setPendingIngresoGtf] = useState<string | null>(null);
 
   const period = useMemo(() => resolveCtpPeriod(periodKey, custom), [periodKey, custom]);
+
+  // Levanta el handoff de sessionStorage → abre Ingresos pre-llenado. Se
+  // dispara al montar (tab abierto en frío) y cada vez que el tab se re-activa
+  // (TabMultiplexer cachea el módulo montado, así que el mount no vuelve a correr).
+  const consumirHandoff = useCallback(() => {
+    let gtf: string | null = null;
+    try {
+      gtf = sessionStorage.getItem(CTP_INGRESAR_GTF_KEY);
+      if (gtf) sessionStorage.removeItem(CTP_INGRESAR_GTF_KEY);
+    } catch {
+      // sessionStorage puede fallar (modo privado/SSR): sin handoff, sin bug.
+    }
+    if (gtf) {
+      setView("ingresos");
+      setPendingIngresoGtf(gtf);
+    }
+  }, []);
+
+  useEffect(() => {
+    consumirHandoff();
+    const onActivated = (e: Event) => {
+      if ((e as CustomEvent).detail?.tab === CTP_MODULE_TAB_ID) consumirHandoff();
+    };
+    window.addEventListener("admin-tab-activated", onActivated);
+    return () => window.removeEventListener("admin-tab-activated", onActivated);
+  }, [consumirHandoff]);
 
   async function exportar(kind: "interno" | "oficial" | "informe") {
     setExporting(kind);
@@ -176,7 +205,13 @@ export default function CTPLibroOperaciones() {
         )}
       </div>
 
-      {view === "ingresos" && <CtpIngresosView period={period} />}
+      {view === "ingresos" && (
+        <CtpIngresosView
+          period={period}
+          openGtf={pendingIngresoGtf}
+          onOpenConsumed={() => setPendingIngresoGtf(null)}
+        />
+      )}
       {view === "produccion" && <CtpEntriesView section="produccion" period={period} />}
       {view === "despacho" && <CtpEntriesView section="despacho" period={period} />}
       {view === "radar" && <CtpTrazaRadar period={period} />}
