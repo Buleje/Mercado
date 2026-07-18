@@ -138,6 +138,17 @@ const PRODUCT_LABELS: Record<string, string> = {
 export const originLabel = (type: string): string => ORIGIN_LABELS[type] ?? type;
 export const productLabel = (type: string): string => PRODUCT_LABELS[type] ?? type;
 
+/**
+ * N° de permiso CITES del ingreso. Se guarda en `notes` ("… · Permiso CITES: X")
+ * en vez de una columna aparte (mismo patrón sin-migración que la GTF de salida).
+ * Single source para leerlo estructurado en el detalle y el export.
+ */
+export function parseCitesPermiso(notes: string | null): string | null {
+  if (!notes) return null;
+  const m = notes.match(/Permiso CITES:\s*([^·]+?)\s*(?:·|$)/i);
+  return m ? m[1].trim() || null : null;
+}
+
 export function formatDate(iso: string | null): string {
   if (!iso) return "—";
   try {

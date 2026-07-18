@@ -31,6 +31,7 @@ import {
   formatDate,
   formatDateTime,
   originLabel,
+  parseCitesPermiso,
   productLabel,
   type WoodEntry,
 } from "./ctp-shared";
@@ -44,6 +45,8 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
   const dias = diasDeRegistro(entry); // para mostrar
   const fueraDePlazo = estaFueraDePlazo(entry); // para decidir — matchea el SQL
   const photos = Array.isArray(entry.photos) ? entry.photos : [];
+  // Permiso CITES vinculado (estructurado, leído de notes) — visible si es CITES.
+  const citesPermiso = parseCitesPermiso(entry.notes);
 
   return (
     <AdminModal
@@ -77,9 +80,18 @@ export default function CtpEntryDetailModal({ entry, onClose }: CtpEntryDetailMo
           {(entry.speciesCites || fueraDePlazo) && (
             <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--rule-soft)] pt-3">
               {entry.speciesCites && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-100)] px-3 py-1 text-xs font-bold text-[var(--data-error-700)]">
-                  <ShieldAlert className="h-3.5 w-3.5" /> CITES · requiere permiso
-                </span>
+                citesPermiso ? (
+                  <span
+                    title="Permiso CITES vinculado a este ingreso"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-3 py-1 text-xs font-bold text-[var(--data-success-700)]"
+                  >
+                    <ShieldAlert className="h-3.5 w-3.5" /> CITES · Permiso {citesPermiso}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-100)] px-3 py-1 text-xs font-bold text-[var(--data-error-700)]">
+                    <ShieldAlert className="h-3.5 w-3.5" /> CITES · sin permiso vinculado
+                  </span>
+                )
               )}
               {fueraDePlazo && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-3 py-1 text-xs font-bold text-[var(--data-warning-700)]">

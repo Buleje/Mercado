@@ -368,6 +368,16 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
   const fichaFaltante = ficha ? ctpFichaFaltantes(ficha) : [];
   // (H) Permisos CITES cargados en la Ficha.
   const permisosCites = ficha?.citesPermisos ?? [];
+  const permisoCitesSel = permisosCites.find((p) => p.numero === citesPermiso) ?? null;
+  // ¿El permiso vinculado ya estaba vencido a la FECHA DE INGRESO? Comparación
+  // fiscal: importa la vigencia al momento de la operación, no la de hoy. Se
+  // avisa (no bloquea): CITES es legal con permiso; puede haber una renovación
+  // en trámite — un permiso vencido debilita el respaldo, no lo anula.
+  const citesPermisoVencidoAlIngreso = Boolean(
+    permisoCitesSel?.vencimiento && data.entryDate &&
+    new Date(`${permisoCitesSel.vencimiento}T23:59:59`).getTime() <
+      new Date(`${data.entryDate}T00:00:00`).getTime(),
+  );
 
   // Filtro especies
   const filteredSpecies = useMemo(() => {
@@ -855,6 +865,12 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
                           <option key={i} value={p.numero}>{p.especie} · {p.numero}{p.vencimiento ? ` (vence ${p.vencimiento})` : ""}</option>
                         ))}
                       </select>
+                      {citesPermisoVencidoAlIngreso && permisoCitesSel && (
+                        <p className="mt-2 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2.5 text-xs font-medium text-[var(--data-warning-700)]">
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <span>El permiso <strong>{permisoCitesSel.numero}</strong> venció el {permisoCitesSel.vencimiento}, antes de la fecha de ingreso ({data.entryDate}). Verificá que exista una renovación vigente — un permiso vencido al momento del ingreso debilita el respaldo legal del origen CITES.</span>
+                        </p>
+                      )}
                     </Field>
                   ) : (
                     <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs font-medium text-[var(--data-error-700)]">
