@@ -35,9 +35,9 @@ const REGISTRO_ORDER: Registro[] = ["ingresos", "produccion", "salida"];
 const MODE_LABEL: Record<ImportMode, string> = { completo: "Libro completo", ingresos: "Ingresos", produccion: "Producción", salida: "Salida" };
 const REGISTRO_NOUN: Record<Registro, string> = { ingresos: "ingresos", produccion: "corridas", salida: "despachos" };
 
-type Action = "crear" | "creado" | "existe" | "error";
+type Action = "crear" | "creado" | "existe" | "difiere" | "error";
 interface ResultRow { row?: number; gtf: string | null; action: Action; message: string; seccion?: string }
-interface Resumen { total: number; crear: number; creados: number; saltados: number; errores: number }
+interface Resumen { total: number; crear: number; creados: number; saltados: number; difieren: number; errores: number }
 interface Combined { ingresos: unknown[]; produccion: unknown[]; salida: unknown[] }
 
 const IMPORT_URL = "/api/admin/forestal/wood-entries/import";
@@ -151,7 +151,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
     setPhase("committing");
     setError(null);
     const allDetalle: ResultRow[] = [];
-    const agg: Resumen = { total: 0, crear: 0, creados: 0, saltados: 0, errores: 0 };
+    const agg: Resumen = { total: 0, crear: 0, creados: 0, saltados: 0, difieren: 0, errores: 0 };
     const porReg: Partial<Record<Registro, number>> = {};
     try {
       for (const reg of REGISTRO_ORDER) {
@@ -165,8 +165,8 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         });
         const j = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(`${MODE_LABEL[reg]}: ${j.message ?? j.error ?? `HTTP ${r.status}`}`);
-        const res: Resumen = j.resumen ?? { total: 0, crear: 0, creados: 0, saltados: 0, errores: 0 };
-        agg.total += res.total; agg.creados += res.creados; agg.saltados += res.saltados; agg.errores += res.errores;
+        const res: Resumen = j.resumen ?? { total: 0, crear: 0, creados: 0, saltados: 0, difieren: 0, errores: 0 };
+        agg.total += res.total; agg.creados += res.creados; agg.saltados += res.saltados; agg.difieren += res.difieren ?? 0; agg.errores += res.errores;
         porReg[reg] = res.creados;
         for (const d of (j.detalle ?? []) as ResultRow[]) allDetalle.push({ ...d, seccion: MODE_LABEL[reg] });
       }
@@ -280,8 +280,16 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-sunken)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)]"><FileSpreadsheet className="h-3.5 w-3.5" /> {fileName} · formato {format}</span>
               <Chip tone="info" label={phase === "done" ? `${resumen.creados} creados` : `${resumen.crear} a crear`} />
               {resumen.saltados > 0 && <Chip tone="muted" label={`${resumen.saltados} ya existen`} />}
+              {resumen.difieren > 0 && <Chip tone="warning" label={`${resumen.difieren} difieren`} />}
               {resumen.errores > 0 && <Chip tone="error" label={`${resumen.errores} con error`} />}
             </div>
+
+            {resumen.difieren > 0 && (
+              <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)]">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>Hay filas que ya existen con datos distintos. El importador <strong>solo agrega, no sobrescribe</strong> (un acta del libro no se pisa desde un Excel): corregilas a mano en la línea correspondiente si el archivo trae la versión buena.</span>
+              </p>
+            )}
 
             <div className="max-h-[46vh] overflow-y-auto rounded-2xl border-2 border-[var(--rule-base)]">
               <table className="w-full text-sm">
@@ -356,13 +364,14 @@ function ActionBadge({ action }: { action: Action }) {
     crear: { label: "A crear", cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)]" },
     creado: { label: "Creado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)]" },
     existe: { label: "Ya existe", cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
+    difiere: { label: "Difiere", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" },
     error: { label: "Error", cls: "bg-[var(--data-error-100)] text-[var(--data-error-700)]" },
   };
   const m = map[action];
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${m.cls}`}>{m.label}</span>;
 }
 
-function Chip({ tone, label }: { tone: "info" | "muted" | "error"; label: string }) {
-  const cls = tone === "info" ? "bg-[var(--data-info-100)] text-[var(--data-info-700)]" : tone === "error" ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
+function Chip({ tone, label }: { tone: "info" | "muted" | "warning" | "error"; label: string }) {
+  const cls = tone === "info" ? "bg-[var(--data-info-100)] text-[var(--data-info-700)]" : tone === "warning" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" : tone === "error" ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
   return <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${cls}`}>{label}</span>;
 }

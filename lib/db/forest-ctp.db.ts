@@ -802,6 +802,33 @@ export class ForestCtpDB {
   }
 
   /**
+   * Mapa `gtfNumber → campos comparables` de los despachos vivos CON GTF, para la
+   * vista de reconciliación del importador (ADR-138): un despacho cuyo GTF ya
+   * existe pero con cantidad/producto/destino distinto se marca «difiere». Solo
+   * despachos con GTF (los «sin GTF» se dedupean por clave compuesta, sin diff).
+   */
+  static async despachoComparableByGtf(
+    tenantId: string,
+  ): Promise<Map<string, { quantity: number; productType: string; speciesCommon: string; destino: string }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const rows = await prisma.forestCtpEntry.findMany({
+      where: { tenantId, section: "despacho", deletedAt: null, status: "registrado", gtfNumber: { not: null } },
+      select: { gtfNumber: true, quantity: true, productType: true, speciesCommon: true, destino: true },
+    });
+    const map = new Map<string, { quantity: number; productType: string; speciesCommon: string; destino: string }>();
+    for (const r of rows) {
+      if (!r.gtfNumber) continue;
+      map.set(r.gtfNumber, {
+        quantity: Number(r.quantity ?? 0),
+        productType: r.productType ?? "",
+        speciesCommon: r.speciesCommon ?? "",
+        destino: r.destino ?? "",
+      });
+    }
+    return map;
+  }
+
+  /**
    * Trazabilidad HACIA ADELANTE de un ingreso: ¿a dónde fue esta madera?
    * GTF de ingreso → corridas de producción que la consumieron (puente
    * ForestCtpConsumo) → despachos que salieron de esas corridas (puente

@@ -71,7 +71,35 @@ const bodySchema = z.object({
   salida: z.array(z.record(z.string(), z.unknown())).max(5000).optional().default([]),
 });
 
-type ResultRow = { row?: number; gtf: string | null; action: "crear" | "creado" | "existe" | "error"; message: string };
+type ResultRow = { row?: number; gtf: string | null; action: "crear" | "creado" | "existe" | "difiere" | "error"; message: string };
+
+// ── Reconciliación (ADR-138): el importador es insert-only. Una fila cuya clave
+// ya existe pero con valores distintos se marca «difiere» (NO se sobrescribe —
+// sobrescribir un acta del libro es un cambio de compliance, no una importación).
+const normCmp = (s: unknown): string => String(s ?? "").trim().toLowerCase();
+
+function diffIngreso(
+  db: { volumeM3: number; speciesCommonName: string; productType: string },
+  file: { volumeM3: number; speciesCommonName: string; productType: string },
+): string | null {
+  const parts: string[] = [];
+  if (Math.abs(db.volumeM3 - file.volumeM3) > 0.0001) parts.push(`volumen ${db.volumeM3}→${file.volumeM3} m³`);
+  if (normCmp(db.speciesCommonName) !== normCmp(file.speciesCommonName)) parts.push(`especie ${db.speciesCommonName}→${file.speciesCommonName}`);
+  if (normCmp(db.productType) !== normCmp(file.productType)) parts.push(`producto ${db.productType}→${file.productType}`);
+  return parts.length ? parts.join(" · ") : null;
+}
+
+function diffDespacho(
+  db: { quantity: number; productType: string; speciesCommon: string; destino: string },
+  file: { quantity: number; productType: string; speciesCommon: string; destino?: string | null },
+): string | null {
+  const parts: string[] = [];
+  if (Math.abs(db.quantity - file.quantity) > 0.0001) parts.push(`cantidad ${db.quantity}→${file.quantity}`);
+  if (normCmp(db.productType) !== normCmp(file.productType)) parts.push(`producto ${db.productType}→${file.productType}`);
+  if (normCmp(db.speciesCommon) !== normCmp(file.speciesCommon)) parts.push(`especie ${db.speciesCommon}→${file.speciesCommon}`);
+  if (normCmp(db.destino) !== normCmp(file.destino)) parts.push(`destino ${db.destino || "—"}→${file.destino || "—"}`);
+  return parts.length ? parts.join(" · ") : null;
+}
 
 export const POST = withApiHandler("forestal-wood-entries-import", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
@@ -164,14 +192,15 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         detalle.push({ row, gtf: label, action: "error", message: e instanceof Error ? e.message : String(e) });
       }
     }
-    return NextResponse.json({ mode, registro, resumen: { total: produccion.length, crear: mode === "commit" ? creados : creables, creados, saltados, errores }, detalle });
+    return NextResponse.json({ mode, registro, resumen: { total: produccion.length, crear: mode === "commit" ? creados : creables, creados, saltados, difieren: 0, errores }, detalle });
   }
 
   // ── Registro: SALIDA / despachos (etapa 2b) ─────────────────────────────
   if (registro === "salida") {
     const existingKeys = await ForestCtpDB.existingDespachoKeys(auth.tenantId);
+    const existingByGtf = await ForestCtpDB.despachoComparableByGtf(auth.tenantId);
     const detalle: ResultRow[] = [];
-    let creables = 0, saltados = 0, errores = 0, creados = 0;
+    let creables = 0, saltados = 0, difieren = 0, errores = 0, creados = 0;
     for (const raw of salida) {
       const row = typeof raw.row === "number" ? raw.row : undefined;
       const v = salidaSchema.safeParse(raw);
@@ -184,8 +213,16 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       const gtfLabel = d.gtfNumber || `${d.productType} · ${d.speciesCommon}`;
       const key = despachoKey(d.gtfNumber ?? null, d.entryDate ?? "", d.productType, d.speciesCommon, d.quantity, d.destino ?? null);
       if (existingKeys.has(key)) {
-        saltados++;
-        detalle.push({ row, gtf: gtfLabel, action: "existe", message: "Ya existe un despacho igual — se salta" });
+        // Reconciliación: si el despacho tiene GTF, comparar valores contra el guardado.
+        const prev = d.gtfNumber ? existingByGtf.get(d.gtfNumber.trim()) : undefined;
+        const diff = prev ? diffDespacho(prev, d) : null;
+        if (diff) {
+          difieren++;
+          detalle.push({ row, gtf: gtfLabel, action: "difiere", message: `Ya existe con datos distintos (no se sobrescribe): ${diff}` });
+        } else {
+          saltados++;
+          detalle.push({ row, gtf: gtfLabel, action: "existe", message: "Ya existe un despacho igual — se salta" });
+        }
         continue;
       }
       if (mode === "preview") {
@@ -217,16 +254,16 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         detalle.push({ row, gtf: gtfLabel, action: "error", message: e instanceof Error ? e.message : String(e) });
       }
     }
-    return NextResponse.json({ mode, registro, resumen: { total: salida.length, crear: mode === "commit" ? creados : creables, creados, saltados, errores }, detalle });
+    return NextResponse.json({ mode, registro, resumen: { total: salida.length, crear: mode === "commit" ? creados : creables, creados, saltados, difieren, errores }, detalle });
   }
 
   // ── Registro: INGRESOS (etapa 1, default) ───────────────────────────────
-  // Idempotencia: qué GTF ya existen para el tenant.
+  // Idempotencia + reconciliación: valores actuales de los GTF que ya existen.
   const gtfs = ingresos.map((r) => String(r.gtfNumber ?? "").trim()).filter(Boolean);
-  const existing = await WoodEntriesDB.existingGtfNumbers(auth.tenantId, gtfs);
+  const existing = await WoodEntriesDB.comparableByGtf(auth.tenantId, gtfs);
 
   const detalle: ResultRow[] = [];
-  let creables = 0, saltados = 0, errores = 0, creados = 0;
+  let creables = 0, saltados = 0, difieren = 0, errores = 0, creados = 0;
 
   for (const raw of ingresos) {
     const row = typeof raw.row === "number" ? raw.row : undefined;
@@ -237,9 +274,17 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       continue;
     }
     const d = v.data;
-    if (existing.has(d.gtfNumber)) {
-      saltados++;
-      detalle.push({ row, gtf: d.gtfNumber, action: "existe", message: "Ya existe un ingreso con esta GTF — se salta" });
+    const prev = existing.get(d.gtfNumber);
+    if (prev) {
+      // Insert-only: existe → NO se sobrescribe. «difiere» si el libro trae otros valores.
+      const diff = diffIngreso(prev, d);
+      if (diff) {
+        difieren++;
+        detalle.push({ row, gtf: d.gtfNumber, action: "difiere", message: `Ya existe con datos distintos (no se sobrescribe): ${diff}` });
+      } else {
+        saltados++;
+        detalle.push({ row, gtf: d.gtfNumber, action: "existe", message: "Ya existe, idéntico — se salta" });
+      }
       continue;
     }
     if (mode === "preview") {
@@ -262,7 +307,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         notes: d.notes ?? null,
         createdBy: auth.username ?? "import",
       });
-      existing.add(d.gtfNumber); // no duplicar dentro del mismo batch
+      existing.set(d.gtfNumber, { volumeM3: d.volumeM3, speciesCommonName: d.speciesCommonName, productType: d.productType, providerName: d.providerName }); // no duplicar en el batch
       creados++;
       detalle.push({ row, gtf: d.gtfNumber, action: "creado", message: "Importado (pendiente de validar)" });
     } catch (e) {
@@ -274,7 +319,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
 
   return NextResponse.json({
     mode,
-    resumen: { total: ingresos.length, crear: mode === "commit" ? creados : creables, creados, saltados, errores },
+    resumen: { total: ingresos.length, crear: mode === "commit" ? creados : creables, creados, saltados, difieren, errores },
     detalle,
   });
 });

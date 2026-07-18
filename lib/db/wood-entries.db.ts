@@ -290,6 +290,36 @@ export class WoodEntriesDB {
   }
 
   /**
+   * Mapa `gtfNumber → campos comparables` (vivos) para la vista de reconciliación
+   * del importador (ADR-138): al re-importar el libro, una fila cuyo GTF ya existe
+   * pero con valores distintos se marca «difiere» (no se sobrescribe — el importador
+   * es insert-only). Solo los campos que un libro corregido cambiaría de verdad.
+   */
+  static async comparableByGtf(
+    tenantId: string,
+    gtfs: string[],
+  ): Promise<Map<string, { volumeM3: number; speciesCommonName: string; productType: string; providerName: string }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const clean = [...new Set(gtfs.map((g) => g.trim()).filter(Boolean))];
+    if (clean.length === 0) return new Map();
+    const rows = await prisma.woodEntry.findMany({
+      where: { tenantId, deletedAt: null, gtfNumber: { in: clean } },
+      orderBy: { entryDate: "asc" },
+      select: { gtfNumber: true, volumeM3: true, speciesCommonName: true, productType: true, providerName: true },
+    });
+    const map = new Map<string, { volumeM3: number; speciesCommonName: string; productType: string; providerName: string }>();
+    for (const r of rows) {
+      map.set(r.gtfNumber, {
+        volumeM3: Number(r.volumeM3),
+        speciesCommonName: r.speciesCommonName ?? "",
+        productType: r.productType ?? "",
+        providerName: r.providerName ?? "",
+      });
+    }
+    return map;
+  }
+
+  /**
    * Agregados del período, calculados en DB sobre TODO el conjunto filtrado
    * (no sobre la página cargada — sumar en el cliente miente en cuanto hay más
    * registros que `limit`).
