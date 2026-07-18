@@ -280,8 +280,18 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                   <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0f172a" floodOpacity="0.10" />
                 </filter>
               </defs>
-              {g.consumos.map((e) => <Edge key={`c:${e.from}->${e.to}`} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={!active || active.edges.has(`c:${e.from}->${e.to}`)} dim={!!active && !active.edges.has(`c:${e.from}->${e.to}`)} amber={edgeAmber(e.to)} />)}
-              {g.origenes.map((e) => <Edge key={`o:${e.from}->${e.to}`} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={!active || active.edges.has(`o:${e.from}->${e.to}`)} dim={!!active && !active.edges.has(`o:${e.from}->${e.to}`)} amber={edgeAmber(e.from) || edgeAmber(e.to)} />)}
+              {g.consumos.map((e) => {
+                const k = `c:${e.from}->${e.to}`;
+                const onE = !active || active.edges.has(k);
+                const amberE = edgeAmber(e.to);
+                return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={`${e.volumeM3.toFixed(2)} m³`} flow={!!active && active.edges.has(k) && !amberE} />;
+              })}
+              {g.origenes.map((e) => {
+                const k = `o:${e.from}->${e.to}`;
+                const onE = !active || active.edges.has(k);
+                const amberE = edgeAmber(e.from) || edgeAmber(e.to);
+                return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={`${e.quantity}`} flow={!!active && active.edges.has(k) && !amberE} />;
+              })}
               {layout.cols.flat().map((n) => (
                 <Node key={n.id} n={n} dim={!!active && !active.nodes.has(n.id)} pinned={pinned === n.id} onHover={setHover} onPin={(id) => setPinned((p) => (p === id ? null : id))} />
               ))}
@@ -291,6 +301,12 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       )}
 
       {detail && <CtpNodeDetailLoader target={detail} onClose={() => setDetail(null)} />}
+
+      <style jsx global>{`
+        @keyframes ctp-edge-flow { to { stroke-dashoffset: -19; } }
+        .ctp-edge-flow { animation: ctp-edge-flow 1s linear infinite; }
+        @media (prefers-reduced-motion: reduce) { .ctp-edge-flow { animation: none; } }
+      `}</style>
     </div>
   );
 }
@@ -336,20 +352,28 @@ function Legend({ swatch, icon: Icon, text }: { swatch: string; icon: typeof Box
   );
 }
 
-function Edge({ a, b, on, dim, amber }: { a?: Placed; b?: Placed; on: boolean; dim: boolean; amber: boolean }) {
+function Edge({ a, b, on, dim, amber, label, flow }: { a?: Placed; b?: Placed; on: boolean; dim: boolean; amber: boolean; label?: string; flow?: boolean }) {
   if (!a || !b) return null;
   const x1 = a.x + NODE_W, y1 = a.y + NODE_H / 2, x2 = b.x, y2 = b.y + NODE_H / 2;
-  const mx = (x1 + x2) / 2;
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
   const color = amber ? "var(--data-warning-500)" : on ? "var(--brand-ink)" : "var(--rule-base)";
+  // El path termina 7px antes del nodo para dejar lugar a la punta de flecha.
+  const d = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2 - 7} ${y2}`;
   return (
-    <path
-      d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`}
-      fill="none"
-      stroke={color}
-      strokeWidth={on ? 2 : 1.5}
-      strokeDasharray={amber ? "5 4" : undefined}
-      opacity={dim ? 0.12 : on ? 0.6 : 0.3}
-    />
+    <g opacity={dim ? 0.12 : on ? 0.7 : 0.32}>
+      <path d={d} fill="none" stroke={color} strokeWidth={on ? 2 : 1.5} strokeDasharray={amber ? "5 4" : undefined} />
+      {/* Flujo animado: puntos que corren por la cadena activa (marca la dirección). */}
+      {flow && <path d={d} fill="none" stroke={color} strokeWidth={2.5} strokeDasharray="0.5 9" strokeLinecap="round" className="ctp-edge-flow" />}
+      {/* Punta de flecha ingreso→corrida→despacho. */}
+      <path d={`M ${x2} ${y2} L ${x2 - 8} ${y2 - 4.5} L ${x2 - 8} ${y2 + 4.5} Z`} fill={color} />
+      {/* Volumen/cantidad atribuido a ESTE link (lo que fluyó por el eslabón). */}
+      {label && !dim && (
+        <g transform={`translate(${mx} ${my})`}>
+          <rect x={-21} y={-8} width={42} height={15} rx={7.5} fill="var(--surface-raised)" stroke={color} strokeWidth={0.75} />
+          <text x={0} y={2.5} fontSize={8} fontWeight={700} textAnchor="middle" fill={amber ? "var(--data-warning-700)" : on ? "var(--text-primary)" : "var(--text-tertiary)"}>{label}</text>
+        </g>
+      )}
+    </g>
   );
 }
 
