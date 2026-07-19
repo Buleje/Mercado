@@ -12,6 +12,7 @@ import {
   Scale, PackageCheck, Layers, PackagePlus, Clock, TreePine, Link2, Calculator,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
+import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -346,6 +347,18 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
 
   const mp = data?.materiaPrima;
 
+  // Balance por especie, dibujado: lo que entró (validado) vs. lo que se consumió
+  // en producción. Barras a la par = especie agotada; ingreso > consumo = stock en
+  // patio. Es el balance que se fiscaliza, de un vistazo (el detalle en la tabla).
+  const balanceChart = useMemo(
+    () => (data?.porEspecie ?? []).map((s) => ({
+      especie: s.especie.length > 14 ? s.especie.slice(0, 13) + "…" : s.especie,
+      Ingreso: s.ingresoM3,
+      Consumido: s.consumidoM3,
+    })),
+    [data],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -374,6 +387,26 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
             <StatCard label="Saldo de materia prima" value={`${n2(mp.saldoM3)} m³`} subValue={mp.saldoM3 < 0 ? "sobreconsumo" : "disponible"} icon={Scale} emphasis={mp.saldoM3 < 0 ? "error" : "success"} />
             <StatCard label="Pendiente de validar" value={`${n2(mp.pendienteM3)} m³`} subValue="no computa como saldo" icon={Clock} emphasis={mp.pendienteM3 > 0 ? "warning" : "neutral"} />
           </div>
+
+          {/* Balance por especie, dibujado: entra (validado) vs. sale (consumido). */}
+          {balanceChart.length > 0 && (
+            <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Materia prima por especie · entra vs. consumido (m³)</CardTitle>
+              <p className="mb-2 text-xs text-[var(--text-tertiary)]">Barras a la par = especie agotada en producción; ingreso por encima del consumo = stock en patio.</p>
+              <BulejeComposedChart
+                data={balanceChart}
+                xKey="especie"
+                bars={[
+                  { key: "Ingreso", label: "Ingreso", color: "accent", yAxis: "left" },
+                  { key: "Consumido", label: "Consumido", color: "amber", yAxis: "left" },
+                ]}
+                height={240}
+                minDataPoints={1}
+                leftAxisFormat={(v) => `${v}`}
+                tooltipFormat={(v) => `${Number(v).toFixed(2)} m³`}
+              />
+            </div>
+          )}
 
           {/* Conciliación: apertura (del cierre anterior) + movimientos = final (ADR-139 rollforward). */}
           {concil && concil.materiaPrima.length > 0 && (
