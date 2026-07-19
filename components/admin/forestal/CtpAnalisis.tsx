@@ -24,11 +24,12 @@ import {
   TrendingDown,
   TrendingUp,
 } from "@buleje/design-system/icons";
-import { BulejeBarChart } from "@/components/ui-system/charts";
+import { BulejeComposedChart, BulejeLineChart, BulejeDonutChart } from "@/components/ui-system/charts";
 import { SERIES_PALETTE } from "@/components/ui-system/charts/palette";
 import type { ReordenProyeccion, TendenciaMes } from "@/lib/db/forest-ctp.db";
 
 const n2 = (v: number) => v.toFixed(2);
+const r2 = (v: number) => Math.round(v * 100) / 100;
 
 export default function CtpAnalisis() {
   const [reorden, setReorden] = useState<ReordenProyeccion[] | null>(null);
@@ -58,10 +59,25 @@ export default function CtpAnalisis() {
       mes: mesCorto(t.mes),
       Ingresado: t.ingresoM3,
       Consumido: t.consumidoM3,
+      // Balance del mes = lo que entró − lo que se consumió. Cruce en 0 = si la
+      // planta repone o se está comiendo su stock. Mismo eje (m³) que las barras.
+      Balance: r2(t.ingresoM3 - t.consumidoM3),
       Rendimiento: t.rendimiento,
     })),
     [tendencias],
   );
+
+  // Composición del stock actual de materia prima por especie (top 6 + otras),
+  // derivada del reorden — de qué está hecho lo que hoy tenés en patio.
+  const stockData = useMemo(() => {
+    const rows = (reorden ?? []).filter((r) => r.saldo > 0).sort((a, b) => b.saldo - a.saldo);
+    const TOP = 6;
+    const out = rows.slice(0, TOP).map((r) => ({ name: r.especie, value: r.saldo }));
+    const resto = rows.slice(TOP);
+    if (resto.length) out.push({ name: `Otras (${resto.length})`, value: r2(resto.reduce((a, r) => a + r.saldo, 0)) });
+    return out;
+  }, [reorden]);
+  const stockTotal = useMemo(() => stockData.reduce((a, d) => a + d.value, 0), [stockData]);
 
   return (
     <div className="space-y-4">
@@ -123,34 +139,70 @@ export default function CtpAnalisis() {
 
       {tendencias && tendencias.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
+          {/* Flujo: barras entrada/consumo + línea de balance del mes (mismo eje
+              m³, cruce en 0). Composed = una sola lectura de "¿repongo o me como
+              el stock?". */}
           <ChartCard
             title="Flujo mensual de materia prima (m³)"
-            subtitle="Ingresado vs. consumido en producción — si consumís más de lo que entra, el saldo cae."
-            legend={[{ label: "Ingresado", color: SERIES_PALETTE[0] }, { label: "Consumido", color: SERIES_PALETTE[1] }]}
+            subtitle="Ingresado vs. consumido, y el balance del mes: si la línea cae bajo 0, consumís más de lo que entra."
           >
-            <BulejeBarChart
+            <BulejeComposedChart
               data={chartData}
               xKey="mes"
-              series={[{ key: "Ingresado", label: "Ingresado" }, { key: "Consumido", label: "Consumido" }]}
-              height={220}
-              barSize={18}
-              format={(v) => `${Number(v).toFixed(2)} m³`}
+              bars={[
+                { key: "Ingresado", label: "Ingresado", color: "accent", yAxis: "left" },
+                { key: "Consumido", label: "Consumido", color: "amber", yAxis: "left" },
+              ]}
+              lines={[{ key: "Balance", label: "Balance del mes", color: "purple", yAxis: "left" }]}
+              height={240}
+              leftAxisFormat={(v) => `${v}`}
+              tooltipFormat={(v) => `${Number(v).toFixed(2)} m³`}
             />
           </ChartCard>
+          {/* Rendimiento = tasa en el tiempo → línea (no barras): la pendiente ES
+              la lectura. */}
           <ChartCard
             title="Rendimiento promedio por mes (%)"
             subtitle="Salida / entrada ponderado por volumen. Un salto brusco hacia arriba puede ser sobre-declaración (revisá Cumplimiento)."
           >
-            <BulejeBarChart
+            <BulejeLineChart
               data={chartData}
               xKey="mes"
               series={[{ key: "Rendimiento", label: "Rendimiento" }]}
-              height={220}
-              barSize={26}
+              height={240}
+              showDots
               format={(v) => `${Number(v).toFixed(1)}%`}
             />
           </ChartCard>
         </div>
+      )}
+
+      {/* Composición del stock actual por especie: de qué está hecho el patio hoy. */}
+      {stockData.length > 0 && (
+        <ChartCard
+          title="Stock de materia prima por especie"
+          subtitle={`${n2(stockTotal)} m³ en patio hoy, repartidos entre ${stockData.length} ${stockData.length === 1 ? "especie" : "grupos de especie"}.`}
+        >
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+            <div className="w-full max-w-[15rem] shrink-0">
+              <BulejeDonutChart data={stockData} height={200} format={(v) => `${Number(v).toFixed(2)} m³`} />
+            </div>
+            {/* Leyenda con valor + % (identidad nunca por color solo — dataviz). */}
+            <ul className="grid w-full flex-1 grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {stockData.map((s, i) => (
+                <li key={s.name} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm">
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: SERIES_PALETTE[i % SERIES_PALETTE.length] }} aria-hidden="true" />
+                    <span className="truncate text-[var(--text-secondary)]">{s.name}</span>
+                  </span>
+                  <span className="shrink-0 font-mono tabular-nums text-[var(--text-tertiary)]">
+                    {n2(s.value)} <span className="text-[length:var(--ts-2xs)]">({stockTotal > 0 ? Math.round((s.value / stockTotal) * 100) : 0}%)</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </ChartCard>
       )}
     </div>
   );
