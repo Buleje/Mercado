@@ -11,10 +11,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle, StatCard } from "@buleje/design-system";
-import { AlertCircle, RefreshCw, Map as MapIcon, Layers, Boxes, PackageCheck, Truck } from "@buleje/design-system/icons";
+import { AlertCircle, RefreshCw, Map as MapIcon, Layers, Boxes, PackageCheck, Truck, Printer, PieChart } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ZONA_TIPOS, zonaTipoMeta, type PlantaZona } from "@/lib/forestal/planta-zona-types";
+import { printPlantaPlano } from "@/lib/forestal/planta-plano-print";
 import CtpPlantaMapa from "./CtpPlantaMapa";
 
 interface PlantaSaldos {
@@ -95,6 +96,29 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
     finally { setAsignando(null); }
   }, [load]);
 
+  // Ubicar EN LOTE: todos los ítems de un tipo (troza/producto/despacho) a una
+  // zona de un click. PUTs en paralelo (filas por-entry, sin carrera); recarga
+  // ante cualquier fallo para no dejar el estado optimista inconsistente.
+  const asignarLote = useCallback(async (kind: ItemKind, zonaId: string | null) => {
+    const targets = items.filter((it) => it.kind === kind);
+    if (targets.length === 0) return;
+    setAsignando(`lote:${kind}`);
+    setAsignaciones((prev) => {
+      const next = { ...prev };
+      for (const it of targets) { if (zonaId) next[it.id] = zonaId; else delete next[it.id]; }
+      return next;
+    });
+    try {
+      await Promise.all(targets.map((it) =>
+        fetch("/api/admin/forestal/ctp/planta", {
+          method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
+          body: JSON.stringify({ entryId: it.id, zonaId }),
+        }).then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); }),
+      ));
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); void load(); }
+    finally { setAsignando(null); }
+  }, [items, load]);
+
   const porTipo = useMemo(() => {
     const m = new Map<string, number>();
     for (const z of zonas) m.set(z.tipo, (m.get(z.tipo) ?? 0) + 1);
@@ -123,6 +147,16 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
     return m;
   }, [items, asignaciones, zonaById]);
   const invObj = useMemo(() => Object.fromEntries([...invPorZona].map(([k, v]) => [k, { ...v, m3: Math.round(v.m3 * 100) / 100 }])), [invPorZona]);
+  // Ocupación de la planta: cómo se reparte el área mapeada por tipo de zona
+  // (+ m³ ubicados por tipo). Ordenado por área desc. Solo tipos con área.
+  const ocupacion = useMemo(() => zonasByTipo
+    .map(({ tipo, list }) => {
+      const area = list.reduce((a, z) => a + (z.areaM2 ?? 0), 0);
+      const m3 = list.reduce((a, z) => a + (invPorZona.get(z.id)?.m3 ?? 0), 0);
+      return { tipo, count: list.length, area, m3, pct: areaTotal > 0 ? (area / areaTotal) * 100 : 0 };
+    })
+    .filter((o) => o.area > 0)
+    .sort((a, b) => b.area - a.area), [zonasByTipo, invPorZona, areaTotal]);
   const isPlaced = useCallback((id: string) => { const z = asignaciones[id]; return !!z && zonaById.has(z); }, [asignaciones, zonaById]);
   const sinUbicar = useMemo(() => items.filter((it) => !isPlaced(it.id)), [items, isPlaced]);
   const itemsByKind = useMemo(
@@ -136,7 +170,15 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
         <p className="max-w-2xl text-sm text-[var(--text-tertiary)]">
           <strong className="text-[var(--text-secondary)]">Mapa de tu aserradero.</strong> Dibujá las zonas de la planta (entrada, patio de trozas, aserrado, despacho…) sobre el satélite: el mapa muestra <em>dónde</em> está la madera y el Libro, <em>cuánta</em> se mueve.
         </p>
-        <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { try { printPlantaPlano({ zonas, invByZona: invObj, areaTotalM2: areaTotal, periodLabel: period.label }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } }}
+            title="Imprimir el plano de la planta (satélite + zonas + inventario) para la visita de la ARFFS"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          ><Printer className="h-4 w-4" /><span className="hidden sm:inline">Imprimir plano</span></button>
+          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+        </div>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
@@ -164,6 +206,34 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
       {/* El mapa (las etiquetas muestran el inventario ubicado en cada zona). */}
       <CtpPlantaMapa zonas={zonas} inventario={invObj} onChanged={load} />
 
+      {/* Ocupación de la planta: reparto del área mapeada por tipo de zona. */}
+      {ocupacion.length > 0 && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><PieChart className="h-4 w-4" /> Ocupación de la planta</CardTitle>
+          <div className="flex h-4 w-full overflow-hidden rounded-full border border-[var(--rule-base)]">
+            {ocupacion.map((o) => (
+              <div key={o.tipo.tipo} style={{ width: `${o.pct}%`, background: o.tipo.ring }} title={`${o.tipo.label} · ${o.pct.toFixed(0)}%`} />
+            ))}
+          </div>
+          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {ocupacion.map((o) => (
+              <li key={o.tipo.tipo} className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: o.tipo.ring }} />
+                  <span className="truncate font-bold text-[var(--text-primary)]">{o.tipo.label}</span>
+                  <span className="shrink-0 text-[var(--text-tertiary)]">· {o.count}</span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <span className="font-mono font-bold text-[var(--text-secondary)]">{o.pct.toFixed(0)}%</span>
+                  {o.m3 > 0 && <span className="ml-2 text-xs text-[var(--text-tertiary)]">{o.m3.toFixed(1)} m³</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-[var(--text-tertiary)]">Área total mapeada: <strong className="text-[var(--text-secondary)]">{areaTotal >= 10000 ? `${(areaTotal / 10000).toFixed(2)} ha` : `${Math.round(areaTotal).toLocaleString("es-PE")} m²`}</strong> · el % es sobre el área dibujada, no sobre el terreno real.</p>
+        </div>
+      )}
+
       {/* Ubicar el flujo físico: troza → producto terminado → despacho, cada uno a su zona. */}
       {items.length > 0 && (
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
@@ -180,7 +250,22 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
               const ordered = [...list].sort((a, b) => Number(isPlaced(a.id)) - Number(isPlaced(b.id)));
               return (
                 <div key={kind}>
-                  <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]"><KI className="h-3.5 w-3.5" />{KIND_META[kind].label} · {list.length}</p>
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                    <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]"><KI className="h-3.5 w-3.5" />{KIND_META[kind].label} · {list.length}</p>
+                    {zonas.length > 0 && list.length > 1 && (
+                      <select
+                        value=""
+                        disabled={asignando != null}
+                        onChange={(e) => { if (e.target.value) void asignarLote(kind, e.target.value === "__none__" ? null : e.target.value); }}
+                        title={`Ubicar los ${list.length} ítems de este tipo en una zona de un click`}
+                        className="h-8 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
+                      >
+                        <option value="">Ubicar todas en…</option>
+                        {zonas.map((z) => <option key={z.id} value={z.id}>{z.codigo} · {zonaTipoMeta(z.tipo).label}</option>)}
+                        <option value="__none__">— Quitar de todas —</option>
+                      </select>
+                    )}
+                  </div>
                   <ul className="space-y-1.5">
                     {ordered.map((it) => {
                       const zid = isPlaced(it.id) ? asignaciones[it.id] : "";
