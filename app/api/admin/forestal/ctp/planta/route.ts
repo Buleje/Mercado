@@ -45,21 +45,24 @@ async function guard(req: NextRequest) {
 export const GET = withApiHandler("forestal-ctp-planta", async (req: NextRequest) => {
   const auth = await guard(req);
   if (auth instanceof NextResponse) return auth;
-  const [zonas, source, asignaciones] = await Promise.all([
+  const [zonas, trozasSrc, prodSrc, despRes, asignaciones] = await Promise.all([
     ForestPlantaZonaDB.list(auth.tenantId),
-    ForestCtpDB.availableSource(auth.tenantId, "produccion"),
+    ForestCtpDB.availableSource(auth.tenantId, "produccion"), // trozas (materia prima con saldo)
+    ForestCtpDB.availableSource(auth.tenantId, "despacho"), // producto terminado (corridas con stock)
+    ForestCtpDB.list(auth.tenantId, { section: "despacho" }), // despachos (salidas)
     ForestPlantaAsignacionDB.getMap(auth.tenantId),
   ]);
-  // Trozas ubicables: ingresos de materia prima con saldo sin consumir.
-  const trozas = source.map((t) => ({
-    id: t.id,
-    gtf: t.code,
-    species: t.species,
-    cites: t.cites,
-    disponible: t.disponible,
-    entryDate: t.entryDate instanceof Date ? t.entryDate.toISOString() : String(t.entryDate),
-  }));
-  return NextResponse.json({ zonas, trozas, asignaciones });
+  // Items ubicables del flujo físico: troza (m³) → producto (unidad) → despacho (salida).
+  const items = [
+    ...trozasSrc.map((t) => ({ id: t.id, kind: "troza" as const, label: `GTF ${t.code ?? "—"}`, sub: t.species ?? null, cantidad: t.disponible, unidad: "m³", cites: !!t.cites })),
+    ...prodSrc.map((c) => {
+      // availableSource devuelve una unión; en la rama "despacho" son corridas.
+      const d = c as { id: string; code: string; disponible: number; cites: boolean; species: string | null; productType?: string | null; unit?: string | null };
+      return { id: d.id, kind: "producto" as const, label: d.code ?? "Corrida", sub: d.productType ?? d.species ?? null, cantidad: d.disponible, unidad: d.unit ?? "u", cites: !!d.cites };
+    }),
+    ...despRes.entries.map((d) => ({ id: d.id, kind: "despacho" as const, label: `Despacho #${d.lineNo}`, sub: d.destino ?? d.productType ?? null, cantidad: Number(d.quantity ?? 0), unidad: d.unit ?? "u", cites: !!d.cites })),
+  ];
+  return NextResponse.json({ zonas, items, asignaciones });
 });
 
 const asignarSchema = z.object({

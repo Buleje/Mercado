@@ -22,14 +22,31 @@ interface PlantaSaldos {
   productoStock: number;
   despachado: number;
 }
-export interface Troza { id: string; gtf: string | null; species: string | null; cites: boolean; disponible: number; entryDate: string }
-export interface ZonaInv { count: number; m3: number }
+export type ItemKind = "troza" | "producto" | "despacho";
+export interface Item { id: string; kind: ItemKind; label: string; sub: string | null; cantidad: number; unidad: string; cites: boolean }
+export interface ZonaInv { trozas: number; m3: number; productos: number; despachos: number }
+
+const KIND_META: Record<ItemKind, { label: string; icon: typeof Boxes }> = {
+  troza: { label: "Trozas · materia prima", icon: Boxes },
+  producto: { label: "Producto terminado", icon: PackageCheck },
+  despacho: { label: "Despachos · salidas", icon: Truck },
+};
+
+/** Resumen legible del inventario ubicado en una zona (por tipo, sin mezclar unidades). */
+function invSummary(inv?: ZonaInv): string | null {
+  if (!inv) return null;
+  const p: string[] = [];
+  if (inv.trozas) p.push(`${inv.trozas} troza${inv.trozas === 1 ? "" : "s"} · ${inv.m3.toFixed(2)} m³`);
+  if (inv.productos) p.push(`${inv.productos} producto${inv.productos === 1 ? "" : "s"}`);
+  if (inv.despachos) p.push(`${inv.despachos} despacho${inv.despachos === 1 ? "" : "s"}`);
+  return p.length ? p.join(" · ") : null;
+}
 
 const n2 = (v: number) => v.toFixed(2);
 
 export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const [zonas, setZonas] = useState<PlantaZona[]>([]);
-  const [trozas, setTrozas] = useState<Troza[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [asignaciones, setAsignaciones] = useState<Record<string, string>>({});
   const [saldos, setSaldos] = useState<PlantaSaldos | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +64,7 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
       if (!rz.ok) throw new Error((await rz.json().catch(() => ({}))).message ?? `HTTP ${rz.status}`);
       const pz = await rz.json();
       setZonas(pz.zonas ?? []);
-      setTrozas(pz.trozas ?? []);
+      setItems(pz.items ?? []);
       setAsignaciones(pz.asignaciones ?? {});
       if (rs.ok) {
         const s = (await rs.json()).saldos;
@@ -90,22 +107,28 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   );
 
   const zonaById = useMemo(() => new Map(zonas.map((z) => [z.id, z])), [zonas]);
-  // Inventario ubicado por zona (trozas asignadas a una zona existente).
+  // Inventario ubicado por zona, por tipo (trozas m³ + conteo de productos/despachos).
   const invPorZona = useMemo(() => {
     const m = new Map<string, ZonaInv>();
-    for (const t of trozas) {
-      const zid = asignaciones[t.id];
+    for (const it of items) {
+      const zid = asignaciones[it.id];
       if (zid && zonaById.has(zid)) {
-        const cur = m.get(zid) ?? { count: 0, m3: 0 };
-        cur.count += 1; cur.m3 += t.disponible;
+        const cur = m.get(zid) ?? { trozas: 0, m3: 0, productos: 0, despachos: 0 };
+        if (it.kind === "troza") { cur.trozas += 1; cur.m3 += it.cantidad; }
+        else if (it.kind === "producto") cur.productos += 1;
+        else cur.despachos += 1;
         m.set(zid, cur);
       }
     }
     return m;
-  }, [trozas, asignaciones, zonaById]);
-  const invObj = useMemo(() => Object.fromEntries([...invPorZona].map(([k, v]) => [k, { count: v.count, m3: Math.round(v.m3 * 100) / 100 }])), [invPorZona]);
-  const sinUbicar = useMemo(() => trozas.filter((t) => { const z = asignaciones[t.id]; return !z || !zonaById.has(z); }), [trozas, asignaciones, zonaById]);
-  const sinUbicarM3 = useMemo(() => sinUbicar.reduce((a, t) => a + t.disponible, 0), [sinUbicar]);
+  }, [items, asignaciones, zonaById]);
+  const invObj = useMemo(() => Object.fromEntries([...invPorZona].map(([k, v]) => [k, { ...v, m3: Math.round(v.m3 * 100) / 100 }])), [invPorZona]);
+  const isPlaced = useCallback((id: string) => { const z = asignaciones[id]; return !!z && zonaById.has(z); }, [asignaciones, zonaById]);
+  const sinUbicar = useMemo(() => items.filter((it) => !isPlaced(it.id)), [items, isPlaced]);
+  const itemsByKind = useMemo(
+    () => (["troza", "producto", "despacho"] as const).map((k) => ({ kind: k, list: items.filter((i) => i.kind === k) })).filter((g) => g.list.length > 0),
+    [items],
+  );
 
   return (
     <div className="space-y-4">
@@ -141,40 +164,51 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
       {/* El mapa (las etiquetas muestran el inventario ubicado en cada zona). */}
       <CtpPlantaMapa zonas={zonas} inventario={invObj} onChanged={load} />
 
-      {/* Ubicar madera: llevar cada troza con saldo a su zona (o dejarla sin ubicar). */}
-      {trozas.length > 0 && (
+      {/* Ubicar el flujo físico: troza → producto terminado → despacho, cada uno a su zona. */}
+      {items.length > 0 && (
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Boxes className="h-4 w-4" /> Ubicar madera en la planta</CardTitle>
+            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Boxes className="h-4 w-4" /> Ubicar el flujo de la planta</CardTitle>
             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${sinUbicar.length === 0 ? "bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "bg-[var(--data-warning-50)] text-[var(--data-warning-700)]"}`}>
-              {trozas.length - sinUbicar.length} de {trozas.length} ubicadas{sinUbicar.length > 0 ? ` · ${n2(sinUbicarM3)} m³ sin ubicar` : ""}
+              {items.length - sinUbicar.length} de {items.length} ubicados
             </span>
           </div>
-          <p className="mb-3 text-xs text-[var(--text-tertiary)]">Cada troza con saldo sin consumir. Elegí en qué zona está apilada — así el mapa muestra dónde está cada madera. {zonas.length === 0 && <strong className="text-[var(--data-warning-700)]">Dibujá zonas primero para poder ubicar.</strong>}</p>
-          <ul className="space-y-1.5">
-            {[...trozas].sort((a, b) => Number(!!asignaciones[a.id] && zonaById.has(asignaciones[a.id])) - Number(!!asignaciones[b.id] && zonaById.has(asignaciones[b.id]))).map((t) => {
-              const zid = asignaciones[t.id] && zonaById.has(asignaciones[t.id]) ? asignaciones[t.id] : "";
+          <p className="mb-3 text-xs text-[var(--text-tertiary)]">Troza (materia prima), producto terminado y despachos — elegí en qué zona está cada uno para que el mapa muestre dónde está todo. {zonas.length === 0 && <strong className="text-[var(--data-warning-700)]">Dibujá zonas primero para poder ubicar.</strong>}</p>
+          <div className="space-y-3">
+            {itemsByKind.map(({ kind, list }) => {
+              const KI = KIND_META[kind].icon;
+              const ordered = [...list].sort((a, b) => Number(isPlaced(a.id)) - Number(isPlaced(b.id)));
               return (
-                <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2 text-sm">
-                    <span className="font-bold text-[var(--text-primary)]">GTF {t.gtf || "—"}</span>
-                    <span className="truncate text-[var(--text-tertiary)]">· {t.species ?? "—"}</span>
-                    {t.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
-                    <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">{n2(t.disponible)} m³</span>
-                  </div>
-                  <select
-                    value={zid}
-                    disabled={asignando === t.id || zonas.length === 0}
-                    onChange={(e) => void asignar(t.id, e.target.value || null)}
-                    className="h-9 shrink-0 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
-                  >
-                    <option value="">Sin ubicar</option>
-                    {zonas.map((z) => <option key={z.id} value={z.id}>{z.codigo} · {zonaTipoMeta(z.tipo).label}</option>)}
-                  </select>
-                </li>
+                <div key={kind}>
+                  <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]"><KI className="h-3.5 w-3.5" />{KIND_META[kind].label} · {list.length}</p>
+                  <ul className="space-y-1.5">
+                    {ordered.map((it) => {
+                      const zid = isPlaced(it.id) ? asignaciones[it.id] : "";
+                      return (
+                        <li key={it.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
+                          <div className="flex min-w-0 items-center gap-2 text-sm">
+                            <span className="font-bold text-[var(--text-primary)]">{it.label}</span>
+                            {it.sub && <span className="truncate text-[var(--text-tertiary)]">· {it.sub}</span>}
+                            {it.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
+                            <span className="font-mono text-xs font-bold text-[var(--text-secondary)]">{n2(it.cantidad)} {it.unidad}</span>
+                          </div>
+                          <select
+                            value={zid}
+                            disabled={asignando === it.id || zonas.length === 0}
+                            onChange={(e) => void asignar(it.id, e.target.value || null)}
+                            className="h-9 shrink-0 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
+                          >
+                            <option value="">Sin ubicar</option>
+                            {zonas.map((z) => <option key={z.id} value={z.id}>{z.codigo} · {zonaTipoMeta(z.tipo).label}</option>)}
+                          </select>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
             })}
-          </ul>
+          </div>
         </div>
       )}
 
@@ -196,8 +230,8 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
                           {z.areaM2 != null && <span className="font-mono text-xs text-[var(--text-tertiary)]">{z.areaM2 >= 10000 ? `${(z.areaM2 / 10000).toFixed(2)} ha` : `${Math.round(z.areaM2).toLocaleString("es-PE")} m²`}</span>}
                         </div>
                         {z.nombre && <p className="truncate text-sm text-[var(--text-secondary)]">{z.nombre}</p>}
-                        {inv ? (
-                          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent-dark)]"><Boxes className="h-3 w-3" />{inv.count} {inv.count === 1 ? "troza" : "trozas"} · {n2(inv.m3)} m³</p>
+                        {invSummary(inv) ? (
+                          <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent-dark)]"><Boxes className="h-3 w-3" />{invSummary(inv)}</p>
                         ) : (
                           <p className="mt-1 text-xs text-[var(--text-tertiary)]">sin madera ubicada</p>
                         )}

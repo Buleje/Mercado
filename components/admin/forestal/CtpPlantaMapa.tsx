@@ -25,11 +25,15 @@ function labelHtml(z: PlantaZona, inv?: ZonaInv): string {
   const meta = zonaTipoMeta(z.tipo);
   const header = `<div style="font-weight:800;font-size:12px">${escapeHtml(z.codigo)}${z.areaM2 != null ? ` · ${fmtArea(z.areaM2)}` : ""}</div><div style="font-weight:700;color:${meta.ring}">${escapeHtml(meta.label)}</div>`;
   const sub = z.nombre ? `<div style="opacity:.85">${escapeHtml(z.nombre)}</div>` : "";
-  const invLine = inv && inv.count > 0 ? `<div style="color:var(--accent-glow,#5eead4);font-weight:700">${inv.count} ${inv.count === 1 ? "troza" : "trozas"} · ${inv.m3.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³</div>` : "";
+  const parts: string[] = [];
+  if (inv?.trozas) parts.push(`${inv.trozas} ${inv.trozas === 1 ? "troza" : "trozas"} · ${inv.m3.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³`);
+  if (inv?.productos) parts.push(`${inv.productos} ${inv.productos === 1 ? "producto" : "productos"}`);
+  if (inv?.despachos) parts.push(`${inv.despachos} ${inv.despachos === 1 ? "despacho" : "despachos"}`);
+  const invLine = parts.length ? `<div style="color:var(--accent-glow,#5eead4);font-weight:700">${parts.join(" · ")}</div>` : "";
   return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${meta.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${header}${sub}${invLine}</div>`;
 }
 
-export interface ZonaInv { count: number; m3: number }
+export interface ZonaInv { trozas: number; m3: number; productos: number; despachos: number }
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
