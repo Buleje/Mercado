@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
   Scale, PackageCheck, Layers, PackagePlus, Clock, TreePine, Link2, Calculator,
+  ArrowUp, ArrowDown, ArrowUpDown,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
@@ -65,6 +66,10 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   const [toProductMsg, setToProductMsg] = useState<string | null>(null);
   // Cadena de custodia (solo despacho): trazabilidad + COGS + certificado.
   const [chainEntry, setChainEntry] = useState<CtpEntry | null>(null);
+  // Filtro por estado (chips, como Ingresos) + orden por columna, client-side
+  // sobre el set completo del período (search es server-side, sin paginación).
+  const [statusFilter, setStatusFilter] = useState<"" | "registrado" | "anulado">("");
+  const [sort, setSort] = useState<{ by: "fecha" | "cantidad" | "rend" | null; dir: "asc" | "desc" }>({ by: null, dir: "desc" });
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -130,6 +135,27 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
     return { count: reg.length, totalQty, consumido, avgRend };
   }, [entries]);
 
+  const statusCounts = useMemo(() => ({
+    total: entries.length,
+    registrado: entries.filter((e) => e.status === "registrado").length,
+    anulado: entries.filter((e) => e.status === "anulado").length,
+  }), [entries]);
+
+  // Filtro por estado + orden. La media/KPIs no cambian (siguen sobre todo el set);
+  // esto solo cambia lo que se LISTA en la tabla/cards.
+  const visible = useMemo(() => {
+    const list = statusFilter ? entries.filter((e) => e.status === statusFilter) : entries;
+    if (!sort.by) return list;
+    const val = (e: CtpEntry) =>
+      sort.by === "fecha" ? new Date(e.entryDate).getTime()
+      : sort.by === "cantidad" ? Number(e.quantity ?? 0)
+      : Number(e.rendimientoPct ?? 0);
+    return [...list].sort((a, b) => { const d = val(a) - val(b); return sort.dir === "asc" ? d : -d; });
+  }, [entries, statusFilter, sort]);
+
+  const toggleSort = (by: "fecha" | "cantidad" | "rend") =>
+    setSort((s) => (s.by === by ? { by, dir: s.dir === "asc" ? "desc" : "asc" } : { by, dir: "desc" }));
+
   const Icon = meta.icon;
   return (
     <div className="space-y-4">
@@ -161,6 +187,17 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
 
+      {/* Filtro por estado (chips, consistente con Ingresos): oculta anulados de un clic. */}
+      {statusCounts.total > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <EntryChip label="Todos" count={statusCounts.total} active={statusFilter === ""} onClick={() => setStatusFilter("")} />
+          <EntryChip label="Registrados" count={statusCounts.registrado} active={statusFilter === "registrado"} onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))} />
+          {statusCounts.anulado > 0 && (
+            <EntryChip label="Anulados" count={statusCounts.anulado} active={statusFilter === "anulado"} tone="muted" onClick={() => setStatusFilter((f) => (f === "anulado" ? "" : "anulado"))} />
+          )}
+        </div>
+      )}
+
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
       {toProductMsg && (
         <div className={`flex items-start justify-between gap-3 rounded-xl border-2 p-4 text-sm ${toProductMsg.startsWith("Error") ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"}`}>
@@ -176,17 +213,17 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Th className="w-12 text-right">#</Th>
-              <Th>Fecha</Th>
+              <SortTh label="Fecha" by="fecha" sort={sort} onSort={toggleSort} />
               <Th>Especie</Th>
               <Th>Producto</Th>
-              {section === "produccion" ? (<><Th className="text-right">Consumido (m³)</Th><Th className="text-right">Producido</Th><Th className="text-right">Rend.</Th></>)
-                : (<><Th className="text-right">Cantidad</Th><Th className="text-right">Piezas</Th><Th>GTF salida</Th><Th>Destino</Th></>)}
+              {section === "produccion" ? (<><Th className="text-right">Consumido (m³)</Th><SortTh label="Producido" by="cantidad" sort={sort} onSort={toggleSort} className="text-right" /><SortTh label="Rend." by="rend" sort={sort} onSort={toggleSort} className="text-right" /></>)
+                : (<><SortTh label="Cantidad" by="cantidad" sort={sort} onSort={toggleSort} className="text-right" /><Th className="text-right">Piezas</Th><Th>GTF salida</Th><Th>Destino</Th></>)}
               <Th>Estado</Th>
               <Th className="text-right">Acciones</Th>
             </tr>
           </thead>
           <tbody>
-            {entries.map((e) => (
+            {visible.map((e) => (
               <tr key={e.id} className={`border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]/40 ${e.status === "anulado" ? "opacity-50" : ""}`}>
                 <Td className="text-right font-mono text-xs text-[var(--text-tertiary)]">{e.lineNo}</Td>
                 <Td className="font-medium text-[var(--text-primary)]">{fmtDate(e.entryDate)}</Td>
@@ -254,9 +291,9 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       </div>
 
       {/* ── Mobile: cards a medida (<640px) ── */}
-      {entries.length > 0 && (
+      {visible.length > 0 && (
         <div className="space-y-3 sm:hidden">
-          {entries.map((e) => (
+          {visible.map((e) => (
             <CtpSeccionCardMobile
               key={e.id}
               entry={e}
@@ -267,6 +304,13 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
               onAnnul={(id) => { setAnnulId(id); setAnnulReason(""); }}
             />
           ))}
+        </div>
+      )}
+
+      {/* Filtro activo sin resultados (pero sí hay datos): distinto de "sin datos". */}
+      {!loading && entries.length > 0 && visible.length === 0 && (
+        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+          Ninguna línea {statusFilter === "anulado" ? "anulada" : statusFilter === "registrado" ? "registrada" : ""} en {period.label}.
         </div>
       )}
 
@@ -547,4 +591,48 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
 }
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
+}
+
+type SortKey = "fecha" | "cantidad" | "rend";
+/** Encabezado de columna ordenable: click alterna asc/desc; indica el estado con flecha. */
+function SortTh({ label, by, sort, onSort, className }: {
+  label: string; by: SortKey; sort: { by: SortKey | null; dir: "asc" | "desc" }; onSort: (by: SortKey) => void; className?: string;
+}) {
+  const active = sort.by === by;
+  const Ico = active ? (sort.dir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+  const right = className?.includes("text-right");
+  return (
+    <th className={`px-4 py-3 font-bold ${className ?? ""}`}>
+      <button
+        type="button"
+        onClick={() => onSort(by)}
+        className={`inline-flex items-center gap-1 ${right ? "flex-row-reverse" : ""} ${active ? "text-[var(--accent)]" : "text-[var(--text-primary)] hover:text-[var(--accent)]"}`}
+      >
+        {label} <Ico className={`h-3.5 w-3.5 ${active ? "" : "opacity-40"}`} />
+      </button>
+    </th>
+  );
+}
+
+/** Chip de filtro por estado (mismo lenguaje que los de Ingresos). */
+function EntryChip({ label, count, active, onClick, tone = "accent" }: {
+  label: string; count: number; active: boolean; onClick: () => void; tone?: "accent" | "muted";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-bold transition ${
+        active
+          ? tone === "muted"
+            ? "border-[var(--text-tertiary)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+            : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-dark)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+      }`}
+    >
+      {label}
+      <span className={`rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums ${active ? "bg-[var(--surface-raised)]/70" : "bg-[var(--surface-sunken)]"}`}>{count}</span>
+    </button>
+  );
 }
