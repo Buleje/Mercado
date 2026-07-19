@@ -26,6 +26,7 @@ import {
   Filter,
   PackageOpen,
   RefreshCw,
+  Search,
   ShieldAlert,
   TreePine,
   Truck,
@@ -69,6 +70,8 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
   const [onlyBroken, setOnlyBroken] = useState(false);
+  const [onlyCites, setOnlyCites] = useState(false);
+  const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<DetailTarget | null>(null);
 
   const load = useCallback(async () => {
@@ -107,13 +110,19 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     for (const w of g.ingresos) status.set(w.id, ingresoUsado.has(w.id) ? "ok" : "muted");
     for (const c of g.corridas) status.set(c.id, corridaHuerfana.has(c.id) ? "warn" : "ok");
     for (const d of g.despachos) status.set(d.id, despachoIncompleto.has(d.id) ? "warn" : "ok");
+    // % de trazabilidad = despachos que trazan de punta a punta / total. Basado en
+    // conteo de despachos (no en volumen: las salidas mezclan unidades m³/pt/kg y
+    // sumarlas fingiría un total falso). Es lo que un fiscalizador mide de un vistazo.
+    const despachosCompletos = g.despachos.length - despachoIncompleto.size;
     return {
       status,
       warnIds: new Set([...corridaHuerfana, ...despachoIncompleto]),
-      despachosCompletos: g.despachos.length - despachoIncompleto.size,
+      citesIds: new Set(g.ingresos.filter((w) => w.cites).map((w) => w.id)),
+      despachosCompletos,
       despachosHueco: despachoIncompleto.size,
       corridasHuerfanas: corridaHuerfana.size,
       citesCount: g.ingresos.filter((w) => w.cites).length,
+      trazabilidadPct: g.despachos.length ? Math.round((despachosCompletos / g.despachos.length) * 100) : null,
     };
   }, [g]);
 
@@ -148,10 +157,26 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     return { cols, pos, W: colX[2] + NODE_W + PAD, H };
   }, [g, analysis]);
 
-  // Conjunto conectado a las semillas (pin > hover > filtro "solo huecos").
+  // Nodos que matchean la búsqueda (GTF, especie, destino, línea).
+  const matchIds = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!g || !q) return null;
+    const ids = new Set<string>();
+    for (const w of g.ingresos) if (`gtf ${w.gtf ?? ""} ${w.species ?? ""}`.toLowerCase().includes(q)) ids.add(w.id);
+    for (const c of g.corridas) if (`corrida #${c.lineNo} corrida ${c.lineNo} ${c.label ?? ""}`.toLowerCase().includes(q)) ids.add(c.id);
+    for (const d of g.despachos) if (`despacho #${d.lineNo} despacho ${d.lineNo} ${d.destino ?? ""} ${d.label ?? ""}`.toLowerCase().includes(q)) ids.add(d.id);
+    return ids;
+  }, [g, query]);
+
+  // Conjunto conectado a las semillas: búsqueda > pin > hover > filtro huecos > CITES.
   const active = useMemo(() => {
     if (!g || !analysis) return null;
-    const seeds = pinned ? [pinned] : hover ? [hover] : onlyBroken ? [...analysis.warnIds] : null;
+    const seeds = matchIds && matchIds.size ? [...matchIds]
+      : pinned ? [pinned]
+      : hover ? [hover]
+      : onlyBroken ? [...analysis.warnIds]
+      : onlyCites ? [...analysis.citesIds]
+      : null;
     if (!seeds || seeds.length === 0) return null;
     const nodes = new Set<string>(seeds);
     const edges = new Set<string>();
@@ -172,7 +197,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       walk(g.origenes, "o");
     }
     return { nodes, edges };
-  }, [g, analysis, pinned, hover, onlyBroken]);
+  }, [g, analysis, pinned, hover, onlyBroken, onlyCites, matchIds]);
 
   const isEmpty = g && g.ingresos.length === 0 && g.corridas.length === 0 && g.despachos.length === 0;
   const edgeAmber = (id: string) => analysis?.warnIds.has(id) ?? false;
@@ -211,6 +236,23 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
 
       {layout && g && analysis && !isEmpty && (
         <>
+          {/* Trazabilidad de la cadena: el número que un fiscalizador lee primero. */}
+          {analysis.trazabilidadPct != null && (
+            <div className="flex flex-wrap items-center gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-4">
+              <div className="flex items-center gap-3">
+                <span className={`font-mono text-4xl font-extrabold tabular-nums leading-none ${analysis.trazabilidadPct === 100 ? "text-[var(--data-success-700)]" : analysis.trazabilidadPct >= 80 ? "text-[var(--data-warning-700)]" : "text-[var(--data-error-700)]"}`}>{analysis.trazabilidadPct}%</span>
+                <div className="text-sm">
+                  <p className="font-bold text-[var(--text-primary)]">Trazabilidad de la cadena</p>
+                  <p className="text-[var(--text-tertiary)]">{analysis.despachosCompletos} de {g.despachos.length} despachos trazan hasta su GTF de ingreso</p>
+                </div>
+              </div>
+              {/* Barra de progreso: proporción de despachos que trazan de punta a punta. */}
+              <div className="h-2.5 min-w-[8rem] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                <div className={`h-full rounded-full ${analysis.trazabilidadPct === 100 ? "bg-[var(--data-success-500)]" : analysis.trazabilidadPct >= 80 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"}`} style={{ width: `${analysis.trazabilidadPct}%` }} />
+              </div>
+            </div>
+          )}
+
           {/* Resumen de salud de la cadena */}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <SummaryChip icon={CheckCircle2} tone="success" value={analysis.despachosCompletos} label="Despachos con cadena completa" />
@@ -219,20 +261,58 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             <SummaryChip icon={ShieldAlert} tone="danger" value={analysis.citesCount} label="Ingresos CITES" />
           </div>
 
-          {(analysis.despachosHueco > 0 || analysis.corridasHuerfanas > 0) && (
-            <button
-              type="button"
-              onClick={() => setOnlyBroken((v) => !v)}
-              aria-pressed={onlyBroken}
-              className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition ${
-                onlyBroken
-                  ? "border-[var(--data-warning-500)] bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-              }`}
-            >
-              <Filter className="h-4 w-4" /> {onlyBroken ? "Mostrando solo cadenas con huecos" : "Ver solo cadenas con huecos"}
-            </button>
-          )}
+          {/* Controles: buscar dentro de la cadena + filtros de foco. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[15rem] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar GTF, especie, destino o «corrida 2»…"
+                aria-label="Buscar en la cadena de custodia"
+                className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] focus:outline-none"
+              />
+              {query && (
+                <button type="button" onClick={() => setQuery("")} title="Limpiar búsqueda" className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
+                  <XIcon className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            {matchIds && (
+              <span className="shrink-0 text-xs font-bold text-[var(--text-secondary)]">
+                {matchIds.size} {matchIds.size === 1 ? "coincidencia" : "coincidencias"}
+              </span>
+            )}
+            {(analysis.despachosHueco > 0 || analysis.corridasHuerfanas > 0) && (
+              <button
+                type="button"
+                onClick={() => setOnlyBroken((v) => !v)}
+                aria-pressed={onlyBroken}
+                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition ${
+                  onlyBroken
+                    ? "border-[var(--data-warning-500)] bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                }`}
+              >
+                <Filter className="h-4 w-4" /> {onlyBroken ? "Solo con huecos" : "Ver solo huecos"}
+              </button>
+            )}
+            {analysis.citesCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setOnlyCites((v) => !v)}
+                aria-pressed={onlyCites}
+                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition ${
+                  onlyCites
+                    ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                }`}
+              >
+                <ShieldAlert className="h-4 w-4" /> {onlyCites ? "Solo CITES" : "Ver solo CITES"}
+              </button>
+            )}
+          </div>
 
           {/* Leyenda */}
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
@@ -293,7 +373,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                 return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={`${e.quantity}`} flow={!!active && active.edges.has(k) && !amberE} />;
               })}
               {layout.cols.flat().map((n) => (
-                <Node key={n.id} n={n} dim={!!active && !active.nodes.has(n.id)} pinned={pinned === n.id} onHover={setHover} onPin={(id) => setPinned((p) => (p === id ? null : id))} />
+                <Node key={n.id} n={n} dim={!!active && !active.nodes.has(n.id)} pinned={pinned === n.id} match={!!matchIds?.has(n.id)} onHover={setHover} onPin={(id) => setPinned((p) => (p === id ? null : id))} />
               ))}
             </svg>
           </div>
@@ -377,12 +457,12 @@ function Edge({ a, b, on, dim, amber, label, flow }: { a?: Placed; b?: Placed; o
   );
 }
 
-function Node({ n, dim, pinned, onHover, onPin }: { n: Placed; dim: boolean; pinned: boolean; onHover: (id: string | null) => void; onPin: (id: string) => void }) {
+function Node({ n, dim, pinned, match, onHover, onPin }: { n: Placed; dim: boolean; pinned: boolean; match: boolean; onHover: (id: string | null) => void; onPin: (id: string) => void }) {
   const warn = n.status === "warn";
   const muted = n.status === "muted";
   const accent = KIND_ACCENT[n.kind];
   const fill = warn ? "var(--data-warning-50)" : muted ? "var(--surface-sunken)" : "var(--surface-raised)";
-  const stroke = pinned ? "var(--accent)" : n.cites ? "var(--data-error-500)" : warn ? "var(--data-warning-500)" : "var(--rule-base)";
+  const stroke = match ? "var(--accent)" : pinned ? "var(--accent)" : n.cites ? "var(--data-error-500)" : warn ? "var(--data-warning-500)" : "var(--rule-base)";
   return (
     <g
       transform={`translate(${n.x} ${n.y})`}
@@ -394,7 +474,9 @@ function Node({ n, dim, pinned, onHover, onPin }: { n: Placed; dim: boolean; pin
       role="button"
       aria-label={`${n.top} — ${n.sub}`}
     >
-      <rect width={NODE_W} height={NODE_H} rx={14} fill={fill} stroke={stroke} strokeWidth={pinned ? 2.5 : warn ? 2 : 1.5} filter={dim ? undefined : "url(#ctp-node-shadow)"} />
+      {/* Halo de coincidencia: resalta el nodo que matchea la búsqueda. */}
+      {match && <rect x={-3} y={-3} width={NODE_W + 6} height={NODE_H + 6} rx={16} fill="none" stroke="var(--accent)" strokeWidth={2} opacity={0.45} />}
+      <rect width={NODE_W} height={NODE_H} rx={14} fill={fill} stroke={stroke} strokeWidth={match || pinned ? 2.5 : warn ? 2 : 1.5} filter={dim ? undefined : "url(#ctp-node-shadow)"} />
       {/* pill de acento por columna (inset, no borde a sangre) */}
       <rect x={9} y={11} width={3.5} height={NODE_H - 22} rx={1.75} fill={accent} />
       <text x={20} y={20} fontSize={11} fontWeight={700} fill="var(--text-primary)">{trunc(n.top, 21)}</text>
