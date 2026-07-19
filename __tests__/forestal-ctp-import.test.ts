@@ -169,6 +169,55 @@ describe("regresión: corrida fantasma", () => {
   });
 });
 
+describe("archivos rotos / hostiles", () => {
+  it("cantidad como texto → issue (no crashea)", async () => {
+    const buf = await build((wb) => addIngreso(wb, {
+      n: 1, f: D(2026, 6, 1), td: "GTF", nd: "GTF-T", e: "Tornillo", u: "m³", q: "abc",
+    }));
+    const res = await parseWoodEntriesXlsx(buf);
+    expect(res.ingresos).toHaveLength(1);
+    expect(res.ingresos[0].volumeM3).toBe(0);
+    expect(res.ingresos[0].issues.some((m) => /inválido|≤ 0/i.test(m))).toBe(true);
+  });
+
+  it("cantidad negativa → issue", async () => {
+    const buf = await build((wb) => addIngreso(wb, {
+      n: 1, f: D(2026, 6, 1), td: "GTF", nd: "GTF-N", e: "Tornillo", u: "m³", q: -5,
+    }));
+    const res = await parseWoodEntriesXlsx(buf);
+    expect(res.ingresos[0].issues.some((m) => /≤ 0|inválido/i.test(m))).toBe(true);
+  });
+
+  it("workbook vacío (sin hojas) → ok:false, sin excepción", async () => {
+    const buf = await build(() => { /* sin worksheets */ });
+    const res = await parseWoodEntriesXlsx(buf);
+    expect(res.ok).toBe(false);
+    expect(res.ingresos).toHaveLength(0);
+  });
+
+  it("unidad desconocida en producción → default m3 (no crashea)", async () => {
+    const buf = await build((wb) => {
+      const wp = wb.addWorksheet("3. Producción");
+      wp.columns = PROD_COLS;
+      wp.addRow({ n: 1, f: D(2026, 6, 3), tp: "Madera aserrada", e: "Tornillo", u: "toneladas", q: 5 });
+    });
+    const res = await parseProduccionXlsx(buf);
+    expect(res.produccion).toHaveLength(1);
+    expect(res.produccion[0].unit).toBe("m3");
+  });
+
+  it("fila totalmente vacía se saltea (no genera ingreso basura)", async () => {
+    const buf = await build((wb) => {
+      const w = wb.addWorksheet("1. Ingreso");
+      w.columns = ING_COLS;
+      w.addRow({}); // fila en blanco
+    });
+    const res = await parseWoodEntriesXlsx(buf);
+    expect(res.ok).toBe(true);
+    expect(res.ingresos).toHaveLength(0);
+  });
+});
+
 describe("strict positivo: libro completo con las 3 hojas", () => {
   it("cada parser strict encuentra su hoja nombrada", async () => {
     const buf = await build((wb) => {

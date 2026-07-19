@@ -25,6 +25,12 @@ import { withApiHandler } from "@/lib/api-handler";
 const ORIGIN = ["concesion", "predio_privado", "comunidad_nativa", "reforestacion", "retroaserradero", "otro"] as const;
 const PRODUCT = ["rolliza", "aserrada", "tablones", "listones", "durmientes", "pulgada", "carbon", "lena", "otro"] as const;
 
+// Techos de rango = límites de la columna Decimal en el schema (12,4 / 14,4 /
+// 5,2). Sin esto, un volumen absurdo (typo «200000000») pasa Zod y REVIENTA en
+// el insert con un error crudo de Prisma; con esto es una fila «error» limpia.
+const MAX_VOL_12_4 = 99_999_999.9999; // Decimal(12,4) — volumen/consumo m³
+const MAX_QTY_14_4 = 9_999_999_999.9999; // Decimal(14,4) — cantidad producida/despachada
+
 const ingresoSchema = z.object({
   gtfNumber: z.string().trim().min(1, "Sin N° de GTF (origen legal obligatorio)"),
   entryDate: z.string().trim().nullable().optional(),
@@ -35,20 +41,20 @@ const ingresoSchema = z.object({
   speciesScientificName: z.string().trim().max(160).nullable().optional(),
   speciesCites: z.boolean().optional().default(false),
   productType: z.enum(PRODUCT).optional().default("rolliza"),
-  volumeM3: z.number().positive("Cantidad/volumen inválido (≤ 0)"),
+  volumeM3: z.number().positive("Cantidad/volumen inválido (≤ 0)").max(MAX_VOL_12_4, "Volumen fuera de rango"),
   notes: z.string().trim().max(2000).nullable().optional(),
   row: z.number().optional(),
 });
 
-const consumoSchema = z.object({ gtfIngreso: z.string().trim().min(1), volumeM3: z.number().positive() });
+const consumoSchema = z.object({ gtfIngreso: z.string().trim().min(1), volumeM3: z.number().positive().max(MAX_VOL_12_4) });
 const produccionSchema = z.object({
   entryDate: z.string().trim().nullable().optional(),
   productType: z.string().trim().min(1, "Sin tipo de producto").max(120),
   speciesCommon: z.string().trim().min(1, "Sin especie").max(120),
   gtfIngreso: z.string().trim().max(120).nullable().optional(),
   unit: z.string().trim().max(20).optional().default("m3"),
-  quantity: z.number().positive("Cantidad producida inválida (≤ 0)"),
-  rendimientoPct: z.number().nullable().optional(),
+  quantity: z.number().positive("Cantidad producida inválida (≤ 0)").max(MAX_QTY_14_4, "Cantidad fuera de rango"),
+  rendimientoPct: z.number().max(999.99, "Rendimiento fuera de rango").nullable().optional(),
   consumos: z.array(consumoSchema).optional().default([]),
   row: z.number().optional(),
 });
@@ -59,7 +65,7 @@ const salidaSchema = z.object({
   productType: z.string().trim().min(1, "Sin tipo de producto").max(120),
   speciesCommon: z.string().trim().max(120).optional().default("—"),
   unit: z.string().trim().max(20).optional().default("m3"),
-  quantity: z.number().positive("Cantidad despachada inválida (≤ 0)"),
+  quantity: z.number().positive("Cantidad despachada inválida (≤ 0)").max(MAX_QTY_14_4, "Cantidad fuera de rango"),
   destino: z.string().trim().max(200).nullable().optional(),
   row: z.number().optional(),
 });
@@ -167,6 +173,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
     const existingKeys = await ForestCtpDB.existingProduccionKeys(auth.tenantId);
 
     const detalle: ResultRow[] = [];
+    const seenInBatch = new Set<string>(); // corridas iguales EN ESTE archivo → una sola vez
     let creables = 0, saltados = 0, errores = 0, creados = 0;
     for (const raw of produccion) {
       const row = typeof raw.row === "number" ? raw.row : undefined;
@@ -184,6 +191,12 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         detalle.push({ row, gtf: label, action: "existe", message: "Ya existe una corrida igual — se salta" });
         continue;
       }
+      if (seenInBatch.has(key)) {
+        saltados++;
+        detalle.push({ row, gtf: label, action: "existe", message: "Duplicada en el archivo — se importa una sola vez" });
+        continue;
+      }
+      seenInBatch.add(key);
       // Resolver consumos; si un GTF de ingreso falta, es error (importá ingresos primero).
       const resolved: { woodEntryId: string; volumeM3: number }[] = [];
       const missing: string[] = [];
@@ -235,6 +248,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
     const existingKeys = await ForestCtpDB.existingDespachoKeys(auth.tenantId);
     const existingByGtf = await ForestCtpDB.despachoComparableByGtf(auth.tenantId);
     const detalle: ResultRow[] = [];
+    const seenInBatch = new Set<string>(); // despachos iguales EN ESTE archivo → una sola vez
     let creables = 0, saltados = 0, difieren = 0, errores = 0, creados = 0;
     for (const raw of salida) {
       const row = typeof raw.row === "number" ? raw.row : undefined;
@@ -260,6 +274,12 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         }
         continue;
       }
+      if (seenInBatch.has(key)) {
+        saltados++;
+        detalle.push({ row, gtf: gtfLabel, action: "existe", message: "Duplicado en el archivo — se importa una sola vez" });
+        continue;
+      }
+      seenInBatch.add(key);
       if (mode === "preview") {
         creables++;
         detalle.push({ row, gtf: gtfLabel, action: "crear", message: `${d.quantity} ${d.unit}${d.destino ? ` → ${d.destino}` : ""} · sin atribuir (atribuí luego)` });
@@ -299,6 +319,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
   const existing = await WoodEntriesDB.comparableByGtf(auth.tenantId, gtfs);
 
   const detalle: ResultRow[] = [];
+  const seenInBatch = new Set<string>(); // GTF ya vistas EN ESTE archivo → se importa una sola vez
   let creables = 0, saltados = 0, difieren = 0, errores = 0, creados = 0;
 
   for (const raw of ingresos) {
@@ -323,6 +344,12 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
       }
       continue;
     }
+    if (seenInBatch.has(d.gtfNumber)) {
+      saltados++;
+      detalle.push({ row, gtf: d.gtfNumber, action: "existe", message: "Duplicada en el archivo — se importa una sola vez" });
+      continue;
+    }
+    seenInBatch.add(d.gtfNumber);
     if (mode === "preview") {
       creables++;
       detalle.push({ row, gtf: d.gtfNumber, action: "crear", message: `${d.speciesCommonName} · ${d.volumeM3} m³${d.speciesCites ? " · CITES" : ""}` });
