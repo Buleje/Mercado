@@ -114,7 +114,14 @@ function cellText(v: unknown): string {
   return String(v).trim();
 }
 
-export async function parseWoodEntriesXlsx(buffer: ArrayBuffer): Promise<ParseResult> {
+/**
+ * `strict` = solo la hoja NOMBRADA, sin fallback por contenido. Lo usa el modo
+ * «Libro completo» (que parsea las 3 hojas del mismo archivo): sin strict, el
+ * fallback de una hoja ausente matchea una hoja de OTRO registro por columnas
+ * en común (ej. «Tipo de Producto»+«Cantidad» del Ingreso disparaban una corrida
+ * fantasma). En modo un-registro sí se permite el fallback (el operador eligió).
+ */
+export async function parseWoodEntriesXlsx(buffer: ArrayBuffer, opts?: { strict?: boolean }): Promise<ParseResult> {
   const wb = new ExcelJS.Workbook();
   try {
     await wb.xlsx.load(buffer);
@@ -122,12 +129,12 @@ export async function parseWoodEntriesXlsx(buffer: ArrayBuffer): Promise<ParseRe
     return { ok: false, format: "desconocido", sheet: null, ingresos: [], error: `No se pudo leer el Excel: ${e instanceof Error ? e.message : String(e)}` };
   }
 
-  // Hoja de ingresos: por nombre, o la primera con cabecera de GTF + especie.
+  // Hoja de ingresos: por nombre, o (no-strict) la primera con cabecera de GTF + especie.
   const byName = wb.worksheets.find((w) => /1\.?\s*ingreso|^ingresos?$/i.test(w.name.trim()));
-  const ws = byName ?? wb.worksheets.find((w) => {
+  const ws = byName ?? (opts?.strict ? undefined : wb.worksheets.find((w) => {
     const hdr = (w.getRow(1).values as unknown[]).map(norm).join(" ");
     return /gtf|documento/.test(hdr) && /especie/.test(hdr);
-  });
+  }));
   if (!ws) return { ok: false, format: "desconocido", sheet: null, ingresos: [], error: "No se encontró una hoja de Ingresos (esperada «1. Ingreso» o «Ingresos»)." };
 
   const headers: string[] = [];
@@ -251,7 +258,7 @@ function makeFinder(ws: ExcelJS.Worksheet) {
   return { find, get, headers };
 }
 
-export async function parseProduccionXlsx(buffer: ArrayBuffer): Promise<ProduccionParseResult> {
+export async function parseProduccionXlsx(buffer: ArrayBuffer, opts?: { strict?: boolean }): Promise<ProduccionParseResult> {
   const wb = new ExcelJS.Workbook();
   try {
     await wb.xlsx.load(buffer);
@@ -259,8 +266,10 @@ export async function parseProduccionXlsx(buffer: ArrayBuffer): Promise<Producci
     return { ok: false, produccion: [], error: `No se pudo leer el Excel: ${e instanceof Error ? e.message : String(e)}` };
   }
 
+  // Fallback SOLO por señal propia de producción (rendimiento/producido) + cantidad:
+  // «producto» a secas colisiona con «Tipo de Producto» del Ingreso (corrida fantasma).
   const wProd = wb.worksheets.find((w) => /3\.?\s*produccion|^produccion$/i.test(norm(w.name).replace(/\s+/g, " ")))
-    ?? wb.worksheets.find((w) => { const h = (w.getRow(1).values as unknown[]).map(norm).join(" "); return /rendimiento|producido|producto/.test(h) && /cantidad/.test(h); });
+    ?? (opts?.strict ? undefined : wb.worksheets.find((w) => { const h = (w.getRow(1).values as unknown[]).map(norm).join(" "); return /rendimiento|producido/.test(h) && /cantidad/.test(h); }));
   if (!wProd) return { ok: false, produccion: [], error: "No se encontró una hoja de Producción (esperada «3. Producción»)." };
 
   // Consumos (opcional): matchea GTF ingreso → corrida por su lineNo.
@@ -348,7 +357,7 @@ export interface SalidaParseResult {
   error?: string;
 }
 
-export async function parseSalidaXlsx(buffer: ArrayBuffer): Promise<SalidaParseResult> {
+export async function parseSalidaXlsx(buffer: ArrayBuffer, opts?: { strict?: boolean }): Promise<SalidaParseResult> {
   const wb = new ExcelJS.Workbook();
   try {
     await wb.xlsx.load(buffer);
@@ -357,7 +366,7 @@ export async function parseSalidaXlsx(buffer: ArrayBuffer): Promise<SalidaParseR
   }
 
   const ws = wb.worksheets.find((w) => /4\.?\s*salida|^salida$|^despachos?$/i.test(norm(w.name).replace(/\s+/g, " ")))
-    ?? wb.worksheets.find((w) => { const h = (w.getRow(1).values as unknown[]).map(norm).join(" "); return /destino/.test(h) && /cantidad/.test(h); });
+    ?? (opts?.strict ? undefined : wb.worksheets.find((w) => { const h = (w.getRow(1).values as unknown[]).map(norm).join(" "); return /destino/.test(h) && /cantidad/.test(h); }));
   if (!ws) return { ok: false, salida: [], error: "No se encontró una hoja de Salida (esperada «4. Salida»)." };
 
   const { find, get } = makeFinder(ws);

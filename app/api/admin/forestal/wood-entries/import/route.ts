@@ -5,6 +5,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { WoodEntriesDB, type WoodOriginType, type WoodProductType } from "@/lib/db/wood-entries.db";
 import { ForestCtpDB, produccionKey, despachoKey } from "@/lib/db/forest-ctp.db";
+import { ActivityLogDB } from "@/lib/db/activity-log.db";
+import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -65,6 +67,8 @@ const salidaSchema = z.object({
 const bodySchema = z.object({
   mode: z.enum(["preview", "commit"]),
   registro: z.enum(["ingresos", "produccion", "salida"]).optional().default("ingresos"),
+  // Nombre del archivo del cliente — solo para el historial de importaciones (audit).
+  fileName: z.string().trim().max(200).optional(),
   // Filas sueltas: las que fallan validación se REPORTAN (no rompen el request).
   ingresos: z.array(z.record(z.string(), z.unknown())).max(5000).optional().default([]),
   produccion: z.array(z.record(z.string(), z.unknown())).max(5000).optional().default([]),
@@ -72,6 +76,36 @@ const bodySchema = z.object({
 });
 
 type ResultRow = { row?: number; gtf: string | null; action: "crear" | "creado" | "existe" | "difiere" | "error"; message: string };
+const REGISTRO_NOUN: Record<"ingresos" | "produccion" | "salida", string> = { ingresos: "ingresos", produccion: "corridas", salida: "despachos" };
+
+/**
+ * Registra el import como evento de lote en el ActivityLog (ADR-138): un
+ * fiscalizador quiere saber CÓMO entraron los datos al libro. Solo en commit y
+ * si hubo algo que reportar. Fire-and-forget vía auditCtp.
+ */
+function auditImport(
+  tenantId: string,
+  user: string,
+  registro: "ingresos" | "produccion" | "salida",
+  fileName: string | undefined,
+  r: { creados: number; saltados: number; difieren: number; errores: number },
+): void {
+  const noun = REGISTRO_NOUN[registro];
+  const partes = [
+    `${r.creados} creados`,
+    r.saltados > 0 ? `${r.saltados} ya existían` : "",
+    r.difieren > 0 ? `${r.difieren} difieren` : "",
+    r.errores > 0 ? `${r.errores} con error` : "",
+  ].filter(Boolean);
+  auditCtp({
+    tenantId,
+    action: "ctp_import",
+    entity: "ForestCtpImport",
+    entityId: fileName || registro,
+    detail: `Importó ${noun}${fileName ? ` desde «${fileName}»` : ""}: ${partes.join(", ")}`,
+    user,
+  });
+}
 
 // ── Reconciliación (ADR-138): el importador es insert-only. Una fila cuya clave
 // ya existe pero con valores distintos se marca «difiere» (NO se sobrescribe —
@@ -123,7 +157,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
   }
-  const { mode, registro, ingresos, produccion, salida } = parsed.data;
+  const { mode, registro, fileName, ingresos, produccion, salida } = parsed.data;
 
   // ── Registro: PRODUCCIÓN (etapa 2) ──────────────────────────────────────
   if (registro === "produccion") {
@@ -192,6 +226,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         detalle.push({ row, gtf: label, action: "error", message: e instanceof Error ? e.message : String(e) });
       }
     }
+    if (mode === "commit") auditImport(auth.tenantId, auth.username ?? "unknown", "produccion", fileName, { creados, saltados, difieren: 0, errores });
     return NextResponse.json({ mode, registro, resumen: { total: produccion.length, crear: mode === "commit" ? creados : creables, creados, saltados, difieren: 0, errores }, detalle });
   }
 
@@ -254,6 +289,7 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
         detalle.push({ row, gtf: gtfLabel, action: "error", message: e instanceof Error ? e.message : String(e) });
       }
     }
+    if (mode === "commit") auditImport(auth.tenantId, auth.username ?? "unknown", "salida", fileName, { creados, saltados, difieren, errores });
     return NextResponse.json({ mode, registro, resumen: { total: salida.length, crear: mode === "commit" ? creados : creables, creados, saltados, difieren, errores }, detalle });
   }
 
@@ -317,9 +353,31 @@ export const POST = withApiHandler("forestal-wood-entries-import", async (req: N
     }
   }
 
+  if (mode === "commit") auditImport(auth.tenantId, auth.username ?? "unknown", "ingresos", fileName, { creados, saltados, difieren, errores });
   return NextResponse.json({
     mode,
     resumen: { total: ingresos.length, crear: mode === "commit" ? creados : creables, creados, saltados, difieren, errores },
     detalle,
   });
+});
+
+/**
+ * GET — historial de importaciones (ADR-138). Lee del ActivityLog los eventos de
+ * lote `ctp_import` del tenant. La fuente autoritativa es el ActivityLog (también
+ * visible en Auditoría); esto es la vista de conveniencia del modal de import.
+ */
+export const GET = withApiHandler("forestal-wood-entries-import-log", async (req: NextRequest) => {
+  const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
+  if (auth instanceof NextResponse) return auth;
+
+  const enabled = await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro");
+  if (!enabled) {
+    return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
+  }
+
+  // Los eventos de import tienen entity="ForestCtpImport" → filtro por entity
+  // (ActivityLogDB.list soporta entity/entityId, no action).
+  const rows = await ActivityLogDB.list(auth.tenantId, { entity: "ForestCtpImport", limit: 30 });
+  const imports = rows.map((r) => ({ detail: r.detail, user: r.user, createdAt: r.createdAt, archivo: r.entityId }));
+  return NextResponse.json({ imports });
 });

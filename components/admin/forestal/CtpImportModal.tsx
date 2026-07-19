@@ -22,6 +22,8 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
+  Clock,
   Download,
   FileSpreadsheet,
   Loader2,
@@ -40,6 +42,7 @@ type Action = "crear" | "creado" | "existe" | "difiere" | "error";
 interface ResultRow { row?: number; gtf: string | null; action: Action; message: string; seccion?: string }
 interface Resumen { total: number; crear: number; creados: number; saltados: number; difieren: number; errores: number }
 interface Combined { ingresos: unknown[]; produccion: unknown[]; salida: unknown[] }
+interface ImportLogRow { detail: string; user: string; createdAt: string; archivo: string | null }
 
 const IMPORT_URL = "/api/admin/forestal/wood-entries/import";
 
@@ -54,6 +57,8 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [creadosPorReg, setCreadosPorReg] = useState<Partial<Record<Registro, number>>>({});
   const [error, setError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<ImportLogRow[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const isCombined = mode === "completo";
@@ -66,11 +71,12 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
       const buf = await file.arrayBuffer();
 
       if (isCombined) {
-        // Parsear las 3 hojas; una hoja ausente = 0 filas (no es error).
+        // Parsear las 3 hojas por su NOMBRE (strict): sin fallback por contenido,
+        // que en un libro multi-hoja cruzaría columnas comunes entre registros.
         const [ing, prod, sal] = await Promise.all([
-          parseWoodEntriesXlsx(buf).catch(() => null),
-          parseProduccionXlsx(buf).catch(() => null),
-          parseSalidaXlsx(buf).catch(() => null),
+          parseWoodEntriesXlsx(buf, { strict: true }).catch(() => null),
+          parseProduccionXlsx(buf, { strict: true }).catch(() => null),
+          parseSalidaXlsx(buf, { strict: true }).catch(() => null),
         ]);
         const c: Combined = {
           ingresos: ing?.ok ? ing.ingresos : [],
@@ -132,7 +138,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ mode: "commit", registro: mode, [mode as Registro]: rows }),
+        body: JSON.stringify({ mode: "commit", registro: mode, fileName: fileName ?? undefined, [mode as Registro]: rows }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
@@ -162,7 +168,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
           method: "POST",
           headers: csrfHeaders({ "Content-Type": "application/json" }),
           credentials: "include",
-          body: JSON.stringify({ mode: "commit", registro: reg, [reg]: regRows }),
+          body: JSON.stringify({ mode: "commit", registro: reg, fileName: fileName ?? undefined, [reg]: regRows }),
         });
         const j = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(`${MODE_LABEL[reg]}: ${j.message ?? j.error ?? `HTTP ${r.status}`}`);
@@ -192,6 +198,20 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
       await descargarPlantillaLoCtp();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function toggleHistory() {
+    const next = !showHistory;
+    setShowHistory(next);
+    if (next && history === null) {
+      try {
+        const r = await fetch(IMPORT_URL, { credentials: "include" });
+        const j = await r.json().catch(() => ({}));
+        setHistory(Array.isArray(j.imports) ? j.imports : []);
+      } catch {
+        setHistory([]); // sin historial visible ante fallo — no rompe el import
+      }
     }
   }
 
@@ -263,6 +283,36 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               </button>
             </div>
             <p className="text-xs text-[var(--text-tertiary)]">Nada se guarda hasta que confirmes. Las filas inválidas se marcan y no se importan; las que ya existen se saltan (ingresos por GTF, corridas por fecha+producto+especie+cantidad).</p>
+
+            {/* Historial de importaciones (auditable — también en Auditoría) */}
+            <div className="border-t-2 border-[var(--rule-soft)] pt-3">
+              <button type="button" onClick={() => void toggleHistory()} aria-expanded={showHistory} className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                <Clock className="h-4 w-4" />
+                Historial de importaciones
+                <ChevronDown className={`h-4 w-4 transition-transform ${showHistory ? "rotate-180" : ""}`} />
+              </button>
+              {showHistory && (
+                <div className="mt-3">
+                  {history === null ? (
+                    <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>
+                  ) : history.length === 0 ? (
+                    <p className="text-sm text-[var(--text-tertiary)]">Todavía no se importó nada en este libro.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {history.map((h, i) => (
+                        <li key={i} className="flex items-start gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+                          <FileSpreadsheet className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                          <div className="min-w-0">
+                            <p className="text-sm text-[var(--text-primary)]">{h.detail}</p>
+                            <p className="text-xs text-[var(--text-tertiary)]">{fmtFecha(h.createdAt)} · {h.user}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -372,6 +422,13 @@ function describeCombined(porReg: Partial<Record<Registro, number>>): string {
   if (porReg.produccion) parts.push(`${porReg.produccion} corridas`);
   if (porReg.salida) parts.push(`${porReg.salida} despachos`);
   return parts.length ? parts.join(" · ") : "nada nuevo (todo ya existía)";
+}
+
+/** Timestamp del log (no es fecha-only: es hora real del evento) → hora local. */
+function fmtFecha(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("es-PE", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 function StepDot({ n, on }: { n: number; on: boolean }) {
