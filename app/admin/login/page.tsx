@@ -13,7 +13,6 @@
 
 import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useRef, useMemo, type FormEvent, type KeyboardEvent } from "react";
-import { useRouter } from "next/navigation";
 import {
   Loader2, LogIn, User, Lock, Eye, EyeOff, AlertTriangle,
   Store, ArrowRight, ShieldCheck,
@@ -32,7 +31,6 @@ import { cn } from "@/lib/utils";
 //   - Tipografía: italic serif para el headline, sans-serif tight para datos.
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const fromRef = useRef<string | null>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +73,10 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [bypassLoading, setBypassLoading] = useState(false);
   const [shaking, setShaking] = useState(false);
+  // Tras autenticar arrancamos la navegación DURA (ver hardRedirect). Este flag
+  // mantiene el botón deshabilitado y en estado "Entrando…" mientras el browser
+  // recarga — evita que el usuario re-submitee y que el botón parpadee a activo.
+  const [redirecting, setRedirecting] = useState(false);
   // ADR-120 login unificado: si la credencial existe en varias tiendas, el
   // backend devuelve la lista y mostramos un selector en vez de adivinar.
   const [tenantChoices, setTenantChoices] = useState<Array<{ slug: string; name: string }> | null>(null);
@@ -144,6 +146,23 @@ export default function AdminLoginPage() {
     setTimeout(() => setError(null), 3500);
   };
 
+  /**
+   * FIX 2026-07-19 (Brandon: "me logueo y no entra, recargo el login y recién
+   * funciona"). Causa: tras autenticar, la cookie de sesión ya está seteada,
+   * pero `router.push()` es una navegación SOFT del App Router que puede servir
+   * el RSC de `/admin` cacheado/prefetcheado de ANTES del login (cuando el
+   * middleware redirigía a /login) → rebota a login EN SILENCIO. Un reload duro
+   * funcionaba porque hace un request nuevo y el middleware lee la cookie fresca.
+   *
+   * Solución: cruzar la frontera de auth con navegación DURA
+   * (`window.location.assign`), que fuerza un documento nuevo. Es la corrección
+   * estándar para transiciones no-autenticado → autenticado con cookies HttpOnly.
+   */
+  const hardRedirect = (path: string) => {
+    setRedirecting(true);
+    window.location.assign(path);
+  };
+
   const handleSubmit = async (e?: FormEvent, chosenSlug?: string) => {
     e?.preventDefault();
     setLoading(true);
@@ -169,7 +188,9 @@ export default function AdminLoginPage() {
         method: "POST",
         headers,
         body: JSON.stringify({
-          username: username || undefined,
+          // trim: espacios pegados desde copy-paste o el teclado móvil hacían
+          // fallar un usuario correcto ("no me deja entrar").
+          username: username.trim() || undefined,
           password: pw,
           ...(chosenSlug ? { tenantSlug: chosenSlug } : {}),
         }),
@@ -197,13 +218,14 @@ export default function AdminLoginPage() {
 
         // ── 2FA requerido: redirigir sin mostrar error ──────────────────
         if (data.requires2FA) {
-          if (rememberMe) localStorage.setItem("login-remember-username", username);
+          if (rememberMe) localStorage.setItem("login-remember-username", username.trim());
           else localStorage.removeItem("login-remember-username");
-          // Preservar `from` para post-2FA redirect
+          // Preservar `from` para post-2FA redirect. Nav dura: la página 2FA
+          // lee la cookie pending-totp recién seteada (mismo race que /admin).
           const dest = fromRef.current
             ? `/admin/login/2fa?from=${encodeURIComponent(fromRef.current)}`
             : "/admin/login/2fa";
-          router.push(dest);
+          hardRedirect(dest);
           return;
         }
 
@@ -216,15 +238,15 @@ export default function AdminLoginPage() {
         }
         // ── Contraseña temporal (reset del superadmin): forzar cambio (ADR-133) ──
         if (data.mustChangePassword) {
-          router.push("/admin/cambiar-clave");
+          hardRedirect("/admin/cambiar-clave");
           return;
         }
         if (data.onboardingPending && !fromRef.current) {
-          router.push("/onboarding");
+          hardRedirect("/onboarding");
         } else if (data.role === "owner" || data.role === "platform_admin") {
-          router.push("/superadmin/login");
+          hardRedirect("/superadmin/login");
         } else {
-          router.push(safeRedirectPath(fromRef.current, adminPath("/admin")));
+          hardRedirect(safeRedirectPath(fromRef.current, adminPath("/admin")));
         }
       } else if (res.status === 429) {
         // Rate limit o lockout: recargar NO ayuda (es por tiempo del servidor).
@@ -279,7 +301,7 @@ export default function AdminLoginPage() {
     try {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
       if (res.ok) {
-        router.push(safeRedirectPath(fromRef.current, adminPath("/admin")));
+        hardRedirect(safeRedirectPath(fromRef.current, adminPath("/admin")));
         return;
       }
       showError(
@@ -370,7 +392,7 @@ export default function AdminLoginPage() {
                 <button
                   key={t.slug}
                   type="button"
-                  disabled={loading}
+                  disabled={loading || redirecting}
                   onClick={() => handleSubmit(undefined, t.slug)}
                   className="w-full flex items-center justify-between gap-3 h-14 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-left font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/8 disabled:opacity-50 transition-all"
                 >
@@ -395,6 +417,9 @@ export default function AdminLoginPage() {
               >
                 Usuario
               </label>
+              {/* Móvil "sin trabas": el username NO capitaliza la 1ª letra
+                  ("Qaadmin") ni autocorrige — era causa #1 de "puse bien todo
+                  y no me deja". El trim de espacios va en el submit. */}
               <div className="relative group">
                 <User
                   className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors"
@@ -409,6 +434,9 @@ export default function AdminLoginPage() {
                   className="w-full h-14 pl-12 pr-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="qaadmin"
                   autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   data-bwignore="true"
                   data-1p-ignore="true"
                   data-lpignore="true"
@@ -527,10 +555,15 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              disabled={loading || !pw || retryAfter > 0}
+              disabled={loading || redirecting || !pw || retryAfter > 0}
               className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-base font-extrabold tracking-tight shadow-lg shadow-[var(--accent)]/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-[var(--accent)]/40 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {loading ? (
+              {redirecting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Entrando al panel…
+                </>
+              ) : loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
                   Verificando…
