@@ -24,6 +24,7 @@ import {
   Building2,
   FileSpreadsheet,
   FileText,
+  Globe,
   Loader2,
   Lock,
   PackageOpen,
@@ -45,6 +46,7 @@ import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpCierrePanel from "./CtpCierrePanel";
+import CtpEudrPanel from "./CtpEudrPanel";
 import CtpImportModal from "./CtpImportModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpAsistente from "./CtpAsistente";
@@ -52,7 +54,7 @@ import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "cierre" | "analisis" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "analisis" | "ficha";
 
 const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
   { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
@@ -62,6 +64,7 @@ const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string
   { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
   { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
   { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta" },
+  { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE" },
   { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias" },
   { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
 ];
@@ -235,6 +238,7 @@ export default function CTPLibroOperaciones() {
       {view === "saldos" && <CtpSaldosView period={period} />}
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
       {view === "cierre" && <CtpCierrePanel />}
+      {view === "eudr" && <CtpEudrPanel period={period} />}
       {view === "analisis" && <CtpAnalisis />}
       {view === "ficha" && <CtpFichaEditor />}
 

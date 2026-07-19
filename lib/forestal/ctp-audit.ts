@@ -34,7 +34,9 @@ export type CtpAuditEntity =
   // entraron los datos al libro (qué archivo, cuántas filas, quién) — ADR-138.
   | "ForestCtpImport"
   // KV (como ForestCtpFicha): el cierre de período fiscal del libro (ADR-139).
-  | "ForestCtpCierre";
+  | "ForestCtpCierre"
+  // KV: geolocalización de orígenes para el dossier EUDR (ADR-140).
+  | "ForestOrigenGeo";
 
 /**
  * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
@@ -68,7 +70,9 @@ export type CtpAuditAction =
   | "ctp_import"
   // Cierre de período fiscal del libro (ADR-139) — congela + bloquea el mes
   | "ctp_periodo_cerrar"
-  | "ctp_periodo_reabrir";
+  | "ctp_periodo_reabrir"
+  // Geolocalización de origen para el dossier EUDR (ADR-140)
+  | "ctp_origen_geo_set";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no
