@@ -212,6 +212,18 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   };
   const pinnedNode = pinned && layout ? layout.pos.get(pinned) : null;
 
+  // Huecos concretos, listos para accionar: cada despacho sin origen y cada
+  // corrida sin materia prima, con su ficha editable a un click (el mismo modal
+  // de atribución que abre el drill-in — encontrar el hueco y cerrarlo en el mismo lugar).
+  const huecoDespachos = useMemo(
+    () => (g && analysis ? g.despachos.filter((d) => analysis.status.get(d.id) === "warn") : []),
+    [g, analysis],
+  );
+  const huerfanaCorridas = useMemo(
+    () => (g && analysis ? g.corridas.filter((c) => analysis.status.get(c.id) === "warn") : []),
+    [g, analysis],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -260,6 +272,52 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             <SummaryChip icon={Boxes} tone="warning" value={analysis.corridasHuerfanas} label="Corridas sin materia prima" />
             <SummaryChip icon={ShieldAlert} tone="danger" value={analysis.citesCount} label="Ingresos CITES" />
           </div>
+
+          {/* Huecos accionables: la cadena rota, con el arreglo a un click. El
+              libro los admite; el certificado exige cadena completa. */}
+          {(huecoDespachos.length > 0 || huerfanaCorridas.length > 0) && (
+            <div className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning-700)]" />
+                <p className="font-bold text-[var(--data-warning-700)]">
+                  {huecoDespachos.length + huerfanaCorridas.length} {huecoDespachos.length + huerfanaCorridas.length === 1 ? "hueco corta la cadena" : "huecos cortan la cadena"}
+                </p>
+              </div>
+              <p className="mb-3 text-sm text-[var(--text-secondary)]">
+                Estos eslabones no trazan hasta su GTF de ingreso. El libro los admite, pero el certificado exige cadena completa — tocá para completarlos.
+              </p>
+              <ul className="space-y-2">
+                {huecoDespachos.map((d) => (
+                  <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
+                    <div className="flex min-w-0 items-center gap-2 text-sm">
+                      <Truck className="h-4 w-4 shrink-0 text-[var(--data-success-600)]" />
+                      <span>
+                        <span className="font-bold text-[var(--text-primary)]">Despacho #{d.lineNo}</span>
+                        <span className="text-[var(--text-tertiary)]"> · {trunc(d.destino || d.label || "—", 32)} — sin origen atribuido</span>
+                      </span>
+                    </div>
+                    <button type="button" onClick={() => setDetail({ kind: "despacho", id: d.id })} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
+                      <Eye className="h-3.5 w-3.5" /> Atribuir origen
+                    </button>
+                  </li>
+                ))}
+                {huerfanaCorridas.map((c) => (
+                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
+                    <div className="flex min-w-0 items-center gap-2 text-sm">
+                      <Boxes className="h-4 w-4 shrink-0 text-[var(--data-info-500)]" />
+                      <span>
+                        <span className="font-bold text-[var(--text-primary)]">Corrida #{c.lineNo}</span>
+                        <span className="text-[var(--text-tertiary)]"> · {trunc(c.label || "—", 32)} — sin materia prima</span>
+                      </span>
+                    </div>
+                    <button type="button" onClick={() => setDetail({ kind: "corrida", id: c.id })} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
+                      <Eye className="h-3.5 w-3.5" /> Atribuir materia prima
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Controles: buscar dentro de la cadena + filtros de foco. */}
           <div className="flex flex-wrap items-center gap-2">
@@ -380,7 +438,9 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
         </>
       )}
 
-      {detail && <CtpNodeDetailLoader target={detail} onClose={() => setDetail(null)} />}
+      {/* Al cerrar la ficha recargamos el grafo: si se atribuyó un origen, el
+          hueco desaparece del panel y el % de trazabilidad sube en el acto. */}
+      {detail && <CtpNodeDetailLoader target={detail} onClose={() => { setDetail(null); void load(); }} />}
 
       <style jsx global>{`
         @keyframes ctp-edge-flow { to { stroke-dashoffset: -19; } }
