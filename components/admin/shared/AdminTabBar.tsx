@@ -13,6 +13,8 @@ export interface AdminTab {
   icon?: LucideIcon;
   badge?: number | string;
   disabled?: boolean;
+  /** Tooltip nativo al hover. Cae a `label` si no se provee. */
+  title?: string;
 }
 
 interface AdminTabBarProps {
@@ -169,6 +171,7 @@ export default function AdminTabBar({
                   key={tab.id}
                   onClick={() => !tab.disabled && onTabChange(tab.id)}
                   onMouseEnter={() => onTabHover?.(tab.id)}
+                  title={tab.title ?? tab.label}
                   className={cn(
                     "flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--ts-sm)] transition-all duration-[var(--dur-fast)]",
                     "lg:rounded-none lg:rounded-r-lg",
@@ -250,7 +253,7 @@ export default function AdminTabBar({
               onClick={() => !tab.disabled && onTabChange(tab.id)}
               onMouseEnter={() => onTabHover?.(tab.id)}
               disabled={tab.disabled}
-              title={tab.label}
+              title={tab.title ?? tab.label}
               className={cn(
                 // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
                 // Desktop: layout original más compacto.

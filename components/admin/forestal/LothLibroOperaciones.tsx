@@ -24,8 +24,14 @@ import {
   FileSpreadsheet,
   ChevronDown,
   QrCode,
+  Map as MapIcon,
+  Layers,
+  Share2,
+  Truck,
+  TrendingUp,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
@@ -112,6 +118,19 @@ const COLS: Record<LothSection, Col[]> = {
   ],
 };
 
+type LothView = "secciones" | "trazabilidad" | "plan" | "gtf" | "analitica";
+
+// Sub-tabs coherentes con el resto del admin (AdminTabBar: reorden por drag +
+// registro en sidebar), reemplaza el toggle segmentado hecho a mano.
+const LOTH_MODULE_ID = "loth-libro";
+const LOTH_TAB_ITEMS = [
+  { id: "plan", label: "Plan de Manejo", icon: MapIcon, title: "Censo + especies autorizadas" },
+  { id: "secciones", label: "Secciones", icon: Layers, title: "Las 6 secciones SERFOR" },
+  { id: "trazabilidad", label: "Trazabilidad", icon: Share2, title: "Operación completa por árbol" },
+  { id: "gtf", label: "GTF", icon: Truck, title: "Guías de transporte forestal" },
+  { id: "analitica", label: "Analítica", icon: TrendingUp, title: "Aprovechamiento + anomalías" },
+];
+
 export default function LothLibroOperaciones() {
   const [section, setSection] = useState<LothSection>("tala");
   const [entries, setEntries] = useState<LothEntry[]>([]);
@@ -125,7 +144,18 @@ export default function LothLibroOperaciones() {
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [pending, setPending] = useState<string | null>(null);
-  const [view, setView] = useState<"secciones" | "trazabilidad" | "plan" | "gtf" | "analitica">("secciones");
+  const [view, setView] = useState<LothView>(() => {
+    if (typeof window === "undefined") return "secciones";
+    const saved = localStorage.getItem(`admin-last-tab-${LOTH_MODULE_ID}`);
+    return saved && LOTH_TAB_ITEMS.some((t) => t.id === saved) ? (saved as LothView) : "secciones";
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(`admin-last-tab-${LOTH_MODULE_ID}`, view);
+    } catch {
+      // localStorage puede fallar (modo privado): sin persistencia, sin bug.
+    }
+  }, [view]);
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
   const [exportMenu, setExportMenu] = useState(false);
   const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
@@ -352,25 +382,14 @@ export default function LothLibroOperaciones() {
         </div>
       )}
 
-      {/* Toggle Secciones / Trazabilidad */}
-      <div className="flex">
-        <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
-          {([["plan", "Plan de Manejo"], ["secciones", "Secciones"], ["trazabilidad", "Trazabilidad"], ["gtf", "GTF"], ["analitica", "Analítica"]] as const).map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              className={`rounded-lg px-4 py-1.5 text-sm font-bold transition ${
-                view === v
-                  ? "bg-[var(--brand-ink)] text-white"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Sub-tabs del Libro TH — AdminTabBar (coherente con el resto del admin:
+          reorden por drag + registro en sidebar). */}
+      <AdminTabBar
+        moduleId={LOTH_MODULE_ID}
+        tabs={LOTH_TAB_ITEMS}
+        activeTab={view}
+        onTabChange={(id) => setView(id as LothView)}
+      />
 
       {/* Vista Plan de Manejo — base maestra (censo + especies autorizadas) */}
       {view === "plan" && <LothPlanView />}

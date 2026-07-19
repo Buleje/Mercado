@@ -10,6 +10,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Wrench, Calculator, Activity } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 const CubicadorMadera = dynamic(() => import("./CubicadorMadera"), {
   ssr: false,
@@ -21,9 +22,11 @@ const CubicadorMadera = dynamic(() => import("./CubicadorMadera"), {
 });
 
 type Tool = "cubicador";
+const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
 const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }[] = [
   { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Pie tablar + m³ por voz" },
 ];
+const TOOL_TAB_ITEMS = TOOLS.map((t) => ({ id: t.key, label: t.label, icon: t.icon, title: t.hint }));
 
 export default function ForestalHerramientas() {
   const [tool, setTool] = useState<Tool>("cubicador");
@@ -37,28 +40,22 @@ export default function ForestalHerramientas() {
         icon={Wrench}
       />
 
-      {/* Sub-nav de herramientas (extensible: crece parejo en pantalla chica) */}
-      <div className="flex flex-wrap items-center gap-2 border-b-2 border-[var(--rule-soft)] pb-3">
-        {TOOLS.map((t) => {
-          const Icon = t.icon;
-          const active = tool === t.key;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTool(t.key)}
-              title={t.hint}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-bold transition max-sm:grow max-sm:justify-center ${active ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"}`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
-        <span className="ml-1 hidden text-[length:var(--ts-2xs)] italic text-[var(--text-tertiary)] sm:inline">más herramientas pronto</span>
-      </div>
+      {/* Sub-nav de herramientas — AdminTabBar (coherente con el resto del admin).
+          Con una sola herramienta el reorden por drag no aplica todavía. */}
+      <AdminTabBar
+        moduleId={HERRAMIENTAS_MODULE_ID}
+        tabs={TOOL_TAB_ITEMS}
+        activeTab={tool}
+        onTabChange={(id) => setTool(id as Tool)}
+        draggable={TOOLS.length > 1}
+        rightSlot={
+          <span className="hidden text-[length:var(--ts-2xs)] italic text-[var(--text-tertiary)] sm:inline">
+            más herramientas pronto
+          </span>
+        }
+      />
 
-      {tool === "cubicador" && <CubicadorMadera />}
+      <div className="mt-6">{tool === "cubicador" && <CubicadorMadera />}</div>
     </div>
   );
 }

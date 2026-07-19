@@ -39,6 +39,7 @@ import {
   Upload,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
@@ -75,8 +76,24 @@ const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string
   { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
 ];
 
+// Sub-tabs coherentes con el resto del admin: AdminTabBar da reorden por drag,
+// persistencia del orden y registro en el sidebar. `title` = el hint como tooltip.
+const CTP_MODULE_ID = "ctp-libro";
+const CTP_TAB_ITEMS = CTP_VIEWS.map((v) => ({ id: v.key, label: v.label, icon: v.icon, title: v.hint }));
+
 export default function CTPLibroOperaciones() {
-  const [view, setView] = useState<CtpView>("ingresos");
+  const [view, setView] = useState<CtpView>(() => {
+    if (typeof window === "undefined") return "ingresos";
+    const saved = localStorage.getItem(`admin-last-tab-${CTP_MODULE_ID}`);
+    return saved && CTP_VIEWS.some((v) => v.key === saved) ? (saved as CtpView) : "ingresos";
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(`admin-last-tab-${CTP_MODULE_ID}`, view);
+    } catch {
+      // localStorage puede fallar (modo privado): sin persistencia, sin bug.
+    }
+  }, [view]);
   // Default = trimestre, no "mes actual": una planta con un mes flojo abriría el
   // libro vacío teniendo datos, y "vacío al abrir" se lee como "roto".
   // El cierre mensual está a un click en el selector.
@@ -200,55 +217,42 @@ export default function CTPLibroOperaciones() {
         </div>
       )}
 
-      {/* Sub-tabs del Libro CTP: flujo materia prima → producto → salida */}
-      <div className="flex flex-wrap gap-2 border-b-2 border-[var(--rule-soft)] pb-px max-sm:gap-1">
-        {CTP_VIEWS.map((v) => {
-          const Icon = v.icon;
-          const active = view === v.key;
-          return (
-            <button
-              key={v.key}
-              type="button"
-              onClick={() => setView(v.key)}
-              title={v.hint}
-              className={`group inline-flex items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition max-sm:grow max-sm:justify-center max-sm:px-2 ${
-                active
-                  ? "border-[var(--brand-ink)] text-[var(--brand-ink)]"
-                  : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{v.label}</span>
-            </button>
-          );
-        })}
-        {/* Semáforo del período: siempre visible salvo en la propia pestaña. */}
-        {view !== "cumplimiento" && (
-          <span className="ml-auto self-center pb-1">
+      {/* Sub-tabs del Libro CTP: flujo materia prima → producto → salida.
+          AdminTabBar = coherencia con el resto del admin (reorden por drag,
+          registro en sidebar). El semáforo del período va en rightSlot. */}
+      <AdminTabBar
+        moduleId={CTP_MODULE_ID}
+        tabs={CTP_TAB_ITEMS}
+        activeTab={view}
+        onTabChange={(id) => setView(id as CtpView)}
+        rightSlot={
+          view !== "cumplimiento" ? (
             <CtpHealthChip period={period} onNavigate={() => setView("cumplimiento")} />
-          </span>
-        )}
-      </div>
-
-      {view === "ingresos" && (
-        <CtpIngresosView
-          key={ingresosKey}
-          period={period}
-          openGtf={pendingIngresoGtf}
-          onOpenConsumed={() => setPendingIngresoGtf(null)}
-        />
-      )}
-      {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
-      {view === "despacho" && <CtpEntriesView key={`desp-${ingresosKey}`} section="despacho" period={period} />}
-      {view === "radar" && <CtpTrazaRadar period={period} />}
-      {view === "planta" && <CtpPlantaView period={period} />}
-      {view === "saldos" && <CtpSaldosView period={period} />}
-      {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
-      {view === "cierre" && <CtpCierrePanel />}
-      {view === "eudr" && <CtpEudrPanel period={period} />}
-      {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
-      {view === "analisis" && <CtpAnalisis />}
-      {view === "ficha" && <CtpFichaEditor />}
+          ) : undefined
+        }
+      >
+        <div className="mt-6">
+          {view === "ingresos" && (
+            <CtpIngresosView
+              key={ingresosKey}
+              period={period}
+              openGtf={pendingIngresoGtf}
+              onOpenConsumed={() => setPendingIngresoGtf(null)}
+            />
+          )}
+          {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
+          {view === "despacho" && <CtpEntriesView key={`desp-${ingresosKey}`} section="despacho" period={period} />}
+          {view === "radar" && <CtpTrazaRadar period={period} />}
+          {view === "planta" && <CtpPlantaView period={period} />}
+          {view === "saldos" && <CtpSaldosView period={period} />}
+          {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
+          {view === "cierre" && <CtpCierrePanel />}
+          {view === "eudr" && <CtpEudrPanel period={period} />}
+          {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
+          {view === "analisis" && <CtpAnalisis />}
+          {view === "ficha" && <CtpFichaEditor />}
+        </div>
+      </AdminTabBar>
 
       {showImport && (
         <CtpImportModal
