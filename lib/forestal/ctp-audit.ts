@@ -36,7 +36,9 @@ export type CtpAuditEntity =
   // KV (como ForestCtpFicha): el cierre de período fiscal del libro (ADR-139).
   | "ForestCtpCierre"
   // KV: geolocalización de orígenes para el dossier EUDR (ADR-140).
-  | "ForestOrigenGeo";
+  | "ForestOrigenGeo"
+  // KV: zonas físicas del aserradero para el Mapa de Planta (ADR-142).
+  | "ForestPlantaZona";
 
 /**
  * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
@@ -74,7 +76,10 @@ export type CtpAuditAction =
   // Geolocalización de origen para el dossier EUDR (ADR-140)
   | "ctp_origen_geo_set"
   // Valor de venta del despacho para el P&L (ADR-141)
-  | "ctp_venta_set";
+  | "ctp_venta_set"
+  // Zonas físicas del aserradero para el Mapa de Planta (ADR-142)
+  | "ctp_planta_zona_set"
+  | "ctp_planta_zona_delete";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no

@@ -28,6 +28,7 @@ import {
   Globe,
   Loader2,
   Lock,
+  MapPin,
   PackageOpen,
   Scale,
   Share2,
@@ -51,18 +52,20 @@ import CtpEudrPanel from "./CtpEudrPanel";
 import CtpRentabilidadPanel from "./CtpRentabilidadPanel";
 import CtpImportModal from "./CtpImportModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
+import CtpPlantaView from "./CtpPlantaView";
 import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "planta" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "ficha";
 
 const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
   { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
   { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación" },
   { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto" },
   { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual" },
+  { key: "planta", label: "Planta", icon: MapPin, hint: "Mapa del aserradero" },
   { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
   { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
   { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta" },
@@ -238,6 +241,7 @@ export default function CTPLibroOperaciones() {
       {view === "produccion" && <CtpEntriesView key={`prod-${ingresosKey}`} section="produccion" period={period} />}
       {view === "despacho" && <CtpEntriesView key={`desp-${ingresosKey}`} section="despacho" period={period} />}
       {view === "radar" && <CtpTrazaRadar period={period} />}
+      {view === "planta" && <CtpPlantaView period={period} />}
       {view === "saldos" && <CtpSaldosView period={period} />}
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
       {view === "cierre" && <CtpCierrePanel />}
