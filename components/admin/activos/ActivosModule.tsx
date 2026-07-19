@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
 
@@ -73,6 +74,12 @@ const LABEL = "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase t
 
 type View = "flota" | "cobrar" | "calendario" | "ranking";
 
+// Sub-tabs top-level: coherencia con el resto del admin (AdminTabBar da
+// reorden por drag + registro en sidebar). Los badges son dinámicos (alertas
+// de mantto./combustible y pendientes por cobrar), así que el array se arma
+// en el render, no acá arriba.
+const ACTIVOS_MODULE_ID = "activos";
+
 export default function ActivosModule() {
   const [assets, setAssets] = useState<AssetStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,6 +107,13 @@ export default function ActivosModule() {
   const alerts = assets.reduce((n, a) => n + a.maintenanceDue + (a.fuelAlert ? 1 : 0), 0);
   // Categorías = defaults + las que ya usan las máquinas del tenant (custom persisten).
   const knownTypes = Array.from(new Set([...TYPES.map(t => t.v), ...assets.map(a => a.type)]));
+
+  const ACTIVOS_TAB_ITEMS: AdminTab[] = [
+    { id: "flota", label: "Flota", icon: Construction, badge: alerts > 0 ? alerts : undefined },
+    { id: "cobrar", label: "Por cobrar", icon: CreditCard, badge: totals.pending > 0 ? "!" : undefined },
+    { id: "calendario", label: "Calendario", icon: Calendar },
+    { id: "ranking", label: "Ranking", icon: BarChart3 },
+  ];
 
   const exportReport = () => {
     if (assets.length === 0) { toast.error("No hay máquinas para exportar"); return; }
@@ -158,18 +172,14 @@ export default function ActivosModule() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
-        {([["flota", "Flota", Construction], ["cobrar", "Por cobrar", CreditCard], ["calendario", "Calendario", Calendar], ["ranking", "Ranking", BarChart3]] as const).map(([v, label, Icon]) => (
-          <button key={v} type="button" onClick={() => setView(v)}
-            className={cn("inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors sm:flex-none sm:px-4",
-              view === v ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
-            <Icon className="h-3.5 w-3.5" /> {label}
-            {v === "cobrar" && totals.pending > 0 && <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--data-warning-500)] px-1 text-[length:var(--ts-2xs)] font-black text-white">!</span>}
-            {v === "flota" && alerts > 0 && <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-black text-white">{alerts}</span>}
-          </button>
-        ))}
-      </div>
+      {/* Sub-tabs top-level: AdminTabBar da coherencia con el resto del admin
+          (reorden por drag, registro en sidebar). Vistas quedan como hermanas. */}
+      <AdminTabBar
+        moduleId={ACTIVOS_MODULE_ID}
+        tabs={ACTIVOS_TAB_ITEMS}
+        activeTab={view}
+        onTabChange={(id) => setView(id as View)}
+      />
 
       {/* Vistas */}
       {loading ? (

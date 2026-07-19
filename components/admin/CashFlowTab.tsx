@@ -3,9 +3,11 @@
 import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Field } from "@/components/admin/shared/Field";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import {
   Droplets, Loader2, RefreshCw, Download, TrendingUp, TrendingDown,
   ArrowUpRight, ArrowDownRight, AlertTriangle, CheckCircle, Calendar,
+  CalendarDays, List,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -32,6 +34,12 @@ type DaySummary = {
 };
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+const CASHFLOW_MODULE_ID = "cashflow";
+const CASHFLOW_TAB_ITEMS: AdminTab[] = [
+  { id: "summary", label: "Vista diaria", icon: CalendarDays },
+  { id: "detail", label: "Movimientos", icon: List },
+];
 
 function fmt(n: number) {
   return `S/ ${Math.abs(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -292,13 +300,12 @@ export default function CashFlowTab() {
           )}
 
           {/* View toggle */}
-          <div className="flex flex-wrap items-center gap-2">
-            {(["summary", "detail"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-primary text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
-                {v === "summary" ? "Vista diaria" : "Movimientos"}
-              </button>
-            ))}
-          </div>
+          <AdminTabBar
+            moduleId={CASHFLOW_MODULE_ID}
+            tabs={CASHFLOW_TAB_ITEMS}
+            activeTab={view}
+            onTabChange={(id) => setView(id as "summary" | "detail")}
+          />
 
           {view === "summary" ? (
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">

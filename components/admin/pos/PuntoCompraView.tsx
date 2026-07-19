@@ -45,6 +45,7 @@ import {
 } from "@/lib/types/purchases";
 import { buildPurchaseWhatsAppUrl } from "@/lib/whatsapp-client";
 import { csrfHeaders } from "@/lib/csrf-client";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 
 const OCPrintPreviewModal = dynamic(() => import("./OCPrintPreviewModal"), { ssr: false });
 const InvoiceScannerModal = dynamic(() => import("./InvoiceScannerModal"), { ssr: false });
@@ -125,6 +126,14 @@ function promoMeetsCondition(promo: ActivePromo, baseSubtotal: number, totalQty:
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 const ITEMS_PER_PAGE = 24;
+
+const PUNTOCOMPRA_MODULE_ID = "punto-compra";
+
+const CART_TAB_ITEMS: AdminTab[] = [
+  { id: "carrito", label: "Carrito" },
+  { id: "frecuentes", label: "Frecuentes" },
+  { id: "paquetes", label: "Paquetes" },
+];
 
 export default function PuntoCompraView() {
   // ── Hooks de contexto y sonido ───────────────────────────────────────────────
@@ -1564,29 +1573,13 @@ export default function PuntoCompraView() {
             </div>
 
             {/* Tabs: Carrito | Frecuentes | Paquetes */}
-            <div className="flex border-b border-[var(--rule-soft)]" role="tablist" aria-label="Secciones del carrito">
-              {([
-                { key: "carrito" as const, label: "Carrito" },
-                { key: "frecuentes" as const, label: "Frecuentes" },
-                { key: "paquetes" as const, label: "Paquetes" },
-              ]).map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={cartTab === tab.key}
-                  onClick={() => setCartTab(tab.key)}
-                  className={cn(
-                    "flex-1 py-2 text-xs font-semibold transition-colors",
-                    cartTab === tab.key
-                      ? "text-primary border-b-2 border-primary"
-                      : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]",
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <AdminTabBar
+              tabs={CART_TAB_ITEMS}
+              activeTab={cartTab}
+              onTabChange={(id) => setCartTab(id as "carrito" | "frecuentes" | "paquetes")}
+              moduleId={PUNTOCOMPRA_MODULE_ID}
+              draggable={false}
+            />
 
             {/* Tab: Frecuentes */}
             {cartTab === "frecuentes" && (

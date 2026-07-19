@@ -3,6 +3,7 @@
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -248,6 +249,12 @@ const PER_PAGE = 10;
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const RECETAS_MODULE_ID = "recetas";
+const RECETAS_TAB_ITEMS = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "recetas", label: "Recetas" },
+  { id: "produccion", label: "Producción" },
+  { id: "recetario", label: "Recetario Web", icon: BookOpen },
+];
 
 export default function RecetasModule() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "recetas" | "produccion" | "recetario">(() => {
@@ -505,23 +512,12 @@ export default function RecetasModule() {
         )}
       </AdminModuleHeader>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto scrollbar-none">
-        {(["dashboard", "recetas", "produccion", "recetario"] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setActiveTab(t)}
-            className={cn(
-              "shrink-0 px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
-              activeTab === t
-                ? "border-[#2563EB] text-[#2563EB]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {t === "dashboard" ? <><BarChart3 className="h-3.5 w-3.5" /> Dashboard</> : t === "recetas" ? "Recetas" : t === "produccion" ? "Producción" : <><BookOpen className="h-3.5 w-3.5" /> Recetario Web</>}
-          </button>
-        ))}
-      </div>
+      <AdminTabBar
+        moduleId={RECETAS_MODULE_ID}
+        tabs={RECETAS_TAB_ITEMS}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as typeof activeTab)}
+      />
 
       {/* ── Tab: Dashboard ─────────────────────────────────────────────────────── */}
       {activeTab === "dashboard" && <RecetasDashboard />}

@@ -15,6 +15,7 @@ import {
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
 import { CardTitle, LoadingState, PageTitle, SectionTitle, WarningAlert } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
@@ -498,6 +499,18 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
     </div>
   );
 }
+
+// Sub-tabs coherentes con el resto del admin: AdminTabBar da reorden por drag,
+// persistencia del orden y registro en el sidebar. El badge de "Cobros" se
+// inyecta en el render (depende de cobrosData, no es estático).
+const PRESTAMOS_MODULE_ID = "prestamos";
+const PRESTAMOS_TAB_ITEMS: AdminTab[] = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "activos", label: "Préstamos Activos" },
+  { id: "cobros", label: "Cobros", icon: Bell },
+  { id: "calculadora", label: "Calculadora" },
+  { id: "historial", label: "Historial" },
+];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -1004,33 +1017,16 @@ export default function PrestamosModule() {
       />
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto">
-        {([
-          { id: "dashboard" as const, label: "Dashboard" },
-          { id: "activos" as const, label: "Préstamos Activos" },
-          { id: "cobros" as const, label: "Cobros", badge: cobrosData ? cobrosData.vencidas.length : undefined },
-          { id: "calculadora" as const, label: "Calculadora" },
-          { id: "historial" as const, label: "Historial" },
-        ]).map(t => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={cn(
-              "shrink-0 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
-              activeTab === t.id
-                ? "border-[var(--accent)] text-[var(--accent)]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {t.id === "dashboard" && <BarChart3 className="h-3.5 w-3.5" />}
-            {t.id === "cobros" && <Bell className="h-3.5 w-3.5" />}
-            {t.label}
-            {"badge" in t && t.badge != null && t.badge > 0 && (
-              <span className="ml-0.5 bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 leading-none">{t.badge}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <AdminTabBar
+        moduleId={PRESTAMOS_MODULE_ID}
+        tabs={PRESTAMOS_TAB_ITEMS.map((t) =>
+          t.id === "cobros" && cobrosData && cobrosData.vencidas.length > 0
+            ? { ...t, badge: cobrosData.vencidas.length }
+            : t
+        )}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as "dashboard" | "activos" | "cobros" | "calculadora" | "historial")}
+      />
 
       {/* ── Tab: Dashboard ────────────────────────────────────────────────── */}
       {activeTab === "dashboard" && !loading && <PrestamosDashboard prestamos={prestamos} resumen={resumen} />}

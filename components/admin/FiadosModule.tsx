@@ -10,6 +10,7 @@ import {
   ArrowUp, ArrowDown, Maximize2, Minimize2,
   LayoutList, Columns3, MapPin, Search, RefreshCw, HandCoins, Share2 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
@@ -78,6 +79,10 @@ function formatDate(iso: string) {
 }
 
 const PER_PAGE = 10;
+
+// AdminTabBar: coherencia con el resto del admin (reorden por drag,
+// registro en sidebar). Persistencia en `tab-order-${FIADOS_MODULE_ID}`.
+const FIADOS_MODULE_ID = "fiados";
 
 // ── Mejora 15: Semáforo visual por fiado ────────────────────────────────────
 
@@ -313,10 +318,10 @@ export default function FiadosModule() {
 
   // Conteos para badges de tabs (se actualizan en vivo con los filtros).
   const vencidosTotales = fiados.filter(f => f.status === "VENCIDO" || (f.fechaVence && new Date(f.fechaVence) < new Date() && f.status === "ACTIVO")).length;
-  const TABS: Array<{ key: FiadoTab; label: string; badge?: number }> = [
-    { key: "resumen", label: "Resumen" },
-    { key: "deudores", label: "Deudores", badge: fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length },
-    { key: "analisis", label: "Análisis", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
+  const FIADOS_TAB_ITEMS: Array<{ id: FiadoTab; label: string; badge?: number }> = [
+    { id: "resumen", label: "Resumen" },
+    { id: "deudores", label: "Deudores", badge: fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length },
+    { id: "analisis", label: "Análisis", badge: vencidosTotales > 0 ? vencidosTotales : undefined },
   ];
 
   // IDEA 1: Libreta Digital — Vista que replica la libreta de fiados de papel.
@@ -944,45 +949,14 @@ export default function FiadosModule() {
           hay pendientes. Aprobar fija la línea → desbloquea checkout. */}
       <CreditRequestsPanel />
 
-      {/* Sub-tabs · Audit 2026-05-17 */}
-      <nav
-        role="tablist"
-        aria-label="Vistas del módulo Fiados"
-        className="flex flex-wrap gap-1 border-b border-[var(--rule-base)]"
-      >
-        {TABS.map((t) => {
-          const isActive = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`fiados-panel-${t.key}`}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                "relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors -mb-px border-b-2",
-                isActive
-                  ? "text-[var(--text-primary)] border-primary"
-                  : "text-[var(--text-secondary)] border-transparent hover:text-[var(--text-primary)] hover:border-[var(--rule-base)]",
-              )}
-            >
-              <span>{t.label}</span>
-              {t.badge != null && t.badge > 0 && (
-                <span
-                  className={cn(
-                    "inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold tabular-nums",
-                    isActive
-                      ? "bg-primary/15 text-primary"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-                  )}
-                >
-                  {t.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+      {/* Sub-tabs · Audit 2026-05-17. AdminTabBar = coherencia con el resto
+          del admin (reorden por drag, registro en sidebar). */}
+      <AdminTabBar
+        moduleId={FIADOS_MODULE_ID}
+        tabs={FIADOS_TAB_ITEMS}
+        activeTab={activeTab}
+        onTabChange={(id) => setTab(id as FiadoTab)}
+      />
 
       {/* Fila única — Buscador + filtros + contador + acciones (compacto, 1 row).
           Solo visible en tab Deudores (los filtros afectan la tabla).
