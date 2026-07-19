@@ -22,6 +22,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
+import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 
 const CACHE_PREFIX = "forest-ctp";
 
@@ -84,7 +85,10 @@ export class CtpInvariantError extends Error {
       /** Una corrida despachada dos veces (≅ I2). Lo que I3 no puede ver. */
       | "I5_SOBRE_SALIDA_PRODUCCION"
       | "TENANT_MISMATCH"
-      | "CONGELADO",
+      | "CONGELADO"
+      // ── Cierre de período fiscal (ADR-139) ──
+      /** La línea cae en un mes cerrado: el acta es inmutable hasta reabrir. */
+      | "PERIODO_CERRADO",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -151,6 +155,18 @@ export class ForestCtpConsumoDB {
           { woodEntryId: c.woodEntryId },
         );
       }
+    }
+
+    // Cierre de período (ADR-139): la atribución de una corrida de un mes cerrado
+    // es inmutable (además del guard de costo congelado de más abajo).
+    const entryCons = await prisma.forestCtpEntry.findFirst({ where: { id: ctpEntryId, tenantId }, select: { entryDate: true } });
+    const cerradoCons = entryCons ? await ForestCtpCierreDB.closedPeriodOf(tenantId, entryCons.entryDate) : null;
+    if (cerradoCons) {
+      throw new CtpInvariantError(
+        `El período ${cerradoCons.label} está cerrado: no se puede cambiar la materia prima de una corrida de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerradoCons.periodKey },
+      );
     }
 
     return prisma.$transaction(async (tx) => {

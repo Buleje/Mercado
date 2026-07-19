@@ -9,6 +9,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { ForestCtpConsumoDB, CtpInvariantError, CONSUMO_VIGENTE, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
+import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -192,6 +193,17 @@ export class ForestCtpDB {
     if (!CTP_SECTIONS.includes(input.section)) throw new Error(`invalid section: ${input.section}`);
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
 
+    // Cierre de período (ADR-139): no se registra una línea con fecha dentro de
+    // un mes ya cerrado — sería alterar un acta inmutable.
+    const cerradoCreate = await ForestCtpCierreDB.closedPeriodOf(tenantId, input.entryDate ?? new Date());
+    if (cerradoCreate) {
+      throw new CtpInvariantError(
+        `El período ${cerradoCreate.label} está cerrado: no se puede registrar una línea con fecha de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerradoCreate.periodKey },
+      );
+    }
+
     // Rendimiento auto si hay input+output en m³ y no se pasó explícito
     let rendimiento = input.rendimientoPct;
     const inVol = input.volumeInputM3 != null ? Number(input.volumeInputM3) : 0;
@@ -299,6 +311,16 @@ export class ForestCtpDB {
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");
+    // Cierre de período (ADR-139): una línea de un mes cerrado no se anula.
+    const curAnnul = await prisma.forestCtpEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
+    const cerradoAnnul = curAnnul ? await ForestCtpCierreDB.closedPeriodOf(tenantId, curAnnul.entryDate) : null;
+    if (cerradoAnnul) {
+      throw new CtpInvariantError(
+        `El período ${cerradoAnnul.label} está cerrado: no se puede anular una línea de un mes cerrado. Reabrí el período para corregir.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerradoAnnul.periodKey },
+      );
+    }
     const e = await prisma.forestCtpEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
       data: { status: "anulado", annulledReason: reason.trim() },
@@ -318,6 +340,15 @@ export class ForestCtpDB {
 
   static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
+    const curDel = await prisma.forestCtpEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
+    const cerradoDel = curDel ? await ForestCtpCierreDB.closedPeriodOf(tenantId, curDel.entryDate) : null;
+    if (cerradoDel) {
+      throw new CtpInvariantError(
+        `El período ${cerradoDel.label} está cerrado: no se puede eliminar una línea de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerradoDel.periodKey },
+      );
+    }
     const e = await prisma.forestCtpEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
       data: { deletedAt: new Date() },

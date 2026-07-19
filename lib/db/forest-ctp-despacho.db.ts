@@ -29,6 +29,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
+import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 
 const CACHE_PREFIX = "forest-ctp";
 /** 4 decimales — precisión forestal (volúmenes/cantidades). */
@@ -123,6 +124,18 @@ export class ForestCtpDespachoDB {
     }
     if (ids.includes(despachoEntryId)) {
       throw new CtpInvariantError("Una línea no puede salir de sí misma.", "TENANT_MISMATCH");
+    }
+
+    // Cierre de período (ADR-139): la atribución de origen de un despacho de un
+    // mes cerrado es inmutable.
+    const despOrig = await prisma.forestCtpEntry.findFirst({ where: { id: despachoEntryId, tenantId }, select: { entryDate: true } });
+    const cerradoOrig = despOrig ? await ForestCtpCierreDB.closedPeriodOf(tenantId, despOrig.entryDate) : null;
+    if (cerradoOrig) {
+      throw new CtpInvariantError(
+        `El período ${cerradoOrig.label} está cerrado: no se puede cambiar el origen de un despacho de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerradoOrig.periodKey },
+      );
     }
 
     return prisma.$transaction(async (tx) => {

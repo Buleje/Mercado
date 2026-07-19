@@ -18,6 +18,8 @@ import type {
 import { invalidateByPrefix } from "@/lib/cache";
 import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
+import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { CtpInvariantError } from "./forest-ctp-consumo.db";
 
 export interface WoodEntryCreateInput {
   // Fecha + GTF
@@ -176,6 +178,17 @@ export class WoodEntriesDB {
     }
     if (input.costoTotal != null && Number(input.costoTotal) < 0) {
       throw new Error("costoTotal no puede ser negativo");
+    }
+
+    // Cierre de período (ADR-139): no se ingresa madera con fecha de un mes ya
+    // cerrado (ni a mano ni por importación — no se backdatea a un acta cerrada).
+    const cerradoWe = await ForestCtpCierreDB.closedPeriodOf(tenantId, input.entryDate ?? new Date());
+    if (cerradoWe) {
+      throw new CtpInvariantError(
+        `El período ${cerradoWe.label} está cerrado: no se puede ingresar madera con fecha de un mes cerrado.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerradoWe.periodKey },
+      );
     }
 
     const entry = await prisma.woodEntry.create({
@@ -415,11 +428,28 @@ export class WoodEntriesDB {
   }
 
   /**
+   * Guard de cierre de período (ADR-139): tira si el ingreso `id` cae en un mes
+   * cerrado. Carga solo la fecha. No-op si no hay períodos cerrados.
+   */
+  private static async assertPeriodoAbierto(tenantId: string, id: string, accion: string): Promise<void> {
+    const cur = await prisma.woodEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
+    const cerrado = cur ? await ForestCtpCierreDB.closedPeriodOf(tenantId, cur.entryDate) : null;
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se puede ${accion} un ingreso de un mes cerrado. Reabrí el período para corregir.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+  }
+
+  /**
    * Validar un ingreso (status pendiente → validado).
    * Solo admin con permisos. validatorId queda en validatedBy.
    */
   static async validate(tenantId: string, id: string, validatorId: string) {
     if (!tenantId) throw new Error("tenantId is required");
+    await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "validar");
     const entry = await prisma.woodEntry.update({
       where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
       data: {
@@ -485,6 +515,7 @@ export class WoodEntriesDB {
   static async annul(tenantId: string, id: string, user: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("annul reason is required");
+    await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "anular");
     const consumido = await prisma.forestCtpConsumo.count({
       where: { tenantId, woodEntryId: id, ctpEntry: { deletedAt: null, status: "registrado" } },
     });
@@ -514,6 +545,7 @@ export class WoodEntriesDB {
    */
   static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
+    await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "eliminar");
     const entry = await prisma.woodEntry.update({
       where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
       data: { deletedAt: new Date() },

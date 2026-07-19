@@ -32,7 +32,9 @@ export type CtpAuditEntity =
   // No es modelo Prisma (como ForestCtpFicha): un evento de importación LO-CTP es
   // un lote, no una fila. Se audita porque un fiscalizador quiere saber CÓMO
   // entraron los datos al libro (qué archivo, cuántas filas, quién) — ADR-138.
-  | "ForestCtpImport";
+  | "ForestCtpImport"
+  // KV (como ForestCtpFicha): el cierre de período fiscal del libro (ADR-139).
+  | "ForestCtpCierre";
 
 /**
  * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
@@ -63,7 +65,10 @@ export type CtpAuditAction =
   // GTF de salida formal (serie autorizada ARFFS + correlativo auto)
   | "ctp_gtf_emitir"
   // Importación del libro desde el Excel LO-CTP (ADR-138) — evento por lote
-  | "ctp_import";
+  | "ctp_import"
+  // Cierre de período fiscal del libro (ADR-139) — congela + bloquea el mes
+  | "ctp_periodo_cerrar"
+  | "ctp_periodo_reabrir";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no

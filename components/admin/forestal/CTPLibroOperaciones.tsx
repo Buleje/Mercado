@@ -25,6 +25,7 @@ import {
   FileSpreadsheet,
   FileText,
   Loader2,
+  Lock,
   PackageOpen,
   Scale,
   Share2,
@@ -43,6 +44,7 @@ import CtpIngresosView from "./CtpIngresosView";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
+import CtpCierrePanel from "./CtpCierrePanel";
 import CtpImportModal from "./CtpImportModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpAsistente from "./CtpAsistente";
@@ -50,7 +52,7 @@ import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "analisis" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "cierre" | "analisis" | "ficha";
 
 const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
   { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
@@ -59,6 +61,7 @@ const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string
   { key: "radar", label: "Radar", icon: Share2, hint: "Cadena de custodia visual" },
   { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
   { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
+  { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta" },
   { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias" },
   { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
 ];
@@ -231,6 +234,7 @@ export default function CTPLibroOperaciones() {
       {view === "radar" && <CtpTrazaRadar period={period} />}
       {view === "saldos" && <CtpSaldosView period={period} />}
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
+      {view === "cierre" && <CtpCierrePanel />}
       {view === "analisis" && <CtpAnalisis />}
       {view === "ficha" && <CtpFichaEditor />}
 
