@@ -24,7 +24,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "@buleje/design-system/icons";
-import { BulejeComposedChart, BulejeLineChart, BulejeDonutChart } from "@/components/ui-system/charts";
+import { BulejeComposedChart, BulejeLineChart, BulejeDonutChart, BulejeSparkline } from "@/components/ui-system/charts";
 import { SERIES_PALETTE } from "@/components/ui-system/charts/palette";
 import type { ReordenProyeccion, TendenciaMes } from "@/lib/db/forest-ctp.db";
 
@@ -62,10 +62,19 @@ export default function CtpAnalisis() {
       // Balance del mes = lo que entró − lo que se consumió. Cruce en 0 = si la
       // planta repone o se está comiendo su stock. Mismo eje (m³) que las barras.
       Balance: r2(t.ingresoM3 - t.consumidoM3),
+      Producido: t.producido,
+      Despachado: t.despachado,
       Rendimiento: t.rendimiento,
     })),
     [tendencias],
   );
+
+  // Series planas para los sparklines de cada KPI (tendencia de 6 meses de un vistazo).
+  const spark = useMemo(() => ({
+    ingreso: (tendencias ?? []).map((t) => t.ingresoM3),
+    producido: (tendencias ?? []).map((t) => t.producido),
+    rendimiento: (tendencias ?? []).map((t) => t.rendimiento),
+  }), [tendencias]);
 
   // Composición del stock actual de materia prima por especie (top 6 + otras),
   // derivada del reorden — de qué está hecho lo que hoy tenés en patio.
@@ -92,9 +101,9 @@ export default function CtpAnalisis() {
       {/* Resumen ejecutivo: tramo reciente vs tramo previo (mitades del rango cargado). */}
       {resumen && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <DeltaStat label="Ingresado" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.ingresado)} unit="m³" icon={Layers} delta={resumen.ingresadoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" />
-          <DeltaStat label="Producido" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.producido)} unit="" icon={Boxes} delta={resumen.producidoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" />
-          <DeltaStat label="Rendimiento prom." hint={`ponderado últimos ${resumen.monthsRecent}m`} value={resumen.rendimiento.toFixed(1)} unit="%" icon={Scale} delta={resumen.rendimientoDelta} deltaSuffix=" pts" priorLabel={`${resumen.monthsPrior}m previos`} tone="neutral" />
+          <DeltaStat label="Ingresado" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.ingresado)} unit="m³" icon={Layers} delta={resumen.ingresadoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" spark={spark.ingreso} />
+          <DeltaStat label="Producido" hint={`suma últimos ${resumen.monthsRecent}m`} value={n2(resumen.producido)} unit="" icon={Boxes} delta={resumen.producidoDelta} deltaSuffix="%" priorLabel={`${resumen.monthsPrior}m previos`} tone="directional" spark={spark.producido} />
+          <DeltaStat label="Rendimiento prom." hint={`ponderado últimos ${resumen.monthsRecent}m`} value={resumen.rendimiento.toFixed(1)} unit="%" icon={Scale} delta={resumen.rendimientoDelta} deltaSuffix=" pts" priorLabel={`${resumen.monthsPrior}m previos`} tone="neutral" spark={spark.rendimiento} />
         </div>
       )}
 
@@ -177,32 +186,58 @@ export default function CtpAnalisis() {
         </div>
       )}
 
-      {/* Composición del stock actual por especie: de qué está hecho el patio hoy. */}
-      {stockData.length > 0 && (
-        <ChartCard
-          title="Stock de materia prima por especie"
-          subtitle={`${n2(stockTotal)} m³ en patio hoy, repartidos entre ${stockData.length} ${stockData.length === 1 ? "especie" : "grupos de especie"}.`}
-        >
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-            <div className="w-full max-w-[15rem] shrink-0">
-              <BulejeDonutChart data={stockData} height={200} format={(v) => `${Number(v).toFixed(2)} m³`} />
-            </div>
-            {/* Leyenda con valor + % (identidad nunca por color solo — dataviz). */}
-            <ul className="grid w-full flex-1 grid-cols-1 gap-1.5 sm:grid-cols-2">
-              {stockData.map((s, i) => (
-                <li key={s.name} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm">
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: SERIES_PALETTE[i % SERIES_PALETTE.length] }} aria-hidden="true" />
-                    <span className="truncate text-[var(--text-secondary)]">{s.name}</span>
-                  </span>
-                  <span className="shrink-0 font-mono tabular-nums text-[var(--text-tertiary)]">
-                    {n2(s.value)} <span className="text-[length:var(--ts-2xs)]">({stockTotal > 0 ? Math.round((s.value / stockTotal) * 100) : 0}%)</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </ChartCard>
+      {/* Lado de salida + composición del patio. */}
+      {((tendencias && tendencias.length > 0) || stockData.length > 0) && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Producción vs despacho: el ciclo de salida. En unidades de producto
+              (no m³) → chart aparte del flujo de materia prima para no mezclar. */}
+          {tendencias && tendencias.length > 0 && (
+            <ChartCard
+              title="Producción vs. despacho por mes"
+              subtitle="Lo transformado vs. lo que salió, en unidades de producto declaradas — va aparte del flujo (m³) para no mezclar unidades."
+            >
+              <BulejeComposedChart
+                data={chartData}
+                xKey="mes"
+                bars={[
+                  { key: "Producido", label: "Producido", color: "info", yAxis: "left" },
+                  { key: "Despachado", label: "Despachado", color: "primary", yAxis: "left" },
+                ]}
+                height={240}
+                leftAxisFormat={(v) => `${v}`}
+                tooltipFormat={(v) => `${Number(v).toFixed(2)}`}
+              />
+            </ChartCard>
+          )}
+
+          {/* Composición del stock actual por especie: de qué está hecho el patio hoy. */}
+          {stockData.length > 0 && (
+            <ChartCard
+              title="Stock de materia prima por especie"
+              subtitle={`${n2(stockTotal)} m³ en patio hoy, repartidos entre ${stockData.length} ${stockData.length === 1 ? "especie" : "grupos de especie"}.`}
+            >
+              <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+                <div className="w-full max-w-[15rem] shrink-0">
+                  <BulejeDonutChart data={stockData} height={200} format={(v) => `${Number(v).toFixed(2)} m³`} />
+                </div>
+                {/* Leyenda con valor + % (identidad nunca por color solo — dataviz). */}
+                <ul className="grid w-full flex-1 grid-cols-1 gap-1.5">
+                  {stockData.map((s, i) => (
+                    <li key={s.name} className="flex items-center justify-between gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm">
+                      <span className="inline-flex min-w-0 items-center gap-2">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: SERIES_PALETTE[i % SERIES_PALETTE.length] }} aria-hidden="true" />
+                        <span className="truncate text-[var(--text-secondary)]">{s.name}</span>
+                      </span>
+                      <span className="shrink-0 font-mono tabular-nums text-[var(--text-tertiary)]">
+                        {n2(s.value)} <span className="text-[length:var(--ts-2xs)]">({stockTotal > 0 ? Math.round((s.value / stockTotal) * 100) : 0}%)</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ChartCard>
+          )}
+        </div>
       )}
     </div>
   );
@@ -246,11 +281,11 @@ function computeResumen(t: TendenciaMes[] | null): Resumen | null {
 /** Tile de KPI con delta vs. tramo previo. tone="neutral" = la subida no implica
  *  "mejor" (ej. rendimiento, donde subir puede ser sobre-declaración). */
 function DeltaStat({
-  label, hint, value, unit, icon: Icon, delta, deltaSuffix, priorLabel, tone,
+  label, hint, value, unit, icon: Icon, delta, deltaSuffix, priorLabel, tone, spark,
 }: {
   label: string; hint: string; value: string; unit: string;
   icon: typeof Layers; delta: number | null; deltaSuffix: string;
-  priorLabel: string; tone: "directional" | "neutral";
+  priorLabel: string; tone: "directional" | "neutral"; spark?: number[];
 }) {
   const up = delta != null && delta > 0;
   const DeltaIcon = delta == null || delta === 0 ? Minus : up ? TrendingUp : TrendingDown;
@@ -262,15 +297,21 @@ function DeltaStat({
         : up
           ? "text-[var(--data-success-700)]"
           : "text-[var(--data-error-700)]";
+  // El sparkline colorea según dirección salvo en tone neutral (donde subir no es "mejor").
+  const sparkTrend: "up" | "down" | "neutral" = tone === "neutral" || delta == null || delta === 0 ? "neutral" : up ? "up" : "down";
+  const sparkData = spark && spark.length >= 2 && spark.some((v) => v > 0) ? spark : null;
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
         <Icon className="h-4 w-4 text-[var(--text-tertiary)]" />
       </div>
-      <div className="mt-2 flex items-baseline gap-1">
-        <span className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">{value}</span>
-        {unit && <span className="text-sm font-medium text-[var(--text-tertiary)]">{unit}</span>}
+      <div className="mt-2 flex items-end justify-between gap-2">
+        <div className="flex items-baseline gap-1">
+          <span className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">{value}</span>
+          {unit && <span className="text-sm font-medium text-[var(--text-tertiary)]">{unit}</span>}
+        </div>
+        {sparkData && <div className="shrink-0"><BulejeSparkline data={sparkData} trend={sparkTrend} width={72} height={28} /></div>}
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
         <span className={`inline-flex items-center gap-1 text-xs font-bold ${deltaCls}`}>

@@ -868,14 +868,15 @@ export class ForestCtpDB {
     const now = new Date();
     const startMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (n - 1), 1));
     const keyOf = (d: Date) => d.toISOString().slice(0, 7);
-    const [ingresos, corridas] = await Promise.all([
+    const [ingresos, corridas, despachos] = await Promise.all([
       prisma.woodEntry.findMany({ where: { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] }, entryDate: { gte: startMonth } }, select: { entryDate: true, volumeM3: true } }),
       prisma.forestCtpEntry.findMany({ where: { tenantId, deletedAt: null, status: "registrado", section: "produccion", entryDate: { gte: startMonth } }, select: { entryDate: true, quantity: true, volumeInputM3: true, rendimientoPct: true } }),
+      prisma.forestCtpEntry.findMany({ where: { tenantId, deletedAt: null, status: "registrado", section: "despacho", entryDate: { gte: startMonth } }, select: { entryDate: true, quantity: true } }),
     ]);
-    const buckets = new Map<string, { ingresoM3: number; producido: number; consumidoM3: number; rendW: number; rendPeso: number }>();
+    const buckets = new Map<string, { ingresoM3: number; producido: number; despachado: number; consumidoM3: number; rendW: number; rendPeso: number }>();
     for (let i = 0; i < n; i++) {
       const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (n - 1) + i, 1));
-      buckets.set(keyOf(d), { ingresoM3: 0, producido: 0, consumidoM3: 0, rendW: 0, rendPeso: 0 });
+      buckets.set(keyOf(d), { ingresoM3: 0, producido: 0, despachado: 0, consumidoM3: 0, rendW: 0, rendPeso: 0 });
     }
     for (const i of ingresos) { const b = buckets.get(keyOf(i.entryDate)); if (b) b.ingresoM3 += Number(i.volumeM3 ?? 0); }
     for (const c of corridas) {
@@ -887,9 +888,13 @@ export class ForestCtpDB {
       const rend = Number(c.rendimientoPct ?? 0);
       if (rend > 0 && vin > 0) { b.rendW += rend * vin; b.rendPeso += vin; }
     }
+    // Despachado: cantidad de producto que salió por mes (como el `producido`, en
+    // unidades de producto declaradas — por eso va en el chart de salida, no en el
+    // de materia prima m³, para no mezclar unidades).
+    for (const d of despachos) { const b = buckets.get(keyOf(d.entryDate)); if (b) b.despachado += Number(d.quantity ?? 0); }
     return [...buckets.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([mes, b]) => ({ mes, ingresoM3: r4(b.ingresoM3), producido: r4(b.producido), consumidoM3: r4(b.consumidoM3), rendimiento: b.rendPeso > 0 ? Math.round((b.rendW / b.rendPeso) * 10) / 10 : 0 }));
+      .map(([mes, b]) => ({ mes, ingresoM3: r4(b.ingresoM3), producido: r4(b.producido), despachado: r4(b.despachado), consumidoM3: r4(b.consumidoM3), rendimiento: b.rendPeso > 0 ? Math.round((b.rendW / b.rendPeso) * 10) / 10 : 0 }));
   }
 
   /**
@@ -1056,7 +1061,7 @@ export interface ReordenProyeccion {
 
 export interface TendenciaMes {
   mes: string; // YYYY-MM
-  ingresoM3: number; producido: number; consumidoM3: number; rendimiento: number;
+  ingresoM3: number; producido: number; despachado: number; consumidoM3: number; rendimiento: number;
 }
 
 /** Trazabilidad hacia adelante de un ingreso: corridas que lo consumieron y
