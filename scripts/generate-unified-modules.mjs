@@ -252,7 +252,6 @@ const modules = [
     imports: [
       ["PLTab", "@/components/admin/PLTab"],
       ["BalanceSheetTab", "@/components/admin/BalanceSheetTab"],
-      ["CashFlowTab", "@/components/admin/CashFlowTab"],
       ["BudgetTab", "@/components/admin/BudgetTab"],
       ["BudgetVsRealTab", "@/components/admin/BudgetVsRealTab"],
       ["BreakEvenTab", "@/components/admin/BreakEvenTab"],
