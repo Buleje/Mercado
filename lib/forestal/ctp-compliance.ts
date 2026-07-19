@@ -188,3 +188,35 @@ export function ctpComplianceTone(score: number): CtpComplianceTone {
   if (score >= 70) return "warning";
   return "error";
 }
+
+/** Etiqueta legible de cada categoría que resta puntos (para el desglose del score). */
+const CATEGORIA_LABEL: Record<(typeof CATEGORIAS_QUE_RESTAN)[number], string> = {
+  fueraPlazo: "Ingresos fuera de plazo",
+  pendientes: "Ingresos sin validar",
+  especiesEnNegativo: "Especies en saldo negativo",
+  stockNegativo: "Productos con stock negativo",
+  despachosSinTraza: "Despachos sin cadena completa",
+};
+
+export interface CtpComplianceDeduccion {
+  key: (typeof CATEGORIAS_QUE_RESTAN)[number];
+  label: string;
+  casos: number;
+  /** Puntos que esta categoría le resta al score (0..TOPE_PUNTOS_POR_ALERTA). */
+  puntos: number;
+  /** true si la categoría llegó al tope (da igual 5 o 50 casos). */
+  topeAlcanzado: boolean;
+}
+
+/**
+ * Desglose del score: cuántos puntos resta cada categoría corregible. Single
+ * source con `ctpComplianceScore` (mismas categorías, mismos pesos) — el panel
+ * lo muestra sin re-derivar la fórmula, así nunca divergen del score real.
+ */
+export function ctpComplianceBreakdown(counts: CtpComplianceCounts): CtpComplianceDeduccion[] {
+  return CATEGORIAS_QUE_RESTAN.map((key) => {
+    const casos = Math.max(counts[key], 0);
+    const puntos = Math.min(casos * PUNTOS_POR_CASO, TOPE_PUNTOS_POR_ALERTA);
+    return { key, label: CATEGORIA_LABEL[key], casos, puntos, topeAlcanzado: puntos >= TOPE_PUNTOS_POR_ALERTA && casos > 0 };
+  });
+}

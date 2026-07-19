@@ -24,9 +24,10 @@ import {
   ThumbsUp,
   TreePine,
 } from "@buleje/design-system/icons";
-import { StatCard, WarningAlert, ErrorAlert, SuccessAlert, LoadingState } from "@buleje/design-system";
+import { WarningAlert, ErrorAlert, SuccessAlert, LoadingState } from "@buleje/design-system";
+import { BulejeGaugeChart } from "@/components/ui-system/charts";
 import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
-import { ctpComplianceTone } from "@/lib/forestal/ctp-compliance";
+import { ctpComplianceTone, ctpComplianceBreakdown, type CtpComplianceTone } from "@/lib/forestal/ctp-compliance";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
 type ComplianceNavTarget = "ingresos" | "saldos" | "despacho" | "produccion" | "ficha";
@@ -41,6 +42,13 @@ const TONE_LABEL: Record<ReturnType<typeof ctpComplianceTone>, string> = {
   success: "Cumplimiento en orden",
   warning: "Hay puntos que revisar",
   error: "Requiere atención antes de cerrar el período",
+};
+
+/** Color del arco del gauge por tono (tokens del DS). */
+const GAUGE_COLOR: Record<CtpComplianceTone, string> = {
+  success: "var(--data-success-500)",
+  warning: "var(--data-warning-500)",
+  error: "var(--data-error-500)",
 };
 
 export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliancePanelProps) {
@@ -68,6 +76,8 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
   if (!data) return null;
 
   const tone = ctpComplianceTone(data.score);
+  const breakdown = ctpComplianceBreakdown(data.counts);
+  const totalRestado = breakdown.reduce((a, d) => a + d.puntos, 0);
 
   return (
     <div className="space-y-4">
@@ -87,14 +97,37 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
         </button>
       </div>
 
-      <StatCard
-        label="Score de cumplimiento del período"
-        value={`${data.score}/100`}
-        subValue={TONE_LABEL[tone]}
-        icon={Gauge}
-        emphasis={tone}
-        density="comfortable"
-      />
+      {/* Score con gauge firma + desglose transparente de cómo se compone. */}
+      <div className="grid gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
+        <div className="flex justify-center">
+          <BulejeGaugeChart value={data.score} max={100} size={190} color={GAUGE_COLOR[tone]} sublabel="de 100" label={TONE_LABEL[tone]} />
+        </div>
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <Gauge className="h-4 w-4 text-[var(--text-tertiary)]" />
+            <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+              Cómo se compone · 100 {totalRestado > 0 ? `− ${totalRestado} deducidos` : "· sin deducciones"}
+            </p>
+          </div>
+          <ul className="space-y-1.5">
+            {breakdown.map((d) => (
+              <li key={d.key} className="flex items-center justify-between gap-3 text-sm">
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${d.puntos > 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--data-success-500)]"}`} aria-hidden="true" />
+                  <span className="truncate text-[var(--text-secondary)]">{d.label}</span>
+                </span>
+                {d.puntos > 0 ? (
+                  <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--data-error-700)]">
+                    −{d.puntos} pts <span className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">({d.casos}{d.topeAlcanzado ? "+" : ""} {d.casos === 1 ? "caso" : "casos"})</span>
+                  </span>
+                ) : (
+                  <span className="shrink-0 text-xs font-bold text-[var(--data-success-700)]">sin restar</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <div className="grid gap-3 md:grid-cols-2">
         <ComplianceRow
