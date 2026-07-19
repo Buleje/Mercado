@@ -1,8 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Monitor, Smartphone, MapPin, Clock, ShieldCheck } from "@buleje/design-system/icons";
+import { useState, useEffect, useCallback } from "react";
+import { Monitor, Smartphone, MapPin, Clock, ShieldCheck, KeyRound, X } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+
+type TrustedDevice = {
+  id: string;
+  label: string;
+  createdAt: string;
+  expiresAt: string;
+  lastUsedAt: string;
+};
 
 /**
  * LoginDevicesCard — "Dispositivos y accesos" (Configuración → Seguridad).
@@ -52,7 +61,18 @@ function relative(iso: string): string {
 
 export default function LoginDevicesCard() {
   const [devices, setDevices] = useState<Device[]>([]);
+  const [trusted, setTrusted] = useState<TrustedDevice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [revoking, setRevoking] = useState<string | null>(null);
+
+  const loadTrusted = useCallback(() => {
+    fetch("/api/admin/security/trusted-devices", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.devices) setTrusted(data.devices);
+      })
+      .catch((err) => logger.error("[LoginDevicesCard] trusted load failed", { error: String(err) }));
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -63,15 +83,33 @@ export default function LoginDevicesCard() {
       })
       .catch((err) => logger.error("[LoginDevicesCard] load failed", { error: String(err) }))
       .finally(() => alive && setLoading(false));
+    loadTrusted();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [loadTrusted]);
+
+  async function revoke(id: string | "all") {
+    setRevoking(id);
+    try {
+      const res = await fetch("/api/admin/security/trusted-devices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(csrfHeaders() as Record<string, string>) },
+        credentials: "include",
+        body: JSON.stringify(id === "all" ? { all: true } : { id }),
+      });
+      if (res.ok) setTrusted((prev) => (id === "all" ? [] : prev.filter((d) => d.id !== id)));
+    } catch (err) {
+      logger.error("[LoginDevicesCard] revoke failed", { error: String(err) });
+    } finally {
+      setRevoking(null);
+    }
+  }
 
   if (loading) {
     return <div className="h-40 animate-pulse rounded-2xl bg-[var(--surface-sunken)]" />;
   }
-  if (devices.length === 0) return null;
+  if (devices.length === 0 && trusted.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
@@ -121,6 +159,56 @@ export default function LoginDevicesCard() {
           );
         })}
       </ul>
+
+      {/* ADR-304: dispositivos de confianza (saltan el 2FA). Revocables acá. */}
+      {trusted.length > 0 && (
+        <div className="mt-5 border-t border-[var(--rule-soft)] pt-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+              <h4 className="text-sm font-bold text-[var(--text-primary)]">Dispositivos de confianza</h4>
+            </div>
+            <button
+              type="button"
+              onClick={() => revoke("all")}
+              disabled={revoking != null}
+              className="text-[length:var(--ts-xs)] font-bold text-[var(--data-error-500)] hover:underline disabled:opacity-50"
+            >
+              Revocar todos
+            </button>
+          </div>
+          <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+            No piden el código 2FA en ese navegador. La contraseña se sigue pidiendo siempre.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {trusted.map((t) => (
+              <li
+                key={t.id}
+                className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-soft)]">
+                  <ShieldCheck className="h-4.5 w-4.5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{t.label}</p>
+                  <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                    Confiado {relative(t.createdAt)} · usado {relative(t.lastUsedAt)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => revoke(t.id)}
+                  disabled={revoking != null}
+                  aria-label={`Revocar confianza de ${t.label}`}
+                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] disabled:opacity-50"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden /> Revocar
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

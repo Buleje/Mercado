@@ -13,6 +13,7 @@ import { cacheStore } from "@/lib/cache";
 import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 import { alertNewDeviceLogin } from "@/lib/auth/security-alerts";
 import { AdminDevicesDB } from "@/lib/db/admin-devices.db";
+import { TrustedDevicesDB, TRUSTED_DEVICE_COOKIE } from "@/lib/db/trusted-devices.db";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
@@ -204,25 +205,52 @@ export async function POST(req: Request) {
     // y retornar { requires2FA: true } para que el frontend redirija a /login/2fa.
     const totpRecord = await AdminTotpDB.getByUsername(matchedTenantId, u.username).catch((err) => { logger.warn("[security] op failed", { err: String(err) }); return null; });
     if (totpRecord?.totpEnabledAt) {
-      const pendingToken = await createPendingTotpToken(
-        u.username,
-        matchedTenantId,
-        u.name,
-        u.role as AdminRole,
-      );
-      const res = NextResponse.json({ requires2FA: true });
-      res.cookies.set(PENDING_TOTP_COOKIE, pendingToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 300, // 5 minutos
-        path: "/",
-      });
-      logger.info("[auth/login] 2FA required — pending-totp cookie emitida", {
+      // ADR-304: dispositivo de confianza → saltar el 2FA. La contraseña YA se
+      // verificó arriba; esto sólo evita el segundo factor en este navegador
+      // por 30 días. Cookie robada ≠ bypass (falta el password). Best-effort.
+      const rawCookie = req.headers.get("cookie") ?? "";
+      const trustedToken = rawCookie
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(`${TRUSTED_DEVICE_COOKIE}=`))
+        ?.slice(TRUSTED_DEVICE_COOKIE.length + 1);
+      // El token es `id.secret` (hex+punto): cookie-safe, NUNCA percent-encoded.
+      // NO usar decodeURIComponent — con una cookie malformada (`%`) lanzaría
+      // URIError ANTES de crear la promesa, el `.catch` no lo atraparía y el
+      // login caería en 500 (DoS de disponibilidad). Se pasa crudo.
+      const deviceTrusted = trustedToken
+        ? await TrustedDevicesDB
+            .verify(matchedTenantId, u.username, trustedToken, new Date())
+            .catch(() => false)
+        : false;
+
+      if (!deviceTrusted) {
+        const pendingToken = await createPendingTotpToken(
+          u.username,
+          matchedTenantId,
+          u.name,
+          u.role as AdminRole,
+        );
+        const res = NextResponse.json({ requires2FA: true });
+        res.cookies.set(PENDING_TOTP_COOKIE, pendingToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          maxAge: 300, // 5 minutos
+          path: "/",
+        });
+        logger.info("[auth/login] 2FA required — pending-totp cookie emitida", {
+          username: u.username,
+          tenantId: matchedTenantId,
+        });
+        return res;
+      }
+
+      logger.info("[auth/login] 2FA saltado — dispositivo de confianza", {
         username: u.username,
         tenantId: matchedTenantId,
       });
-      return res;
+      // Cae al flujo normal de sesión completa (abajo).
     }
 
     const [token, refreshToken] = await Promise.all([
