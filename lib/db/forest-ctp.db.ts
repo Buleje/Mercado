@@ -71,6 +71,21 @@ export interface SpeciesBalance {
   ingresosCount: number;
 }
 
+/**
+ * Conciliación de período (ADR-139 rollforward): existencia de APERTURA + movimientos del
+ * período = existencia FINAL. Sin apertura, un saldo mensual ignora el stock
+ * heredado y no cuadra ante un fiscalizador. La apertura sale del cierre anterior
+ * (frozen) o se calcula acumulada hasta el inicio del período.
+ */
+export interface ConciliacionPeriodo {
+  /** De dónde salió la apertura: "cierre" (snapshot congelado), "calculada" (acumulada), "sin_apertura" (período histórico). */
+  fuenteApertura: "cierre" | "calculada" | "sin_apertura";
+  /** Etiqueta del cierre que dio la apertura, si aplica ("marzo de 2026"). */
+  aperturaLabel: string | null;
+  materiaPrima: { especie: string; cites: boolean; apertura: number; ingreso: number; consumido: number; final: number; negativa: boolean }[];
+  productos: { producto: string; apertura: number; producido: number; despachado: number; final: number; negativo: boolean }[];
+}
+
 export interface CtpEntryInput {
   section: CtpSection;
   entryDate?: Date;
@@ -503,6 +518,76 @@ export class ForestCtpDB {
         stock: r4(v.producido - v.despachado),
       })),
     };
+  }
+
+  /**
+   * Conciliación del período (ADR-139 rollforward): existencia de APERTURA + movimientos =
+   * existencia FINAL, por especie y por producto. La apertura sale del cierre
+   * inmediatamente anterior (snapshot congelado) o, si no hay cierre previo, se
+   * calcula acumulada hasta el inicio del período. Cierra el bug de que un saldo
+   * mensual ignoraba el stock heredado y no cuadraba ante un fiscalizador.
+   */
+  static async conciliacionPeriodo(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<ConciliacionPeriodo> {
+    if (!tenantId) throw new Error("tenantId is required");
+
+    const mov = await ForestCtpDB.saldos(tenantId, opts);
+
+    // ── Apertura ──────────────────────────────────────────────────────────
+    let fuenteApertura: ConciliacionPeriodo["fuenteApertura"] = "sin_apertura";
+    let aperturaLabel: string | null = null;
+    const aperturaMP: { especie: string; cites: boolean; existencia: number }[] = [];
+    const aperturaProd: { producto: string; existencia: number }[] = [];
+
+    if (opts.fromDate) {
+      const cierres = await ForestCtpCierreDB.list(tenantId);
+      const prev = cierres
+        .filter((c) => !c.reabierto && new Date(c.to).getTime() < opts.fromDate!.getTime())
+        .sort((a, b) => new Date(b.to).getTime() - new Date(a.to).getTime())[0];
+      if (prev) {
+        fuenteApertura = "cierre";
+        aperturaLabel = prev.label;
+        for (const m of prev.saldoCierre.materiaPrima) aperturaMP.push({ especie: m.especie, cites: m.cites, existencia: m.existenciaM3 });
+        for (const p of prev.saldoCierre.productos) aperturaProd.push({ producto: p.producto, existencia: p.existencia });
+      } else {
+        fuenteApertura = "calculada";
+        const acum = await ForestCtpDB.saldos(tenantId, { toDate: new Date(opts.fromDate.getTime() - 1) });
+        for (const e of acum.porEspecie) aperturaMP.push({ especie: e.especie, cites: e.cites, existencia: e.saldoM3 });
+        for (const p of acum.productos) aperturaProd.push({ producto: p.producto, existencia: p.stock });
+      }
+    }
+
+    // ── Combinar apertura + movimientos → final (materia prima) ───────────
+    const mp = new Map<string, { label: string; cites: boolean; apertura: number; ingreso: number; consumido: number }>();
+    const mpKey = (s: string) => s.trim().toLowerCase();
+    const mpUpsert = (especie: string, cites: boolean) => {
+      const key = mpKey(especie);
+      let x = mp.get(key);
+      if (!x) { x = { label: especie, cites, apertura: 0, ingreso: 0, consumido: 0 }; mp.set(key, x); }
+      if (cites) x.cites = true;
+      return x;
+    };
+    for (const a of aperturaMP) mpUpsert(a.especie, a.cites).apertura = a.existencia;
+    for (const e of mov.porEspecie) { const x = mpUpsert(e.especie, e.cites); x.ingreso = e.ingresoM3; x.consumido = e.consumidoM3; }
+
+    const materiaPrima = [...mp.values()]
+      .map((x) => { const final = r4(x.apertura + x.ingreso - x.consumido); return { especie: x.label, cites: x.cites, apertura: r4(x.apertura), ingreso: r4(x.ingreso), consumido: r4(x.consumido), final, negativa: final < 0 }; })
+      .sort((a, b) => (a.negativa === b.negativa ? b.final - a.final : a.negativa ? -1 : 1));
+
+    // ── Combinar apertura + movimientos → final (productos) ───────────────
+    const pr = new Map<string, { producto: string; apertura: number; producido: number; despachado: number }>();
+    const prUpsert = (producto: string) => {
+      let x = pr.get(producto);
+      if (!x) { x = { producto, apertura: 0, producido: 0, despachado: 0 }; pr.set(producto, x); }
+      return x;
+    };
+    for (const a of aperturaProd) prUpsert(a.producto).apertura = a.existencia;
+    for (const p of mov.productos) { const x = prUpsert(p.producto); x.producido = p.producido; x.despachado = p.despachado; }
+
+    const productos = [...pr.values()]
+      .map((x) => { const final = r4(x.apertura + x.producido - x.despachado); return { producto: x.producto, apertura: r4(x.apertura), producido: r4(x.producido), despachado: r4(x.despachado), final, negativo: final < 0 }; })
+      .sort((a, b) => b.final - a.final);
+
+    return { fuenteApertura, aperturaLabel, materiaPrima, productos };
   }
 
   /**

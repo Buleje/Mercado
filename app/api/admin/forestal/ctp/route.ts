@@ -107,6 +107,10 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (url.searchParams.get("pnl") === "1") {
       return NextResponse.json({ pnl: await ForestCtpDespachoDB.pnlDelPeriodo(auth.tenantId, period) });
     }
+    // Conciliación: apertura + movimientos = existencia final (ADR-139 rollforward).
+    if (url.searchParams.get("conciliacion") === "1") {
+      return NextResponse.json({ conciliacion: await ForestCtpDB.conciliacionPeriodo(auth.tenantId, period) });
+    }
     // ADR-135 D3: despachos del período que no podrían emitir certificado.
     if (url.searchParams.get("traza") === "1") {
       return NextResponse.json({ traza: await ForestCtpDespachoDB.trazabilidadDelPeriodo(auth.tenantId, period) });

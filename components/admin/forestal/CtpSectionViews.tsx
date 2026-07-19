@@ -316,8 +316,12 @@ interface SaldosData {
   productos: { producto: string; producido: number; despachado: number; stock: number }[];
 }
 
+interface ConcilMP { especie: string; cites: boolean; apertura: number; ingreso: number; consumido: number; final: number; negativa: boolean }
+interface Concil { fuenteApertura: "cierre" | "calculada" | "sin_apertura"; aperturaLabel: string | null; materiaPrima: ConcilMP[]; productos: { producto: string; apertura: number; producido: number; despachado: number; final: number; negativo: boolean }[] }
+
 export function CtpSaldosView({ period }: { period: CtpPeriod }) {
   const [data, setData] = useState<SaldosData | null>(null);
+  const [concil, setConcil] = useState<Concil | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [kardexEspecie, setKardexEspecie] = useState<string | null>(null);
@@ -329,6 +333,12 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
       const r = await fetch(`/api/admin/forestal/ctp?${p}`, { credentials: "include" });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       setData((await r.json()).saldos);
+      // Conciliación (apertura + movimientos = final) — solo si el período tiene inicio.
+      if (period.from) {
+        const cp = applyCtpPeriodParams(new URLSearchParams({ conciliacion: "1" }), period);
+        const cr = await fetch(`/api/admin/forestal/ctp?${cp}`, { credentials: "include" });
+        setConcil(cr.ok ? (await cr.json()).conciliacion : null);
+      } else { setConcil(null); }
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [period]);
@@ -364,6 +374,30 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
             <StatCard label="Saldo de materia prima" value={`${n2(mp.saldoM3)} m³`} subValue={mp.saldoM3 < 0 ? "sobreconsumo" : "disponible"} icon={Scale} emphasis={mp.saldoM3 < 0 ? "error" : "success"} />
             <StatCard label="Pendiente de validar" value={`${n2(mp.pendienteM3)} m³`} subValue="no computa como saldo" icon={Clock} emphasis={mp.pendienteM3 > 0 ? "warning" : "neutral"} />
           </div>
+
+          {/* Conciliación: apertura (del cierre anterior) + movimientos = final (ADR-139 rollforward). */}
+          {concil && concil.materiaPrima.length > 0 && (
+            <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+              <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Conciliación del período · apertura → cierre</CardTitle>
+                <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Existencia de apertura {concil.fuenteApertura === "cierre" ? `(del cierre de ${concil.aperturaLabel})` : concil.fuenteApertura === "calculada" ? "(acumulada al inicio)" : "(sin cierre previo)"} + movimientos del período = existencia final. Así el saldo cuadra con el stock heredado.</p>
+              </div>
+              <table className="w-full text-sm">
+                <thead className="bg-[var(--surface-sunken)] text-left"><tr><Th>Especie</Th><Th className="text-right">Apertura (m³)</Th><Th className="text-right">+ Ingreso</Th><Th className="text-right">− Consumido</Th><Th className="text-right">= Final (m³)</Th></tr></thead>
+                <tbody>
+                  {concil.materiaPrima.map((s) => (
+                    <tr key={s.especie} className="border-t border-[var(--rule-soft)]">
+                      <td className="px-4 py-2 text-[var(--text-primary)]">{s.especie}{s.cites ? " · CITES" : ""}</td>
+                      <td className="px-4 py-2 text-right text-[var(--text-secondary)]">{n2(s.apertura)}</td>
+                      <td className="px-4 py-2 text-right text-[var(--data-success-700)]">{n2(s.ingreso)}</td>
+                      <td className="px-4 py-2 text-right text-[var(--text-secondary)]">{n2(s.consumido)}</td>
+                      <td className={`px-4 py-2 text-right font-bold ${s.negativa ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}`}>{n2(s.final)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Balance POR ESPECIE — es lo que se fiscaliza; el global solo resume. */}
           <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">

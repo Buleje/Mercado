@@ -81,3 +81,19 @@ es agregada y no expresable en un CHECK de Postgres.
 
 - **Cerrar:** `admin` / `owner` (gestión).
 - **Reabrir:** `owner` (más sensible; motivo auditado).
+
+## Rollforward — conciliación de período (2026-07-18)
+
+El snapshot de cierre no es solo un registro: es la **existencia de apertura** del
+período siguiente. `ForestCtpDB.conciliacionPeriodo(period)` compone
+**apertura + movimientos = existencia final** por especie y por producto:
+
+- **Apertura** = el cierre inmediatamente anterior a `from` (snapshot congelado,
+  `fuenteApertura: "cierre"`); si no hay cierre previo, se calcula acumulada hasta
+  el inicio (`"calculada"`); histórico sin `from` → `"sin_apertura"`.
+- Cierra el bug de que `saldos()` con filtro de período ignoraba el stock heredado
+  — un libro mensual que no arrancaba de una apertura no cuadraba ante OSINFOR.
+
+Endpoint `GET ?conciliacion=1`; UI en la vista Saldos (tabla apertura → ingreso −
+consumido → final). Verificado E2E: cerrar junio → conciliación de julio toma la
+apertura del cierre de junio y `final = apertura + ingreso − consumido` cuadra.
