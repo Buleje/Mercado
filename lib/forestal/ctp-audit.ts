@@ -72,7 +72,9 @@ export type CtpAuditAction =
   | "ctp_periodo_cerrar"
   | "ctp_periodo_reabrir"
   // Geolocalización de origen para el dossier EUDR (ADR-140)
-  | "ctp_origen_geo_set";
+  | "ctp_origen_geo_set"
+  // Valor de venta del despacho para el P&L (ADR-141)
+  | "ctp_venta_set";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no

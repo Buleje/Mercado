@@ -68,6 +68,8 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({ id: z.string().trim().min(1), action: z.literal("annul"), reason: z.string().trim().min(3).max(500) }),
   // Emitir la GTF de salida formal (serie autorizada ARFFS + correlativo auto).
   z.object({ id: z.string().trim().min(1), action: z.literal("emitir_gtf") }),
+  // Registrar el valor de venta del despacho para el P&L (ADR-141).
+  z.object({ id: z.string().trim().min(1), action: z.literal("set_venta"), valorVenta: z.number().min(0).max(9_999_999_999.99).nullable() }),
 ]);
 
 /** `?from`/`?to` = instantes ISO del período (lib/forestal/ctp-period.ts). Inválido → sin límite. */
@@ -100,6 +102,10 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
   try {
     if (url.searchParams.get("saldos") === "1") {
       return NextResponse.json({ saldos: await ForestCtpDB.saldos(auth.tenantId, period) });
+    }
+    // P&L del período: venta − COGS agregado (ADR-141).
+    if (url.searchParams.get("pnl") === "1") {
+      return NextResponse.json({ pnl: await ForestCtpDespachoDB.pnlDelPeriodo(auth.tenantId, period) });
     }
     // ADR-135 D3: despachos del período que no podrían emitir certificado.
     if (url.searchParams.get("traza") === "1") {
@@ -209,6 +215,10 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         return NextResponse.json({ error: result.reason, message }, { status: 422 });
       }
       return NextResponse.json({ gtf: result.gtf, correlativo: result.correlativo, yaEmitida: result.yaEmitida });
+    }
+    if (parsed.data.action === "set_venta") {
+      await ForestCtpDespachoDB.setValorVenta(auth.tenantId, parsed.data.id, parsed.data.valorVenta, auth.username ?? "unknown");
+      return NextResponse.json({ ok: true, margen: await ForestCtpDespachoDB.margenDeDespacho(auth.tenantId, parsed.data.id) });
     }
     return NextResponse.json({ entry: await ForestCtpDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown") });
   } catch (err) {

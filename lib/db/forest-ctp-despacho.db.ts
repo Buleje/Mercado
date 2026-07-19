@@ -30,6 +30,7 @@ import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { decidirMargen, type MargenMotivo } from "@/lib/forestal/ctp-pnl";
 
 const CACHE_PREFIX = "forest-ctp";
 /** 4 decimales — precisión forestal (volúmenes/cantidades). */
@@ -65,6 +66,37 @@ export interface CogsDespacho {
     costo: number | null;
     congelado: boolean;
   }[];
+}
+
+/** Margen de un despacho = venta − COGS (ADR-141). null si falta cualquiera. */
+export interface MargenDespacho {
+  valorVenta: number | null;
+  cogs: number | null;
+  /** venta − cogs. null (NUNCA 0) si falta la venta o el costo. */
+  margen: number | null;
+  /** margen / venta × 100. */
+  margenPct: number | null;
+  moneda: string;
+  /** Por qué el margen es null (sin_venta / o el motivo del COGS). */
+  motivo: MargenMotivo;
+}
+
+/** P&L agregado de un período (ADR-141). El margen cubre SOLO los completos. */
+export interface PnlPeriodo {
+  despachos: number;
+  /** Con venta Y costo conocidos → contribuyen al margen. */
+  completos: number;
+  sinVenta: number;
+  sinCosto: number;
+  ventasTotal: number;
+  cogsTotal: number;
+  /** Σ(venta − cogs) sobre los completos. */
+  margenTotal: number;
+  margenPct: number | null;
+  moneda: string;
+  porProducto: { producto: string; ventas: number; cogs: number; margen: number; margenPct: number | null }[];
+  /** Detalle por despacho: para editar la venta y ver el margen fila por fila. */
+  porDespacho: { id: string; lineNo: number; producto: string; gtfSalida: string | null; valorVenta: number | null; cogs: number | null; margen: number | null; margenPct: number | null; motivo: MargenDespacho["motivo"] }[];
 }
 
 export interface TrazabilidadDespacho {
@@ -378,6 +410,101 @@ export class ForestCtpDespachoDB {
       costoUnitario: declarado > 0 ? r2(cogs / declarado) : null,
       motivo: declarado > 0 ? "ok" : "sin_cantidad",
       detalle,
+    };
+  }
+
+  /**
+   * Margen de un despacho = valor de venta − COGS (ADR-141). Regla de oro: si
+   * falta la venta O el costo, el margen es null (NUNCA 0 — un 0 fingiría margen).
+   */
+  static async margenDeDespacho(tenantId: string, despachoEntryId: string): Promise<MargenDespacho> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [cogsR, despacho] = await Promise.all([
+      ForestCtpDespachoDB.cogsDeDespacho(tenantId, despachoEntryId),
+      prisma.forestCtpEntry.findFirst({ where: { id: despachoEntryId, tenantId, deletedAt: null }, select: { valorVenta: true } }),
+    ]);
+    const venta = despacho?.valorVenta != null ? Number(despacho.valorVenta) : null;
+    const { margen, margenPct, motivo } = decidirMargen(venta, cogsR.cogs, cogsR.motivo);
+    return { valorVenta: venta, cogs: cogsR.cogs, margen, margenPct, moneda: cogsR.moneda ?? "PEN", motivo };
+  }
+
+  /**
+   * Registra el valor de VENTA de un despacho (ADR-141). Es un dato COMERCIAL,
+   * no del acta de trazabilidad — por eso NO lo bloquea el cierre de período (la
+   * venta puede registrarse después de cerrar la producción del mes).
+   */
+  static async setValorVenta(tenantId: string, despachoEntryId: string, valorVenta: number | null, user = "unknown"): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (valorVenta != null && valorVenta < 0) throw new Error("El valor de venta no puede ser negativo");
+    const e = await prisma.forestCtpEntry.findFirst({ where: { id: despachoEntryId, tenantId, deletedAt: null }, select: { section: true, lineNo: true } });
+    if (!e) throw new Error("Despacho no encontrado");
+    if (e.section !== "despacho") throw new Error("El valor de venta solo aplica a una línea de despacho");
+    await prisma.forestCtpEntry.update({
+      where: { id: despachoEntryId, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
+      data: { valorVenta: valorVenta != null ? new Prisma.Decimal(valorVenta) : null },
+    });
+    auditCtp({
+      tenantId,
+      action: "ctp_venta_set",
+      entity: "ForestCtpEntry",
+      entityId: despachoEntryId,
+      detail: `Registró el valor de venta del despacho #${e.lineNo}: ${valorVenta != null ? `S/ ${valorVenta}` : "borrado"}`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+  }
+
+  /**
+   * P&L del período (ADR-141): venta − COGS agregado sobre los despachos vivos.
+   * El margen total cubre SOLO los "completos" (con venta Y costo conocidos); los
+   * que les falta venta o costo se cuentan aparte y NO se suman (no se inventa
+   * margen). Itera despacho por despacho reusando `margenDeDespacho`.
+   */
+  static async pnlDelPeriodo(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<PnlPeriodo> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const where: Prisma.ForestCtpEntryWhereInput = { tenantId, section: "despacho", deletedAt: null, status: "registrado" };
+    if (opts.fromDate || opts.toDate) {
+      where.entryDate = {};
+      if (opts.fromDate) where.entryDate.gte = opts.fromDate;
+      if (opts.toDate) where.entryDate.lte = opts.toDate;
+    }
+    const despachos = await prisma.forestCtpEntry.findMany({ where, orderBy: { lineNo: "asc" }, select: { id: true, lineNo: true, productType: true, speciesCommon: true, gtfNumber: true } });
+    const margenes = await Promise.all(despachos.map((d) => ForestCtpDespachoDB.margenDeDespacho(tenantId, d.id)));
+
+    let completos = 0, sinVenta = 0, sinCosto = 0, ventasTotal = 0, cogsTotal = 0, margenTotal = 0;
+    const monedas = new Set<string>();
+    const prod: Record<string, { producto: string; ventas: number; cogs: number; margen: number }> = {};
+    const porDespacho: PnlPeriodo["porDespacho"] = [];
+
+    despachos.forEach((d, i) => {
+      const m = margenes[i];
+      monedas.add(m.moneda);
+      const producto = `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`;
+      porDespacho.push({ id: d.id, lineNo: d.lineNo, producto, gtfSalida: d.gtfNumber ?? null, valorVenta: m.valorVenta, cogs: m.cogs, margen: m.margen, margenPct: m.margenPct, motivo: m.motivo });
+      if (m.margen == null) {
+        if (m.motivo === "sin_venta") sinVenta++; else sinCosto++;
+        return;
+      }
+      completos++;
+      ventasTotal += m.valorVenta ?? 0;
+      cogsTotal += m.cogs ?? 0;
+      margenTotal += m.margen;
+      prod[producto] ??= { producto, ventas: 0, cogs: 0, margen: 0 };
+      prod[producto].ventas += m.valorVenta ?? 0;
+      prod[producto].cogs += m.cogs ?? 0;
+      prod[producto].margen += m.margen;
+    });
+
+    return {
+      despachos: despachos.length,
+      completos, sinVenta, sinCosto,
+      ventasTotal: r2(ventasTotal), cogsTotal: r2(cogsTotal), margenTotal: r2(margenTotal),
+      margenPct: ventasTotal > 0 ? r2((margenTotal / ventasTotal) * 100) : null,
+      moneda: monedas.size === 1 ? [...monedas][0] : "PEN",
+      porProducto: Object.values(prod)
+        .map((p) => ({ ...p, ventas: r2(p.ventas), cogs: r2(p.cogs), margen: r2(p.margen), margenPct: p.ventas > 0 ? r2((p.margen / p.ventas) * 100) : null }))
+        .sort((a, b) => b.margen - a.margen),
+      porDespacho,
     };
   }
 

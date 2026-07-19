@@ -5316,6 +5316,10 @@ model ForestCtpEntry {
   costoProceso Decimal? @db.Decimal(12, 2)
   moneda       String?  @default("PEN")
 
+  /// Valor de VENTA del despacho (P&L, ADR-141). Solo aplica a section=despacho.
+  /// Sin esto no hay margen: null ⇒ margen desconocido, NUNCA 0 (regla de oro).
+  valorVenta Decimal? @db.Decimal(14, 2)
+
   /// Qué ingresos (y cuántos m³ de cada uno) alimentaron esta corrida (ADR-134 D5).
   consumos ForestCtpConsumo[]
 

@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   Building2,
+  Coins,
   FileSpreadsheet,
   FileText,
   Globe,
@@ -47,6 +48,7 @@ import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
 import CtpCierrePanel from "./CtpCierrePanel";
 import CtpEudrPanel from "./CtpEudrPanel";
+import CtpRentabilidadPanel from "./CtpRentabilidadPanel";
 import CtpImportModal from "./CtpImportModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpAsistente from "./CtpAsistente";
@@ -54,7 +56,7 @@ import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "analisis" | "ficha";
+type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "ficha";
 
 const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
   { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
@@ -65,6 +67,7 @@ const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string
   { key: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, hint: "Alertas del período" },
   { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar mes · bloquear el acta" },
   { key: "eudr", label: "EUDR", icon: Globe, hint: "Geolocalización + dossier UE" },
+  { key: "rentabilidad", label: "Rentabilidad", icon: Coins, hint: "Margen: venta − COGS" },
   { key: "analisis", label: "Análisis", icon: TrendingUp, hint: "Reorden + tendencias" },
   { key: "ficha", label: "Ficha CTP", icon: Building2, hint: "Identidad legal SERFOR" },
 ];
@@ -239,6 +242,7 @@ export default function CTPLibroOperaciones() {
       {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={setView} />}
       {view === "cierre" && <CtpCierrePanel />}
       {view === "eudr" && <CtpEudrPanel period={period} />}
+      {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
       {view === "analisis" && <CtpAnalisis />}
       {view === "ficha" && <CtpFichaEditor />}
 
