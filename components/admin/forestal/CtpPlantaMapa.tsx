@@ -181,7 +181,13 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
       LRef.current = L;
       const map = L.map(containerRef.current, { center: [BRAND_GEO.lat, BRAND_GEO.lng], zoom: 17, maxZoom: 22 });
       mapRef.current = map;
-      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: 18, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
+      // maxNativeZoom 17 (no 18): Esri World_Imagery NO tiene imagen a z18 en
+      // zonas remotas como Ciudad Constitución / concesiones forestales — a z18+
+      // devuelve el tile gris "Map data not yet available". Con 17, Leaflet pide
+      // el z17 real (última resolución disponible) y lo UPSCALEA para z18-22 →
+      // se ve borroso al acercar mucho, pero nunca el placeholder. Las zonas
+      // dibujadas son vectores (nítidas igual). Verificado en navegador 2026-07-19.
+      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: 17, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 22, maxNativeZoom: 19, attribution: "© OpenStreetMap" });
       map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
         const ll: [number, number] = [e.latlng.lat, e.latlng.lng];
