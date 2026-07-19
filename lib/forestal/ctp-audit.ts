@@ -79,7 +79,9 @@ export type CtpAuditAction =
   | "ctp_venta_set"
   // Zonas físicas del aserradero para el Mapa de Planta (ADR-142)
   | "ctp_planta_zona_set"
-  | "ctp_planta_zona_delete";
+  | "ctp_planta_zona_delete"
+  // Ubicación de una troza/ingreso en una zona de la planta (ADR-142 follow-up)
+  | "ctp_planta_asignar";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no

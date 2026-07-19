@@ -4,6 +4,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { ForestPlantaZonaDB } from "@/lib/db/forest-planta-zona.db";
+import { ForestPlantaAsignacionDB } from "@/lib/db/forest-planta-asignacion.db";
+import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { isZonaTipo } from "@/lib/forestal/planta-zona-types";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -43,8 +45,41 @@ async function guard(req: NextRequest) {
 export const GET = withApiHandler("forestal-ctp-planta", async (req: NextRequest) => {
   const auth = await guard(req);
   if (auth instanceof NextResponse) return auth;
-  const zonas = await ForestPlantaZonaDB.list(auth.tenantId);
-  return NextResponse.json({ zonas });
+  const [zonas, source, asignaciones] = await Promise.all([
+    ForestPlantaZonaDB.list(auth.tenantId),
+    ForestCtpDB.availableSource(auth.tenantId, "produccion"),
+    ForestPlantaAsignacionDB.getMap(auth.tenantId),
+  ]);
+  // Trozas ubicables: ingresos de materia prima con saldo sin consumir.
+  const trozas = source.map((t) => ({
+    id: t.id,
+    gtf: t.code,
+    species: t.species,
+    cites: t.cites,
+    disponible: t.disponible,
+    entryDate: t.entryDate instanceof Date ? t.entryDate.toISOString() : String(t.entryDate),
+  }));
+  return NextResponse.json({ zonas, trozas, asignaciones });
+});
+
+const asignarSchema = z.object({
+  entryId: z.string().trim().min(1),
+  zonaId: z.string().trim().min(1).nullable(),
+});
+
+export const PUT = withApiHandler("forestal-ctp-planta-asignar", async (req: NextRequest) => {
+  const auth = await guard(req);
+  if (auth instanceof NextResponse) return auth;
+  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
+  if (rl) return rl;
+
+  let body: unknown;
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
+  const parsed = asignarSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
+
+  await ForestPlantaAsignacionDB.set(auth.tenantId, parsed.data.entryId, parsed.data.zonaId, auth.username ?? "unknown");
+  return NextResponse.json({ ok: true });
 });
 
 async function upsert(req: NextRequest) {
@@ -74,5 +109,7 @@ export const DELETE = withApiHandler("forestal-ctp-planta-delete", async (req: N
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id_required" }, { status: 400 });
   const ok = await ForestPlantaZonaDB.remove(auth.tenantId, id, auth.username ?? "unknown");
+  // Las trozas ubicadas en la zona borrada quedan "sin ubicar" (no huérfanas).
+  if (ok) await ForestPlantaAsignacionDB.clearForZona(auth.tenantId, id, auth.username ?? "unknown");
   return NextResponse.json({ ok });
 });

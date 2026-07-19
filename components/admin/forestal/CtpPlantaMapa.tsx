@@ -20,13 +20,16 @@ import { ZONA_TIPOS, zonaTipoMeta, type PlantaZona, type ZonaTipo } from "@/lib/
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 const fmtArea = (m2: number) => (m2 >= 10000 ? `${(m2 / 10000).toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha` : `${Math.round(m2).toLocaleString("es-PE")} m²`);
 
-/** HTML de la etiqueta sobre cada zona: código + tipo + área. Scrim oscuro para contraste sobre satélite. */
-function labelHtml(z: PlantaZona): string {
+/** HTML de la etiqueta sobre cada zona: código + tipo + área + inventario ubicado. */
+function labelHtml(z: PlantaZona, inv?: ZonaInv): string {
   const meta = zonaTipoMeta(z.tipo);
   const header = `<div style="font-weight:800;font-size:12px">${escapeHtml(z.codigo)}${z.areaM2 != null ? ` · ${fmtArea(z.areaM2)}` : ""}</div><div style="font-weight:700;color:${meta.ring}">${escapeHtml(meta.label)}</div>`;
   const sub = z.nombre ? `<div style="opacity:.85">${escapeHtml(z.nombre)}</div>` : "";
-  return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${meta.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${header}${sub}</div>`;
+  const invLine = inv && inv.count > 0 ? `<div style="color:var(--accent-glow,#5eead4);font-weight:700">${inv.count} ${inv.count === 1 ? "troza" : "trozas"} · ${inv.m3.toLocaleString("es-PE", { maximumFractionDigits: 2 })} m³</div>` : "";
+  return `<div style="transform:translate(-50%,-50%);display:inline-block;white-space:nowrap;border-left:3px solid ${meta.ring};background:rgba(15,23,42,.82);color:#fff;padding:3px 8px;border-radius:8px;font:600 11px/1.4 system-ui;box-shadow:0 1px 3px rgba(0,0,0,.5)">${header}${sub}${invLine}</div>`;
 }
+
+export interface ZonaInv { count: number; m3: number }
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -59,7 +62,7 @@ function drawMetrics(v: [number, number][]): { area: number; perim: number } {
   return { area: v.length >= 3 ? geodesicAreaM2(v) : 0, perim };
 }
 
-export default function CtpPlantaMapa({ zonas, onChanged }: { zonas: PlantaZona[]; onChanged: () => void }) {
+export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas: PlantaZona[]; inventario?: Record<string, ZonaInv>; onChanged: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- instancias Leaflet (import dinámico)
   const LRef = useRef<any>(null);
@@ -115,6 +118,8 @@ export default function CtpPlantaMapa({ zonas, onChanged }: { zonas: PlantaZona[
   const drawingRef = useRef(false);
   const zonasRef = useRef(zonas);
   zonasRef.current = zonas;
+  const invRef = useRef(inventario);
+  invRef.current = inventario;
   const onFichaRef = useRef<(z: PlantaZona) => void>(() => {});
   onFichaRef.current = (z) => setFicha(z);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -150,7 +155,7 @@ export default function CtpPlantaMapa({ zonas, onChanged }: { zonas: PlantaZona[
           else onFichaRef.current(z);
         });
         poly.addTo(polysRef.current);
-        if (showLabelsRef.current) L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: labelHtml(z), iconSize: [0, 0] }) }).addTo(polysRef.current);
+        if (showLabelsRef.current) L.marker(centroid(pts), { interactive: false, icon: L.divIcon({ className: "", html: labelHtml(z, invRef.current?.[z.id]), iconSize: [0, 0] }) }).addTo(polysRef.current);
         pts.forEach((pt) => bounds.push(pt));
       } else if (z.lat != null && z.lng != null) {
         // Zona sin polígono: marcador simple.
@@ -198,6 +203,8 @@ export default function CtpPlantaMapa({ zonas, onChanged }: { zonas: PlantaZona[
   }, []);
 
   useEffect(() => { if (ready) renderPolys(); }, [zonas, ready, renderPolys]);
+  // Re-pintar etiquetas cuando cambia el inventario ubicado (sin re-encuadrar).
+  useEffect(() => { if (ready) renderPolys(false); }, [inventario, ready, renderPolys]);
 
   useEffect(() => {
     const map = mapRef.current;
