@@ -41,4 +41,22 @@ export const AdminDevicesDB = {
       lastSeenAt: r.lastSeenAt.toISOString(),
     }));
   },
+
+  /**
+   * Acceso MÁS RECIENTE conocido de la cuenta (para el aviso "Último acceso" al
+   * entrar). Debe llamarse ANTES de que `alertNewDeviceLogin` haga el upsert del
+   * login actual — así devuelve el acceso ANTERIOR, no el que se está haciendo.
+   * Null si es el primer login de la cuenta.
+   */
+  async getLastLogin(
+    tenantId: string,
+    username: string,
+  ): Promise<{ lastSeenAt: string; ip: string | null } | null> {
+    const row = await prisma.adminLoginDevice.findFirst({
+      where: { tenantId, username },
+      orderBy: { lastSeenAt: "desc" },
+      select: { lastSeenAt: true, ip: true },
+    });
+    return row ? { lastSeenAt: row.lastSeenAt.toISOString(), ip: row.ip } : null;
+  },
 };

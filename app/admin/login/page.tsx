@@ -20,6 +20,7 @@ import {
   TrendingUp, ShoppingBag, Wallet, Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { getKeepAlive, setKeepAlive } from "@/lib/session-keepalive";
 
 // Brandon mayo 14 2026 v3: layout editorial con dashboard preview.
 //   - Lado izquierdo: form de login dentro de una card flotante, brand
@@ -69,6 +70,10 @@ export default function AdminLoginPage() {
   const [pw, setPw] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  // B2 "confiar en este equipo": activa el keep-alive (sesión no se cae mientras
+  // trabajás en ESTE dispositivo). Reusa lib/session-keepalive — NO debilita
+  // tokens ni saltea 2FA. Pre-marcado si ya estaba activo.
+  const [trustDevice, setTrustDevice] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bypassLoading, setBypassLoading] = useState(false);
@@ -113,6 +118,9 @@ export default function AdminLoginPage() {
       setUsername(saved);
       setRememberMe(true);
     }
+
+    // Pre-marcar "confiar en este equipo" si el keep-alive ya estaba activo.
+    setTrustDevice(getKeepAlive());
 
     // SECURITY 2026-05-16 (P0 fix): eliminado el flujo de auto-login con
     // password desde localStorage. Antes leía `sa-cred-${tenantParam}` con
@@ -207,6 +215,8 @@ export default function AdminLoginPage() {
           tenantId?: string;
           tenantSlug?: string;
           mustChangePassword?: boolean;
+          lastLoginAt?: string | null;
+          lastLoginIp?: string | null;
         };
 
         // ── Credencial en varias tiendas: mostrar selector ──────────────
@@ -229,12 +239,28 @@ export default function AdminLoginPage() {
           return;
         }
 
-        if (rememberMe) localStorage.setItem("login-remember-username", username);
+        if (rememberMe) localStorage.setItem("login-remember-username", username.trim());
         else localStorage.removeItem("login-remember-username");
+
+        // B2: aplicar "confiar en este equipo" a la sesión recién creada
+        // (keep-alive proactivo mientras trabajás; nada de saltar 2FA).
+        setKeepAlive(trustDevice);
 
         if (data.tenantSlug) {
           localStorage.setItem("active-tenant-slug", data.tenantSlug);
           sessionStorage.setItem("active-tenant-slug", data.tenantSlug);
+        }
+        // B3 "último acceso": guardamos el ingreso anterior para que el panel
+        // lo muestre al entrar (un solo aviso, se limpia al mostrarse).
+        if (data.lastLoginAt) {
+          try {
+            sessionStorage.setItem(
+              "bsm-last-login",
+              JSON.stringify({ at: data.lastLoginAt, ip: data.lastLoginIp ?? null }),
+            );
+          } catch {
+            // sessionStorage puede fallar (modo privado): sin aviso, sin bug.
+          }
         }
         // ── Contraseña temporal (reset del superadmin): forzar cambio (ADR-133) ──
         if (data.mustChangePassword) {
@@ -437,10 +463,6 @@ export default function AdminLoginPage() {
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
-                  data-bwignore="true"
-                  data-1p-ignore="true"
-                  data-lpignore="true"
-                  data-form-type="other"
                 />
               </div>
             </div>
@@ -468,10 +490,6 @@ export default function AdminLoginPage() {
                   className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  data-bwignore="true"
-                  data-1p-ignore="true"
-                  data-lpignore="true"
-                  data-form-type="other"
                   required
                 />
                 <button
@@ -522,6 +540,21 @@ export default function AdminLoginPage() {
                 ¿Olvidaste tu contraseña?
               </a>
             </div>
+
+            {/* B2: confiar en este equipo → mantiene la sesión activa mientras
+                trabajás (keep-alive). No debilita seguridad ni saltea 2FA. */}
+            <label className="flex items-start gap-2.5 cursor-pointer select-none pt-0.5">
+              <input
+                type="checkbox"
+                checked={trustDevice}
+                onChange={(e) => setTrustDevice(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--rule-base)] text-[var(--accent)] focus:ring-[var(--accent)]/30 cursor-pointer"
+              />
+              <span className="text-sm text-[var(--text-secondary)]">
+                <span className="font-semibold text-[var(--text-primary)]">Confiar en este equipo</span>
+                {" "}— mantené la sesión activa mientras trabajás y no vuelvas al login tan seguido.
+              </span>
+            </label>
 
             {reason && !error && retryAfter === 0 && (
               <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[var(--accent)]/8 border border-[var(--accent)]/20 text-sm font-semibold text-[var(--text-secondary)]">

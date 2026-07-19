@@ -30,6 +30,7 @@ import {
 } from "./_hooks";
 
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
+import { LastLoginToast } from "@/components/admin/LastLoginToast";
 import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 // TrialExpiredGuard se mantiene estático: es un gate de negocio que bloquea el
@@ -284,6 +285,8 @@ function AdminPage() {
   return (
     <TrialExpiredGuard activeTab={tab}>
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-dark-fallback>
+      {/* B3: aviso "Último acceso" al entrar (lee sessionStorage del login) */}
+      <LastLoginToast />
       {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}
       <TrialCountdownBannerLoader />
 

@@ -12,6 +12,7 @@ import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
 import { AdminTotpDB } from "@/lib/db/admin-totp.db";
 import { alertNewDeviceLogin } from "@/lib/auth/security-alerts";
+import { AdminDevicesDB } from "@/lib/db/admin-devices.db";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
@@ -252,7 +253,22 @@ export async function POST(req: Request) {
       mustChangePassword = rows[0]?.mustChangePassword ?? false;
     } catch { /* si falla, no bloquear el login */ }
 
-    const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId: matchedTenantId, tenantSlug, mustChangePassword });
+    // B3 "último acceso": leer el ingreso ANTERIOR (antes de que
+    // alertNewDeviceLogin actualice el lastSeenAt de este dispositivo) para
+    // que el front lo muestre al entrar ("¿no fuiste vos?"). Best-effort.
+    const lastLogin = await AdminDevicesDB.getLastLogin(matchedTenantId, u.username).catch(() => null);
+
+    const response = NextResponse.json({
+      ok: true,
+      role: u.role,
+      name: u.name,
+      onboardingPending,
+      tenantId: matchedTenantId,
+      tenantSlug,
+      mustChangePassword,
+      lastLoginAt: lastLogin?.lastSeenAt ?? null,
+      lastLoginIp: lastLogin?.ip ?? null,
+    });
     response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
     response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
     response.cookies.set("active-tenant", matchedTenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
