@@ -37,6 +37,9 @@ export interface ZonaInv { trozas: number; m3: number; productos: number; despac
 
 const SAT = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const STREET = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+// Última resolución real del satélite Esri en zonas remotas (Ciudad Constitución /
+// concesiones). Más allá se upscalea (zoom digital) — el badge lo avisa.
+const SAT_MAX_NATIVE = 17;
 
 function parseCoordText(text: string): [number, number][] {
   const pts: [number, number][] = [];
@@ -96,6 +99,8 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
   const [drawPerim, setDrawPerim] = useState(0);
   const [layer, setLayer] = useState<"sat" | "street">("sat");
   const [fullscreen, setFullscreen] = useState(false);
+  // Zoom actual — para avisar cuando se pasa el detalle real del satélite.
+  const [zoom, setZoom] = useState(17);
   const [pending, setPending] = useState<[number, number][] | null>(null);
   const [coordModal, setCoordModal] = useState(false);
   const [ficha, setFicha] = useState<PlantaZona | null>(null);
@@ -181,13 +186,14 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
       LRef.current = L;
       const map = L.map(containerRef.current, { center: [BRAND_GEO.lat, BRAND_GEO.lng], zoom: 17, maxZoom: 22 });
       mapRef.current = map;
+      map.on("zoomend", () => setZoom(map.getZoom()));
       // maxNativeZoom 17 (no 18): Esri World_Imagery NO tiene imagen a z18 en
       // zonas remotas como Ciudad Constitución / concesiones forestales — a z18+
       // devuelve el tile gris "Map data not yet available". Con 17, Leaflet pide
       // el z17 real (última resolución disponible) y lo UPSCALEA para z18-22 →
       // se ve borroso al acercar mucho, pero nunca el placeholder. Las zonas
       // dibujadas son vectores (nítidas igual). Verificado en navegador 2026-07-19.
-      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: 17, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
+      satRef.current = L.tileLayer(SAT, { maxZoom: 22, maxNativeZoom: SAT_MAX_NATIVE, attribution: "Tiles © Esri, Maxar, Earthstar Geographics" }).addTo(map);
       streetRef.current = L.tileLayer(STREET, { maxZoom: 22, maxNativeZoom: 19, attribution: "© OpenStreetMap" });
       map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
         const ll: [number, number] = [e.latlng.lat, e.latlng.lng];
@@ -467,6 +473,14 @@ export default function CtpPlantaMapa({ zonas, inventario, onChanged }: { zonas:
           </div>
         )}
         {cursor && <div className="pointer-events-none absolute bottom-3 right-3 z-[500] rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{Number(cursor.lat).toFixed(5)}, {Number(cursor.lng).toFixed(5)}</div>}
+        {/* Aviso de zoom digital: el satélite no tiene más detalle a este zoom en
+            zonas remotas — la imagen se ve borrosa (upscale), NO está rota. */}
+        {ready && layer === "sat" && zoom > SAT_MAX_NATIVE && (
+          <div className="pointer-events-none absolute bottom-3 left-3 z-[500] inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)]/40 bg-[var(--surface-raised)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] shadow-[var(--shadow-md)]">
+            <Layers className="h-3.5 w-3.5 text-[var(--data-warning-600,var(--data-warning-500))]" />
+            Zoom digital · máximo detalle satelital
+          </div>
+        )}
       </div>
       {editErr && <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-xs font-bold text-[var(--data-error-700)]">{editErr}</p>}
       {mapMsg && <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)]">{mapMsg}<button type="button" onClick={() => setMapMsg(null)} className="shrink-0 text-[var(--data-warning-700)]"><X className="h-4 w-4" /></button></p>}
