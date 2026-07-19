@@ -19,6 +19,8 @@ import {
   cacaoRendimiento,
   cacaoVentaTotalPen,
 } from "@/lib/cacao/cacao-quality";
+import { CacaoCierreDB } from "./cacao-cierre.db";
+import type { CacaoSnapshot } from "@/lib/cacao/cacao-cierre-types";
 
 const CACHE_PREFIX = "cacao";
 const dec = (v: number | string | null | undefined) =>
@@ -288,10 +290,51 @@ export class CacaoDB {
     return prisma.cacaoLote.findMany({ where, orderBy: { fecha: "desc" }, take: 500 });
   }
 
+  /**
+   * Guard de cierre de período (ADR-303): tira si `fecha` cae en un mes cerrado.
+   * No-op si no hay cierres. Lo llaman los write-paths del cacao.
+   */
+  private static async assertCampañaAbierta(tenantId: string, fecha: Date | null | undefined, accion: string): Promise<void> {
+    const cerrado = await CacaoCierreDB.closedPeriodOf(tenantId, fecha ?? new Date());
+    if (cerrado) throw new Error(`El período ${cerrado.label} está cerrado: no se puede ${accion} en un mes cerrado. Reabrí el período para corregir.`);
+  }
+
+  /**
+   * Movimientos del cacao en un rango (ADR-303): acopio, ventas, mermas y stock.
+   * Con `{toDate}` = acumulado hasta esa fecha (existencia de cierre / apertura);
+   * con `{fromDate,toDate}` = movimientos del propio mes (para el acta del cierre).
+   */
+  static async movimientosPeriodo(tenantId: string, range?: { from?: Date; to?: Date }): Promise<CacaoSnapshot & { lotes: number; ventas: number; montoVentasPen: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const w = cacaoFechaWhere(range);
+    const [lotes, ventas, ajustes] = await Promise.all([
+      prisma.cacaoLote.findMany({ where: { tenantId, deletedAt: null, status: "registrado", ...w }, select: { pesoKg: true, montoPagado: true, grado: true } }),
+      safeVenta(() => prisma.cacaoVenta.findMany({ where: { tenantId, deletedAt: null, status: "registrado", ...w }, select: { pesoKg: true, totalPen: true, montoCobrado: true } }), [] as { pesoKg: Prisma.Decimal | null; totalPen: Prisma.Decimal | null; montoCobrado: Prisma.Decimal | null }[]),
+      prisma.cacaoAjusteInventario.findMany({ where: { tenantId, deletedAt: null, status: "registrado", ...w }, select: { tipo: true, cantidadKg: true } }),
+    ]);
+    const r2 = (x: number) => Math.round(x * 100) / 100;
+    const sum = (arr: unknown[], f: (x: never) => Prisma.Decimal | null) => arr.reduce((a: number, x) => a + (f(x as never) ? Number(f(x as never)) : 0), 0);
+    const acopioKg = sum(lotes, (l: { pesoKg: Prisma.Decimal | null }) => l.pesoKg);
+    const ventasKg = sum(ventas, (v: { pesoKg: Prisma.Decimal | null }) => v.pesoKg);
+    // Mermas = reducciones de stock (merma/perdida/muestra → signo negativo).
+    const mermasKg = ajustes.reduce((a, x) => a + (cacaoAjusteSigno(x.tipo) < 0 ? Number(x.cantidadKg) : 0), 0);
+    const stockKg = r2(acopioKg - ventasKg - mermasKg);
+    const porGradoMap = new Map<string, number>();
+    for (const l of lotes) { const g = l.grado ?? "sin grado"; porGradoMap.set(g, (porGradoMap.get(g) ?? 0) + Number(l.pesoKg ?? 0)); }
+    return {
+      stockKg, acopioKg: r2(acopioKg), ventasKg: r2(ventasKg), mermasKg: r2(mermasKg),
+      pagadoProductores: r2(sum(lotes, (l: { montoPagado: Prisma.Decimal | null }) => l.montoPagado)),
+      cobradoVentas: r2(sum(ventas, (v: { montoCobrado: Prisma.Decimal | null }) => v.montoCobrado)),
+      porGrado: [...porGradoMap.entries()].map(([grado, kg]) => ({ grado, kg: r2(kg) })).sort((a, b) => b.kg - a.kg),
+      lotes: lotes.length, ventas: ventas.length, montoVentasPen: r2(sum(ventas, (v: { totalPen: Prisma.Decimal | null }) => v.totalPen)),
+    };
+  }
+
   static async createLote(tenantId: string, input: LoteInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (input.pesoKg == null || Number(input.pesoKg) <= 0) throw new Error("pesoKg must be > 0");
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
+    await CacaoDB.assertCampañaAbierta(tenantId, input.fecha, "registrar un lote");
 
     let loteCode = input.loteCode?.trim() || null;
     if (!loteCode) {
@@ -358,6 +401,8 @@ export class CacaoDB {
   static async annulLote(tenantId: string, id: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");
+    const curLote = await prisma.cacaoLote.findFirst({ where: { id, tenantId }, select: { fecha: true } });
+    await CacaoDB.assertCampañaAbierta(tenantId, curLote?.fecha, "anular un lote");
     const l = await prisma.cacaoLote.update({
       where: { id, tenantId } satisfies Prisma.CacaoLoteWhereUniqueInput,
       data: { status: "anulado", annulledReason: reason.trim() },
@@ -1651,6 +1696,7 @@ export class CacaoDB {
     if (!(prisma as { cacaoVenta?: unknown }).cacaoVenta) throw new Error("ventas_no_disponible");
     if (input.pesoKg == null || Number(input.pesoKg) <= 0) throw new Error("pesoKg must be > 0");
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
+    await CacaoDB.assertCampañaAbierta(tenantId, input.fecha, "registrar una venta");
     const year = (input.fecha ?? new Date()).getUTCFullYear();
     const count = await prisma.cacaoVenta.count({
       where: { tenantId, ventaCode: { startsWith: `V-${year}-` } },
@@ -1750,6 +1796,8 @@ export class CacaoDB {
   static async annulVenta(tenantId: string, id: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!(prisma as { cacaoVenta?: unknown }).cacaoVenta) throw new Error("ventas_no_disponible");
+    const curVenta = await prisma.cacaoVenta.findFirst({ where: { id, tenantId }, select: { fecha: true } });
+    await CacaoDB.assertCampañaAbierta(tenantId, curVenta?.fecha, "anular una venta");
     const v = await prisma.cacaoVenta.update({
       where: { id, tenantId } satisfies Prisma.CacaoVentaWhereUniqueInput,
       data: { status: "anulado", annulledReason: reason?.trim() || null },
@@ -1828,6 +1876,7 @@ export class CacaoDB {
     if (input.cantidadKg == null || Number(input.cantidadKg) <= 0)
       throw new Error("cantidadKg must be > 0");
     if (!input.motivo?.trim()) throw new Error("motivo is required");
+    await CacaoDB.assertCampañaAbierta(tenantId, input.fecha, "registrar un ajuste");
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
     const a = await prisma.cacaoAjusteInventario.create({
       data: {

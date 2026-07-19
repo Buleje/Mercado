@@ -55,6 +55,7 @@ import CacaoProductores from "./CacaoProductores";
 import CacaoLiquidaciones from "./CacaoLiquidaciones";
 import CacaoMapa from "./CacaoMapa";
 import CacaoCertificacion from "./CacaoCertificacion";
+import CacaoCierrePanel from "./CacaoCierrePanel";
 import CacaoCampo from "./CacaoCampo";
 import CacaoVentas from "./CacaoVentas";
 import CacaoAlertsBell from "./CacaoAlertsBell";
@@ -774,6 +775,8 @@ export default function CacaoAcopio() {
 
       {/* CERTIFICACIÓN — cumplimiento EUDR (geolocalización) + certificaciones */}
       {view === "certificacion" && <CacaoCertificacion />}
+
+      {view === "cierre" && <CacaoCierrePanel />}
 
       {/* CAMPO — maqueta de la chacra en grilla + labores por sección */}
       {view === "campo" && <CacaoCampo />}

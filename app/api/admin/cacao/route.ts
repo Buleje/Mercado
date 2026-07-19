@@ -434,6 +434,10 @@ export async function POST(req: NextRequest) {
         { status: 503 },
       );
     }
+    // Cierre de período (ADR-303): el mes está cerrado → 422 con el motivo.
+    if (msg.includes("está cerrado")) {
+      return NextResponse.json({ error: "periodo_cerrado", message: msg }, { status: 422 });
+    }
     logger.error("[cacao.POST] failed", { error: msg, tenantId: g.auth.tenantId, type });
     return NextResponse.json({ error: "internal_error", message: msg }, { status: 500 });
   }
@@ -607,6 +611,9 @@ export async function PATCH(req: NextRequest) {
         },
         { status: 503 },
       );
+    }
+    if (msg.includes("está cerrado")) {
+      return NextResponse.json({ error: "periodo_cerrado", message: msg }, { status: 422 });
     }
     logger.error("[cacao.PATCH] failed", { error: msg, tenantId: g.auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

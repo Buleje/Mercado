@@ -6,13 +6,13 @@
  */
 
 import {
-  PackageCheck, Droplets, Warehouse, Coins, Users, BarChart3, Newspaper, Sparkles, Activity, HandCoins, MapPin, ShieldCheck, Trees,
+  PackageCheck, Droplets, Warehouse, Coins, Users, BarChart3, Newspaper, Sparkles, Activity, HandCoins, MapPin, ShieldCheck, Trees, Lock,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
 export type CacaoView =
   | "campo" | "acopio" | "beneficio" | "inventario" | "ventas"
-  | "productores" | "liquidaciones" | "mapa" | "certificacion" | "resumen" | "mercado" | "noticias" | "asesor";
+  | "productores" | "liquidaciones" | "mapa" | "certificacion" | "cierre" | "resumen" | "mercado" | "noticias" | "asesor";
 
 export type CacaoViewDef = { key: CacaoView; label: string; icon: LucideIcon; hint: string };
 export type CacaoViewGroup = { id: string; label: string; views: CacaoViewDef[] };
@@ -37,6 +37,7 @@ export const CACAO_VIEW_GROUPS: CacaoViewGroup[] = [
       { key: "liquidaciones", label: "Liquidaciones", icon: HandCoins, hint: "Pagos al productor" },
       { key: "mapa", label: "Mapa", icon: MapPin, hint: "Parcelas geolocalizadas" },
       { key: "certificacion", label: "Certificación", icon: ShieldCheck, hint: "Cumplimiento EUDR + certs" },
+      { key: "cierre", label: "Cierre", icon: Lock, hint: "Cerrar campaña · acta inmutable" },
       { key: "resumen", label: "Resumen", icon: BarChart3, hint: "KPIs de campaña" },
     ],
   },
