@@ -10,7 +10,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CardTitle, StatCard } from "@buleje/design-system";
-import { AlertCircle, CheckCircle2, Coins, Loader2, TrendingUp, Wallet } from "@buleje/design-system/icons";
+import { AlertCircle, Award, CheckCircle2, Coins, Loader2, Sparkles, TrendingDown, TrendingUp, Wallet } from "@buleje/design-system/icons";
+import { BulejeWaterfallChart, type WaterfallStep } from "@/components/ui-system/charts";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
@@ -71,6 +72,22 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
   if (error && !pnl) return <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Error:</strong> {error}</div></div>;
   if (!pnl) return <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando P&L…</p>;
 
+  // Ranking + insight: qué producto deja plata y cuál la pierde. Se ordena por
+  // margen (desc); el detalle de la tabla usa una barra proporcional al mayor
+  // margen absoluto para leer la magnitud de un vistazo.
+  const ranked = [...pnl.porProducto].sort((a, b) => b.margen - a.margen);
+  const best = ranked[0] ?? null;
+  const worst = ranked.length > 1 ? ranked[ranked.length - 1] : null;
+  const maxAbsMargen = Math.max(1, ...ranked.map((p) => Math.abs(p.margen)));
+
+  // Cascada del P&L: Ventas − COGS = Margen (solo con despachos completos).
+  const waterfall: WaterfallStep[] = [
+    { label: "Ventas", value: pnl.ventasTotal, type: "positive" },
+    { label: "COGS", value: -pnl.cogsTotal, type: "negative" },
+    { label: "Margen", value: pnl.margenTotal, type: "total" },
+  ];
+  const cur = pnl.moneda === "PEN" ? "S/" : pnl.moneda;
+
   return (
     <div className="space-y-5">
       {error && <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div>{error}</div></div>}
@@ -87,6 +104,34 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
         <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-xs text-[var(--data-warning-700)]">El margen cubre solo los {pnl.completos} despachos con venta Y costo conocidos. {pnl.sinVenta} sin valor de venta y {pnl.sinCosto} sin costo (falta factura o atribución) NO se suman — no se inventa margen.</p>
       )}
 
+      {/* Insight accionable: mejor y peor producto del período. */}
+      {pnl.completos > 0 && best && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <span className="inline-flex items-center gap-2 text-sm">
+            <Sparkles className="h-4 w-4 shrink-0 text-[var(--data-success-600)]" />
+            <span className="text-[var(--text-tertiary)]">Más rentable:</span>
+            <strong className="text-[var(--text-primary)]">{best.producto}</strong>
+            <span className="font-bold text-[var(--data-success-700)]">{money(best.margen, pnl.moneda)}{best.margenPct != null ? ` · ${pct(best.margenPct)}` : ""}</span>
+          </span>
+          {worst && (
+            <span className="inline-flex items-center gap-2 text-sm">
+              {worst.margen < 0 ? <TrendingDown className="h-4 w-4 shrink-0 text-[var(--data-error-600)]" /> : <TrendingUp className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />}
+              <span className="text-[var(--text-tertiary)]">{worst.margen < 0 ? "Pierde plata:" : "Menor margen:"}</span>
+              <strong className="text-[var(--text-primary)]">{worst.producto}</strong>
+              <span className={`font-bold ${worst.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-secondary)]"}`}>{money(worst.margen, pnl.moneda)}{worst.margenPct != null ? ` · ${pct(worst.margenPct)}` : ""}</span>
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Cascada del P&L: Ventas − COGS = Margen, de un vistazo. */}
+      {pnl.completos > 0 && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Cómo se compone el margen</CardTitle>
+          <BulejeWaterfallChart steps={waterfall} currency={cur} height={230} />
+        </div>
+      )}
+
       {/* Por producto */}
       {pnl.porProducto.length > 0 && (
         <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
@@ -95,13 +140,21 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase text-[var(--text-tertiary)]"><tr><th className="py-1.5 pr-2 font-bold">Producto</th><th className="py-1.5 px-2 text-right font-bold">Ventas</th><th className="py-1.5 px-2 text-right font-bold">COGS</th><th className="py-1.5 px-2 text-right font-bold">Margen</th><th className="py-1.5 pl-2 text-right font-bold">%</th></tr></thead>
               <tbody>
-                {pnl.porProducto.map((p, i) => (
+                {ranked.map((p, i) => (
                   <tr key={i} className="border-t border-[var(--rule-soft)]">
-                    <td className="py-1.5 pr-2 text-[var(--text-primary)]">{p.producto}</td>
-                    <td className="py-1.5 px-2 text-right text-[var(--text-secondary)]">{money(p.ventas, pnl.moneda)}</td>
-                    <td className="py-1.5 px-2 text-right text-[var(--text-secondary)]">{money(p.cogs, pnl.moneda)}</td>
-                    <td className={`py-1.5 px-2 text-right font-bold ${p.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}`}>{money(p.margen, pnl.moneda)}</td>
-                    <td className="py-1.5 pl-2 text-right text-[var(--text-secondary)]">{pct(p.margenPct)}</td>
+                    <td className="py-1.5 pr-2 align-top">
+                      <div className="flex items-center gap-1.5">
+                        {i === 0 && ranked.length > 1 && p.margen > 0 && <Award className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" aria-label="más rentable" />}
+                        <span className="text-[var(--text-primary)]">{p.producto}</span>
+                      </div>
+                      <div className="mt-1 h-1.5 w-full max-w-[160px] overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                        <div className={`h-full rounded-full ${p.margen < 0 ? "bg-[var(--data-error-500)]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${Math.max(4, (Math.abs(p.margen) / maxAbsMargen) * 100)}%` }} />
+                      </div>
+                    </td>
+                    <td className="py-1.5 px-2 text-right align-top text-[var(--text-secondary)]">{money(p.ventas, pnl.moneda)}</td>
+                    <td className="py-1.5 px-2 text-right align-top text-[var(--text-secondary)]">{money(p.cogs, pnl.moneda)}</td>
+                    <td className={`py-1.5 px-2 text-right align-top font-bold ${p.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--text-primary)]"}`}>{money(p.margen, pnl.moneda)}</td>
+                    <td className="py-1.5 pl-2 text-right align-top text-[var(--text-secondary)]">{pct(p.margenPct)}</td>
                   </tr>
                 ))}
               </tbody>
