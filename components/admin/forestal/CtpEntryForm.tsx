@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Boxes, Truck, Loader2, X, Search, Check } from "@buleje/design-system/icons";
+import { Boxes, Truck, Loader2, X, Search, Check, AlertCircle } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -220,7 +220,7 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
 
   const Icon = meta.icon;
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[940px]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[1200px]">
       <div className="flex h-full max-h-[92vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -233,7 +233,8 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
           <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>
         </header>
 
-        <form id="ctp-entry-form" onSubmit={submit} className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+        <form id="ctp-entry-form" onSubmit={submit} className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">
           {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">{error}</div>}
 
           <Field label="Fecha" required><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={I} /></Field>
@@ -329,6 +330,49 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
           <div className="sm:col-span-2"><Field label="Observaciones"><textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional..." className={`${I} h-auto resize-none py-2.5`} /></Field></div>
         </form>
 
+        {/* ── Panel derecho: vista previa en vivo (lg+) ─────────── */}
+        <aside className="hidden w-[300px] shrink-0 flex-col border-l border-[var(--rule-base)] bg-[var(--surface-canvas)] lg:flex">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3.5">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Vista previa del registro</span>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="mb-5">
+              <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">{productType}</CardTitle>
+              {speciesCommon.trim() && <p className="mt-0.5 text-xs italic text-[var(--text-tertiary)]">{speciesCommon.trim()}</p>}
+            </div>
+            <div className="mb-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{section === "produccion" ? "Producido" : "A despachar"}</div>
+              <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-[var(--text-primary)]">{quantity ? Number(quantity).toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0"}<span className="ml-1 text-sm font-medium text-[var(--text-tertiary)]">{UNIT_LABELS[unit] ?? unit}</span></div>
+              {section === "produccion" && rendimiento != null && <div className="mt-1.5 flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"><Check className="h-3 w-3" /> Rendimiento {rendimiento}%</div>}
+            </div>
+            <dl className="space-y-2.5">
+              <PreviewRow label="Fecha" value={entryDate || "—"} />
+              {section === "produccion" ? (
+                <>
+                  <PreviewRow label="Consumido" value={volumeInputM3 ? `${volumeInputM3} m³` : "—"} mono />
+                  <PreviewRow label="Atribuido" value={totalAtribuido > 0 ? totalAtribuido.toFixed(4) : "—"} mono />
+                  <PreviewRow label="Costo proceso" value={costoProceso ? `S/ ${costoProceso}` : "—"} mono />
+                </>
+              ) : (
+                <>
+                  <PreviewRow label="GTF salida" value={gtfNumber.trim() || "—"} mono />
+                  <PreviewRow label="Destino" value={destino.trim() || "—"} />
+                  <PreviewRow label="Piezas" value={pieces ? Number(pieces).toLocaleString("es-PE") : "—"} />
+                  <PreviewRow label="Atribuido" value={totalAtribuido > 0 ? totalAtribuido.toFixed(4) : "—"} mono />
+                </>
+              )}
+            </dl>
+          </div>
+          <div className="border-t border-[var(--rule-soft)] px-5 py-4">
+            {isValid ? (
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-700)]"><Check className="h-4 w-4 shrink-0" /> Listo para registrar</div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm font-medium text-[var(--data-warning-700)]"><AlertCircle className="h-4 w-4 shrink-0" /> Completá los obligatorios</div>
+            )}
+          </div>
+        </aside>
+        </div>
+
         <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
           <div className="hidden items-center gap-1.5 text-xs text-[var(--text-tertiary)] sm:flex">
             {isValid ? <><Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" /><span>Listo para registrar</span></> : <span>Completá los obligatorios</span>}
@@ -341,5 +385,14 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
         </footer>
       </div>
     </AdminModal>
+  );
+}
+
+function PreviewRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{label}</dt>
+      <dd className={`min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}>{value}</dd>
+    </div>
   );
 }
