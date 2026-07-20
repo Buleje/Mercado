@@ -20,10 +20,13 @@ export type LothSection = (typeof LOTH_SECTIONS)[number];
  * Plazo de registro en el LO-TH: 15 días CALENDARIO desde la actividad
  * (`entryDate`) hasta el registro (`createdAt`).
  *
- * ⚠️ PENDIENTE DE RECONCILIAR contra el texto vigente de la RDE 264-2019 /
- * Reglamento (art. Libro de Operaciones): el LO-CTP se reconcilió a **2 días
- * hábiles** (ADR-137, RDE D000025-2023); el del título habilitante puede diferir.
- * NO cambiar el número a ciegas (skill `serfor-osinfor-compliance` §7).
+ * ✅ VERIFICADO 2026-07-20 contra la Guía oficial SERFOR ("Guía para el Registro
+ * de Información", 2021, 64 pp — firecrawl del PDF, NO de memoria): «El registro
+ * de información en las secciones de tala, trozado, despacho de trozas, consumo de
+ * trozas, producto terminado y despacho de producto terminado, se debe realizar
+ * dentro de los 15 días CALENDARIO una vez realizada la actividad». Es DISTINTO
+ * del LO-CTP (2 días HÁBILES, RDE D000025-2023) — son libros y normas distintas,
+ * es correcto que difieran. NO cambiar sin re-verificar (skill serfor-osinfor §7).
  *
  * Este es el ÚNICO lugar donde vive el predicado: el badge del libro, la
  * analítica (`detectAnomalias`), el export Excel y el PDF lo importan de acá para
