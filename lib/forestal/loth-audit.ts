@@ -23,7 +23,7 @@ import { logger } from "@/lib/logger";
 /** Entidades del libro TH. `ForestLothCites` no es modelo Prisma (vive en el KV
  * `PlatformSetting`, key `loth-cites:{tenantId}`), pero se audita porque acredita
  * la legalidad de las especies protegidas ante OSINFOR. */
-export type LothAuditEntity = "ForestLothEntry" | "ForestLothCaratula" | "ForestLothCites";
+export type LothAuditEntity = "ForestLothEntry" | "ForestLothCaratula" | "ForestLothCites" | "ForestGtf";
 
 /** Acciones auditables del LO-TH. */
 export type LothAuditAction =
@@ -35,7 +35,10 @@ export type LothAuditAction =
   | "loth_caratula_create"
   | "loth_caratula_update"
   // Catálogo de permisos CITES del libro (KV)
-  | "loth_cites_update";
+  | "loth_cites_update"
+  // Guía de Transporte Forestal (GTF)
+  | "loth_gtf_create"
+  | "loth_gtf_annul";
 
 /**
  * Registra un evento del LO-TH. No se await-ea a propósito: la auditoría no debe

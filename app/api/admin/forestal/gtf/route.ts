@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
+import { ForestGtfDB, GtfDuplicateError } from "@/lib/db/forest-gtf.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -83,6 +83,11 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
     if (url.searchParams.get("sinIngresar") === "1") {
       return NextResponse.json({ gtfs: await ForestGtfDB.sinIngresarAlCtp(auth.tenantId) });
     }
+    // Sugerencia de correlativo para una serie (el operador la acepta o la pisa).
+    const serie = url.searchParams.get("sugerir");
+    if (serie) {
+      return NextResponse.json({ sugerido: await ForestGtfDB.sugerirNumero(auth.tenantId, serie) });
+    }
     return NextResponse.json({ gtfs: await ForestGtfDB.list(auth.tenantId) });
   } catch (err) {
     logger.error("[gtf.GET] failed", { error: String(err), tenantId: auth.tenantId });
@@ -105,6 +110,10 @@ export const POST = withApiHandler("forestal-gtf-post", async (req: NextRequest)
     const gtf = await ForestGtfDB.create(auth.tenantId, { ...parsed.data, createdBy: auth.username ?? "unknown" });
     return NextResponse.json({ gtf }, { status: 201 });
   } catch (err) {
+    // GTF duplicada = dato del operador (una guía no se anota dos veces), no 500.
+    if (err instanceof GtfDuplicateError) {
+      return NextResponse.json({ error: "duplicate", message: err.message }, { status: 409 });
+    }
     logger.error("[gtf.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
@@ -122,7 +131,7 @@ export const PATCH = withApiHandler("forestal-gtf-patch", async (req: NextReques
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "validation_error", issues: parsed.error.issues }, { status: 400 });
   try {
-    return NextResponse.json({ gtf: await ForestGtfDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason) });
+    return NextResponse.json({ gtf: await ForestGtfDB.annul(auth.tenantId, parsed.data.id, parsed.data.reason, auth.username ?? "unknown") });
   } catch (err) {
     logger.error("[gtf.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
