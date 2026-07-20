@@ -17,6 +17,7 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { printCertificadoLote, printEtiquetaLote } from "@/lib/forestal/lote-certificado";
 import LoteMiembrosEditor, { loteRowsValidas, type LoteRow } from "./LoteMiembrosEditor";
+import { Btn } from "./ctp-shared";
 
 const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
 const n4 = (v: number) => v.toFixed(4);
@@ -170,7 +171,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
       <div className="space-y-4">
         {loading && <div className="p-8 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando lote…</p></div>}
         {error && (
-          <ErrorAlert title="Error" description={error} action={<button type="button" onClick={() => void load()} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)]"><RefreshCw className="h-3.5 w-3.5" /> Reintentar</button>} />
+          <ErrorAlert title="Error" description={error} action={<Btn variant="secondary" size="sm" onClick={() => void load()}><RefreshCw className="h-3.5 w-3.5" /> Reintentar</Btn>} />
         )}
 
         {lote && traza && !loading && (
@@ -196,15 +197,15 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
               <div className="flex items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
                 <div className="flex items-center gap-2"><Link2 className="h-4 w-4 text-[var(--text-tertiary)]" /><CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Corridas del lote</CardTitle></div>
                 {!editing && lote.status === "abierto" && (
-                  <button type="button" onClick={startEdit} className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Pencil className="h-3 w-3" /> Editar</button>
+                  <Btn variant="secondary" size="sm" onClick={startEdit}><Pencil className="h-3 w-3" /> Editar</Btn>
                 )}
               </div>
               {editing ? (
                 <div className="space-y-3 p-3">
                   <LoteMiembrosEditor excludeLoteId={loteId} unitLabel={unitLabel} rows={editRows} onRowsChange={setEditRows} />
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setEditing(false)} disabled={busy} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)]">Cancelar</button>
-                    <button type="button" onClick={() => void saveMiembros()} disabled={busy || !loteRowsValidas(editRows)} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-3 text-xs font-bold text-white disabled:opacity-50">{busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Guardar</button>
+                    <Btn variant="secondary" size="sm" onClick={() => setEditing(false)} disabled={busy}>Cancelar</Btn>
+                    <Btn variant="dark" size="sm" onClick={() => void saveMiembros()} disabled={busy || !loteRowsValidas(editRows)}>{busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Guardar</Btn>
                   </div>
                 </div>
               ) : (
@@ -232,12 +233,12 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
 
             {/* Documentos con QR */}
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => void imprimir("cert")} disabled={!traza.completa || printing} title={!traza.completa ? "Requiere cadena completa" : undefined} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--brand-ink)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+              <Btn variant="dark" onClick={() => void imprimir("cert")} disabled={!traza.completa || printing} title={!traza.completa ? "Requiere cadena completa" : undefined}>
                 {printing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />} Certificado
-              </button>
-              <button type="button" onClick={() => void imprimir("label")} disabled={printing} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">
+              </Btn>
+              <Btn variant="secondary" onClick={() => void imprimir("label")} disabled={printing}>
                 <Tag className="h-4 w-4" /> Etiqueta
-              </button>
+              </Btn>
             </div>
             {docError && <p className="text-center text-xs font-bold text-[var(--data-error-700)]">{docError}</p>}
 
@@ -245,15 +246,17 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
             {lote.status !== "anulado" && lote.status !== "despachado" && (
               <div className="flex flex-wrap gap-2 border-t-2 border-[var(--rule-soft)] pt-4">
                 {lote.status === "abierto" && (
-                  <button type="button" onClick={() => void changeStatus("status", "cerrado")} disabled={busy || lote.miembros.length === 0} className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)] disabled:opacity-50"><Lock className="h-4 w-4" /> Cerrar lote</button>
+                  // Sin variante "success" en Btn (soft green) — se normaliza a secondary; se pierde
+                  // el acento verde, se conserva la altura consistente con Anular en la misma fila.
+                  <Btn variant="secondary" onClick={() => void changeStatus("status", "cerrado")} disabled={busy || lote.miembros.length === 0}><Lock className="h-4 w-4" /> Cerrar lote</Btn>
                 )}
                 {lote.status === "cerrado" && (
                   <>
-                    <button type="button" onClick={() => void changeStatus("status", "abierto")} disabled={busy} className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Unlock className="h-4 w-4" /> Reabrir</button>
-                    <button type="button" onClick={() => void changeStatus("status", "despachado")} disabled={busy} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"><Truck className="h-4 w-4" /> Marcar despachado</button>
+                    <Btn variant="secondary" onClick={() => void changeStatus("status", "abierto")} disabled={busy}><Unlock className="h-4 w-4" /> Reabrir</Btn>
+                    <Btn variant="dark" onClick={() => void changeStatus("status", "despachado")} disabled={busy}><Truck className="h-4 w-4" /> Marcar despachado</Btn>
                   </>
                 )}
-                <button type="button" onClick={() => setAnnulReason("")} disabled={busy} className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] disabled:opacity-50"><Ban className="h-4 w-4" /> Anular</button>
+                <Btn variant="danger" onClick={() => setAnnulReason("")} disabled={busy}><Ban className="h-4 w-4" /> Anular</Btn>
               </div>
             )}
             {lote.status === "despachado" && (
@@ -266,8 +269,8 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                 <p className="text-sm text-[var(--text-primary)]"><strong>Anular {lote.loteCode}:</strong> indicá el motivo (queda en el historial, no se borra).</p>
                 <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (mín. 3 caracteres)" className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]" />
                 <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setAnnulReason(null)} disabled={busy} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)]">Cancelar</button>
-                  <button type="button" onClick={() => void changeStatus("anular", undefined, annulReason)} disabled={busy || annulReason.trim().length < 3} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-3 text-xs font-bold text-white disabled:opacity-50">{busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Confirmar anulación</button>
+                  <Btn variant="secondary" size="sm" onClick={() => setAnnulReason(null)} disabled={busy}>Cancelar</Btn>
+                  <Btn variant="danger" size="sm" onClick={() => void changeStatus("anular", undefined, annulReason)} disabled={busy || annulReason.trim().length < 3}>{busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Confirmar anulación</Btn>
                 </div>
               </div>
             )}

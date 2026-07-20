@@ -19,6 +19,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, Calculator, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import { rendimientoReferencial } from "@/lib/forestal/ctp-rendimiento";
+import { Btn } from "./ctp-shared";
 
 /** 1 m³ = 423.78 pies tablares (misma constante que el cubicador). */
 const PT_POR_M3 = 423.78;
@@ -102,7 +103,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
         {error && (
           <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div>
-            <button type="button" onClick={() => void load()} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)]"><RefreshCw className="h-3.5 w-3.5" /> Reintentar</button>
+            <Btn variant="secondary" size="sm" className="ml-auto" onClick={() => void load()}><RefreshCw className="h-3.5 w-3.5" /> Reintentar</Btn>
           </div>
         )}
 

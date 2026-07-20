@@ -29,6 +29,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
 import CtpHistorial from "./CtpHistorial";
+import { Btn } from "./ctp-shared";
 
 export interface ProduccionResumen {
   id: string;
@@ -169,9 +170,9 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
             title="No se pudo cargar la corrida"
             description={error}
             action={
-              <button type="button" onClick={() => void load()} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+              <Btn variant="secondary" size="sm" onClick={() => void load()}>
                 <RefreshCw className="h-3.5 w-3.5" /> Reintentar
-              </button>
+              </Btn>
             }
           />
         )}
@@ -226,13 +227,9 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                   <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Materia prima consumida</CardTitle>
                 </div>
                 {!editing && !costo.congelado && (
-                  <button
-                    type="button"
-                    onClick={() => setEditing(true)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-                  >
+                  <Btn variant="secondary" size="sm" onClick={() => setEditing(true)}>
                     <Pencil className="h-3 w-3" /> Editar atribución
-                  </button>
+                  </Btn>
                 )}
                 {costo.congelado && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-info-100)] px-2.5 py-1 text-xs font-bold text-[var(--data-info-700)]">
@@ -333,22 +330,24 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
             {!costo.congelado && consumos.length > 0 && (
               <div className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-4">
                 {!confirmFreeze ? (
-                  <button
-                    type="button"
+                  <Btn
+                    variant="secondary"
+                    className="w-full"
                     onClick={() => setConfirmFreeze(true)}
                     disabled={costo.motivo === "falta_factura"}
                     title={costo.motivo === "falta_factura" ? "Falta al menos una factura: no hay costo que congelar" : undefined}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] px-5 text-sm font-bold text-[var(--data-info-700)] hover:bg-[var(--data-info-100)] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Snowflake className="h-4 w-4" /> Congelar costo (cierre de período)
-                  </button>
+                  </Btn>
                 ) : (
                   <div className="space-y-2 rounded-2xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] p-3">
                     <p className="text-sm text-[var(--text-primary)]">
                       <strong>Irreversible:</strong> el costo queda fijado con las facturas de hoy y la atribución no se podrá editar más.
                     </p>
                     <div className="flex justify-end gap-2">
-                      <button type="button" onClick={() => setConfirmFreeze(false)} disabled={freezing} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)]">Cancelar</button>
+                      <Btn variant="secondary" size="sm" onClick={() => setConfirmFreeze(false)} disabled={freezing}>Cancelar</Btn>
+                      {/* Sin Btn: confirmación sólida "info" (irreversible) sin variante equivalente — Btn secondary
+                          la volvería indistinguible del Cancelar de al lado. */}
                       <button type="button" onClick={() => void congelar()} disabled={freezing} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-info-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50">
                         {freezing && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Sí, congelar
                       </button>

@@ -36,6 +36,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
 import CtpHistorial from "./CtpHistorial";
+import { Btn } from "./ctp-shared";
 
 export interface DespachoResumen {
   id: string;
@@ -225,9 +226,9 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
             title="No se pudo cargar la cadena"
             description={error}
             action={
-              <button type="button" onClick={() => void load()} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+              <Btn variant="secondary" size="sm" onClick={() => void load()}>
                 <RefreshCw className="h-3.5 w-3.5" /> Reintentar
-              </button>
+              </Btn>
             }
           />
         )}
@@ -265,13 +266,9 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                   <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Origen del volumen</CardTitle>
                 </div>
                 {!editing && (
-                  <button
-                    type="button"
-                    onClick={() => setEditing(true)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-                  >
+                  <Btn variant="secondary" size="sm" onClick={() => setEditing(true)}>
                     <Pencil className="h-3 w-3" /> Editar atribución
-                  </button>
+                  </Btn>
                 )}
               </div>
               {editing ? (
@@ -378,25 +375,19 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
                   <p className="mt-0.5 font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{gtf || "— sin emitir —"}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
+                  <Btn
+                    variant="secondary"
                     onClick={() => void emitirGtf()}
                     disabled={gtfBusy !== null}
                     title="Asigna serie + correlativo desde la serie autorizada en la Ficha del CTP"
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
                   >
                     {gtfBusy === "emitir" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                     {gtf ? "Re-emitir" : "Emitir GTF"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void imprimirGtf()}
-                    disabled={!gtf || gtfBusy !== null}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
+                  </Btn>
+                  <Btn variant="dark" onClick={() => void imprimirGtf()} disabled={!gtf || gtfBusy !== null}>
                     {gtfBusy === "imprimir" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                     Imprimir GTF
-                  </button>
+                  </Btn>
                 </div>
               </div>
               {gtfError && <p className="mt-2 text-xs font-bold text-[var(--data-error-700)]">{gtfError}</p>}
@@ -404,15 +395,15 @@ export default function CtpDespachoDetalleModal({ entry, onClose }: { entry: Des
 
             {/* 5. Certificado — gate ADR-135 D3 */}
             <div className="space-y-2 border-t-2 border-[var(--rule-soft)] pt-4">
-              <button
-                type="button"
+              <Btn
+                variant="dark"
+                className="w-full"
                 disabled={!traza.completa || printing}
                 onClick={() => void imprimirCertificado()}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {printing ? <Loader2 className="h-5 w-5 animate-spin" /> : traza.completa ? <Printer className="h-5 w-5" /> : <FileCheck className="h-5 w-5" />}
                 {printing ? "Preparando…" : "Imprimir certificado de trazabilidad"}
-              </button>
+              </Btn>
               {!traza.completa && (
                 <p className="text-center text-xs text-[var(--text-tertiary)]">
                   El certificado exige cadena completa — el libro admite huecos, el certificado no.
