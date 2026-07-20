@@ -185,3 +185,33 @@ export function Field({ label, required, hint, children }: { label: string; requ
     </label>
   );
 }
+
+// ── Botón estándar del módulo forestal ──────────────────────────────────────
+// Single source para que TODOS los botones de acción (modales, toolbars) tengan
+// el mismo alto/radio/estados en vez de reescribir clases sueltas por lugar.
+// Variantes: primary (verde, registrar/guardar) · dark (brand-ink, acción oficial) ·
+// secondary (borde) · ghost (texto) · danger (rojo suave). Tamaños: md (h-11) · sm (h-9).
+export type BtnVariant = "primary" | "dark" | "secondary" | "ghost" | "danger";
+const BTN_BASE =
+  "inline-flex items-center justify-center gap-2 rounded-xl font-bold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+const BTN_SIZE: Record<"md" | "sm", string> = {
+  md: "h-11 px-4 text-sm",
+  sm: "h-9 px-3 text-sm",
+};
+const BTN_VARIANT: Record<BtnVariant, string> = {
+  primary: "bg-[var(--data-success-700)] text-white shadow-sm hover:opacity-90",
+  dark: "bg-[var(--brand-ink)] text-white shadow-sm hover:opacity-90",
+  secondary: "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]",
+  ghost: "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+  danger: "border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]",
+};
+
+export function Btn({
+  variant = "secondary",
+  size = "md",
+  className = "",
+  type = "button",
+  ...props
+}: { variant?: BtnVariant; size?: "md" | "sm" } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button type={type} className={`${BTN_BASE} ${BTN_SIZE[size]} ${BTN_VARIANT[variant]} ${className}`} {...props} />;
+}

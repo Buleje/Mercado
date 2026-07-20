@@ -24,6 +24,7 @@ import {
   Camera,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Btn } from "./ctp-shared";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpFichaFaltantes, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
@@ -1113,37 +1114,11 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
           </div>
 
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={(e) => handleSubmit(e, true)}
-              disabled={!isValid || submitting}
-              className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Guardar y otro
-            </button>
-            <button
-              type="submit"
-              form="wood-entry-form"
-              disabled={!isValid || submitting}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Guardando
-                </>
-              ) : (
-                "Registrar ingreso"
-              )}
-            </button>
+            <Btn variant="ghost" onClick={onClose} disabled={submitting}>Cancelar</Btn>
+            <Btn variant="secondary" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting}>Guardar y otro</Btn>
+            <Btn variant="primary" type="submit" form="wood-entry-form" disabled={!isValid || submitting}>
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar ingreso"}
+            </Btn>
           </div>
         </footer>
       </div>

@@ -13,7 +13,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import CtpConsumosPicker, { sumConsumos, type ConsumoRow } from "./CtpConsumosPicker";
 import CtpOrigenesPicker, { sumOrigenes, type OrigenRow } from "./CtpOrigenesPicker";
-import { Field, I } from "./ctp-shared";
+import { Field, I, Btn } from "./ctp-shared";
 
 type CtpSection = "produccion" | "despacho";
 
@@ -378,9 +378,9 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
             {isValid ? <><Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" /><span>Listo para registrar</span></> : <span>Completá los obligatorios</span>}
           </div>
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-            <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">Cancelar</button>
-            <button type="button" onClick={(e) => submit(e, true)} disabled={!isValid || submitting} className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50">Guardar y otro</button>
-            <button type="submit" form="ctp-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar"}</button>
+            <Btn variant="ghost" onClick={onClose} disabled={submitting}>Cancelar</Btn>
+            <Btn variant="secondary" onClick={(e) => submit(e, true)} disabled={!isValid || submitting}>Guardar y otro</Btn>
+            <Btn variant="primary" type="submit" form="ctp-entry-form" disabled={!isValid || submitting}>{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar"}</Btn>
           </div>
         </footer>
       </div>
