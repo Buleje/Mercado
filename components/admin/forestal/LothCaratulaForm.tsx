@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { FileText, Loader2, X, AlertTriangle } from "@buleje/design-system/icons";
+import { FileText, Loader2, X, AlertTriangle, Check, AlertCircle } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -92,8 +92,8 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[680px]">
-      <div className="flex h-full max-h-[86vh] flex-col bg-[var(--surface-raised)]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[1200px]">
+      <div className="flex h-full max-h-[92vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--data-success-100)] text-[var(--data-success-700)]">
@@ -109,9 +109,10 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
           </button>
         </header>
 
-        <form id="loth-caratula-form" onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+        <form id="loth-caratula-form" onSubmit={submit} className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
+            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>{error}</div>
             </div>
@@ -124,19 +125,19 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
             <input type="text" value={f.representanteLegal} onChange={(e) => set("representanteLegal", e.target.value)} placeholder="Pedro Rinconada Pariachi" className={cls.input} />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2">
             <Field label="RUC"><input type="text" value={f.ruc} onChange={(e) => set("ruc", e.target.value)} placeholder="20XXXXXXXXX" className={cls.input} /></Field>
             <Field label="DNI (rep. legal)"><input type="text" value={f.dni} onChange={(e) => set("dni", e.target.value)} placeholder="05040151" className={cls.input} /></Field>
           </div>
 
           <Field label="N° de título habilitante"><input type="text" value={f.tituloHabilitante} onChange={(e) => set("tituloHabilitante", e.target.value)} placeholder="17-CPO/C-J-001-02" className={cls.input} /></Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2">
             <Field label="N° de registro del libro" hint="Otorgado por la ARFFS"><input type="text" value={f.registroNumber} onChange={(e) => set("registroNumber", e.target.value)} placeholder="001-GOREU-..." className={cls.input} /></Field>
             <Field label="N° de tomo"><input type="text" value={f.tomo} onChange={(e) => set("tomo", e.target.value)} placeholder="PO 12 - Tomo I" className={cls.input} /></Field>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 sm:col-span-2">
             <Field label="Documento de gestión">
               <select value={f.docGestionType} onChange={(e) => set("docGestionType", e.target.value)} className={cls.input}>
                 <option value="PO">PO</option>
@@ -150,7 +151,7 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
 
           <Field label="Domicilio"><input type="text" value={f.domicilio} onChange={(e) => set("domicilio", e.target.value)} placeholder="Coronel Portillo Km 15" className={cls.input} /></Field>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 sm:col-span-2">
             <Field label="Departamento">
               <select value={f.departamento} onChange={(e) => set("departamento", e.target.value)} className={cls.input}>
                 {REGIONS_PE.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -160,11 +161,46 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
             <Field label="Distrito"><input type="text" value={f.distrito} onChange={(e) => set("distrito", e.target.value)} placeholder="Callería" className={cls.input} /></Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2">
             <Field label="Teléfono"><input type="text" value={f.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="992696555" className={cls.input} /></Field>
             <Field label="Correo electrónico"><input type="email" value={f.email} onChange={(e) => set("email", e.target.value)} placeholder="titular@correo.com" className={cls.input} /></Field>
           </div>
         </form>
+
+        {/* Panel derecho: vista previa en vivo (lg+) */}
+        <aside className="hidden w-[300px] shrink-0 flex-col border-l border-[var(--rule-base)] bg-[var(--surface-canvas)] lg:flex">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3.5">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Vista previa de la carátula</span>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="mb-5">
+              <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">{f.titularName.trim() || "Titular sin nombre"}</CardTitle>
+              {f.representanteLegal.trim() && <p className="mt-0.5 text-xs italic text-[var(--text-tertiary)]">Rep. legal: {f.representanteLegal.trim()}</p>}
+            </div>
+            <div className="mb-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Documento de gestión</div>
+              <div className="mt-1 text-lg font-bold text-[var(--text-primary)]">{f.docGestionType}</div>
+              {f.docGestionName.trim() && <div className="mt-0.5 text-xs text-[var(--text-tertiary)]">{f.docGestionName.trim()}</div>}
+            </div>
+            <dl className="space-y-2.5">
+              <PreviewRow label="RUC" value={f.ruc.trim() || "—"} mono />
+              <PreviewRow label="Título habilitante" value={f.tituloHabilitante.trim() || "—"} mono />
+              <PreviewRow label="Registro del libro" value={f.registroNumber.trim() || "—"} mono />
+              <PreviewRow label="Tomo" value={f.tomo.trim() || "—"} />
+              <PreviewRow label="Departamento" value={f.departamento || "—"} />
+              <PreviewRow label="Provincia" value={f.provincia.trim() || "—"} />
+              <PreviewRow label="Distrito" value={f.distrito.trim() || "—"} />
+            </dl>
+          </div>
+          <div className="border-t border-[var(--rule-soft)] px-5 py-4">
+            {isValid ? (
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-700)]"><Check className="h-4 w-4 shrink-0" /> Listo para {current ? "actualizar" : "crear"}</div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm font-medium text-[var(--data-warning-700)]"><AlertCircle className="h-4 w-4 shrink-0" /> Completá el titular</div>
+            )}
+          </div>
+        </aside>
+        </div>
 
         <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
           <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
@@ -189,6 +225,15 @@ function Field({ label, required, hint, children }: { label: string; required?: 
       {children}
       {hint && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{hint}</span>}
     </label>
+  );
+}
+
+function PreviewRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{label}</dt>
+      <dd className={`min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}>{value}</dd>
+    </div>
   );
 }
 

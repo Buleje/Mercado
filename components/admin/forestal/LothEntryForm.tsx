@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TreePine,
   AlertTriangle,
+  AlertCircle,
   Loader2,
   X,
   Sparkles,
@@ -279,6 +280,24 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
   const isValid = missing.length === 0;
 
+  // Vista previa: qué código encabeza la tarjeta y qué número se destaca, según sección.
+  const previewEntity = fields.has("productType")
+    ? productType
+    : trozaCode.trim() || treeCode.trim() || despachoCode.trim() || meta.short;
+  const highlight = useMemo(() => {
+    if (fields.has("volume")) {
+      const vol = Number(volumeM3) > 0 ? Number(volumeM3) : autoVolume;
+      return { label: "Volumen (Smalian)", value: vol > 0 ? vol.toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: "m³" };
+    }
+    if (fields.has("volumeManual")) {
+      return { label: "Volumen consumido", value: volumeM3 ? Number(volumeM3).toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: "m³" };
+    }
+    if (fields.has("quantity")) {
+      return { label: section === "despacho_producto" ? "A despachar" : "Producido", value: quantity ? Number(quantity).toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: unit === "m3" ? "m³" : unit === "kg" ? "Kg" : "Unidad" };
+    }
+    return { label: "N° de GTF", value: gtfNumber.trim() || "—", unit: "" };
+  }, [fields, volumeM3, autoVolume, quantity, unit, section, gtfNumber]);
+
   function captureGps() {
     if (!navigator.geolocation) {
       setGpsError("Geolocalización no disponible en este dispositivo.");
@@ -413,8 +432,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[640px]">
-      <div className="flex h-full max-h-[86vh] flex-col bg-[var(--surface-raised)]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[1200px]">
+      <div className="flex h-full max-h-[92vh] flex-col bg-[var(--surface-raised)]">
         {/* Header */}
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -440,10 +459,10 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           </button>
         </header>
 
-        {/* Body */}
-        <form id="loth-entry-form" onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+        <form id="loth-entry-form" onSubmit={handleSubmit} className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
+            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>{error}</div>
             </div>
@@ -454,7 +473,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           </Field>
 
           {/* Picker data-driven: elegí del plan lo disponible para esta sección */}
-          <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3">
+          <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-700)]">
                 {SOURCE_TITLE[section]}
@@ -528,7 +547,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
           {/* Banner: datos jalados del censo (data-driven) */}
           {fields.has("treeCode") && censusTree && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 py-2.5 text-xs text-[var(--data-success-700)]">
+            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 py-2.5 text-xs text-[var(--data-success-700)] sm:col-span-2">
               <Check className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <span className="font-bold">Jalado del censo:</span>{" "}
@@ -544,7 +563,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             </div>
           )}
           {fields.has("treeCode") && censusChecked && !censusTree && treeCode.trim() && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)] sm:col-span-2">
               Este código no está en el censo del plan — se registra como código libre.
             </div>
           )}
@@ -581,7 +600,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           )}
 
           {fields.has("species") && showPicker && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 sm:col-span-2">
               <input
                 type="text"
                 value={speciesQuery}
@@ -652,7 +671,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           )}
 
           {fields.has("species") && cites && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs text-[var(--data-error-700)]">
+            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs text-[var(--data-error-700)] sm:col-span-2">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
               <div><span className="font-bold">Especie CITES.</span> Requiere permiso de exportación. Verificá el sello en la GTF.</div>
             </div>
@@ -660,7 +679,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
           {fields.has("diams") && (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 sm:col-span-2">
                 <Field label="Ø mayor (m)" hint="Promedio 2 medidas">
                   <input type="number" step="0.001" min="0" value={diamMayor} onChange={(e) => setDiamMayor(e.target.value)} placeholder="0.96" className={cls.input} />
                 </Field>
@@ -711,7 +730,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           )}
 
           {(fields.has("quantity") || fields.has("unit") || fields.has("pieces")) && (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3 sm:col-span-2">
               {fields.has("pieces") && (
                 <Field label="N° piezas">
                   <input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={cls.input} />
@@ -755,7 +774,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           )}
 
           {/* Evidencia de campo (GPS + foto) */}
-          <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+          <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:col-span-2">
             <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
               Evidencia de campo <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
             </CardTitle>
@@ -835,10 +854,48 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             </div>
           </div>
 
-          <Field label="Observaciones">
-            <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2.5`} />
-          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Observaciones">
+              <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2.5`} />
+            </Field>
+          </div>
         </form>
+
+        {/* Panel derecho: vista previa en vivo (lg+) */}
+        <aside className="hidden w-[300px] shrink-0 flex-col border-l border-[var(--rule-base)] bg-[var(--surface-canvas)] lg:flex">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3.5">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Vista previa del registro</span>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="mb-5">
+              <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">{previewEntity}</CardTitle>
+              <p className="mt-0.5 text-xs italic text-[var(--text-tertiary)]">{meta.label}</p>
+            </div>
+            <div className="mb-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{highlight.label}</div>
+              <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-[var(--text-primary)]">{highlight.value}{highlight.unit && <span className="ml-1 text-sm font-medium text-[var(--text-tertiary)]">{highlight.unit}</span>}</div>
+            </div>
+            <dl className="space-y-2.5">
+              <PreviewRow label="Fecha" value={entryDate || "—"} />
+              {fields.has("treeCode") && <PreviewRow label="Árbol" value={treeCode.trim() || "—"} mono />}
+              {fields.has("trozaCode") && <PreviewRow label="Troza" value={trozaCode.trim() || "—"} mono />}
+              {fields.has("despachoCode") && <PreviewRow label="Despacho" value={despachoCode.trim() || "—"} mono />}
+              {fields.has("species") && <PreviewRow label="Especie" value={speciesName || "—"} />}
+              {fields.has("gtf") && <PreviewRow label="GTF" value={gtfNumber.trim() || "—"} mono />}
+              {fields.has("pieces") && <PreviewRow label="Piezas" value={pieces ? Number(pieces).toLocaleString("es-PE") : "—"} />}
+              {fields.has("discarded") && <PreviewRow label="Estado" value={discarded ? "Descartado" : "Aprovechable"} />}
+              {fields.has("consumoInterno") && <PreviewRow label="Consumo interno" value={consumoInterno ? "Sí" : "No"} />}
+            </dl>
+          </div>
+          <div className="border-t border-[var(--rule-soft)] px-5 py-4">
+            {isValid ? (
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-700)]"><Check className="h-4 w-4 shrink-0" /> Listo para registrar</div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm font-medium text-[var(--data-warning-700)]"><AlertCircle className="h-4 w-4 shrink-0" /> Faltan {missing.length} {missing.length === 1 ? "campo" : "campos"}</div>
+            )}
+          </div>
+        </aside>
+        </div>
 
         {/* Footer */}
         <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
@@ -886,6 +943,15 @@ function CitesPill() {
     <span className="inline-flex shrink-0 items-center rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-error-700)]">
       CITES
     </span>
+  );
+}
+
+function PreviewRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{label}</dt>
+      <dd className={`min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}>{value}</dd>
+    </div>
   );
 }
 
