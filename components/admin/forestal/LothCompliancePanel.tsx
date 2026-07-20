@@ -37,6 +37,7 @@ import {
   type LothNavTarget,
 } from "@/lib/forestal/loth-compliance";
 import { printLothCumplimiento } from "@/lib/forestal/loth-cumplimiento-print";
+import { permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 
 interface FullCaratula {
   titularName?: string | null;
@@ -71,6 +72,8 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 export default function LothCompliancePanel({ totalLineas, onNavigate }: Props) {
   const [anomalias, setAnomalias] = useState<LothAnomaly[] | null>(null);
   const [caratula, setCaratula] = useState<FullCaratula | null>(null);
+  const [citesEspecies, setCitesEspecies] = useState<string[]>([]);
+  const [citesPermisos, setCitesPermisos] = useState<LothCitesPermiso[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
@@ -79,9 +82,10 @@ export default function LothCompliancePanel({ totalLineas, onNavigate }: Props) 
     setLoading(true);
     setError(null);
     try {
-      const [aRes, cRes] = await Promise.all([
+      const [aRes, cRes, xRes] = await Promise.all([
         fetch("/api/admin/forestal/plan?analytics=1", { credentials: "include" }),
         fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
+        fetch("/api/admin/forestal/loth/cites", { credentials: "include" }),
       ]);
       if (!aRes.ok) {
         const d = await aRes.json().catch(() => ({}));
@@ -89,7 +93,9 @@ export default function LothCompliancePanel({ totalLineas, onNavigate }: Props) 
       }
       const analytics = (await aRes.json()).analytics;
       setAnomalias(analytics?.anomalias ?? []);
+      setCitesEspecies(analytics?.citesEspecies ?? []);
       if (cRes.ok) setCaratula((await cRes.json()).active ?? null);
+      if (xRes.ok) setCitesPermisos((await xRes.json()).catalogo?.permisos ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -116,7 +122,8 @@ export default function LothCompliancePanel({ totalLineas, onNavigate }: Props) 
     );
   }
 
-  const result = computeLothCompliance({ anomalias: anomalias ?? [], caratula, totalLineas });
+  const citesSinPermiso = citesEspecies.filter((sp) => !permisoParaEspecie({ permisos: citesPermisos }, sp));
+  const result = computeLothCompliance({ anomalias: anomalias ?? [], caratula, totalLineas, citesSinPermiso });
   const { problemas, enOrden, bloqueos, advertencias, readiness, breakdown, tone, score } = result;
   const totalRestado = breakdown.reduce((a, d) => a + d.puntos, 0);
 

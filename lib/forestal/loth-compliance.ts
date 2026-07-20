@@ -34,6 +34,8 @@ export interface LothComplianceInput {
   caratula: { titularName?: string | null; tituloHabilitante?: string | null; resolucionNumber?: string | null } | null;
   /** Total de líneas registradas en el libro (para el subtítulo del panel/reporte). */
   totalLineas: number;
+  /** Especies CITES del libro SIN permiso en el catálogo (informativo, NO resta score). */
+  citesSinPermiso?: string[];
 }
 
 export interface LothCheck {
@@ -84,6 +86,8 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
 
   const caratulaIncompleta =
     !input.caratula || !input.caratula.titularName?.trim() || !input.caratula.tituloHabilitante?.trim();
+
+  const citesSinPermiso = input.citesSinPermiso ?? [];
 
   const checks: LothCheck[] = [
     {
@@ -188,6 +192,23 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
       action: "Planificá el cierre del aprovechamiento de esas especies.",
       navTarget: "analitica",
       navigateLabel: "Ver analítica",
+    },
+    {
+      // CITES es LEGAL con permiso archivado → recordatorio, NUNCA resta score
+      // (un score que castiga lo incorregible enseña a ignorarlo — regla del CTP).
+      key: "cites",
+      count: citesSinPermiso.length,
+      severity: "warning",
+      penalty: 0,
+      title: `${citesSinPermiso.length} ${plural(citesSinPermiso.length, "especie CITES sin permiso", "especies CITES sin permiso")} cargado`,
+      okTitle: "Especies CITES con su permiso cargado",
+      description:
+        citesSinPermiso.length > 0
+          ? `Especies protegidas en el libro sin permiso en el catálogo: ${listar(citesSinPermiso)}. Es legal con permiso archivado — cargalo para acreditarlo ante OSINFOR.`
+          : "Cada especie CITES del libro tiene su permiso cargado (o no hay CITES).",
+      action: "Cargá el N° de permiso en Configurar carátula → Permisos CITES.",
+      navTarget: "caratula",
+      navigateLabel: "Configurar carátula",
     },
   ];
 

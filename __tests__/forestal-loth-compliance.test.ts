@@ -59,6 +59,23 @@ describe("computeLothCompliance", () => {
     expect(r.problemas[r.problemas.length - 1].severity).toBe("warning");
   });
 
+  it("CITES sin permiso → advertencia informativa que NO resta score", () => {
+    const r = computeLothCompliance({
+      anomalias: [],
+      caratula: CARATULA_OK,
+      totalLineas: 5,
+      citesSinPermiso: ["Caoba", "Cedro"],
+    });
+    expect(r.score).toBe(100); // CITES no penaliza (regla del CTP)
+    expect(r.bloqueos).toBe(0);
+    expect(r.advertencias).toBe(1); // aparece como recordatorio
+    expect(r.readiness).toBe("warning");
+    const cites = r.problemas.find((c) => c.key === "cites");
+    expect(cites?.description).toContain("Caoba");
+    // No aparece en el desglose del score (penalty 0)
+    expect(r.breakdown.some((b) => b.key === "cites")).toBe(false);
+  });
+
   it("el score nunca baja de 0 aunque se acumulen penalidades", () => {
     // 40+20+20+15 (bloqueos) + 10+10+5 (advertencias) = 120 → clamp a 0
     const anomalias: LothAnomaly[] = [

@@ -420,7 +420,7 @@ export class ForestPlanDB {
     const [entries, speciesRows] = await Promise.all([
       prisma.forestLothEntry.findMany({
         where: { tenantId, deletedAt: null, status: "registrado" },
-        select: { section: true, speciesCommon: true, trozaCode: true, volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true },
+        select: { section: true, speciesCommon: true, trozaCode: true, volumeM3: true, quantity: true, unit: true, entryDate: true, createdAt: true, cites: true },
       }),
       plan
         ? prisma.forestPlanSpecies.findMany({ where: { tenantId, planId: plan.id, deletedAt: null } })
@@ -476,10 +476,16 @@ export class ForestPlanDB {
       costeo = computeCosteo(costeoInputs, costos);
     }
 
+    // Especies CITES presentes en el libro (para el cruce con el catálogo de
+    // permisos en el panel Cumplimiento — informativo, no resta score).
+    const citesEspecies = [
+      ...new Set(entries.filter((e) => e.cites && e.speciesCommon).map((e) => e.speciesCommon as string)),
+    ];
+
     return {
       hasPlan: !!plan,
       plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos } : null,
-      aprovechamiento, balance, anomalias, projection, lateCount, costeo,
+      aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies,
     };
   }
 
