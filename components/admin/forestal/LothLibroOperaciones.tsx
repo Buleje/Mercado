@@ -52,6 +52,7 @@ import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
 import LothAnalyticsView from "./LothAnalyticsView";
 import LothCompliancePanel from "./LothCompliancePanel";
+import LothResumenStrip from "./LothResumenStrip";
 import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
 
 type LothEntry = LothEntryDTO;
@@ -305,6 +306,9 @@ export default function LothLibroOperaciones() {
   const totalLines = stats.reduce((a, s) => a + s.count, 0);
   const citesCount = entries.filter((e) => e.cites && e.status === "registrado").length;
   const cols = COLS[section];
+  // Qué métrica tiene sentido en el KPI de cada sección (evita el "0.00" de ruido).
+  const usaVolumen = section === "tala" || section === "trozado" || section === "consumo_troza";
+  const usaCantidad = section === "producto_terminado" || section === "despacho_producto";
 
   return (
     <div className="space-y-6">
@@ -437,6 +441,9 @@ export default function LothLibroOperaciones() {
 
       {view === "secciones" && (
         <>
+      {/* Resumen "de un vistazo" del aprovechamiento (bosque → producto) */}
+      <LothResumenStrip onNavigate={(v) => setView(v)} />
+
       {/* Sub-tabs de las 6 secciones */}
       <div className="flex flex-wrap gap-2">
         {LOTH_SECTIONS.map((s) => {
@@ -468,11 +475,17 @@ export default function LothLibroOperaciones() {
         })}
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {/* KPIs — adaptados a la sección (evita mostrar métricas que no aplican:
+          volumen en tala/trozado/consumo · cantidad en producto/despacho PT). */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard label={`Líneas · ${SECTION_META[section].short}`} value={(cur?.count ?? 0).toString()} subValue={`${totalLines} en el libro`} icon={Boxes} emphasis="neutral" />
-        <StatCard label="Volumen registrado" value={`${(cur?.totalVolumeM3 ?? 0).toFixed(2)} m³`} subValue={SECTION_META[section].short} icon={TreePine} emphasis="success" />
-        <StatCard label="Cantidad (prod.)" value={(cur?.totalQuantity ?? 0).toFixed(2)} subValue="prod. terminado" icon={FileText} emphasis="neutral" />
+        {usaVolumen ? (
+          <StatCard label="Volumen registrado" value={`${(cur?.totalVolumeM3 ?? 0).toFixed(2)} m³`} subValue={SECTION_META[section].short} icon={TreePine} emphasis="success" />
+        ) : usaCantidad ? (
+          <StatCard label="Cantidad registrada" value={(cur?.totalQuantity ?? 0).toFixed(2)} subValue={SECTION_META[section].short} icon={FileText} emphasis="success" />
+        ) : (
+          <StatCard label="Trozas despachadas" value={(cur?.count ?? 0).toString()} subValue="con N° de GTF" icon={Truck} emphasis="success" />
+        )}
         <StatCard label="Especies CITES" value={citesCount.toString()} subValue="en esta sección" icon={ShieldAlert} emphasis={citesCount > 0 ? "error" : "neutral"} />
       </div>
 
