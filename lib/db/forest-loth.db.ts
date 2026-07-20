@@ -44,6 +44,7 @@ export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
  *   T3 · trozaCode único en Trozado; treeCode único en Tala → cadena ambigua
  *   T4 · Σ trozado(árbol) ≤ volumen de la tala del árbol    → trozar más que lo tumbado
  *   T5 · Σ despacho_producto ≤ Σ producto_terminado         → despachar más que lo producido
+ *   T6 · Σ movilizado(especie) ≤ volumen autorizado (POA)   → EXCESO DE APROVECHAMIENTO (OSINFOR)
  */
 export class LothInvariantError extends Error {
   constructor(
@@ -54,7 +55,8 @@ export class LothInvariantError extends Error {
       | "T3_TROZA_DUPLICADA"
       | "T3_TALA_DUPLICADA"
       | "T4_TROZADO_SUPERA_TALA"
-      | "T5_DESPACHO_SUPERA_PRODUCCION",
+      | "T5_DESPACHO_SUPERA_PRODUCCION"
+      | "T6_EXCESO_AUTORIZADO",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -349,7 +351,7 @@ export class ForestLothDB {
       // T2 — la troza debe existir en Trozado (origen legal de la salida).
       const trozada = await tx.forestLothEntry.findFirst({
         where: { tenantId, section: "trozado", trozaCode, status: "registrado", deletedAt: null },
-        select: { id: true },
+        select: { id: true, speciesCommon: true, volumeM3: true },
       });
       if (!trozada) {
         throw new LothInvariantError(
@@ -376,6 +378,15 @@ export class ForestLothDB {
           `La troza ${trozaCode} ya fue ${queHizo} (línea #${usada.lineNo}). Una troza sale del bosque una sola vez.`,
           "T1_TROZA_YA_MOVILIZADA",
           { trozaCode, lineNo: usada.lineNo, section: usada.section },
+        );
+      }
+      // T6 — despachar la troza no puede exceder el volumen autorizado del POA
+      //      para su especie (sólo despacho MOVILIZA; consumo interno no mueve al
+      //      exterior). El volumen es el de la troza según su Trozado.
+      if (section === "despacho_troza") {
+        await ForestLothDB.enforceT6(
+          tx, tenantId, input.planId ?? null,
+          trozada.speciesCommon, trozada.volumeM3 != null ? Number(trozada.volumeM3) : 0,
         );
       }
       return;
@@ -408,9 +419,96 @@ export class ForestLothDB {
           { productType, producido: r4(producido), yaDespachado: r4(yaDespachado), pedido: r4(qty) },
         );
       }
+      // T6 — sólo el producto despachado en m³ moviliza volumen comparable con el
+      //      autorizado (kg/unidad no se cuentan contra el volumen del POA, igual
+      //      que en `computeBalance`).
+      if (unit === "m3") {
+        await ForestLothDB.enforceT6(tx, tenantId, input.planId ?? null, speciesCommon, qty);
+      }
       return;
     }
     // producto_terminado: output del aserrío, sin invariante dura.
+  }
+
+  /**
+   * T6 — el volumen MOVILIZADO de una especie no puede superar el volumen
+   * AUTORIZADO por el título habilitante (POA) — el exceso de aprovechamiento es
+   * la infracción que sanciona OSINFOR. Antes sólo se DETECTABA en la Analítica
+   * (`computeBalance.exceso`); acá se IMPIDE al escribir el despacho.
+   *
+   * Aplica sólo cuando el plan define un volumen autorizado para esa especie (si
+   * no, es código libre sin techo → se salta, mismo criterio que T4 sin tala).
+   * LOCKEA la fila de autorización de la especie (`ForestPlanSpecies`), que es el
+   * recurso disputado: dos despachos de la misma especie serializan sobre ella y
+   * ninguno pasa leyendo un movilizado desactualizado. Es otra tabla que el lock
+   * de T1 (sobre `ForestLothEntry` por trozaCode) → sin ciclo de deadlock.
+   *
+   * `movilizado` espeja EXACTO a `computeBalance` (loth-constants): despacho de
+   * trozas (volumen resuelto vía Trozado) + despacho de producto en m³.
+   */
+  private static async enforceT6(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    planIdInput: string | null,
+    speciesCommon: string | null,
+    nuevoVolumen: number,
+  ): Promise<void> {
+    const species = speciesCommon?.trim() || null;
+    if (!species || !(nuevoVolumen > 0)) return;
+
+    // Plan de referencia: el de la línea, o el vigente del tenant.
+    const planId =
+      planIdInput ??
+      (await tx.forestPlan.findFirst({
+        where: { tenantId, deletedAt: null, estado: "vigente" },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      }))?.id ??
+      null;
+    if (!planId) return;
+
+    // Lock + lectura de la autorización de la especie (el recurso disputado).
+    await tx.$queryRaw`
+      SELECT "id" FROM "ForestPlanSpecies"
+      WHERE "tenantId" = ${tenantId} AND "planId" = ${planId} AND "speciesCommon" = ${species} AND "deletedAt" IS NULL
+      ORDER BY "id" FOR UPDATE`;
+    const auth = await tx.forestPlanSpecies.findFirst({
+      where: { tenantId, planId, speciesCommon: species, deletedAt: null },
+      select: { volumenAutorizadoM3: true },
+    });
+    if (!auth?.volumenAutorizadoM3) return; // sin techo declarado → no se bloquea
+    const autorizado = Number(auth.volumenAutorizadoM3);
+
+    // Movilizado hasta ahora para la especie (espejo de computeBalance):
+    //  (a) trozas ya despachadas → su volumen según Trozado, filtrado a la especie
+    const despachadas = await tx.forestLothEntry.findMany({
+      where: { tenantId, section: "despacho_troza", status: "registrado", deletedAt: null },
+      select: { trozaCode: true },
+    });
+    const codes = despachadas.map((d) => d.trozaCode).filter((c): c is string => !!c);
+    let movTrozas = 0;
+    if (codes.length > 0) {
+      const trozados = await tx.forestLothEntry.aggregate({
+        where: { tenantId, section: "trozado", status: "registrado", deletedAt: null, speciesCommon: species, trozaCode: { in: codes } },
+        _sum: { volumeM3: true },
+      });
+      movTrozas = Number(trozados._sum.volumeM3 ?? 0);
+    }
+    //  (b) producto terminado despachado en m³ de la especie
+    const prodDesp = await tx.forestLothEntry.aggregate({
+      where: { tenantId, section: "despacho_producto", status: "registrado", deletedAt: null, speciesCommon: species, unit: "m3" },
+      _sum: { quantity: true },
+    });
+    const movilizado = movTrozas + Number(prodDesp._sum.quantity ?? 0);
+
+    if (r4(movilizado + nuevoVolumen) > r4(autorizado)) {
+      throw new LothInvariantError(
+        `El POA autoriza ${r4(autorizado)} m³ de ${species} y ya se movilizaron ${r4(movilizado)} m³; ` +
+          `este despacho de ${r4(nuevoVolumen)} m³ excede lo autorizado. Es la infracción que sanciona OSINFOR.`,
+        "T6_EXCESO_AUTORIZADO",
+        { species, autorizado: r4(autorizado), movilizado: r4(movilizado), pedido: r4(nuevoVolumen) },
+      );
+    }
   }
 
   static async list(tenantId: string, filters: LothListFilters = {}) {

@@ -48,6 +48,7 @@ suma sobre un puente.
 | **T3** | `trozaCode` único en `trozado`; `treeCode` único en `tala` | cadena ambigua / doble tumba |
 | **T4** | Σ trozado(árbol) ≤ volumen de la tala del árbol | trozar más de lo tumbado |
 | **T5** | Σ despacho_producto(prod·esp·unidad) ≤ Σ producto_terminado | despachar más de lo producido |
+| **T6** | Σ movilizado(especie) ≤ volumen autorizado del POA | **exceso de aprovechamiento** (la infracción que sanciona OSINFOR) |
 
 Reglas de diseño heredadas del CTP:
 
@@ -63,12 +64,17 @@ Reglas de diseño heredadas del CTP:
 - **`lineNo` atómico**: se calcula bajo `FOR UPDATE` de la sección/carátula
   (`IS NOT DISTINCT FROM` para la carátula null).
 
-### Fuera de alcance de este ADR (se tratan aparte)
+### T6 — exceso de aprovechamiento (añadido en la 2ª ronda)
 
-- **T6 — movilizado ≤ autorizado por el plan** (exceso de aprovechamiento): sigue
-  como *señal* de cumplimiento (`computeBalance.exceso` + panel Cumplimiento), no
-  como bloqueo duro, porque depende del volumen autorizado del POA que el plan
-  puede no tener cargado; bloquear al escribir atraparía correcciones legítimas.
+`T6` bloquea movilizar (despacho de troza o de producto en m³) más del volumen
+autorizado por el POA para esa especie — la infracción que sanciona OSINFOR. Se
+aplica **sólo cuando el plan define un volumen autorizado** para la especie (si
+no, es código libre sin techo → se salta, mismo criterio que T4 sin tala). El
+LOCK va sobre la fila de autorización de la especie (`ForestPlanSpecies`), que es
+otra tabla que el lock de T1 → sin ciclo de deadlock. El `movilizado` espeja
+EXACTO a `computeBalance` (despacho de trozas resuelto vía Trozado + producto en
+m³). Antes sólo se DETECTABA en la Analítica; ahora se IMPIDE.
+
 - Sin migración de schema: las invariantes son de comportamiento, no de datos.
 
 ## Consecuencias
