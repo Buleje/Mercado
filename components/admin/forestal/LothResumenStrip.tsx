@@ -121,8 +121,8 @@ export default function LothResumenStrip({ onNavigate }: { onNavigate: (view: "a
         </div>
       </div>
 
-      {/* Embudo de negocio: Talado → Trozado → Movilizado */}
-      <div className="flex flex-wrap items-stretch gap-2 p-3 sm:flex-nowrap sm:items-center sm:gap-0">
+      {/* Embudo de negocio: Talado → Trozado → Movilizado (stack en mobile) */}
+      <div className="flex flex-col gap-1 p-3 sm:flex-row sm:flex-nowrap sm:items-center sm:gap-0">
         <Stage icon={TreePine} label="Talado" value={`${fm(talado)} m³`} sub="tumbado en el bosque" />
         <Arrow />
         <Stage
