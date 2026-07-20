@@ -108,6 +108,12 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
       return NextResponse.json({ items });
     }
 
+    // Cadena de custodia de un árbol/troza por su código (drill-in desde la tabla).
+    const traceCode = url.searchParams.get("trace");
+    if (traceCode) {
+      return NextResponse.json({ trace: await ForestLothDB.traceByCode(auth.tenantId, traceCode) });
+    }
+
     const sectionParam = url.searchParams.get("section");
     const section =
       sectionParam && (LOTH_SECTIONS as readonly string[]).includes(sectionParam)

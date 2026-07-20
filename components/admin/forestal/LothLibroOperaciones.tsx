@@ -53,6 +53,7 @@ import LothGtfView from "./LothGtfView";
 import LothAnalyticsView from "./LothAnalyticsView";
 import LothCompliancePanel from "./LothCompliancePanel";
 import LothResumenStrip from "./LothResumenStrip";
+import LothCadenaModal from "./LothCadenaModal";
 import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
 
 type LothEntry = LothEntryDTO;
@@ -149,6 +150,7 @@ export default function LothLibroOperaciones() {
   const [showCaratula, setShowCaratula] = useState(false);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
+  const [cadenaCode, setCadenaCode] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [view, setView] = useState<LothView>(() => {
     if (typeof window === "undefined") return "secciones";
@@ -588,10 +590,23 @@ export default function LothLibroOperaciones() {
                         </div>
                       </div>
                     ) : (
-                      <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} title="Anular (subsanación SERFOR — queda visible)" className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">
-                        <Ban className="h-3 w-3" />
-                        Anular
-                      </button>
+                      <div className="inline-flex items-center justify-end gap-1.5">
+                        {(e.trozaCode || e.treeCode) && (
+                          <button
+                            type="button"
+                            onClick={() => setCadenaCode(e.trozaCode || e.treeCode)}
+                            title="Ver la cadena de custodia de este árbol/troza"
+                            className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                          >
+                            <Share2 className="h-3 w-3" />
+                            Cadena
+                          </button>
+                        )}
+                        <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} title="Anular (subsanación SERFOR — queda visible)" className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">
+                          <Ban className="h-3 w-3" />
+                          Anular
+                        </button>
+                      </div>
                     )}
                   </Td>
                 </tr>
@@ -635,6 +650,7 @@ export default function LothLibroOperaciones() {
           onSaved={() => { setShowCaratula(false); refreshAll(); }}
         />
       )}
+      {cadenaCode && <LothCadenaModal code={cadenaCode} onClose={() => setCadenaCode(null)} />}
     </div>
   );
 }
