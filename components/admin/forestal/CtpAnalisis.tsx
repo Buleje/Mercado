@@ -16,7 +16,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { CardTitle } from "@buleje/design-system";
 import {
   AlertCircle,
+  AlertTriangle,
   Boxes,
+  CheckCircle2,
   Layers,
   Minus,
   RefreshCw,
@@ -26,6 +28,7 @@ import {
 } from "@buleje/design-system/icons";
 import { BulejeComposedChart, BulejeLineChart, BulejeDonutChart, BulejeSparkline } from "@/components/ui-system/charts";
 import { SERIES_PALETTE } from "@/components/ui-system/charts/palette";
+import { Btn } from "./ctp-shared";
 import type { ReordenProyeccion, TendenciaMes } from "@/lib/db/forest-ctp.db";
 
 const n2 = (v: number) => v.toFixed(2);
@@ -88,11 +91,29 @@ export default function CtpAnalisis() {
   }, [reorden]);
   const stockTotal = useMemo(() => stockData.reduce((a, d) => a + d.value, 0), [stockData]);
 
+  // Reorden ordenado por urgencia: lo que se agota primero, arriba (el output que
+  // más importa — "¿qué madera me falta?"). Sin días de agotar (no se consume) al fondo.
+  const reordenSorted = useMemo(() => {
+    if (!reorden) return null;
+    return [...reorden].sort((a, b) => (a.diasHastaAgotar ?? Infinity) - (b.diasHastaAgotar ?? Infinity));
+  }, [reorden]);
+
+  // Síntesis accionable de la reposición: cuántas especies críticas (≤14 días) o
+  // por reponer este mes (≤30), y cuál es la más urgente.
+  const reordenInsight = useMemo(() => {
+    if (!reordenSorted) return null;
+    const conDias = reordenSorted.filter((r): r is ReordenProyeccion & { diasHastaAgotar: number } => r.diasHastaAgotar != null);
+    return {
+      criticas: conDias.filter((r) => r.diasHastaAgotar <= 14),
+      pronto: conDias.filter((r) => r.diasHastaAgotar > 14 && r.diasHastaAgotar <= 30),
+    };
+  }, [reordenSorted]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <p className="max-w-2xl text-sm text-[var(--text-tertiary)]">Reorden predictivo (¿cuándo me quedo sin madera?) y tendencias de los últimos 6 meses. Derivado del libro, sin configurar nada.</p>
-        <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+        <Btn variant="secondary" size="md" onClick={() => void load()} disabled={loading} className="shrink-0"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</Btn>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
@@ -113,6 +134,16 @@ export default function CtpAnalisis() {
             <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><TrendingUp className="h-4 w-4" /> Reorden predictivo de materia prima</CardTitle>
             <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Días de stock al ritmo de consumo de los últimos 90 días. Repone antes de que llegue a cero.</p>
           </div>
+          {reorden.length > 0 && reordenInsight && (() => {
+            const b = reordenBanner(reordenInsight);
+            const s = REORDEN_BANNER[b.tone];
+            return (
+              <div className={`flex items-center gap-2 border-b-2 border-[var(--rule-base)] px-4 py-2.5 text-sm font-medium ${s.cls}`}>
+                <s.Icon className="h-4 w-4 shrink-0" />
+                <span>{b.text}</span>
+              </div>
+            );
+          })()}
           {reorden.length === 0 ? (
             <div className="p-8 text-center text-sm text-[var(--text-tertiary)]">Sin materia prima ni consumo registrado.</div>
           ) : (
@@ -126,7 +157,7 @@ export default function CtpAnalisis() {
                 </tr>
               </thead>
               <tbody>
-                {reorden.map((r) => {
+                {(reordenSorted ?? reorden).map((r) => {
                   const u = urgencia(r.diasHastaAgotar);
                   return (
                     <tr key={r.especie} className="border-t border-[var(--rule-soft)]">
@@ -350,6 +381,28 @@ function ChartCard({ title, subtitle, legend, children }: {
       {children}
     </div>
   );
+}
+
+/** Estilos del banner de reposición por tono (mismo lenguaje que el resto del CTP). */
+const REORDEN_BANNER: Record<"error" | "warning" | "success", { cls: string; Icon: typeof AlertCircle }> = {
+  error: { cls: "bg-[var(--data-error-50)] text-[var(--data-error-700)]", Icon: AlertCircle },
+  warning: { cls: "bg-[var(--data-warning-50)] text-[var(--data-warning-700)]", Icon: AlertTriangle },
+  success: { cls: "bg-[var(--data-success-50)] text-[var(--data-success-700)]", Icon: CheckCircle2 },
+};
+
+/** Síntesis en una línea: qué reponer y con qué urgencia. La más crítica, nombrada. */
+function reordenBanner(insight: { criticas: (ReordenProyeccion & { diasHastaAgotar: number })[]; pronto: (ReordenProyeccion & { diasHastaAgotar: number })[] }): { tone: "error" | "warning" | "success"; text: string } {
+  const { criticas, pronto } = insight;
+  if (criticas.length > 0) {
+    const top = criticas[0];
+    const extra = criticas.length > 1 ? ` (+${criticas.length - 1} más)` : "";
+    return { tone: "error", text: `${criticas.length} ${criticas.length === 1 ? "especie se agota" : "especies se agotan"} en ≤14 días — la más urgente: ${top.especie} en ${top.diasHastaAgotar} ${top.diasHastaAgotar === 1 ? "día" : "días"}${extra}. Reponé ya.` };
+  }
+  if (pronto.length > 0) {
+    const names = pronto.slice(0, 3).map((r) => r.especie).join(", ");
+    return { tone: "warning", text: `${pronto.length} ${pronto.length === 1 ? "especie" : "especies"} por reponer este mes: ${names}${pronto.length > 3 ? ` y ${pronto.length - 3} más` : ""}.` };
+  }
+  return { tone: "success", text: "Stock holgado — ninguna especie se agota en los próximos 30 días." };
 }
 
 function urgencia(dias: number | null): { label: string; cls: string } {
