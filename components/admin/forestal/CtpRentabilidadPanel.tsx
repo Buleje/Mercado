@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, Coins, Loader2, TrendingUp, Wallet } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -71,18 +71,16 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
   if (error && !pnl) return <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Error:</strong> {error}</div></div>;
   if (!pnl) return <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando P&L…</p>;
 
-  const marginTone = pnl.margenTotal < 0 ? "text-[var(--data-error-700)]" : "text-[var(--data-success-700)]";
-
   return (
     <div className="space-y-5">
       {error && <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div>{error}</div></div>}
 
-      {/* Resumen */}
+      {/* Resumen — StatCard del DS (mismo patrón que Ingresos/Producción/Saldos) */}
       <div className="grid gap-3 sm:grid-cols-4">
-        <StatCard icon={Coins} label="Ventas" value={money(pnl.ventasTotal, pnl.moneda)} sub={`${pnl.completos} despachos costeados`} />
-        <StatCard icon={Wallet} label="COGS" value={money(pnl.cogsTotal, pnl.moneda)} sub="costo de lo vendido" />
-        <StatCard icon={TrendingUp} label="Margen" value={money(pnl.margenTotal, pnl.moneda)} sub={pct(pnl.margenPct)} valueClass={marginTone} />
-        <StatCard icon={AlertCircle} label="Incompletos" value={`${pnl.sinVenta + pnl.sinCosto}`} sub={`${pnl.sinVenta} sin venta · ${pnl.sinCosto} sin costo`} />
+        <StatCard icon={Coins} label="Ventas" value={money(pnl.ventasTotal, pnl.moneda)} subValue={`${pnl.completos} despachos costeados`} emphasis="neutral" />
+        <StatCard icon={Wallet} label="COGS" value={money(pnl.cogsTotal, pnl.moneda)} subValue="costo de lo vendido" emphasis="neutral" />
+        <StatCard icon={TrendingUp} label="Margen" value={money(pnl.margenTotal, pnl.moneda)} subValue={pct(pnl.margenPct)} emphasis={pnl.margenTotal < 0 ? "error" : "success"} />
+        <StatCard icon={AlertCircle} label="Incompletos" value={`${pnl.sinVenta + pnl.sinCosto}`} subValue={`${pnl.sinVenta} sin venta · ${pnl.sinCosto} sin costo`} emphasis={pnl.sinVenta + pnl.sinCosto > 0 ? "warning" : "neutral"} />
       </div>
 
       {(pnl.sinVenta > 0 || pnl.sinCosto > 0) && (
@@ -149,12 +147,3 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
   );
 }
 
-function StatCard({ icon: Icon, label, value, sub, valueClass }: { icon: typeof Coins; label: string; value: string; sub?: string; valueClass?: string }) {
-  return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="flex items-center gap-2 text-[var(--text-tertiary)]"><Icon className="h-4 w-4" /><span className="text-xs font-bold uppercase tracking-wide">{label}</span></div>
-      <p className={`mt-1 text-xl font-extrabold ${valueClass ?? "text-[var(--text-primary)]"}`}>{value}</p>
-      {sub && <p className="text-xs text-[var(--text-tertiary)]">{sub}</p>}
-    </div>
-  );
-}

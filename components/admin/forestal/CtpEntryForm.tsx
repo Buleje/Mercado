@@ -220,8 +220,8 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
 
   const Icon = meta.icon;
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[640px]">
-      <div className="flex h-full max-h-[86vh] flex-col bg-[var(--surface-raised)]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[940px]">
+      <div className="flex h-full max-h-[92vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--data-success-100)] text-[var(--data-success-700)]"><Icon className="h-5 w-5" strokeWidth={1.75} /></span>
@@ -233,19 +233,19 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
           <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>
         </header>
 
-        <form id="ctp-entry-form" onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
-          {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">{error}</div>}
+        <form id="ctp-entry-form" onSubmit={submit} className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">
+          {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">{error}</div>}
 
           <Field label="Fecha" required><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} required className={I} /></Field>
 
           {/* Picker data-driven */}
-          <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3">
+          <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 sm:col-span-2">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-700)]">{meta.sourceTitle}</span>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
               <input value={srcQuery} onChange={(e) => setSrcQuery(e.target.value)} placeholder="Buscar..." className={`${I} h-9 pl-8`} />
             </div>
-            <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+            <div className="max-h-56 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
               {loadingSrc ? <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
                 : filtered.length === 0 ? <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">{emptyPickerMsg}</div>
                 : filtered.map((it, i) => (
@@ -267,19 +267,22 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
           </Field>
 
           {section === "despacho" && (
-            <CtpOrigenesPicker
-              origenes={origenes}
-              onChangeQuantity={(id, value) => setOrigenes((prev) => prev.map((o) => (o.produccionEntryId === id ? { ...o, quantity: value } : o)))}
-              onRemove={(id) => setOrigenes((prev) => prev.filter((o) => o.produccionEntryId !== id))}
-              totalAtribuido={totalAtribuido}
-              quantityDeclared={Number(quantity) || 0}
-              unitLabel={UNIT_LABELS[unit] ?? unit}
-            />
+            <div className="sm:col-span-2">
+              <CtpOrigenesPicker
+                origenes={origenes}
+                onChangeQuantity={(id, value) => setOrigenes((prev) => prev.map((o) => (o.produccionEntryId === id ? { ...o, quantity: value } : o)))}
+                onRemove={(id) => setOrigenes((prev) => prev.filter((o) => o.produccionEntryId !== id))}
+                totalAtribuido={totalAtribuido}
+                quantityDeclared={Number(quantity) || 0}
+                unitLabel={UNIT_LABELS[unit] ?? unit}
+              />
+            </div>
           )}
 
           {section === "produccion" && (
             <>
               <Field label="Ref. materia prima" hint="Lote o acopio de origen (libre)"><input value={materiaPrimaRef} onChange={(e) => setMateriaPrimaRef(e.target.value)} placeholder="lote / acopio" className={I} /></Field>
+              <div className="sm:col-span-2">
               <CtpConsumosPicker
                 consumos={consumos}
                 onChangeVolume={(id, value) => setConsumos((prev) => prev.map((c) => (c.woodEntryId === id ? { ...c, volumeM3: value } : c)))}
@@ -291,6 +294,7 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
                 producedQty={Number(quantity) || 0}
                 producedUnitLabel={UNIT_LABELS[unit] ?? unit}
               />
+              </div>
               <Field label="Volumen consumido (m³)" hint="Se autocompleta con el total atribuido; editalo si la atribución es parcial">
                 <input type="number" step="0.0001" value={volumeInputM3} onChange={(e) => { setVolumeInputM3(e.target.value); setVolumeTouched(true); }} placeholder="2.13" className={`${I} font-mono tabular-nums`} />
               </Field>
@@ -301,7 +305,7 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
             <select value={productType} onChange={(e) => setProductType(e.target.value)} disabled={despachoLocked} className={`${I} disabled:cursor-not-allowed disabled:opacity-60`}>{PRODUCT_TYPES.map((p) => <option key={p} value={p}>{p}</option>)}</select>
           </Field>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 sm:col-span-2">
             {section === "despacho" && <Field label="N° piezas"><input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={I} /></Field>}
             <Field label={section === "produccion" ? "Producido" : "Cantidad"} required hint={section === "despacho" ? "Se autocompleta con el total atribuido" : undefined}>
               <input type="number" step="0.0001" value={quantity} onChange={(e) => { setQuantity(e.target.value); if (section === "despacho") setQuantityTouched(true); }} placeholder="1.90" className={`${I} font-mono tabular-nums`} />
@@ -312,17 +316,17 @@ export default function CtpEntryForm({ section, onClose, onSaved }: Props) {
           </div>
 
           {rendimiento != null && (
-            <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-xs text-[var(--data-success-700)]"><Check className="h-3.5 w-3.5" /> Rendimiento: <b>{rendimiento}%</b> (producido / consumido)</div>
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-xs text-[var(--data-success-700)] sm:col-span-2"><Check className="h-3.5 w-3.5" /> Rendimiento: <b>{rendimiento}%</b> (producido / consumido)</div>
           )}
 
           {section === "despacho" && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:col-span-2">
               <Field label="N° de GTF" required><input value={gtfNumber} onChange={(e) => setGtfNumber(e.target.value)} placeholder="001-00000025" className={`${I} font-mono`} /></Field>
               <Field label="Destino"><input value={destino} onChange={(e) => setDestino(e.target.value)} placeholder="Industria / cliente" className={I} /></Field>
             </div>
           )}
 
-          <Field label="Observaciones"><textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional..." className={`${I} h-auto resize-none py-2.5`} /></Field>
+          <div className="sm:col-span-2"><Field label="Observaciones"><textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional..." className={`${I} h-auto resize-none py-2.5`} /></Field></div>
         </form>
 
         <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">

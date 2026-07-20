@@ -201,13 +201,18 @@ export default function CTPLibroOperaciones() {
         </div>
       </AdminModuleHeader>
 
-      <CtpPeriodPicker
-        periodKey={periodKey}
-        custom={custom}
-        period={period}
-        onKeyChange={setPeriodKey}
-        onCustomChange={setCustom}
-      />
+      {/* El selector de período solo aplica a las vistas period-scoped. Análisis
+          (tendencia fija de 6 meses), Cierre (por mes) y Ficha (identidad) NO lo
+          usan — mostrarlo ahí hacía parecer que "el selector no hace nada". */}
+      {!["analisis", "cierre", "ficha"].includes(view) && (
+        <CtpPeriodPicker
+          periodKey={periodKey}
+          custom={custom}
+          period={period}
+          onKeyChange={setPeriodKey}
+          onCustomChange={setCustom}
+        />
+      )}
 
       <CtpAsistente />
 
