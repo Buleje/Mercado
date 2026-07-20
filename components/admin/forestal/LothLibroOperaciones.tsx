@@ -18,6 +18,7 @@ import {
   Boxes,
   FileText,
   ShieldAlert,
+  ShieldCheck,
   Ban,
   Download,
   Printer,
@@ -50,6 +51,8 @@ import LothTraceView from "./LothTraceView";
 import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
 import LothAnalyticsView from "./LothAnalyticsView";
+import LothCompliancePanel from "./LothCompliancePanel";
+import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
 
 type LothEntry = LothEntryDTO;
 
@@ -119,7 +122,7 @@ const COLS: Record<LothSection, Col[]> = {
   ],
 };
 
-type LothView = "secciones" | "trazabilidad" | "plan" | "gtf" | "analitica";
+type LothView = "secciones" | "trazabilidad" | "plan" | "gtf" | "analitica" | "cumplimiento";
 
 // Sub-tabs coherentes con el resto del admin (AdminTabBar: reorden por drag +
 // registro en sidebar), reemplaza el toggle segmentado hecho a mano.
@@ -130,6 +133,7 @@ const LOTH_TAB_ITEMS = [
   { id: "trazabilidad", label: "Trazabilidad", icon: Share2, title: "Operación completa por árbol" },
   { id: "gtf", label: "GTF", icon: Truck, title: "Guías de transporte forestal" },
   { id: "analitica", label: "Analítica", icon: TrendingUp, title: "Aprovechamiento + anomalías" },
+  { id: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, title: "Veredicto de fiscalización + reporte imprimible" },
 ];
 
 export default function LothLibroOperaciones() {
@@ -400,6 +404,17 @@ export default function LothLibroOperaciones() {
 
       {/* Vista Analítica — inteligencia de aprovechamiento + anomalías (Batch 2) */}
       {view === "analitica" && <LothAnalyticsView />}
+
+      {/* Vista Cumplimiento — veredicto de fiscalización OSINFOR + reporte (ADR-305) */}
+      {view === "cumplimiento" && (
+        <LothCompliancePanel
+          totalLineas={totalLines}
+          onNavigate={(t: LothNavTarget) => {
+            if (t === "caratula") setShowCaratula(true);
+            else setView(t);
+          }}
+        />
+      )}
 
       {/* Vista de trazabilidad — operación completa por árbol */}
       {view === "trazabilidad" && (
