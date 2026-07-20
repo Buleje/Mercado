@@ -35,6 +35,7 @@ import { StatCard } from "@buleje/design-system";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
+import { printLothInforme } from "@/lib/forestal/loth-informe-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import {
@@ -197,6 +198,19 @@ export default function LothLibroOperaciones() {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setExporting(null);
+    }
+  }
+
+  const [informing, setInforming] = useState(false);
+  async function doInforme() {
+    setInforming(true);
+    setError(null);
+    try {
+      await printLothInforme();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setInforming(false);
     }
   }
 
@@ -363,6 +377,16 @@ export default function LothLibroOperaciones() {
             </>
           )}
         </div>
+        <button
+          type="button"
+          onClick={doInforme}
+          disabled={informing}
+          title="Informe del período para presentar a la ARFFS / OSINFOR"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+        >
+          {informing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+          <span>{informing ? "Generando…" : "Informe ARFFS"}</span>
+        </button>
         <button
           type="button"
           onClick={refreshAll}
