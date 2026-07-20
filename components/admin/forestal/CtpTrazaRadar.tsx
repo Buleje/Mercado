@@ -405,6 +405,12 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             </div>
           )}
 
+          {/* Mobile: la cadena es más ancha que la pantalla → se desliza. Sin este
+              aviso, en el celu solo se veía media cadena y parecía cortada. */}
+          <p className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] sm:hidden">
+            Deslizá para ver toda la cadena <span aria-hidden>→</span> · tocá un nodo para el detalle
+          </p>
+          <div className="relative">
           <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)]">
             {/* Click en el fondo = soltar el pin. */}
             <svg
@@ -434,6 +440,9 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                 <Node key={n.id} n={n} dim={!!active && !active.nodes.has(n.id)} pinned={pinned === n.id} match={!!matchIds?.has(n.id)} onHover={setHover} onPin={(id) => setPinned((p) => (p === id ? null : id))} />
               ))}
             </svg>
+          </div>
+          {/* Fade en el borde derecho (mobile) — señala que hay más cadena al deslizar. */}
+          <div aria-hidden className="pointer-events-none absolute right-0.5 top-0.5 bottom-0.5 w-12 rounded-r-2xl bg-linear-to-l from-[var(--surface-sunken)] to-transparent sm:hidden" />
           </div>
         </>
       )}
