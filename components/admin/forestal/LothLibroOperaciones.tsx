@@ -36,7 +36,14 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printTrozaLabels } from "@/lib/forestal/loth-labels";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { LOTH_SECTIONS, type LothSection, type LothEntryDTO } from "@/lib/forestal/loth-constants";
+import {
+  LOTH_SECTIONS,
+  PLAZO_REGISTRO_DIAS,
+  diasDeRegistro,
+  estaFueraDePlazo,
+  type LothSection,
+  type LothEntryDTO,
+} from "@/lib/forestal/loth-constants";
 import LothEntryForm, { SECTION_META } from "./LothEntryForm";
 import LothCaratulaForm from "./LothCaratulaForm";
 import LothTraceView from "./LothTraceView";
@@ -65,14 +72,8 @@ type Col = { key: string; label: string; align?: "right"; render: (e: LothEntry)
 
 const num = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
 
-/** Días entre actividad (entryDate) y registro (createdAt). >15 = fuera de plazo SERFOR. */
-function lateDaysOf(e: LothEntry): number {
-  const act = e.entryDate ? new Date(e.entryDate).getTime() : 0;
-  const reg = (e as { createdAt?: string }).createdAt ? new Date((e as { createdAt?: string }).createdAt as string).getTime() : 0;
-  if (!act || !reg) return 0;
-  return Math.max(0, Math.floor((reg - act) / 86_400_000));
-}
-const PLAZO_DIAS = 15;
+/** createdAt no está tipado en el DTO (lo agrega Prisma en runtime) — accesor con cast. */
+const createdAtOf = (e: LothEntry) => (e as { createdAt?: string }).createdAt;
 
 const COLS: Record<LothSection, Col[]> = {
   tala: [
@@ -524,12 +525,12 @@ export default function LothLibroOperaciones() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       {e.discarded && <Tag tone="danger">descartado</Tag>}
                       {annulled && <Tag tone="danger">ANULADO</Tag>}
-                      {!annulled && lateDaysOf(e) > PLAZO_DIAS && (
+                      {!annulled && estaFueraDePlazo(e.entryDate, createdAtOf(e)) && (
                         <span
-                          title={`Registrado ${lateDaysOf(e)} días después de la actividad — SERFOR exige registro dentro de ${PLAZO_DIAS} días`}
+                          title={`Registrado ${diasDeRegistro(e.entryDate, createdAtOf(e))} días después de la actividad — SERFOR exige registro dentro de ${PLAZO_REGISTRO_DIAS} días`}
                           className="rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-700)]"
                         >
-                          fuera de plazo · {lateDaysOf(e)}d
+                          fuera de plazo · {diasDeRegistro(e.entryDate, createdAtOf(e))}d
                         </span>
                       )}
                       {e.observations && <span className="text-xs text-[var(--text-tertiary)]">{e.observations}</span>}

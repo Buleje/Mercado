@@ -14,6 +14,44 @@ export const LOTH_SECTIONS = [
 
 export type LothSection = (typeof LOTH_SECTIONS)[number];
 
+// ─── Plazo de registro (SINGLE SOURCE) ─────────────────────────────────────
+
+/**
+ * Plazo de registro en el LO-TH: 15 días CALENDARIO desde la actividad
+ * (`entryDate`) hasta el registro (`createdAt`).
+ *
+ * ⚠️ PENDIENTE DE RECONCILIAR contra el texto vigente de la RDE 264-2019 /
+ * Reglamento (art. Libro de Operaciones): el LO-CTP se reconcilió a **2 días
+ * hábiles** (ADR-137, RDE D000025-2023); el del título habilitante puede diferir.
+ * NO cambiar el número a ciegas (skill `serfor-osinfor-compliance` §7).
+ *
+ * Este es el ÚNICO lugar donde vive el predicado: el badge del libro, la
+ * analítica (`detectAnomalias`), el export Excel y el PDF lo importan de acá para
+ * que nunca puedan divergir (antes el `15` estaba copiado en 5 archivos).
+ */
+export const PLAZO_REGISTRO_DIAS = 15;
+
+/** Días entre la actividad y su registro (calendario). null si falta una fecha. */
+export function diasDeRegistro(
+  entryDate: Date | string | null | undefined,
+  createdAt: Date | string | null | undefined,
+): number | null {
+  if (!entryDate || !createdAt) return null;
+  const act = new Date(entryDate).getTime();
+  const reg = new Date(createdAt).getTime();
+  if (!act || !reg) return null;
+  return Math.max(0, Math.floor((reg - act) / 86_400_000));
+}
+
+/** ¿La línea se registró fuera del plazo SERFOR? */
+export function estaFueraDePlazo(
+  entryDate: Date | string | null | undefined,
+  createdAt: Date | string | null | undefined,
+): boolean {
+  const d = diasDeRegistro(entryDate, createdAt);
+  return d != null && d > PLAZO_REGISTRO_DIAS;
+}
+
 // ─── Fórmulas SERFOR (puras, testeables, sin deps) ─────────────────────────
 
 /** Cubicación de troza (Smalian/SERFOR): 0.7854 × ((Ø mayor + Ø menor)/2)² × Longitud (m³). */
@@ -206,7 +244,7 @@ export function detectAnomalias(
       out.push({ level: "warn", code: "troza_fantasma", message: `Troza ${e.trozaCode} despachada sin registro de trozado.` });
     }
   }
-  if (lateCount > 0) out.push({ level: "warn", code: "fuera_de_plazo", message: `${lateCount} línea(s) registrada(s) fuera del plazo de 15 días.` });
+  if (lateCount > 0) out.push({ level: "warn", code: "fuera_de_plazo", message: `${lateCount} línea(s) registrada(s) fuera del plazo de ${PLAZO_REGISTRO_DIAS} días.` });
   return out;
 }
 

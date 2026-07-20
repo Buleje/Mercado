@@ -12,6 +12,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import {
   censusVolume, computeBalance, computeAprovechamiento, detectAnomalias, projectSaldo, computeCosteo,
+  estaFueraDePlazo,
   type BalanceMovement, type BalanceSpeciesInput, type CosteoSpeciesInput,
 } from "@/lib/forestal/loth-constants";
 
@@ -443,11 +444,8 @@ export class ForestPlanDB {
       balance = computeBalance(species, movements, { uitRef: Number(plan.uitRef ?? 0), areaHa: Number(plan.areaHa ?? 0) });
     }
 
-    // Fuera de plazo: createdAt − entryDate > 15 días
-    const lateCount = entries.filter((e) => {
-      if (!e.entryDate || !e.createdAt) return false;
-      return (e.createdAt.getTime() - e.entryDate.getTime()) / 86_400_000 > 15;
-    }).length;
+    // Fuera de plazo — predicado ÚNICO (loth-constants), no re-implementado acá.
+    const lateCount = entries.filter((e) => estaFueraDePlazo(e.entryDate, e.createdAt)).length;
 
     const anomalias = detectAnomalias(movements, balance?.rows ?? [], lateCount);
 
