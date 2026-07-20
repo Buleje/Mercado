@@ -7,6 +7,7 @@ import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 
 /**
  * /api/admin/forestal/loth — Libro de Operaciones Títulos Habilitantes (ADR-125)
@@ -146,12 +147,7 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
   }
 
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "validation_error", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  if (!parsed.success) return lothValidationResponse(parsed.error);
 
   try {
     const entry = await ForestLothDB.create(auth.tenantId, {
@@ -167,7 +163,7 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
     }
     return NextResponse.json({ entry }, { status: 201 });
   } catch (err) {
-    logger.error("[loth.POST] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Una invariante T1–T5 violada es dato del operador (422), no fallo del server.
+    return lothErrorResponse(err, "loth.POST", auth.tenantId);
   }
 });

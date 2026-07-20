@@ -16,9 +16,51 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
+import { auditLoth } from "@/lib/forestal/loth-audit";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
+
+/** Redondeo a 4 decimales — precisión forestal (m³/cantidad). */
+const r4 = (n: number) => Math.round(n * 10000) / 10000;
+
+/**
+ * Timeout de las transacciones del LO-TH. Igual criterio que `CTP_TX_OPTS`: los
+ * guards hacen varios round-trips dentro de la tx (lock FOR UPDATE + reads +
+ * insert) y el default de Prisma (5s) los pasa contra el pooler remoto. `maxWait`
+ * cubre la espera por conexión cuando dos altas pelean por las mismas filas.
+ */
+export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
+
+/**
+ * Error de invariante del LO-TH: el caller lo mapea a 422 (dato del operador que
+ * no cuadra), NO a 500. Gemelo de `CtpInvariantError` (ADR-134/135) — las
+ * invariantes T1–T5 (ADR-305) son la cadena de custodia del bosque traducida a
+ * código. Postgres no puede expresarlas (son agregadas + aislamiento app-level),
+ * así que si no se aplican acá, no se aplican en ningún lado.
+ *
+ *   T1 · una troza sale (despacho ∪ consumo) UNA sola vez  → doble movilización
+ *   T2 · despachar/consumir exige que la troza esté trozada → troza fantasma
+ *   T3 · trozaCode único en Trozado; treeCode único en Tala → cadena ambigua
+ *   T4 · Σ trozado(árbol) ≤ volumen de la tala del árbol    → trozar más que lo tumbado
+ *   T5 · Σ despacho_producto ≤ Σ producto_terminado         → despachar más que lo producido
+ */
+export class LothInvariantError extends Error {
+  constructor(
+    message: string,
+    readonly code:
+      | "T1_TROZA_YA_MOVILIZADA"
+      | "T2_TROZA_SIN_TROZADO"
+      | "T3_TROZA_DUPLICADA"
+      | "T3_TALA_DUPLICADA"
+      | "T4_TROZADO_SUPERA_TALA"
+      | "T5_DESPACHO_SUPERA_PRODUCCION",
+    readonly detail?: Record<string, unknown>,
+  ) {
+    super(message);
+    this.name = "LothInvariantError";
+  }
+}
 
 export interface LothEntryCreateInput {
   caratulaId?: string | null;
@@ -99,9 +141,40 @@ export { smalianVolume } from "@/lib/forestal/loth-constants";
 const dec = (v: number | string | null | undefined) =>
   v === null || v === undefined || v === "" ? null : new Prisma.Decimal(v);
 
+/** Descripción legible de una línea para el audit log (fiscalizador-friendly). */
+function describeEntry(e: {
+  section: string;
+  lineNo: number;
+  treeCode: string | null;
+  trozaCode: string | null;
+  speciesCommon: string | null;
+  volumeM3: Prisma.Decimal | null;
+  productType: string | null;
+  quantity: Prisma.Decimal | null;
+  unit: string | null;
+  gtfNumber: string | null;
+}): string {
+  const code = e.trozaCode || e.treeCode || e.productType || "—";
+  const esp = e.speciesCommon ? ` · ${e.speciesCommon}` : "";
+  const vol = e.volumeM3 != null ? ` · ${Number(e.volumeM3).toFixed(4)} m³` : "";
+  const qty = e.quantity != null ? ` · ${Number(e.quantity).toFixed(4)} ${e.unit ?? ""}`.trimEnd() : "";
+  const gtf = e.gtfNumber ? ` · GTF ${e.gtfNumber}` : "";
+  return `Registró ${e.section} #${e.lineNo}: ${code}${esp}${vol}${qty}${gtf}`;
+}
+
 export class ForestLothDB {
   // ─── Entries ─────────────────────────────────────────────────────────
 
+  /**
+   * Crea una línea del libro dentro de UNA transacción que valida las
+   * invariantes de cadena de custodia (T1–T5, ADR-305) y asigna el correlativo
+   * `lineNo` bajo LOCK. Antes de esto el `create` insertaba sin ninguna guarda:
+   * se podía movilizar dos veces la misma troza, trozar más de lo tumbado o
+   * despachar más de lo producido — justo lo que fiscaliza OSINFOR. La Analítica
+   * lo detectaba DESPUÉS; acá se IMPIDE.
+   *
+   * Lanza `LothInvariantError` (→ 422) si el dato rompe la cadena.
+   */
   static async create(tenantId: string, input: LothEntryCreateInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!LOTH_SECTIONS.includes(input.section)) {
@@ -109,52 +182,235 @@ export class ForestLothDB {
     }
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
 
-    // Correlativo por (tenant, carátula, sección)
-    const max = await prisma.forestLothEntry.aggregate({
-      where: { tenantId, caratulaId: input.caratulaId ?? null, section: input.section },
-      _max: { lineNo: true },
-    });
-    const lineNo = (max._max.lineNo ?? 0) + 1;
+    const entry = await prisma.$transaction(async (tx) => {
+      // 1. Invariantes de cadena de custodia (lockean el recurso disputado).
+      await ForestLothDB.enforceInvariants(tx, tenantId, input);
 
-    const entry = await prisma.forestLothEntry.create({
-      data: {
-        tenantId,
-        caratulaId: input.caratulaId ?? null,
-        planId: input.planId ?? null,
-        section: input.section,
-        lineNo,
-        entryDate: input.entryDate ?? new Date(),
-        treeCode: input.treeCode?.trim() || null,
-        trozaCode: input.trozaCode?.trim() || null,
-        despachoCode: input.despachoCode?.trim() || null,
-        isRama: input.isRama ?? false,
-        speciesCommon: input.speciesCommon?.trim() || null,
-        speciesScientific: input.speciesScientific?.trim() || null,
-        cites: input.cites ?? false,
-        diamMayorM: dec(input.diamMayorM),
-        diamMenorM: dec(input.diamMenorM),
-        lengthM: dec(input.lengthM),
-        volumeM3: dec(input.volumeM3),
-        productType: input.productType?.trim() || null,
-        quantity: dec(input.quantity),
-        unit: input.unit?.trim() || null,
-        pieces: input.pieces ?? null,
-        gtfNumber: input.gtfNumber?.trim() || null,
-        discarded: input.discarded ?? false,
-        consumoInterno: input.consumoInterno ?? false,
-        observations: input.observations?.trim() || null,
-        correctsLineNo: input.correctsLineNo ?? null,
-        correctionNote: input.correctionNote?.trim() || null,
-        gpsLat: dec(input.gpsLat),
-        gpsLng: dec(input.gpsLng),
-        photoUrl: input.photoUrl?.trim() || null,
-        status: "registrado",
-        createdBy: input.createdBy,
-      },
-    });
+      // 2. Correlativo por (tenant, carátula, sección) — bajo LOCK para que dos
+      //    altas concurrentes no repitan el N°. `IS NOT DISTINCT FROM` maneja la
+      //    carátula null como igualdad (no como el `= NULL` que nunca matchea).
+      const caratulaId = input.caratulaId ?? null;
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLothEntry"
+        WHERE "tenantId" = ${tenantId} AND "section" = ${input.section}
+          AND "caratulaId" IS NOT DISTINCT FROM ${caratulaId} AND "deletedAt" IS NULL
+        ORDER BY "id"
+        FOR UPDATE
+      `;
+      const max = await tx.forestLothEntry.aggregate({
+        where: { tenantId, caratulaId, section: input.section },
+        _max: { lineNo: true },
+      });
+      const lineNo = (max._max.lineNo ?? 0) + 1;
 
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+      return tx.forestLothEntry.create({
+        data: {
+          tenantId,
+          caratulaId,
+          planId: input.planId ?? null,
+          section: input.section,
+          lineNo,
+          entryDate: input.entryDate ?? new Date(),
+          treeCode: input.treeCode?.trim() || null,
+          trozaCode: input.trozaCode?.trim() || null,
+          despachoCode: input.despachoCode?.trim() || null,
+          isRama: input.isRama ?? false,
+          speciesCommon: input.speciesCommon?.trim() || null,
+          speciesScientific: input.speciesScientific?.trim() || null,
+          cites: input.cites ?? false,
+          diamMayorM: dec(input.diamMayorM),
+          diamMenorM: dec(input.diamMenorM),
+          lengthM: dec(input.lengthM),
+          volumeM3: dec(input.volumeM3),
+          productType: input.productType?.trim() || null,
+          quantity: dec(input.quantity),
+          unit: input.unit?.trim() || null,
+          pieces: input.pieces ?? null,
+          gtfNumber: input.gtfNumber?.trim() || null,
+          discarded: input.discarded ?? false,
+          consumoInterno: input.consumoInterno ?? false,
+          observations: input.observations?.trim() || null,
+          correctsLineNo: input.correctsLineNo ?? null,
+          correctionNote: input.correctionNote?.trim() || null,
+          gpsLat: dec(input.gpsLat),
+          gpsLng: dec(input.gpsLng),
+          photoUrl: input.photoUrl?.trim() || null,
+          status: "registrado",
+          createdBy: input.createdBy,
+        },
+      });
+    }, LOTH_TX_OPTS);
+
+    auditLoth({
+      tenantId,
+      action: "loth_linea_create",
+      entity: "ForestLothEntry",
+      entityId: entry.id,
+      detail: describeEntry(entry),
+      user: input.createdBy,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
+  }
+
+  /**
+   * Valida las invariantes T1–T5 dentro de la tx, LOCKEANDO el recurso disputado
+   * (la troza, el árbol o el producto) — no la fila que se escribe. El lock va
+   * sobre lo disputado porque dos altas que movilizan la misma troza son filas
+   * distintas: sin lock las dos leen el mismo saldo y ambas pasan (el TOCTOU que
+   * ya se pagó en el CTP). Ordenado por id para no deadlockear.
+   */
+  private static async enforceInvariants(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    input: LothEntryCreateInput,
+  ): Promise<void> {
+    const section = input.section;
+    const treeCode = input.treeCode?.trim() || null;
+    const trozaCode = input.trozaCode?.trim() || null;
+
+    if (section === "tala") {
+      // T3 — un árbol se tala una sola vez.
+      if (!treeCode) return;
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLothEntry"
+        WHERE "tenantId" = ${tenantId} AND "section" = 'tala' AND "treeCode" = ${treeCode} AND "deletedAt" IS NULL
+        ORDER BY "id" FOR UPDATE`;
+      const dup = await tx.forestLothEntry.findFirst({
+        where: { tenantId, section: "tala", treeCode, status: "registrado", deletedAt: null },
+        select: { lineNo: true },
+      });
+      if (dup) {
+        throw new LothInvariantError(
+          `El árbol ${treeCode} ya fue talado (línea #${dup.lineNo}). No se tala dos veces el mismo árbol.`,
+          "T3_TALA_DUPLICADA",
+          { treeCode, lineNo: dup.lineNo },
+        );
+      }
+      return;
+    }
+
+    if (section === "trozado") {
+      // Lock del árbol (para T4) + la troza (para T3).
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLothEntry"
+        WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+          AND ("treeCode" = ${treeCode} OR "trozaCode" = ${trozaCode})
+        ORDER BY "id" FOR UPDATE`;
+      // T3 — trozaCode único en Trozado.
+      if (trozaCode) {
+        const dup = await tx.forestLothEntry.findFirst({
+          where: { tenantId, section: "trozado", trozaCode, status: "registrado", deletedAt: null },
+          select: { lineNo: true },
+        });
+        if (dup) {
+          throw new LothInvariantError(
+            `La troza ${trozaCode} ya está registrada en Trozado (línea #${dup.lineNo}). Usá un código de troza único.`,
+            "T3_TROZA_DUPLICADA",
+            { trozaCode, lineNo: dup.lineNo },
+          );
+        }
+      }
+      // T4 — Σ trozado(árbol) + esta ≤ volumen de la tala del árbol (merma normal
+      //      hace que trozado sea < tala; nunca puede superarlo). Solo si la tala
+      //      existe con volumen: si no, se registra como código libre.
+      if (treeCode && input.volumeM3 != null) {
+        const tala = await tx.forestLothEntry.findFirst({
+          where: { tenantId, section: "tala", treeCode, status: "registrado", deletedAt: null },
+          select: { volumeM3: true },
+        });
+        if (tala?.volumeM3 != null) {
+          const talaVol = Number(tala.volumeM3);
+          const prev = await tx.forestLothEntry.aggregate({
+            where: { tenantId, section: "trozado", treeCode, status: "registrado", deletedAt: null },
+            _sum: { volumeM3: true },
+          });
+          const yaTrozado = Number(prev._sum.volumeM3 ?? 0);
+          const nuevo = Number(input.volumeM3);
+          if (r4(yaTrozado + nuevo) > r4(talaVol)) {
+            throw new LothInvariantError(
+              `El árbol ${treeCode} se taló con ${r4(talaVol)} m³ y ya tiene ${r4(yaTrozado)} m³ trozados; ` +
+                `estás agregando ${r4(nuevo)} m³, que supera lo tumbado.`,
+              "T4_TROZADO_SUPERA_TALA",
+              { treeCode, talaVol: r4(talaVol), yaTrozado: r4(yaTrozado), nuevo: r4(nuevo) },
+            );
+          }
+        }
+      }
+      return;
+    }
+
+    if (section === "despacho_troza" || section === "consumo_troza") {
+      if (!trozaCode) return; // el form exige trozaCode acá; sin él no hay qué atar
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLothEntry"
+        WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL AND "trozaCode" = ${trozaCode}
+        ORDER BY "id" FOR UPDATE`;
+      // T2 — la troza debe existir en Trozado (origen legal de la salida).
+      const trozada = await tx.forestLothEntry.findFirst({
+        where: { tenantId, section: "trozado", trozaCode, status: "registrado", deletedAt: null },
+        select: { id: true },
+      });
+      if (!trozada) {
+        throw new LothInvariantError(
+          `La troza ${trozaCode} no está registrada en Trozado. Registrá el trozado antes de despacharla o consumirla.`,
+          "T2_TROZA_SIN_TROZADO",
+          { trozaCode },
+        );
+      }
+      // T1 — una troza sale del bosque UNA vez (despacho O consumo, no ambos ni
+      //      dos veces). Es el killer anti-blanqueo: la misma troza en 2 GTF.
+      const usada = await tx.forestLothEntry.findFirst({
+        where: {
+          tenantId,
+          section: { in: ["despacho_troza", "consumo_troza"] },
+          trozaCode,
+          status: "registrado",
+          deletedAt: null,
+        },
+        select: { lineNo: true, section: true },
+      });
+      if (usada) {
+        const queHizo = usada.section === "despacho_troza" ? "despachada" : "consumida";
+        throw new LothInvariantError(
+          `La troza ${trozaCode} ya fue ${queHizo} (línea #${usada.lineNo}). Una troza sale del bosque una sola vez.`,
+          "T1_TROZA_YA_MOVILIZADA",
+          { trozaCode, lineNo: usada.lineNo, section: usada.section },
+        );
+      }
+      return;
+    }
+
+    if (section === "despacho_producto") {
+      // T5 — Σ despacho_producto(prod,esp,unidad) + este ≤ Σ producto_terminado.
+      const productType = input.productType?.trim() || null;
+      const speciesCommon = input.speciesCommon?.trim() || null;
+      const unit = input.unit?.trim() || null;
+      const qty = input.quantity != null ? Number(input.quantity) : 0;
+      if (!productType || !(qty > 0)) return;
+      await tx.$queryRaw`
+        SELECT "id" FROM "ForestLothEntry"
+        WHERE "tenantId" = ${tenantId} AND "deletedAt" IS NULL
+          AND "section" IN ('producto_terminado','despacho_producto') AND "productType" = ${productType}
+        ORDER BY "id" FOR UPDATE`;
+      const match = { tenantId, productType, speciesCommon, unit, status: "registrado" as const, deletedAt: null };
+      const [prod, desp] = await Promise.all([
+        tx.forestLothEntry.aggregate({ where: { ...match, section: "producto_terminado" }, _sum: { quantity: true } }),
+        tx.forestLothEntry.aggregate({ where: { ...match, section: "despacho_producto" }, _sum: { quantity: true } }),
+      ]);
+      const producido = Number(prod._sum.quantity ?? 0);
+      const yaDespachado = Number(desp._sum.quantity ?? 0);
+      if (r4(yaDespachado + qty) > r4(producido)) {
+        throw new LothInvariantError(
+          `Se produjeron ${r4(producido)} de ${productType}${speciesCommon ? ` · ${speciesCommon}` : ""} y ya se despacharon ` +
+            `${r4(yaDespachado)}; estás despachando ${r4(qty)}, que supera lo producido.`,
+          "T5_DESPACHO_SUPERA_PRODUCCION",
+          { productType, producido: r4(producido), yaDespachado: r4(yaDespachado), pedido: r4(qty) },
+        );
+      }
+      return;
+    }
+    // producto_terminado: output del aserrío, sin invariante dura.
   }
 
   static async list(tenantId: string, filters: LothListFilters = {}) {
@@ -195,25 +451,41 @@ export class ForestLothDB {
   }
 
   /** Subsanación SERFOR: anular es visible, no se borra. */
-  static async annul(tenantId: string, id: string, reason: string) {
+  static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("annul reason is required");
     const entry = await prisma.forestLothEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
       data: { status: "anulado", annulledReason: reason.trim() },
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    auditLoth({
+      tenantId,
+      action: "loth_linea_annul",
+      entity: "ForestLothEntry",
+      entityId: id,
+      detail: `Anuló ${entry.section} #${entry.lineNo} (${entry.trozaCode || entry.treeCode || entry.productType || "—"}). Motivo: ${reason.trim()}`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
   }
 
   /** Soft delete (solo errores de captura del sistema, no subsanación normativa). */
-  static async softDelete(tenantId: string, id: string) {
+  static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     const entry = await prisma.forestLothEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
       data: { deletedAt: new Date() },
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    auditLoth({
+      tenantId,
+      action: "loth_linea_delete",
+      entity: "ForestLothEntry",
+      entityId: id,
+      detail: `Borró (soft-delete) ${entry.section} #${entry.lineNo} (${entry.trozaCode || entry.treeCode || entry.productType || "—"})`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
   }
 
@@ -425,7 +697,15 @@ export class ForestLothDB {
         createdBy: input.createdBy,
       },
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    auditLoth({
+      tenantId,
+      action: "loth_caratula_create",
+      entity: "ForestLothCaratula",
+      entityId: caratula.id,
+      detail: `Creó la carátula del libro: ${caratula.titularName}${caratula.tituloHabilitante ? ` · TH ${caratula.tituloHabilitante}` : ""}`,
+      user: input.createdBy,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return caratula;
   }
 
@@ -449,6 +729,7 @@ export class ForestLothDB {
     tenantId: string,
     id: string,
     patch: Partial<Omit<LothCaratulaInput, "createdBy">>,
+    user = "unknown",
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const data: Prisma.ForestLothCaratulaUpdateInput = {};
@@ -461,7 +742,15 @@ export class ForestLothDB {
       where: { id, tenantId } satisfies Prisma.ForestLothCaratulaWhereUniqueInput,
       data,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    auditLoth({
+      tenantId,
+      action: "loth_caratula_update",
+      entity: "ForestLothCaratula",
+      entityId: id,
+      detail: `Actualizó la carátula: ${Object.keys(patch).join(", ")}`,
+      user,
+    });
+    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return caratula;
   }
 }

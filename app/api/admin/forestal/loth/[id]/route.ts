@@ -59,7 +59,7 @@ export const PATCH = withApiHandler("forestal-loth-id-patch", async (
   try {
     const existing = await ForestLothDB.getById(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    const entry = await ForestLothDB.annul(auth.tenantId, id, parsed.data.reason);
+    const entry = await ForestLothDB.annul(auth.tenantId, id, parsed.data.reason, auth.username ?? "unknown");
     return NextResponse.json({ entry });
   } catch (err) {
     logger.error("[loth.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
@@ -85,7 +85,7 @@ export const DELETE = withApiHandler("forestal-loth-id-delete", async (
   try {
     const existing = await ForestLothDB.getById(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    await ForestLothDB.softDelete(auth.tenantId, id);
+    await ForestLothDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
     return NextResponse.json({ ok: true });
   } catch (err) {
     logger.error("[loth.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
