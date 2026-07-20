@@ -38,12 +38,16 @@ export interface GeolocationPickerModalProps {
   onClose: () => void;
   /** Coords finales cuando el dueño confirma. El padre hace ubigeo + autollenado. */
   onConfirm: (lat: number, lon: number) => Promise<void> | void;
+  /** Título del modal. Default "Ubicar mi negocio" (marketplace); otros contextos
+      (ej. EUDR forestal) pasan uno propio como "Ubicar la parcela". */
+  title?: string;
 }
 
 export default function GeolocationPickerModal({
   open,
   onClose,
   onConfirm,
+  title = "Ubicar mi negocio",
 }: GeolocationPickerModalProps) {
   const [step, setStep] = useState<Step>("loading");
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
@@ -139,7 +143,7 @@ export default function GeolocationPickerModal({
             key="geo-panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Ubicar mi negocio"
+            aria-label={title}
             initial={{ opacity: 0, y: 30, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
@@ -156,7 +160,7 @@ export default function GeolocationPickerModal({
                 </span>
                 <div className="min-w-0">
                   <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
-                    Ubicar mi negocio
+                    {title}
                   </h3>
                   <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-snug mt-0.5">
                     {step === "loading" && "Buscando tu posición exacta…"}

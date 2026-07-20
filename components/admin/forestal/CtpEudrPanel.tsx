@@ -8,8 +8,13 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, FileText, Globe, Loader2, MapPin, ShieldCheck } from "@buleje/design-system/icons";
+
+// Reusa el picker de geo del marketplace (Leaflet + pin draggable). ssr:false
+// porque Leaflet toca window. Marcar en el mapa = alternativa a tipear lat/lng.
+const GeolocationPickerModal = dynamic(() => import("@/components/marketplace/GeolocationPickerModal"), { ssr: false });
 import { csrfHeaders } from "@/lib/csrf-client";
 import { imprimirDds, type DdsEmisor } from "@/lib/forestal/eudr-print";
 import { origenGeolocalizado, type DdsData, type OrigenGeo } from "@/lib/forestal/eudr-types";
@@ -31,6 +36,8 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
   const [ddsResult, setDdsResult] = useState<{ id: string; riesgo: string; gaps: string[] } | null>(null);
   const [selDesp, setSelDesp] = useState<string>("");
   const [draft, setDraft] = useState<Record<string, { lat: string; lng: string; df: boolean }>>({});
+  // Origen cuyo picker de mapa está abierto (null = cerrado).
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -136,6 +143,9 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
                   </div>
                   <input inputMode="decimal" value={d.lat} onChange={(e) => setDraftField(o.originCode, "lat", e.target.value)} placeholder="lat" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
                   <input inputMode="decimal" value={d.lng} onChange={(e) => setDraftField(o.originCode, "lng", e.target.value)} placeholder="lng" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
+                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marcá la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15">
+                    <MapPin className="h-4 w-4" /> <span className="hidden sm:inline">Mapa</span>
+                  </button>
                   <label className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
                     <input type="checkbox" checked={d.df} onChange={(e) => setDraftField(o.originCode, "df", e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" /> sin deforestación
                   </label>
@@ -173,6 +183,20 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
         )}
         {despachos.length === 0 && <p className="mt-3 text-sm text-[var(--text-tertiary)]">No hay despachos en el período seleccionado.</p>}
       </div>
+
+      {/* Picker de mapa: marcar la parcela con el pin → llena lat/lng del origen. */}
+      {pickerFor && (
+        <GeolocationPickerModal
+          open
+          title={`Ubicar la parcela · ${pickerFor}`}
+          onClose={() => setPickerFor(null)}
+          onConfirm={(lat, lon) => {
+            setDraftField(pickerFor, "lat", lat.toFixed(6));
+            setDraftField(pickerFor, "lng", lon.toFixed(6));
+            setPickerFor(null);
+          }}
+        />
+      )}
     </div>
   );
 }
