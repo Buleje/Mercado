@@ -493,8 +493,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
   // ═════════════════════════════════════════════════════════════════════
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[980px]">
-      <div className="flex h-full max-h-[86vh] flex-col bg-[var(--surface-raised)]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[1280px]">
+      <div className="flex h-full max-h-[94vh] flex-col bg-[var(--surface-raised)]">
         {/* ── Header ──────────────────────────────────────────────────── */}
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -543,6 +543,12 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
               </div>
             )}
 
+            {/* 2 columnas explícitas en pantallas anchas (xl+): [1·2·3 | 4·5·6].
+                NO usamos CSS multicol porque, con la altura fija del panel, hace
+                column-fill:auto y desborda las secciones a una 3ª columna fuera
+                del form. El grid explícito es determinístico. */}
+            <div className="xl:grid xl:grid-cols-2 xl:gap-x-5 xl:items-start">
+            <div>
             {/* ─── 1 · GTF ─────────────────────────────────────────── */}
             <Section index={1} title="Guía de Transporte Forestal">
               <Field label="N° GTF" required hint="Escribí el número y tocá «Cargar guía» para traer todos los datos.">
@@ -737,7 +743,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
                 </Field>
               </Grid>
             </Section>
-
+            </div>
+            <div>
             {/* ─── 4 · Especie ─────────────────────────────────────── */}
             <Section index={4} title="Especie forestal">
               <Field label="Especie" required>
@@ -1004,6 +1011,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
                 />
               </Field>
             </Section>
+            </div>
+            </div>
           </form>
 
           {/* ─── Panel derecho: vista previa en vivo (lg+) ─────────── */}
@@ -1149,17 +1158,17 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
 function Section({
   index,
   title,
-  last,
   children,
 }: {
   index: number;
   title: string;
+  /** @deprecated ya no se usa (las secciones son cards independientes). */
   last?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section className={last ? "" : "mb-7 border-b border-[var(--rule-soft)] pb-7"}>
-      <div className="mb-4 flex items-center gap-2.5">
+    <section className="mb-3.5 break-inside-avoid rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3.5 sm:p-4">
+      <div className="mb-3 flex items-center gap-2.5">
         <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
           {index}
         </span>
@@ -1167,7 +1176,7 @@ function Section({
           {title}
         </CardTitle>
       </div>
-      <div className="space-y-4">{children}</div>
+      <div className="space-y-3">{children}</div>
     </section>
   );
 }
