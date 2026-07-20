@@ -30,6 +30,7 @@ import {
   Share2,
   Truck,
   TrendingUp,
+  Lock,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -55,6 +56,7 @@ import LothAnalyticsView from "./LothAnalyticsView";
 import LothCompliancePanel from "./LothCompliancePanel";
 import LothResumenStrip from "./LothResumenStrip";
 import LothCadenaModal from "./LothCadenaModal";
+import LothCierrePanel from "./LothCierrePanel";
 import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
 
 type LothEntry = LothEntryDTO;
@@ -125,7 +127,7 @@ const COLS: Record<LothSection, Col[]> = {
   ],
 };
 
-type LothView = "secciones" | "trazabilidad" | "plan" | "gtf" | "analitica" | "cumplimiento";
+type LothView = "secciones" | "trazabilidad" | "plan" | "gtf" | "analitica" | "cumplimiento" | "cierre";
 
 // Sub-tabs coherentes con el resto del admin (AdminTabBar: reorden por drag +
 // registro en sidebar), reemplaza el toggle segmentado hecho a mano.
@@ -137,6 +139,7 @@ const LOTH_TAB_ITEMS = [
   { id: "gtf", label: "GTF", icon: Truck, title: "Guías de transporte forestal" },
   { id: "analitica", label: "Analítica", icon: TrendingUp, title: "Aprovechamiento + anomalías" },
   { id: "cumplimiento", label: "Cumplimiento", icon: ShieldCheck, title: "Veredicto de fiscalización + reporte imprimible" },
+  { id: "cierre", label: "Cierre", icon: Lock, title: "Cerrar el mes → acta inmutable (OSINFOR)" },
 ];
 
 export default function LothLibroOperaciones() {
@@ -445,6 +448,9 @@ export default function LothLibroOperaciones() {
           }}
         />
       )}
+
+      {/* Vista Cierre — cerrar el mes → acta inmutable (invariante P1) */}
+      {view === "cierre" && <LothCierrePanel />}
 
       {/* Vista de trazabilidad — operación completa por árbol */}
       {view === "trazabilidad" && (

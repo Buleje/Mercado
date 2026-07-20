@@ -6,6 +6,7 @@ import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { lothErrorResponse } from "@/lib/forestal/loth-api-errors";
 
 /**
  * /api/admin/forestal/loth/[id]
@@ -62,8 +63,8 @@ export const PATCH = withApiHandler("forestal-loth-id-patch", async (
     const entry = await ForestLothDB.annul(auth.tenantId, id, parsed.data.reason, auth.username ?? "unknown");
     return NextResponse.json({ entry });
   } catch (err) {
-    logger.error("[loth.PATCH] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // P1: anular una línea de un mes cerrado → 422 (dato del operador), no 500.
+    return lothErrorResponse(err, "loth.PATCH", auth.tenantId);
   }
 });
 

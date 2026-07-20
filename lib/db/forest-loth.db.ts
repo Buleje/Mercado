@@ -17,6 +17,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
 import { auditLoth } from "@/lib/forestal/loth-audit";
+import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -56,7 +57,9 @@ export class LothInvariantError extends Error {
       | "T3_TALA_DUPLICADA"
       | "T4_TROZADO_SUPERA_TALA"
       | "T5_DESPACHO_SUPERA_PRODUCCION"
-      | "T6_EXCESO_AUTORIZADO",
+      | "T6_EXCESO_AUTORIZADO"
+      // P1 — la línea cae en un mes cerrado: el acta es inmutable hasta reabrir.
+      | "PERIODO_CERRADO",
     readonly detail?: Record<string, unknown>,
   ) {
     super(message);
@@ -184,6 +187,18 @@ export class ForestLothDB {
     }
     if (!input.createdBy?.trim()) throw new Error("createdBy is required");
 
+    // P1 (cierre de período): no se puede registrar una línea fechada en un mes
+    // cerrado — el acta es inmutable hasta reabrir. Se chequea antes de la tx.
+    const entryDate = input.entryDate ?? new Date();
+    const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, entryDate);
+    if (cerrado) {
+      throw new LothInvariantError(
+        `El período ${cerrado.label} está cerrado: no se pueden registrar líneas fechadas en un mes cerrado. Reabrilo si necesitás corregir.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+
     const entry = await prisma.$transaction(async (tx) => {
       // 1. Invariantes de cadena de custodia (lockean el recurso disputado).
       await ForestLothDB.enforceInvariants(tx, tenantId, input);
@@ -212,7 +227,7 @@ export class ForestLothDB {
           planId: input.planId ?? null,
           section: input.section,
           lineNo,
-          entryDate: input.entryDate ?? new Date(),
+          entryDate,
           treeCode: input.treeCode?.trim() || null,
           trozaCode: input.trozaCode?.trim() || null,
           despachoCode: input.despachoCode?.trim() || null,
@@ -552,6 +567,18 @@ export class ForestLothDB {
   static async annul(tenantId: string, id: string, reason: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("annul reason is required");
+    // P1: una línea de un mes cerrado es inmutable (ni anular) hasta reabrir.
+    const existing = await prisma.forestLothEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
+    if (existing) {
+      const cerrado = await ForestLothCierreDB.closedPeriodOf(tenantId, existing.entryDate);
+      if (cerrado) {
+        throw new LothInvariantError(
+          `El período ${cerrado.label} está cerrado: no se puede anular una línea de un mes cerrado. Reabrilo primero.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerrado.periodKey },
+        );
+      }
+    }
     const entry = await prisma.forestLothEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
       data: { status: "anulado", annulledReason: reason.trim() },
@@ -585,6 +612,27 @@ export class ForestLothDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
+  }
+
+  /** Totales de un rango de fechas (para el acta de cierre de período). */
+  static async resumenPeriodo(tenantId: string, from: Date, to: Date) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const where: Prisma.ForestLothEntryWhereInput = {
+      tenantId,
+      deletedAt: null,
+      status: "registrado",
+      entryDate: { gte: from, lte: to },
+    };
+    const [count, tala, trozado] = await Promise.all([
+      prisma.forestLothEntry.count({ where }),
+      prisma.forestLothEntry.aggregate({ where: { ...where, section: "tala" }, _sum: { volumeM3: true } }),
+      prisma.forestLothEntry.aggregate({ where: { ...where, section: "trozado" }, _sum: { volumeM3: true } }),
+    ]);
+    return {
+      lineasCount: count,
+      taladoM3: Number(tala._sum.volumeM3 ?? 0),
+      trozadoM3: Number(trozado._sum.volumeM3 ?? 0),
+    };
   }
 
   /** Resumen por sección: conteo + volumen registrado. */

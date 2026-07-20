@@ -174,6 +174,31 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
       .rejects.toMatchObject({ code: "T6_EXCESO_AUTORIZADO" });
   });
 
+  it("P1 — no se registra en un mes cerrado; reabrir lo desbloquea", async () => {
+    const { monthRange } = await import("@/lib/forestal/loth-cierre-types");
+    const { ForestLothCierreDB } = await import("@/lib/db/forest-loth-cierre.db");
+    const { PlatformSettingsDB } = await import("@/lib/db/platform-settings.db");
+    const KEY = `loth-cierre:${TENANT}`;
+    const prev: unknown = await PlatformSettingsDB.get(KEY);
+    try {
+      // Enero 2099 — mes sin datos reales, así un cierre filtrado es inofensivo.
+      const { from, to, periodKey, label } = monthRange(2099, 0);
+      await ForestLothCierreDB.save(
+        TENANT,
+        { periodKey, from: from.toISOString(), to: to.toISOString(), label, closedAt: new Date().toISOString(), closedBy: P, totales: { lineasCount: 0, taladoM3: 0, trozadoM3: 0 } },
+        P,
+      );
+      await expect(crear({ section: "tala", treeCode: `${P}-P1`, speciesCommon: SP, volumeM3: 3, entryDate: new Date(2099, 0, 15) }))
+        .rejects.toMatchObject({ code: "PERIODO_CERRADO" });
+      // Reabrir → el mismo mes vuelve a admitir registro.
+      await ForestLothCierreDB.reabrir(TENANT, periodKey, "test de reapertura", P);
+      await expect(crear({ section: "tala", treeCode: `${P}-P1b`, speciesCommon: SP, volumeM3: 3, entryDate: new Date(2099, 0, 16) }))
+        .resolves.toBeTruthy();
+    } finally {
+      await PlatformSettingsDB.set(KEY, prev ?? [], P);
+    }
+  }, 40_000);
+
   it("TOCTOU — dos despachos paralelos de la misma troza: exactamente uno pasa", async () => {
     const tree = `${P}-F1`;
     const troza = `${tree}-A`;
