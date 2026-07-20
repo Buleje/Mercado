@@ -20,8 +20,10 @@
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 
-/** Entidades del libro TH — coinciden con los modelos Prisma para poder cruzarlas. */
-export type LothAuditEntity = "ForestLothEntry" | "ForestLothCaratula";
+/** Entidades del libro TH. `ForestLothCites` no es modelo Prisma (vive en el KV
+ * `PlatformSetting`, key `loth-cites:{tenantId}`), pero se audita porque acredita
+ * la legalidad de las especies protegidas ante OSINFOR. */
+export type LothAuditEntity = "ForestLothEntry" | "ForestLothCaratula" | "ForestLothCites";
 
 /** Acciones auditables del LO-TH. */
 export type LothAuditAction =
@@ -31,7 +33,9 @@ export type LothAuditAction =
   | "loth_linea_delete"
   // Carátula (identidad del título habilitante que encabeza el libro)
   | "loth_caratula_create"
-  | "loth_caratula_update";
+  | "loth_caratula_update"
+  // Catálogo de permisos CITES del libro (KV)
+  | "loth_cites_update";
 
 /**
  * Registra un evento del LO-TH. No se await-ea a propósito: la auditoría no debe

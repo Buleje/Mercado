@@ -5,11 +5,12 @@
  * Crea o edita los datos del titular / documento de gestión / tomo.
  */
 
-import { useState } from "react";
-import { FileText, Loader2, X, AlertTriangle, Check, AlertCircle } from "@buleje/design-system/icons";
+import { useEffect, useState } from "react";
+import { FileText, Loader2, X, AlertTriangle, Check, AlertCircle, Plus, Trash2, ShieldAlert } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { estadoVencimiento, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 
 interface Caratula {
   id: string;
@@ -64,6 +65,27 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const isValid = f.titularName.trim().length >= 2;
 
+  // ── Catálogo de permisos CITES (KV, sin migración) ─────────────────────────
+  const [permisos, setPermisos] = useState<LothCitesPermiso[]>([]);
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/forestal/loth/cites", { credentials: "include" });
+        if (!r.ok || cancel) return;
+        const cat = (await r.json()).catalogo;
+        if (!cancel) setPermisos(cat?.permisos ?? []);
+      } catch {
+        /* el catálogo es best-effort: sin él, la carátula igual se edita */
+      }
+    })();
+    return () => { cancel = true; };
+  }, []);
+  const addPermiso = () => setPermisos((p) => [...p, { especie: "", numero: "", vencimiento: "" }]);
+  const rmPermiso = (i: number) => setPermisos((p) => p.filter((_, j) => j !== i));
+  const updPermiso = (i: number, k: keyof LothCitesPermiso, v: string) =>
+    setPermisos((p) => p.map((row, j) => (j === i ? { ...row, [k]: v } : row)));
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting || !isValid) return;
@@ -83,6 +105,18 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
       if (!res.ok) {
         const r = await res.json().catch(() => ({}));
         throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
+      }
+
+      // Guardar el catálogo CITES (KV, independiente de la carátula Prisma).
+      const cRes = await fetch("/api/admin/forestal/loth/cites", {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ permisos: permisos.filter((p) => p.especie.trim() || p.numero.trim()) }),
+      });
+      if (!cRes.ok) {
+        const r = await cRes.json().catch(() => ({}));
+        throw new Error(r.message ?? r.error ?? `No se pudieron guardar los permisos CITES (HTTP ${cRes.status})`);
       }
       onSaved();
     } catch (err) {
@@ -164,6 +198,77 @@ export default function LothCaratulaForm({ current, onClose, onSaved }: Props) {
           <div className="grid grid-cols-2 gap-3 sm:col-span-2">
             <Field label="Teléfono"><input type="text" value={f.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="992696555" className={cls.input} /></Field>
             <Field label="Correo electrónico"><input type="email" value={f.email} onChange={(e) => set("email", e.target.value)} placeholder="titular@correo.com" className={cls.input} /></Field>
+          </div>
+
+          {/* Permisos CITES — acreditan la legalidad de las especies protegidas (ADR-305). */}
+          <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:col-span-2">
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+                <ShieldAlert className="h-4 w-4 text-[var(--data-error-600)]" />
+                Permisos CITES <span className="font-normal text-[var(--text-tertiary)]">(especies protegidas)</span>
+              </CardTitle>
+              <button
+                type="button"
+                onClick={addPermiso}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+              >
+                <Plus className="h-3.5 w-3.5" /> Agregar
+              </button>
+            </div>
+            <p className="text-xs text-[var(--text-tertiary)]">
+              Una especie CITES (caoba, cedro, shihuahuaco) es legal con su permiso archivado. Cargá el N° y su
+              vencimiento para acreditar el origen ante OSINFOR — el booleano de cada línea no alcanza.
+            </p>
+            {permisos.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2.5 text-sm text-[var(--text-tertiary)]">
+                Sin permisos cargados. Agregá uno si aprovechás especies CITES.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {permisos.map((p, i) => {
+                  const est = estadoVencimiento(p.vencimiento);
+                  return (
+                    <div key={i} className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        value={p.especie}
+                        onChange={(e) => updPermiso(i, "especie", e.target.value)}
+                        placeholder="Especie (Caoba)"
+                        className={`${cls.input} h-9 min-w-[8rem] flex-1`}
+                      />
+                      <input
+                        type="text"
+                        value={p.numero}
+                        onChange={(e) => updPermiso(i, "numero", e.target.value)}
+                        placeholder="N° permiso CITES"
+                        className={`${cls.input} h-9 min-w-[8rem] flex-1 font-mono`}
+                      />
+                      <input
+                        type="date"
+                        value={p.vencimiento}
+                        onChange={(e) => updPermiso(i, "vencimiento", e.target.value)}
+                        className={`${cls.input} h-9 w-40`}
+                        aria-label="Vencimiento del permiso"
+                      />
+                      {est === "vencido" && (
+                        <span className="rounded-full bg-[var(--data-error-100)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-error-700)]">vencido</span>
+                      )}
+                      {est === "por_vencer" && (
+                        <span className="rounded-full bg-[var(--data-warning-100)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-warning-700)]">por vencer</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => rmPermiso(i)}
+                        aria-label="Quitar permiso"
+                        className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--data-error-600)] transition-colors hover:bg-[var(--data-error-50)]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </form>
 

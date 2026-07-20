@@ -28,6 +28,7 @@ import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
 import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
+import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
 
 interface Props {
   section: LothSection;
@@ -132,6 +133,21 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loadingSrc, setLoadingSrc] = useState(false);
   const [srcQuery, setSrcQuery] = useState("");
+
+  // Catálogo de permisos CITES de la carátula — para acreditar la especie protegida.
+  const [citesPermisos, setCitesPermisos] = useState<LothCitesPermiso[]>([]);
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/forestal/loth/cites", { credentials: "include" });
+        if (!r.ok || cancel) return;
+        const cat = (await r.json()).catalogo;
+        if (!cancel) setCitesPermisos(cat?.permisos ?? []);
+      } catch { /* best-effort: sin catálogo, se muestra el aviso genérico */ }
+    })();
+    return () => { cancel = true; };
+  }, []);
 
   useEffect(() => {
     let cancel = false;
@@ -670,12 +686,30 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             </Field>
           )}
 
-          {fields.has("species") && cites && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs text-[var(--data-error-700)] sm:col-span-2">
-              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-              <div><span className="font-bold">Especie CITES.</span> Requiere permiso de exportación. Verificá el sello en la GTF.</div>
-            </div>
-          )}
+          {fields.has("species") && cites && (() => {
+            const permiso = permisoParaEspecie({ permisos: citesPermisos }, speciesName);
+            const est = permiso ? estadoVencimiento(permiso.vencimiento) : null;
+            const ok = permiso && est !== "vencido";
+            return (
+              <div className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 text-xs sm:col-span-2 ${ok ? "border-[var(--data-success-100)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--data-error-100)] bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <span className="font-bold">Especie CITES.</span>{" "}
+                  {permiso ? (
+                    <>
+                      Permiso <span className="font-mono font-bold">{permiso.numero || "(sin N°)"}</span>
+                      {permiso.vencimiento && (
+                        <> · vence {permiso.vencimiento}{est === "vencido" ? " — VENCIDO" : est === "por_vencer" ? " — por vencer" : ""}</>
+                      )}
+                      {est === "vencido" && ". Renová el permiso en la carátula antes de movilizar."}
+                    </>
+                  ) : (
+                    <>Sin permiso CITES cargado para esta especie. Cargalo en <span className="font-bold">Configurar carátula → Permisos CITES</span> para acreditar el origen.</>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {fields.has("diams") && (
             <>
