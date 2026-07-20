@@ -8,10 +8,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, AlertCircle, Boxes, Scale, PackageCheck, Layers, Clock, TreePine,
+  RefreshCw, AlertCircle, Boxes, Scale, PackageCheck, Layers, Clock, TreePine, FileDown,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { BulejeComposedChart } from "@/components/ui-system/charts";
+import { Btn } from "./ctp-shared";
+import { printExistencias } from "@/lib/forestal/ctp-existencias-print";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import CtpKardexModal from "./CtpKardexModal";
 import CtpPatioAging from "./CtpPatioAging";
@@ -38,6 +40,7 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
   const [concil, setConcil] = useState<Concil | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
   const [kardexEspecie, setKardexEspecie] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -58,6 +61,32 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
   }, [period]);
   useEffect(() => { void load(); }, [load]);
 
+  // Reporte de existencias imprimible (PDF) para fiscalización: misma data del
+  // panel + identidad del CTP (best-effort desde la Ficha).
+  const handleReport = useCallback(async () => {
+    if (!data) return;
+    setReportError(null);
+    const ficha = await fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body) => body?.ficha ?? null)
+      .catch((err) => {
+        console.warn("[ctp-existencias] ficha fetch failed", err);
+        return null;
+      });
+    try {
+      printExistencias({
+        periodLabel: period.label,
+        materiaPrima: data.materiaPrima,
+        porEspecie: data.porEspecie,
+        productos: data.productos,
+        concil,
+        ficha,
+      });
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : String(err));
+    }
+  }, [data, concil, period.label]);
+
   const mp = data?.materiaPrima;
 
   // Balance por especie, dibujado: lo que entró (validado) vs. lo que se consumió
@@ -74,10 +103,19 @@ export function CtpSaldosView({ period }: { period: CtpPeriod }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--text-tertiary)]"><strong className="text-[var(--text-secondary)]">Existencias del Libro (LO-CTP)</strong> en {period.label}: materia prima que entra vs. producto que sale. Es el saldo que se declara ante SERFOR — va en la hoja «Existencias» del export oficial.</p>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="min-w-[16rem] flex-1 text-sm text-[var(--text-tertiary)]"><strong className="text-[var(--text-secondary)]">Existencias del Libro (LO-CTP)</strong> en {period.label}: materia prima que entra vs. producto que sale. Es el saldo que se declara ante SERFOR — va en la hoja «Existencias» del export oficial.</p>
+        <div className="flex shrink-0 items-center gap-2">
+          <Btn variant="dark" size="md" onClick={() => void handleReport()} disabled={!data}>
+            <FileDown className="h-4 w-4" /> Descargar reporte
+          </Btn>
+          <Btn variant="secondary" size="md" onClick={load} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
+          </Btn>
+        </div>
       </div>
+
+      {reportError && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo abrir el reporte:</strong> {reportError}</div></div>}
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
