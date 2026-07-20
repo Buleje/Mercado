@@ -16,11 +16,13 @@
  * muro de cajas verdes que entierra el único punto a revisar.
  */
 
+import { useState } from "react";
 import {
   AlertCircle,
   AlertTriangle,
   CheckCircle2,
   Clock,
+  FileDown,
   Gauge,
   Link2,
   ListChecks,
@@ -37,6 +39,7 @@ import { BulejeGaugeChart } from "@/components/ui-system/charts";
 import { Btn } from "./ctp-shared";
 import { useCtpCompliance } from "@/hooks/use-ctp-compliance";
 import { ctpComplianceTone, ctpComplianceBreakdown, type CtpComplianceTone } from "@/lib/forestal/ctp-compliance";
+import { printCumplimiento } from "@/lib/forestal/ctp-cumplimiento-print";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
 type ComplianceNavTarget = "ingresos" | "saldos" | "despacho" | "produccion" | "ficha";
@@ -56,7 +59,7 @@ interface CheckDescriptor {
   severity: Severity;
   title: string;
   okTitle: string;
-  description: React.ReactNode;
+  description: string;
   action: string;
   navTarget: ComplianceNavTarget;
   navigateLabel: string;
@@ -79,6 +82,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliancePanelProps) {
   const { data, loading, error, reload } = useCtpCompliance(period);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   if (loading && !data) return <LoadingState message="Calculando cumplimiento del período..." />;
 
@@ -253,18 +257,57 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
   // las advertencias no bloquean pero conviene mirarlas.
   const readiness: Severity | "ready" = bloqueos > 0 ? "error" : advertencias > 0 ? "warning" : "ready";
 
+  // Reporte imprimible (PDF) para fiscalización: misma data del panel + la
+  // identidad del CTP (best-effort desde la Ficha; si falla, el reporte igual sale).
+  const reportData = data; // alias no-nullable (data ya pasó el guard `if (!data)`).
+  async function handleReport() {
+    setReportError(null);
+    const ficha = await fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body) => body?.ficha ?? null)
+      .catch((err) => {
+        console.warn("[ctp-report] ficha fetch failed", err);
+        return null;
+      });
+    try {
+      printCumplimiento({
+        periodLabel: period.label,
+        score: reportData.score,
+        toneLabel: TONE_LABEL[tone],
+        totalIngresos: reportData.totalIngresos,
+        readiness,
+        bloqueos,
+        advertencias,
+        enOrdenCount: enOrden.length,
+        breakdown: breakdown.map((b) => ({ label: b.label, puntos: b.puntos, casos: b.casos, topeAlcanzado: b.topeAlcanzado })),
+        problemas: problemas.map((c) => ({ severity: c.severity, title: c.title, description: c.description, action: c.action })),
+        enOrden: enOrden.map((c) => c.okTitle),
+        ficha,
+      });
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-[var(--text-tertiary)]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="min-w-[16rem] flex-1 text-sm text-[var(--text-tertiary)]">
           Chequeo de <strong className="text-[var(--text-secondary)]">{period.label}</strong> sobre{" "}
           {data.totalIngresos.toLocaleString("es-PE")} ingresos registrados. Mismos números que exporta el
           libro a Excel.
         </p>
-        <Btn variant="secondary" size="md" onClick={() => void reload()} disabled={loading} className="shrink-0">
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
-        </Btn>
+        <div className="flex shrink-0 items-center gap-2">
+          <Btn variant="dark" size="md" onClick={() => void handleReport()}>
+            <FileDown className="h-4 w-4" /> Descargar reporte
+          </Btn>
+          <Btn variant="secondary" size="md" onClick={() => void reload()} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
+          </Btn>
+        </div>
       </div>
+
+      {reportError && <WarningAlert title="No se pudo abrir el reporte" description={reportError} />}
 
       <ReadinessBanner readiness={readiness} bloqueos={bloqueos} advertencias={advertencias} periodLabel={period.label} onNavigate={onNavigate} />
 
