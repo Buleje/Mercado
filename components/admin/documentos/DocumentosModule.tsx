@@ -326,40 +326,56 @@ export default function DocumentosModule() {
     setBulkTagValue("");
     clearSelection();
   };
-  // Descarga en lote como ZIP (client-side con jszip): baja cada archivo del
-  // proxy /raw y los empaqueta. Evita nombres duplicados con un sufijo (n).
+  // Empaqueta una lista de documentos en un ZIP (client-side con jszip): baja cada
+  // archivo del proxy /raw y evita nombres duplicados con un sufijo (n). Compartido
+  // por la descarga en lote (selección) y la descarga de una carpeta entera.
+  const zipAndDownload = async (docs: DbDocument[], filename: string) => {
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    const seen = new Map<string, number>();
+    for (const doc of docs) {
+      const res = await fetch(`/api/admin/documents/${doc.id}/raw`, { credentials: "include" });
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      let name = doc.name || `documento-${doc.id}`;
+      const dup = seen.get(name) ?? 0;
+      seen.set(name, dup + 1);
+      if (dup > 0) {
+        const dot = name.lastIndexOf(".");
+        name = dot > 0 ? `${name.slice(0, dot)} (${dup})${name.slice(dot)}` : `${name} (${dup})`;
+      }
+      zip.file(name, blob);
+    }
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
   const bulkDownloadZip = async () => {
     if (selectedIds.size === 0 || zipping) return;
     setZipping(true);
     try {
-      const JSZip = (await import("jszip")).default;
-      const zip = new JSZip();
-      const seen = new Map<string, number>();
-      for (const id of Array.from(selectedIds)) {
-        const doc = documents.find((d) => d.id === id);
-        if (!doc) continue;
-        const res = await fetch(`/api/admin/documents/${id}/raw`, { credentials: "include" });
-        if (!res.ok) continue;
-        const blob = await res.blob();
-        let name = doc.name || `documento-${id}`;
-        const dup = seen.get(name) ?? 0;
-        seen.set(name, dup + 1);
-        if (dup > 0) {
-          const dot = name.lastIndexOf(".");
-          name = dot > 0 ? `${name.slice(0, dot)} (${dup})${name.slice(dot)}` : `${name} (${dup})`;
-        }
-        zip.file(name, blob);
-      }
-      const content = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(content);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `documentos-${selectedIds.size}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const docs = Array.from(selectedIds)
+        .map((id) => documents.find((d) => d.id === id))
+        .filter((d): d is DbDocument => !!d);
+      await zipAndDownload(docs, `documentos-${selectedIds.size}.zip`);
       clearSelection();
+    } finally {
+      setZipping(false);
+    }
+  };
+  // Descargar TODA la carpeta activa como ZIP.
+  const downloadFolderZip = async () => {
+    if (zipping || displayDocs.length === 0) return;
+    setZipping(true);
+    try {
+      const folderName = activePath.length ? activePath[activePath.length - 1].name : "carpeta";
+      await zipAndDownload(displayDocs, `${folderName.replace(/[^\w.-]+/g, "_") || "carpeta"}.zip`);
     } finally {
       setZipping(false);
     }
@@ -891,6 +907,16 @@ export default function DocumentosModule() {
                   </span>
                 );
               })}
+              {displayDocs.length > 0 && (
+                <button
+                  onClick={downloadFolderZip}
+                  disabled={zipping}
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-white px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
+                  title="Descargar todos los documentos de esta carpeta en un ZIP"
+                >
+                  <FileArchive className="h-3.5 w-3.5" /> {zipping ? "Comprimiendo…" : "Descargar carpeta (ZIP)"}
+                </button>
+              )}
             </nav>
           )}
 
