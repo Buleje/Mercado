@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, AlertTriangle, TrendingUp, Gauge, Coins, CalendarClock, Activity, CheckCircle2,
-  Calculator, Save, Wallet,
+  Calculator, Save, Wallet, Download, Ban,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -33,10 +33,70 @@ interface Analytics {
   projection: { ritmoDiaM3: number; diasParaAgotar: number; fechaAgotamientoISO: string | null } | null;
   lateCount: number;
   costeo: { rows: CosteoRow[]; ingresoTotal: number; costoTotal: number; margenTotal: number; margenPctTotal: number; costoOperativoM3: number } | null;
+  especiesNoAutorizadas?: string[];
 }
 
 const fm = (n: number, dp = 2) => n.toLocaleString("es-PE", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 const fdate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }) : "—");
+
+// ─── Export CSV (BOM UTF-8 para Excel es-PE) ────────────────────────────────
+function buildAnalyticsCsv(d: Analytics): string {
+  const rows: (string | number)[][] = [];
+  const push = (...cells: (string | number)[]) => rows.push(cells);
+  push("Análisis del Libro de Operaciones · Títulos Habilitantes");
+  push("Plan", d.plan?.titularName ?? "—", d.plan?.planNumber ?? "");
+  push("");
+  push("Indicador", "Valor");
+  push("Rendimiento de aprovechamiento (%)", d.aprovechamiento.rendimientoGlobalPct);
+  push("Valor movilizado (S/)", (d.balance?.valorTotal ?? 0).toFixed(2));
+  push("Pago derecho total (S/)", (d.balance?.pagoDerechoTotal ?? 0).toFixed(2));
+  push("Anomalías", d.anomalias.length);
+  if ((d.especiesNoAutorizadas ?? []).length > 0) push("Especies fuera del plan", (d.especiesNoAutorizadas ?? []).join(" · "));
+  push("");
+  const f = d.aprovechamiento.funnel;
+  push("Cascada de aprovechamiento (m³)");
+  push("Etapa", "m³");
+  push("Tala", f.taladoM3.toFixed(4));
+  push("Trozado", f.trozadoM3.toFixed(4));
+  push("Despacho de trozas", f.despachoTrozaM3.toFixed(4));
+  push("Consumo (aserrío)", f.consumidoM3.toFixed(4));
+  push("Despacho producto term.", f.despachoProductoM3.toFixed(4));
+  push("");
+  push("Rendimiento por especie");
+  push("Especie", "Talado m³", "Trozado m³", "Rendimiento %", "Merma m³");
+  d.aprovechamiento.bySpecies.forEach((s) =>
+    push(s.species, s.taladoM3.toFixed(4), s.trozadoM3.toFixed(4), s.rendimientoPct, s.mermaM3.toFixed(4)));
+  if (d.balance) {
+    push("");
+    push("Valorización y saldo por especie");
+    push("Especie", "Movilizado m³", "Saldo m³", "Valor movilizado S/");
+    d.balance.rows.forEach((r) =>
+      push(r.species, r.movilizado.toFixed(4), r.saldo.toFixed(4), r.valorMovilizado.toFixed(2)));
+  }
+  if (d.costeo && d.costeo.rows.length > 0) {
+    push("");
+    push("Costeo y margen por m³");
+    push("Especie", "Precio/m³", "Costo/m³", "Margen/m³", "Margen %", "Margen total");
+    d.costeo.rows.forEach((c) =>
+      push(c.species, c.precioVentaM3.toFixed(2), c.costoTotalM3.toFixed(2), c.margenM3.toFixed(2), c.margenPct, c.margen.toFixed(2)));
+    push("TOTAL", "", "", "", d.costeo.margenPctTotal, d.costeo.margenTotal.toFixed(2));
+  }
+  const esc = (v: string) => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  // BOM UTF-8 explícito para que Excel es-PE lea bien los acentos.
+  return "\uFEFF" + rows.map((r) => r.map((c) => esc(String(c))).join(",")).join("\r\n");
+}
+
+function downloadCsv(filename: string, content: string) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: number } = {}) {
   const [data, setData] = useState<Analytics | null>(null);
@@ -107,8 +167,22 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
         <p className="text-sm text-[var(--text-tertiary)]">
           {data.hasPlan ? <>Plan activo: <b className="text-[var(--text-secondary)]">{data.plan?.titularName}</b>{data.plan?.planNumber ? ` · ${data.plan.planNumber}` : ""}</> : "Sin plan activo — la proyección y el balance requieren un Plan de Manejo configurado."}
         </p>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => downloadCsv(`analitica-libro-th-${(data.plan?.planNumber ?? "sin-plan").replace(/[^\w-]+/g, "-")}.csv`, buildAnalyticsCsv(data))} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /> CSV</button>
+          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+        </div>
       </div>
+
+      {/* Especies con operaciones fuera del plan autorizado (cruce OSINFOR) */}
+      {(data.especiesNoAutorizadas ?? []).length > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 px-4 py-3 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          <Ban className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <b>Especie(s) con operaciones fuera del plan autorizado:</b>{" "}
+            {(data.especiesNoAutorizadas ?? []).join(", ")}. Aprovechar una especie que no figura en la resolución es infracción — regularizá el plan o el registro.
+          </div>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -238,7 +312,14 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
                         <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">S/ {fm(c.precioVentaM3)}</Td>
                         <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">S/ {fm(c.costoTotalM3)}</Td>
                         <Td className="text-right font-mono tabular-nums"><span className={c.margenM3 >= 0 ? "text-[var(--data-success-700)]" : "text-[var(--data-error-700)]"}>S/ {fm(c.margenM3)}</span></Td>
-                        <Td className="text-right"><span className={`font-mono font-bold tabular-nums ${c.margenPct >= 25 ? "text-[var(--data-success-700)]" : c.margenPct >= 0 ? "text-[var(--data-warning-700)]" : "text-[var(--data-error-700)]"}`}>{c.margenPct}%</span></Td>
+                        <Td className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                              <span className={`block h-full rounded-full ${c.margenPct >= 25 ? "bg-[var(--data-success-500)]" : c.margenPct >= 0 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"}`} style={{ width: `${Math.min(100, Math.max(0, c.margenPct))}%` }} />
+                            </span>
+                            <span className={`font-mono font-bold tabular-nums ${c.margenPct >= 25 ? "text-[var(--data-success-700)]" : c.margenPct >= 0 ? "text-[var(--data-warning-700)]" : "text-[var(--data-error-700)]"}`}>{c.margenPct}%</span>
+                          </div>
+                        </Td>
                         <Td className="text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">S/ {fm(c.margen)}</Td>
                       </tr>
                     ))}
