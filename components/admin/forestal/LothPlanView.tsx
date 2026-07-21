@@ -9,9 +9,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  FileText, Plus, TreePine, ShieldAlert, Upload, Trash2, Loader2, AlertCircle, Printer, MapPin,
+  FileText, Plus, TreePine, ShieldAlert, ShieldCheck, Upload, Trash2, Loader2, AlertCircle,
+  Printer, MapPin, TrendingUp, Scale, Ban, AlertTriangle, CheckCircle2,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 
@@ -49,6 +50,8 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPlanForm, setShowPlanForm] = useState(false);
+  const [balance, setBalance] = useState<Balance | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const loadPlans = useCallback(async () => {
     setLoading(true); setError(null);
@@ -63,14 +66,18 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   }, [planId]);
 
   const loadDetail = useCallback(async (id: string) => {
+    setDetailLoading(true);
     try {
-      const [d, c] = await Promise.all([
+      const [d, c, b] = await Promise.all([
         fetch(`/api/admin/forestal/plan?planId=${id}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/plan/census?planId=${id}`, { credentials: "include" }),
+        fetch(`/api/admin/forestal/plan?balance=${id}`, { credentials: "include" }),
       ]);
       if (d.ok) { const j = await d.json(); setSpecies(j.species ?? []); setCensusStat(j.censusSummary ?? []); }
       if (c.ok) setTrees((await c.json()).trees ?? []);
+      if (b.ok) setBalance((await b.json()).balance ?? null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setDetailLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -82,8 +89,16 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
 
   const plan = plans.find((p) => p.id === planId) ?? null;
   const autorizadoTotal = useMemo(() => species.reduce((a, s) => a + Number(s.volumenAutorizadoM3 ?? 0), 0), [species]);
-  const censoVolTotal = useMemo(() => censusStat.reduce((a, s) => a + s.volumenEstimadoM3, 0), [censusStat]);
-  const taladoVol = censusStat.find((s) => s.estado === "talado")?.volumenEstimadoM3 ?? 0;
+
+  // Cruce censo ↔ autorizado ↔ movilizado por especie (compliance SERFOR/OSINFOR).
+  const controlRows = useMemo(() => buildControlRows(species, trees, balance), [species, trees, balance]);
+  const movilizadoTotal = useMemo(() => (balance?.rows ?? []).reduce((a, r) => a + r.movilizado, 0), [balance]);
+  const aprovechamientoPct = autorizadoTotal > 0 ? (movilizadoTotal / autorizadoTotal) * 100 : 0;
+  const saldoTotal = Math.max(0, autorizadoTotal - movilizadoTotal);
+  const georrefCount = useMemo(() => trees.filter((t) => Number(t.utmX) && Number(t.utmY)).length, [trees]);
+  const georrefPct = trees.length > 0 ? Math.round((georrefCount / trees.length) * 100) : 0;
+  const noAutorizadas = controlRows.filter((r) => r.flags.includes("no_autorizada"));
+  const okCount = controlRows.filter((r) => r.tone === "ok").length;
 
   return (
     <div className="space-y-5">
@@ -154,18 +169,25 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
             </div>
           </div>
 
-          {/* KPIs */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Kpi label="Vol. autorizado" value={`${autorizadoTotal.toFixed(2)} m³`} tone="success" />
-            <Kpi label="Especies aprobadas" value={species.length.toString()} />
-            <Kpi label="Árboles censados" value={trees.length.toString()} />
-            <Kpi label="Vol. censo · talado" value={`${censoVolTotal.toFixed(1)} / ${taladoVol.toFixed(1)} m³`} />
+          {/* KPIs — StatCards del DS (consistencia visual con la vista Trazabilidad) */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <StatCard label="Vol. autorizado" value={`${autorizadoTotal.toFixed(0)} m³`} subValue={`${species.length} especie${species.length === 1 ? "" : "s"}`} icon={FileText} emphasis="neutral" />
+            <StatCard label="Aprovechamiento POA" value={`${aprovechamientoPct.toFixed(0)}%`} subValue={`${movilizadoTotal.toFixed(1)} m³ movilizados`} icon={TrendingUp} emphasis={aprovechamientoPct > 100 ? "error" : aprovechamientoPct >= 85 ? "warning" : "success"} />
+            <StatCard label="Saldo disponible" value={`${saldoTotal.toFixed(1)} m³`} subValue={`${Math.max(0, 100 - aprovechamientoPct).toFixed(0)}% del POA`} icon={Scale} emphasis="success" />
+            <StatCard label="Árboles censados" value={trees.length.toString()} subValue={`${georrefPct}% con GPS`} icon={TreePine} emphasis="neutral" />
+            <StatCard label="Control de especies" value={`${okCount}/${controlRows.length}`} subValue={noAutorizadas.length > 0 ? `${noAutorizadas.length} fuera del plan` : "todo autorizado"} icon={noAutorizadas.length > 0 ? ShieldAlert : ShieldCheck} emphasis={noAutorizadas.length > 0 ? "error" : "success"} />
           </div>
 
-          {/* Balance de extracción / saldos */}
-          <BalancePanel planId={plan.id} vigenciaHasta={plan.vigenciaHasta} />
+          {/* Alertas de calidad del cruce censo ↔ autorizado (lo que el diseño viejo no atrapaba) */}
+          <QualityAlerts rows={controlRows} />
 
-          {/* Especies autorizadas */}
+          {/* Control por especie — ¿estoy dentro de lo autorizado? (compliance OSINFOR) */}
+          <EspecieControlPanel rows={controlRows} loading={detailLoading} />
+
+          {/* Balance de extracción / saldos — lente de dinero (pago derecho) */}
+          <BalancePanel balance={balance} loading={detailLoading} vigenciaHasta={plan.vigenciaHasta} />
+
+          {/* Especies autorizadas (editor) */}
           <SpeciesPanel planId={plan.id} species={species} onChange={() => loadDetail(plan.id)} />
 
           {/* Censo */}
@@ -433,20 +455,7 @@ interface Balance {
   plan: { vigenciaHasta: string | null; estado: string; areaHa: number; uitRef: number } | null;
 }
 
-function BalancePanel({ planId, vigenciaHasta }: { planId: string; vigenciaHasta: string | null }) {
-  const [b, setB] = useState<Balance | null>(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let cancel = false;
-    setLoading(true);
-    fetch(`/api/admin/forestal/plan?balance=${planId}`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (!cancel) setB(j?.balance ?? null); })
-      .catch(() => { /* balance best-effort: el panel muestra vacío si falla */ })
-      .finally(() => { if (!cancel) setLoading(false); });
-    return () => { cancel = true; };
-  }, [planId]);
-
+function BalancePanel({ balance: b, loading, vigenciaHasta }: { balance: Balance | null; loading: boolean; vigenciaHasta: string | null }) {
   // Alertas
   const alerts: { tone: "danger" | "warning"; text: string }[] = [];
   if (b) {
@@ -517,6 +526,157 @@ function printBalance(b: Balance) {
   </body></html>`;
   const w = window.open("", "_blank", "width=820,height=700");
   if (w) { w.document.write(html); w.document.close(); }
+}
+
+// ─── Control por especie · cruce censo ↔ autorizado ↔ movilizado ────────────
+// El corazón de la fiscalización OSINFOR: ¿lo censado/talado/movilizado cabe en
+// lo que autorizó la resolución? Detecta especies fuera del plan (tala no
+// autorizada), exceso de árboles y de volumen. Todo derivado en el cliente de
+// datos ya cargados (species + trees + balance) — sin fetch extra.
+type ControlFlag = "no_autorizada" | "exceso_volumen" | "exceso_arboles" | "sin_censo";
+type ControlTone = "ok" | "warn" | "danger";
+interface ControlRow {
+  species: string; cites: boolean;
+  autorizada: boolean; autorizadoM3: number; autorizadoArboles: number | null;
+  censadoCount: number; censadoVolM3: number; georrefCount: number; taladoCount: number;
+  movilizado: number; saldo: number; pctEjecutado: number;
+  flags: ControlFlag[]; tone: ControlTone;
+}
+
+const normSp = (s: string) => s.trim().toLowerCase();
+
+function buildControlRows(species: Species[], trees: Tree[], balance: Balance | null): ControlRow[] {
+  const spMap = new Map(species.map((s) => [normSp(s.speciesCommon), s]));
+  const balMap = new Map((balance?.rows ?? []).map((r) => [normSp(r.species), r]));
+  const groups = new Map<string, { name: string; count: number; vol: number; georref: number; talado: number; cites: boolean }>();
+  for (const t of trees) {
+    const key = normSp(t.speciesCommon);
+    const g = groups.get(key) ?? { name: t.speciesCommon, count: 0, vol: 0, georref: 0, talado: 0, cites: false };
+    g.count += 1;
+    g.vol += Number(t.volumenEstimadoM3 ?? 0);
+    if (Number(t.utmX) && Number(t.utmY)) g.georref += 1;
+    if (t.estado === "talado") g.talado += 1;
+    g.cites = g.cites || t.cites;
+    groups.set(key, g);
+  }
+  const keys = new Set<string>([...spMap.keys(), ...groups.keys()]);
+  const rows: ControlRow[] = [];
+  for (const key of keys) {
+    const sp = spMap.get(key);
+    const g = groups.get(key);
+    const bal = balMap.get(key);
+    const autorizada = !!sp;
+    const autorizadoM3 = Number(sp?.volumenAutorizadoM3 ?? 0);
+    const autorizadoArboles = sp?.arbolesAutorizados ?? null;
+    const censadoCount = g?.count ?? 0;
+    const movilizado = bal?.movilizado ?? 0;
+    const saldo = bal ? bal.saldo : autorizadoM3 - movilizado;
+    const pctEjecutado = autorizadoM3 > 0 ? (movilizado / autorizadoM3) * 100 : 0;
+    const flags: ControlFlag[] = [];
+    if (!autorizada && censadoCount > 0) flags.push("no_autorizada");
+    if (bal?.exceso) flags.push("exceso_volumen");
+    if (autorizadoArboles != null && censadoCount > autorizadoArboles) flags.push("exceso_arboles");
+    if (autorizada && censadoCount === 0 && autorizadoM3 > 0) flags.push("sin_censo");
+    const tone: ControlTone =
+      flags.includes("no_autorizada") || flags.includes("exceso_volumen") ? "danger"
+        : flags.includes("exceso_arboles") || flags.includes("sin_censo") ? "warn"
+          : "ok";
+    rows.push({
+      species: sp?.speciesCommon ?? g?.name ?? key, cites: sp?.cites ?? g?.cites ?? false,
+      autorizada, autorizadoM3, autorizadoArboles, censadoCount, censadoVolM3: g?.vol ?? 0,
+      georrefCount: g?.georref ?? 0, taladoCount: g?.talado ?? 0, movilizado, saldo, pctEjecutado, flags, tone,
+    });
+  }
+  const toneRank: Record<ControlTone, number> = { danger: 0, warn: 1, ok: 2 };
+  rows.sort((a, b) => toneRank[a.tone] - toneRank[b.tone] || b.autorizadoM3 - a.autorizadoM3 || b.censadoVolM3 - a.censadoVolM3);
+  return rows;
+}
+
+const FLAG_LABEL: Record<ControlFlag, string> = {
+  no_autorizada: "Fuera del plan aprobado",
+  exceso_volumen: "Movilizado excede autorizado",
+  exceso_arboles: "Censo excede N° árboles autorizados",
+  sin_censo: "Autorizada sin censo",
+};
+
+// Banner de calidad — surfacea lo que el diseño viejo dejaba pasar: una especie
+// censada que NO figura en la resolución (ej. "Misa" en los datos demo).
+function QualityAlerts({ rows }: { rows: ControlRow[] }) {
+  const hasCenso = rows.some((r) => r.censadoCount > 0);
+  if (!hasCenso) return null;
+  const noAut = rows.filter((r) => r.flags.includes("no_autorizada"));
+  const excArb = rows.filter((r) => r.flags.includes("exceso_arboles"));
+  if (noAut.length === 0 && excArb.length === 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15 px-4 py-3 text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+        <CheckCircle2 className="h-4 w-4 shrink-0" />
+        Todo el censo corresponde a especies autorizadas en el plan.
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {noAut.length > 0 && (
+        <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 px-4 py-3 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          <Ban className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <span className="font-bold">Especie(s) censada(s) fuera del plan aprobado: </span>
+            {noAut.map((r) => r.species).join(", ")}.{" "}
+            <span className="font-medium">Talar o movilizar una especie no autorizada es infracción — corregí el plan o el censo antes de emitir GTF.</span>
+          </div>
+        </div>
+      )}
+      {excArb.map((r) => (
+        <div key={r.species} className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-4 py-3 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div><span className="font-bold">{r.species}:</span> censados {r.censadoCount} árboles &gt; {r.autorizadoArboles} autorizados en la resolución.</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ControlToneDot({ tone }: { tone: ControlTone }) {
+  const c = tone === "danger" ? "var(--data-error-500)" : tone === "warn" ? "var(--data-warning-500)" : "var(--data-success-500)";
+  return <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c }} />;
+}
+
+function EspecieControlPanel({ rows, loading }: { rows: ControlRow[]; loading: boolean }) {
+  return (
+    <Panel title="Control por especie · censo ↔ autorizado">
+      {loading && rows.length === 0 && <div className="p-4 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
+      {(!loading || rows.length > 0) && (
+        <>
+          <Table head={["Especie", "Autorizado", "N° árb.", "Censado", "Talado", "Movilizado", "% ejec.", "Estado"]}>
+            {rows.map((r) => (
+              <tr key={r.species} className={`border-t border-[var(--rule-soft)] ${r.tone === "danger" ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12" : ""}`}>
+                <Cell>
+                  <span className="inline-flex items-center gap-2 font-medium text-[var(--text-primary)]"><ControlToneDot tone={r.tone} />{r.species}</span>
+                  {r.cites && <CitesPill />}
+                  {!r.autorizada && <span className="ml-1.5 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">NO EN PLAN</span>}
+                </Cell>
+                <Cell right><Mono>{r.autorizada ? r.autorizadoM3.toFixed(2) : "—"}</Mono></Cell>
+                <Cell right>
+                  <span className={r.flags.includes("exceso_arboles") ? "font-bold text-[var(--data-warning-700)]" : "text-[var(--text-secondary)]"}>
+                    {r.censadoCount}{r.autorizadoArboles != null ? ` / ${r.autorizadoArboles}` : ""}
+                  </span>
+                </Cell>
+                <Cell right><Mono>{r.censadoVolM3.toFixed(2)}</Mono></Cell>
+                <Cell right><Mono>{r.taladoCount}</Mono></Cell>
+                <Cell right><Mono>{r.movilizado.toFixed(2)}</Mono></Cell>
+                <Cell right><SaldoBar pct={r.pctEjecutado} exceso={r.flags.includes("exceso_volumen")} /></Cell>
+                <Cell><span className="text-xs font-medium text-[var(--text-secondary)]">{r.flags.length === 0 ? "OK" : r.flags.map((f) => FLAG_LABEL[f]).join(" · ")}</span></Cell>
+              </tr>
+            ))}
+            {rows.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Agregá especies autorizadas y censá árboles para ver el control cruzado.</td></tr>}
+          </Table>
+          <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+            Cruce entre lo que autorizó la resolución (m³ + N° de árboles), lo censado en campo y lo movilizado con GTF. Un fiscalizador de OSINFOR cruza exactamente estas columnas.
+          </p>
+        </>
+      )}
+    </Panel>
+  );
 }
 
 // Informe de ejecución del POA — documento consolidado para ARFFS/SERFOR/OSINFOR al cierre
@@ -666,14 +826,6 @@ function AddBtn({ open, onClick }: { open: boolean; onClick: () => void }) {
 }
 function Meta({ k, v }: { k: string; v: string | null }) {
   return <div><span className="text-[var(--text-tertiary)]">{k}: </span><span className="font-medium text-[var(--text-primary)]">{v || "—"}</span></div>;
-}
-function Kpi({ label, value, tone }: { label: string; value: string; tone?: "success" }) {
-  return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{label}</div>
-      <div className={`mt-1 text-xl font-bold tabular-nums ${tone === "success" ? "text-[var(--data-success-700)]" : "text-[var(--text-primary)]"}`}>{value}</div>
-    </div>
-  );
 }
 function CitesPill() {
   return <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]"><ShieldAlert className="h-2.5 w-2.5" />CITES</span>;
