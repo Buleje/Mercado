@@ -46,6 +46,7 @@ export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
  *   T4 · Σ trozado(árbol) ≤ volumen de la tala del árbol    → trozar más que lo tumbado
  *   T5 · Σ despacho_producto ≤ Σ producto_terminado         → despachar más que lo producido
  *   T6 · Σ movilizado(especie) ≤ volumen autorizado (POA)   → EXCESO DE APROVECHAMIENTO (OSINFOR)
+ *   T7 · la especie movilizada debe estar AUTORIZADA en el plan → tala/movilización de especie fuera del POA (infracción)
  */
 export class LothInvariantError extends Error {
   constructor(
@@ -58,6 +59,7 @@ export class LothInvariantError extends Error {
       | "T4_TROZADO_SUPERA_TALA"
       | "T5_DESPACHO_SUPERA_PRODUCCION"
       | "T6_EXCESO_AUTORIZADO"
+      | "T7_ESPECIE_NO_AUTORIZADA"
       // P1 — la línea cae en un mes cerrado: el acta es inmutable hasta reabrir.
       | "PERIODO_CERRADO",
     readonly detail?: Record<string, unknown>,
@@ -395,10 +397,12 @@ export class ForestLothDB {
           { trozaCode, lineNo: usada.lineNo, section: usada.section },
         );
       }
-      // T6 — despachar la troza no puede exceder el volumen autorizado del POA
-      //      para su especie (sólo despacho MOVILIZA; consumo interno no mueve al
-      //      exterior). El volumen es el de la troza según su Trozado.
+      // T7 + T6 — sólo el despacho MOVILIZA (consumo interno no sale al exterior).
       if (section === "despacho_troza") {
+        // T7 — la especie de la troza debe estar autorizada en el plan de manejo.
+        await ForestLothDB.enforceT7(tx, tenantId, input.planId ?? null, trozada.speciesCommon);
+        // T6 — despachar la troza no puede exceder el volumen autorizado del POA
+        //      para su especie. El volumen es el de la troza según su Trozado.
         await ForestLothDB.enforceT6(
           tx, tenantId, input.planId ?? null,
           trozada.speciesCommon, trozada.volumeM3 != null ? Number(trozada.volumeM3) : 0,
@@ -434,6 +438,9 @@ export class ForestLothDB {
           { productType, producido: r4(producido), yaDespachado: r4(yaDespachado), pedido: r4(qty) },
         );
       }
+      // T7 — la especie del producto despachado debe estar autorizada en el plan
+      //      (movilizar una especie fuera del POA es infracción, sea cual sea la unidad).
+      await ForestLothDB.enforceT7(tx, tenantId, input.planId ?? null, speciesCommon);
       // T6 — sólo el producto despachado en m³ moviliza volumen comparable con el
       //      autorizado (kg/unidad no se cuentan contra el volumen del POA, igual
       //      que en `computeBalance`).
@@ -522,6 +529,50 @@ export class ForestLothDB {
           `este despacho de ${r4(nuevoVolumen)} m³ excede lo autorizado. Es la infracción que sanciona OSINFOR.`,
         "T6_EXCESO_AUTORIZADO",
         { species, autorizado: r4(autorizado), movilizado: r4(movilizado), pedido: r4(nuevoVolumen) },
+      );
+    }
+  }
+
+  /**
+   * T7 — la especie que se MOVILIZA (despacho de troza o de producto) debe estar
+   * entre las autorizadas del plan de manejo. Talar/movilizar una especie que no
+   * figura en la resolución del título habilitante es infracción — es lo que
+   * cruza OSINFOR contra el POA. Antes sólo se DETECTABA en el cruce del Plan de
+   * Manejo (UI); acá se IMPIDE al escribir el despacho.
+   *
+   * Se aplica SÓLO cuando el despacho declara explícitamente su plan (`input.planId`).
+   * Sin plan atado (código libre) no fabricamos la restricción: no sabríamos contra
+   * qué POA validar. A diferencia de T6, NO cae al plan vigente por defecto — eso
+   * bloquearía movimientos legítimos de otros planes/tenants y rompería la cadena
+   * de "código libre". Match de especie case-insensitive (el nombre común entra a
+   * mano y puede diferir en mayúsculas). Sin especie o sin especies autorizadas
+   * cargadas todavía (plan a medio configurar) → no bloquea.
+   */
+  private static async enforceT7(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    planId: string | null,
+    speciesCommon: string | null,
+  ): Promise<void> {
+    const species = speciesCommon?.trim() || null;
+    if (!planId || !species) return;
+
+    const autorizadas = await tx.forestPlanSpecies.count({
+      where: { tenantId, planId, deletedAt: null },
+    });
+    if (autorizadas === 0) return; // plan sin especies cargadas → no se puede juzgar
+
+    const match = await tx.forestPlanSpecies.findFirst({
+      where: { tenantId, planId, deletedAt: null, speciesCommon: { equals: species, mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (!match) {
+      throw new LothInvariantError(
+        `La especie "${species}" no está autorizada en el plan de manejo (POA). ` +
+          `Movilizar una especie fuera del título habilitante es infracción — agregala a las especies ` +
+          `autorizadas del plan o corregí el registro antes de emitir la GTF.`,
+        "T7_ESPECIE_NO_AUTORIZADA",
+        { species, planId },
       );
     }
   }

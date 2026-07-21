@@ -39,6 +39,9 @@ const P = `TEST-LOTH-${runId}`;
 // tenant. `SP` no lo autoriza ningún plan (T6 se salta); `SP6` sí, sólo en su test.
 const SP = `Especie-${runId}`;
 const SP6 = `EspecieT6-${runId}`;
+// T7 — SP7ok autorizada en su plan; SP7bad fuera del POA (debe frenar al movilizar).
+const SP7ok = `EspecieT7ok-${runId}`;
+const SP7bad = `EspecieT7bad-${runId}`;
 
 /** Alta de una línea del libro con `createdBy` de prueba. */
 function crear(input: Omit<LothEntryCreateInput, "createdBy">) {
@@ -172,6 +175,38 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     await crear({ section: "trozado", treeCode: t2, trozaCode: `${t2}-A`, speciesCommon: SP6, volumeM3: 5, planId: plan.id });
     await expect(crear({ section: "despacho_troza", trozaCode: `${t2}-A`, gtfNumber: `${P}-G2D`, planId: plan.id }))
       .rejects.toMatchObject({ code: "T6_EXCESO_AUTORIZADO" });
+  });
+
+  it("T7 — no se moviliza una especie que no está autorizada en el plan", async () => {
+    // Plan que autoriza SÓLO SP7ok. Movilizar SP7bad (fuera del POA) debe frenar.
+    const plan = await prisma.forestPlan.create({
+      data: { tenantId: TENANT, titularName: `${P} titular T7`, createdBy: P, estado: "vigente" },
+    });
+    await prisma.forestPlanSpecies.create({
+      data: { tenantId: TENANT, planId: plan.id, speciesCommon: SP7ok, volumenAutorizadoM3: 100 },
+    });
+    // Troza de una especie NO autorizada, despachada con el plan atado → T7.
+    const bad = `${P}-T7bad`;
+    await crear({ section: "tala", treeCode: bad, speciesCommon: SP7bad, volumeM3: 5 });
+    await crear({ section: "trozado", treeCode: bad, trozaCode: `${bad}-A`, speciesCommon: SP7bad, volumeM3: 4, planId: plan.id });
+    await expect(crear({ section: "despacho_troza", trozaCode: `${bad}-A`, gtfNumber: `${P}-T7BG`, planId: plan.id }))
+      .rejects.toMatchObject({ code: "T7_ESPECIE_NO_AUTORIZADA" });
+    // Control: la especie autorizada SÍ se moviliza — y el match es case-insensitive
+    // (el trozado va en MAYÚSCULAS y la autorización en su forma original).
+    const ok = `${P}-T7ok`;
+    await crear({ section: "tala", treeCode: ok, speciesCommon: SP7ok, volumeM3: 5 });
+    await crear({ section: "trozado", treeCode: ok, trozaCode: `${ok}-A`, speciesCommon: SP7ok.toUpperCase(), volumeM3: 4, planId: plan.id });
+    const desp = await crear({ section: "despacho_troza", trozaCode: `${ok}-A`, gtfNumber: `${P}-T7OKG`, planId: plan.id });
+    expect(desp.status).toBe("registrado");
+  });
+
+  it("T7 — sin plan atado (código libre) NO bloquea, aunque la especie no figure", async () => {
+    // Un despacho sin planId es "código libre": no se juzga contra ningún POA.
+    const free = `${P}-T7free`;
+    await crear({ section: "tala", treeCode: free, speciesCommon: SP7bad, volumeM3: 5 });
+    await crear({ section: "trozado", treeCode: free, trozaCode: `${free}-A`, speciesCommon: SP7bad, volumeM3: 4 });
+    const desp = await crear({ section: "despacho_troza", trozaCode: `${free}-A`, gtfNumber: `${P}-T7FG` });
+    expect(desp.status).toBe("registrado");
   });
 
   it("P1 — no se registra en un mes cerrado; reabrir lo desbloquea", async () => {
