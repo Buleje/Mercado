@@ -23,7 +23,7 @@ import {
   Upload, Search, Grid3x3, List, FolderArchive, FileText, Image as ImageIcon,
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
-  Camera, AlarmClock, Wand2, Tag,
+  Camera, AlarmClock, Wand2, Tag, RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -67,6 +67,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-slate-500" },
   { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-red-500" },
+  { id: "trash", label: "Papelera", icon: Trash2, color: "text-[var(--text-tertiary)]" },
 ];
 
 // ADR-119 — almacenamiento orientativo por plan (bytes). Sin gate duro: solo
@@ -89,7 +90,7 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "favorites" | "recent" | "expiring" | "folder">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "favorites" | "recent" | "expiring" | "folder" | "trash">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
 
@@ -123,13 +124,14 @@ export default function DocumentosModule() {
       favorite: filterMode === "favorites" ? true : undefined,
       expiring: filterMode === "expiring" ? 30 : undefined,
       semantic: semantic && !!searchDebounced.trim(),
+      deletedOnly: filterMode === "trash" ? true : undefined,
     }),
     [filterMode, activeFolderId, searchDebounced, semantic]
   );
 
   const {
     documents, folders, loading, error, refresh,
-    upload, scan, patch, bulk, createFolder, deleteFolder,
+    upload, scan, patch, bulk, restore, purge, createFolder, deleteFolder,
   } = useDocuments(filters);
 
   // ── Escaneo desde cámara (móvil) ──
@@ -480,10 +482,7 @@ export default function DocumentosModule() {
           <ul className="space-y-1 mb-4">
             {BUILTIN_CATEGORIES.map((cat) => {
               const Icon = cat.icon;
-              const active =
-                (cat.id === "all" && filterMode === "all") ||
-                (cat.id === "favorites" && filterMode === "favorites") ||
-                (cat.id === "recent" && filterMode === "recent");
+              const active = filterMode === cat.id;
               return (
                 <li key={cat.id}>
                   <button
@@ -696,6 +695,8 @@ export default function DocumentosModule() {
             <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-10 text-center text-sm text-[var(--text-tertiary)]">
               Cargando…
             </div>
+          ) : filterMode === "trash" ? (
+            <PapeleraView docs={displayDocs} onRestore={restore} onPurge={purge} />
           ) : displayDocs.length === 0 ? (
             <EmptyState onUpload={() => fileInputRef.current?.click()} />
           ) : view === "grid" ? (
@@ -1030,6 +1031,56 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
       <button onClick={onUpload} className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
         <Upload className="h-4 w-4" /> Subir archivos
       </button>
+    </div>
+  );
+}
+
+// ── Papelera: documentos eliminados con restaurar / eliminar definitivamente ──
+function PapeleraView({ docs, onRestore, onPurge }: { docs: DbDocument[]; onRestore: (id: string) => void; onPurge: (id: string) => void }) {
+  if (docs.length === 0) {
+    return (
+      <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
+        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)] mb-4">
+          <Trash2 className="h-7 w-7" />
+        </div>
+        <p className="text-lg font-extrabold text-[var(--text-primary)]">La papelera está vacía</p>
+        <p className="text-sm text-[var(--text-secondary)] mt-1.5">Los documentos que elimines aparecerán acá y vas a poder recuperarlos.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] text-xs text-[var(--text-tertiary)]">
+        <Trash2 className="h-3.5 w-3.5 shrink-0" /> {docs.length} documento(s) en la papelera — restaurá o eliminá definitivamente.
+      </div>
+      <ul className="divide-y divide-[var(--rule-soft)]">
+        {docs.map((d) => {
+          const { Icon, tint, bg } = getFileIcon(d.mimeType);
+          return (
+            <li key={d.id} className="flex items-center gap-3 px-4 py-3">
+              <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", bg)}>
+                <Icon className={cn("h-4 w-4", tint)} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-sm text-[var(--text-primary)] truncate">{d.name}</p>
+                <p className="text-xs text-[var(--text-tertiary)] tabular-nums">{formatBytes(d.size)}{d.category ? ` · ${d.category}` : ""}</p>
+              </div>
+              <button
+                onClick={() => onRestore(d.id)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold hover:opacity-90 transition-opacity"
+              >
+                <RotateCcw className="h-3.5 w-3.5" /> Restaurar
+              </button>
+              <button
+                onClick={() => { if (confirm(`¿Eliminar "${d.name}" definitivamente? No se puede deshacer.`)) onPurge(d.id); }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-xs font-bold hover:opacity-90 transition-opacity"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Eliminar def.
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

@@ -143,6 +143,8 @@ export interface DocumentListFilters {
   orderId?: string;
   supplierId?: string;
   includeDeleted?: boolean;
+  /** Vista "Papelera": SÓLO documentos soft-deleted (deletedAt != null). */
+  deletedOnly?: boolean;
   /** ADR-119 — vista "Por vencer": documentos que vencen dentro de N días. */
   expiring?: number;
   /** ADR-119 — activar expansión semántica IA de la query `q`. */

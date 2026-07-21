@@ -40,6 +40,8 @@ export interface UseDocumentsResult {
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
   patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; expiresAt: string | null; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  restore: (id: string) => Promise<void>;
+  purge: (id: string) => Promise<void>;
   bulk: (action: "delete" | "move" | "tag" | "favorite", ids: string[], extra?: Record<string, unknown>) => Promise<number>;
   createFolder: (input: { name: string; parentId?: string | null; color?: string; icon?: string }) => Promise<DbDocumentFolder>;
   deleteFolder: (id: string) => Promise<void>;
@@ -72,6 +74,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
       // ADR-119 — vista "Por vencer" + búsqueda semántica
       if (f.expiring) qs.set("expiring", String(f.expiring));
       if (f.semantic && f.q) qs.set("semantic", "1");
+      if (f.deletedOnly) qs.set("deleted", "1");
 
       const [docsResp, foldersResp] = await Promise.all([
         http<{ documents: DbDocument[] }>(`${BASE}?${qs.toString()}`),
@@ -101,6 +104,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     filters.orderId,
     filters.expiring,
     filters.semantic,
+    filters.deletedOnly,
     tagsKey,
   ]);
 
@@ -154,6 +158,17 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     await fetchAll();
   }, [fetchAll]);
 
+  // Papelera: restaurar (soft-deleted → activo) o borrar definitivamente (purge).
+  const restore = useCallback(async (id: string) => {
+    await http(`${BASE}/${id}/restore`, { method: "POST" });
+    await fetchAll();
+  }, [fetchAll]);
+
+  const purge = useCallback(async (id: string) => {
+    await http(`${BASE}/${id}?purge=1`, { method: "DELETE" });
+    await fetchAll();
+  }, [fetchAll]);
+
   const bulk = useCallback(
     async (
       action: "delete" | "move" | "tag" | "favorite",
@@ -184,7 +199,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     await fetchAll();
   }, [fetchAll]);
 
-  return { documents, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, bulk, createFolder, deleteFolder };
+  return { documents, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, deleteFolder };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────

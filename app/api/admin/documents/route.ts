@@ -27,6 +27,8 @@ const ListQuery = z.object({
   expiring: z.coerce.number().int().min(1).max(365).optional(),
   // ADR-119 — búsqueda semántica IA (expande la query antes de buscar).
   semantic: z.enum(["1", "true"]).optional(),
+  // Vista "Papelera": sólo documentos soft-deleted.
+  deleted: z.enum(["1", "true"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -59,8 +61,10 @@ export async function GET(req: NextRequest) {
     semanticTerms = qAny;
   }
 
+  const deletedOnly = f.deleted === "1" || f.deleted === "true";
   const docs = await DocumentsDB.list(auth.tenantId, {
-    folderId: f.folderId === "null" ? null : f.folderId,
+    // En la papelera no aplicamos folder (mostramos TODO lo eliminado del tenant).
+    folderId: deletedOnly ? undefined : f.folderId === "null" ? null : f.folderId,
     category: f.category,
     q: qAny ? undefined : f.q,
     qAny,
@@ -69,6 +73,7 @@ export async function GET(req: NextRequest) {
     customerId: f.customerId,
     orderId: f.orderId,
     supplierId: f.supplierId,
+    deletedOnly,
   });
 
   return NextResponse.json({ documents: docs, ...(semanticTerms ? { semanticTerms } : {}) });

@@ -159,7 +159,8 @@ export class DocumentsDB {
   ): Promise<DbDocument[]> {
     const where: Record<string, unknown> = { tenantId };
 
-    if (!filters.includeDeleted) where.deletedAt = null;
+    if (filters.deletedOnly) where.deletedAt = { not: null };
+    else if (!filters.includeDeleted) where.deletedAt = null;
 
     if (filters.folderId !== undefined) {
       where.folderId = filters.folderId; // null → raíz
