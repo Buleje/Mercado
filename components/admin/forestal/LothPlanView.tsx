@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FileText, Plus, TreePine, ShieldAlert, ShieldCheck, Upload, Trash2, Loader2, AlertCircle,
-  Printer, MapPin, TrendingUp, Scale, Ban, AlertTriangle, CheckCircle2,
+  Printer, MapPin, TrendingUp, Scale, Ban, AlertTriangle, CheckCircle2, Pencil, Check, X, Search,
 } from "@buleje/design-system/icons";
 import { CardTitle, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -99,6 +99,8 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const georrefPct = trees.length > 0 ? Math.round((georrefCount / trees.length) * 100) : 0;
   const noAutorizadas = controlRows.filter((r) => r.flags.includes("no_autorizada"));
   const okCount = controlRows.filter((r) => r.tone === "ok").length;
+  // Nombres autorizados (normalizados) — el censo y el croquis marcan lo que cae fuera.
+  const authorizedSet = useMemo(() => new Set(species.map((s) => normSp(s.speciesCommon))), [species]);
 
   return (
     <div className="space-y-5">
@@ -191,10 +193,10 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           <SpeciesPanel planId={plan.id} species={species} onChange={() => loadDetail(plan.id)} />
 
           {/* Censo */}
-          <CensusPanel planId={plan.id} trees={trees} onChange={() => loadDetail(plan.id)} />
+          <CensusPanel planId={plan.id} trees={trees} authorizedSpecies={authorizedSet} onChange={() => loadDetail(plan.id)} />
 
           {/* Croquis de la parcela (UTM) */}
-          <CensusMap trees={trees} />
+          <CensusMap trees={trees} authorizedSpecies={authorizedSet} />
         </>
       )}
 
@@ -273,7 +275,10 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ speciesCommon: "", cites: false, volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "" });
   const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [edit, setEdit] = useState({ volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "" });
   const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
+  const setE = (k: keyof typeof edit, v: string) => setEdit((p) => ({ ...p, [k]: v }));
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -302,6 +307,37 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
     onChange();
   }
 
+  function startEdit(s: Species) {
+    setEditingId(s.id);
+    setEdit({
+      volumenAutorizadoM3: s.volumenAutorizadoM3 ?? "",
+      arbolesAutorizados: s.arbolesAutorizados != null ? String(s.arbolesAutorizados) : "",
+      precioVentaSoles: s.precioVentaSoles ?? "",
+      valorEstadoNaturalSoles: s.valorEstadoNaturalSoles ?? "",
+    });
+  }
+  async function saveEdit(id: string) {
+    // PATCH: solo corrige los números de la autorización (vol/árboles/precio/VEN).
+    // El nombre de la especie no se edita acá (rompería el cruce del control) —
+    // para cambiarlo, borrar y volver a agregar.
+    if (busy || !(Number(edit.volumenAutorizadoM3) > 0)) return;
+    setBusy(true);
+    try {
+      await fetch("/api/admin/forestal/plan/species", {
+        method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
+        body: JSON.stringify({
+          id,
+          volumenAutorizadoM3: Number(edit.volumenAutorizadoM3),
+          arbolesAutorizados: edit.arbolesAutorizados ? Number(edit.arbolesAutorizados) : null,
+          precioVentaSoles: edit.precioVentaSoles ? Number(edit.precioVentaSoles) : null,
+          valorEstadoNaturalSoles: edit.valorEstadoNaturalSoles ? Number(edit.valorEstadoNaturalSoles) : null,
+        }),
+      });
+      setEditingId(null);
+      onChange();
+    } finally { setBusy(false); }
+  }
+
   return (
     <Panel title="Especies autorizadas" action={<AddBtn open={open} onClick={() => setOpen((v) => !v)} />}>
       {open && (
@@ -315,14 +351,33 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
         </form>
       )}
       <Table head={["Especie", "Vol. autoriz.", "N° árb.", "Precio/m³", "VEN/m³", ""]}>
-        {species.map((s) => (
+        {species.map((s) => editingId === s.id ? (
+          <tr key={s.id} className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
+            <Cell><span className="font-medium text-[var(--text-primary)]">{s.speciesCommon}</span>{s.cites && <CitesPill />}</Cell>
+            <Cell right><input type="number" step="0.0001" value={edit.volumenAutorizadoM3} onChange={(e) => setE("volumenAutorizadoM3", e.target.value)} className={editCls} /></Cell>
+            <Cell right><input type="number" value={edit.arbolesAutorizados} onChange={(e) => setE("arbolesAutorizados", e.target.value)} className={editCls} /></Cell>
+            <Cell right><input type="number" step="0.01" value={edit.precioVentaSoles} onChange={(e) => setE("precioVentaSoles", e.target.value)} className={editCls} /></Cell>
+            <Cell right><input type="number" step="0.01" value={edit.valorEstadoNaturalSoles} onChange={(e) => setE("valorEstadoNaturalSoles", e.target.value)} className={editCls} /></Cell>
+            <Cell right>
+              <span className="inline-flex items-center gap-2">
+                <button onClick={() => saveEdit(s.id)} disabled={busy} title="Guardar" className="text-[var(--data-success-700)] hover:opacity-80 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</button>
+                <button onClick={() => setEditingId(null)} title="Cancelar" className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"><X className="h-4 w-4" /></button>
+              </span>
+            </Cell>
+          </tr>
+        ) : (
           <tr key={s.id} className="border-t border-[var(--rule-soft)]">
             <Cell><span className="font-medium text-[var(--text-primary)]">{s.speciesCommon}</span>{s.cites && <CitesPill />}{s.speciesScientific && <div className="text-xs italic text-[var(--text-tertiary)]">{s.speciesScientific}</div>}</Cell>
             <Cell right><Mono>{n(s.volumenAutorizadoM3)}</Mono></Cell>
             <Cell right>{s.arbolesAutorizados ?? "—"}</Cell>
             <Cell right>{soles(s.precioVentaSoles)}</Cell>
             <Cell right>{soles(s.valorEstadoNaturalSoles)}</Cell>
-            <Cell right><button onClick={() => del(s.id)} className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button></Cell>
+            <Cell right>
+              <span className="inline-flex items-center gap-2">
+                <button onClick={() => startEdit(s)} title="Editar autorización" className="text-[var(--text-tertiary)] hover:text-[var(--accent)]"><Pencil className="h-4 w-4" /></button>
+                <button onClick={() => del(s.id)} title="Borrar" className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button>
+              </span>
+            </Cell>
           </tr>
         ))}
         {species.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Sin especies. Agregá las aprobadas en la resolución.</td></tr>}
@@ -332,15 +387,29 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
 }
 
 // ─── Censo ─────────────────────────────────────────────────────────────────
-function CensusPanel({ planId, trees, onChange }: { planId: string; trees: Tree[]; onChange: () => void }) {
+function CensusPanel({ planId, trees, authorizedSpecies, onChange }: { planId: string; trees: Tree[]; authorizedSpecies: Set<string>; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [csv, setCsv] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("todos");
   const [f, setF] = useState({ treeCode: "", speciesCommon: "", dapM: "", alturaComercialM: "", factorForma: "0.65", utmZona: "18L", utmX: "", utmY: "" });
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const auto = censusVol(Number(f.dapM), Number(f.alturaComercialM), Number(f.factorForma) || 0.65);
+
+  // Buscador (código/especie) + filtro por estado, sobre el censo completo.
+  const filtered = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    return trees.filter((t) => {
+      if (estadoFilter !== "todos" && t.estado !== estadoFilter) return false;
+      if (query && !`${t.treeCode} ${t.speciesCommon}`.toLowerCase().includes(query)) return false;
+      return true;
+    });
+  }, [trees, q, estadoFilter]);
+  // Un árbol cuya especie NO está autorizada en el plan = tala potencialmente ilegal.
+  const outOfPlan = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(normSp(name));
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -424,11 +493,33 @@ function CensusPanel({ planId, trees, onChange }: { planId: string; trees: Tree[
           <button type="submit" disabled={busy} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Agregar</button>
         </form>
       )}
+      {trees.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar por código o especie…"
+              className={`${cls} pl-9`}
+            />
+          </div>
+          <select value={estadoFilter} onChange={(e) => setEstadoFilter(e.target.value)} className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
+            <option value="todos">Todos los estados</option>
+            <option value="en_pie">En pie</option>
+            <option value="talado">Talado</option>
+            <option value="descartado">Descartado</option>
+          </select>
+          <span className="text-xs tabular-nums text-[var(--text-tertiary)]">{filtered.length} de {trees.length}</span>
+        </div>
+      )}
       <Table head={["Código", "Especie", "DAP", "Hc", "Vol. est. m³", "UTM", "Estado", ""]}>
-        {trees.slice(0, 200).map((t) => (
-          <tr key={t.id} className="border-t border-[var(--rule-soft)]">
+        {filtered.slice(0, 200).map((t) => {
+          const fuera = outOfPlan(t.speciesCommon);
+          return (
+          <tr key={t.id} className={`border-t border-[var(--rule-soft)] ${fuera ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/12" : ""}`}>
             <Cell><Mono bold>{t.treeCode}</Mono></Cell>
-            <Cell><span className="text-[var(--text-primary)]">{t.speciesCommon}</span>{t.cites && <CitesPill />}</Cell>
+            <Cell><span className="text-[var(--text-primary)]">{t.speciesCommon}</span>{t.cites && <CitesPill />}{fuera && <span className="ml-1.5 rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">NO EN PLAN</span>}</Cell>
             <Cell right><Mono>{n(t.dapM, 2)}</Mono></Cell>
             <Cell right><Mono>{n(t.alturaComercialM, 2)}</Mono></Cell>
             <Cell right><Mono bold>{n(t.volumenEstimadoM3)}</Mono></Cell>
@@ -436,10 +527,12 @@ function CensusPanel({ planId, trees, onChange }: { planId: string; trees: Tree[
             <Cell><EstadoTag estado={t.estado} /></Cell>
             <Cell right><button onClick={() => del(t.id)} className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button></Cell>
           </tr>
-        ))}
+          );
+        })}
         {trees.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-2 h-8 w-8 opacity-30" />Sin árboles censados. Agregá o importá el censo (CSV).</td></tr>}
+        {trees.length > 0 && filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">Ningún árbol coincide con el filtro.</td></tr>}
       </Table>
-      {trees.length > 200 && <p className="mt-2 text-center text-xs text-[var(--text-tertiary)]">Mostrando 200 de {trees.length} árboles.</p>}
+      {filtered.length > 200 && <p className="mt-2 text-center text-xs text-[var(--text-tertiary)]">Mostrando 200 de {filtered.length} árboles.</p>}
     </Panel>
   );
 }
@@ -734,45 +827,58 @@ async function printInforme(plan: Plan, species: Species[], censusStat: CensusSt
 }
 
 // Croquis de la parcela: scatter de árboles por coordenadas UTM (sin dependencias)
-function CensusMap({ trees }: { trees: Tree[] }) {
+function CensusMap({ trees, authorizedSpecies }: { trees: Tree[]; authorizedSpecies: Set<string> }) {
   const pts = trees
     .map((t) => ({ t, x: Number(t.utmX), y: Number(t.utmY) }))
     .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y) && p.x !== 0 && p.y !== 0);
   if (pts.length === 0) return null;
+
+  // Color por ESPECIE (paleta HSL determinística — sin hex hardcodeado), opacidad
+  // por estado, y borde rojo punteado para especies fuera del plan autorizado.
+  const speciesList = Array.from(new Set(pts.map((p) => p.t.speciesCommon)));
+  const colorFor = (name: string) => `hsl(${Math.round((speciesList.indexOf(name) * 360) / Math.max(1, speciesList.length))} 60% 45%)`;
+  const fuera = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(normSp(name));
+  const opacityFor = (e: string) => (e === "talado" ? 0.5 : e === "descartado" ? 0.28 : 1);
 
   const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
   const W = 760, H = 320, pad = 28;
   const sx = (x: number) => (maxX === minX ? W / 2 : pad + ((x - minX) / (maxX - minX)) * (W - 2 * pad));
   const sy = (y: number) => (maxY === minY ? H / 2 : H - pad - ((y - minY) / (maxY - minY)) * (H - 2 * pad)); // Norte arriba
-  const color = (e: string) => (e === "talado" ? "var(--data-warning-500)" : e === "descartado" ? "var(--data-error-500)" : "var(--data-success-500)");
 
   return (
     <Panel title={`Croquis de la parcela · ${pts.length} árboles georreferenciados (UTM)`}>
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-2">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 340 }}>
           <text x={pad} y={16} fontSize="10" fill="var(--text-tertiary)">N ↑</text>
-          {pts.map((p, i) => (
-            <g key={i}>
-              <circle cx={sx(p.x)} cy={sy(p.y)} r={6} fill={color(p.t.estado)} stroke="var(--surface-raised)" strokeWidth={1.5}>
-                <title>{p.t.treeCode} · {p.t.speciesCommon} · {p.t.estado} · UTM {p.x},{p.y}</title>
-              </circle>
-              <text x={sx(p.x) + 8} y={sy(p.y) + 3} fontSize="9" fill="var(--text-secondary)">{p.t.treeCode}</text>
-            </g>
-          ))}
+          {pts.map((p, i) => {
+            const off = fuera(p.t.speciesCommon);
+            return (
+              <g key={i}>
+                {off && <circle cx={sx(p.x)} cy={sy(p.y)} r={11} fill="none" stroke="var(--data-error-500)" strokeWidth={1.5} strokeDasharray="2.5 2" />}
+                <circle cx={sx(p.x)} cy={sy(p.y)} r={7} fill={colorFor(p.t.speciesCommon)} fillOpacity={opacityFor(p.t.estado)} stroke={off ? "var(--data-error-500)" : "var(--surface-raised)"} strokeWidth={off ? 2 : 1.5}>
+                  <title>{p.t.treeCode} · {p.t.speciesCommon}{off ? " · FUERA DEL PLAN" : ""} · {p.t.estado} · UTM {p.x},{p.y}</title>
+                </circle>
+                <text x={sx(p.x) + 9} y={sy(p.y) + 3} fontSize="9" fill="var(--text-secondary)">{p.t.treeCode}</text>
+              </g>
+            );
+          })}
         </svg>
       </div>
-      <div className="mt-2 flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
-        <MapPin className="h-3.5 w-3.5" />
-        <Legend color="var(--data-success-500)" label="En pie" />
-        <Legend color="var(--data-warning-500)" label="Talado" />
-        <Legend color="var(--data-error-500)" label="Descartado" />
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-[var(--text-tertiary)]">
+        <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> Especie:</span>
+        {speciesList.map((sp) => (
+          <span key={sp} className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: colorFor(sp) }} />
+            <span className={fuera(sp) ? "font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : ""}>{sp}{fuera(sp) ? " ⚠" : ""}</span>
+          </span>
+        ))}
       </div>
+      <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+        Opacidad = estado (lleno: en pie · medio: talado · tenue: descartado). Borde rojo punteado = especie fuera del plan.
+      </p>
     </Panel>
   );
-}
-function Legend({ color, label }: { color: string; label: string }) {
-  return <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} /> {label}</span>;
 }
 
 function SaldoBar({ pct, exceso }: { pct: number; exceso: boolean }) {
@@ -789,6 +895,8 @@ function SaldoBar({ pct, exceso }: { pct: number; exceso: boolean }) {
 
 // ─── átomos ──────────────────────────────────────────────────────────────
 const cls = "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--data-success-600)] focus:ring-1 focus:ring-[var(--data-success-600)]/20 placeholder:text-[var(--text-tertiary)]";
+// Input compacto para edición inline dentro de celdas de tabla (alineado a la derecha).
+const editCls = "w-24 h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--data-success-600)] focus:ring-1 focus:ring-[var(--data-success-600)]/20";
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="block"><span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">{label}</span>{children}</label>;
 }
