@@ -36,6 +36,8 @@ export interface DdsPlot {
   lat: number | null;
   lng: number | null;
   hasPolygon: boolean;
+  /** GeoJSON del polígono declarado (para dibujarlo en el mapa del DDS). */
+  polygonJson?: string | null;
   pais: string;
   deforestationFree: boolean;
   /** GTF de ingreso que entraron por este origen. */
@@ -97,6 +99,137 @@ export function normalizeOrigenGeo(raw: unknown): OrigenGeo {
 export function origenGeolocalizado(g: OrigenGeo | null | undefined): boolean {
   if (!g) return false;
   return (g.lat != null && g.lng != null) || !!g.polygonJson;
+}
+
+// ─── Readiness a nivel PLANTA (cockpit del CtpEudrPanel) ─────────────────────
+
+/** Origen tal como lo lista el editor (código + cuántos ingresos ampara). */
+export interface OrigenRow {
+  originCode: string;
+  originType?: string | null;
+  region?: string | null;
+  ingresos: number;
+}
+
+export interface CtpEudrCheck {
+  key: string;
+  label: string;
+  ok: boolean;
+  detail: string;
+  weight: number;
+}
+
+export interface CtpEudrReadiness {
+  total: number;
+  geolocalizados: number;
+  deforestationFree: number;
+  /** % de orígenes geolocalizados (métrica EUDR de la planta). */
+  coberturaPct: number;
+  /** Ingresos amparados por orígenes ya geolocalizados / total de ingresos. */
+  ingresosCubiertos: number;
+  ingresosTotal: number;
+  checks: CtpEudrCheck[];
+  score: number;
+  listo: boolean;
+}
+
+const clampPct = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+
+/**
+ * Estado EUDR de la PLANTA a partir de sus orígenes: cuántos están
+ * geolocalizados y atestados "sin deforestación". Puro y determinístico.
+ */
+export function computeCtpEudrReadiness(origins: OrigenRow[], geoByCode: Record<string, OrigenGeo>): CtpEudrReadiness {
+  const total = origins.length;
+  const geoOrigins = origins.filter((o) => origenGeolocalizado(geoByCode[o.originCode]));
+  const dfOrigins = origins.filter((o) => geoByCode[o.originCode]?.deforestationFree === true);
+  const geolocalizados = geoOrigins.length;
+  const deforestationFree = dfOrigins.length;
+  const ingresosTotal = origins.reduce((a, o) => a + (o.ingresos || 0), 0);
+  const ingresosCubiertos = geoOrigins.reduce((a, o) => a + (o.ingresos || 0), 0);
+  const coberturaPct = total > 0 ? clampPct((geolocalizados / total) * 100) : 0;
+
+  const checks: CtpEudrCheck[] = [
+    {
+      key: "geo",
+      label: "Orígenes geolocalizados",
+      ok: total > 0 && geolocalizados === total,
+      detail: total === 0 ? "Aún no hay orígenes con código en los ingresos" : `${geolocalizados} de ${total} orígenes con coordenadas (${coberturaPct}%)`,
+      weight: 60,
+    },
+    {
+      key: "df",
+      label: "Sin deforestación declarada (post 2020-12-31)",
+      ok: total > 0 && deforestationFree === total,
+      detail: total === 0 ? "Requiere orígenes cargados" : `${deforestationFree} de ${total} orígenes atestados`,
+      weight: 40,
+    },
+  ];
+
+  const totalWeight = checks.reduce((a, c) => a + c.weight, 0);
+  const score = total === 0 ? 0 : clampPct((checks.filter((c) => c.ok).reduce((a, c) => a + c.weight, 0) / totalWeight) * 100);
+  const listo = total > 0 && checks.every((c) => c.ok);
+
+  return { total, geolocalizados, deforestationFree, coberturaPct, ingresosCubiertos, ingresosTotal, checks, score, listo };
+}
+
+// ─── GeoJSON del dossier de la planta (todos los orígenes) ───────────────────
+
+type GjFeature = {
+  type: "Feature";
+  geometry: { type: "Point"; coordinates: number[] } | { type: string; coordinates: unknown };
+  properties: Record<string, unknown>;
+};
+
+/**
+ * FeatureCollection con TODOS los orígenes geolocalizados de la planta — el
+ * dossier geoespacial que adjunta el operador a la UE. Punto por origen (o su
+ * polígono si `polygonJson` es un GeoJSON válido). GeoJSON usa [lng, lat].
+ */
+export function buildOriginsGeoJson(
+  origins: OrigenRow[],
+  geoByCode: Record<string, OrigenGeo>,
+  emisor?: { razonSocial?: string | null; ruc?: string | null; codigoCtp?: string | null },
+): { type: "FeatureCollection"; metadata: Record<string, unknown>; features: GjFeature[] } {
+  const features: GjFeature[] = [];
+  for (const o of origins) {
+    const g = geoByCode[o.originCode];
+    if (!origenGeolocalizado(g)) continue;
+    const props = {
+      originCode: o.originCode,
+      originType: o.originType ?? g?.originType ?? null,
+      region: o.region ?? g?.region ?? null,
+      ingresos: o.ingresos,
+      pais: g?.pais ?? "PE",
+      deforestationFree: g?.deforestationFree === true,
+      corteEudr: "2020-12-31",
+    };
+    // Polígono declarado (parcelas > 4 ha) tiene prioridad sobre el punto.
+    if (g?.polygonJson) {
+      try {
+        const geom = JSON.parse(g.polygonJson) as { type?: string; coordinates?: unknown };
+        if (geom && typeof geom.type === "string" && geom.coordinates != null) {
+          features.push({ type: "Feature", geometry: { type: geom.type, coordinates: geom.coordinates }, properties: props });
+          continue;
+        }
+      } catch {
+        /* polygonJson corrupto → cae al punto */
+      }
+    }
+    if (g?.lat != null && g?.lng != null) {
+      features.push({ type: "Feature", geometry: { type: "Point", coordinates: [g.lng, g.lat] }, properties: props });
+    }
+  }
+  return {
+    type: "FeatureCollection",
+    metadata: {
+      operador: emisor?.razonSocial ?? null,
+      ruc: emisor?.ruc ?? null,
+      codigoCtp: emisor?.codigoCtp ?? null,
+      reglamento: "UE 2023/1115 (EUDR)",
+    },
+    features,
+  };
 }
 
 /** Evalúa el riesgo EUDR y arma los gaps a partir de los plots + la traza. */

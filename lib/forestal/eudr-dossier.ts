@@ -57,6 +57,7 @@ export async function buildDdsForDespacho(tenantId: string, despachoId: string):
       lat: geo?.lat ?? null,
       lng: geo?.lng ?? null,
       hasPolygon: !!geo?.polygonJson,
+      polygonJson: geo?.polygonJson ?? null,
       pais: geo?.pais || "PE",
       deforestationFree: geo?.deforestationFree === true,
       gtfs: [...a.gtfs].sort(),

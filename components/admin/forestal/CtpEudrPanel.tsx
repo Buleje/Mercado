@@ -10,14 +10,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, CheckCircle2, FileText, Globe, Loader2, MapPin, ShieldCheck } from "@buleje/design-system/icons";
+import { AlertCircle, CheckCircle2, XCircle, Download, FileText, Globe, Loader2, MapPin, PenTool, ShieldAlert, ShieldCheck } from "@buleje/design-system/icons";
+import EudrGauge from "./EudrGauge";
+import CtpEudrMap from "./CtpEudrMap";
+import CtpOriginPolygonModal from "./CtpOriginPolygonModal";
 
 // Reusa el picker de geo del marketplace (Leaflet + pin draggable). ssr:false
 // porque Leaflet toca window. Marcar en el mapa = alternativa a tipear lat/lng.
 const GeolocationPickerModal = dynamic(() => import("@/components/marketplace/GeolocationPickerModal"), { ssr: false });
 import { csrfHeaders } from "@/lib/csrf-client";
 import { imprimirDds, type DdsEmisor } from "@/lib/forestal/eudr-print";
-import { origenGeolocalizado, type DdsData, type OrigenGeo } from "@/lib/forestal/eudr-types";
+import { origenGeolocalizado, computeCtpEudrReadiness, buildOriginsGeoJson, type DdsData, type OrigenGeo } from "@/lib/forestal/eudr-types";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
 interface OriginRow { originCode: string; originType: string | null; region: string | null; ingresos: number }
@@ -38,6 +41,8 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
   const [draft, setDraft] = useState<Record<string, { lat: string; lng: string; df: boolean }>>({});
   // Origen cuyo picker de mapa está abierto (null = cerrado).
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  // Origen cuyo editor de POLÍGONO está abierto (parcelas > 4 ha, EUDR).
+  const [polygonFor, setPolygonFor] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -89,6 +94,21 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
     }
   }
 
+  async function savePolygon(code: string, polygonJson: string) {
+    setSavingCode(code); setError(null);
+    try {
+      const r = await fetch(EUDR, { method: "PUT", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify({ originCode: code, polygonJson }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
+      setGeo((g) => ({ ...g, [code]: j.geo }));
+      setPolygonFor(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSavingCode(null);
+    }
+  }
+
   async function generarDds(id: string) {
     setDdsBusy(id); setError(null); setDdsResult(null);
     try {
@@ -106,6 +126,19 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
   }
 
   const geolocalizados = useMemo(() => (origins ?? []).filter((o) => origenGeolocalizado(geo[o.originCode])).length, [origins, geo]);
+  const readiness = useMemo(() => computeCtpEudrReadiness(origins ?? [], geo), [origins, geo]);
+  const rTone = readiness.listo ? "success" : readiness.score >= 50 ? "warning" : "error";
+
+  function exportGeoJson() {
+    const fc = buildOriginsGeoJson(origins ?? [], geo, emisor);
+    const blob = new Blob([JSON.stringify(fc, null, 2)], { type: "application/geo+json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dds-eudr-origenes-ctp.geojson";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="space-y-5">
@@ -114,6 +147,48 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><div><strong>Error:</strong> {error}</div>
         </div>
       )}
+
+      {/* Cockpit de readiness EUDR de la planta */}
+      <div className={`rounded-2xl border-2 p-5 ${readiness.listo ? "border-[var(--data-success-500)] bg-[var(--data-success-50)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"}`}>
+        <div className="flex flex-wrap items-start gap-4">
+          <EudrGauge value={readiness.score} tone={rTone} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+              {readiness.listo ? <ShieldCheck className="h-3.5 w-3.5 text-[var(--data-success-600)]" /> : <ShieldAlert className="h-3.5 w-3.5 text-[var(--data-warning-600)]" />}
+              Cumplimiento EUDR · Planta
+            </div>
+            <p className="mt-1 text-base font-bold leading-tight text-[var(--text-primary)]">
+              {readiness.total === 0 ? "Cargá orígenes para evaluar el EUDR" : readiness.listo ? "Tu planta resiste el Reglamento UE Antideforestación" : "Faltan pasos para acreditar el EUDR"}
+            </p>
+            <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+              {readiness.geolocalizados}/{readiness.total} orígenes geolocalizados · {readiness.deforestationFree}/{readiness.total} sin deforestación · {readiness.ingresosCubiertos}/{readiness.ingresosTotal} ingresos cubiertos.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={exportGeoJson}
+            disabled={readiness.geolocalizados === 0}
+            title={readiness.geolocalizados > 0 ? "Descargar la geolocalización de los orígenes en GeoJSON (dossier UE)" : "Geolocalizá al menos un origen"}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" /> GeoJSON
+          </button>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {readiness.checks.map((c) => (
+            <div key={c.key} className="flex items-start gap-2.5">
+              {c.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success-600)]" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-600)]" />}
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-[var(--text-primary)]">{c.label}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">{c.detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Mapa de los orígenes de la planta */}
+      <CtpEudrMap origins={origins ?? []} geoByCode={geo} />
 
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-start gap-3">
@@ -143,8 +218,11 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
                   </div>
                   <input inputMode="decimal" value={d.lat} onChange={(e) => setDraftField(o.originCode, "lat", e.target.value)} placeholder="lat" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
                   <input inputMode="decimal" value={d.lng} onChange={(e) => setDraftField(o.originCode, "lng", e.target.value)} placeholder="lng" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
-                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marcá la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15">
-                    <MapPin className="h-4 w-4" /> <span className="hidden sm:inline">Mapa</span>
+                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marcá el punto de la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15">
+                    <MapPin className="h-4 w-4" /> <span className="hidden sm:inline">Punto</span>
+                  </button>
+                  <button type="button" onClick={() => setPolygonFor(o.originCode)} title="Dibujá el polígono de la parcela (EUDR exige polígono para > 4 ha)" className={`inline-flex h-11 items-center gap-1.5 rounded-lg border-2 px-3 text-sm font-bold ${g?.polygonJson ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)]/15"}`}>
+                    <PenTool className="h-4 w-4" /> <span className="hidden sm:inline">{g?.polygonJson ? "Polígono ✓" : "Polígono"}</span>
                   </button>
                   <label className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
                     <input type="checkbox" checked={d.df} onChange={(e) => setDraftField(o.originCode, "df", e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" /> sin deforestación
@@ -195,6 +273,18 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
             setDraftField(pickerFor, "lng", lon.toFixed(6));
             setPickerFor(null);
           }}
+        />
+      )}
+
+      {/* Editor de polígono de la parcela (parcelas > 4 ha, EUDR). */}
+      {polygonFor && (
+        <CtpOriginPolygonModal
+          originCode={polygonFor}
+          initialPolygonJson={geo[polygonFor]?.polygonJson}
+          center={geo[polygonFor]?.lat != null && geo[polygonFor]?.lng != null ? { lat: geo[polygonFor]!.lat as number, lng: geo[polygonFor]!.lng as number } : null}
+          saving={savingCode === polygonFor}
+          onClose={() => setPolygonFor(null)}
+          onSave={(pj) => void savePolygon(polygonFor, pj)}
         />
       )}
     </div>

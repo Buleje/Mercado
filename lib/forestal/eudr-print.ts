@@ -1,6 +1,8 @@
 "use client";
 
 import type { DdsData } from "@/lib/forestal/eudr-types";
+import { buildEudrMapFigure, eudrMapFigureCss } from "./eudr-map-figure";
+import { geoJsonPolygonToRing } from "./loth-geo";
 
 /**
  * eudr-print — Declaración de Diligencia Debida (DDS) imprimible (ADR-140).
@@ -39,6 +41,17 @@ export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
 
   const gapsList = dds.gaps.length ? `<ul class="gaps">${dds.gaps.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : "";
 
+  const figura = buildEudrMapFigure({
+    polygons: dds.plots
+      .filter((p) => p.polygonJson)
+      .map((p) => ({ code: p.originCode, ring: geoJsonPolygonToRing(p.polygonJson), color: p.deforestationFree ? "#16a34a" : "#d97706" }))
+      .filter((p) => p.ring.length >= 3),
+    points: dds.plots
+      .filter((p) => !p.polygonJson && p.lat != null && p.lng != null)
+      .map((p) => ({ lat: p.lat as number, lng: p.lng as number, label: p.originCode, color: p.deforestationFree ? "#16a34a" : "#d97706" })),
+    caption: "Parcelas de origen del despacho · verde = sin deforestación · satélite Esri World Imagery",
+  });
+
   w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>DDS EUDR — despacho ${esc(dds.gtfSalida ?? dds.despachoId)}</title>
   <style>
     *{box-sizing:border-box} body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:32px;line-height:1.5}
@@ -53,8 +66,11 @@ export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
     .gaps{color:#b91c1c;font-size:13px;margin:8px 0 0} .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 16px;font-size:13px}
     .kv dt{color:#666} .sign{margin-top:48px;display:flex;gap:64px} .sign div{flex:1;border-top:1px solid #333;padding-top:6px;font-size:12px;color:#555}
     .foot{margin-top:28px;font-size:11px;color:#888;border-top:1px solid #eee;padding-top:8px}
-    @media print{body{margin:12mm}}
+    .printbtn{position:sticky;top:0;float:right;background:#0d9488;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer}
+    ${eudrMapFigureCss()}
+    @media print{body{margin:12mm} .printbtn{display:none}}
   </style></head><body>
+    <button class="printbtn" onclick="window.print()">Imprimir / Guardar como PDF</button>
     <div class="hdr">
       <div>
         <h1>Declaración de Diligencia Debida (DDS)</h1>
@@ -83,6 +99,7 @@ export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
     </dl>
 
     <h2>Parcelas de origen (geolocalización)</h2>
+    ${figura}
     <table>
       <thead><tr><th>Origen</th><th>Coordenadas (WGS84)</th><th>País</th><th>Sin deforestación</th><th>GTF de ingreso</th><th>Especies</th></tr></thead>
       <tbody>${plotsRows || '<tr><td colspan="6" class="center muted">Sin orígenes trazados.</td></tr>'}</tbody>
@@ -96,7 +113,6 @@ export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
       <div>Fecha y lugar</div>
     </div>
     <div class="foot">Documento generado por el módulo Libro de Operaciones CTP (ADR-140). Este DDS acompaña la colocación en el mercado de la UE; los datos de geolocalización deben corresponder a la parcela de cosecha real.</div>
-    <script>window.onload=function(){setTimeout(function(){window.print()},300)}</script>
   </body></html>`);
   w.document.close();
 }
