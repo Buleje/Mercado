@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { ForestGtfDB, GtfDuplicateError } from "@/lib/db/forest-gtf.db";
+import { ForestGtfDB, GtfDuplicateError, GtfSpeciesNotAuthorizedError } from "@/lib/db/forest-gtf.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -113,6 +113,9 @@ export const POST = withApiHandler("forestal-gtf-post", async (req: NextRequest)
     // GTF duplicada = dato del operador (una guía no se anota dos veces), no 500.
     if (err instanceof GtfDuplicateError) {
       return NextResponse.json({ error: "duplicate", message: err.message }, { status: 409 });
+    }
+    if (err instanceof GtfSpeciesNotAuthorizedError) {
+      return NextResponse.json({ error: "species_not_authorized", message: err.message }, { status: 422 });
     }
     logger.error("[gtf.POST] failed", { error: String(err), tenantId: auth.tenantId });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

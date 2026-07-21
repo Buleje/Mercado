@@ -20,6 +20,22 @@ export class GtfDuplicateError extends Error {
   }
 }
 
+/**
+ * La GTF transporta una o más especies que no están autorizadas en el plan de
+ * manejo (POA). Es la 2ª barrera después de T7 (que ya frena el despacho): un
+ * fiscalizador cruza la guía contra la resolución. Dato del operador → el route
+ * lo mapea a 422.
+ */
+export class GtfSpeciesNotAuthorizedError extends Error {
+  constructor(readonly species: string[]) {
+    super(
+      `La GTF incluye especie(s) no autorizada(s) en el plan de manejo: ${species.join(", ")}. ` +
+        `Movilizar una especie fuera del POA es infracción — corregí la guía o el plan antes de emitirla.`,
+    );
+    this.name = "GtfSpeciesNotAuthorizedError";
+  }
+}
+
 export interface GtfItem {
   code?: string | null;
   species?: string | null;
@@ -70,6 +86,29 @@ export class ForestGtfDB {
     const num = input.gtfNumber?.trim();
     if (!num) throw new Error("gtfNumber is required");
     const items = input.items ?? [];
+
+    // Barrera de especie autorizada (2ª, tras T7 en el despacho): si la GTF se
+    // emite contra un plan que declara especies, ninguna especie transportada
+    // puede caer fuera del POA. Sin plan atado, o plan sin especies, no se juzga.
+    if (input.planId) {
+      const autorizadas = await prisma.forestPlanSpecies.findMany({
+        where: { tenantId, planId: input.planId, deletedAt: null },
+        select: { speciesCommon: true },
+      });
+      if (autorizadas.length > 0) {
+        const set = new Set(autorizadas.map((s) => s.speciesCommon.trim().toLowerCase()));
+        const fuera = [
+          ...new Set(
+            items
+              .map((it) => it.species?.trim())
+              .filter((s): s is string => !!s)
+              .filter((s) => !set.has(s.toLowerCase())),
+          ),
+        ];
+        if (fuera.length > 0) throw new GtfSpeciesNotAuthorizedError(fuera);
+      }
+    }
+
     const volumenTotal = items.reduce(
       (a, it) => a + Number(it.volumeM3 ?? it.quantity ?? 0),
       0,
