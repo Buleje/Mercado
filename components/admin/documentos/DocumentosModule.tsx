@@ -102,6 +102,7 @@ export default function DocumentosModule() {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [bulkTagValue, setBulkTagValue] = useState("");
+  const [expiryBannerDismissed, setExpiryBannerDismissed] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
@@ -181,6 +182,15 @@ export default function DocumentosModule() {
   const favCount = useMemo(() => documents.filter((d) => d.favorite).length, [documents]);
   const expiringSoonCount = useMemo(
     () => documents.filter((d) => { const n = daysUntil(d.expiresAt); return n !== null && n <= 30; }).length,
+    [documents]
+  );
+  // Documentos por vencer (≤30d, vencidos primero) — alimenta el aviso proactivo.
+  const expiringDocs = useMemo(
+    () =>
+      documents
+        .map((d) => ({ d, n: daysUntil(d.expiresAt) }))
+        .filter((x): x is { d: typeof x.d; n: number } => x.n !== null && x.n <= 30)
+        .sort((a, b) => a.n - b.n),
     [documents]
   );
 
@@ -371,6 +381,29 @@ export default function DocumentosModule() {
           onChange={(e) => e.target.files && handleScan(e.target.files)}
         />
       </AdminModuleHeader>
+
+      {/* Aviso proactivo: documentos por vencer (la promesa del módulo) */}
+      {expiringDocs.length > 0 && !expiryBannerDismissed && (
+        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 px-4 py-3">
+          <AlarmClock className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+              {expiringDocs.length} documento{expiringDocs.length === 1 ? "" : "s"} por vencer en los próximos 30 días
+            </p>
+            <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
+              {expiringDocs.slice(0, 3).map(({ d, n }) => `${d.name} (${n < 0 ? "vencido" : n === 0 ? "vence hoy" : `${n}d`})`).join(" · ")}
+              {expiringDocs.length > 3 ? ` y ${expiringDocs.length - 3} más` : ""}
+            </p>
+          </div>
+          <button
+            onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
+            className="shrink-0 rounded-lg bg-[var(--data-error-700)] dark:bg-[var(--data-error-500)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+          >
+            Ver
+          </button>
+          <button onClick={() => setExpiryBannerDismissed(true)} className="shrink-0 rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Descartar aviso"><X className="h-4 w-4" /></button>
+        </div>
+      )}
 
       {/* Resultado del escaneo IA */}
       {scanResult && (
