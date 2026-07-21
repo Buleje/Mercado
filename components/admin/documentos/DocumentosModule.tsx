@@ -23,7 +23,7 @@ import {
   Upload, Search, Grid3x3, List, FolderArchive, FileText, Image as ImageIcon,
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
-  Camera, AlarmClock, Wand2,
+  Camera, AlarmClock, Wand2, Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -101,6 +101,7 @@ export default function DocumentosModule() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [bulkTagValue, setBulkTagValue] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
@@ -246,6 +247,13 @@ export default function DocumentosModule() {
   const bulkMove = async (folderId: string | null) => {
     if (selectedIds.size === 0) return;
     await bulk("move", Array.from(selectedIds), { folderId });
+    clearSelection();
+  };
+  const bulkTag = async (tag: string) => {
+    const t = tag.trim();
+    if (selectedIds.size === 0 || !t) return;
+    await bulk("tag", Array.from(selectedIds), { tag: t });
+    setBulkTagValue("");
     clearSelection();
   };
 
@@ -588,6 +596,17 @@ export default function DocumentosModule() {
                 {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
                 <option value="__none__">Sin carpeta</option>
               </select>
+              <div className="inline-flex items-center gap-1 rounded-md bg-white/20 px-2">
+                <Tag className="h-3 w-3 shrink-0" />
+                <input
+                  value={bulkTagValue}
+                  onChange={(e) => setBulkTagValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") bulkTag(bulkTagValue); }}
+                  placeholder="Etiquetar…"
+                  aria-label="Agregar etiqueta a la selección"
+                  className="w-24 bg-transparent py-1 text-xs font-bold text-white placeholder-white/60 outline-none"
+                />
+              </div>
               <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-md bg-red-500 hover:bg-red-600 font-bold inline-flex items-center gap-1">
                 <Trash2 className="h-3 w-3" /> Eliminar
               </button>
