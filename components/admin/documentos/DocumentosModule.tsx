@@ -196,6 +196,11 @@ export default function DocumentosModule() {
         .sort((a, b) => a.n - b.n),
     [documents]
   );
+  // Evita el parpadeo a "0" del contador al cambiar de carpeta: mientras carga,
+  // retiene el último conteo estable en vez de mostrar 0.
+  const lastDocCount = useRef(0);
+  useEffect(() => { if (!loading) lastDocCount.current = documents.length; }, [loading, documents.length]);
+  const shownDocCount = loading && documents.length === 0 ? lastDocCount.current : documents.length;
 
   // ── Selection ──
   const toggleSelect = (id: string) => {
@@ -446,7 +451,7 @@ export default function DocumentosModule() {
 
       {/* Hero stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatBlock label="Total archivos" value={documents.length.toString()} icon={FileIcon} tint="text-primary" />
+        <StatBlock label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />
         <StorageRing usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />
         <button
           onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
@@ -594,7 +599,10 @@ export default function DocumentosModule() {
                 placeholder={semantic ? "Describí lo que buscás… ej: el contrato del local" : "Buscar por nombre, tag o contenido OCR…"}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className={cn(
+                  "w-full pl-9 pr-3 py-2.5 rounded-xl border-2 bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
+                  semantic ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
+                )}
               />
             </div>
             <button
@@ -636,6 +644,14 @@ export default function DocumentosModule() {
               </button>
             </div>
           </div>
+
+          {/* Indicador del modo de búsqueda IA (semántica) */}
+          {semantic && (
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--accent)]/10 px-3 py-1.5 text-xs font-medium text-[var(--accent)]">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              Modo IA activo: describí el documento (ej. &ldquo;el contrato del local&rdquo;), no solo palabras exactas.
+            </div>
+          )}
 
           {/* Bulk bar */}
           {selectedIds.size > 0 && (
@@ -922,11 +938,16 @@ function DocCard({
         aria-label={`Seleccionar ${doc.name}`}
       />
 
-      {/* Thumbnail */}
+      {/* Thumbnail — imagen real para archivos de imagen; ícono para el resto. */}
       <button onClick={onPreview} className="block w-full aspect-square bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
-        <div className={cn("w-full h-full flex items-center justify-center", bg)}>
-          <Icon className={cn("h-12 w-12", tint)} />
-        </div>
+        {doc.mimeType.startsWith("image/") ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={`/api/admin/documents/${doc.id}/raw`} alt={doc.name} loading="lazy" className="w-full h-full object-cover" />
+        ) : (
+          <div className={cn("w-full h-full flex items-center justify-center", bg)}>
+            <Icon className={cn("h-12 w-12", tint)} />
+          </div>
+        )}
       </button>
 
       {/* Hover actions */}
