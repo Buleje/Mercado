@@ -741,16 +741,25 @@ export class ForestLothDB {
       }));
     }
     if (section === "despacho_troza" || section === "consumo_troza") {
-      const used = new Set(entries.filter((e) => e.section === section).map((e) => e.trozaCode));
+      // Una troza sale del bosque UNA vez (T1): excluir las YA despachadas O
+      // consumidas, no solo las de esta misma sección (antes se colaban las
+      // despachadas en el picker de consumo — el usuario solo veía el conflicto al guardar).
+      const used = new Set(
+        entries.filter((e) => e.section === "despacho_troza" || e.section === "consumo_troza").map((e) => e.trozaCode),
+      );
       return entries.filter((e) => e.section === "trozado" && e.trozaCode && !used.has(e.trozaCode)).map(mapTroza);
     }
     if (section === "producto_terminado") {
-      return entries.filter((e) => e.section === "consumo_troza" && e.trozaCode).map(mapTroza);
+      // Trozas consumidas aún no convertidas en producto (una troza → un producto).
+      const usedInProd = new Set(entries.filter((e) => e.section === "producto_terminado").map((e) => e.trozaCode));
+      return entries.filter((e) => e.section === "consumo_troza" && e.trozaCode && !usedInProd.has(e.trozaCode)).map(mapTroza);
     }
     if (section === "despacho_producto") {
       return entries.filter((e) => e.section === "producto_terminado").map((e) => ({
         kind: "producto" as const, code: e.productType, species: e.speciesCommon, scientific: e.speciesScientific,
         cites: e.cites, productType: e.productType, quantity: e.quantity ? Number(e.quantity) : null, unit: e.unit,
+        // La troza de origen del producto → el despacho la hereda para trazar por árbol.
+        trozaCode: e.trozaCode,
       }));
     }
     return [];

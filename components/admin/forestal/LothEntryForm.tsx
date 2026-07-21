@@ -70,7 +70,7 @@ const FIELDS: Record<LothSection, Set<string>> = {
   trozado: new Set(["treeCode", "trozaCode", "isRama", "species", "diams", "volume", "discarded", "obs"]),
   despacho_troza: new Set(["trozaCode", "despachoCode", "gtf", "obs"]),
   consumo_troza: new Set(["trozaCode", "species", "volumeManual", "consumoInterno", "obs"]),
-  producto_terminado: new Set(["productType", "species", "quantity", "unit", "obs"]),
+  producto_terminado: new Set(["trozaCode", "productType", "species", "quantity", "unit", "obs"]),
   despacho_producto: new Set(["gtf", "productType", "species", "pieces", "quantity", "unit", "obs"]),
 };
 
@@ -126,7 +126,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   interface SourceItem {
     kind: string; code: string | null; species: string | null; scientific: string | null; cites?: boolean;
     dapM?: number | null; hcM?: number | null; vol?: number | null; productType?: string | null;
-    quantity?: number | null; unit?: string | null; meta?: string | null;
+    quantity?: number | null; unit?: string | null; meta?: string | null; trozaCode?: string | null;
   }
   const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -192,14 +192,24 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       if (it.dapM) { setDiamMayor(String(it.dapM)); setDiamMenor(String(it.dapM)); }
       if (it.hcM) setLengthM(String(it.hcM));
     } else if (section === "trozado") {
-      if (it.code) { setTreeCode(it.code); setTrozaCode((c) => c || `${it.code}-`); }
+      // Prefill un código de troza COMPLETO y válido (árbol + "-A"); el operador lo
+      // ajusta a B/C… para las siguientes trozas del mismo árbol. Antes quedaba
+      // "002-TOR-" con el guión colgando y parecía roto.
+      if (it.code) { setTreeCode(it.code); setTrozaCode((c) => c || `${it.code}-A`); }
     } else if (section === "despacho_troza" || section === "consumo_troza") {
       if (it.code) setTrozaCode(it.code);
       if (section === "consumo_troza" && it.vol) setVolumeM3(String(it.vol));
+    } else if (section === "producto_terminado") {
+      // La materia prima del aserrío = la troza consumida. Guardar su código liga
+      // el producto a su árbol de origen (trazabilidad individual, no por especie).
+      if (it.code) setTrozaCode(it.code);
+      if (it.vol) setQuantity(String(it.vol));
     } else if (section === "despacho_producto") {
       if (it.productType) setProductType(it.productType);
       if (it.quantity) setQuantity(String(it.quantity));
       if (it.unit === "m3" || it.unit === "kg" || it.unit === "unidad") setUnit(it.unit);
+      // Hereda la troza de origen del producto que se despacha (para trazar por árbol).
+      if (it.trozaCode) setTrozaCode(it.trozaCode);
     }
   }
   const SOURCE_TITLE: Record<LothSection, string> = {
@@ -289,10 +299,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     if (fields.has("species") && section !== "consumo_troza" && section !== "despacho_producto" && speciesName.length === 0) m.push("Especie");
     if (fields.has("gtf") && !gtfNumber.trim()) m.push("N° de GTF");
     if (fields.has("volumeManual") && !(Number(volumeM3) > 0)) m.push("Volumen (m³)");
+    // Tala/Trozado: exigir volumen > 0 (manual o calculado por Smalian) — antes se
+    // podía registrar con Ø/longitud vacíos y quedaba una línea con volumen 0.
+    if (fields.has("volume") && !(Number(volumeM3) > 0) && !(autoVolume > 0)) m.push("Volumen — completá Ø mayor, Ø menor y longitud");
     if (fields.has("quantity") && !(Number(quantity) > 0)) m.push("Cantidad");
     if (fields.has("productType") && !productType.trim()) m.push("Tipo de producto");
     return m;
-  }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, productType]);
+  }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType]);
 
   const isValid = missing.length === 0;
 
@@ -398,7 +411,11 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
         observations: observations.trim() || null,
       };
       if (fields.has("treeCode")) payload.treeCode = treeCode.trim() || null;
-      if (fields.has("trozaCode")) payload.trozaCode = trozaCode.trim() || null;
+      // despacho_producto no muestra input de troza pero SÍ hereda la del producto
+      // (link de trazabilidad por árbol), así que se manda aunque no esté en FIELDS.
+      if (fields.has("trozaCode") || (section === "despacho_producto" && trozaCode.trim())) {
+        payload.trozaCode = trozaCode.trim() || null;
+      }
       if (fields.has("despachoCode")) payload.despachoCode = despachoCode.trim() || null;
       if (fields.has("isRama")) payload.isRama = isRama;
       if (fields.has("species")) {

@@ -226,7 +226,7 @@ function PlanForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Field label="Titular *"><input value={f.titularName} onChange={(e) => set("titularName", e.target.value)} placeholder="Maderera ... SAC" required className={cls} /></Field>
         <Field label="ARFFS"><input value={f.arffs} onChange={(e) => set("arffs", e.target.value)} placeholder="GERFOR Ucayali" className={cls} /></Field>
-        <Field label="Región"><input value={f.region} onChange={(e) => set("region", e.target.value)} className={cls} /></Field>
+        <Field label="Región"><input value={f.region} onChange={(e) => set("region", e.target.value)} onFocus={(e) => e.target.select()} className={cls} /></Field>
         <Field label="Parcela de corta"><input value={f.parcelaCorta} onChange={(e) => set("parcelaCorta", e.target.value)} placeholder="PC 12" className={cls} /></Field>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

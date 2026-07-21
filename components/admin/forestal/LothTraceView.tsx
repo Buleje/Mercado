@@ -56,8 +56,11 @@ function buildOperations(entries: LothEntryDTO[]): Operation[] {
       trozado,
       despachoTroza: reg.filter((e) => e.section === "despacho_troza" && belongs(e.trozaCode)),
       consumo: reg.filter((e) => e.section === "consumo_troza" && belongs(e.trozaCode)),
-      producto: species ? reg.filter((e) => e.section === "producto_terminado" && e.speciesCommon === species) : [],
-      despachoPT: species ? reg.filter((e) => e.section === "despacho_producto" && e.speciesCommon === species) : [],
+      // Producto/despacho PT: atribuir por la TROZA de origen (link explícito), no
+      // por especie — si no, el mismo producto aparecía bajo dos árboles de la misma
+      // especie. Fallback a especie solo para líneas viejas sin trozaCode.
+      producto: reg.filter((e) => e.section === "producto_terminado" && (e.trozaCode ? belongs(e.trozaCode) : !!species && e.speciesCommon === species)),
+      despachoPT: reg.filter((e) => e.section === "despacho_producto" && (e.trozaCode ? belongs(e.trozaCode) : !!species && e.speciesCommon === species)),
     };
   });
 }

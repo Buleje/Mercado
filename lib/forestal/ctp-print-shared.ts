@@ -84,10 +84,19 @@ export const CTP_REPORT_BASE_CSS = `
  * base + el CSS específico del reporte y dispara `window.print()`.
  */
 export function openCtpReport(opts: { title: string; css?: string; body: string }): void {
+  // Barra con botón de impresión en vez de auto-disparar `window.print()`: el
+  // auto-print bloqueaba la ventana en entornos sin manejador de diálogo (headless/
+  // automatización) y sorprendía al usuario. Ahora el reporte se ve primero y el
+  // usuario decide imprimir/guardar PDF. La barra se oculta al imprimir.
+  const barCss = `
+    .print-bar{position:sticky;top:0;z-index:10;display:flex;justify-content:flex-end;gap:8px;padding:8px 0;margin:-8px 0 6px;background:#fff}
+    .print-bar button{cursor:pointer;border:0;border-radius:8px;padding:9px 16px;font:700 13px system-ui;background:#0f5132;color:#fff}
+    @media print{.print-bar{display:none}}
+  `;
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
-<style>${CTP_REPORT_BASE_CSS}${opts.css ?? ""}</style></head><body>
+<style>${CTP_REPORT_BASE_CSS}${barCss}${opts.css ?? ""}</style></head><body>
+<div class="print-bar"><button type="button" onclick="window.print()">Imprimir / Guardar como PDF</button></div>
 ${opts.body}
-  <script>setTimeout(function(){ window.print(); }, 300);</script>
 </body></html>`;
   const w = window.open("", "_blank", "width=980,height=760");
   if (!w) throw new Error("El navegador bloqueó la ventana. Permití pop-ups para descargar el reporte.");
