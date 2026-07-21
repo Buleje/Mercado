@@ -243,6 +243,11 @@ export default function DocumentosModule() {
     await bulk("favorite", Array.from(selectedIds), { favorite: fav });
     clearSelection();
   };
+  const bulkMove = async (folderId: string | null) => {
+    if (selectedIds.size === 0) return;
+    await bulk("move", Array.from(selectedIds), { folderId });
+    clearSelection();
+  };
 
   // ── Folder actions ──
   const handleCreateFolder = async () => {
@@ -572,6 +577,17 @@ export default function DocumentosModule() {
               <button onClick={() => bulkFavorite(true)} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1">
                 <Star className="h-3 w-3" /> Favorito
               </button>
+              <select
+                onChange={(e) => { const v = e.target.value; if (v) { bulkMove(v === "__none__" ? null : v); } e.currentTarget.selectedIndex = 0; }}
+                defaultValue=""
+                className="text-xs px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white font-bold outline-none cursor-pointer [&>option]:text-[var(--text-primary)]"
+                title="Mover a carpeta"
+                aria-label="Mover a carpeta"
+              >
+                <option value="" disabled>Mover a…</option>
+                {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                <option value="__none__">Sin carpeta</option>
+              </select>
               <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-md bg-red-500 hover:bg-red-600 font-bold inline-flex items-center gap-1">
                 <Trash2 className="h-3 w-3" /> Eliminar
               </button>
