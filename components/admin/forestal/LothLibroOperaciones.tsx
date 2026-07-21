@@ -161,6 +161,10 @@ export default function LothLibroOperaciones() {
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [cadenaCode, setCadenaCode] = useState<string | null>(null);
+  // Señal reactiva: se incrementa tras cada escritura (registro/anulación/carátula)
+  // para que los paneles con fetch propio (Resumen, Cumplimiento, Rentabilidad)
+  // se refresquen solos, sin depender de que el usuario apriete "Recargar".
+  const [reloadSignal, setReloadSignal] = useState(0);
   const [pending, setPending] = useState<string | null>(null);
   const [view, setView] = useState<LothView>(() => {
     if (typeof window === "undefined") return "secciones";
@@ -277,6 +281,7 @@ export default function LothLibroOperaciones() {
 
   // Recargar manual + tras escrituras: lista + meta (+ trazabilidad).
   const refreshAll = useCallback(async () => {
+    setReloadSignal((s) => s + 1); // gatilla el refetch de los paneles con fetch propio
     await Promise.all([loadEntries(), loadMeta(), loadAll()]);
   }, [loadEntries, loadMeta, loadAll]);
 
@@ -436,18 +441,19 @@ export default function LothLibroOperaciones() {
       />
 
       {/* Vista Plan de Manejo — base maestra (censo + especies autorizadas) */}
-      {view === "plan" && <LothPlanView />}
+      {view === "plan" && <LothPlanView reloadSignal={reloadSignal} />}
 
       {/* Vista GTF — guías de transporte forestal */}
       {view === "gtf" && <LothGtfView />}
 
       {/* Vista Analítica — inteligencia de aprovechamiento + anomalías (Batch 2) */}
-      {view === "analitica" && <LothAnalyticsView />}
+      {view === "analitica" && <LothAnalyticsView reloadSignal={reloadSignal} />}
 
       {/* Vista Cumplimiento — veredicto de fiscalización OSINFOR + reporte (ADR-305) */}
       {view === "cumplimiento" && (
         <LothCompliancePanel
           totalLineas={totalLines}
+          reloadSignal={reloadSignal}
           onNavigate={(t: LothNavTarget) => {
             if (t === "caratula") setShowCaratula(true);
             else setView(t);
@@ -462,7 +468,7 @@ export default function LothLibroOperaciones() {
       {view === "mapa" && <LothMapaView />}
 
       {/* Vista Rentabilidad — margen por especie (dashboard de negocio) */}
-      {view === "rentabilidad" && <LothRentabilidadPanel />}
+      {view === "rentabilidad" && <LothRentabilidadPanel reloadSignal={reloadSignal} />}
 
       {/* Vista de trazabilidad — operación completa por árbol */}
       {view === "trazabilidad" && (
@@ -486,7 +492,7 @@ export default function LothLibroOperaciones() {
       {view === "secciones" && (
         <>
       {/* Resumen "de un vistazo" del aprovechamiento (bosque → producto) */}
-      <LothResumenStrip onNavigate={(v) => setView(v)} />
+      <LothResumenStrip onNavigate={(v) => setView(v)} reloadSignal={reloadSignal} />
 
       {/* Sub-tabs de las 6 secciones */}
       <div className="flex flex-wrap gap-2">

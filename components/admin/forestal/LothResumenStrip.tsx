@@ -36,7 +36,7 @@ interface Analytics {
 
 const fm = (n: number, dp = 2) => n.toLocaleString("es-PE", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
-export default function LothResumenStrip({ onNavigate }: { onNavigate: (view: "analitica" | "cumplimiento") => void }) {
+export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavigate: (view: "analitica" | "cumplimiento") => void; reloadSignal?: number }) {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +53,7 @@ export default function LothResumenStrip({ onNavigate }: { onNavigate: (view: "a
   }, []);
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, reloadSignal]);
 
   if (loading && !data) {
     return <div className="h-[104px] animate-pulse rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" aria-hidden="true" />;

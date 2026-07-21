@@ -40,7 +40,7 @@ const soles = (v: string | null) => (v == null || v === "" ? "—" : `S/ ${Numbe
 const censusVol = (dap: number, hc: number, ff: number) =>
   dap > 0 && hc > 0 ? Math.round(0.7854 * dap * dap * hc * ff * 10000) / 10000 : 0;
 
-export default function LothPlanView() {
+export default function LothPlanView({ reloadSignal }: { reloadSignal?: number } = {}) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
   const [species, setSpecies] = useState<Species[]>([]);
@@ -77,7 +77,8 @@ export default function LothPlanView() {
     loadPlans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useEffect(() => { if (planId) loadDetail(planId); }, [planId, loadDetail]);
+  // reloadSignal en deps: tras una tala/despacho el balance (loadDetail) se refresca solo.
+  useEffect(() => { if (planId) loadDetail(planId); }, [planId, loadDetail, reloadSignal]);
 
   const plan = plans.find((p) => p.id === planId) ?? null;
   const autorizadoTotal = useMemo(() => species.reduce((a, s) => a + Number(s.volumenAutorizadoM3 ?? 0), 0), [species]);

@@ -38,7 +38,7 @@ interface Analytics {
 const fm = (n: number, dp = 2) => n.toLocaleString("es-PE", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 const fdate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }) : "—");
 
-export default function LothAnalyticsView() {
+export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: number } = {}) {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export default function LothAnalyticsView() {
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, reloadSignal]);
 
   async function saveCosts() {
     if (!data?.plan?.id) return;

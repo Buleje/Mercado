@@ -39,7 +39,7 @@ interface Costeo {
 const soles = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const pct = (n: number) => `${n.toLocaleString("es-PE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 
-export default function LothRentabilidadPanel() {
+export default function LothRentabilidadPanel({ reloadSignal }: { reloadSignal?: number }) {
   const [costeo, setCosteo] = useState<Costeo | null>(null);
   const [hasPlan, setHasPlan] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ export default function LothRentabilidadPanel() {
   }, []);
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, reloadSignal]);
 
   if (loading && costeo === null && !error) return <LoadingState message="Calculando rentabilidad..." />;
   if (error && costeo === null) {

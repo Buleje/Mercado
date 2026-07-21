@@ -55,6 +55,8 @@ interface FullCaratula {
 interface Props {
   totalLineas: number;
   onNavigate: (target: LothNavTarget) => void;
+  /** Se incrementa tras cada escritura del libro → gatilla refetch (fin del "apretá Recargar"). */
+  reloadSignal?: number;
 }
 
 const TONE_LABEL: Record<LothComplianceTone, string> = {
@@ -69,7 +71,7 @@ const GAUGE_COLOR: Record<LothComplianceTone, string> = {
 };
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
-export default function LothCompliancePanel({ totalLineas, onNavigate }: Props) {
+export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSignal }: Props) {
   const [anomalias, setAnomalias] = useState<LothAnomaly[] | null>(null);
   const [caratula, setCaratula] = useState<FullCaratula | null>(null);
   const [citesEspecies, setCitesEspecies] = useState<string[]>([]);
@@ -105,7 +107,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate }: Props) 
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, reloadSignal]);
 
   if (loading && anomalias === null) return <LoadingState message="Calculando cumplimiento del libro..." />;
   if (error && anomalias === null) {
