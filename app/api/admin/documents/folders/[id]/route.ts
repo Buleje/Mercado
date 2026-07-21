@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logger } from "@/lib/logger";
+import { buildChildrenMap, descendantIds } from "@/lib/documentos/folder-tree";
 
 
 const PatchBody = z.object({
@@ -35,6 +36,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     // Prevenir loops: no permitir parentId === id, ni asignar el folder a un descendiente
     if (parsed.data.parentId === id) {
       return NextResponse.json({ error: "folder_cannot_parent_itself" }, { status: 400 });
+    }
+    if (parsed.data.parentId) {
+      const all = await DocumentsDB.listFolders(auth.tenantId);
+      if (descendantIds(buildChildrenMap(all), id).has(parsed.data.parentId)) {
+        return NextResponse.json({ error: "folder_cannot_be_moved_into_descendant" }, { status: 400 });
+      }
     }
 
     const f = await DocumentsDB.updateFolder(auth.tenantId, id, parsed.data);

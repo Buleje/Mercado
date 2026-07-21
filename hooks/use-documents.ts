@@ -44,6 +44,7 @@ export interface UseDocumentsResult {
   purge: (id: string) => Promise<void>;
   bulk: (action: "delete" | "move" | "tag" | "favorite", ids: string[], extra?: Record<string, unknown>) => Promise<number>;
   createFolder: (input: { name: string; parentId?: string | null; color?: string; icon?: string }) => Promise<DbDocumentFolder>;
+  moveFolder: (id: string, parentId: string | null) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
 }
 
@@ -194,12 +195,18 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     return r.folder;
   }, [fetchAll]);
 
+  // Reparentar una carpeta (subcarpetas): parentId null = mover a la raíz.
+  const moveFolder = useCallback(async (id: string, parentId: string | null) => {
+    await http(`${BASE}/folders/${id}`, { method: "PATCH", body: JSON.stringify({ parentId }) });
+    await fetchAll();
+  }, [fetchAll]);
+
   const deleteFolder = useCallback(async (id: string) => {
     await http(`${BASE}/folders/${id}`, { method: "DELETE" });
     await fetchAll();
   }, [fetchAll]);
 
-  return { documents, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, deleteFolder };
+  return { documents, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, moveFolder, deleteFolder };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────

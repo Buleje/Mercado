@@ -24,14 +24,17 @@ import {
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
-  ChevronRight,
+  ChevronRight, Pencil, FolderInput, MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useDocuments, getSignedDownloadUrl } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
+import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
+import { SendWhatsAppModal } from "./SendWhatsAppModal";
+import { MoveToFolderModal } from "./MoveToFolderModal";
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers
@@ -81,83 +84,8 @@ function daysUntil(iso: string | null): number | null {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Árbol de carpetas (subcarpetas anidadas)
-// La API devuelve carpetas planas con `parentId`; el árbol se arma en cliente.
-// ─────────────────────────────────────────────────────────────────
-
-type FolderRow = { folder: DbDocumentFolder; depth: number; hasChildren: boolean };
-
-/** Agrupa carpetas por parentId (clave null = raíces), cada grupo ordenado A–Z. */
-function buildChildrenMap(folders: DbDocumentFolder[]): Map<string | null, DbDocumentFolder[]> {
-  const map = new Map<string | null, DbDocumentFolder[]>();
-  for (const f of folders) {
-    const key = f.parentId ?? null;
-    const arr = map.get(key);
-    if (arr) arr.push(f);
-    else map.set(key, [f]);
-  }
-  for (const arr of map.values()) {
-    arr.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
-  }
-  return map;
-}
-
-/** DFS que respeta el set de carpetas expandidas → filas visibles ordenadas. */
-function flattenVisible(
-  childrenMap: Map<string | null, DbDocumentFolder[]>,
-  expanded: Set<string>
-): FolderRow[] {
-  const rows: FolderRow[] = [];
-  const walk = (parentId: string | null, depth: number) => {
-    for (const folder of childrenMap.get(parentId) ?? []) {
-      const hasChildren = (childrenMap.get(folder.id)?.length ?? 0) > 0;
-      rows.push({ folder, depth, hasChildren });
-      if (hasChildren && expanded.has(folder.id)) walk(folder.id, depth + 1);
-    }
-  };
-  walk(null, 0);
-  return rows;
-}
-
-/** DFS completo (ignora expandido) — para el `<select>` de "Mover a…". */
-function flattenAll(childrenMap: Map<string | null, DbDocumentFolder[]>): FolderRow[] {
-  const rows: FolderRow[] = [];
-  const walk = (parentId: string | null, depth: number) => {
-    for (const folder of childrenMap.get(parentId) ?? []) {
-      rows.push({ folder, depth, hasChildren: (childrenMap.get(folder.id)?.length ?? 0) > 0 });
-      walk(folder.id, depth + 1);
-    }
-  };
-  walk(null, 0);
-  return rows;
-}
-
-/** Ruta raíz→carpeta para los breadcrumbs (guard contra loops por datos corruptos). */
-function folderPath(byId: Map<string, DbDocumentFolder>, id: string | null): DbDocumentFolder[] {
-  const path: DbDocumentFolder[] = [];
-  const guard = new Set<string>();
-  let cur = id ? byId.get(id) : undefined;
-  while (cur && !guard.has(cur.id)) {
-    guard.add(cur.id);
-    path.unshift(cur);
-    cur = cur.parentId ? byId.get(cur.parentId) : undefined;
-  }
-  return path;
-}
-
-/** Todos los descendientes de una carpeta (para el aviso de borrado en cascada). */
-function descendantIds(childrenMap: Map<string | null, DbDocumentFolder[]>, id: string): Set<string> {
-  const out = new Set<string>();
-  const walk = (pid: string) => {
-    for (const f of childrenMap.get(pid) ?? []) {
-      out.add(f.id);
-      walk(f.id);
-    }
-  };
-  walk(id);
-  return out;
-}
+// Los helpers del árbol de carpetas viven en `@/lib/documentos/folder-tree`
+// (compartidos con MoveToFolderModal).
 
 // ─────────────────────────────────────────────────────────────────
 // Componente principal
@@ -189,6 +117,12 @@ export default function DocumentosModule() {
   // Drag & drop de documentos hacia carpetas de la barra lateral.
   const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  // Reparentar carpetas (arrastrar una carpeta sobre otra o a la raíz).
+  const [draggingFolderId, setDraggingFolderId] = useState<string | null>(null);
+  const [rootDropActive, setRootDropActive] = useState(false);
+  // Modales por-documento (mover a carpeta / enviar por WhatsApp).
+  const [movingDoc, setMovingDoc] = useState<DbDocument | null>(null);
+  const [whatsappDoc, setWhatsappDoc] = useState<DbDocument | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
@@ -213,7 +147,7 @@ export default function DocumentosModule() {
 
   const {
     documents, folders, loading, error, refresh,
-    upload, scan, patch, bulk, restore, purge, createFolder, deleteFolder,
+    upload, scan, patch, bulk, restore, purge, createFolder, moveFolder, deleteFolder,
   } = useDocuments(filters);
 
   // ── Escaneo desde cámara (móvil) ──
@@ -347,8 +281,9 @@ export default function DocumentosModule() {
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {
-    // Drag interno de un documento (mover a carpeta) → no es una subida de archivos.
-    if (e.dataTransfer.types.includes("application/x-doc-id")) return;
+    // Drag interno (mover documento o reparentar carpeta) → no es una subida.
+    const t = e.dataTransfer.types;
+    if (t.includes("application/x-doc-id") || t.includes("application/x-folder-id")) return;
     e.preventDefault();
     setDragOver(true);
   }, []);
@@ -426,6 +361,20 @@ export default function DocumentosModule() {
     setDraggingDocId(null);
     if (!docId) return;
     await bulk("move", [docId], { folderId });
+  };
+
+  // Reparentar una carpeta al soltarla sobre otra (o "raíz").
+  // Guard: no soltar sobre sí misma ni sobre un descendiente (crearía un ciclo).
+  const dropFolderOnFolder = async (folderId: string, targetId: string | null) => {
+    setDragOverFolderId(null);
+    setRootDropActive(false);
+    setDraggingFolderId(null);
+    if (!folderId || folderId === targetId) return;
+    if (targetId && descendantIds(childrenMap, folderId).has(targetId)) return;
+    const dragged = folderById.get(folderId);
+    if (dragged && (dragged.parentId ?? null) === (targetId ?? null)) return;
+    await moveFolder(folderId, targetId);
+    if (targetId) setExpandedFolders((prev) => new Set(prev).add(targetId));
   };
 
   // ── Folder actions ──
@@ -657,9 +606,25 @@ export default function DocumentosModule() {
             })}
           </ul>
 
-          <div className="flex items-center justify-between px-3 py-2">
+          <div
+            className={cn("flex items-center justify-between px-3 py-2 rounded-lg transition-all", rootDropActive && "bg-primary/10 ring-2 ring-primary")}
+            onDragOver={(e) => {
+              if (!e.dataTransfer.types.includes("application/x-folder-id")) return;
+              if (draggingFolderId && (folderById.get(draggingFolderId)?.parentId ?? null) === null) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setRootDropActive(true);
+            }}
+            onDragLeave={() => setRootDropActive(false)}
+            onDrop={(e) => {
+              if (!e.dataTransfer.types.includes("application/x-folder-id")) return;
+              e.preventDefault();
+              e.stopPropagation();
+              dropFolderOnFolder(e.dataTransfer.getData("application/x-folder-id"), null);
+            }}
+          >
             <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Carpetas
+              {draggingFolderId ? "Soltá acá → raíz" : "Carpetas"}
             </p>
             <button
               onClick={() => openCreateChild(null)}
@@ -695,19 +660,41 @@ export default function DocumentosModule() {
               return (
                 <li key={f.id}>
                   <div
-                    className={cn("group relative rounded-lg transition-all", dropTarget && "bg-primary/10 ring-2 ring-primary")}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("application/x-folder-id", f.id);
+                      e.dataTransfer.effectAllowed = "move";
+                      setDraggingFolderId(f.id);
+                    }}
+                    onDragEnd={() => { setDraggingFolderId(null); setDragOverFolderId(null); setRootDropActive(false); }}
+                    className={cn(
+                      "group relative rounded-lg transition-all",
+                      dropTarget && "bg-primary/10 ring-2 ring-primary",
+                      draggingFolderId === f.id && "opacity-40"
+                    )}
                     onDragOver={(e) => {
-                      if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+                      const t = e.dataTransfer.types;
+                      const isDoc = t.includes("application/x-doc-id");
+                      const isFolder = t.includes("application/x-folder-id");
+                      if (!isDoc && !isFolder) return;
+                      // Reparent inválido: sobre sí misma o sobre un descendiente.
+                      if (isFolder && draggingFolderId && (draggingFolderId === f.id || descendantIds(childrenMap, draggingFolderId).has(f.id))) return;
                       e.preventDefault();
                       e.dataTransfer.dropEffect = "move";
                       if (dragOverFolderId !== f.id) setDragOverFolderId(f.id);
                     }}
                     onDragLeave={() => setDragOverFolderId((cur) => (cur === f.id ? null : cur))}
                     onDrop={(e) => {
-                      if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
-                      e.preventDefault();
-                      e.stopPropagation();
-                      dropDocOnFolder(e.dataTransfer.getData("application/x-doc-id"), f.id);
+                      const t = e.dataTransfer.types;
+                      if (t.includes("application/x-folder-id")) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropFolderOnFolder(e.dataTransfer.getData("application/x-folder-id"), f.id);
+                      } else if (t.includes("application/x-doc-id")) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropDocOnFolder(e.dataTransfer.getData("application/x-doc-id"), f.id);
+                      }
                     }}
                   >
                     <div className="flex items-stretch" style={{ paddingLeft: depth * 14 }}>
@@ -980,6 +967,7 @@ export default function DocumentosModule() {
                   onSelect={() => toggleSelect(doc.id)}
                   onPreview={() => setPreview(doc)}
                   onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
+                  onWhatsApp={() => setWhatsappDoc(doc)}
                   onRemove={async () => {
                     if (!confirm(`¿Eliminar "${doc.name}"?`)) return;
                     await patch(doc.id, {}); // no-op, but ensures patch path warm
@@ -1034,17 +1022,30 @@ export default function DocumentosModule() {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <button onClick={() => setPreview(doc)} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors">
-                            <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg shrink-0", bg)}>
-                              <Icon className={cn("h-4 w-4", tint)} />
-                            </span>
-                            <span className="font-bold text-[var(--text-primary)] truncate max-w-[280px]">{doc.name}</span>
-                            {doc.favorite && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />}
-                            {doc.versionCount && doc.versionCount > 0 && (
-                              <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">v{doc.versionCount + 1}</span>
-                            )}
-                            <ExpiryBadge expiresAt={doc.expiresAt} />
-                          </button>
+                          {renaming?.id === doc.id ? (
+                            <input
+                              type="text"
+                              value={renaming.value}
+                              onChange={(e) => setRenaming({ ...renaming, value: e.target.value })}
+                              onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setRenaming(null); }}
+                              onBlur={commitRename}
+                              autoFocus
+                              aria-label={`Renombrar ${doc.name}`}
+                              className="w-full max-w-[320px] px-2 py-1 rounded-md border-2 border-primary text-sm font-bold outline-none bg-[var(--surface-raised)] text-[var(--text-primary)]"
+                            />
+                          ) : (
+                            <button onClick={() => setPreview(doc)} onDoubleClick={(e) => { e.preventDefault(); startRename(doc); }} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors" title="Doble-click para renombrar">
+                              <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg shrink-0", bg)}>
+                                <Icon className={cn("h-4 w-4", tint)} />
+                              </span>
+                              <span className="font-bold text-[var(--text-primary)] truncate max-w-[280px]">{doc.name}</span>
+                              {doc.favorite && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />}
+                              {doc.versionCount && doc.versionCount > 0 && (
+                                <span className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-bold">v{doc.versionCount + 1}</span>
+                              )}
+                              <ExpiryBadge expiresAt={doc.expiresAt} />
+                            </button>
+                          )}
                         </td>
                         <td className="px-4 py-3 hidden sm:table-cell">
                           <span className="text-xs text-[var(--text-secondary)] capitalize">{doc.category}</span>
@@ -1057,6 +1058,9 @@ export default function DocumentosModule() {
                           <RowActions
                             favorite={!!doc.favorite}
                             onPreview={() => setPreview(doc)}
+                            onRename={() => startRename(doc)}
+                            onMove={() => setMovingDoc(doc)}
+                            onWhatsApp={() => setWhatsappDoc(doc)}
                             onDownload={() => handleDownload(doc)}
                             onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
                             onDelete={() => { if (confirm(`¿Eliminar "${doc.name}"?`)) bulk("delete", [doc.id]); }}
@@ -1095,6 +1099,19 @@ export default function DocumentosModule() {
             refresh();
           }}
         />
+      )}
+
+      {movingDoc && (
+        <MoveToFolderModal
+          doc={movingDoc}
+          folders={folders}
+          onMove={async (folderId) => { await bulk("move", [movingDoc.id], { folderId }); }}
+          onClose={() => setMovingDoc(null)}
+        />
+      )}
+
+      {whatsappDoc && (
+        <SendWhatsAppModal doc={whatsappDoc} onClose={() => setWhatsappDoc(null)} />
       )}
     </div>
   );
@@ -1169,7 +1186,7 @@ function ExpiryBadge({ expiresAt, className }: { expiresAt: string | null; class
 
 function DocCard({
   doc, selected, isRenaming, renameValue,
-  onSelect, onPreview, onToggleFav, onRemove,
+  onSelect, onPreview, onToggleFav, onRemove, onWhatsApp,
   onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
   onDragStart, onDragEnd, dragging,
 }: {
@@ -1181,6 +1198,7 @@ function DocCard({
   onPreview: () => void;
   onToggleFav: () => void;
   onRemove: () => void;
+  onWhatsApp: () => void;
   onStartRename: () => void;
   onCommitRename: () => void;
   onCancelRename: () => void;
@@ -1236,6 +1254,9 @@ function DocCard({
           aria-label={doc.favorite ? "Quitar favorito" : "Marcar favorito"}
         >
           <Star className={cn("h-3.5 w-3.5", doc.favorite && "fill-current")} />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onWhatsApp(); }} className="h-7 w-7 rounded-full flex items-center justify-center bg-white/85 backdrop-blur-sm text-[var(--text-tertiary)] hover:text-[var(--data-success-700)]" aria-label="Enviar por WhatsApp">
+          <MessageCircle className="h-3.5 w-3.5" />
         </button>
         <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="h-7 w-7 rounded-full flex items-center justify-center bg-white/85 backdrop-blur-sm text-[var(--text-tertiary)] hover:text-primary" aria-label="Descargar">
           <Download className="h-3.5 w-3.5" />
@@ -1312,8 +1333,8 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 // ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
 // la vista lista. Dropdown `position: fixed` para no quedar recortado por el
 // overflow del contenedor de la tabla. ──
-function RowActions({ onPreview, onDownload, onToggleFav, onDelete, favorite }: {
-  onPreview: () => void; onDownload: () => void; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
+function RowActions({ onPreview, onDownload, onRename, onMove, onWhatsApp, onToggleFav, onDelete, favorite }: {
+  onPreview: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -1356,6 +1377,9 @@ function RowActions({ onPreview, onDownload, onToggleFav, onDelete, favorite }: 
       {open && pos && (
         <div className="fixed z-50 min-w-[170px] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, right: pos.right }} onClick={(e) => e.stopPropagation()}>
           {item(Eye, "Ver", onPreview)}
+          {item(Pencil, "Renombrar", onRename)}
+          {item(FolderInput, "Mover a carpeta", onMove)}
+          {item(MessageCircle, "Enviar por WhatsApp", onWhatsApp)}
           {item(Download, "Descargar", onDownload)}
           {item(Star, favorite ? "Quitar favorito" : "Marcar favorito", onToggleFav)}
           {item(Trash2, "Eliminar", onDelete, true)}
