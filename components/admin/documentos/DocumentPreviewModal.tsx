@@ -76,7 +76,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
   if (!doc) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white rounded-3xl p-8 text-sm text-slate-500">{loading ? "Cargando…" : "No disponible"}</div>
+        <div className="bg-[var(--surface-raised)] rounded-3xl p-8 text-sm text-[var(--text-tertiary)]">{loading ? "Cargando…" : "No disponible"}</div>
       </div>
     );
   }
@@ -92,17 +92,17 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-6xl max-h-[92vh] overflow-hidden bg-white rounded-3xl shadow-2xl flex flex-col"
+        className="w-full max-w-6xl max-h-[92vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-2xl flex flex-col"
       >
         {/* Header */}
-        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200 shrink-0">
+        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 shrink-0">
-              <FileText className="h-5 w-5 text-slate-600" />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-sunken)] shrink-0">
+              <FileText className="h-5 w-5 text-[var(--text-secondary)]" />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-extrabold text-slate-900 truncate">{doc.name}</p>
-              <p className="text-xs text-slate-500 tabular-nums">
+              <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
+              <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
                 {formatBytes(doc.size)} · {doc.mimeType} · {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
                 {doc.versionCount ? ` · v${doc.versionCount + 1}` : ""}
               </p>
@@ -113,14 +113,14 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
               <a
                 href={signedUrl}
                 download={doc.name}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
               >
                 <Download className="h-3.5 w-3.5" /> Descargar
               </a>
             )}
             <button
               onClick={onClose}
-              className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-900 transition-colors"
+              className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
               aria-label="Cerrar"
             >
               <X className="h-4 w-4" />
@@ -129,7 +129,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
         </header>
 
         {/* Tabs */}
-        <nav className="flex items-center gap-1 px-5 pt-3 border-b border-slate-200 shrink-0 overflow-x-auto">
+        <nav className="flex items-center gap-1 px-5 pt-3 border-b border-[var(--rule-base)] shrink-0 overflow-x-auto">
           <TabBtn icon={Eye} active={tab === "preview"} onClick={() => setTab("preview")}>Vista previa</TabBtn>
           <TabBtn icon={Link2} active={tab === "details"} onClick={() => setTab("details")}>Detalles{doc.expiresAt || doc.customerId || doc.supplierId ? " •" : ""}</TabBtn>
           <TabBtn icon={History} active={tab === "versions"} onClick={() => setTab("versions")}>Versiones{doc.versionCount ? ` (${(doc.versionCount ?? 0) + 1})` : ""}</TabBtn>
@@ -139,21 +139,21 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
         </nav>
 
         {/* Body */}
-        <div className="flex-1 overflow-auto bg-slate-50 min-h-0">
+        <div className="flex-1 overflow-auto bg-[var(--surface-sunken)] min-h-0">
           {tab === "preview" && (
             <div className="h-full flex items-center justify-center p-4">
               {isImage && signedUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={signedUrl} alt={doc.name} className="max-w-full max-h-full object-contain rounded-lg shadow-md" />
               ) : isPdf && signedUrl ? (
-                <iframe src={signedUrl} title={doc.name} className="w-full h-[78vh] rounded-lg border border-slate-200 bg-white" />
+                <iframe src={signedUrl} title={doc.name} className="w-full h-[78vh] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
               ) : isVideo && signedUrl ? (
                 <video src={signedUrl} controls className="max-w-full max-h-full rounded-lg" />
               ) : (
                 <div className="text-center py-10">
-                  <FileText className="h-16 w-16 mx-auto text-slate-300 mb-3" />
-                  <p className="text-base font-bold text-slate-700">{doc.name}</p>
-                  <p className="text-sm text-slate-500 mt-1">Sin vista previa. Descargá para verlo en tu equipo.</p>
+                  <FileText className="h-16 w-16 mx-auto text-[var(--text-tertiary)] mb-3" />
+                  <p className="text-base font-bold text-[var(--text-secondary)]">{doc.name}</p>
+                  <p className="text-sm text-[var(--text-tertiary)] mt-1">Sin vista previa. Descargá para verlo en tu equipo.</p>
                 </div>
               )}
             </div>
@@ -192,7 +192,7 @@ function TabBtn({
       onClick={onClick}
       className={cn(
         "px-3 py-2.5 text-sm font-bold inline-flex items-center gap-1.5 border-b-2 -mb-px transition-colors whitespace-nowrap",
-        active ? "border-primary text-primary" : "border-transparent text-slate-500 hover:text-slate-900"
+        active ? "border-primary text-primary" : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
       )}
     >
       <Icon className="h-4 w-4" /> {children}
@@ -223,15 +223,15 @@ function VersionsTab({
 
   return (
     <div className="p-5 space-y-4">
-      <div className="bg-white rounded-2xl border border-slate-200 p-4">
-        <p className="text-sm font-bold text-slate-900 mb-2">Subir nueva versión</p>
-        <p className="text-xs text-slate-500 mb-3">Reemplaza el archivo activo y guarda la versión actual como histórico.</p>
+      <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
+        <p className="text-sm font-bold text-[var(--text-primary)] mb-2">Subir nueva versión</p>
+        <p className="text-xs text-[var(--text-tertiary)] mb-3">Reemplaza el archivo activo y guarda la versión actual como histórico.</p>
         <input
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Nota del cambio (opcional)…"
-          className="w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary mb-2"
+          className="w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary mb-2"
         />
         <input
           ref={fileRef}
@@ -248,18 +248,18 @@ function VersionsTab({
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <p className="text-sm font-bold text-slate-900 px-4 py-3 border-b border-slate-200">Historial</p>
+      <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden">
+        <p className="text-sm font-bold text-[var(--text-primary)] px-4 py-3 border-b border-[var(--rule-base)]">Historial</p>
         {versions.length === 0 ? (
-          <p className="text-xs text-slate-500 italic px-4 py-6">Aún no hay versiones previas. Subí una nueva para crear la primera entrada.</p>
+          <p className="text-xs text-[var(--text-tertiary)] italic px-4 py-6">Aún no hay versiones previas. Subí una nueva para crear la primera entrada.</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-[var(--rule-soft)]">
             {versions.map((v) => (
               <li key={v.id} className="px-4 py-3 flex items-center gap-3">
-                <span className="h-8 w-8 rounded-lg bg-blue-100 text-blue-700 inline-flex items-center justify-center text-xs font-bold">v{v.versionNumber}</span>
+                <span className="h-8 w-8 rounded-lg bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)] inline-flex items-center justify-center text-xs font-bold">v{v.versionNumber}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-900">{v.changeNote ?? "Sin nota"}</p>
-                  <p className="text-xs text-slate-500 tabular-nums">{formatBytes(v.size)} · {relativeTime(v.uploadedAt)} · {v.uploadedById}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{v.changeNote ?? "Sin nota"}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">{formatBytes(v.size)} · {relativeTime(v.uploadedAt)} · {v.uploadedById}</p>
                 </div>
               </li>
             ))}
@@ -320,11 +320,11 @@ function DetailsTab({ doc, onPatched }: { doc: DbDocument; onPatched: (d: DbDocu
   return (
     <div className="p-5 space-y-4 max-w-2xl mx-auto">
       {/* Vencimiento */}
-      <section className="bg-white rounded-2xl border border-slate-200 p-4">
-        <p className="text-sm font-bold text-slate-900 mb-1 inline-flex items-center gap-1.5">
-          <AlarmClock className="h-4 w-4 text-red-500" /> Fecha de vencimiento
+      <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
+        <p className="text-sm font-bold text-[var(--text-primary)] mb-1 inline-flex items-center gap-1.5">
+          <AlarmClock className="h-4 w-4 text-[var(--data-error-500)]" /> Fecha de vencimiento
         </p>
-        <p className="text-xs text-slate-500 mb-3">
+        <p className="text-xs text-[var(--text-tertiary)] mb-3">
           Para licencias, certificados o contratos. Te avisamos por WhatsApp 7 días antes.
         </p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -332,21 +332,21 @@ function DetailsTab({ doc, onPatched }: { doc: DbDocument; onPatched: (d: DbDocu
             type="date"
             defaultValue={expiryValue}
             onChange={(e) => save("expiry", { expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-            className="px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary"
+            className="px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
           />
           {doc.expiresAt && (
             <button
               onClick={() => save("expiry", { expiresAt: null })}
-              className="px-2.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-600"
+              className="px-2.5 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)]"
             >
               Quitar
             </button>
           )}
-          {saving === "expiry" && <span className="text-xs text-slate-400">Guardando…</span>}
+          {saving === "expiry" && <span className="text-xs text-[var(--text-tertiary)]">Guardando…</span>}
           {dias !== null && (
             <span className={cn(
               "text-xs font-bold px-2 py-1 rounded-md",
-              dias < 0 ? "bg-red-100 text-red-700" : dias <= 7 ? "bg-red-50 text-red-600" : dias <= 30 ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+              dias < 0 ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]" : dias <= 7 ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]" : dias <= 30 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]"
             )}>
               {dias < 0 ? "Ya venció" : dias === 0 ? "Vence hoy" : `Faltan ${dias} días`}
             </span>
@@ -355,31 +355,31 @@ function DetailsTab({ doc, onPatched }: { doc: DbDocument; onPatched: (d: DbDocu
       </section>
 
       {/* Vincular a entidad */}
-      <section className="bg-white rounded-2xl border border-slate-200 p-4">
-        <p className="text-sm font-bold text-slate-900 mb-1 inline-flex items-center gap-1.5">
+      <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
+        <p className="text-sm font-bold text-[var(--text-primary)] mb-1 inline-flex items-center gap-1.5">
           <Link2 className="h-4 w-4 text-primary" /> Vincular a
         </p>
-        <p className="text-xs text-slate-500 mb-3">
+        <p className="text-xs text-[var(--text-tertiary)] mb-3">
           Conectá este documento con un cliente o proveedor para encontrarlo desde su ficha.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-xs font-bold text-slate-600 inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Cliente</span>
+            <span className="text-xs font-bold text-[var(--text-secondary)] inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Cliente</span>
             <select
               value={doc.customerId ?? ""}
               onChange={(e) => save("customer", { customerId: e.target.value || null })}
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary bg-white"
+              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
             >
               <option value="">— Ninguno —</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="text-xs font-bold text-slate-600 inline-flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Proveedor</span>
+            <span className="text-xs font-bold text-[var(--text-secondary)] inline-flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Proveedor</span>
             <select
               value={doc.supplierId ?? ""}
               onChange={(e) => save("supplier", { supplierId: e.target.value || null })}
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary bg-white"
+              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
             >
               <option value="">— Ninguno —</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -387,17 +387,17 @@ function DetailsTab({ doc, onPatched }: { doc: DbDocument; onPatched: (d: DbDocu
           </label>
         </div>
         {saving && (saving === "customer" || saving === "supplier") && (
-          <p className="text-xs text-slate-400 mt-2">Guardando…</p>
+          <p className="text-xs text-[var(--text-tertiary)] mt-2">Guardando…</p>
         )}
       </section>
 
       {/* Texto OCR detectado */}
       {doc.ocrText && (
-        <section className="bg-white rounded-2xl border border-slate-200 p-4">
-          <p className="text-sm font-bold text-slate-900 mb-2 inline-flex items-center gap-1.5">
+        <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
+          <p className="text-sm font-bold text-[var(--text-primary)] mb-2 inline-flex items-center gap-1.5">
             <Sparkles className="h-4 w-4 text-[var(--accent)]" /> Texto detectado (OCR)
           </p>
-          <p className="text-xs text-slate-600 whitespace-pre-wrap line-clamp-6 leading-relaxed">{doc.ocrText.slice(0, 800)}</p>
+          <p className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap line-clamp-6 leading-relaxed">{doc.ocrText.slice(0, 800)}</p>
         </section>
       )}
     </div>
@@ -444,26 +444,26 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
 
   return (
     <div className="p-5 space-y-4">
-      <div className="bg-white rounded-2xl border border-slate-200 p-4">
-        <p className="text-sm font-bold text-slate-900 mb-3">Crear link público</p>
+      <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
+        <p className="text-sm font-bold text-[var(--text-primary)] mb-3">Crear link público</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-xs font-bold text-slate-600">Días de validez</span>
+            <span className="text-xs font-bold text-[var(--text-secondary)]">Días de validez</span>
             <input
               type="number" min={1} max={90} value={days}
               onChange={(e) => setDays(Math.max(1, Math.min(90, Number(e.target.value))))}
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-bold text-slate-600 inline-flex items-center gap-1.5">
+            <span className="text-xs font-bold text-[var(--text-secondary)] inline-flex items-center gap-1.5">
               <input type="checkbox" checked={usePwd} onChange={(e) => setUsePwd(e.target.checked)} className="accent-[var(--color-primary)]" />
               <Lock className="h-3.5 w-3.5" /> Proteger con contraseña
             </span>
             {usePwd && (
               <input
                 type="text" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="Mínimo 4 caracteres"
-                className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary"
+                className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             )}
           </label>
@@ -477,12 +477,12 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <p className="text-sm font-bold text-slate-900 px-4 py-3 border-b border-slate-200">Links activos</p>
+      <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden">
+        <p className="text-sm font-bold text-[var(--text-primary)] px-4 py-3 border-b border-[var(--rule-base)]">Links activos</p>
         {shares.length === 0 ? (
-          <p className="text-xs text-slate-500 italic px-4 py-6">No hay links generados.</p>
+          <p className="text-xs text-[var(--text-tertiary)] italic px-4 py-6">No hay links generados.</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-[var(--rule-soft)]">
             {shares.map((s) => {
               const url = `${baseUrl}/d/${s.token}`;
               const active = !s.revokedAt && new Date(s.expiresAt).getTime() > Date.now();
@@ -495,13 +495,13 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
                       onClick={(e) => (e.target as HTMLInputElement).select()}
                       className={cn(
                         "flex-1 min-w-0 px-2 py-1.5 rounded-md border text-xs font-mono",
-                        active ? "border-slate-200 bg-slate-50 text-slate-700" : "border-slate-200 bg-slate-100 text-slate-400 line-through"
+                        active ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]" : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] line-through"
                       )}
                     />
                     <button
                       onClick={() => copyLink(s.token)}
                       disabled={!active}
-                      className="px-2 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 inline-flex items-center gap-1 disabled:opacity-50"
+                      className="px-2 py-1.5 rounded-md bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)] inline-flex items-center gap-1 disabled:opacity-50"
                     >
                       {copied === s.token ? <Check className="h-3 w-3" /> : <Clipboard className="h-3 w-3" />}
                       {copied === s.token ? "Copiado" : "Copiar"}
@@ -511,7 +511,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
                         href={`https://wa.me/?text=${encodeURIComponent(`Te comparto este documento: ${url}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-2 py-1.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold inline-flex items-center gap-1"
+                        className="px-2 py-1.5 rounded-md bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15 hover:bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)] text-xs font-bold inline-flex items-center gap-1"
                         title="Enviar por WhatsApp"
                       >
                         <Share2 className="h-3 w-3" /> WhatsApp
@@ -520,17 +520,17 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
                     {active && (
                       <button
                         onClick={async () => { await revokeShare(s.id); await reload(); }}
-                        className="px-2 py-1.5 rounded-md bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold"
+                        className="px-2 py-1.5 rounded-md bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 hover:bg-[var(--data-error-100)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-xs font-bold"
                       >
                         Revocar
                       </button>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-1.5 text-[length:var(--ts-2xs)] text-slate-500">
+                  <div className="flex items-center gap-3 mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                     <span>Expira: {new Date(s.expiresAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</span>
                     <span>Accesos: {s.accessCount}</span>
                     {s.hasPassword && <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> protegido</span>}
-                    {s.revokedAt && <span className="text-red-500">Revocado</span>}
+                    {s.revokedAt && <span className="text-[var(--data-error-500)]">Revocado</span>}
                   </div>
                 </li>
               );
@@ -618,35 +618,35 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
 
   return (
     <div className="p-5 space-y-4">
-      <div className="bg-white rounded-2xl border border-slate-200 p-5">
+      <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-5">
         <div className="flex items-center gap-2 mb-3">
           <PencilLine className="h-5 w-5 text-primary" />
-          <p className="text-sm font-bold text-slate-900">Firma digital visual</p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">Firma digital visual</p>
         </div>
-        <p className="text-xs text-slate-500 mb-4">
+        <p className="text-xs text-[var(--text-tertiary)] mb-4">
           Estampa un sello visual + hash SHA-256 en la última página del PDF. NO es firma criptográfica RENIEC — es un sello con audit trail.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <label className="block">
-            <span className="text-xs font-bold text-slate-600">Tu nombre</span>
+            <span className="text-xs font-bold text-[var(--text-secondary)]">Tu nombre</span>
             <input
               type="text" value={signerName} onChange={(e) => setSignerName(e.target.value)}
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-bold text-slate-600">Cargo (opcional)</span>
+            <span className="text-xs font-bold text-[var(--text-secondary)]">Cargo (opcional)</span>
             <input
               type="text" value={signerRole} onChange={(e) => setSignerRole(e.target.value)}
               placeholder="Gerente, Contador…"
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
         </div>
 
-        <p className="text-xs font-bold text-slate-600 mb-1.5">Trazá tu firma:</p>
-        <div className="inline-block border-2 border-dashed border-slate-300 rounded-xl bg-white">
+        <p className="text-xs font-bold text-[var(--text-secondary)] mb-1.5">Trazá tu firma:</p>
+        <div className="inline-block border-2 border-dashed border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)]">
           <canvas
             ref={canvasRef}
             width={w}
@@ -660,7 +660,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
           />
         </div>
         <div className="flex items-center gap-2 mt-3">
-          <button onClick={clear} className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700">Limpiar</button>
+          <button onClick={clear} className="px-3 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)]">Limpiar</button>
           <button
             onClick={handleSign}
             disabled={signing || !signerName.trim()}
@@ -672,12 +672,12 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
         </div>
 
         {result && (
-          <div className="mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs">
-            <p className="font-bold text-emerald-800 inline-flex items-center gap-1.5">
+          <div className="mt-4 p-3 rounded-xl bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 text-xs">
+            <p className="font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] inline-flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" /> Firmado correctamente
             </p>
-            <p className="text-emerald-700 mt-1 tabular-nums">Nueva versión: v{result.versionNumber}</p>
-            <p className="text-emerald-700 mt-0.5 font-mono break-all text-[length:var(--ts-2xs)]">SHA-256: {result.sha}</p>
+            <p className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)] mt-1 tabular-nums">Nueva versión: v{result.versionNumber}</p>
+            <p className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)] mt-0.5 font-mono break-all text-[length:var(--ts-2xs)]">SHA-256: {result.sha}</p>
           </div>
         )}
       </div>
@@ -688,39 +688,39 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
 // ─────────── Audit tab ───────────
 
 const ACTION_META: Record<string, { color: string; label: string }> = {
-  upload: { color: "bg-emerald-100 text-emerald-700", label: "Upload" },
-  view: { color: "bg-slate-100 text-slate-600", label: "Vista" },
-  download: { color: "bg-blue-100 text-blue-700", label: "Descarga" },
-  rename: { color: "bg-amber-100 text-amber-700", label: "Renombrado" },
-  delete: { color: "bg-red-100 text-red-700", label: "Eliminado" },
-  restore: { color: "bg-emerald-100 text-emerald-700", label: "Restaurado" },
+  upload: { color: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]", label: "Upload" },
+  view: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Vista" },
+  download: { color: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]", label: "Descarga" },
+  rename: { color: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]", label: "Renombrado" },
+  delete: { color: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]", label: "Eliminado" },
+  restore: { color: "bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]", label: "Restaurado" },
   share: { color: "bg-[var(--accent)]/15 text-[var(--accent)]", label: "Compartido" },
-  share_revoke: { color: "bg-red-100 text-red-700", label: "Share revocado" },
+  share_revoke: { color: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]", label: "Share revocado" },
   sign: { color: "bg-primary/15 text-primary", label: "Firmado" },
-  version: { color: "bg-blue-100 text-blue-700", label: "Nueva versión" },
-  move: { color: "bg-slate-100 text-slate-600", label: "Movido" },
-  tag: { color: "bg-slate-100 text-slate-600", label: "Tag" },
+  version: { color: "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]", label: "Nueva versión" },
+  move: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Movido" },
+  tag: { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: "Tag" },
 };
 
 function AuditTab({ logs }: { logs: DbDocumentAuditLog[] }) {
   return (
     <div className="p-5">
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <p className="text-sm font-bold text-slate-900 px-4 py-3 border-b border-slate-200">Registro de actividad</p>
+      <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden">
+        <p className="text-sm font-bold text-[var(--text-primary)] px-4 py-3 border-b border-[var(--rule-base)]">Registro de actividad</p>
         {logs.length === 0 ? (
-          <p className="text-xs text-slate-500 italic px-4 py-6">Sin eventos.</p>
+          <p className="text-xs text-[var(--text-tertiary)] italic px-4 py-6">Sin eventos.</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-[var(--rule-soft)]">
             {logs.map((l) => {
-              const meta = ACTION_META[l.action] ?? { color: "bg-slate-100 text-slate-600", label: l.action };
+              const meta = ACTION_META[l.action] ?? { color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", label: l.action };
               return (
                 <li key={l.id} className="px-4 py-3 flex items-start gap-3">
                   <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-md shrink-0", meta.color)}>
                     {meta.label}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-900">{l.actorId}</p>
-                    <p className="text-xs text-slate-500 tabular-nums">{relativeTime(l.createdAt)} · {l.ipAddress ?? "—"}</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)]">{l.actorId}</p>
+                    <p className="text-xs text-[var(--text-tertiary)] tabular-nums">{relativeTime(l.createdAt)} · {l.ipAddress ?? "—"}</p>
                   </div>
                 </li>
               );
