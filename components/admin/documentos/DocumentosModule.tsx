@@ -44,12 +44,14 @@ function formatBytes(b: number): string {
 }
 
 function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: string } {
-  if (type.startsWith("image/")) return { Icon: ImageIcon, tint: "text-[var(--accent)]", bg: "bg-pink-50" };
-  if (type.startsWith("video/")) return { Icon: Film, tint: "text-[var(--accent)]", bg: "bg-violet-50" };
-  if (type.startsWith("audio/")) return { Icon: Music, tint: "text-emerald-500", bg: "bg-emerald-50" };
-  if (type === "application/pdf") return { Icon: FileText, tint: "text-red-500", bg: "bg-red-50" };
-  if (type.includes("spreadsheet") || type.includes("excel") || type.includes("csv")) return { Icon: FileSpreadsheet, tint: "text-emerald-500", bg: "bg-emerald-50" };
-  if (type.includes("word") || type.includes("document")) return { Icon: FileText, tint: "text-blue-500", bg: "bg-blue-50" };
+  // Tints por tipo de archivo (paleta categórica); con variante dark para que
+  // el fondo no quede claro sobre el tema oscuro.
+  if (type.startsWith("image/")) return { Icon: ImageIcon, tint: "text-[var(--accent)]", bg: "bg-pink-50 dark:bg-pink-500/15" };
+  if (type.startsWith("video/")) return { Icon: Film, tint: "text-[var(--accent)]", bg: "bg-violet-50 dark:bg-violet-500/15" };
+  if (type.startsWith("audio/")) return { Icon: Music, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" };
+  if (type === "application/pdf") return { Icon: FileText, tint: "text-red-500", bg: "bg-red-50 dark:bg-red-500/15" };
+  if (type.includes("spreadsheet") || type.includes("excel") || type.includes("csv")) return { Icon: FileSpreadsheet, tint: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/15" };
+  if (type.includes("word") || type.includes("document")) return { Icon: FileText, tint: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-500/15" };
   return { Icon: FileIcon, tint: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]" };
 }
 
@@ -83,6 +85,7 @@ function daysUntil(iso: string | null): number | null {
 
 export default function DocumentosModule() {
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState<"recent" | "name" | "size" | "expiry">("recent");
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
@@ -145,15 +148,33 @@ export default function DocumentosModule() {
     [scan, activeFolderId]
   );
 
-  // ── Filtrado client-side adicional (recent) ──
+  // ── Filtrado (recent) + orden client-side ──
   const displayDocs = useMemo(() => {
     let list = documents;
     if (filterMode === "recent") {
       const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
       list = list.filter((d) => new Date(d.uploadedAt).getTime() > cutoff);
     }
-    return list;
-  }, [documents, filterMode]);
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name, "es", { sensitivity: "base" });
+        case "size":
+          return b.size - a.size;
+        case "expiry": {
+          // Los que vencen primero arriba; los que no vencen, al final.
+          const av = a.expiresAt ? new Date(a.expiresAt).getTime() : Infinity;
+          const bv = b.expiresAt ? new Date(b.expiresAt).getTime() : Infinity;
+          return av - bv;
+        }
+        case "recent":
+        default:
+          return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+      }
+    });
+    return sorted;
+  }, [documents, filterMode, sortBy]);
 
   const totalSize = useMemo(() => documents.reduce((s, d) => s + d.size, 0), [documents]);
   const favCount = useMemo(() => documents.filter((d) => d.favorite).length, [documents]);
@@ -359,7 +380,7 @@ export default function DocumentosModule() {
       )}
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <X className="h-4 w-4 shrink-0" /> {error}
           <button onClick={refresh} className="ml-auto text-xs underline">Reintentar</button>
         </div>
@@ -373,15 +394,15 @@ export default function DocumentosModule() {
           onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
           className={cn(
             "text-left bg-white border rounded-2xl p-4 transition-all hover:shadow-md",
-            expiringSoonCount > 0 ? "border-red-200 hover:border-red-400" : "border-[var(--rule-base)] hover:border-primary/40"
+            expiringSoonCount > 0 ? "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]" : "border-[var(--rule-base)] hover:border-primary/40"
           )}
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Por vencer (30d)</p>
-              <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringSoonCount > 0 ? "text-red-500" : "text-[var(--text-tertiary)]")}>{expiringSoonCount}</p>
+              <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>{expiringSoonCount}</p>
             </div>
-            <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringSoonCount > 0 ? "text-red-500" : "text-[var(--text-tertiary)]")} />
+            <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
           </div>
         </button>
         <StatBlock label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />
@@ -511,6 +532,18 @@ export default function DocumentosModule() {
             >
               <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">IA</span>
             </button>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              className="h-[42px] rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary"
+              aria-label="Ordenar documentos"
+              title="Ordenar documentos"
+            >
+              <option value="recent">Más recientes</option>
+              <option value="name">Nombre A–Z</option>
+              <option value="size">Tamaño</option>
+              <option value="expiry">Vence primero</option>
+            </select>
             <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-white overflow-hidden">
               <button
                 onClick={() => setView("grid")}
@@ -719,16 +752,19 @@ function StorageRing({ usedBytes, quotaBytes }: { usedBytes: number; quotaBytes:
 function ExpiryBadge({ expiresAt, className }: { expiresAt: string | null; className?: string }) {
   const n = daysUntil(expiresAt);
   if (n === null) return null;
+  const err = "bg-[var(--data-error-50)] text-[var(--data-error-700)] border-[var(--data-error-500)]/40 dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]";
+  const warn = "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] border-[var(--data-warning-500)]/40 dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]";
+  const ok = "bg-[var(--data-success-50)] text-[var(--data-success-700)] border-[var(--data-success-500)]/40 dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]";
   const { label, cls } =
     n < 0
-      ? { label: "Vencido", cls: "bg-red-100 text-red-700 border-red-200" }
+      ? { label: "Vencido", cls: err }
       : n === 0
-      ? { label: "Vence hoy", cls: "bg-red-100 text-red-700 border-red-200" }
+      ? { label: "Vence hoy", cls: err }
       : n <= 7
-      ? { label: `Vence en ${n}d`, cls: "bg-red-50 text-red-600 border-red-200" }
+      ? { label: `Vence en ${n}d`, cls: err }
       : n <= 30
-      ? { label: `Vence en ${n}d`, cls: "bg-amber-50 text-amber-700 border-amber-200" }
-      : { label: new Date(expiresAt!).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" }), cls: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+      ? { label: `Vence en ${n}d`, cls: warn }
+      : { label: new Date(expiresAt!).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" }), cls: ok };
   return (
     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[length:var(--ts-2xs,11px)] font-bold", cls, className)}>
       <AlarmClock className="h-3 w-3" /> {label}
