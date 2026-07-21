@@ -103,6 +103,9 @@ export default function DocumentosModule() {
   const [newFolderName, setNewFolderName] = useState("");
   const [bulkTagValue, setBulkTagValue] = useState("");
   const [expiryBannerDismissed, setExpiryBannerDismissed] = useState(false);
+  // Drag & drop de documentos hacia carpetas de la barra lateral.
+  const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
@@ -234,6 +237,8 @@ export default function DocumentosModule() {
   );
 
   const onDragOver = useCallback((e: React.DragEvent) => {
+    // Drag interno de un documento (mover a carpeta) → no es una subida de archivos.
+    if (e.dataTransfer.types.includes("application/x-doc-id")) return;
     e.preventDefault();
     setDragOver(true);
   }, []);
@@ -265,6 +270,13 @@ export default function DocumentosModule() {
     await bulk("tag", Array.from(selectedIds), { tag: t });
     setBulkTagValue("");
     clearSelection();
+  };
+  // Mover UN documento a una carpeta al soltarlo (drag & drop).
+  const dropDocOnFolder = async (docId: string, folderId: string | null) => {
+    setDragOverFolderId(null);
+    setDraggingDocId(null);
+    if (!docId) return;
+    await bulk("move", [docId], { folderId });
   };
 
   // ── Folder actions ──
@@ -520,8 +532,25 @@ export default function DocumentosModule() {
             )}
             {folders.map((f) => {
               const active = filterMode === "folder" && activeFolderId === f.id;
+              const dropTarget = dragOverFolderId === f.id;
               return (
-                <li key={f.id} className="group relative">
+                <li
+                  key={f.id}
+                  className={cn("group relative rounded-lg transition-all", dropTarget && "bg-primary/10 ring-2 ring-primary")}
+                  onDragOver={(e) => {
+                    if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverFolderId !== f.id) setDragOverFolderId(f.id);
+                  }}
+                  onDragLeave={() => setDragOverFolderId((cur) => (cur === f.id ? null : cur))}
+                  onDrop={(e) => {
+                    if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropDocOnFolder(e.dataTransfer.getData("application/x-doc-id"), f.id);
+                  }}
+                >
                   <button
                     onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
                     className={cn(
@@ -675,6 +704,13 @@ export default function DocumentosModule() {
                   onCancelRename={() => setRenaming(null)}
                   onRenameChange={(v) => setRenaming(renaming ? { ...renaming, value: v } : null)}
                   onDownload={() => handleDownload(doc)}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("application/x-doc-id", doc.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    setDraggingDocId(doc.id);
+                  }}
+                  onDragEnd={() => { setDraggingDocId(null); setDragOverFolderId(null); }}
+                  dragging={draggingDocId === doc.id}
                 />
               ))}
             </div>
@@ -844,6 +880,7 @@ function DocCard({
   doc, selected, isRenaming, renameValue,
   onSelect, onPreview, onToggleFav, onRemove,
   onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
+  onDragStart, onDragEnd, dragging,
 }: {
   doc: DbDocument;
   selected: boolean;
@@ -858,13 +895,21 @@ function DocCard({
   onCancelRename: () => void;
   onRenameChange: (v: string) => void;
   onDownload: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+  dragging: boolean;
 }) {
   const { Icon, tint, bg } = getFileIcon(doc.mimeType);
   return (
-    <div className={cn(
-      "group relative overflow-hidden rounded-2xl border-2 bg-white transition-all",
-      selected ? "border-primary shadow-md" : "border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
-    )}>
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className={cn(
+        "group relative overflow-hidden rounded-2xl border-2 bg-white transition-all cursor-grab active:cursor-grabbing",
+        selected ? "border-primary shadow-md" : "border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md",
+        dragging && "opacity-40"
+      )}>
       {/* Checkbox */}
       <input
         type="checkbox"
