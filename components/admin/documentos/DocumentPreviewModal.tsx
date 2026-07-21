@@ -370,6 +370,12 @@ function VersionsTab({
                     <p className="text-sm font-bold text-[var(--text-primary)]">{v.changeNote ?? "Sin nota"}</p>
                     <p className="text-xs text-[var(--text-tertiary)] tabular-nums">{formatBytes(v.size)} · {relativeTime(v.uploadedAt)} · {v.uploadedById}</p>
                   </div>
+                  {!compareMode && (
+                    <div className="flex shrink-0 items-center gap-1">
+                      <a href={`/api/admin/documents/${docId}/versions/${v.id}/raw`} target="_blank" rel="noopener" className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-colors" title="Ver esta versión" aria-label={`Ver v${v.versionNumber}`}><Eye className="h-4 w-4" /></a>
+                      <a href={`/api/admin/documents/${docId}/versions/${v.id}/raw?download=1`} className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-colors" title="Descargar esta versión" aria-label={`Descargar v${v.versionNumber}`}><Download className="h-4 w-4" /></a>
+                    </div>
+                  )}
                 </li>
               );
             })}

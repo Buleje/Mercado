@@ -597,6 +597,21 @@ export class DocumentsDB {
     return versions.map(mapVersion);
   }
 
+  /** Una versión histórica puntual (validada por tenant + documento). */
+  static async getVersion(
+    tenantId: string,
+    documentId: string,
+    versionId: string
+  ): Promise<DbDocumentVersion | null> {
+    const doc = await prisma.document.findFirst({
+      where: { id: documentId, tenantId },
+      select: { id: true },
+    });
+    if (!doc) return null;
+    const v = await prisma.documentVersion.findFirst({ where: { id: versionId, documentId } });
+    return v ? mapVersion(v) : null;
+  }
+
   static async addVersion(
     tenantId: string,
     documentId: string,
