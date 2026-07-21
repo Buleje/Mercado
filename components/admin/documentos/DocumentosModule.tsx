@@ -24,7 +24,7 @@ import {
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
-  ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing,
+  ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -128,6 +128,7 @@ export default function DocumentosModule() {
   // Modales por-documento (mover a carpeta / enviar por WhatsApp).
   const [movingDoc, setMovingDoc] = useState<DbDocument | null>(null);
   const [whatsappDoc, setWhatsappDoc] = useState<DbDocument | null>(null);
+  const [signDoc, setSignDoc] = useState<DbDocument | null>(null);
   // Personalizar carpeta (nombre + color + ícono).
   const [editingFolder, setEditingFolder] = useState<DbDocumentFolder | null>(null);
   // Editor de taxonomía de etiquetas.
@@ -1091,6 +1092,7 @@ export default function DocumentosModule() {
                             onRename={() => startRename(doc)}
                             onMove={() => setMovingDoc(doc)}
                             onWhatsApp={() => setWhatsappDoc(doc)}
+                            onSign={() => setSignDoc(doc)}
                             onDownload={() => handleDownload(doc)}
                             onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
                             onDelete={() => { if (confirm(`¿Eliminar "${doc.name}"?`)) bulk("delete", [doc.id]); }}
@@ -1142,6 +1144,10 @@ export default function DocumentosModule() {
 
       {whatsappDoc && (
         <SendWhatsAppModal doc={whatsappDoc} onClose={() => setWhatsappDoc(null)} />
+      )}
+
+      {signDoc && (
+        <SendWhatsAppModal doc={signDoc} mode="sign" onClose={() => setSignDoc(null)} />
       )}
 
       {editingFolder && (
@@ -1375,8 +1381,8 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 // ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
 // la vista lista. Dropdown `position: fixed` para no quedar recortado por el
 // overflow del contenedor de la tabla. ──
-function RowActions({ onPreview, onDownload, onRename, onMove, onWhatsApp, onToggleFav, onDelete, favorite }: {
-  onPreview: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
+function RowActions({ onPreview, onDownload, onRename, onMove, onWhatsApp, onSign, onToggleFav, onDelete, favorite }: {
+  onPreview: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -1422,6 +1428,7 @@ function RowActions({ onPreview, onDownload, onRename, onMove, onWhatsApp, onTog
           {item(Pencil, "Renombrar", onRename)}
           {item(FolderInput, "Mover a carpeta", onMove)}
           {item(MessageCircle, "Enviar por WhatsApp", onWhatsApp)}
+          {item(PenLine, "Solicitar firma", onSign)}
           {item(Download, "Descargar", onDownload)}
           {item(Star, favorite ? "Quitar favorito" : "Marcar favorito", onToggleFav)}
           {item(Trash2, "Eliminar", onDelete, true)}

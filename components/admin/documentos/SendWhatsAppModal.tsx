@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MessageCircle, X, Search, User, Link2, Copy, Check, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Search, User, Link2, Copy, Check, Send, Loader2, PenLine, FileWarning } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DbDocument } from "@/lib/types/documents";
 import { createShare } from "@/hooks/use-documents";
@@ -22,30 +22,36 @@ function normalizePhone(raw: string): string {
  * 30 días) y abre WhatsApp hacia un número o contacto elegido con el mensaje + link.
  * El link same-origin evita mandar la URL firmada de Supabase (que expira en 1h).
  */
-export function SendWhatsAppModal({ doc, onClose }: { doc: DbDocument; onClose: () => void }) {
+export function SendWhatsAppModal({ doc, mode = "share", onClose }: { doc: DbDocument; mode?: "share" | "sign"; onClose: () => void }) {
+  const isSign = mode === "sign";
+  const isPdf = doc.mimeType === "application/pdf";
+  const blocked = isSign && !isPdf; // solo PDFs se pueden firmar
   const [link, setLink] = useState<string | null>(null);
-  const [creating, setCreating] = useState(true);
+  const [creating, setCreating] = useState(!blocked);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState(
-    `Hola, te comparto el documento "${doc.name}". Podés verlo o descargarlo desde este enlace:`
+    isSign
+      ? `Hola, te pido que firmes este documento "${doc.name}". Podés firmarlo desde este enlace:`
+      : `Hola, te comparto el documento "${doc.name}". Podés verlo o descargarlo desde este enlace:`
   );
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactQuery, setContactQuery] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // Crear el link de acceso público al abrir.
+  // Crear el link de acceso/firma público al abrir (salvo que esté bloqueado).
   useEffect(() => {
+    if (blocked) return;
     let alive = true;
     createShare(doc.id, { expiresInDays: 30 })
       .then((s) => {
         if (!alive) return;
-        setLink(`${window.location.origin}/d/${s.token}`);
+        setLink(`${window.location.origin}/${isSign ? "firmar" : "d"}/${s.token}`);
       })
       .catch((err) => { if (alive) setLinkError(err instanceof Error ? err.message : String(err)); })
       .finally(() => { if (alive) setCreating(false); });
     return () => { alive = false; };
-  }, [doc.id]);
+  }, [doc.id, isSign, blocked]);
 
   // Escape para cerrar.
   useEffect(() => {
@@ -110,20 +116,28 @@ export function SendWhatsAppModal({ doc, onClose }: { doc: DbDocument; onClose: 
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]">
-            <MessageCircle className="h-5 w-5" />
+            {isSign ? <PenLine className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">Enviar por WhatsApp</p>
+            <p className="text-sm font-extrabold text-[var(--text-primary)]">{isSign ? "Solicitar firma" : "Enviar por WhatsApp"}</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{doc.name}</p>
           </div>
           <button onClick={onClose} className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+          {blocked ? (
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"><FileWarning className="h-6 w-6" /></span>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Solo se pueden firmar PDFs</p>
+              <p className="max-w-xs text-xs text-[var(--text-secondary)]">Este documento no es un PDF, así que no se puede solicitar la firma. Subí una versión en PDF y volvé a intentarlo.</p>
+            </div>
+          ) : (
+          <>
           {/* Link público */}
           <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              <Link2 className="h-3.5 w-3.5" /> Enlace de acceso (30 días)
+              <Link2 className="h-3.5 w-3.5" /> {isSign ? "Enlace de firma (30 días)" : "Enlace de acceso (30 días)"}
             </div>
             {creating ? (
               <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><Loader2 className="h-4 w-4 animate-spin" /> Generando enlace…</p>
@@ -209,18 +223,22 @@ export function SendWhatsAppModal({ doc, onClose }: { doc: DbDocument; onClose: 
             />
             <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">El enlace se agrega automáticamente al final del mensaje.</p>
           </div>
+          </>
+          )}
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
-          <button onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button
-            onClick={openWhatsApp}
-            disabled={creating || !link}
-            className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"
-          >
-            <Send className="h-4 w-4" /> Abrir WhatsApp
-          </button>
+          <button onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">{blocked ? "Cerrar" : "Cancelar"}</button>
+          {!blocked && (
+            <button
+              onClick={openWhatsApp}
+              disabled={creating || !link}
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"
+            >
+              <Send className="h-4 w-4" /> Abrir WhatsApp
+            </button>
+          )}
         </div>
       </div>
     </div>

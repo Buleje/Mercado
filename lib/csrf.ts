@@ -151,6 +151,11 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // Zod safeParse, rate-limit STRICT, y solo suma números a un rollup
     // diario (sin datos sensibles ni mutación de estado de usuario).
     "/api/analytics/vitals",
+    // Firma pública de documentos por link: un tercero sin sesión firma un PDF
+    // vía token de share (+ password opcional). No tiene csrf-cookie; se protege
+    // con el token unguessable + rate-limit STRICT. El único write es POST /sign
+    // (los demás bajo el prefijo son GET, que igual no pasan por CSRF).
+    "/api/public/documents/",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;
