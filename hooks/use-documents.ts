@@ -39,7 +39,7 @@ export interface UseDocumentsResult {
   refresh: () => Promise<void>;
   upload: (files: File[], opts?: { folderId?: string | null; onProgress?: (done: number, total: number) => void }) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
-  patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; expiresAt: string | null; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
+  patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
   remove: (id: string) => Promise<void>;
   restore: (id: string) => Promise<void>;
   purge: (id: string) => Promise<void>;

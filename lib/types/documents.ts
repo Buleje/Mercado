@@ -45,6 +45,8 @@ export interface DbDocument {
   category: string;
   tags: string[];
   favorite: boolean;
+  /** Workflow: none | draft | review | approved | archived. */
+  status: string;
   expiresAt: string | null;
   customerId: string | null;
   orderId: string | null;

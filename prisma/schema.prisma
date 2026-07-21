@@ -4642,6 +4642,8 @@ model Document {
   category     String    @default("otros")
   tags         String[]  @default([])
   favorite     Boolean   @default(false)
+  // Workflow del documento: none | draft | review | approved | archived.
+  status       String    @default("none")
   expiresAt    DateTime?
 
   customerId String?
@@ -4672,6 +4674,7 @@ model Document {
   @@index([tenantId, favorite])
   @@index([tenantId, uploadedAt])
   @@index([tenantId, expiresAt]) // ADR-119 — query "por vencer"
+  @@index([tenantId, status])
 }
 
 model DocumentFolder {

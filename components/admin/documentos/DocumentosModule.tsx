@@ -99,6 +99,7 @@ function daysUntil(iso: string | null): number | null {
 export default function DocumentosModule() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "size" | "expiry">("recent");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
@@ -188,6 +189,7 @@ export default function DocumentosModule() {
       const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
       list = list.filter((d) => new Date(d.uploadedAt).getTime() > cutoff);
     }
+    if (statusFilter) list = list.filter((d) => d.status === statusFilter);
     const sorted = [...list];
     sorted.sort((a, b) => {
       switch (sortBy) {
@@ -207,7 +209,13 @@ export default function DocumentosModule() {
       }
     });
     return sorted;
-  }, [documents, filterMode, sortBy]);
+  }, [documents, filterMode, sortBy, statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    const m: Record<string, number> = { draft: 0, review: 0, approved: 0, archived: 0 };
+    for (const d of documents) if (d.status && d.status in m) m[d.status] += 1;
+    return m;
+  }, [documents]);
 
   const totalSize = useMemo(() => documents.reduce((s, d) => s + d.size, 0), [documents]);
   const favCount = useMemo(() => documents.filter((d) => d.favorite).length, [documents]);
@@ -1002,6 +1010,36 @@ export default function DocumentosModule() {
             </div>
           )}
 
+          {/* Filtro por estado (workflow) */}
+          {filterMode !== "activity" && filterMode !== "trash" && (statusFilter !== null || STATUS_ORDER.some((k) => statusCounts[k] > 0)) && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</span>
+              <button
+                onClick={() => setStatusFilter(null)}
+                className={cn("rounded-lg px-2.5 py-1 text-xs font-bold transition-colors", statusFilter === null ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-primary")}
+              >
+                Todos
+              </button>
+              {STATUS_ORDER.map((k) => {
+                const m = STATUS_META[k];
+                const n = statusCounts[k] ?? 0;
+                const active = statusFilter === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => setStatusFilter(active ? null : k)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
+                      active ? cn(m.bg, m.text, "ring-2 ring-primary") : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-primary"
+                    )}
+                  >
+                    <span className={cn("h-2 w-2 rounded-full", m.dot)} /> {m.label}{n > 0 && <span className="tabular-nums opacity-70">{n}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {filterMode === "activity" ? (
             <ActivityView />
           ) : loading && documents.length === 0 ? (
@@ -1025,6 +1063,7 @@ export default function DocumentosModule() {
                   onPreview={() => setPreview(doc)}
                   onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
                   onWhatsApp={() => setWhatsappDoc(doc)}
+                  onSetStatus={(s) => patch(doc.id, { status: s })}
                   onRemove={async () => {
                     if (!confirm(`¿Eliminar "${doc.name}"?`)) return;
                     await patch(doc.id, {}); // no-op, but ensures patch path warm
@@ -1105,7 +1144,10 @@ export default function DocumentosModule() {
                           )}
                         </td>
                         <td className="px-4 py-3 hidden sm:table-cell">
-                          <span className="text-xs text-[var(--text-secondary)] capitalize">{doc.category}</span>
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-xs text-[var(--text-secondary)] capitalize">{doc.category}</span>
+                            <StatusControl status={doc.status} onChange={(s) => patch(doc.id, { status: s })} />
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
                         <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-tertiary)]">
@@ -1258,9 +1300,89 @@ function ExpiryBadge({ expiresAt, className }: { expiresAt: string | null; class
   );
 }
 
+// ── Estados / workflow del documento ──
+const STATUS_META: Record<string, { label: string; dot: string; text: string; bg: string }> = {
+  draft: { label: "Borrador", dot: "bg-[var(--text-tertiary)]", text: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+  review: { label: "En revisión", dot: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15" },
+  approved: { label: "Aprobado", dot: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/15" },
+  archived: { label: "Archivado", dot: "bg-[var(--data-info-500)]", text: "text-[var(--data-info-700)] dark:text-[var(--data-info-500)]", bg: "bg-[var(--data-info-100)] dark:bg-[var(--data-info-500)]/15" },
+};
+const STATUS_ORDER = ["draft", "review", "approved", "archived"];
+
+// Chip de estado que además abre un dropdown (fixed) para cambiarlo. "none" = sin estado.
+function StatusControl({ status, onChange }: { status: string; onChange: (s: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) { setOpen(false); return; }
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 4, left: r.left });
+    setOpen(true);
+  };
+  const meta = STATUS_META[status];
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        title="Estado del documento"
+        className={cn(
+          "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold transition-colors",
+          meta ? cn(meta.bg, meta.text) : "border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-primary hover:text-primary"
+        )}
+      >
+        {meta ? (
+          <><span className={cn("h-2 w-2 rounded-full", meta.dot)} /> {meta.label}</>
+        ) : (
+          <><Plus className="h-2.5 w-2.5" /> estado</>
+        )}
+      </button>
+      {open && pos && (
+        <div className="fixed z-50 min-w-[160px] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, left: pos.left }} onClick={(e) => e.stopPropagation()}>
+          {STATUS_ORDER.map((k) => {
+            const m = STATUS_META[k];
+            return (
+              <button
+                key={k}
+                onClick={(e) => { e.stopPropagation(); setOpen(false); onChange(k); }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+              >
+                <span className={cn("h-2.5 w-2.5 rounded-full", m.dot)} /> {m.label}
+                {status === k && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+              </button>
+            );
+          })}
+          {status !== "none" && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpen(false); onChange("none"); }}
+              className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 py-1.5 text-sm font-medium text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            >
+              Sin estado
+            </button>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
 function DocCard({
   doc, selected, isRenaming, renameValue,
-  onSelect, onPreview, onToggleFav, onRemove, onWhatsApp,
+  onSelect, onPreview, onToggleFav, onRemove, onWhatsApp, onSetStatus,
   onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
   onDragStart, onDragEnd, dragging,
 }: {
@@ -1273,6 +1395,7 @@ function DocCard({
   onToggleFav: () => void;
   onRemove: () => void;
   onWhatsApp: () => void;
+  onSetStatus: (s: string) => void;
   onStartRename: () => void;
   onCommitRename: () => void;
   onCancelRename: () => void;
@@ -1366,7 +1489,10 @@ function DocCard({
           <span className="capitalize text-[var(--text-tertiary)]">{doc.category}</span>
           <span className="tabular-nums text-[var(--text-tertiary)]">{formatBytes(doc.size)}</span>
         </div>
-        <ExpiryBadge expiresAt={doc.expiresAt} className="mt-2" />
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <StatusControl status={doc.status} onChange={onSetStatus} />
+          <ExpiryBadge expiresAt={doc.expiresAt} />
+        </div>
         {(doc.tags.length > 0 || doc.aiTags.length > 0) && (
           <div className="flex flex-wrap gap-1 mt-2">
             {doc.tags.slice(0, 2).map((t) => (

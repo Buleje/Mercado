@@ -14,6 +14,7 @@ const PatchBody = z.object({
   category: z.string().max(40).optional(),
   tags: z.array(z.string().min(1).max(40)).max(20).optional(),
   favorite: z.boolean().optional(),
+  status: z.enum(["none", "draft", "review", "approved", "archived"]).optional(),
   expiresAt: z.string().nullable().optional(),
   // ADR-119 — vincular el documento a una entidad del negocio.
   customerId: z.string().nullable().optional(),
@@ -87,6 +88,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       category: parsed.data.category,
       tags: parsed.data.tags,
       favorite: parsed.data.favorite,
+      status: parsed.data.status,
       expiresAt: expiresAtDate,
       customerId: parsed.data.customerId,
       orderId: parsed.data.orderId,

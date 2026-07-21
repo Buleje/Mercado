@@ -59,6 +59,7 @@ function mapDoc(
     category: d.category,
     tags: d.tags,
     favorite: d.favorite,
+    status: d.status,
     expiresAt: toISO(d.expiresAt),
     customerId: d.customerId,
     orderId: d.orderId,
@@ -270,6 +271,7 @@ export class DocumentsDB {
       category?: string;
       tags?: string[];
       favorite?: boolean;
+      status?: string;
       expiresAt?: Date | null;
       customerId?: string | null;
       orderId?: string | null;
