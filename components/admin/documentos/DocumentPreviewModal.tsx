@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check,
-  PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink, ChevronLeft, ChevronRight,
+  PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink, ChevronLeft, ChevronRight, GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -257,6 +257,8 @@ function VersionsTab({
   const fileRef = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
 
   async function handleFile(f: File) {
     setUploading(true);
@@ -298,20 +300,79 @@ function VersionsTab({
       </div>
 
       <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] overflow-hidden">
-        <p className="text-sm font-bold text-[var(--text-primary)] px-4 py-3 border-b border-[var(--rule-base)]">Historial</p>
+        <div className="flex items-center justify-between border-b border-[var(--rule-base)] px-4 py-3">
+          <p className="text-sm font-bold text-[var(--text-primary)]">Historial</p>
+          {versions.length >= 2 && (
+            <button
+              onClick={() => { setCompareMode((c) => !c); setPicked([]); }}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
+                compareMode ? "bg-primary text-white" : "border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
+              )}
+            >
+              <GitCompare className="h-3.5 w-3.5" /> {compareMode ? "Salir" : "Comparar"}
+            </button>
+          )}
+        </div>
+
+        {compareMode && (
+          <div className="border-b border-[var(--rule-base)] bg-primary/5 px-4 py-3">
+            {picked.length < 2 ? (
+              <p className="text-xs text-[var(--text-secondary)]">Elegí <strong>2 versiones</strong> para comparar ({picked.length}/2).</p>
+            ) : (() => {
+              const [a, b] = picked
+                .map((id) => versions.find((v) => v.id === id))
+                .filter((v): v is DbDocumentVersion => !!v)
+                .sort((x, y) => x.versionNumber - y.versionNumber);
+              const delta = b.size - a.size;
+              return (
+                <div>
+                  <p className="mb-2 text-sm font-bold text-primary">v{a.versionNumber} → v{b.versionNumber}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[a, b].map((v) => (
+                      <div key={v.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5">
+                        <p className="text-xs font-bold text-[var(--text-primary)]">v{v.versionNumber}</p>
+                        <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">{v.changeNote ?? "Sin nota"}</p>
+                        <p className="mt-0.5 text-[length:var(--ts-2xs,11px)] tabular-nums text-[var(--text-tertiary)]">{formatBytes(v.size)} · {relativeTime(v.uploadedAt)}</p>
+                        <p className="truncate text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">por {v.uploadedById}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs font-bold text-[var(--text-secondary)]">
+                    Tamaño: {delta === 0 ? "sin cambio" : `${delta > 0 ? "+" : "−"}${formatBytes(Math.abs(delta))}`}
+                    {" · "}{b.versionNumber - a.versionNumber} versión(es) de diferencia
+                  </p>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {versions.length === 0 ? (
           <p className="text-xs text-[var(--text-tertiary)] italic px-4 py-6">Aún no hay versiones previas. Subí una nueva para crear la primera entrada.</p>
         ) : (
           <ul className="divide-y divide-[var(--rule-soft)]">
-            {versions.map((v) => (
-              <li key={v.id} className="px-4 py-3 flex items-center gap-3">
-                <span className="h-8 w-8 rounded-lg bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)] inline-flex items-center justify-center text-xs font-bold">v{v.versionNumber}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">{v.changeNote ?? "Sin nota"}</p>
-                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">{formatBytes(v.size)} · {relativeTime(v.uploadedAt)} · {v.uploadedById}</p>
-                </div>
-              </li>
-            ))}
+            {versions.map((v) => {
+              const isPicked = picked.includes(v.id);
+              return (
+                <li key={v.id} className={cn("px-4 py-3 flex items-center gap-3", compareMode && isPicked && "bg-primary/5")}>
+                  {compareMode && (
+                    <input
+                      type="checkbox"
+                      checked={isPicked}
+                      onChange={() => setPicked((p) => (p.includes(v.id) ? p.filter((x) => x !== v.id) : [...p, v.id].slice(-2)))}
+                      className="h-4 w-4 shrink-0 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                      aria-label={`Comparar v${v.versionNumber}`}
+                    />
+                  )}
+                  <span className="h-8 w-8 rounded-lg bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)] inline-flex items-center justify-center text-xs font-bold">v{v.versionNumber}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[var(--text-primary)]">{v.changeNote ?? "Sin nota"}</p>
+                    <p className="text-xs text-[var(--text-tertiary)] tabular-nums">{formatBytes(v.size)} · {relativeTime(v.uploadedAt)} · {v.uploadedById}</p>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
