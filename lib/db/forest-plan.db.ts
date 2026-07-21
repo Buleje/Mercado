@@ -482,10 +482,28 @@ export class ForestPlanDB {
       ...new Set(entries.filter((e) => e.cites && e.speciesCommon).map((e) => e.speciesCommon as string)),
     ];
 
+    // Especies con operaciones en el libro que NO figuran entre las autorizadas
+    // del plan (tala/movilización fuera del POA — infracción que cruza OSINFOR).
+    // Sólo si el plan declara especies; match case-insensitive. Sin query extra:
+    // reusa `entries` + `speciesRows` ya cargados. T7 ya frena el despacho; esto
+    // surfacea además la tala/trozado de una especie fuera del plan en el informe.
+    const autorizadasSet = new Set(speciesRows.map((s) => s.speciesCommon.trim().toLowerCase()));
+    const especiesNoAutorizadas =
+      speciesRows.length > 0
+        ? [
+            ...new Set(
+              entries
+                .map((e) => e.speciesCommon?.trim())
+                .filter((s): s is string => !!s)
+                .filter((s) => !autorizadasSet.has(s.toLowerCase())),
+            ),
+          ]
+        : [];
+
     return {
       hasPlan: !!plan,
       plan: plan ? { id: plan.id, planNumber: plan.planNumber ?? null, titularName: plan.titularName, estado: plan.estado, vigenciaHasta: plan.vigenciaHasta, costos } : null,
-      aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies,
+      aprovechamiento, balance, anomalias, projection, lateCount, costeo, citesEspecies, especiesNoAutorizadas,
     };
   }
 

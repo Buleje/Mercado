@@ -33,6 +33,7 @@ interface Analytics {
   };
   balance: { rows: BalanceRow[]; pagoDerechoTotal: number; valorTotal: number } | null;
   anomalias: { level: "error" | "warn"; message: string }[];
+  especiesNoAutorizadas?: string[];
 }
 interface Caratula {
   titularName?: string | null;
@@ -109,6 +110,15 @@ export async function printLothInforme(): Promise<void> {
       <p class="muted">Volúmenes en m³. Pago por derecho de aprovechamiento estimado: S/ ${n2(analytics.balance.pagoDerechoTotal)}.</p>`
     : `<p class="muted">El plan de manejo no declara volúmenes autorizados por especie — sin balance de saldo.</p>`;
 
+  // Cruce de control: especies con operaciones fuera del plan autorizado (POA).
+  const noAut = analytics.especiesNoAutorizadas ?? [];
+  const noAutBlock =
+    noAut.length > 0
+      ? `<p class="flag"><b>⚠ Especie(s) con operaciones fuera del plan autorizado:</b> ${noAut.map(esc).join(", ")}.
+         Movilizar o aprovechar una especie no incluida en la resolución del título habilitante es infracción —
+         regularizá el plan de manejo o el registro.</p>`
+      : "";
+
   const errores = analytics.anomalias.filter((a) => a.level === "error");
   const warns = analytics.anomalias.filter((a) => a.level === "warn");
   const cumplimiento =
@@ -133,6 +143,7 @@ export async function printLothInforme(): Promise<void> {
     ul.anom li{margin:3px 0}
     ul.anom li.error{color:#842029}
     ul.anom li.warn{color:#8a5a00}
+    .flag{color:#842029;background:#f8d7da;border:1px solid #f1aeb5;border-radius:8px;padding:10px 12px;font-size:12px}
   `;
 
   const body = `
@@ -144,6 +155,7 @@ export async function printLothInforme(): Promise<void> {
     <h2>Balance por especie (movilizado vs. autorizado)</h2>
     ${balanceTable}
     <h2>Estado de cumplimiento</h2>
+    ${noAutBlock}
     ${cumplimiento}
     ${footer}
   `;

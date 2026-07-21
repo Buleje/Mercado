@@ -130,6 +130,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   }
   const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
+  // Especies autorizadas del plan (normalizadas) — para avisar en vivo si la
+  // especie elegida cae fuera del POA antes de que T7 rechace el despacho/GTF.
+  const [authorizedSpecies, setAuthorizedSpecies] = useState<Set<string>>(new Set());
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loadingSrc, setLoadingSrc] = useState(false);
   const [srcQuery, setSrcQuery] = useState("");
@@ -178,6 +181,21 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     finally { setLoadingSrc(false); }
   }, [section]);
   useEffect(() => { loadSources(planId); }, [planId, loadSources]);
+
+  // Cargar las especies autorizadas del plan seleccionado (para el aviso en vivo).
+  useEffect(() => {
+    if (!planId) { setAuthorizedSpecies(new Set()); return; }
+    let cancel = false;
+    fetch(`/api/admin/forestal/plan?planId=${planId}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancel) return;
+        const rows = (j?.species ?? []) as Array<{ speciesCommon: string }>;
+        setAuthorizedSpecies(new Set(rows.map((s) => s.speciesCommon.trim().toLowerCase())));
+      })
+      .catch(() => { /* best-effort: sin lista, no se muestra el aviso */ });
+    return () => { cancel = true; };
+  }, [planId]);
 
   function applySpecies(common: string | null) {
     if (!common) return;
@@ -269,6 +287,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   const selected = speciesOptions.find((s) => s.slug === speciesSlug);
   const isCustom = speciesSlug === "otro";
   const speciesName = isCustom ? customSpecies.trim() : selected?.commonName ?? "";
+  // La especie elegida no figura entre las autorizadas del plan → aviso proactivo
+  // (T7 la rechazaría al despachar / al emitir la GTF).
+  const speciesFueraDelPlan =
+    speciesName.trim().length > 0 &&
+    authorizedSpecies.size > 0 &&
+    !authorizedSpecies.has(speciesName.trim().toLowerCase());
   const matched = isCustom ? findSpeciesByCommonName(customSpecies) : null;
   const scientific = isCustom ? matched?.scientificName ?? null : selected?.scientificName ?? null;
   const cites = isCustom ? matched?.cites ?? false : selected?.cites ?? false;
@@ -498,6 +522,16 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>{error}</div>
+            </div>
+          )}
+
+          {speciesFueraDelPlan && (
+            <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-4 py-3 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] sm:col-span-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <b>&ldquo;{speciesName}&rdquo; no está autorizada en el plan de manejo.</b> No vas a poder
+                despacharla ni emitir la GTF hasta agregarla en <b>Plan de Manejo · Especies autorizadas</b>.
+              </div>
             </div>
           )}
 
