@@ -155,7 +155,7 @@ export function OnboardingTour({
   const targetSelector = `[data-tour-tab="${step.tabId}"]`;
 
   return (
-    <TourSpotlight targetSelector={targetSelector}>
+    <TourSpotlight targetSelector={targetSelector} onMissingTarget={onSkip}>
       <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-[var(--rule-base)] overflow-hidden">
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
