@@ -1,72 +1,59 @@
 "use client";
 
 /**
- * LothTraceView — Vista de trazabilidad del LO-TH (ADR-125).
+ * LothTraceView — trazabilidad del Libro TH (ADR-125), rediseñada: la operación
+ * completa de cada árbol (tala → … → despacho) con un resumen "de un vistazo",
+ * búsqueda + filtros + orden, y tarjetas colapsables con métricas por árbol
+ * (rendimiento, embudo, estado de cadena, alertas) + pasaporte imprimible.
  *
- * Muestra la operación COMPLETA de cada árbol en una sola pantalla:
- * Tala → Trozado → Despacho de trozas → Consumo → Producto terminado →
- * Despacho de producto terminado, como un timeline vertical.
- *
- * Enlaces de trazabilidad:
- *  - Tala / Trozado: por `treeCode`.
- *  - Despacho de trozas / Consumo: por `trozaCode` que pertenece al árbol.
- *  - Producto / Despacho PT: por especie (no hay código de árbol en SERFOR
- *    para productos; un lote puede mezclar árboles) — se marca como "por especie".
+ * La inteligencia por árbol vive en `loth-trace` (pura); la tarjeta en
+ * `LothTraceCard`.
  */
 
-import { TreePine, ChevronRight, MapPin, ExternalLink } from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { Search, TreePine, TrendingUp, AlertTriangle, CheckCircle2, MapPin } from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
+import { buildTraceOperations, buildTraceSummary, type TraceOperation } from "@/lib/forestal/loth-trace";
+import LothTraceCard from "./LothTraceCard";
 
-const num = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
-const sum = (rows: LothEntryDTO[], key: "volumeM3" | "quantity") =>
-  rows.reduce((a, r) => a + Number(r[key] ?? 0), 0);
-
-interface Operation {
-  tree: string;
-  species: string | null;
-  scientific: string | null;
-  cites: boolean;
-  tala: LothEntryDTO[];
-  trozado: LothEntryDTO[];
-  despachoTroza: LothEntryDTO[];
-  consumo: LothEntryDTO[];
-  producto: LothEntryDTO[];
-  despachoPT: LothEntryDTO[];
+interface Caratula {
+  titularName?: string | null;
+  tituloHabilitante?: string | null;
+  registroNumber?: string | null;
+  tomo?: string | null;
 }
 
-function buildOperations(entries: LothEntryDTO[]): Operation[] {
-  const reg = entries.filter((e) => e.status !== "anulado");
-  const trees = Array.from(
-    new Set(reg.filter((e) => e.section === "tala" && e.treeCode).map((e) => e.treeCode as string)),
-  );
+type Filter = "todas" | "completa" | "alertas" | "cites";
+type Sort = "volumen" | "rendimiento" | "codigo" | "etapas";
 
-  return trees.map((tree) => {
-    const tala = reg.filter((e) => e.section === "tala" && e.treeCode === tree);
-    const trozado = reg.filter((e) => e.section === "trozado" && e.treeCode === tree);
-    const trozaCodes = new Set(trozado.map((t) => t.trozaCode).filter(Boolean));
-    const belongs = (c: string | null) =>
-      !!c && (trozaCodes.has(c) || c.startsWith(`${tree}-`) || c === tree);
-    const species = tala[0]?.speciesCommon ?? trozado[0]?.speciesCommon ?? null;
-    return {
-      tree,
-      species,
-      scientific: tala[0]?.speciesScientific ?? trozado[0]?.speciesScientific ?? null,
-      cites: tala[0]?.cites ?? false,
-      tala,
-      trozado,
-      despachoTroza: reg.filter((e) => e.section === "despacho_troza" && belongs(e.trozaCode)),
-      consumo: reg.filter((e) => e.section === "consumo_troza" && belongs(e.trozaCode)),
-      // Producto/despacho PT: atribuir por la TROZA de origen (link explícito), no
-      // por especie — si no, el mismo producto aparecía bajo dos árboles de la misma
-      // especie. Fallback a especie solo para líneas viejas sin trozaCode.
-      producto: reg.filter((e) => e.section === "producto_terminado" && (e.trozaCode ? belongs(e.trozaCode) : !!species && e.speciesCommon === species)),
-      despachoPT: reg.filter((e) => e.section === "despacho_producto" && (e.trozaCode ? belongs(e.trozaCode) : !!species && e.speciesCommon === species)),
-    };
-  });
-}
+const SORTERS: Record<Sort, (a: TraceOperation, b: TraceOperation) => number> = {
+  volumen: (a, b) => b.talaVolM3 - a.talaVolM3,
+  rendimiento: (a, b) => b.rendimientoPct - a.rendimientoPct,
+  codigo: (a, b) => a.tree.localeCompare(b.tree, "es", { numeric: true }),
+  etapas: (a, b) => b.stagesReached - a.stagesReached,
+};
 
-export default function LothTraceView({ entries }: { entries: LothEntryDTO[] }) {
-  const ops = buildOperations(entries);
+export default function LothTraceView({ entries, caratula }: { entries: LothEntryDTO[]; caratula?: Caratula | null }) {
+  const ops = useMemo(() => buildTraceOperations(entries), [entries]);
+  const summary = useMemo(() => buildTraceSummary(ops), [ops]);
+
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<Filter>("todas");
+  const [sort, setSort] = useState<Sort>("volumen");
+
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return ops
+      .filter((o) => {
+        if (filter === "completa" && o.chain !== "completa") return false;
+        if (filter === "alertas" && o.alerts.length === 0) return false;
+        if (filter === "cites" && !o.cites) return false;
+        if (q && !o.tree.toLowerCase().includes(q) && !(o.species ?? "").toLowerCase().includes(q)) return false;
+        return true;
+      })
+      .sort(SORTERS[sort]);
+  }, [ops, search, filter, sort]);
 
   if (ops.length === 0) {
     return (
@@ -78,225 +65,83 @@ export default function LothTraceView({ entries }: { entries: LothEntryDTO[] }) 
     );
   }
 
-  return (
-    <div className="space-y-5">
-      {ops.map((op) => (
-        <OperationCard key={op.tree} op={op} />
-      ))}
-    </div>
-  );
-}
-
-function OperationCard({ op }: { op: Operation }) {
-  const talaVol = sum(op.tala, "volumeM3");
-  const trozVol = sum(op.trozado, "volumeM3");
-  const consVol = sum(op.consumo, "volumeM3");
-
-  const stages = [
-    {
-      n: 1,
-      title: "Tala",
-      done: op.tala.length > 0,
-      body:
-        op.tala.length > 0 ? (
-          <div>
-            <span>
-              <Code>{op.tree}</Code> · Ø {num(op.tala[0].diamMayorM, 2)}/{num(op.tala[0].diamMenorM, 2)} m · L {num(op.tala[0].lengthM, 2)} m ·{" "}
-              <Vol>{talaVol.toFixed(4)} m³</Vol>
-            </span>
-            <GpsPhotoEvidence entry={op.tala[0]} />
-          </div>
-        ) : null,
-    },
-    {
-      n: 2,
-      title: "Trozado",
-      done: op.trozado.length > 0,
-      body:
-        op.trozado.length > 0 ? (
-          <div className="space-y-1">
-            <div className="text-[var(--text-tertiary)]">{op.trozado.length} trozas · <Vol>{trozVol.toFixed(4)} m³</Vol></div>
-            <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-              {op.trozado.map((t) => (
-                <div key={t.id}>
-                  <span>
-                    <Code>{t.trozaCode}</Code> <span className="font-mono tabular-nums text-[var(--text-secondary)]">{num(t.volumeM3)}</span>
-                    {t.isRama && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(rama)</span>}
-                  </span>
-                  <GpsPhotoEvidence entry={t} />
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null,
-    },
-    {
-      n: 3,
-      title: "Despacho de trozas",
-      done: op.despachoTroza.length > 0,
-      body:
-        op.despachoTroza.length > 0 ? (
-          <span>
-            {op.despachoTroza.map((d) => <Code key={d.id} className="mr-1.5">{d.trozaCode}</Code>)}
-            {" → "}
-            {Array.from(new Set(op.despachoTroza.map((d) => d.gtfNumber).filter(Boolean))).map((g) => (
-              <Gtf key={g}>{g}</Gtf>
-            ))}
-          </span>
-        ) : null,
-    },
-    {
-      n: 4,
-      title: "Consumo de trozas",
-      done: op.consumo.length > 0,
-      body:
-        op.consumo.length > 0 ? (
-          <span>
-            {op.consumo.map((c) => (
-              <span key={c.id} className="mr-3">
-                <Code>{c.trozaCode}</Code> <span className="font-mono tabular-nums text-[var(--text-secondary)]">{num(c.volumeM3)}</span>
-              </span>
-            ))}
-            <span className="text-[var(--text-tertiary)]">· <Vol>{consVol.toFixed(4)} m³</Vol> al aserrío</span>
-          </span>
-        ) : null,
-    },
-    {
-      n: 5,
-      title: "Producto terminado",
-      hint: "por especie",
-      done: op.producto.length > 0,
-      body:
-        op.producto.length > 0 ? (
-          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-            {op.producto.map((p) => (
-              <span key={p.id}>
-                <span className="font-medium text-[var(--text-primary)]">{p.productType}</span>{" "}
-                <span className="font-mono tabular-nums text-[var(--text-secondary)]">{num(p.quantity)} {unit(p.unit)}</span>
-              </span>
-            ))}
-          </div>
-        ) : null,
-    },
-    {
-      n: 6,
-      title: "Despacho de producto terminado",
-      hint: "por especie",
-      done: op.despachoPT.length > 0,
-      body:
-        op.despachoPT.length > 0 ? (
-          <div className="space-y-0.5">
-            {op.despachoPT.map((d) => (
-              <span key={d.id} className="block">
-                <Gtf>{d.gtfNumber}</Gtf> · <span className="font-medium text-[var(--text-primary)]">{d.productType}</span> ·{" "}
-                {d.pieces != null && <span className="text-[var(--text-secondary)]">{d.pieces} pzas · </span>}
-                <span className="font-mono tabular-nums text-[var(--text-secondary)]">{num(d.quantity)} {unit(d.unit)}</span>
-              </span>
-            ))}
-          </div>
-        ) : null,
-    },
+  const chips: { key: Filter; label: string; count: number }[] = [
+    { key: "todas", label: "Todas", count: summary.totalTrees },
+    { key: "completa", label: "Cadena completa", count: summary.completas },
+    { key: "alertas", label: "Con alertas", count: summary.conAlertas },
+    { key: "cites", label: "CITES", count: summary.citesCount },
   ];
 
   return (
-    <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      {/* Header de la operación */}
-      <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-4">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--data-success-100)] text-[var(--data-success-700)]">
-          <TreePine className="h-5 w-5" strokeWidth={1.75} />
-        </span>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Operación · Árbol</span>
-            <Code className="text-sm">{op.tree}</Code>
-            {op.cites && <span className="rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-base font-bold text-[var(--text-primary)]">{op.species ?? "—"}</span>
-            {op.scientific && <span className="text-xs italic text-[var(--text-tertiary)]">{op.scientific}</span>}
-          </div>
-        </div>
+    <div className="space-y-5">
+      {/* Resumen del aprovechamiento */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Árboles trazados" value={summary.totalTrees.toString()} subValue={`${summary.conGps} con GPS`} icon={TreePine} emphasis="neutral" />
+        <StatCard label="Volumen talado" value={`${summary.talaVolM3.toFixed(2)} m³`} subValue={`trozado ${summary.trozadoVolM3.toFixed(2)} m³`} icon={TreePine} emphasis="success" />
+        <StatCard label="Rendimiento global" value={`${summary.rendimientoGlobalPct}%`} subValue="trozado / talado" icon={TrendingUp} emphasis={summary.rendimientoGlobalPct >= 60 ? "success" : "warning"} />
+        <StatCard
+          label="Cadenas completas"
+          value={`${summary.completas}/${summary.totalTrees}`}
+          subValue={summary.conAlertas > 0 ? `${summary.conAlertas} con alertas` : "sin alertas"}
+          icon={summary.conAlertas > 0 ? AlertTriangle : CheckCircle2}
+          emphasis={summary.conAlertas > 0 ? "error" : "success"}
+        />
       </div>
 
-      {/* Timeline de las 6 etapas */}
-      <ol className="px-5 py-4">
-        {stages.map((s, i) => (
-          <li key={s.n} className="relative flex gap-3 pb-4 last:pb-0">
-            {/* línea conectora */}
-            {i < stages.length - 1 && (
-              <span className={`absolute left-[13px] top-7 bottom-0 w-px ${s.done ? "bg-[var(--data-success-500)]" : "bg-[var(--rule-soft)]"}`} />
-            )}
-            {/* número */}
-            <span
-              className={`relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold tabular-nums ${
-                s.done
-                  ? "bg-[var(--data-success-600)] text-white"
-                  : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]"
+      {/* Buscar + filtros + orden */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por código de árbol o especie..."
+            className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
+          />
+        </div>
+        <label className="flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
+          <span className="text-[var(--text-tertiary)]">Ordenar</span>
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="bg-transparent font-bold text-[var(--text-primary)] outline-none">
+            <option value="volumen">Mayor volumen</option>
+            <option value="rendimiento">Mayor rendimiento</option>
+            <option value="etapas">Más avanzada</option>
+            <option value="codigo">Código</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {chips.map((c) => {
+          const active = filter === c.key;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setFilter(c.key)}
+              className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-1.5 text-sm font-bold transition ${
+                active ? "border-[var(--data-success-600)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
               }`}
             >
-              {s.n}
-            </span>
-            {/* contenido */}
-            <div className="min-w-0 flex-1 pt-0.5">
-              <div className="flex items-center gap-2">
-                <span className={`text-sm font-bold ${s.done ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}>{s.title}</span>
-                {s.hint && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">· {s.hint}</span>}
-              </div>
-              <div className="mt-0.5 text-sm text-[var(--text-secondary)]">
-                {s.done ? s.body : <span className="text-[var(--text-tertiary)]">— sin registros</span>}
-              </div>
-            </div>
-            <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-[var(--rule-base)]" />
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
+              {c.label}
+              <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{c.count}</span>
+            </button>
+          );
+        })}
+      </div>
 
-// ─── átomos ──────────────────────────────────────────────────────────────
-function Code({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <span className={`font-mono font-bold text-[var(--text-primary)] ${className ?? ""}`}>{children}</span>;
-}
-function Vol({ children }: { children: React.ReactNode }) {
-  return <span className="font-mono font-bold tabular-nums text-[var(--data-success-700)]">{children}</span>;
-}
-function Gtf({ children }: { children: React.ReactNode }) {
-  return <span className="font-mono font-bold text-[var(--text-primary)]">{children}</span>;
-}
-function unit(u: string | null) {
-  return u === "m3" ? "m³" : u === "kg" ? "Kg" : u === "unidad" ? "u" : (u ?? "");
-}
-
-/** Muestra pin GPS con link a OpenStreetMap y/o thumbnail de foto si existen. */
-function GpsPhotoEvidence({ entry }: { entry: LothEntryDTO }) {
-  const hasGps = entry.gpsLat != null && entry.gpsLng != null;
-  const lat = hasGps ? Number(entry.gpsLat) : null;
-  const lng = hasGps ? Number(entry.gpsLng) : null;
-  if (!hasGps && !entry.photoUrl) return null;
-  return (
-    <div className="mt-1.5 flex flex-wrap items-center gap-3">
-      {hasGps && lat != null && lng != null && (
-        <a
-          href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--data-success-50)] px-2 py-0.5 text-xs font-medium text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-100)]"
-        >
-          <MapPin className="h-3 w-3 shrink-0" />
-          <span className="font-mono tabular-nums">{lat.toFixed(5)}, {lng.toFixed(5)}</span>
-          <ExternalLink className="h-3 w-3 shrink-0" />
-        </a>
-      )}
-      {entry.photoUrl && (
-        <a href={entry.photoUrl} target="_blank" rel="noopener noreferrer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={entry.photoUrl}
-            alt="Foto de evidencia de campo"
-            className="h-16 w-auto rounded-lg border border-[var(--rule-base)] object-cover transition-opacity hover:opacity-80"
-          />
-        </a>
+      {/* Lista de árboles */}
+      {shown.length === 0 ? (
+        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-10 text-center text-sm text-[var(--text-tertiary)]">
+          <MapPin className="mx-auto mb-2 h-6 w-6 opacity-40" />
+          Ningún árbol coincide con el filtro. Probá con otro término o quitá los filtros.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {shown.map((op) => (
+            <LothTraceCard key={op.tree} op={op} caratula={caratula} />
+          ))}
+        </div>
       )}
     </div>
   );

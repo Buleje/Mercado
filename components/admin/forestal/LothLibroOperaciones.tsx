@@ -484,7 +484,7 @@ export default function LothLibroOperaciones() {
               <p className="mt-2 text-sm">Cargando trazabilidad...</p>
             </div>
           ) : (
-            <LothTraceView entries={allEntries} />
+            <LothTraceView entries={allEntries} caratula={caratula} />
           )}
         </>
       )}
