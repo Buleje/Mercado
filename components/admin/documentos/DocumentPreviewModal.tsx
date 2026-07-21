@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check,
-  PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink,
+  PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -20,6 +20,10 @@ interface Props {
   docId: string;
   onClose: () => void;
   onRefresh?: () => void;
+  /** Navegación entre documentos de la lista (undefined en los extremos). */
+  onPrev?: () => void;
+  onNext?: () => void;
+  position?: { current: number; total: number };
 }
 
 function formatBytes(b: number): string {
@@ -39,7 +43,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
+export function DocumentPreviewModal({ docId, onClose, onRefresh, onPrev, onNext, position }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -48,10 +52,17 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      // No navegar entre documentos si el usuario está escribiendo en un campo.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key === "ArrowLeft") onPrev?.();
+      else if (e.key === "ArrowRight") onNext?.();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, onPrev, onNext]);
 
   useEffect(() => {
     let mounted = true;
@@ -113,6 +124,29 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {(onPrev || onNext) && (
+              <div className="mr-1 flex items-center gap-1">
+                <button
+                  onClick={onPrev}
+                  disabled={!onPrev}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Documento anterior (←)"
+                  aria-label="Documento anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {position && <span className="text-xs font-bold tabular-nums text-[var(--text-tertiary)] min-w-[52px] text-center">{position.current} / {position.total}</span>}
+                <button
+                  onClick={onNext}
+                  disabled={!onNext}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Documento siguiente (→)"
+                  aria-label="Documento siguiente"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             {(isPdf || isImage || isVideo) && (
               <a
                 href={rawUrl}

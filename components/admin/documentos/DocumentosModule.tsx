@@ -23,7 +23,7 @@ import {
   Upload, Search, Grid3x3, List, FolderArchive, FileText, Image as ImageIcon,
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
-  Camera, AlarmClock, Wand2, Tag, RotateCcw,
+  Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -104,6 +104,7 @@ export default function DocumentosModule() {
   const [newFolderName, setNewFolderName] = useState("");
   const [bulkTagValue, setBulkTagValue] = useState("");
   const [expiryBannerDismissed, setExpiryBannerDismissed] = useState(false);
+  const [zipping, setZipping] = useState(false);
   // Drag & drop de documentos hacia carpetas de la barra lateral.
   const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
@@ -278,6 +279,45 @@ export default function DocumentosModule() {
     setBulkTagValue("");
     clearSelection();
   };
+  // Descarga en lote como ZIP (client-side con jszip): baja cada archivo del
+  // proxy /raw y los empaqueta. Evita nombres duplicados con un sufijo (n).
+  const bulkDownloadZip = async () => {
+    if (selectedIds.size === 0 || zipping) return;
+    setZipping(true);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      const seen = new Map<string, number>();
+      for (const id of Array.from(selectedIds)) {
+        const doc = documents.find((d) => d.id === id);
+        if (!doc) continue;
+        const res = await fetch(`/api/admin/documents/${id}/raw`, { credentials: "include" });
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        let name = doc.name || `documento-${id}`;
+        const dup = seen.get(name) ?? 0;
+        seen.set(name, dup + 1);
+        if (dup > 0) {
+          const dot = name.lastIndexOf(".");
+          name = dot > 0 ? `${name.slice(0, dot)} (${dup})${name.slice(dot)}` : `${name} (${dup})`;
+        }
+        zip.file(name, blob);
+      }
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `documentos-${selectedIds.size}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      clearSelection();
+    } finally {
+      setZipping(false);
+    }
+  };
+
   // Mover UN documento a una carpeta al soltarlo (drag & drop).
   const dropDocOnFolder = async (docId: string, folderId: string | null) => {
     setDragOverFolderId(null);
@@ -673,6 +713,9 @@ export default function DocumentosModule() {
                 {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
                 <option value="__none__">Sin carpeta</option>
               </select>
+              <button onClick={bulkDownloadZip} disabled={zipping} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-60">
+                <FileArchive className="h-3 w-3" /> {zipping ? "Comprimiendo…" : "ZIP"}
+              </button>
               <div className="inline-flex items-center gap-1 rounded-md bg-white/20 px-2">
                 <Tag className="h-3 w-3 shrink-0" />
                 <input
@@ -785,14 +828,13 @@ export default function DocumentosModule() {
                           {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <div className="inline-flex items-center gap-1">
-                            <button onClick={() => setPreview(doc)} className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary text-[var(--text-tertiary)] transition-colors" title="Ver"><Eye className="h-4 w-4" /></button>
-                            <button onClick={() => handleDownload(doc)} className="p-1.5 rounded-md hover:bg-blue-50 hover:text-blue-600 text-[var(--text-tertiary)] transition-colors" title="Descargar"><Download className="h-4 w-4" /></button>
-                            <button onClick={() => patch(doc.id, { favorite: !doc.favorite })} className="p-1.5 rounded-md hover:bg-amber-50 hover:text-amber-500 text-[var(--text-tertiary)] transition-colors" title="Favorito">
-                              <Star className={cn("h-4 w-4", doc.favorite && "fill-amber-400 text-amber-400")} />
-                            </button>
-                            <button onClick={() => bulk("delete", [doc.id])} className="p-1.5 rounded-md hover:bg-red-50 hover:text-red-500 text-[var(--text-tertiary)] transition-colors" title="Eliminar"><Trash2 className="h-4 w-4" /></button>
-                          </div>
+                          <RowActions
+                            favorite={!!doc.favorite}
+                            onPreview={() => setPreview(doc)}
+                            onDownload={() => handleDownload(doc)}
+                            onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
+                            onDelete={() => { if (confirm(`¿Eliminar "${doc.name}"?`)) bulk("delete", [doc.id]); }}
+                          />
                         </td>
                       </tr>
                     );
@@ -805,13 +847,19 @@ export default function DocumentosModule() {
       </div>
 
       {/* Modals */}
-      {preview && (
-        <DocumentPreviewModal
-          docId={preview.id}
-          onClose={() => setPreview(null)}
-          onRefresh={refresh}
-        />
-      )}
+      {preview && (() => {
+        const idx = displayDocs.findIndex((d) => d.id === preview.id);
+        return (
+          <DocumentPreviewModal
+            docId={preview.id}
+            onClose={() => setPreview(null)}
+            onRefresh={refresh}
+            onPrev={idx > 0 ? () => setPreview(displayDocs[idx - 1]) : undefined}
+            onNext={idx >= 0 && idx < displayDocs.length - 1 ? () => setPreview(displayDocs[idx + 1]) : undefined}
+            position={idx >= 0 ? { current: idx + 1, total: displayDocs.length } : undefined}
+          />
+        );
+      })()}
 
       {showTemplates && (
         <TemplateGenerator
@@ -1032,6 +1080,62 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
         <Upload className="h-4 w-4" /> Subir archivos
       </button>
     </div>
+  );
+}
+
+// ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
+// la vista lista. Dropdown `position: fixed` para no quedar recortado por el
+// overflow del contenedor de la tabla. ──
+function RowActions({ onPreview, onDownload, onToggleFav, onDelete, favorite }: {
+  onPreview: () => void; onDownload: () => void; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (open) { setOpen(false); return; }
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    setOpen(true);
+  };
+  const item = (Icon: typeof Eye, label: string, onClick: () => void, danger?: boolean) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); setOpen(false); onClick(); }}
+      className={cn(
+        "flex w-full items-center gap-2 px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--surface-sunken)]",
+        danger ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-secondary)]"
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" /> {label}
+    </button>
+  );
+  return (
+    <>
+      <button ref={btnRef} onClick={toggle} className="p-1.5 rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)]" title="Acciones" aria-label="Acciones del documento">
+        <MoreVertical className="h-4 w-4" />
+      </button>
+      {open && pos && (
+        <div className="fixed z-50 min-w-[170px] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, right: pos.right }} onClick={(e) => e.stopPropagation()}>
+          {item(Eye, "Ver", onPreview)}
+          {item(Download, "Descargar", onDownload)}
+          {item(Star, favorite ? "Quitar favorito" : "Marcar favorito", onToggleFav)}
+          {item(Trash2, "Eliminar", onDelete, true)}
+        </div>
+      )}
+    </>
   );
 }
 
