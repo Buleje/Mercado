@@ -75,6 +75,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
   const [anomalias, setAnomalias] = useState<LothAnomaly[] | null>(null);
   const [caratula, setCaratula] = useState<FullCaratula | null>(null);
   const [citesEspecies, setCitesEspecies] = useState<string[]>([]);
+  const [especiesNoAutorizadas, setEspeciesNoAutorizadas] = useState<string[]>([]);
   const [citesPermisos, setCitesPermisos] = useState<LothCitesPermiso[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +97,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
       const analytics = (await aRes.json()).analytics;
       setAnomalias(analytics?.anomalias ?? []);
       setCitesEspecies(analytics?.citesEspecies ?? []);
+      setEspeciesNoAutorizadas(analytics?.especiesNoAutorizadas ?? []);
       if (cRes.ok) setCaratula((await cRes.json()).active ?? null);
       if (xRes.ok) setCitesPermisos((await xRes.json()).catalogo?.permisos ?? []);
     } catch (err) {
@@ -125,7 +127,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
   }
 
   const citesSinPermiso = citesEspecies.filter((sp) => !permisoParaEspecie({ permisos: citesPermisos }, sp));
-  const result = computeLothCompliance({ anomalias: anomalias ?? [], caratula, totalLineas, citesSinPermiso });
+  const result = computeLothCompliance({ anomalias: anomalias ?? [], caratula, totalLineas, citesSinPermiso, especiesNoAutorizadas });
   const { problemas, enOrden, bloqueos, advertencias, readiness, breakdown, tone, score } = result;
   const totalRestado = breakdown.reduce((a, d) => a + d.puntos, 0);
 

@@ -36,6 +36,21 @@ describe("computeLothCompliance", () => {
     expect(r.problemas[0].description).toContain("Caoba");
   });
 
+  it("especie fuera del plan autorizado → bloqueo que resta 40 (infracción OSINFOR)", () => {
+    const r = computeLothCompliance({
+      anomalias: [],
+      caratula: CARATULA_OK,
+      totalLineas: 5,
+      especiesNoAutorizadas: ["Misa"],
+    });
+    expect(r.score).toBe(60); // 100 − 40
+    expect(r.bloqueos).toBe(1);
+    expect(r.readiness).toBe("error");
+    expect(r.problemas[0].key).toBe("especieNoAutorizada");
+    expect(r.problemas[0].description).toContain("Misa");
+    expect(r.breakdown.some((b) => b.key === "especieNoAutorizada" && b.puntos === 40)).toBe(true);
+  });
+
   it("solo advertencias (fuera de plazo + saldo bajo) → warning, no bloquea", () => {
     const anomalias: LothAnomaly[] = [
       { level: "warn", code: "fuera_de_plazo", message: "2 línea(s) fuera del plazo de 15 días." },

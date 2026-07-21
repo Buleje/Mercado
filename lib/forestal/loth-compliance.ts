@@ -36,6 +36,8 @@ export interface LothComplianceInput {
   totalLineas: number;
   /** Especies CITES del libro SIN permiso en el catálogo (informativo, NO resta score). */
   citesSinPermiso?: string[];
+  /** Especies con operaciones en el libro que NO figuran en el POA (infracción, SÍ resta). */
+  especiesNoAutorizadas?: string[];
 }
 
 export interface LothCheck {
@@ -88,6 +90,7 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
     !input.caratula || !input.caratula.titularName?.trim() || !input.caratula.tituloHabilitante?.trim();
 
   const citesSinPermiso = input.citesSinPermiso ?? [];
+  const especiesNoAutorizadas = input.especiesNoAutorizadas ?? [];
 
   const checks: LothCheck[] = [
     {
@@ -117,6 +120,21 @@ export function computeLothCompliance(input: LothComplianceInput): LothComplianc
       action: "Revisá el Balance por especie y frená la movilización de la especie excedida.",
       navTarget: "analitica",
       navigateLabel: "Ver analítica",
+    },
+    {
+      key: "especieNoAutorizada",
+      count: especiesNoAutorizadas.length,
+      severity: "error",
+      penalty: 40,
+      title: `${especiesNoAutorizadas.length} ${plural(especiesNoAutorizadas.length, "especie fuera del plan", "especies fuera del plan")} autorizado`,
+      okTitle: "Todas las especies del libro están autorizadas",
+      description:
+        especiesNoAutorizadas.length > 0
+          ? `Especies con operaciones en el libro fuera del POA: ${listar(especiesNoAutorizadas)}. Aprovechar una especie que no figura en la resolución del título habilitante es infracción.`
+          : "Todas las especies con operaciones figuran en el plan de manejo autorizado.",
+      action: "Agregá la especie en Plan de Manejo · Especies autorizadas, o corregí el registro.",
+      navTarget: "plan",
+      navigateLabel: "Ver plan de manejo",
     },
     {
       key: "rendAserrio",
