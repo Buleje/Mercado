@@ -24,6 +24,7 @@ import {
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -81,6 +82,84 @@ function daysUntil(iso: string | null): number | null {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Árbol de carpetas (subcarpetas anidadas)
+// La API devuelve carpetas planas con `parentId`; el árbol se arma en cliente.
+// ─────────────────────────────────────────────────────────────────
+
+type FolderRow = { folder: DbDocumentFolder; depth: number; hasChildren: boolean };
+
+/** Agrupa carpetas por parentId (clave null = raíces), cada grupo ordenado A–Z. */
+function buildChildrenMap(folders: DbDocumentFolder[]): Map<string | null, DbDocumentFolder[]> {
+  const map = new Map<string | null, DbDocumentFolder[]>();
+  for (const f of folders) {
+    const key = f.parentId ?? null;
+    const arr = map.get(key);
+    if (arr) arr.push(f);
+    else map.set(key, [f]);
+  }
+  for (const arr of map.values()) {
+    arr.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
+  }
+  return map;
+}
+
+/** DFS que respeta el set de carpetas expandidas → filas visibles ordenadas. */
+function flattenVisible(
+  childrenMap: Map<string | null, DbDocumentFolder[]>,
+  expanded: Set<string>
+): FolderRow[] {
+  const rows: FolderRow[] = [];
+  const walk = (parentId: string | null, depth: number) => {
+    for (const folder of childrenMap.get(parentId) ?? []) {
+      const hasChildren = (childrenMap.get(folder.id)?.length ?? 0) > 0;
+      rows.push({ folder, depth, hasChildren });
+      if (hasChildren && expanded.has(folder.id)) walk(folder.id, depth + 1);
+    }
+  };
+  walk(null, 0);
+  return rows;
+}
+
+/** DFS completo (ignora expandido) — para el `<select>` de "Mover a…". */
+function flattenAll(childrenMap: Map<string | null, DbDocumentFolder[]>): FolderRow[] {
+  const rows: FolderRow[] = [];
+  const walk = (parentId: string | null, depth: number) => {
+    for (const folder of childrenMap.get(parentId) ?? []) {
+      rows.push({ folder, depth, hasChildren: (childrenMap.get(folder.id)?.length ?? 0) > 0 });
+      walk(folder.id, depth + 1);
+    }
+  };
+  walk(null, 0);
+  return rows;
+}
+
+/** Ruta raíz→carpeta para los breadcrumbs (guard contra loops por datos corruptos). */
+function folderPath(byId: Map<string, DbDocumentFolder>, id: string | null): DbDocumentFolder[] {
+  const path: DbDocumentFolder[] = [];
+  const guard = new Set<string>();
+  let cur = id ? byId.get(id) : undefined;
+  while (cur && !guard.has(cur.id)) {
+    guard.add(cur.id);
+    path.unshift(cur);
+    cur = cur.parentId ? byId.get(cur.parentId) : undefined;
+  }
+  return path;
+}
+
+/** Todos los descendientes de una carpeta (para el aviso de borrado en cascada). */
+function descendantIds(childrenMap: Map<string | null, DbDocumentFolder[]>, id: string): Set<string> {
+  const out = new Set<string>();
+  const walk = (pid: string) => {
+    for (const f of childrenMap.get(pid) ?? []) {
+      out.add(f.id);
+      walk(f.id);
+    }
+  };
+  walk(id);
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Componente principal
 // ─────────────────────────────────────────────────────────────────
 
@@ -100,8 +179,10 @@ export default function DocumentosModule() {
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showNewFolder, setShowNewFolder] = useState(false);
+  // Subcarpetas: `undefined` = no creando, `null` = crear en raíz, string = crear dentro de esa carpeta.
+  const [newFolderParent, setNewFolderParent] = useState<string | null | undefined>(undefined);
   const [newFolderName, setNewFolderName] = useState("");
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [bulkTagValue, setBulkTagValue] = useState("");
   const [expiryBannerDismissed, setExpiryBannerDismissed] = useState(false);
   const [zipping, setZipping] = useState(false);
@@ -204,6 +285,27 @@ export default function DocumentosModule() {
   const lastDocCount = useRef(0);
   useEffect(() => { if (!loading) lastDocCount.current = documents.length; }, [loading, documents.length]);
   const shownDocCount = loading && documents.length === 0 ? lastDocCount.current : documents.length;
+
+  // ── Árbol de carpetas (subcarpetas anidadas) ──
+  const childrenMap = useMemo(() => buildChildrenMap(folders), [folders]);
+  const folderById = useMemo(() => new Map(folders.map((f) => [f.id, f])), [folders]);
+  const visibleFolderRows = useMemo(() => flattenVisible(childrenMap, expandedFolders), [childrenMap, expandedFolders]);
+  const allFolderRows = useMemo(() => flattenAll(childrenMap), [childrenMap]);
+  const activePath = useMemo(
+    () => (filterMode === "folder" && activeFolderId ? folderPath(folderById, activeFolderId) : []),
+    [filterMode, activeFolderId, folderById]
+  );
+  const activeChildren = useMemo(
+    () => (filterMode === "folder" && activeFolderId ? childrenMap.get(activeFolderId) ?? [] : []),
+    [filterMode, activeFolderId, childrenMap]
+  );
+  const toggleExpand = (id: string) =>
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   // ── Selection ──
   const toggleSelect = (id: string) => {
@@ -327,17 +429,29 @@ export default function DocumentosModule() {
   };
 
   // ── Folder actions ──
+  const openCreateChild = (parentId: string | null) => {
+    setNewFolderName("");
+    setNewFolderParent(parentId);
+    if (parentId) setExpandedFolders((prev) => new Set(prev).add(parentId));
+  };
   const handleCreateFolder = async () => {
     const name = newFolderName.trim();
     if (!name) return;
-    await createFolder({ name, parentId: null });
+    const parentId = newFolderParent ?? null;
+    await createFolder({ name, parentId });
     setNewFolderName("");
-    setShowNewFolder(false);
+    setNewFolderParent(undefined);
+    if (parentId) setExpandedFolders((prev) => new Set(prev).add(parentId));
   };
   const handleDeleteFolder = async (f: DbDocumentFolder) => {
-    if (!confirm(`¿Eliminar la carpeta "${f.name}"? Los documentos pasarán a la raíz.`)) return;
+    const descs = descendantIds(childrenMap, f.id);
+    const msg =
+      descs.size > 0
+        ? `¿Eliminar la carpeta "${f.name}" y sus ${descs.size} subcarpeta(s)? Los documentos pasarán a la raíz.`
+        : `¿Eliminar la carpeta "${f.name}"? Los documentos pasarán a la raíz.`;
+    if (!confirm(msg)) return;
     await deleteFolder(f.id);
-    if (activeFolderId === f.id) {
+    if (activeFolderId === f.id || (activeFolderId && descs.has(activeFolderId))) {
       setActiveFolderId(null);
       setFilterMode("all");
     }
@@ -548,7 +662,7 @@ export default function DocumentosModule() {
               Carpetas
             </p>
             <button
-              onClick={() => setShowNewFolder(true)}
+              onClick={() => openCreateChild(null)}
               className="h-6 w-6 inline-flex items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-colors"
               aria-label="Nueva carpeta"
             >
@@ -556,71 +670,113 @@ export default function DocumentosModule() {
             </button>
           </div>
 
-          {showNewFolder && (
+          {newFolderParent === null && (
             <div className="flex items-stretch gap-1 px-2 mb-2">
               <input
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setShowNewFolder(false); setNewFolderName(""); } }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setNewFolderParent(undefined); setNewFolderName(""); } }}
                 autoFocus
-                placeholder="Nombre…"
+                placeholder="Nombre de la carpeta…"
                 className="flex-1 px-2 py-1.5 rounded-md border-2 border-[var(--rule-base)] text-xs outline-none focus:border-primary"
               />
               <button onClick={handleCreateFolder} className="px-2 rounded-md bg-primary text-white text-xs font-bold hover:bg-primary-dark"><Check className="h-3 w-3" /></button>
             </div>
           )}
 
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {folders.length === 0 && (
               <li className="px-3 py-2 text-xs text-[var(--text-tertiary)] italic">Sin carpetas. Creá la primera.</li>
             )}
-            {folders.map((f) => {
+            {visibleFolderRows.map(({ folder: f, depth, hasChildren }) => {
               const active = filterMode === "folder" && activeFolderId === f.id;
               const dropTarget = dragOverFolderId === f.id;
+              const isOpen = expandedFolders.has(f.id);
               return (
-                <li
-                  key={f.id}
-                  className={cn("group relative rounded-lg transition-all", dropTarget && "bg-primary/10 ring-2 ring-primary")}
-                  onDragOver={(e) => {
-                    if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    if (dragOverFolderId !== f.id) setDragOverFolderId(f.id);
-                  }}
-                  onDragLeave={() => setDragOverFolderId((cur) => (cur === f.id ? null : cur))}
-                  onDrop={(e) => {
-                    if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropDocOnFolder(e.dataTransfer.getData("application/x-doc-id"), f.id);
-                  }}
-                >
-                  <button
-                    onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 pr-9 rounded-lg text-sm font-bold transition-colors",
-                      active ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-                    )}
+                <li key={f.id}>
+                  <div
+                    className={cn("group relative rounded-lg transition-all", dropTarget && "bg-primary/10 ring-2 ring-primary")}
+                    onDragOver={(e) => {
+                      if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverFolderId !== f.id) setDragOverFolderId(f.id);
+                    }}
+                    onDragLeave={() => setDragOverFolderId((cur) => (cur === f.id ? null : cur))}
+                    onDrop={(e) => {
+                      if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dropDocOnFolder(e.dataTransfer.getData("application/x-doc-id"), f.id);
+                    }}
                   >
-                    <Folder className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-[var(--text-tertiary)]")} />
-                    <span className="flex-1 text-left truncate">{f.name}</span>
-                    {f.documentCount !== undefined && f.documentCount > 0 && (
-                      <span className={cn(
-                        "text-[length:var(--ts-2xs,11px)] tabular-nums px-1.5 py-0.5 rounded-md font-bold",
-                        active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
-                      )}>
-                        {f.documentCount}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f); }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 hover:text-red-500 text-[var(--text-tertiary)] transition-all"
-                    aria-label={`Eliminar carpeta ${f.name}`}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                    <div className="flex items-stretch" style={{ paddingLeft: depth * 14 }}>
+                      {hasChildren ? (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleExpand(f.id); }}
+                          className="shrink-0 w-5 inline-flex items-center justify-center text-[var(--text-tertiary)] hover:text-primary"
+                          aria-label={isOpen ? `Colapsar ${f.name}` : `Expandir ${f.name}`}
+                          aria-expanded={isOpen}
+                        >
+                          <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", isOpen && "rotate-90")} />
+                        </button>
+                      ) : (
+                        <span className="shrink-0 w-5" />
+                      )}
+                      <button
+                        onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
+                        className={cn(
+                          "flex-1 min-w-0 flex items-center gap-2 py-2 pr-14 rounded-lg text-sm font-bold transition-colors",
+                          active ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                        )}
+                      >
+                        <Folder className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-[var(--text-tertiary)]")} />
+                        <span className="flex-1 text-left truncate">{f.name}</span>
+                        {f.documentCount !== undefined && f.documentCount > 0 && (
+                          <span className={cn(
+                            "text-[length:var(--ts-2xs,11px)] tabular-nums px-1.5 py-0.5 rounded-md font-bold",
+                            active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+                          )}>
+                            {f.documentCount}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openCreateChild(f.id); }}
+                        className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
+                        aria-label={`Nueva subcarpeta en ${f.name}`}
+                        title="Nueva subcarpeta"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f); }}
+                        className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)] transition-all"
+                        aria-label={`Eliminar carpeta ${f.name}`}
+                        title="Eliminar carpeta"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                  {newFolderParent === f.id && (
+                    <div className="flex items-stretch gap-1 py-1 pr-2" style={{ paddingLeft: (depth + 1) * 14 + 20 }}>
+                      <input
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setNewFolderParent(undefined); setNewFolderName(""); } }}
+                        autoFocus
+                        placeholder="Subcarpeta…"
+                        className="flex-1 min-w-0 px-2 py-1.5 rounded-md border-2 border-[var(--rule-base)] text-xs outline-none focus:border-primary"
+                      />
+                      <button onClick={handleCreateFolder} className="px-2 rounded-md bg-primary text-white text-xs font-bold hover:bg-primary-dark shrink-0"><Check className="h-3 w-3" /></button>
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -692,6 +848,74 @@ export default function DocumentosModule() {
             </div>
           )}
 
+          {/* Breadcrumbs de la carpeta activa (subcarpetas anidadas) */}
+          {filterMode === "folder" && activePath.length > 0 && (
+            <nav className="flex items-center gap-1 flex-wrap text-sm" aria-label="Ruta de carpetas">
+              <button
+                onClick={() => { setFilterMode("all"); setActiveFolderId(null); }}
+                className="inline-flex items-center gap-1.5 font-bold text-[var(--text-tertiary)] hover:text-primary transition-colors"
+              >
+                <FolderArchive className="h-4 w-4" /> Todos
+              </button>
+              {activePath.map((f, i) => {
+                const last = i === activePath.length - 1;
+                return (
+                  <span key={f.id} className="inline-flex items-center gap-1">
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
+                    <button
+                      onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
+                      disabled={last}
+                      className={cn(
+                        "font-bold rounded-md px-1 transition-colors",
+                        last ? "text-primary" : "text-[var(--text-secondary)] hover:text-primary"
+                      )}
+                    >
+                      {f.name}
+                    </button>
+                  </span>
+                );
+              })}
+            </nav>
+          )}
+
+          {/* Subcarpetas de la carpeta activa — atajo para bajar un nivel */}
+          {filterMode === "folder" && activeChildren.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Subcarpetas</span>
+              {activeChildren.map((f) => {
+                const dropTarget = dragOverFolderId === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); setExpandedFolders((prev) => new Set(prev).add(f.id)); }}
+                    onDragOver={(e) => {
+                      if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverFolderId !== f.id) setDragOverFolderId(f.id);
+                    }}
+                    onDragLeave={() => setDragOverFolderId((cur) => (cur === f.id ? null : cur))}
+                    onDrop={(e) => {
+                      if (!e.dataTransfer.types.includes("application/x-doc-id")) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dropDocOnFolder(e.dataTransfer.getData("application/x-doc-id"), f.id);
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 bg-white text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors",
+                      dropTarget ? "border-primary ring-2 ring-primary" : "border-[var(--rule-base)]"
+                    )}
+                  >
+                    <Folder className="h-4 w-4 text-[var(--text-tertiary)]" /> {f.name}
+                    {f.documentCount !== undefined && f.documentCount > 0 && (
+                      <span className="tabular-nums text-[var(--text-tertiary)]">{f.documentCount}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Bulk bar */}
           {selectedIds.size > 0 && (
             <div className="sticky top-2 z-30 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary text-white shadow-lg">
@@ -710,7 +934,9 @@ export default function DocumentosModule() {
                 aria-label="Mover a carpeta"
               >
                 <option value="" disabled>Mover a…</option>
-                {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                {allFolderRows.map(({ folder: f, depth }) => (
+                  <option key={f.id} value={f.id}>{`${"   ".repeat(depth)}${depth > 0 ? "└ " : ""}${f.name}`}</option>
+                ))}
                 <option value="__none__">Sin carpeta</option>
               </select>
               <button onClick={bulkDownloadZip} disabled={zipping} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-60">
