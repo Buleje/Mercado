@@ -66,6 +66,12 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
     return () => { mounted = false; };
   }, [docId]);
 
+  // Vista previa same-origin: servimos el archivo desde nuestro proxy (/raw) en vez
+  // de iframear la URL firmada de Supabase directamente (llegaba con X-Frame-Options
+  // → "contenido bloqueado"). El proxy es same-origin, así que la CSP `frame-src 'self'`
+  // lo permite y las cookies autentican el GET.
+  const rawUrl = `/api/admin/documents/${docId}/raw`;
+
   // Lazy load por tab
   useEffect(() => {
     if (tab === "versions") fetchVersions(docId).then(setVersions);
@@ -142,13 +148,13 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
         <div className="flex-1 overflow-auto bg-[var(--surface-sunken)] min-h-0">
           {tab === "preview" && (
             <div className="h-full flex items-center justify-center p-4">
-              {isImage && signedUrl ? (
+              {isImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={signedUrl} alt={doc.name} className="max-w-full max-h-full object-contain rounded-lg shadow-md" />
-              ) : isPdf && signedUrl ? (
-                <iframe src={signedUrl} title={doc.name} className="w-full h-[78vh] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
-              ) : isVideo && signedUrl ? (
-                <video src={signedUrl} controls className="max-w-full max-h-full rounded-lg" />
+                <img src={rawUrl} alt={doc.name} className="max-w-full max-h-full object-contain rounded-lg shadow-md" />
+              ) : isPdf ? (
+                <iframe src={rawUrl} title={doc.name} className="w-full h-[78vh] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
+              ) : isVideo ? (
+                <video src={rawUrl} controls className="max-w-full max-h-full rounded-lg" />
               ) : (
                 <div className="text-center py-10">
                   <FileText className="h-16 w-16 mx-auto text-[var(--text-tertiary)] mb-3" />
