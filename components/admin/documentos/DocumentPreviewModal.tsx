@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check,
-  PencilLine, Sparkles, AlarmClock, Link2, Users, Truck,
+  PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -42,7 +42,6 @@ function relativeTime(iso: string): string {
 export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
   const [audit, setAudit] = useState<DbDocumentAuditLog[]>([]);
   const [shares, setShares] = useState<DbDocumentShare[]>([]);
@@ -60,7 +59,6 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
     getDocumentDetail(docId).then((r) => {
       if (!mounted) return;
       setDoc(r.document);
-      setSignedUrl(r.signedUrl);
       setLoading(false);
     }).catch(() => setLoading(false));
     return () => { mounted = false; };
@@ -115,15 +113,26 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {signedUrl && (
+            {(isPdf || isImage || isVideo) && (
               <a
-                href={signedUrl}
-                download={doc.name}
+                href={rawUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
+                title="Abrir en una pestaña nueva"
               >
-                <Download className="h-3.5 w-3.5" /> Descargar
+                <ExternalLink className="h-3.5 w-3.5" /> Abrir
               </a>
             )}
+            {/* Descarga vía nuestro proxy (?download=1): confiable y con auth, no
+                depende de la URL firmada que expira. */}
+            <a
+              href={`${rawUrl}?download=1`}
+              download={doc.name}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" /> Descargar
+            </a>
             <button
               onClick={onClose}
               className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"

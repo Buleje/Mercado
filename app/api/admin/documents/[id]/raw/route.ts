@@ -30,11 +30,14 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (!buf) return NextResponse.json({ error: "storage_unavailable" }, { status: 502 });
 
     const safeName = doc.name.replace(/[^\w.-]+/g, "_") || "documento";
+    // ?download=1 → fuerza la descarga (attachment); por defecto se muestra inline
+    // (para la vista previa dentro del modal).
+    const disposition = req.nextUrl.searchParams.get("download") === "1" ? "attachment" : "inline";
     return new NextResponse(new Uint8Array(buf), {
       status: 200,
       headers: {
         "Content-Type": doc.mimeType || "application/octet-stream",
-        "Content-Disposition": `inline; filename="${safeName}"`,
+        "Content-Disposition": `${disposition}; filename="${safeName}"`,
         "Content-Length": String(buf.length),
         "Cache-Control": "private, max-age=60",
         "X-Frame-Options": "SAMEORIGIN",
