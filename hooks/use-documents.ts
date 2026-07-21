@@ -7,6 +7,7 @@ import type {
   DbDocumentVersion,
   DbDocumentShare,
   DbDocumentAuditLog,
+  DbDocumentActivity,
   DbDocumentTemplate,
   DocumentListFilters,
 } from "@/lib/types/documents";
@@ -45,6 +46,7 @@ export interface UseDocumentsResult {
   bulk: (action: "delete" | "move" | "tag" | "favorite", ids: string[], extra?: Record<string, unknown>) => Promise<number>;
   createFolder: (input: { name: string; parentId?: string | null; color?: string; icon?: string }) => Promise<DbDocumentFolder>;
   moveFolder: (id: string, parentId: string | null) => Promise<void>;
+  updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null }) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
 }
 
@@ -201,12 +203,18 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
     await fetchAll();
   }, [fetchAll]);
 
+  // Editar metadata de la carpeta (nombre / color / ícono).
+  const updateFolder = useCallback(async (id: string, patch: { name?: string; color?: string | null; icon?: string | null }) => {
+    await http(`${BASE}/folders/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+    await fetchAll();
+  }, [fetchAll]);
+
   const deleteFolder = useCallback(async (id: string) => {
     await http(`${BASE}/folders/${id}`, { method: "DELETE" });
     await fetchAll();
   }, [fetchAll]);
 
-  return { documents, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, moveFolder, deleteFolder };
+  return { documents, folders, loading, error, refresh: fetchAll, upload, scan, patch, remove, restore, purge, bulk, createFolder, moveFolder, updateFolder, deleteFolder };
 }
 
 // ── Standalone helpers ──────────────────────────────────────────────────────
@@ -227,6 +235,35 @@ export async function uploadVersion(id: string, file: File, changeNote?: string)
 export async function fetchAudit(id: string): Promise<DbDocumentAuditLog[]> {
   const r = await http<{ logs: DbDocumentAuditLog[] }>(`${BASE}/${id}/audit`);
   return r.logs;
+}
+
+/** Feed de actividad global del drive (cross-documento). */
+export async function fetchRecentActivity(limit = 40): Promise<DbDocumentActivity[]> {
+  const r = await http<{ activity: DbDocumentActivity[] }>(`${BASE}/activity?limit=${limit}`);
+  return r.activity;
+}
+
+// ── Taxonomía de etiquetas ──────────────────────────────────────────────────
+
+export async function fetchTags(): Promise<{ tag: string; count: number }[]> {
+  const r = await http<{ tags: { tag: string; count: number }[] }>(`${BASE}/tags`);
+  return r.tags;
+}
+
+export async function renameDocTag(from: string, to: string): Promise<number> {
+  const r = await http<{ affected: number }>(`${BASE}/tags`, {
+    method: "POST",
+    body: JSON.stringify({ action: "rename", from, to }),
+  });
+  return r.affected;
+}
+
+export async function deleteDocTag(tag: string): Promise<number> {
+  const r = await http<{ affected: number }>(`${BASE}/tags`, {
+    method: "POST",
+    body: JSON.stringify({ action: "delete", tag }),
+  });
+  return r.affected;
 }
 
 export async function fetchShares(id: string): Promise<DbDocumentShare[]> {

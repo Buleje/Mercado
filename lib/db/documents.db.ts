@@ -16,6 +16,7 @@ import type {
   DbDocumentVersion,
   DbDocumentShare,
   DbDocumentAuditLog,
+  DbDocumentActivity,
   DbDocumentTemplate,
   DocAction,
   DocumentListFilters,
@@ -474,6 +475,50 @@ export class DocumentsDB {
     return toUpdate.length;
   }
 
+  /** Etiquetas del tenant con conteo (solo docs activos), ordenadas por uso. */
+  static async listTags(tenantId: string): Promise<{ tag: string; count: number }[]> {
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null },
+      select: { tags: true },
+    });
+    const counts = new Map<string, number>();
+    for (const d of docs) for (const t of d.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return Array.from(counts, ([tag, count]) => ({ tag, count })).sort(
+      (a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "es"),
+    );
+  }
+
+  /** Renombra/fusiona una etiqueta en todos los docs (dedupe si el destino ya existe). */
+  static async renameTag(tenantId: string, from: string, to: string): Promise<number> {
+    const toN = to.trim().toLowerCase();
+    if (!toN || toN === from) return 0;
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null, tags: { has: from } },
+      select: { id: true, tags: true },
+    });
+    await Promise.all(
+      docs.map((d) => {
+        const next = Array.from(new Set(d.tags.map((t) => (t === from ? toN : t))));
+        return prisma.document.update({ where: { id: d.id }, data: { tags: next } });
+      }),
+    );
+    return docs.length;
+  }
+
+  /** Elimina una etiqueta de todos los docs del tenant. */
+  static async deleteTag(tenantId: string, tag: string): Promise<number> {
+    const docs = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null, tags: { has: tag } },
+      select: { id: true, tags: true },
+    });
+    await Promise.all(
+      docs.map((d) =>
+        prisma.document.update({ where: { id: d.id }, data: { tags: d.tags.filter((t) => t !== tag) } }),
+      ),
+    );
+    return docs.length;
+  }
+
   // ── Folders ────────────────────────────────────────────────────────────────
 
   static async listFolders(tenantId: string): Promise<DbDocumentFolder[]> {
@@ -512,7 +557,7 @@ export class DocumentsDB {
   static async updateFolder(
     tenantId: string,
     id: string,
-    patch: { name?: string; parentId?: string | null; color?: string; icon?: string }
+    patch: { name?: string; parentId?: string | null; color?: string | null; icon?: string | null }
   ): Promise<DbDocumentFolder | null> {
     const existing = await prisma.documentFolder.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
@@ -758,6 +803,26 @@ export class DocumentsDB {
       take: limit,
     });
     return logs.map(mapAuditLog);
+  }
+
+  /** Feed de actividad global del tenant (cross-documento), con nombre del doc. */
+  static async recentActivity(tenantId: string, limit = 40): Promise<DbDocumentActivity[]> {
+    const take = Math.min(200, Math.max(1, limit));
+    const logs = await prisma.documentAuditLog.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "desc" },
+      take,
+      include: { document: { select: { name: true, deletedAt: true } } },
+    });
+    return logs.map((a) => ({
+      id: a.id,
+      documentId: a.documentId,
+      documentName: a.document?.name ?? "(documento eliminado)",
+      documentDeleted: !!a.document?.deletedAt,
+      actorId: a.actorId,
+      action: a.action as DocAction,
+      createdAt: a.createdAt.toISOString(),
+    }));
   }
 
   // ── Templates ──────────────────────────────────────────────────────────────

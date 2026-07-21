@@ -111,6 +111,17 @@ export interface DbDocumentAuditLog {
   createdAt: string;
 }
 
+/** Evento de auditoría enriquecido con el nombre del documento (feed global). */
+export interface DbDocumentActivity {
+  id: string;
+  documentId: string;
+  documentName: string;
+  documentDeleted: boolean;
+  actorId: string;
+  action: DocAction;
+  createdAt: string;
+}
+
 export interface DbDocumentTemplate {
   id: string;
   tenantId: string | null;

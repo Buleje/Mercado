@@ -24,7 +24,7 @@ import {
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
-  ChevronRight, Pencil, FolderInput, MessageCircle,
+  ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -35,6 +35,10 @@ import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import { MoveToFolderModal } from "./MoveToFolderModal";
+import { FolderEditModal } from "./FolderEditModal";
+import { FolderGlyph } from "./folder-visuals";
+import { ActivityView } from "./ActivityView";
+import { TagTaxonomyModal } from "./TagTaxonomyModal";
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers
@@ -60,7 +64,7 @@ function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: s
 }
 
 interface BuiltinCategory {
-  id: "all" | "favorites" | "recent" | "expiring" | "trash";
+  id: "all" | "favorites" | "recent" | "expiring" | "activity" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -71,6 +75,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-slate-500" },
   { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-red-500" },
+  { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
   { id: "trash", label: "Papelera", icon: Trash2, color: "text-[var(--text-tertiary)]" },
 ];
 
@@ -97,7 +102,7 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "favorites" | "recent" | "expiring" | "folder" | "trash">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "favorites" | "recent" | "expiring" | "folder" | "activity" | "trash">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
 
@@ -123,6 +128,10 @@ export default function DocumentosModule() {
   // Modales por-documento (mover a carpeta / enviar por WhatsApp).
   const [movingDoc, setMovingDoc] = useState<DbDocument | null>(null);
   const [whatsappDoc, setWhatsappDoc] = useState<DbDocument | null>(null);
+  // Personalizar carpeta (nombre + color + ícono).
+  const [editingFolder, setEditingFolder] = useState<DbDocumentFolder | null>(null);
+  // Editor de taxonomía de etiquetas.
+  const [showTags, setShowTags] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
@@ -147,7 +156,7 @@ export default function DocumentosModule() {
 
   const {
     documents, folders, loading, error, refresh,
-    upload, scan, patch, bulk, restore, purge, createFolder, moveFolder, deleteFolder,
+    upload, scan, patch, bulk, restore, purge, createFolder, moveFolder, updateFolder, deleteFolder,
   } = useDocuments(filters);
 
   // ── Escaneo desde cámara (móvil) ──
@@ -516,6 +525,9 @@ export default function DocumentosModule() {
               {expiringDocs.slice(0, 3).map(({ d, n }) => `${d.name} (${n < 0 ? "vencido" : n === 0 ? "vence hoy" : `${n}d`})`).join(" · ")}
               {expiringDocs.length > 3 ? ` y ${expiringDocs.length - 3} más` : ""}
             </p>
+            <p className="mt-1 inline-flex items-center gap-1 text-[length:var(--ts-2xs,11px)] font-medium text-[var(--text-tertiary)]">
+              <BellRing className="h-3 w-3 shrink-0" /> Te avisamos automáticamente por WhatsApp y en el panel ~7 días antes de cada vencimiento.
+            </p>
           </div>
           <button
             onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
@@ -718,7 +730,7 @@ export default function DocumentosModule() {
                           active ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                         )}
                       >
-                        <Folder className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-[var(--text-tertiary)]")} />
+                        <FolderGlyph folder={f} active={active} className="h-4 w-4 shrink-0" />
                         <span className="flex-1 text-left truncate">{f.name}</span>
                         {f.documentCount !== undefined && f.documentCount > 0 && (
                           <span className={cn(
@@ -739,6 +751,15 @@ export default function DocumentosModule() {
                         title="Nueva subcarpeta"
                       >
                         <Plus className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setEditingFolder(f); }}
+                        className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
+                        aria-label={`Personalizar carpeta ${f.name}`}
+                        title="Color e ícono"
+                      >
+                        <Palette className="h-3 w-3" />
                       </button>
                       <button
                         type="button"
@@ -768,6 +789,13 @@ export default function DocumentosModule() {
               );
             })}
           </ul>
+
+          <button
+            onClick={() => setShowTags(true)}
+            className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+          >
+            <Tag className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" /> Etiquetas
+          </button>
         </aside>
 
         {/* ─── Main list ─── */}
@@ -893,7 +921,7 @@ export default function DocumentosModule() {
                       dropTarget ? "border-primary ring-2 ring-primary" : "border-[var(--rule-base)]"
                     )}
                   >
-                    <Folder className="h-4 w-4 text-[var(--text-tertiary)]" /> {f.name}
+                    <FolderGlyph folder={f} className="h-4 w-4" /> {f.name}
                     {f.documentCount !== undefined && f.documentCount > 0 && (
                       <span className="tabular-nums text-[var(--text-tertiary)]">{f.documentCount}</span>
                     )}
@@ -947,7 +975,9 @@ export default function DocumentosModule() {
             </div>
           )}
 
-          {loading && documents.length === 0 ? (
+          {filterMode === "activity" ? (
+            <ActivityView />
+          ) : loading && documents.length === 0 ? (
             <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-10 text-center text-sm text-[var(--text-tertiary)]">
               Cargando…
             </div>
@@ -1112,6 +1142,18 @@ export default function DocumentosModule() {
 
       {whatsappDoc && (
         <SendWhatsAppModal doc={whatsappDoc} onClose={() => setWhatsappDoc(null)} />
+      )}
+
+      {editingFolder && (
+        <FolderEditModal
+          folder={editingFolder}
+          onSave={(patch) => updateFolder(editingFolder.id, patch)}
+          onClose={() => setEditingFolder(null)}
+        />
+      )}
+
+      {showTags && (
+        <TagTaxonomyModal onChanged={refresh} onClose={() => setShowTags(false)} />
       )}
     </div>
   );

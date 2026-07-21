@@ -11,8 +11,8 @@ import { buildChildrenMap, descendantIds } from "@/lib/documentos/folder-tree";
 const PatchBody = z.object({
   name: z.string().min(1).max(80).optional(),
   parentId: z.string().nullable().optional(),
-  color: z.string().max(20).optional(),
-  icon: z.string().max(40).optional(),
+  color: z.string().max(20).nullable().optional(),
+  icon: z.string().max(40).nullable().optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
