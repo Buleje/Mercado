@@ -274,6 +274,8 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
     } finally { setBusy(false); }
   }
   async function del(id: string) {
+    // Confirmar: la especie autorizada alimenta el balance y la rentabilidad del libro.
+    if (!window.confirm("¿Borrar esta especie autorizada del plan? Afecta el balance de saldo y la rentabilidad. Esta acción no se puede deshacer.")) return;
     await fetch(`/api/admin/forestal/plan/species?id=${id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
     onChange();
   }
@@ -366,6 +368,8 @@ function CensusPanel({ planId, trees, onChange }: { planId: string; trees: Tree[
   }
 
   async function del(id: string) {
+    // Confirmar: el árbol del censo es el punto de partida de la trazabilidad.
+    if (!window.confirm("¿Borrar este árbol del censo? Es el origen de la cadena de custodia. Esta acción no se puede deshacer.")) return;
     await fetch(`/api/admin/forestal/plan/census?id=${id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
     onChange();
   }

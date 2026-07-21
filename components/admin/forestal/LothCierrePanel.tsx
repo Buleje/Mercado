@@ -39,11 +39,10 @@ const fdate = (iso: string) => {
   }
 };
 
-/** "YYYY-MM" del mes anterior a hoy (default del picker). */
-function prevMonth(): string {
+/** "YYYY-MM" del mes ACTUAL (default del picker — donde suele estar la actividad
+ * reciente; antes apuntaba al mes anterior y el usuario podía cerrar uno vacío). */
+function currentMonth(): string {
   const d = new Date();
-  d.setDate(1);
-  d.setMonth(d.getMonth() - 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
@@ -51,8 +50,9 @@ export default function LothCierrePanel() {
   const [cierres, setCierres] = useState<Cierre[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState(prevMonth);
+  const [period, setPeriod] = useState(currentMonth);
   const [busy, setBusy] = useState(false);
+  const [confirmCerrar, setConfirmCerrar] = useState(false);
   const [reabrirKey, setReabrirKey] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
 
@@ -105,6 +105,7 @@ export default function LothCierrePanel() {
     const [y, m] = period.split("-").map(Number);
     if (!y || !m) return;
     await post({ action: "cerrar", year: y, month: m });
+    setConfirmCerrar(false);
   }
   async function doReabrir(periodKey: string) {
     if (motivo.trim().length < 3) return;
@@ -141,13 +142,23 @@ export default function LothCierrePanel() {
             <input
               type="month"
               value={period}
-              onChange={(e) => setPeriod(e.target.value)}
+              onChange={(e) => { setPeriod(e.target.value); setConfirmCerrar(false); }}
               className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
-          <Btn variant="primary" size="md" onClick={() => void cerrar()} disabled={busy}>
-            {busy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />} Cerrar período
-          </Btn>
+          {!confirmCerrar ? (
+            <Btn variant="primary" size="md" onClick={() => setConfirmCerrar(true)} disabled={busy}>
+              <Lock className="h-4 w-4" /> Cerrar período
+            </Btn>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-[var(--data-warning-700)]">Bloquea el mes (solo reabrible con motivo). ¿Confirmás?</span>
+              <Btn variant="danger" size="md" onClick={() => void cerrar()} disabled={busy}>
+                {busy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />} Sí, cerrar
+              </Btn>
+              <Btn variant="secondary" size="md" onClick={() => setConfirmCerrar(false)} disabled={busy}>Cancelar</Btn>
+            </div>
+          )}
         </div>
       </div>
 
