@@ -18,6 +18,7 @@ const CotizacionesChart = dynamic(() => import("./CotizacionesChart"), {
 import { CardTitle, ErrorAlert, LoadingState } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
+import { printCotizacion, type EmpresaEmisor } from "@/lib/documentos/cotizacion-print";
 import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 
@@ -290,6 +291,16 @@ export default function CotizacionesModule() {
   const [selected, setSelected] = useState<Cotizacion | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  // Datos del emisor (para el header del PDF); best-effort desde la config SUNAT.
+  const [empresa, setEmpresa] = useState<EmpresaEmisor | null>(null);
+  useEffect(() => {
+    fetch("/api/admin/sunat/config", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.data?.razonSocial) setEmpresa({ razonSocial: j.data.razonSocial, ruc: j.data.ruc, direccionFiscal: j.data.direccionFiscal ?? null });
+      })
+      .catch(() => { /* sin datos de empresa → el PDF usa un header neutro */ });
+  }, []);
 
   // ── NEW FORM STATE (multi-step) ──
   const [step, setStep] = useState(1);
@@ -504,7 +515,12 @@ export default function CotizacionesModule() {
 
   // ── Print ───────────────────────────────────────────────────────────────────
 
-  const handlePrint = () => window.print();
+  // PDF profesional del presupuesto (documento limpio, branded), en vez de
+  // imprimir toda la página del admin con window.print().
+  const handlePrint = () => {
+    if (selected) printCotizacion(selected, empresa);
+    else window.print();
+  };
 
   // ── Template handlers ─────────────────────────────────────────────────────
 
