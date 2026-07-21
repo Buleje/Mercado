@@ -43,6 +43,13 @@ export interface TraceOperation {
   /** Rendimiento de aprovechamiento (trozado / talado) en %. */
   rendimientoPct: number;
   mermaVolM3: number;
+  /** Estado de cada troza del árbol: despachada, consumida o en patio (sin salir). */
+  trozaEstado: Record<string, "despachada" | "consumida" | "patio">;
+  /** Trozas trozadas que aún no se despacharon ni consumieron (inventario en patio). */
+  trozasEnPatio: number;
+  patioVolM3: number;
+  /** N° de GTF que tocaron a este árbol (despacho de troza + de producto). */
+  gtfs: string[];
   /** Etapas de las 6 SERFOR con al menos un registro (0-6). */
   stagesReached: number;
   chain: ChainStatus;
@@ -105,6 +112,21 @@ export function buildTraceOperations(entries: LothEntryDTO[]): TraceOperation[] 
       const rendimientoPct = talaVolM3 > 0 ? clampPct((trozadoVolM3 / talaVolM3) * 100) : 0;
       const mermaVolM3 = Math.max(0, talaVolM3 - trozadoVolM3);
 
+      // Estado de cada troza: despachada (salió con GTF), consumida (al aserrío)
+      // o en patio (trozada pero sin destino aún = inventario).
+      const despachadasCodes = new Set(despachoTroza.map((d) => d.trozaCode).filter(Boolean));
+      const consumidasCodes = new Set(consumo.map((c) => c.trozaCode).filter(Boolean));
+      const trozaEstado: Record<string, "despachada" | "consumida" | "patio"> = {};
+      let patioVolM3 = 0;
+      for (const t of trozado) {
+        if (!t.trozaCode) continue;
+        const estado = despachadasCodes.has(t.trozaCode) ? "despachada" : consumidasCodes.has(t.trozaCode) ? "consumida" : "patio";
+        trozaEstado[t.trozaCode] = estado;
+        if (estado === "patio") patioVolM3 += n(t.volumeM3);
+      }
+      const trozasEnPatio = Object.values(trozaEstado).filter((e) => e === "patio").length;
+      const gtfs = Array.from(new Set([...despachoTroza, ...despachoPT].map((e) => e.gtfNumber).filter((g): g is string => !!g))).sort();
+
       const stagesReached = [tala, trozado, despachoTroza, consumo, producto, despachoPT].filter((s) => s.length > 0).length;
       const movilizada = despachoTroza.length > 0 || despachoPT.length > 0;
       const chain: ChainStatus = movilizada ? "completa" : trozado.length > 0 || consumo.length > 0 || producto.length > 0 ? "parcial" : "iniciada";
@@ -140,6 +162,10 @@ export function buildTraceOperations(entries: LothEntryDTO[]): TraceOperation[] 
         despachoPtCount: despachoPT.length,
         rendimientoPct,
         mermaVolM3,
+        trozaEstado,
+        trozasEnPatio,
+        patioVolM3,
+        gtfs,
         stagesReached,
         chain,
         movilizada,
@@ -162,6 +188,8 @@ export interface TraceSummary {
   conAlertas: number;
   citesCount: number;
   conGps: number;
+  conPatio: number;
+  patioVolM3: number;
   species: string[];
 }
 
@@ -178,6 +206,49 @@ export function buildTraceSummary(ops: TraceOperation[]): TraceSummary {
     conAlertas: ops.filter((o) => o.alerts.length > 0).length,
     citesCount: ops.filter((o) => o.cites).length,
     conGps: ops.filter((o) => o.gps != null).length,
+    conPatio: ops.filter((o) => o.trozasEnPatio > 0).length,
+    patioVolM3: ops.reduce((a, o) => a + o.patioVolM3, 0),
     species: Array.from(new Set(ops.map((o) => o.species).filter((s): s is string => !!s))).sort(),
   };
+}
+
+export interface TraceMatch {
+  matched: boolean;
+  /** Por qué coincidió (para el hint de búsqueda inversa). */
+  via: "código" | "especie" | "troza" | "gtf" | null;
+  hint: string | null;
+}
+
+/**
+ * Búsqueda inversa: ¿este árbol coincide con la consulta? Matchea código de
+ * árbol, especie, código de TROZA o N° de GTF — la pregunta que hace OSINFOR
+ * ("¿de qué árbol salió esta troza / este GTF?").
+ */
+export function matchesTrace(op: TraceOperation, query: string): TraceMatch {
+  const q = query.trim().toLowerCase();
+  if (!q) return { matched: true, via: null, hint: null };
+  if (op.tree.toLowerCase().includes(q)) return { matched: true, via: "código", hint: null };
+  if ((op.species ?? "").toLowerCase().includes(q) || (op.scientific ?? "").toLowerCase().includes(q)) return { matched: true, via: "especie", hint: null };
+  const troza = op.trozado.find((t) => t.trozaCode?.toLowerCase().includes(q));
+  if (troza) return { matched: true, via: "troza", hint: `coincide la troza ${troza.trozaCode}` };
+  const gtf = op.gtfs.find((g) => g.toLowerCase().includes(q));
+  if (gtf) return { matched: true, via: "gtf", hint: `coincide la GTF ${gtf}` };
+  return { matched: false, via: null, hint: null };
+}
+
+/** CSV del resumen de trazabilidad (una fila por árbol). Sin BOM (lo agrega el descargador). */
+export function buildTraceCsv(ops: TraceOperation[]): string {
+  const esc = (v: unknown) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const header = ["Árbol", "Especie", "Científico", "CITES", "Talado m³", "Trozado m³", "Rendimiento %", "Merma m³", "Trozas", "Despachadas", "Consumidas", "En patio", "Patio m³", "Estado cadena", "Etapas", "GTFs", "Alertas"];
+  const estados = (o: TraceOperation) => Object.values(o.trozaEstado);
+  const rows = ops.map((o) => [
+    o.tree, o.species ?? "", o.scientific ?? "", o.cites ? "Sí" : "No",
+    o.talaVolM3.toFixed(4), o.trozadoVolM3.toFixed(4), o.rendimientoPct, o.mermaVolM3.toFixed(4),
+    o.trozasCount, estados(o).filter((e) => e === "despachada").length, estados(o).filter((e) => e === "consumida").length, o.trozasEnPatio, o.patioVolM3.toFixed(4),
+    o.chain, `${o.stagesReached}/6`, o.gtfs.join(" | "), o.alerts.map((a) => a.message).join(" | "),
+  ]);
+  return [header, ...rows].map((r) => r.map(esc).join(",")).join("\n");
 }

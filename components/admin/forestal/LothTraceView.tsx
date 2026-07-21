@@ -11,10 +11,10 @@
  */
 
 import { useMemo, useState } from "react";
-import { Search, TreePine, TrendingUp, AlertTriangle, CheckCircle2, MapPin } from "@buleje/design-system/icons";
+import { Search, TreePine, TrendingUp, AlertTriangle, CheckCircle2, MapPin, Download } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
-import { buildTraceOperations, buildTraceSummary, type TraceOperation } from "@/lib/forestal/loth-trace";
+import { buildTraceOperations, buildTraceSummary, matchesTrace, buildTraceCsv, type TraceOperation } from "@/lib/forestal/loth-trace";
 import LothTraceCard from "./LothTraceCard";
 
 interface Caratula {
@@ -24,7 +24,7 @@ interface Caratula {
   tomo?: string | null;
 }
 
-type Filter = "todas" | "completa" | "alertas" | "cites";
+type Filter = "todas" | "completa" | "alertas" | "cites" | "patio";
 type Sort = "volumen" | "rendimiento" | "codigo" | "etapas";
 
 const SORTERS: Record<Sort, (a: TraceOperation, b: TraceOperation) => number> = {
@@ -43,17 +43,29 @@ export default function LothTraceView({ entries, caratula }: { entries: LothEntr
   const [sort, setSort] = useState<Sort>("volumen");
 
   const shown = useMemo(() => {
-    const q = search.trim().toLowerCase();
     return ops
-      .filter((o) => {
+      .map((o) => ({ o, m: matchesTrace(o, search) }))
+      .filter(({ o, m }) => {
+        if (!m.matched) return false;
         if (filter === "completa" && o.chain !== "completa") return false;
         if (filter === "alertas" && o.alerts.length === 0) return false;
         if (filter === "cites" && !o.cites) return false;
-        if (q && !o.tree.toLowerCase().includes(q) && !(o.species ?? "").toLowerCase().includes(q)) return false;
+        if (filter === "patio" && o.trozasEnPatio === 0) return false;
         return true;
       })
-      .sort(SORTERS[sort]);
+      .sort((a, b) => SORTERS[sort](a.o, b.o));
   }, [ops, search, filter, sort]);
+
+  function doExportCsv() {
+    const csv = buildTraceCsv(ops);
+    const blob = new Blob([String.fromCharCode(0xfeff) + csv], { type: "text/csv;charset=utf-8" }); // BOM → Excel lee UTF-8
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "trazabilidad-libro-th.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   if (ops.length === 0) {
     return (
@@ -69,6 +81,7 @@ export default function LothTraceView({ entries, caratula }: { entries: LothEntr
     { key: "todas", label: "Todas", count: summary.totalTrees },
     { key: "completa", label: "Cadena completa", count: summary.completas },
     { key: "alertas", label: "Con alertas", count: summary.conAlertas },
+    { key: "patio", label: "En patio", count: summary.conPatio },
     { key: "cites", label: "CITES", count: summary.citesCount },
   ];
 
@@ -109,6 +122,14 @@ export default function LothTraceView({ entries, caratula }: { entries: LothEntr
             <option value="codigo">Código</option>
           </select>
         </label>
+        <button
+          type="button"
+          onClick={doExportCsv}
+          title="Descargar el resumen de trazabilidad de todos los árboles (CSV / Excel)"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+        >
+          <Download className="h-4 w-4" /> Exportar
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -138,8 +159,8 @@ export default function LothTraceView({ entries, caratula }: { entries: LothEntr
         </div>
       ) : (
         <div className="space-y-3">
-          {shown.map((op) => (
-            <LothTraceCard key={op.tree} op={op} caratula={caratula} />
+          {shown.map(({ o, m }) => (
+            <LothTraceCard key={o.tree} op={o} caratula={caratula} matchHint={m.hint} />
           ))}
         </div>
       )}

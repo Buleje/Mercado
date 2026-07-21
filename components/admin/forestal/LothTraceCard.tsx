@@ -7,8 +7,8 @@
  * acciones (Pasaporte imprimible · ubicación GPS).
  */
 
-import { useState } from "react";
-import { TreePine, ChevronDown, MapPin, ExternalLink, Printer, AlertTriangle, CheckCircle2 } from "@buleje/design-system/icons";
+import { useEffect, useState } from "react";
+import { TreePine, ChevronDown, MapPin, ExternalLink, Printer, AlertTriangle, CheckCircle2, Warehouse } from "@buleje/design-system/icons";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import type { TraceOperation } from "@/lib/forestal/loth-trace";
 import { printTrozaPasaporte } from "@/lib/forestal/loth-pasaporte-print";
@@ -28,8 +28,13 @@ const CHAIN_META: Record<TraceOperation["chain"], { label: string; cls: string }
   iniciada: { label: "Solo tala", cls: "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)]" },
 };
 
-export default function LothTraceCard({ op, caratula }: { op: TraceOperation; caratula?: Caratula | null }) {
-  const [open, setOpen] = useState(op.alerts.length > 0);
+export default function LothTraceCard({ op, caratula, matchHint }: { op: TraceOperation; caratula?: Caratula | null; matchHint?: string | null }) {
+  const [open, setOpen] = useState(op.alerts.length > 0 || !!matchHint);
+  // Auto-expandir cuando la búsqueda inversa acierta por troza/GTF (el prop cambia
+  // después del montaje → el initializer de useState no alcanza).
+  useEffect(() => {
+    if (matchHint) setOpen(true);
+  }, [matchHint]);
   const chain = CHAIN_META[op.chain];
   const rendColor = op.rendimientoPct >= 60 ? "text-[var(--data-success-700)]" : op.rendimientoPct >= 40 ? "text-[var(--data-warning-700)]" : "text-[var(--data-error-700)]";
   const rendBar = Math.min(100, op.rendimientoPct);
@@ -62,6 +67,11 @@ export default function LothTraceCard({ op, caratula }: { op: TraceOperation; ca
                 <AlertTriangle className="h-3 w-3" /> {op.alerts.length}
               </span>
             )}
+            {op.trozasEnPatio > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+                <Warehouse className="h-3 w-3" /> {op.trozasEnPatio} en patio
+              </span>
+            )}
           </div>
           {/* fila 2: embudo + progreso de etapas */}
           <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -78,6 +88,11 @@ export default function LothTraceCard({ op, caratula }: { op: TraceOperation; ca
             </div>
             <StageDots op={op} />
           </div>
+          {matchHint && (
+            <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-[var(--data-info-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)]">
+              <MapPin className="h-3 w-3" /> {matchHint}
+            </p>
+          )}
         </div>
         <ChevronDown className={`mt-1 h-5 w-5 shrink-0 text-[var(--text-tertiary)] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -143,8 +158,21 @@ function StageDots({ op }: { op: TraceOperation }) {
 }
 
 // ─── timeline detallado de las 6 secciones ───────────────────────────────────
+const TROZA_PILL: Record<string, { label: string; cls: string }> = {
+  despachada: { label: "despachada", cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)]" },
+  consumida: { label: "consumida", cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)]" },
+  patio: { label: "en patio", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" },
+};
+function TrozaPill({ estado }: { estado: "despachada" | "consumida" | "patio" }) {
+  const p = TROZA_PILL[estado];
+  return <span className={`rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${p.cls}`}>{p.label}</span>;
+}
+
 function TraceTimeline({ op }: { op: TraceOperation }) {
   const talaVol = op.talaVolM3;
+  const estados = Object.values(op.trozaEstado);
+  const despachadas = estados.filter((e) => e === "despachada").length;
+  const consumidas = estados.filter((e) => e === "consumida").length;
   const stages = [
     { n: 1, title: "Tala", done: op.tala.length > 0, body: op.tala[0] ? (
       <div>
@@ -153,15 +181,25 @@ function TraceTimeline({ op }: { op: TraceOperation }) {
       </div>
     ) : null },
     { n: 2, title: "Trozado", done: op.trozado.length > 0, body: (
-      <div className="space-y-1">
-        <div className="text-[var(--text-tertiary)]">{op.trozado.length} trozas · <Vol>{op.trozadoVolM3.toFixed(4)} m³</Vol></div>
-        <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-          {op.trozado.map((t) => (
-            <div key={t.id}>
-              <span><Code>{t.trozaCode}</Code> <span className="font-mono tabular-nums text-[var(--text-secondary)]">{num(t.volumeM3)}</span>{t.isRama && <span className="ml-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(rama)</span>}</span>
-              <GpsPhoto entry={t} />
-            </div>
-          ))}
+      <div className="space-y-1.5">
+        <div className="text-[var(--text-tertiary)]">
+          {op.trozado.length} trozas · <Vol>{op.trozadoVolM3.toFixed(4)} m³</Vol>
+          <span className="ml-1">· {despachadas} despachadas · {consumidas} consumidas · <span className={op.trozasEnPatio > 0 ? "font-bold text-[var(--data-warning-700)]" : ""}>{op.trozasEnPatio} en patio{op.patioVolM3 > 0 ? ` (${op.patioVolM3.toFixed(2)} m³)` : ""}</span></span>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {op.trozado.map((t) => {
+            const est = t.trozaCode ? op.trozaEstado[t.trozaCode] : undefined;
+            return (
+              <div key={t.id}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Code>{t.trozaCode}</Code> <span className="font-mono tabular-nums text-[var(--text-secondary)]">{num(t.volumeM3)}</span>
+                  {t.isRama && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">(rama)</span>}
+                  {est && <TrozaPill estado={est} />}
+                </span>
+                <GpsPhoto entry={t} />
+              </div>
+            );
+          })}
         </div>
       </div>
     ) },

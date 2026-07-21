@@ -2,7 +2,7 @@
  * loth-trace — motor de trazabilidad por árbol del Libro TH. Puro, sin DB.
  */
 import { describe, it, expect } from "vitest";
-import { buildTraceOperations, buildTraceSummary } from "@/lib/forestal/loth-trace";
+import { buildTraceOperations, buildTraceSummary, matchesTrace, buildTraceCsv } from "@/lib/forestal/loth-trace";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 
 let seq = 0;
@@ -103,6 +103,65 @@ describe("buildTraceOperations", () => {
       entry({ section: "tala", treeCode: "C", volumeM3: "6" }),
     ]);
     expect(ops.map((o) => o.tree)).toEqual(["B", "C", "A"]);
+  });
+});
+
+describe("balance de trozas (despachada / consumida / patio)", () => {
+  const entries: LothEntryDTO[] = [
+    entry({ section: "tala", treeCode: "10-TOR", volumeM3: "12" }),
+    entry({ section: "trozado", treeCode: "10-TOR", trozaCode: "10-TOR-A", volumeM3: "3" }),
+    entry({ section: "trozado", treeCode: "10-TOR", trozaCode: "10-TOR-B", volumeM3: "3" }),
+    entry({ section: "trozado", treeCode: "10-TOR", trozaCode: "10-TOR-C", volumeM3: "3" }),
+    entry({ section: "despacho_troza", trozaCode: "10-TOR-A", gtfNumber: "GTF-9" }),
+    entry({ section: "consumo_troza", trozaCode: "10-TOR-B", volumeM3: "3" }),
+    // 10-TOR-C queda en patio (ni despacho ni consumo)
+  ];
+  it("clasifica cada troza y suma el volumen en patio", () => {
+    const [op] = buildTraceOperations(entries);
+    expect(op.trozaEstado["10-TOR-A"]).toBe("despachada");
+    expect(op.trozaEstado["10-TOR-B"]).toBe("consumida");
+    expect(op.trozaEstado["10-TOR-C"]).toBe("patio");
+    expect(op.trozasEnPatio).toBe(1);
+    expect(op.patioVolM3).toBe(3);
+    expect(op.gtfs).toEqual(["GTF-9"]);
+  });
+  it("el resumen cuenta árboles con patio y su volumen", () => {
+    const s = buildTraceSummary(buildTraceOperations(entries));
+    expect(s.conPatio).toBe(1);
+    expect(s.patioVolM3).toBe(3);
+  });
+});
+
+describe("matchesTrace (búsqueda inversa)", () => {
+  const [op] = buildTraceOperations([
+    entry({ section: "tala", treeCode: "20-TOR", volumeM3: "5", speciesCommon: "Tornillo" }),
+    entry({ section: "trozado", treeCode: "20-TOR", trozaCode: "20-TOR-A", volumeM3: "4" }),
+    entry({ section: "despacho_troza", trozaCode: "20-TOR-A", gtfNumber: "001-0000120" }),
+  ]);
+  it("matchea por código de árbol, especie, troza y GTF", () => {
+    expect(matchesTrace(op, "20-tor").via).toBe("código");
+    expect(matchesTrace(op, "tornillo").via).toBe("especie");
+    expect(matchesTrace(op, "20-TOR-A").via).toBe("troza");
+    expect(matchesTrace(op, "0000120").via).toBe("gtf");
+    expect(matchesTrace(op, "0000120").hint).toContain("GTF");
+  });
+  it("query vacía matchea todo; query sin coincidencia no matchea", () => {
+    expect(matchesTrace(op, "").matched).toBe(true);
+    expect(matchesTrace(op, "zzz").matched).toBe(false);
+  });
+});
+
+describe("buildTraceCsv", () => {
+  it("emite header + una fila por árbol y escapa comas", () => {
+    const ops = buildTraceOperations([
+      entry({ section: "tala", treeCode: "A,1", volumeM3: "10" }),
+      entry({ section: "trozado", treeCode: "A,1", trozaCode: "A1-a", volumeM3: "8" }),
+    ]);
+    const csv = buildTraceCsv(ops);
+    const lines = csv.split("\n");
+    expect(lines[0]).toContain("Árbol");
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toContain('"A,1"'); // coma escapada con comillas
   });
 });
 
