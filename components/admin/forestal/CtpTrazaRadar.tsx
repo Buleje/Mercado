@@ -548,7 +548,7 @@ function Medidor({ pct, titulo, detalle, neutro }: { pct: number; titulo: string
         </div>
       </div>
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]" role="img" aria-label={`${pct}% — ${titulo}`}>
-        <div className={`h-full rounded-full transition-[width] duration-500 ${tono.barra}`} style={{ width: `${pct}%` }} />
+        <div className={`h-full rounded-full transition-[width] duration-[var(--dur-slow)] ${tono.barra}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
