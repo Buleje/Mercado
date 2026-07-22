@@ -73,6 +73,10 @@ const nextConfig: NextConfig = {
     // los incluyan accidentalmente vía dynamic imports mal resueltos.
     "jspdf",
     "exceljs",
+    // Miniaturas de PDF: canvas nativo (Skia). Turbopack no puede empaquetar el
+    // binding `.node` → hay que resolverlo desde node_modules en runtime.
+    "@napi-rs/canvas",
+    "unpdf",
   ],
 
   // No source maps in production browser bundle (saves ~30–50% of chunk sizes)

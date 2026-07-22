@@ -65,6 +65,39 @@ function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: s
   return { Icon: FileIcon, tint: "text-[var(--text-tertiary)]", bg: "bg-[var(--surface-sunken)]" };
 }
 
+/**
+ * Miniatura de la card de la grilla: imagen real para archivos de imagen y
+ * render de la 1ª página para PDFs (endpoint `/thumbnail`). Si el render falla
+ * (PDF corrupto, storage caído), cae al ícono del tipo. Estado por-card para no
+ * reintentar en loop.
+ */
+function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileIcon; tint: string; bg: string }) {
+  const isImage = doc.mimeType.startsWith("image/");
+  const isPdf = doc.mimeType === "application/pdf";
+  const [failed, setFailed] = useState(false);
+
+  if ((isImage || isPdf) && !failed) {
+    const src = isImage
+      ? `/api/admin/documents/${doc.id}/raw`
+      : `/api/admin/documents/${doc.id}/thumbnail`;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={doc.name}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className={cn("w-full h-full object-cover", isPdf && "object-top bg-white")}
+      />
+    );
+  }
+  return (
+    <div className={cn("w-full h-full flex items-center justify-center", bg)}>
+      <Icon className={cn("h-12 w-12", tint)} />
+    </div>
+  );
+}
+
 interface BuiltinCategory {
   id: "all" | "assistant" | "favorites" | "recent" | "expiring" | "activity" | "trash";
   label: string;
@@ -1539,16 +1572,9 @@ function DocCard({
         aria-label={`Seleccionar ${doc.name}`}
       />
 
-      {/* Thumbnail — imagen real para archivos de imagen; ícono para el resto. */}
+      {/* Thumbnail — imagen real para imágenes, 1ª página para PDFs, ícono para el resto. */}
       <button onClick={onPreview} className="block w-full aspect-square bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
-        {doc.mimeType.startsWith("image/") ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={`/api/admin/documents/${doc.id}/raw`} alt={doc.name} loading="lazy" className="w-full h-full object-cover" />
-        ) : (
-          <div className={cn("w-full h-full flex items-center justify-center", bg)}>
-            <Icon className={cn("h-12 w-12", tint)} />
-          </div>
-        )}
+        <DocThumb doc={doc} Icon={Icon} tint={tint} bg={bg} />
       </button>
 
       {/* Hover actions */}
