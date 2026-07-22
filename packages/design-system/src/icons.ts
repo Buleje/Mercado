@@ -185,6 +185,8 @@ export {
   Box,
   Boxes,
   Layers,
+  Combine,
+  Stamp,
   Folder,
   FolderOpen,
 

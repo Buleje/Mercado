@@ -25,10 +25,11 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2,
+  CalendarDays, Stamp, Combine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { useDocuments, getSignedDownloadUrl, analyzeDoc } from "@/hooks/use-documents";
+import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
@@ -39,6 +40,8 @@ import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
 import { FolderGlyph } from "./folder-visuals";
 import { ActivityView } from "./ActivityView";
+import { CalendarView } from "./CalendarView";
+import { StampModal } from "./StampModal";
 import { AssistantView } from "./AssistantView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
 
@@ -98,8 +101,59 @@ function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileI
   );
 }
 
+/** Datos estructurados extraídos por IA (factura/recibo) guardados en ocrMetadata. */
+type StructuredData = { docType?: string | null; ruc?: string | null; razonSocial?: string | null; numero?: string | null; fecha?: string | null; moneda?: string | null; total?: number | string | null; igv?: number | string | null };
+function structuredOf(doc: DbDocument): StructuredData | null {
+  const s = doc.ocrMetadata?.structured as StructuredData | null | undefined;
+  return s && typeof s === "object" ? s : null;
+}
+function fmtMoney(v: number | string | null | undefined, moneda?: string | null): string | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^\d.-]/g, ""));
+  if (!isFinite(n)) return null;
+  const sym = moneda === "USD" ? "$" : "S/";
+  return `${sym} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+/** Chip compacto en la card: muestra el total (o el tipo) del comprobante detectado. */
+function StructuredChip({ doc }: { doc: DbDocument }) {
+  const s = structuredOf(doc);
+  if (!s) return null;
+  const total = fmtMoney(s.total, s.moneda);
+  const label = total ?? (s.docType ? s.docType : null);
+  if (!label) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-500)]/12 px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/20 dark:text-[var(--data-success-500)]" title={`${s.docType ?? "comprobante"}${s.numero ? " " + s.numero : ""}`}>
+      <FileSpreadsheet className="h-2.5 w-2.5" />{label}
+    </span>
+  );
+}
+
+/**
+ * Fragmento del contenido (ocrText) alrededor de la 1ª coincidencia del término
+ * de búsqueda, con el match resaltado. Muestra DÓNDE matcheó dentro del doc —
+ * la búsqueda ya matchea por ocrText en el backend, esto lo hace visible.
+ */
+function MatchSnippet({ text, term }: { text: string | null; term: string }) {
+  if (!text || !term || term.trim().length < 2) return null;
+  const t = term.trim();
+  const idx = text.toLowerCase().indexOf(t.toLowerCase());
+  if (idx === -1) return null;
+  const start = Math.max(0, idx - 28);
+  const end = Math.min(text.length, idx + t.length + 44);
+  const before = (start > 0 ? "…" : "") + text.slice(start, idx);
+  const match = text.slice(idx, idx + t.length);
+  const after = text.slice(idx + t.length, end) + (end < text.length ? "…" : "");
+  return (
+    <p className="mt-1.5 line-clamp-2 text-[length:var(--ts-2xs,11px)] leading-snug text-[var(--text-tertiary)]">
+      {before}
+      <mark className="rounded bg-[var(--data-warning-500)]/25 px-0.5 text-[var(--text-primary)] dark:bg-[var(--data-warning-500)]/35 dark:text-[var(--text-primary)]">{match}</mark>
+      {after}
+    </p>
+  );
+}
+
 interface BuiltinCategory {
-  id: "all" | "assistant" | "favorites" | "recent" | "expiring" | "activity" | "trash";
+  id: "all" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -111,6 +165,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-slate-500" },
   { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-red-500" },
+  { id: "calendar", label: "Calendario", icon: CalendarDays, color: "text-primary" },
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
   { id: "trash", label: "Papelera", icon: Trash2, color: "text-[var(--text-tertiary)]" },
 ];
@@ -139,7 +194,7 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "assistant" | "favorites" | "recent" | "expiring" | "folder" | "activity" | "trash">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "trash">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
   // Resultado del análisis IA de contenido (resumen + datos clave).
@@ -169,6 +224,8 @@ export default function DocumentosModule() {
   const [movingDoc, setMovingDoc] = useState<DbDocument | null>(null);
   const [whatsappDoc, setWhatsappDoc] = useState<DbDocument | null>(null);
   const [signDoc, setSignDoc] = useState<DbDocument | null>(null);
+  const [stampTarget, setStampTarget] = useState<DbDocument | null>(null);
+  const [merging, setMerging] = useState(false);
   // Personalizar carpeta (nombre + color + ícono).
   const [editingFolder, setEditingFolder] = useState<DbDocumentFolder | null>(null);
   // Compartir carpeta completa por link.
@@ -452,6 +509,30 @@ export default function DocumentosModule() {
       await zipAndDownload(displayDocs, `${folderName.replace(/[^\w.-]+/g, "_") || "carpeta"}.zip`);
     } finally {
       setZipping(false);
+    }
+  };
+
+  // Combinar los documentos seleccionados (PDFs + imágenes) en un PDF nuevo.
+  const handleMerge = async () => {
+    if (selectedIds.size < 2 || merging) return;
+    setMerging(true);
+    try {
+      const ids = Array.from(selectedIds).filter((id) => {
+        const d = documents.find((x) => x.id === id);
+        return d && (d.mimeType === "application/pdf" || d.mimeType.startsWith("image/"));
+      });
+      if (ids.length < 2) {
+        alert("Elegí al menos 2 PDFs o imágenes para combinar.");
+        return;
+      }
+      const res = await mergeDocs(ids);
+      clearSelection();
+      await refresh();
+      if (res.skipped.length) alert(`Combinado en ${res.pageCount} páginas. Se saltaron ${res.skipped.length} archivo(s) no compatibles.`);
+    } catch (err) {
+      alert("No se pudo combinar: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
+    } finally {
+      setMerging(false);
     }
   };
 
@@ -1122,6 +1203,11 @@ export default function DocumentosModule() {
               <button onClick={bulkDownloadZip} disabled={zipping} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-60">
                 <FileArchive className="h-3 w-3" /> {zipping ? "Comprimiendo…" : "ZIP"}
               </button>
+              {selectedIds.size >= 2 && (
+                <button onClick={handleMerge} disabled={merging} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-60" title="Combinar en un PDF">
+                  <Combine className="h-3 w-3" /> {merging ? "Combinando…" : "Combinar PDF"}
+                </button>
+              )}
               <div className="inline-flex items-center gap-1 rounded-md bg-white/20 px-2">
                 <Tag className="h-3 w-3 shrink-0" />
                 <input
@@ -1179,6 +1265,8 @@ export default function DocumentosModule() {
               indexableCount={indexableDocs.length}
               onIndexAll={handleIndexAll}
             />
+          ) : filterMode === "calendar" ? (
+            <CalendarView docs={documents} onOpenDoc={setPreview} />
           ) : filterMode === "activity" ? (
             <ActivityView />
           ) : loading && documents.length === 0 ? (
@@ -1198,6 +1286,7 @@ export default function DocumentosModule() {
                   selected={selectedIds.has(doc.id)}
                   isRenaming={renaming?.id === doc.id}
                   renameValue={renaming?.id === doc.id ? renaming.value : doc.name}
+                  searchTerm={searchDebounced}
                   onSelect={() => toggleSelect(doc.id)}
                   onPreview={() => setPreview(doc)}
                   onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
@@ -1301,6 +1390,8 @@ export default function DocumentosModule() {
                             onMove={() => setMovingDoc(doc)}
                             onWhatsApp={() => setWhatsappDoc(doc)}
                             onSign={() => setSignDoc(doc)}
+                            onStamp={() => setStampTarget(doc)}
+                            isPdf={doc.mimeType === "application/pdf"}
                             onDownload={() => handleDownload(doc)}
                             onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
                             onDelete={() => { if (confirm(`¿Eliminar "${doc.name}"?`)) bulk("delete", [doc.id]); }}
@@ -1322,6 +1413,7 @@ export default function DocumentosModule() {
         return (
           <DocumentPreviewModal
             docId={preview.id}
+            allDocs={documents}
             onClose={() => setPreview(null)}
             onRefresh={refresh}
             onPrev={idx > 0 ? () => setPreview(displayDocs[idx - 1]) : undefined}
@@ -1356,6 +1448,10 @@ export default function DocumentosModule() {
 
       {signDoc && (
         <SendWhatsAppModal doc={signDoc} mode="sign" onClose={() => setSignDoc(null)} />
+      )}
+
+      {stampTarget && (
+        <StampModal doc={stampTarget} onClose={() => setStampTarget(null)} onDone={refresh} />
       )}
 
       {editingFolder && (
@@ -1525,7 +1621,7 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
 }
 
 function DocCard({
-  doc, selected, isRenaming, renameValue,
+  doc, selected, isRenaming, renameValue, searchTerm,
   onSelect, onPreview, onToggleFav, onRemove, onWhatsApp, onSetStatus,
   onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
   onDragStart, onDragEnd, dragging,
@@ -1534,6 +1630,7 @@ function DocCard({
   selected: boolean;
   isRenaming: boolean;
   renameValue: string;
+  searchTerm: string;
   onSelect: () => void;
   onPreview: () => void;
   onToggleFav: () => void;
@@ -1626,9 +1723,13 @@ function DocCard({
           <span className="capitalize text-[var(--text-tertiary)]">{doc.category}</span>
           <span className="tabular-nums text-[var(--text-tertiary)]">{formatBytes(doc.size)}</span>
         </div>
+        {searchTerm && !doc.name.toLowerCase().includes(searchTerm.trim().toLowerCase()) && (
+          <MatchSnippet text={doc.ocrText} term={searchTerm} />
+        )}
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <StatusControl status={doc.status} onChange={onSetStatus} />
           <ExpiryBadge expiresAt={doc.expiresAt} />
+          <StructuredChip doc={doc} />
         </div>
         {(doc.tags.length > 0 || doc.aiTags.length > 0) && (
           <div className="flex flex-wrap gap-1 mt-2">
@@ -1670,8 +1771,8 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 // ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
 // la vista lista. Dropdown `position: fixed` para no quedar recortado por el
 // overflow del contenedor de la tabla. ──
-function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhatsApp, onSign, onToggleFav, onDelete, favorite }: {
-  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
+function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhatsApp, onSign, onStamp, isPdf, onToggleFav, onDelete, favorite }: {
+  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -1719,6 +1820,7 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhat
           {item(FolderInput, "Mover a carpeta", onMove)}
           {item(MessageCircle, "Enviar por WhatsApp", onWhatsApp)}
           {item(PenLine, "Solicitar firma", onSign)}
+          {isPdf && item(Stamp, "Poner sello", onStamp)}
           {item(Download, "Descargar", onDownload)}
           {item(Star, favorite ? "Quitar favorito" : "Marcar favorito", onToggleFav)}
           {item(Trash2, "Eliminar", onDelete, true)}

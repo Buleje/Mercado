@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check,
   PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink, ChevronLeft, ChevronRight, GitCompare,
+  FileSpreadsheet, Plus, Link as LinkChain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getDocumentDetail, fetchVersions, fetchAudit, fetchShares, createShare, revokeShare,
-  uploadVersion, signDocument, patchDocument,
+  uploadVersion, signDocument, patchDocument, relateDoc,
 } from "@/hooks/use-documents";
 import type {
   DbDocument, DbDocumentVersion, DbDocumentAuditLog, DbDocumentShare,
@@ -20,6 +21,8 @@ interface Props {
   docId: string;
   onClose: () => void;
   onRefresh?: () => void;
+  /** Lista completa (para resolver/elegir documentos relacionados). */
+  allDocs?: DbDocument[];
   /** Navegación entre documentos de la lista (undefined en los extremos). */
   onPrev?: () => void;
   onNext?: () => void;
@@ -43,7 +46,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh, onPrev, onNext, position }: Props) {
+export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, onPrev, onNext, position }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -209,7 +212,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, onPrev, onNext
           )}
 
           {tab === "details" && (
-            <DetailsTab doc={doc} onPatched={(d) => { setDoc(d); onRefresh?.(); }} />
+            <DetailsTab doc={doc} allDocs={allDocs ?? []} onPatched={(d) => { setDoc(d); onRefresh?.(); }} />
           )}
 
           {tab === "versions" && (
@@ -390,7 +393,114 @@ function VersionsTab({
 
 interface EntityOpt { id: string; name: string }
 
-function DetailsTab({ doc, onPatched }: { doc: DbDocument; onPatched: (d: DbDocument) => void }) {
+// ── Datos estructurados (facturas/recibos extraídos por IA) ───────────────────
+type StructuredData = { docType?: string | null; ruc?: string | null; razonSocial?: string | null; numero?: string | null; fecha?: string | null; moneda?: string | null; total?: number | string | null; igv?: number | string | null };
+
+function money(v: number | string | null | undefined, moneda?: string | null): string | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[^\d.-]/g, ""));
+  if (!isFinite(n)) return null;
+  return `${moneda === "USD" ? "$" : "S/"} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function StructuredCard({ doc }: { doc: DbDocument }) {
+  const s = doc.ocrMetadata?.structured as StructuredData | null | undefined;
+  if (!s || typeof s !== "object") return null;
+  const rows = ([
+    ["Tipo", s.docType ?? null],
+    ["Nº", s.numero ?? null],
+    ["RUC", s.ruc ?? null],
+    ["Emisor", s.razonSocial ?? null],
+    ["Fecha", s.fecha ?? null],
+    ["IGV", money(s.igv, s.moneda)],
+    ["Total", money(s.total, s.moneda)],
+  ] as [string, string | null][]).filter(([, v]) => v);
+  if (rows.length === 0) return null;
+  return (
+    <section className="rounded-2xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 p-4 dark:bg-[var(--data-success-500)]/12">
+      <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+        <FileSpreadsheet className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" /> Datos extraídos por IA
+      </p>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
+        {rows.map(([k, v]) => (
+          <div key={k} className="min-w-0">
+            <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{k}</p>
+            <p className={cn("truncate text-sm font-semibold text-[var(--text-primary)]", k === "Total" && "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]")}>{v}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── Documentos relacionados ──────────────────────────────────────────────────
+function getRelatedIds(doc: DbDocument): string[] {
+  const r = doc.ocrMetadata?.relatedIds;
+  return Array.isArray(r) ? r.filter((x): x is string => typeof x === "string") : [];
+}
+
+function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs: DbDocument[]; onChanged: (d: DbDocument) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const relatedIds = getRelatedIds(doc);
+  const related = relatedIds.map((id) => allDocs.find((d) => d.id === id)).filter((d): d is DbDocument => !!d);
+  const candidates = allDocs.filter((d) => d.id !== doc.id && !relatedIds.includes(d.id));
+
+  async function toggle(relatedId: string, link: boolean) {
+    setBusy(true);
+    try {
+      await relateDoc(doc.id, relatedId, link);
+      const nextIds = link ? [...relatedIds, relatedId] : relatedIds.filter((x) => x !== relatedId);
+      onChanged({ ...doc, ocrMetadata: { ...(doc.ocrMetadata ?? {}), relatedIds: nextIds } });
+      setAdding(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <p className="mb-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+        <LinkChain className="h-4 w-4 text-primary" /> Documentos relacionados
+      </p>
+      <p className="mb-3 text-xs text-[var(--text-tertiary)]">Vinculá este documento con otros (contrato ↔ adenda, factura ↔ recibo).</p>
+
+      {related.length > 0 && (
+        <ul className="mb-2 space-y-1.5">
+          {related.map((d) => (
+            <li key={d.id} className="flex items-center gap-2 rounded-lg bg-[var(--surface-sunken)] px-2.5 py-1.5">
+              <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text-primary)]">{d.name}</span>
+              <span className="shrink-0 text-[length:var(--ts-2xs,11px)] capitalize text-[var(--text-tertiary)]">{d.category}</span>
+              <button onClick={() => toggle(d.id, false)} disabled={busy} className="shrink-0 rounded p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-700)] disabled:opacity-50" aria-label="Quitar vínculo"><X className="h-3.5 w-3.5" /></button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {adding ? (
+        <select
+          autoFocus
+          defaultValue=""
+          onChange={(e) => { if (e.target.value) toggle(e.target.value, true); }}
+          disabled={busy}
+          className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary dark:bg-[var(--surface-sunken)]"
+        >
+          <option value="" disabled>Elegí un documento…</option>
+          {candidates.map((d) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
+      ) : (
+        <button onClick={() => setAdding(true)} disabled={candidates.length === 0} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-3 py-1.5 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary disabled:opacity-40">
+          <Plus className="h-4 w-4" /> Vincular documento
+        </button>
+      )}
+    </section>
+  );
+}
+
+function DetailsTab({ doc, allDocs, onPatched }: { doc: DbDocument; allDocs: DbDocument[]; onPatched: (d: DbDocument) => void }) {
   const [saving, setSaving] = useState<string | null>(null);
   const [customers, setCustomers] = useState<EntityOpt[]>([]);
   const [suppliers, setSuppliers] = useState<EntityOpt[]>([]);
@@ -435,6 +545,12 @@ function DetailsTab({ doc, onPatched }: { doc: DbDocument; onPatched: (d: DbDocu
 
   return (
     <div className="p-5 space-y-4 max-w-2xl mx-auto">
+      {/* Datos estructurados extraídos por IA (facturas/recibos) */}
+      <StructuredCard doc={doc} />
+
+      {/* Documentos relacionados */}
+      <RelatedSection doc={doc} allDocs={allDocs} onChanged={onPatched} />
+
       {/* Vencimiento */}
       <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-1 inline-flex items-center gap-1.5">

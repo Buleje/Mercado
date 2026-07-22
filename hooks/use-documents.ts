@@ -403,3 +403,18 @@ export async function signDocument(id: string, body: {
 }): Promise<{ version: DbDocumentVersion; originalSha256: string; signedAt: string }> {
   return http(`${BASE}/${id}/sign`, { method: "POST", body: JSON.stringify(body) });
 }
+
+/** Aplica un sello / marca de agua (PAGADO, COPIA…) sobre un PDF → nueva versión. */
+export async function stampDoc(id: string, preset: string, customText?: string): Promise<{ version: DbDocumentVersion | null }> {
+  return http(`${BASE}/${id}/stamp`, { method: "POST", body: JSON.stringify({ preset, customText }) });
+}
+
+/** Vincula/desvincula dos documentos (bidireccional). */
+export async function relateDoc(id: string, relatedId: string, link: boolean): Promise<{ relatedIds: string[] }> {
+  return http(`${BASE}/${id}/relate`, { method: "POST", body: JSON.stringify({ relatedId, link }) });
+}
+
+/** Combina varios documentos (PDFs + imágenes) en un PDF nuevo. */
+export async function mergeDocs(ids: string[], name?: string, folderId?: string | null): Promise<{ document: DbDocument; pageCount: number; skipped: string[] }> {
+  return http(`${BASE}/merge`, { method: "POST", body: JSON.stringify({ ids, name, folderId }) });
+}

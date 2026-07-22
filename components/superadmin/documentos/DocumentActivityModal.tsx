@@ -18,6 +18,9 @@ import {
   FileText,
   Sparkles,
   PenTool,
+  Stamp,
+  Link2,
+  Combine,
 } from "@buleje/design-system/icons";
 import type { DbDocument, DbDocumentAuditLog, DocAction } from "@/lib/types/documents";
 import { fmtDate } from "./shared";
@@ -79,6 +82,9 @@ const ACTION_META: Record<DocAction, ActionMeta> = {
   tag:           { label: "Etiquetado",      Icon: Tag,       color: "var(--accent)" },
   ocr:           { label: "OCR",             Icon: FileText,  color: "var(--text-tertiary)" },
   ai_categorize: { label: "Categorizado IA", Icon: Sparkles,  color: "var(--data-info-500)" },
+  stamp:         { label: "Sellado",         Icon: Stamp,     color: "var(--data-success-500)" },
+  link:          { label: "Vinculado",       Icon: Link2,     color: "var(--data-info-500)" },
+  merge:         { label: "Combinado",       Icon: Combine,   color: "var(--accent)" },
 };
 
 function getMeta(action: DocAction): ActionMeta {

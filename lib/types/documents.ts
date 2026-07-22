@@ -20,6 +20,9 @@ export const DOC_ACTIONS = [
   "tag",
   "ocr",
   "ai_categorize",
+  "stamp",
+  "link",
+  "merge",
 ] as const;
 export type DocAction = (typeof DOC_ACTIONS)[number];
 
