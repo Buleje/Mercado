@@ -854,7 +854,7 @@ export default function DocumentosModule() {
       )}
 
       {/* Hero stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatBlock label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />
         <StorageRing usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />
         <button
@@ -1635,7 +1635,7 @@ function StorageRing({ usedBytes, quotaBytes }: { usedBytes: number; quotaBytes:
       </div>
       <div className="min-w-0">
         <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Espacio usado</p>
-        <p className="text-xl font-extrabold tabular-nums leading-tight" style={{ color }}>{formatBytes(usedBytes)}</p>
+        <p className="text-xl font-extrabold tabular-nums leading-tight whitespace-nowrap" style={{ color }}>{formatBytes(usedBytes)}</p>
         <p className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)] tabular-nums">{pct}% de {formatBytes(quotaBytes)}</p>
       </div>
     </div>

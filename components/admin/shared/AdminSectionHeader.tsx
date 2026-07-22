@@ -40,8 +40,12 @@ function getIconBg(color?: string): string {
 
 function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, tabs }: AdminSectionHeaderProps) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-4">
+    // @container + rem explícitos, igual que AdminModuleHeader: con las acciones
+    // en `shrink-0` y el título sin espacio, el subtítulo se parte por palabra.
+    // (Los tokens `--container-*` están redefinidos en @theme, por eso no se usan
+    // las variantes con nombre `@sm/@md`.)
+    <div className="@container space-y-3">
+      <div className="flex flex-col gap-3 @min-[40rem]:flex-row @min-[40rem]:items-center @min-[40rem]:justify-between @min-[40rem]:gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {Icon && (
             <div
@@ -57,8 +61,9 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
             <SectionTitle className="text-xl truncate">
               {title}
             </SectionTitle>
+            {/* Igual que en AdminModuleHeader: en angosto manda el título. */}
             {subtitle && (
-              <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 truncate">
+              <p className="hidden @min-[28rem]:block text-sm text-[var(--text-secondary)] dark:text-zinc-400 truncate">
                 {subtitle}
               </p>
             )}
@@ -66,7 +71,7 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
         </div>
 
         {actions && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 @min-[40rem]:shrink-0">
             {actions}
           </div>
         )}
