@@ -47,6 +47,9 @@ import {
 import { lineLengthM } from "@/lib/forestal/loth-utm";
 import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
+import LothMapaHerramientas from "./LothMapaHerramientas";
+import type { ModoMedicion } from "@/lib/forestal/loth-medicion";
+import { cargarWaybackReleases, EUDR_CUTOFF, releaseParaFecha, type WaybackRelease } from "@/lib/forestal/loth-wayback";
 import { printLothPlano, type PlanoBasemap } from "@/lib/forestal/loth-plano-print";
 import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
 import LothEudrRail from "./LothEudrRail";
@@ -145,6 +148,15 @@ export default function LothMapaView() {
   /** Pedido de centrado: el canvas lo consume por `fitKey`-style. */
   const [centrarEn, setCentrarEn] = useState<{ p: LatLng; n: number } | null>(null);
 
+  // Caja de herramientas: cinta métrica, comparador histórico y pantalla completa.
+  const [medicion, setMedicion] = useState<LatLng[] | null>(null);
+  const [medicionModo, setMedicionModo] = useState<ModoMedicion>("distancia");
+  const [releases, setReleases] = useState<WaybackRelease[]>([]);
+  const [cargandoReleases, setCargandoReleases] = useState(true);
+  const [wayback, setWayback] = useState<WaybackRelease | null>(null);
+  const [waybackSplit, setWaybackSplit] = useState(50);
+  const [fullscreen, setFullscreen] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -216,6 +228,16 @@ export default function LothMapaView() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Catálogo de imágenes históricas (Esri Wayback). Si el servicio no responde,
+  // la herramienta queda deshabilitada y el mapa sigue funcionando igual.
+  useEffect(() => {
+    const ac = new AbortController();
+    cargarWaybackReleases(ac.signal)
+      .then(setReleases)
+      .finally(() => setCargandoReleases(false));
+    return () => ac.abort();
+  }, []);
 
   const geoAll = useMemo(() => (raw ? toGeo(raw) : []), [raw]);
   const censoBase = useMemo(() => toCenso(trees), [trees]);
@@ -377,6 +399,13 @@ export default function LothMapaView() {
   }, []);
 
   const centrar = useCallback((p: LatLng) => setCentrarEn((c) => ({ p, n: (c?.n ?? 0) + 1 })), []);
+
+  const addMedicionPunto = useCallback((v: LatLng) => setMedicion((m) => [...(m ?? []), v]), []);
+  /** Salta a la última imagen anterior al corte EUDR (31-dic-2020). */
+  const verCorteEudr = () => {
+    const r = releaseParaFecha(releases, EUDR_CUTOFF);
+    if (r) setWayback(r);
+  };
 
   const addViaPoint = useCallback((v: LatLng) => setViaDraft((d) => [...(d ?? []), v]), []);
   const toggleOverlay = useCallback(
@@ -647,13 +676,37 @@ export default function LothMapaView() {
             onCentrar={centrar}
           />
 
+          <LothMapaHerramientas
+            medicion={medicion}
+            medicionModo={medicionModo}
+            onMedicion={setMedicion}
+            onMedicionModo={setMedicionModo}
+            releases={releases}
+            cargandoReleases={cargandoReleases}
+            wayback={wayback}
+            onWayback={setWayback}
+            waybackSplit={waybackSplit}
+            onWaybackSplit={setWaybackSplit}
+            onWaybackCorteEudr={verCorteEudr}
+            onIrA={(p) => centrar(p)}
+            fullscreen={fullscreen}
+            onFullscreen={() => setFullscreen((v) => !v)}
+            zonaDefault={zonaSugerida}
+          />
+
           {error && (
             <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
               <strong>Error:</strong> {error}
             </div>
           )}
 
-          <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]">
+          <div
+            className={
+              fullscreen
+                ? "fixed inset-3 z-[55] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+                : "relative h-[560px] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]"
+            }
+          >
             <LothMapaCanvas
               geo={geoShown}
               censo={censoShown}
@@ -665,6 +718,12 @@ export default function LothMapaView() {
               onViaPoint={addViaPoint}
               overlays={overlays}
               posicion={posicion}
+              wayback={wayback}
+              waybackSplit={waybackSplit}
+              medicion={medicion}
+              medicionModo={medicionModo}
+              onMedicionPunto={addMedicionPunto}
+              fullscreen={fullscreen}
               centrarEn={centrarEn}
               parcela={parcela.vertices}
               declarada={declarada}

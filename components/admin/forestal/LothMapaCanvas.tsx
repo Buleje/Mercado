@@ -22,6 +22,7 @@ import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import { dominantZone, gridLabel, utmGrid, vertexCode } from "@/lib/forestal/loth-utm";
 import { referenciaMeta, viaMeta, type LothReferencia, type LothVia } from "@/lib/forestal/loth-cartografia";
 import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
+import type { WaybackRelease } from "@/lib/forestal/loth-wayback";
 import {
   arbolPopupHtml,
   censoColor,
@@ -65,6 +66,16 @@ interface Props {
   overlays: OverlayId[];
   /** Posición del dispositivo en campo (null = seguimiento apagado). */
   posicion: { lat: number; lng: number; accuracy: number } | null;
+  /** Imagen histórica bajo la cortina (null = apagada). */
+  wayback: WaybackRelease | null;
+  /** Posición de la cortina 0–100 (% del ancho que muestra el histórico). */
+  waybackSplit: number;
+  /** Traza de la cinta métrica (vacío = herramienta apagada). */
+  medicion: LatLng[] | null;
+  medicionModo: "distancia" | "area";
+  onMedicionPunto: (v: LatLng) => void;
+  /** Cambia al entrar/salir de pantalla completa: Leaflet debe re-medirse. */
+  fullscreen: boolean;
   /** Pedido de centrado (cambia `n` en cada pedido). */
   centrarEn: { p: LatLng; n: number } | null;
   parcela: LatLng[];
@@ -99,6 +110,12 @@ export default function LothMapaCanvas({
   onViaPoint,
   overlays,
   posicion,
+  wayback,
+  waybackSplit,
+  medicion,
+  medicionModo,
+  onMedicionPunto,
+  fullscreen,
   centrarEn,
   parcela,
   declarada,
@@ -127,6 +144,8 @@ export default function LothMapaCanvas({
   const refsRef = useRef<any>(null);
   const viasRef = useRef<any>(null);
   const posRef = useRef<any>(null);
+  const waybackRef = useRef<any>(null);
+  const medicionRef = useRef<any>(null);
   const overlayRef = useRef<Record<string, any>>({});
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const fittedRef = useRef(0);
@@ -147,6 +166,11 @@ export default function LothMapaCanvas({
       markersRef.current = L.layerGroup().addTo(map);
       viasRef.current = L.layerGroup().addTo(map);
       posRef.current = L.layerGroup().addTo(map);
+      medicionRef.current = L.layerGroup().addTo(map);
+      // Pane propio para la imagen histórica: va encima de la base y debajo de
+      // los vectores, y su clip-path es el que hace la "cortina" del comparador.
+      map.createPane("wayback");
+      map.getPane("wayback").style.zIndex = "250";
       refsRef.current = L.layerGroup().addTo(map);
       draftRef.current = L.layerGroup().addTo(map);
       setReady(true);
@@ -491,6 +515,66 @@ export default function LothMapaCanvas({
     }
   }, [ready, geo, censo, parcela, declarada]);
 
+  // ── Imagen histórica (Wayback) + cortina ───────────────────────────────────
+  useEffect(() => {
+    const L = LRef.current;
+    const map = mapRef.current;
+    if (!ready || !L || !map) return;
+    if (waybackRef.current) {
+      map.removeLayer(waybackRef.current);
+      waybackRef.current = null;
+    }
+    if (!wayback) return;
+    waybackRef.current = L.tileLayer(wayback.urlTemplate, {
+      maxZoom: 22,
+      maxNativeZoom: MAX_NATIVE.sat,
+      pane: "wayback",
+      attribution: `Imagery ${wayback.label} © Esri Wayback`,
+    }).addTo(map);
+  }, [ready, wayback]);
+
+  // La cortina se aplica al PANE (no a cada tesela): un solo clip-path.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const pane = map.getPane("wayback") as HTMLElement | undefined;
+    if (!pane) return;
+    pane.style.clipPath = wayback ? `inset(0 ${100 - waybackSplit}% 0 0)` : "";
+  }, [ready, wayback, waybackSplit]);
+
+  // ── Cinta métrica ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const L = LRef.current;
+    const group = medicionRef.current;
+    if (!ready || !L || !group) return;
+    group.clearLayers();
+    if (!medicion || medicion.length === 0) return;
+    const color = "#f59e0b";
+    if (medicionModo === "area" && medicion.length >= 3) {
+      L.polygon(medicion, { color, weight: 2.5, dashArray: "6 4", fillColor: color, fillOpacity: 0.15, interactive: false }).addTo(group);
+    } else if (medicion.length >= 2) {
+      L.polyline(medicion, { color, weight: 3, dashArray: "6 4", interactive: false }).addTo(group);
+    }
+    medicion.forEach((p, i) =>
+      L.circleMarker(p, { radius: 4, color: "#fff", weight: 2, fillColor: color, fillOpacity: 1, interactive: false })
+        .bindTooltip(String(i + 1), { permanent: true, direction: "top", className: "loth-vertex-label", offset: [0, -6] })
+        .addTo(group),
+    );
+  }, [ready, medicion, medicionModo]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || medicion === null) return;
+    (map.getContainer() as HTMLElement).style.cursor = "crosshair";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onClick = (e: any) => onMedicionPunto([e.latlng.lat, e.latlng.lng]);
+    map.on("click", onClick);
+    return () => {
+      map.off("click", onClick);
+      if (mapRef.current) (mapRef.current.getContainer() as HTMLElement).style.cursor = "";
+    };
+  }, [ready, medicion, onMedicionPunto]);
+
   // ── Mi posición en campo (GPS del dispositivo) ─────────────────────────────
   useEffect(() => {
     const L = LRef.current;
@@ -507,6 +591,14 @@ export default function LothMapaCanvas({
       .bindTooltip("Estás acá", { direction: "top", offset: [0, -8] })
       .addTo(group);
   }, [ready, posicion]);
+
+  // El contenedor cambió de tamaño (pantalla completa): Leaflet no se entera solo.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const t = setTimeout(() => map.invalidateSize(), 220);
+    return () => clearTimeout(t);
+  }, [ready, fullscreen]);
 
   // Centrar a pedido (botón "Centrar" del modo campo).
   useEffect(() => {
@@ -571,5 +663,7 @@ export default function LothMapaCanvas({
     }
   }, [ready, fitKey, geo, censo, parcela]);
 
-  return <div ref={containerRef} className="h-[560px] w-full bg-[var(--surface-sunken)]" />;
+  // className ESTÁTICO (Leaflet agrega las suyas): la ALTURA la define el
+  // contenedor de `LothMapaView`, que cambia en pantalla completa.
+  return <div ref={containerRef} className="h-full w-full bg-[var(--surface-sunken)]" />;
 }
