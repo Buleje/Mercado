@@ -27,8 +27,12 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const buf = await downloadFromStorage(doc.storagePath);
     if (!buf) return NextResponse.json({ error: "storage_unavailable" }, { status: 502 });
 
+    // ?page=N (1-based) → miniatura de esa página; por defecto la 1ª.
+    const pageParam = Number(req.nextUrl.searchParams.get("page") || "1");
+    const page = Number.isFinite(pageParam) && pageParam >= 1 ? Math.floor(pageParam) : 1;
+
     const { renderPageAsImage } = await import("unpdf");
-    const png = await renderPageAsImage(new Uint8Array(buf), 1, {
+    const png = await renderPageAsImage(new Uint8Array(buf), page, {
       canvasImport: () => import("@napi-rs/canvas"),
       scale: 1.2,
     });

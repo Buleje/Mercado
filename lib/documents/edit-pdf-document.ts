@@ -1,8 +1,41 @@
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { buildStoragePath, downloadFromStorage, uploadToStorage } from "@/lib/documents/storage";
-import { rotatePdfAllPages, splitPdfPerPage } from "@/lib/documents/pdf-pages";
+import { rotatePdfAllPages, splitPdfPerPage, rebuildPdf } from "@/lib/documents/pdf-pages";
 import { logger } from "@/lib/logger";
 import type { DbDocument, DbDocumentVersion } from "@/lib/types/documents";
+
+/** Reordena/elimina/rota páginas individuales de un PDF → nueva versión. */
+export async function editPdfPages(
+  tenantId: string,
+  documentId: string,
+  spec: { index: number; rotate?: number }[],
+  actorId: string,
+): Promise<{ ok: true; version: DbDocumentVersion | null } | { ok: false; error: string; status: number }> {
+  const doc = await DocumentsDB.getById(tenantId, documentId);
+  if (!doc) return { ok: false, error: "not_found", status: 404 };
+  if (doc.mimeType !== "application/pdf") return { ok: false, error: "only_pdf", status: 415 };
+  if (spec.length === 0) return { ok: false, error: "empty_result", status: 400 };
+
+  const original = await downloadFromStorage(doc.storagePath);
+  if (!original) return { ok: false, error: "storage_download_fail", status: 502 };
+
+  const rebuilt = await rebuildPdf(new Uint8Array(original), spec);
+  const newPath = buildStoragePath({ tenantId, documentId, versionLabel: "pages", originalName: doc.originalName });
+  const up = await uploadToStorage(newPath, rebuilt, "application/pdf");
+  if (!up.ok) return { ok: false, error: "storage_upload_fail", status: 502 };
+
+  const version = await DocumentsDB.addVersion(tenantId, documentId, {
+    storagePath: newPath,
+    size: rebuilt.length,
+    mimeType: "application/pdf",
+    uploadedById: actorId,
+    changeNote: `Páginas editadas (${spec.length})`,
+  });
+  DocumentsDB.log(tenantId, { documentId, actorId, action: "version", metadata: { op: "edit-pages", pages: spec.length } }).catch((err) =>
+    logger.warn("documents.editpages.audit_fail", { err: String(err) }),
+  );
+  return { ok: true, version };
+}
 
 /** Rota un PDF (todas las páginas) → nueva versión. */
 export async function rotateDocument(

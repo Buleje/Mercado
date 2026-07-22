@@ -429,6 +429,17 @@ export async function splitDoc(id: string): Promise<{ created: DbDocument[]; cou
   return http(`${BASE}/${id}/split`, { method: "POST", body: JSON.stringify({}) });
 }
 
+/** Cantidad de páginas de un PDF (para el editor). */
+export async function fetchPageCount(id: string): Promise<number> {
+  const r = await http<{ pageCount: number }>(`${BASE}/${id}/pages`);
+  return r.pageCount;
+}
+
+/** Reordena/elimina/rota páginas individuales → nueva versión. */
+export async function editPages(id: string, pages: { index: number; rotate?: number }[]): Promise<{ version: DbDocumentVersion | null }> {
+  return http(`${BASE}/${id}/pages`, { method: "POST", body: JSON.stringify({ pages }) });
+}
+
 /** Combina varias fotos (páginas escaneadas) en un PDF nuevo. */
 export async function scanToPdf(pages: Blob[], name?: string, folderId?: string | null): Promise<{ document: DbDocument; pageCount: number }> {
   const fd = new FormData();

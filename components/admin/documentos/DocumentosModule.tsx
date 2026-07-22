@@ -25,7 +25,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -45,6 +45,7 @@ import { StampModal } from "./StampModal";
 import { DashboardView } from "./DashboardView";
 import { SmartFolderModal } from "./SmartFolderModal";
 import { CameraScanModal } from "./CameraScanModal";
+import { PageEditorModal } from "./PageEditorModal";
 import { loadSmartFolders, saveSmartFolders, matchesSmartFolder, describeRules, type SmartFolder } from "@/lib/documentos/smart-folders";
 import { AssistantView } from "./AssistantView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
@@ -242,6 +243,7 @@ export default function DocumentosModule() {
   const [activeSmartId, setActiveSmartId] = useState<string | null>(null);
   const [smartModal, setSmartModal] = useState<SmartFolder | "new" | null>(null);
   const [showCameraScan, setShowCameraScan] = useState(false);
+  const [pageEditorDoc, setPageEditorDoc] = useState<DbDocument | null>(null);
   useEffect(() => { setSmartFolders(loadSmartFolders()); }, []);
   const persistSmart = useCallback((next: SmartFolder[]) => { setSmartFolders(next); saveSmartFolders(next); }, []);
 
@@ -1474,6 +1476,7 @@ export default function DocumentosModule() {
                             onStamp={() => setStampTarget(doc)}
                             onRotate={() => handleRotate(doc)}
                             onSplit={() => handleSplit(doc)}
+                            onEditPages={() => setPageEditorDoc(doc)}
                             isPdf={doc.mimeType === "application/pdf"}
                             onDownload={() => handleDownload(doc)}
                             onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
@@ -1543,6 +1546,10 @@ export default function DocumentosModule() {
           onClose={() => setShowCameraScan(false)}
           onDone={refresh}
         />
+      )}
+
+      {pageEditorDoc && (
+        <PageEditorModal doc={pageEditorDoc} onClose={() => setPageEditorDoc(null)} onDone={refresh} />
       )}
 
       {smartModal && (
@@ -1875,8 +1882,8 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 // ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
 // la vista lista. Dropdown `position: fixed` para no quedar recortado por el
 // overflow del contenedor de la tabla. ──
-function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhatsApp, onSign, onStamp, onRotate, onSplit, isPdf, onToggleFav, onDelete, favorite }: {
-  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; onRotate: () => void; onSplit: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
+function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhatsApp, onSign, onStamp, onRotate, onSplit, onEditPages, isPdf, onToggleFav, onDelete, favorite }: {
+  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; onRotate: () => void; onSplit: () => void; onEditPages: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -1926,6 +1933,7 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhat
           {item(PenLine, "Solicitar firma", onSign)}
           {isPdf && item(Stamp, "Poner sello", onStamp)}
           {isPdf && item(RotateCw, "Rotar 90°", onRotate)}
+          {isPdf && item(FileStack, "Editar páginas", onEditPages)}
           {isPdf && item(Scissors, "Dividir en páginas", onSplit)}
           {item(Download, "Descargar", onDownload)}
           {item(Star, favorite ? "Quitar favorito" : "Marcar favorito", onToggleFav)}
