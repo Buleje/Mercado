@@ -420,6 +420,11 @@ export async function mergeDocs(ids: string[], name?: string, folderId?: string 
   return http(`${BASE}/merge`, { method: "POST", body: JSON.stringify({ ids, name, folderId }) });
 }
 
+/** Flujo de aprobación: solicitar revisión / aprobar / rechazar. */
+export async function docApproval(id: string, action: "request" | "approve" | "reject", note?: string): Promise<{ status: string }> {
+  return http(`${BASE}/${id}/approval`, { method: "POST", body: JSON.stringify({ action, note }) });
+}
+
 /** Rota todas las páginas de un PDF (90/180/270°) → nueva versión. */
 export async function rotateDoc(id: string, degrees: 90 | 180 | 270 = 90): Promise<{ version: DbDocumentVersion | null }> {
   return http(`${BASE}/${id}/rotate`, { method: "POST", body: JSON.stringify({ degrees }) });
