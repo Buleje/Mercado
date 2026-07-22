@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { m } from "@/components/admin/providers";
+import { SectionTitle } from "@buleje/design-system";
 import {
   ChevronRight,
   ChevronDown,
@@ -784,18 +785,19 @@ export function AdminSidebar({
       }
     : {
         dashboard: "text-primary",
-        ventas: "text-sky-600",
+        // sky-600 y --data-info-600 son el mismo #0284c7: se usa el token.
+        ventas: "text-[var(--data-info-600)]",
         productos: "text-[var(--accent)]",
         inventario: "text-[var(--data-warning-600)]",
-        compras: "text-orange-600",
+        compras: "text-[var(--nav-cat-compras)]",
         finanzas: "text-[var(--data-success-600)]",
         clientes: "text-[var(--data-error-500)]",
         "marketplace-ops": "text-[var(--accent)]",
-        analytics: "text-cyan-600",
+        analytics: "text-[var(--nav-cat-analytics)]",
         comunicacion: "text-[var(--accent-dark)]",
         documentos: "text-slate-600",
         "mi-tienda": "text-[var(--accent)]",
-        metas: "text-yellow-600",
+        metas: "text-[var(--nav-cat-metas)]",
       };
 
   const ICON_COLORS: Record<string, string> =
@@ -1524,9 +1526,9 @@ export function AdminSidebar({
             className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-sm mx-4 p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-base font-bold text-[var(--text-primary)] mb-1">
+            <SectionTitle as="h2" className="text-base mb-1">
               Tipo de negocio
-            </h2>
+            </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)] mb-4">
               El tipo de negocio determina que modulos aparecen en tu panel.
             </p>

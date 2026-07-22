@@ -2110,6 +2110,18 @@ button,
   --data-info-600: #0284c7;
   --data-info-700: #0369a1;
 
+  /* ─── Categorías del menú lateral (decorativo, ADR-075) ────────────────────
+     Estos NO son colores de estado —para eso están --data-*—: sólo distinguen
+     una categoría de otra en el sidebar. Existen porque la paleta semántica
+     tiene 4 familias y el menú tiene 12 categorías: forzarlas a --data-*
+     dejaba varias del mismo color y se perdía la señal.
+     Sólo se usan en el sidebar de fondo CLARO (el oscuro tiene su propio mapa
+     con tonos -300), por eso no se redefinen en el bloque dark.
+     "Ventas" no está acá: sky-600 es idéntico a --data-info-600 y usa ese. */
+  --nav-cat-compras: #ea580c;
+  --nav-cat-analytics: #0891b2;
+  --nav-cat-metas: #ca8a04;
+
   /* Aliases backward compatibility — ahora apuntan al -500.
      Light mode adopta el -500 default (antes usaba -700 más oscuro, ADR-075 unifica). */
   --data-success: var(--data-success-500);
