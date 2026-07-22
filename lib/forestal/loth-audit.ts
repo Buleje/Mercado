@@ -33,7 +33,9 @@ export type LothAuditEntity =
   // KV: el polígono del área de aprovechamiento (cumplimiento EUDR).
   | "ForestLothParcela"
   // KV: referencias y accesos del plano (contexto cartográfico).
-  | "ForestLothCartografia";
+  | "ForestLothCartografia"
+  // KV: parámetros del Plan Operativo (DMC por especie, % de semilleros).
+  | "ForestLothPoa";
 
 /** Acciones auditables del LO-TH. */
 export type LothAuditAction =
@@ -55,7 +57,9 @@ export type LothAuditAction =
   // Parcela de aprovechamiento (polígono EUDR, KV)
   | "loth_parcela_update"
   // Referencias + cuadro de acceso del plano (KV)
-  | "loth_cartografia_update";
+  | "loth_cartografia_update"
+  // Parámetros del POA: DMC por especie y semilleros (KV)
+  | "loth_poa_config_update";
 
 /**
  * Registra un evento del LO-TH. No se await-ea a propósito: la auditoría no debe

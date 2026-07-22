@@ -13,6 +13,9 @@ import {
   Printer, MapPin, TrendingUp, Scale, Ban, AlertTriangle, CheckCircle2, Pencil, Check, X, Search,
 } from "@buleje/design-system/icons";
 import { CardTitle, StatCard } from "@buleje/design-system";
+import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
+import { printLothPoa } from "@/lib/forestal/loth-poa-print";
+import LothPoaPanel from "./LothPoaPanel";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 
@@ -52,6 +55,9 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [balance, setBalance] = useState<Balance | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  // Plan Operativo: DMC por especie + % de semilleros (KV por plan).
+  const [poaConfig, setPoaConfig] = useState<PoaConfig>(defaultPoaConfig());
+  const [poaSaving, setPoaSaving] = useState(false);
 
   const loadPlans = useCallback(async () => {
     setLoading(true); setError(null);
@@ -68,14 +74,16 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const loadDetail = useCallback(async (id: string) => {
     setDetailLoading(true);
     try {
-      const [d, c, b] = await Promise.all([
+      const [d, c, b, poa] = await Promise.all([
         fetch(`/api/admin/forestal/plan?planId=${id}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/plan/census?planId=${id}`, { credentials: "include" }),
         fetch(`/api/admin/forestal/plan?balance=${id}`, { credentials: "include" }),
+        fetch(`/api/admin/forestal/loth/poa?planId=${id}`, { credentials: "include" }),
       ]);
       if (d.ok) { const j = await d.json(); setSpecies(j.species ?? []); setCensusStat(j.censusSummary ?? []); }
       if (c.ok) setTrees((await c.json()).trees ?? []);
       if (b.ok) setBalance((await b.json()).balance ?? null);
+      if (poa.ok) setPoaConfig((await poa.json()).config ?? defaultPoaConfig());
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setDetailLoading(false); }
   }, []);
@@ -101,6 +109,53 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   const okCount = controlRows.filter((r) => r.tone === "ok").length;
   // Nombres autorizados (normalizados) — el censo y el croquis marcan lo que cae fuera.
   const authorizedSet = useMemo(() => new Set(species.map((s) => normSp(s.speciesCommon))), [species]);
+
+  /**
+   * El POA cruza el censo con el DMC de cada especie: cuántos árboles se pueden
+   * tumbar de verdad, cuántos quedan de semilleros y con qué intensidad.
+   */
+  const poa: PoaAnalisis = useMemo(
+    () =>
+      analizarPoa({
+        trees: trees.map((t) => ({
+          id: t.id,
+          treeCode: t.treeCode,
+          speciesCommon: t.speciesCommon,
+          dapM: t.dapM != null && t.dapM !== "" ? Number(t.dapM) : null,
+          volumenEstimadoM3: t.volumenEstimadoM3 != null ? Number(t.volumenEstimadoM3) : null,
+          estado: t.estado,
+        })),
+        species: species.map((s) => ({
+          speciesCommon: s.speciesCommon,
+          volumenAutorizadoM3: Number(s.volumenAutorizadoM3 ?? 0),
+          arbolesAutorizados: s.arbolesAutorizados,
+        })),
+        areaHa: plan?.areaHa != null ? Number(plan.areaHa) : null,
+        config: poaConfig,
+      }),
+    [trees, species, plan, poaConfig],
+  );
+  /** Categoría POA por árbol — la muestra el censo como badge. */
+  const categoriaPorArbol = useMemo(() => new Map(poa.arboles.map((a) => [a.id, a.categoria])), [poa.arboles]);
+
+  const savePoaConfig = useCallback(async () => {
+    if (!planId) return;
+    setPoaSaving(true);
+    try {
+      const r = await fetch("/api/admin/forestal/loth/poa", {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ planId, dmcOverrides: poaConfig.dmcOverrides, semillerosPct: poaConfig.semillerosPct }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      setPoaConfig((await r.json()).config ?? poaConfig);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPoaSaving(false);
+    }
+  }, [planId, poaConfig]);
 
   return (
     <div className="space-y-5">
@@ -183,6 +238,27 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           {/* Alertas de calidad del cruce censo ↔ autorizado (lo que el diseño viejo no atrapaba) */}
           <QualityAlerts rows={controlRows} />
 
+          {/* Plan Operativo: qué se puede tumbar de verdad (DMC + semilleros) */}
+          <LothPoaPanel
+            analisis={poa}
+            config={poaConfig}
+            saving={poaSaving}
+            onConfig={setPoaConfig}
+            onSave={savePoaConfig}
+            onPrint={() =>
+              printLothPoa(poa, {
+                titular: plan.titularName,
+                tituloHabilitante: plan.tituloHabilitante,
+                planNumber: plan.planNumber,
+                planType: plan.planType,
+                resolucion: plan.resolucionNumber,
+                arffs: plan.arffs,
+                parcelaCorta: plan.parcelaCorta,
+                vigencia: plan.vigenciaHasta,
+              })
+            }
+          />
+
           {/* Control por especie — ¿estoy dentro de lo autorizado? (compliance OSINFOR) */}
           <EspecieControlPanel rows={controlRows} loading={detailLoading} />
 
@@ -193,7 +269,13 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           <SpeciesPanel planId={plan.id} species={species} onChange={() => loadDetail(plan.id)} />
 
           {/* Censo */}
-          <CensusPanel planId={plan.id} trees={trees} authorizedSpecies={authorizedSet} onChange={() => loadDetail(plan.id)} />
+          <CensusPanel
+            planId={plan.id}
+            trees={trees}
+            authorizedSpecies={authorizedSet}
+            categorias={categoriaPorArbol}
+            onChange={() => loadDetail(plan.id)}
+          />
 
           {/* Croquis de la parcela (UTM) */}
           <CensusMap trees={trees} authorizedSpecies={authorizedSet} />
@@ -387,7 +469,12 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
 }
 
 // ─── Censo ─────────────────────────────────────────────────────────────────
-function CensusPanel({ planId, trees, authorizedSpecies, onChange }: { planId: string; trees: Tree[]; authorizedSpecies: Set<string>; onChange: () => void }) {
+function CensusPanel({ planId, trees, authorizedSpecies, categorias, onChange }: {
+  planId: string; trees: Tree[]; authorizedSpecies: Set<string>;
+  /** Categoría POA por árbol (aprovechable / semillero / bajo DMC…). */
+  categorias: Map<string, keyof typeof CATEGORIA_LABEL>;
+  onChange: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [csv, setCsv] = useState("");
@@ -395,6 +482,7 @@ function CensusPanel({ planId, trees, authorizedSpecies, onChange }: { planId: s
   const [msg, setMsg] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("todos");
+  const [catFilter, setCatFilter] = useState("todas");
   const [f, setF] = useState({ treeCode: "", speciesCommon: "", dapM: "", alturaComercialM: "", factorForma: "0.65", utmZona: "18L", utmX: "", utmY: "" });
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   const auto = censusVol(Number(f.dapM), Number(f.alturaComercialM), Number(f.factorForma) || 0.65);
@@ -404,10 +492,11 @@ function CensusPanel({ planId, trees, authorizedSpecies, onChange }: { planId: s
     const query = q.trim().toLowerCase();
     return trees.filter((t) => {
       if (estadoFilter !== "todos" && t.estado !== estadoFilter) return false;
+      if (catFilter !== "todas" && categorias.get(t.id) !== catFilter) return false;
       if (query && !`${t.treeCode} ${t.speciesCommon}`.toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [trees, q, estadoFilter]);
+  }, [trees, q, estadoFilter, catFilter, categorias]);
   // Un árbol cuya especie NO está autorizada en el plan = tala potencialmente ilegal.
   const outOfPlan = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(normSp(name));
 
@@ -510,10 +599,17 @@ function CensusPanel({ planId, trees, authorizedSpecies, onChange }: { planId: s
             <option value="talado">Talado</option>
             <option value="descartado">Descartado</option>
           </select>
+          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
+            <option value="todas">Toda categoría POA</option>
+            <option value="aprovechable">Aprovechables</option>
+            <option value="semillero">Semilleros</option>
+            <option value="bajo_dmc">Bajo DMC</option>
+            <option value="sin_dap">Sin DAP</option>
+          </select>
           <span className="text-xs tabular-nums text-[var(--text-tertiary)]">{filtered.length} de {trees.length}</span>
         </div>
       )}
-      <Table head={["Código", "Especie", "DAP", "Hc", "Vol. est. m³", "UTM", "Estado", ""]}>
+      <Table head={["Código", "Especie", "DAP", "Hc", "Vol. est. m³", "Categoría POA", "Estado", ""]}>
         {filtered.slice(0, 200).map((t) => {
           const fuera = outOfPlan(t.speciesCommon);
           return (
@@ -523,7 +619,7 @@ function CensusPanel({ planId, trees, authorizedSpecies, onChange }: { planId: s
             <Cell right><Mono>{n(t.dapM, 2)}</Mono></Cell>
             <Cell right><Mono>{n(t.alturaComercialM, 2)}</Mono></Cell>
             <Cell right><Mono bold>{n(t.volumenEstimadoM3)}</Mono></Cell>
-            <Cell><span className="text-xs text-[var(--text-tertiary)]">{t.utmZona ?? "—"}</span></Cell>
+            <Cell><CategoriaTag categoria={categorias.get(t.id)} /></Cell>
             <Cell><EstadoTag estado={t.estado} /></Cell>
             <Cell right><button onClick={() => del(t.id)} className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button></Cell>
           </tr>
@@ -534,6 +630,20 @@ function CensusPanel({ planId, trees, authorizedSpecies, onChange }: { planId: s
       </Table>
       {filtered.length > 200 && <p className="mt-2 text-center text-xs text-[var(--text-tertiary)]">Mostrando 200 de {filtered.length} árboles.</p>}
     </Panel>
+  );
+}
+
+/** Badge de la categoría POA — el filtro legal que decide si el árbol se tumba. */
+function CategoriaTag({ categoria }: { categoria?: keyof typeof CATEGORIA_LABEL }) {
+  if (!categoria) return <span className="text-xs text-[var(--text-tertiary)]">—</span>;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold"
+      style={{ backgroundColor: `${CATEGORIA_COLOR[categoria]}22`, color: CATEGORIA_COLOR[categoria] }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: CATEGORIA_COLOR[categoria] }} aria-hidden="true" />
+      {CATEGORIA_LABEL[categoria]}
+    </span>
   );
 }
 
