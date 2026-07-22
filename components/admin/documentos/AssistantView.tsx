@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2, History, Plus, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { askDocAssistantStream, type DocAssistantAnswer } from "@/hooks/use-documents";
 
 type Turn = { q: string; a: DocAssistantAnswer | null; partial?: string; error?: boolean };
@@ -11,6 +12,24 @@ const SUGGESTIONS = [
   "¿Qué documentos vencen pronto?",
   "Mostrame los recibos de pago",
 ];
+
+// Historial de conversaciones persistido en localStorage (por-dispositivo).
+type Conversation = { id: string; title: string; turns: Turn[]; updatedAt: number };
+const CONVOS_KEY = "doc-assistant-conversations";
+const newConvoId = () => `c${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+function loadConvos(): Conversation[] {
+  try { const raw = localStorage.getItem(CONVOS_KEY); return raw ? (JSON.parse(raw) as Conversation[]) : []; } catch { return []; }
+}
+function saveConvos(list: Conversation[]) {
+  try { localStorage.setItem(CONVOS_KEY, JSON.stringify(list.slice(0, 30))); } catch { /* quota */ }
+}
+function convoDate(ts: number): string {
+  const d = Math.round((Date.now() - ts) / 86_400_000);
+  if (d <= 0) return "hoy";
+  if (d === 1) return "ayer";
+  if (d < 7) return `hace ${d} d`;
+  return new Date(ts).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
+}
 
 /** Asistente de documentos: preguntá en lenguaje natural y encontrá el doc + la info. */
 export function AssistantView({
@@ -33,7 +52,35 @@ export function AssistantView({
   const [loading, setLoading] = useState(false);
   const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set());
   const [indexing, setIndexing] = useState<{ done: number; total: number } | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [showConvos, setShowConvos] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Cargar el historial persistido al montar.
+  useEffect(() => { setConversations(loadConvos()); }, []);
+
+  // Guardar la conversación activa cuando termina un turno (no mid-stream).
+  useEffect(() => {
+    if (turns.length === 0) return;
+    const last = turns[turns.length - 1];
+    if (!last.a && !last.error) return;
+    const id = activeId ?? newConvoId();
+    if (!activeId) setActiveId(id);
+    setConversations((prev) => {
+      const title = (turns[0]?.q ?? "Conversación").slice(0, 50);
+      const next = [{ id, title, turns, updatedAt: Date.now() }, ...prev.filter((c) => c.id !== id)];
+      saveConvos(next);
+      return next;
+    });
+  }, [turns, activeId]);
+
+  const newConversation = () => { setTurns([]); setActiveId(null); setApprovedIds(new Set()); setShowConvos(false); };
+  const loadConversation = (c: Conversation) => { setTurns(c.turns); setActiveId(c.id); setShowConvos(false); };
+  const deleteConversation = (id: string) => {
+    setConversations((prev) => { const next = prev.filter((c) => c.id !== id); saveConvos(next); return next; });
+    if (activeId === id) newConversation();
+  };
 
   const runIndexAll = async () => {
     if (indexing) return;
@@ -72,13 +119,40 @@ export function AssistantView({
           <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--accent)]/15 text-[var(--accent)]"><Sparkles className="h-3.5 w-3.5" /></span>
           Asistente de documentos
         </p>
-        {indexing ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)]"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Indexando {indexing.done}/{indexing.total}</span>
-        ) : indexableCount > 0 ? (
-          <button onClick={runIndexAll} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--accent)]/40 px-2 py-0.5 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10">
-            <Sparkles className="h-3 w-3" /> Indexar {indexableCount}
-          </button>
-        ) : null}
+        <div className="flex items-center gap-1.5">
+          {indexing ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)]"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Indexando {indexing.done}/{indexing.total}</span>
+          ) : indexableCount > 0 ? (
+            <button onClick={runIndexAll} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--accent)]/40 px-2 py-0.5 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10">
+              <Sparkles className="h-3 w-3" /> Indexar {indexableCount}
+            </button>
+          ) : null}
+          {conversations.length > 0 && (
+            <div className="relative">
+              <button onClick={() => setShowConvos((s) => !s)} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Conversaciones guardadas">
+                <History className="h-3 w-3" /> {conversations.length}
+              </button>
+              {showConvos && (
+                <div className="absolute right-0 top-full z-50 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl">
+                  {conversations.map((c) => (
+                    <div key={c.id} className={cn("group flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[var(--surface-sunken)]", c.id === activeId && "bg-primary/10")}>
+                      <button onClick={() => loadConversation(c)} className="min-w-0 flex-1 text-left">
+                        <span className="block truncate text-xs font-bold text-[var(--text-primary)]">{c.title}</span>
+                        <span className="block text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">{convoDate(c.updatedAt)}</span>
+                      </button>
+                      <button onClick={() => deleteConversation(c.id)} className="shrink-0 rounded p-1 text-[var(--text-tertiary)] opacity-0 transition-opacity hover:text-[var(--data-error-700)] group-hover:opacity-100" aria-label="Borrar conversación"><X className="h-3 w-3" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {turns.length > 0 && (
+            <button onClick={newConversation} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Nueva conversación">
+              <Plus className="h-3 w-3" /> Nueva
+            </button>
+          )}
+        </div>
       </div>
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
