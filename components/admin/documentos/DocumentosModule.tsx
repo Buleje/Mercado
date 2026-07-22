@@ -1113,7 +1113,12 @@ export default function DocumentosModule() {
           )}
 
           {filterMode === "assistant" ? (
-            <AssistantView onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }} />
+            <AssistantView
+              onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }}
+              onSign={(id) => { const d = documents.find((x) => x.id === id); if (d) setSignDoc(d); }}
+              onShare={(id) => { const d = documents.find((x) => x.id === id); if (d) setWhatsappDoc(d); }}
+              onApprove={(id) => { patch(id, { status: "approved" }); }}
+            />
           ) : filterMode === "activity" ? (
             <ActivityView />
           ) : loading && documents.length === 0 ? (

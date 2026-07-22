@@ -10,6 +10,7 @@ import {
   uploadToStorage,
 } from "@/lib/documents/storage";
 import { aiCategorize } from "@/lib/documents/ai-categorize";
+import { analyzeDocumentContent, isAnalyzableMime } from "@/lib/documents/analyze-document";
 import { MAX_UPLOAD_SIZE } from "@/lib/types/documents";
 import { assertCsrf } from "@/lib/auth/csrf";
 
@@ -160,6 +161,14 @@ export async function POST(req: NextRequest) {
       metadata: { mime, size: file.size, source: heur.source },
       ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
     }).catch((err) => logger.warn("documents.audit.upload_fail", { err: String(err) }));
+
+    // Auto-análisis de contenido (fire-and-forget): los PDFs/texto se indexan solos
+    // para que el asistente los pueda leer sin apretar "Analizar con IA".
+    if (isAnalyzableMime(mime)) {
+      analyzeDocumentContent(auth.tenantId, draft.id, auth.username).catch((err) =>
+        logger.warn("documents.autoanalyze_fail", { err: String(err) }),
+      );
+    }
 
     return NextResponse.json({
       document: {

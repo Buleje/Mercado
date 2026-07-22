@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Sparkles, Send, FileText, Loader2, User, Bot } from "lucide-react";
+import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2 } from "lucide-react";
 import { askDocAssistant, type DocAssistantAnswer } from "@/hooks/use-documents";
 
 type Turn = { q: string; a: DocAssistantAnswer | null; error?: boolean };
@@ -13,7 +13,17 @@ const SUGGESTIONS = [
 ];
 
 /** Asistente de documentos: preguntá en lenguaje natural y encontrá el doc + la info. */
-export function AssistantView({ onOpenDoc }: { onOpenDoc: (id: string) => void }) {
+export function AssistantView({
+  onOpenDoc,
+  onSign,
+  onShare,
+  onApprove,
+}: {
+  onOpenDoc: (id: string) => void;
+  onSign: (id: string) => void;
+  onShare: (id: string) => void;
+  onApprove: (id: string) => void;
+}) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -75,17 +85,33 @@ export function AssistantView({ onOpenDoc }: { onOpenDoc: (id: string) => void }
                       {t.a!.matchedDocs.length > 0 && (
                         <div className="space-y-1.5">
                           {t.a!.matchedDocs.map((d) => (
-                            <button
-                              key={d.id}
-                              onClick={() => onOpenDoc(d.id)}
-                              className="flex w-full items-center gap-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 py-2 text-left transition-colors hover:border-primary"
-                            >
-                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><FileText className="h-4 w-4" /></span>
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{d.name}</span>
-                                <span className="block truncate text-xs capitalize text-[var(--text-tertiary)]">{d.category}</span>
-                              </span>
-                            </button>
+                            <div key={d.id} className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-white">
+                              <button
+                                onClick={() => onOpenDoc(d.id)}
+                                className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+                              >
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><FileText className="h-4 w-4" /></span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{d.name}</span>
+                                  <span className="block truncate text-xs capitalize text-[var(--text-tertiary)]">{d.category}</span>
+                                </span>
+                              </button>
+                              <div className="flex items-center gap-1 border-t border-[var(--rule-base)] px-2 py-1">
+                                {([
+                                  { icon: PenLine, label: "Firmar", fn: onSign },
+                                  { icon: Share2, label: "Compartir", fn: onShare },
+                                  { icon: CheckCircle2, label: "Aprobar", fn: onApprove },
+                                ] as const).map(({ icon: Icon, label, fn }) => (
+                                  <button
+                                    key={label}
+                                    onClick={() => fn(d.id)}
+                                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-primary"
+                                  >
+                                    <Icon className="h-3.5 w-3.5" /> {label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
