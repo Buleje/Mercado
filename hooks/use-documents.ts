@@ -418,3 +418,13 @@ export async function relateDoc(id: string, relatedId: string, link: boolean): P
 export async function mergeDocs(ids: string[], name?: string, folderId?: string | null): Promise<{ document: DbDocument; pageCount: number; skipped: string[] }> {
   return http(`${BASE}/merge`, { method: "POST", body: JSON.stringify({ ids, name, folderId }) });
 }
+
+/** Rota todas las páginas de un PDF (90/180/270°) → nueva versión. */
+export async function rotateDoc(id: string, degrees: 90 | 180 | 270 = 90): Promise<{ version: DbDocumentVersion | null }> {
+  return http(`${BASE}/${id}/rotate`, { method: "POST", body: JSON.stringify({ degrees }) });
+}
+
+/** Divide un PDF en un documento por página. */
+export async function splitDoc(id: string): Promise<{ created: DbDocument[]; count: number }> {
+  return http(`${BASE}/${id}/split`, { method: "POST", body: JSON.stringify({}) });
+}

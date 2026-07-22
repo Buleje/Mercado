@@ -25,11 +25,11 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2,
-  CalendarDays, Stamp, Combine, LayoutDashboard,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs } from "@/hooks/use-documents";
+import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
@@ -547,6 +547,28 @@ export default function DocumentosModule() {
       alert("No se pudo combinar: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
     } finally {
       setMerging(false);
+    }
+  };
+
+  // Rotar un PDF 90° (todas las páginas) → nueva versión.
+  const handleRotate = async (doc: DbDocument) => {
+    try {
+      await rotateDoc(doc.id, 90);
+      await refresh();
+    } catch (err) {
+      alert("No se pudo rotar: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
+    }
+  };
+
+  // Dividir un PDF en un documento por página.
+  const handleSplit = async (doc: DbDocument) => {
+    if (!confirm(`¿Dividir "${doc.name}" en un documento por página?`)) return;
+    try {
+      const res = await splitDoc(doc.id);
+      await refresh();
+      alert(`Listo: se crearon ${res.count} documento(s), uno por página.`);
+    } catch (err) {
+      alert("No se pudo dividir: " + (err instanceof Error ? err.message.slice(0, 120) : "error"));
     }
   };
 
@@ -1441,6 +1463,8 @@ export default function DocumentosModule() {
                             onWhatsApp={() => setWhatsappDoc(doc)}
                             onSign={() => setSignDoc(doc)}
                             onStamp={() => setStampTarget(doc)}
+                            onRotate={() => handleRotate(doc)}
+                            onSplit={() => handleSplit(doc)}
                             isPdf={doc.mimeType === "application/pdf"}
                             onDownload={() => handleDownload(doc)}
                             onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
@@ -1834,8 +1858,8 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 // ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
 // la vista lista. Dropdown `position: fixed` para no quedar recortado por el
 // overflow del contenedor de la tabla. ──
-function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhatsApp, onSign, onStamp, isPdf, onToggleFav, onDelete, favorite }: {
-  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
+function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhatsApp, onSign, onStamp, onRotate, onSplit, isPdf, onToggleFav, onDelete, favorite }: {
+  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; onRotate: () => void; onSplit: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -1884,6 +1908,8 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhat
           {item(MessageCircle, "Enviar por WhatsApp", onWhatsApp)}
           {item(PenLine, "Solicitar firma", onSign)}
           {isPdf && item(Stamp, "Poner sello", onStamp)}
+          {isPdf && item(RotateCw, "Rotar 90°", onRotate)}
+          {isPdf && item(Scissors, "Dividir en páginas", onSplit)}
           {item(Download, "Descargar", onDownload)}
           {item(Star, favorite ? "Quitar favorito" : "Marcar favorito", onToggleFav)}
           {item(Trash2, "Eliminar", onDelete, true)}
