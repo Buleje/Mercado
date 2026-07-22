@@ -9,6 +9,7 @@
 
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { formatUtmFull, parseUtmZone, fromUtm, toUtm } from "@/lib/forestal/loth-utm";
+import { CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaCategoria } from "@/lib/forestal/loth-poa";
 
 export const SECTION_COLOR: Record<string, string> = {
   tala: "#16a34a",
@@ -71,6 +72,8 @@ export interface CensoTree {
   utmZona: string;
   utmX: number;
   utmY: number;
+  /** Categoría del POA (aprovechable/semillero/bajo DMC…) si el plan la calculó. */
+  categoria?: PoaCategoria;
 }
 
 /** Árbol del censo tal como lo devuelve `/api/admin/forestal/plan/census`. */
@@ -191,6 +194,11 @@ export function operacionPopupHtml(g: GeoEntry, dentro: boolean, declarada: bool
   </div>`;
 }
 
+/** Color del árbol en el mapa: manda la categoría POA; si no hay, el estado. */
+export function censoColor(t: CensoTree): string {
+  return t.categoria ? CATEGORIA_COLOR[t.categoria] : (CENSO_ESTADO_COLOR[t.estado] ?? "#15803d");
+}
+
 /** Popup de un árbol censado — muestra el UTM ORIGINAL registrado por el regente. */
 export function arbolPopupHtml(t: CensoTree, dentro: boolean, declarada: boolean): string {
   const flag = declarada
@@ -200,7 +208,9 @@ export function arbolPopupHtml(t: CensoTree, dentro: boolean, declarada: boolean
     : "";
   return `<div style="font:600 12px/1.5 system-ui;min-width:170px">
     <div style="font-weight:800;font-size:13px">${esc(t.code)}${t.cites ? ' <span style="color:#e11d48">CITES</span>' : ""}</div>
-    <div style="color:${CENSO_ESTADO_COLOR[t.estado] ?? "#15803d"};font-weight:700">Censo · ${esc(CENSO_ESTADO_LABEL[t.estado] ?? t.estado)}</div>
+    <div style="color:${censoColor(t)};font-weight:700">Censo · ${esc(CENSO_ESTADO_LABEL[t.estado] ?? t.estado)}${
+      t.categoria ? ` · ${esc(CATEGORIA_LABEL[t.categoria])}` : ""
+    }</div>
     <div>${esc(t.species)}</div>
     ${t.dapM != null ? `<div>DAP ${t.dapM.toFixed(2)} m</div>` : ""}
     ${t.volumeM3 != null ? `<div style="font-weight:700">${t.volumeM3.toFixed(4)} m³ estimados</div>` : ""}

@@ -45,6 +45,7 @@ import {
   type LothCartografia,
 } from "@/lib/forestal/loth-cartografia";
 import { lineLengthM } from "@/lib/forestal/loth-utm";
+import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
 import { printLothPlano, type PlanoBasemap } from "@/lib/forestal/loth-plano-print";
 import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
@@ -109,6 +110,9 @@ function toOps(entries: LothEntryDTO[]): OpForEudr[] {
 export default function LothMapaView() {
   const [raw, setRaw] = useState<LothEntryDTO[] | null>(null);
   const [trees, setTrees] = useState<CensusTreeDTO[]>([]);
+  /** Especies autorizadas + parámetros del POA: pintan el censo por categoría. */
+  const [planSpecies, setPlanSpecies] = useState<{ speciesCommon: string; volumenAutorizadoM3: string | number; arbolesAutorizados: number | null }[]>([]);
+  const [poaConfig, setPoaConfig] = useState<PoaConfig>(defaultPoaConfig());
   const [parcela, setParcela] = useState<LothParcela>(emptyParcela());
   const [plan, setPlan] = useState<ActivePlan | null>(null);
   const [caratula, setCaratula] = useState<Caratula | null>(null);
@@ -188,10 +192,18 @@ export default function LothMapaView() {
               }
             : null,
         );
-        // El censo cuelga del plan activo: se pide en cascada (no bloquea el mapa).
+        // El censo y el POA cuelgan del plan activo: se piden en cascada (no
+        // bloquean el primer render del mapa).
         if (a?.id) {
-          const tRes = await fetch(`/api/admin/forestal/plan/census?planId=${encodeURIComponent(a.id)}`, { credentials: "include" });
+          const pid = encodeURIComponent(a.id);
+          const [tRes, sRes, poaRes] = await Promise.all([
+            fetch(`/api/admin/forestal/plan/census?planId=${pid}`, { credentials: "include" }),
+            fetch(`/api/admin/forestal/plan?planId=${pid}`, { credentials: "include" }),
+            fetch(`/api/admin/forestal/loth/poa?planId=${pid}`, { credentials: "include" }),
+          ]);
           if (tRes.ok) setTrees((await tRes.json()).trees ?? []);
+          if (sRes.ok) setPlanSpecies((await sRes.json()).species ?? []);
+          if (poaRes.ok) setPoaConfig((await poaRes.json()).config ?? defaultPoaConfig());
         }
       }
       setFitKey((k) => k + 1);
@@ -206,7 +218,35 @@ export default function LothMapaView() {
   }, [load]);
 
   const geoAll = useMemo(() => (raw ? toGeo(raw) : []), [raw]);
-  const censoAll = useMemo(() => toCenso(trees), [trees]);
+  const censoBase = useMemo(() => toCenso(trees), [trees]);
+  /**
+   * El mapa pinta cada árbol por su categoría del POA (aprovechable, semillero,
+   * bajo DMC): el mismo criterio legal que el cuadro del Plan de Manejo, para
+   * que en campo se vea de un golpe qué se puede tumbar.
+   */
+  const censoAll = useMemo(() => {
+    if (censoBase.length === 0) return censoBase;
+    const analisis = analizarPoa({
+      trees: censoBase.map((t) => ({
+        id: t.id,
+        treeCode: t.code,
+        speciesCommon: t.species,
+        // El censo del mapa guarda el DAP sólo si vino en el DTO original.
+        dapM: t.dapM,
+        volumenEstimadoM3: t.volumeM3,
+        estado: t.estado,
+      })),
+      species: planSpecies.map((s) => ({
+        speciesCommon: s.speciesCommon,
+        volumenAutorizadoM3: Number(s.volumenAutorizadoM3 ?? 0),
+        arbolesAutorizados: s.arbolesAutorizados,
+      })),
+      areaHa: plan?.areaHa ?? null,
+      config: poaConfig,
+    });
+    const cat = new Map(analisis.arboles.map((a) => [a.id, a.categoria]));
+    return censoBase.map((t) => ({ ...t, categoria: cat.get(t.id) }));
+  }, [censoBase, planSpecies, plan, poaConfig]);
   const censoShown = useMemo(() => (showCenso ? censoAll : []), [showCenso, censoAll]);
   const sectionsPresent = useMemo(() => Array.from(new Set(geoAll.map((g) => g.section))), [geoAll]);
   const geoShown = useMemo(() => geoAll.filter((g) => !hidden.has(g.section)), [geoAll, hidden]);
@@ -215,16 +255,21 @@ export default function LothMapaView() {
   const draftAreaHa = draft.length >= 3 ? polygonAreaHa(draft) : 0;
   const center = useMemo<LatLng>(() => [BRAND_GEO.lat, BRAND_GEO.lng], []);
 
-  const censoEstados = useMemo(() => Array.from(new Set(censoAll.map((t) => t.estado))), [censoAll]);
+  /** Entradas de leyenda del censo: por categoría POA si la hay, si no por estado. */
+  const censoCategorias = useMemo(() => {
+    const out = new Map<string, { cat?: (typeof censoAll)[number]["categoria"]; estado: string }>();
+    for (const t of censoAll) out.set(t.categoria ?? `estado:${t.estado}`, { cat: t.categoria, estado: t.estado });
+    return [...out.values()];
+  }, [censoAll]);
   const legendItems = useMemo<LegendItem[]>(
     () => [
       ...(declarada ? [{ label: "Área de aprovechamiento", color: PARCELA_COLOR, shape: "poly" as const }] : []),
       ...(showCenso
-        ? censoEstados.map((e) => ({
-            label: `Censo · ${CENSO_ESTADO_LABEL[e] ?? e}`,
-            color: CENSO_ESTADO_COLOR[e] ?? "#15803d",
-            shape: "tree" as const,
-          }))
+        ? censoCategorias.map((c) =>
+            c.cat
+              ? { label: `Censo · ${CATEGORIA_LABEL[c.cat]}`, color: CATEGORIA_COLOR[c.cat], shape: "tree" as const }
+              : { label: `Censo · ${CENSO_ESTADO_LABEL[c.estado] ?? c.estado}`, color: CENSO_ESTADO_COLOR[c.estado] ?? "#15803d", shape: "tree" as const },
+          )
         : []),
       ...sectionsPresent
         .filter((s) => !hidden.has(s))
@@ -236,7 +281,7 @@ export default function LothMapaView() {
       })),
       ...(showGrid ? [{ label: "Cuadrícula UTM (WGS 84)", color: "#64748b", shape: "grid" as const }] : []),
     ],
-    [declarada, showCenso, censoEstados, sectionsPresent, hidden, showGrid, carto.vias],
+    [declarada, showCenso, censoCategorias, sectionsPresent, hidden, showGrid, carto.vias],
   );
 
   // ── Persistencia de la parcela ─────────────────────────────────────────────

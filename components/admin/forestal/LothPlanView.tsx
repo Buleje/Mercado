@@ -16,6 +16,7 @@ import { CardTitle, StatCard } from "@buleje/design-system";
 import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type PoaAnalisis, type PoaConfig } from "@/lib/forestal/loth-poa";
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
 import LothPoaPanel from "./LothPoaPanel";
+import LothCensoImportModal from "./LothCensoImportModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 
@@ -274,6 +275,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
             trees={trees}
             authorizedSpecies={authorizedSet}
             categorias={categoriaPorArbol}
+            dmcOverrides={poaConfig.dmcOverrides}
             onChange={() => loadDetail(plan.id)}
           />
 
@@ -469,15 +471,16 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
 }
 
 // ─── Censo ─────────────────────────────────────────────────────────────────
-function CensusPanel({ planId, trees, authorizedSpecies, categorias, onChange }: {
+function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverrides, onChange }: {
   planId: string; trees: Tree[]; authorizedSpecies: Set<string>;
+  /** DMC fijado por el plan — el importador avisa si una fila cae por debajo. */
+  dmcOverrides: Record<string, number>;
   /** Categoría POA por árbol (aprovechable / semillero / bajo DMC…). */
   categorias: Map<string, keyof typeof CATEGORIA_LABEL>;
   onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [csv, setCsv] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -520,22 +523,14 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, onChange }:
       onChange();
     } finally { setBusy(false); }
   }
-
-  async function doImport() {
-    if (busy || !csv.trim()) return;
+  /** Importa las filas ya validadas por el modal (shape del endpoint bulk). */
+  async function doImport(filas: Record<string, unknown>[]) {
+    if (busy || filas.length === 0) return;
     setBusy(true); setMsg(null);
-    // CSV: treeCode,especie,dap,hc,ff,utmZona,utmX,utmY
-    const rows = csv.trim().split("\n").map((line) => {
-      const c = line.split(/[,;\t]/).map((x) => x.trim());
-      const matched = findSpeciesByCommonName(c[1] ?? "");
-      return {
-        treeCode: c[0], speciesCommon: c[1] ?? "", speciesScientific: matched?.scientificName ?? null,
-        cites: matched?.cites ?? false,
-        dapM: c[2] ? Number(c[2]) : null, alturaComercialM: c[3] ? Number(c[3]) : null,
-        factorForma: c[4] ? Number(c[4]) : 0.65,
-        utmZona: c[5] || null, utmX: c[6] ? Number(c[6]) : null, utmY: c[7] ? Number(c[7]) : null,
-      };
-    }).filter((r) => r.treeCode && r.speciesCommon);
+    const rows = filas.map((f) => {
+      const matched = findSpeciesByCommonName(String(f.speciesCommon ?? ""));
+      return { ...f, speciesScientific: matched?.scientificName ?? null, cites: matched?.cites ?? false };
+    });
     try {
       const r = await fetch("/api/admin/forestal/plan/census?bulk=1", {
         method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
@@ -543,7 +538,7 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, onChange }:
       });
       const j = await r.json().catch(() => ({}));
       setMsg(`Importados ${j.creados ?? 0} árboles${j.errores?.length ? ` · ${j.errores.length} con error` : ""}.`);
-      setCsv(""); onChange();
+      setImporting(false); onChange();
     } finally { setBusy(false); }
   }
 
@@ -557,20 +552,22 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, onChange }:
   return (
     <Panel title={`Censo forestal (${trees.length})`} action={
       <div className="flex gap-2">
-        <button type="button" onClick={() => setImporting((v) => !v)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> Importar CSV</button>
+        <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> Importar censo</button>
         <AddBtn open={open} onClick={() => setOpen((v) => !v)} />
       </div>
     }>
-      {importing && (
-        <div className="mb-3 space-y-2 rounded-xl bg-[var(--surface-canvas)] p-3">
-          <p className="text-xs text-[var(--text-tertiary)]">Pegá una fila por árbol: <code className="font-mono">código,especie,DAP,altura,ff,zonaUTM,X,Y</code> (ej. <code className="font-mono">85-TOR,Tornillo,0.80,18,0.65,18L,545000,9000000</code>)</p>
-          <textarea value={csv} onChange={(e) => setCsv(e.target.value)} rows={4} placeholder="85-TOR,Tornillo,0.80,18,0.65&#10;1-SHI,Shihuahuaco,0.96,16,0.65" className={`${cls} h-auto resize-none py-2 font-mono`} />
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={doImport} disabled={busy || !csv.trim()} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Importar"}</button>
-            {msg && <span className="text-sm text-[var(--text-secondary)]">{msg}</span>}
-          </div>
-        </div>
-      )}
+      <LothCensoImportModal
+        open={importing}
+        importing={busy}
+        ctx={{
+          codigosExistentes: new Set(trees.map((t) => t.treeCode.toLowerCase())),
+          especiesAutorizadas: authorizedSpecies,
+          dmcOverrides,
+        }}
+        onClose={() => setImporting(false)}
+        onImport={doImport}
+      />
+      {msg && <p className="mb-3 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{msg}</p>}
       {open && (
         <form onSubmit={add} className="mb-3 grid grid-cols-2 items-end gap-2 rounded-xl bg-[var(--surface-canvas)] p-3 lg:grid-cols-7">
           <Field label="Código"><input value={f.treeCode} onChange={(e) => set("treeCode", e.target.value)} placeholder="85-TOR" className={cls} /></Field>

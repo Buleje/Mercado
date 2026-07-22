@@ -24,8 +24,8 @@ import { referenciaMeta, viaMeta, type LothReferencia, type LothVia } from "@/li
 import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
 import {
   arbolPopupHtml,
+  censoColor,
   operacionPopupHtml,
-  CENSO_ESTADO_COLOR,
   PARCELA_COLOR,
   SECTION_COLOR,
   type CensoTree,
@@ -465,7 +465,7 @@ export default function LothMapaCanvas({
 
     for (const t of censo) {
       const dentro = inside([t.lat, t.lng]);
-      const color = CENSO_ESTADO_COLOR[t.estado] ?? "#15803d";
+      const color = censoColor(t);
       if (declarada && !dentro) {
         L.circleMarker([t.lat, t.lng], { radius: 10, color: "#e11d48", weight: 1.5, opacity: 0.8, fill: false }).addTo(group);
       }
