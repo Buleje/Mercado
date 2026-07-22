@@ -49,12 +49,29 @@ function keywordFallback(docs: DbDocument[], question: string): { answer: string
   };
 }
 
+type Structured = { docType?: string; ruc?: string; razonSocial?: string; numero?: string; fecha?: string; moneda?: string; total?: number | string; igv?: number | string };
+
+/** Resume los datos de comprobante extraídos por IA (si el doc es factura/boleta/recibo). */
+function structuredLine(d: DbDocument): string {
+  const s = d.ocrMetadata?.structured as Structured | undefined;
+  if (!s || !/factura|boleta|recibo|guia|nota/i.test(s.docType ?? "")) return "";
+  const bits = [
+    s.docType && `tipo=${s.docType}`,
+    s.numero && `nº=${s.numero}`,
+    s.razonSocial && `emisor=${s.razonSocial}`,
+    s.fecha && `fecha=${s.fecha}`,
+    s.total !== undefined && s.total !== null && s.total !== "" && `total=${s.moneda === "USD" ? "$" : "S/"}${s.total}`,
+    s.igv !== undefined && s.igv !== null && s.igv !== "" && `igv=${s.igv}`,
+  ].filter(Boolean);
+  return bits.length ? ` · COMPROBANTE(${bits.join(" ")})` : "";
+}
+
 function buildIndex(docs: DbDocument[]): string {
   return docs
     .map((d, i) => {
       const content = (d.ocrText ?? "").replace(/\s+/g, " ").slice(0, 600);
       const tags = [...d.tags, ...d.aiTags].join(", ");
-      return `[${i}] "${d.name}" · categoría: ${d.category}${tags ? ` · etiquetas: ${tags}` : ""}${d.expiresAt ? ` · vence: ${d.expiresAt.slice(0, 10)}` : ""}${content ? ` · contenido: ${content}` : ""}`;
+      return `[${i}] "${d.name}" · categoría: ${d.category}${tags ? ` · etiquetas: ${tags}` : ""}${d.expiresAt ? ` · vence: ${d.expiresAt.slice(0, 10)}` : ""}${structuredLine(d)}${content ? ` · contenido: ${content}` : ""}`;
     })
     .join("\n");
 }
@@ -101,7 +118,7 @@ ${index}
 
 ${historyBlock(parsed.data.history)}El usuario pregunta ahora: "${question}"
 
-Escribí la respuesta en español con tuteo peruano, breve y concreta. Si la respuesta está en el contenido de un documento, usala. En la ÚLTIMA línea escribí exactamente: @@DOCS: seguido de los números [i] de los documentos más relevantes separados por coma (máximo 5, el más relevante primero; dejalo vacío si ninguno aplica).`;
+Escribí la respuesta en español con tuteo peruano, breve y concreta. Si la respuesta está en el contenido de un documento, usala. Para preguntas de dinero/totales (ej. "¿cuánto facturé en julio?"), SUMÁ o CONTÁ los COMPROBANTE(...) que apliquen por su fecha y mostrá el total con su moneda. En la ÚLTIMA línea escribí exactamente: @@DOCS: seguido de los números [i] de los documentos más relevantes separados por coma (máximo 5, el más relevante primero; dejalo vacío si ninguno aplica).`;
 
       const result = streamText({ model: smartModel, prompt, temperature: 0.2 });
       const candidates = docs.map((d) => ({ id: d.id, name: d.name, category: d.category }));
@@ -129,6 +146,8 @@ Escribí la respuesta en español con tuteo peruano, breve y concreta. Si la res
 ${index}
 
 ${historyBlock(parsed.data.history)}El usuario pregunta ahora: "${question}"
+
+Para preguntas de dinero/totales (ej. "¿cuánto facturé en julio?"), SUMÁ o CONTÁ los COMPROBANTE(...) que apliquen por su fecha y respondé el total con su moneda.
 
 Devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma:
 {"answer": "<respuesta en español, tuteo peruano, breve y concreta; si la respuesta está en el contenido de un documento, usala>", "docRefs": [<números [i] de los documentos más relevantes, máximo 5, el más relevante primero; vacío si ninguno aplica>]}`;
