@@ -768,7 +768,7 @@ export class ForestCtpDB {
     return {
       ingresos: ing.map((w) => ({ id: w.id, gtf: w.gtfNumber, species: w.speciesCommonName, volumeM3: Number(w.volumeM3 ?? 0), cites: w.speciesCites })),
       corridas: corridas.map((c) => ({ id: c.id, lineNo: c.lineNo, label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`, quantity: Number(c.quantity ?? 0), unit: c.unit, cites: c.cites })),
-      despachos: despachos.map((d) => ({ id: d.id, lineNo: d.lineNo, label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, quantity: Number(d.quantity ?? 0), destino: d.destino, gtf: d.gtfNumber })),
+      despachos: despachos.map((d) => ({ id: d.id, lineNo: d.lineNo, label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, quantity: Number(d.quantity ?? 0), unit: d.unit, destino: d.destino, gtf: d.gtfNumber })),
       // Edge sólo si ambos extremos siguen en el grafo (endpoint vivo).
       consumos: consumos
         .filter((c) => ingIds.has(c.woodEntryId) && corridaIdSet.has(c.ctpEntryId))
@@ -1107,7 +1107,7 @@ export interface KardexEspecie {
 export interface TrazaGrafo {
   ingresos: { id: string; gtf: string; species: string | null; volumeM3: number; cites: boolean }[];
   corridas: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; cites: boolean }[];
-  despachos: { id: string; lineNo: number; label: string; quantity: number; destino: string | null; gtf: string | null }[];
+  despachos: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; destino: string | null; gtf: string | null }[];
   /** woodEntryId → corridaId (m³ consumido). */
   consumos: { from: string; to: string; volumeM3: number }[];
   /** corridaId → despachoId (cantidad atribuida). */
