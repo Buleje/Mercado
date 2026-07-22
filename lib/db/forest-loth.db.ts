@@ -18,6 +18,8 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
 import { auditLoth } from "@/lib/forestal/loth-audit";
 import { ForestLothCierreDB } from "@/lib/db/forest-loth-cierre.db";
+import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
+import { dmcParaEspecie } from "@/lib/forestal/loth-poa";
 
 export { LOTH_SECTIONS };
 export type { LothSection };
@@ -36,7 +38,7 @@ export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
 /**
  * Error de invariante del LO-TH: el caller lo mapea a 422 (dato del operador que
  * no cuadra), NO a 500. Gemelo de `CtpInvariantError` (ADR-134/135) — las
- * invariantes T1–T5 (ADR-305) son la cadena de custodia del bosque traducida a
+ * invariantes T1–T8 (ADR-305) son la cadena de custodia del bosque traducida a
  * código. Postgres no puede expresarlas (son agregadas + aislamiento app-level),
  * así que si no se aplican acá, no se aplican en ningún lado.
  *
@@ -47,6 +49,7 @@ export const LOTH_TX_OPTS = { timeout: 20_000, maxWait: 10_000 } as const;
  *   T5 · Σ despacho_producto ≤ Σ producto_terminado         → despachar más que lo producido
  *   T6 · Σ movilizado(especie) ≤ volumen autorizado (POA)   → EXCESO DE APROVECHAMIENTO (OSINFOR)
  *   T7 · la especie movilizada debe estar AUTORIZADA en el plan → tala/movilización de especie fuera del POA (infracción)
+ *   T8 · no se tala un árbol censado bajo el DMC de su especie → tala ilegal (RJ 458-2002-INRENA)
  */
 export class LothInvariantError extends Error {
   constructor(
@@ -58,6 +61,7 @@ export class LothInvariantError extends Error {
       | "T3_TALA_DUPLICADA"
       | "T4_TROZADO_SUPERA_TALA"
       | "T5_DESPACHO_SUPERA_PRODUCCION"
+      | "T8_BAJO_DMC"
       | "T6_EXCESO_AUTORIZADO"
       | "T7_ESPECIE_NO_AUTORIZADA"
       // P1 — la línea cae en un mes cerrado: el acta es inmutable hasta reabrir.
@@ -99,6 +103,12 @@ export interface LothEntryCreateInput {
   discarded?: boolean;
   consumoInterno?: boolean;
   observations?: string | null;
+  /**
+   * Motivo por el que se tala un árbol bajo el DMC de su especie (T8). Sin esto
+   * el alta se rechaza; con esto queda registrado en el libro y en la auditoría,
+   * que es lo que se le exige explicar al titular ante la ARFFS.
+   */
+  justificacionDmc?: string | null;
 
   correctsLineNo?: number | null;
   correctionNote?: string | null;
@@ -147,6 +157,18 @@ export { smalianVolume } from "@/lib/forestal/loth-constants";
 
 const dec = (v: number | string | null | undefined) =>
   v === null || v === undefined || v === "" ? null : new Prisma.Decimal(v);
+
+/**
+ * Observaciones de la línea + la justificación del DMC, si la hubo. Se guardan
+ * juntas y con prefijo explícito para que la excepción se lea de una en el libro
+ * (y en el export a la ARFFS), no escondida en un campo aparte.
+ */
+function buildObservations(input: { observations?: string | null; justificacionDmc?: string | null }): string | null {
+  const obs = input.observations?.trim() || "";
+  const just = input.justificacionDmc?.trim() || "";
+  if (!just) return obs || null;
+  return `[Tala bajo DMC justificada: ${just}]${obs ? ` ${obs}` : ""}`.slice(0, 2000);
+}
 
 /** Descripción legible de una línea para el audit log (fiscalizador-friendly). */
 function describeEntry(e: {
@@ -201,6 +223,11 @@ export class ForestLothDB {
       );
     }
 
+    // T8 (DMC): un árbol censado por debajo del diámetro mínimo de corta de su
+    // especie no se aprovecha. Va ANTES de la tx porque no hay recurso disputado
+    // (es el dato contra el censo, no una carrera entre dos altas).
+    await ForestLothDB.enforceDmc(tenantId, input);
+
     const entry = await prisma.$transaction(async (tx) => {
       // 1. Invariantes de cadena de custodia (lockean el recurso disputado).
       await ForestLothDB.enforceInvariants(tx, tenantId, input);
@@ -248,7 +275,9 @@ export class ForestLothDB {
           gtfNumber: input.gtfNumber?.trim() || null,
           discarded: input.discarded ?? false,
           consumoInterno: input.consumoInterno ?? false,
-          observations: input.observations?.trim() || null,
+          // La justificación del DMC queda EN el libro: es la explicación que
+          // el titular tiene que poder mostrar en una fiscalización.
+          observations: buildObservations(input),
           correctsLineNo: input.correctsLineNo ?? null,
           correctionNote: input.correctionNote?.trim() || null,
           gpsLat: dec(input.gpsLat),
@@ -270,6 +299,41 @@ export class ForestLothDB {
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
     return entry;
+  }
+
+  /**
+   * T8 — DMC. Si el árbol figura en el censo con su DAP y ese DAP no llega al
+   * diámetro mínimo de corta de la especie, la tala se rechaza (422) salvo que
+   * el operador escriba una justificación, que queda en el libro.
+   *
+   * Fuente del DAP: el CENSO (medido a 1,30 m). El diámetro del tocón que se
+   * anota en la tala NO es DAP, así que no sirve para este chequeo. Si el árbol
+   * no está censado no se bloquea: el libro admite códigos libres.
+   */
+  private static async enforceDmc(tenantId: string, input: LothEntryCreateInput): Promise<void> {
+    if (input.section !== "tala") return;
+    const treeCode = input.treeCode?.trim();
+    if (!treeCode) return;
+
+    const arbol = await prisma.forestCensusTree.findFirst({
+      where: { tenantId, treeCode, deletedAt: null },
+      select: { speciesCommon: true, dapM: true, planId: true },
+    });
+    if (!arbol?.dapM) return;
+
+    const config = await ForestLothPoaDB.get(tenantId, arbol.planId);
+    const { cm: dmcCm, fuente } = dmcParaEspecie(arbol.speciesCommon, config.dmcOverrides);
+    const dapCm = Number(arbol.dapM) * 100;
+    if (!Number.isFinite(dapCm) || dapCm >= dmcCm) return;
+
+    if (input.justificacionDmc?.trim()) return; // decisión asumida y registrada
+
+    const origen = fuente === "plan" ? "fijado en el plan" : fuente === "oficial" ? "de la norma (RJ 458-2002-INRENA)" : "general (RJ 458-2002-INRENA)";
+    throw new LothInvariantError(
+      `El árbol ${treeCode} (${arbol.speciesCommon}) tiene ${dapCm.toFixed(1)} cm de DAP y el DMC ${origen} es ${dmcCm} cm: por debajo del diámetro mínimo de corta no se puede aprovechar. Si igual corresponde talarlo, escribí la justificación.`,
+      "T8_BAJO_DMC",
+      { treeCode, especie: arbol.speciesCommon, dapCm: Number(dapCm.toFixed(1)), dmcCm },
+    );
   }
 
   /**

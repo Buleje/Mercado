@@ -59,6 +59,7 @@ async function purgar() {
   if (testPlans.length > 0) {
     await prisma.forestPlanSpecies.deleteMany({ where: { planId: { in: testPlans.map((p) => p.id) } } });
   }
+  await prisma.forestCensusTree.deleteMany({ where: { tenantId: TENANT, createdBy: { startsWith: "TEST-LOTH-" } } });
   await prisma.forestPlan.deleteMany({ where: { tenantId: TENANT, createdBy: { startsWith: "TEST-LOTH-" } } });
   await prisma.activityLog.deleteMany({ where: { tenantId: TENANT, user: { startsWith: "TEST-LOTH-" } } });
 }
@@ -154,7 +155,7 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     const desp = await crear({ section: "despacho_troza", trozaCode: troza, gtfNumber: `${P}-E1G` });
     expect(desp.status).toBe("registrado");
     expect(desp.lineNo).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it("T6 — no se moviliza más del volumen autorizado por el POA", async () => {
     // Plan con 10 m³ autorizados de Tornillo.
@@ -175,7 +176,7 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     await crear({ section: "trozado", treeCode: t2, trozaCode: `${t2}-A`, speciesCommon: SP6, volumeM3: 5, planId: plan.id });
     await expect(crear({ section: "despacho_troza", trozaCode: `${t2}-A`, gtfNumber: `${P}-G2D`, planId: plan.id }))
       .rejects.toMatchObject({ code: "T6_EXCESO_AUTORIZADO" });
-  });
+  }, 30_000);
 
   it("T7 — no se moviliza una especie que no está autorizada en el plan", async () => {
     // Plan que autoriza SÓLO SP7ok. Movilizar SP7bad (fuera del POA) debe frenar.
@@ -198,7 +199,7 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     await crear({ section: "trozado", treeCode: ok, trozaCode: `${ok}-A`, speciesCommon: SP7ok.toUpperCase(), volumeM3: 4, planId: plan.id });
     const desp = await crear({ section: "despacho_troza", trozaCode: `${ok}-A`, gtfNumber: `${P}-T7OKG`, planId: plan.id });
     expect(desp.status).toBe("registrado");
-  });
+  }, 30_000);
 
   it("T7 — sin plan atado (código libre) NO bloquea, aunque la especie no figure", async () => {
     // Un despacho sin planId es "código libre": no se juzga contra ningún POA.
@@ -208,6 +209,56 @@ describe.skipIf(!HAS_DB)("LO-TH · invariantes de cadena de custodia (ADR-305)",
     const desp = await crear({ section: "despacho_troza", trozaCode: `${free}-A`, gtfNumber: `${P}-T7FG` });
     expect(desp.status).toBe("registrado");
   });
+
+  it("T8 — no se tala un árbol censado por debajo del DMC de su especie", async () => {
+    // Tornillo: DMC 61 cm por la RJ 458-2002-INRENA. Censamos uno de 45 cm.
+    const code = `${P}-DMC`;
+    await prisma.forestCensusTree.create({
+      data: {
+        tenantId: TENANT,
+        planId: `${P}-plan-inexistente`,
+        treeCode: code,
+        speciesCommon: "Tornillo",
+        dapM: 0.45,
+        alturaComercialM: 12,
+        factorForma: 0.65,
+        estado: "en_pie",
+        createdBy: P,
+      },
+    });
+
+    await expect(crear({ section: "tala", treeCode: code, speciesCommon: "Tornillo", volumeM3: 1.2 })).rejects.toMatchObject({
+      code: "T8_BAJO_DMC",
+    });
+
+    // Con justificación pasa, y el motivo queda ESCRITO en el libro.
+    const ok = await crear({
+      section: "tala",
+      treeCode: code,
+      speciesCommon: "Tornillo",
+      volumeM3: 1.2,
+      justificacionDmc: "Árbol caído por viento",
+    });
+    expect(ok.observations).toContain("Tala bajo DMC justificada");
+  }, 30_000);
+
+  it("T8 — un árbol sobre el DMC no se bloquea, y sin censo tampoco", async () => {
+    const sobre = `${P}-DMC-OK`;
+    await prisma.forestCensusTree.create({
+      data: {
+        tenantId: TENANT,
+        planId: `${P}-plan-inexistente`,
+        treeCode: sobre,
+        speciesCommon: "Tornillo",
+        dapM: 0.8, // 80 cm ≥ 61
+        estado: "en_pie",
+        createdBy: P,
+      },
+    });
+    await expect(crear({ section: "tala", treeCode: sobre, speciesCommon: "Tornillo", volumeM3: 4 })).resolves.toBeTruthy();
+    // Código libre (sin censo): el libro no bloquea — no hay DAP con qué juzgar.
+    await expect(crear({ section: "tala", treeCode: `${P}-SIN-CENSO`, speciesCommon: "Tornillo", volumeM3: 4 })).resolves.toBeTruthy();
+  }, 30_000);
 
   it("P1 — no se registra en un mes cerrado; reabrir lo desbloquea", async () => {
     const { monthRange } = await import("@/lib/forestal/loth-cierre-types");

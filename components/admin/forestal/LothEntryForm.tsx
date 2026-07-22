@@ -258,6 +258,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   const [censusTree, setCensusTree] = useState<CensusTree | null>(null);
   /** Coordenada UTM del árbol elegido (del picker o del lookup por código). */
   const [censoUtm, setCensoUtm] = useState<{ code: string; zona: string | null; x: number; y: number } | null>(null);
+  /** T8: el backend rechazó la tala por estar bajo el DMC; hay que justificar. */
+  const [dmcBloqueo, setDmcBloqueo] = useState<string | null>(null);
+  const [justificacionDmc, setJustificacionDmc] = useState("");
   const [censusChecked, setCensusChecked] = useState(false);
 
   /**
@@ -410,6 +413,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     setQuantity(""); setPieces(""); setGtfNumber(""); setDiscarded(false);
     setConsumoInterno(false); setObservations("");
     setGpsLat(null); setGpsLng(null); setCensoUtm(null);
+    setDmcBloqueo(null); setJustificacionDmc("");
     setPhotoUrl(null); setPhotoError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -465,6 +469,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       if (fields.has("discarded")) payload.discarded = discarded;
       if (fields.has("consumoInterno")) payload.consumoInterno = consumoInterno;
 
+      if (justificacionDmc.trim()) payload.justificacionDmc = justificacionDmc.trim();
       payload.gpsLat = gpsLat ?? null;
       payload.gpsLng = gpsLng ?? null;
       payload.photoUrl = photoUrl ?? null;
@@ -477,6 +482,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       });
       if (!res.ok) {
         const r = await res.json().catch(() => ({}));
+        // T8 (bajo DMC): no es un error a secas — se puede seguir con una
+        // justificación, que queda escrita en el libro.
+        if (r.error === "T8_BAJO_DMC") {
+          setDmcBloqueo(r.message ?? "El árbol está por debajo del diámetro mínimo de corta.");
+          setSubmitting(false);
+          return;
+        }
         throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
       }
       if (keepOpen) {
@@ -526,6 +538,25 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>{error}</div>
+            </div>
+          )}
+
+          {dmcBloqueo && (
+            <div className="space-y-2 rounded-xl border-2 border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)] sm:col-span-2">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div><b>Bajo el diámetro mínimo de corta.</b> {dmcBloqueo}</div>
+              </div>
+              <input
+                value={justificacionDmc}
+                onChange={(e) => setJustificacionDmc(e.target.value)}
+                placeholder="Motivo (ej. árbol caído por viento, autorización especial N°…)"
+                aria-label="Justificación de la tala bajo DMC"
+                className="h-12 w-full rounded-lg border-2 border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
+              />
+              <p className="text-xs font-semibold opacity-80">
+                Con el motivo escrito la línea se registra y queda anotada en el libro y en la auditoría.
+              </p>
             </div>
           )}
 
