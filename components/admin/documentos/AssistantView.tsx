@@ -2,9 +2,9 @@
 
 import { useRef, useState } from "react";
 import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2 } from "lucide-react";
-import { askDocAssistant, type DocAssistantAnswer } from "@/hooks/use-documents";
+import { askDocAssistantStream, type DocAssistantAnswer } from "@/hooks/use-documents";
 
-type Turn = { q: string; a: DocAssistantAnswer | null; error?: boolean };
+type Turn = { q: string; a: DocAssistantAnswer | null; partial?: string; error?: boolean };
 
 const SUGGESTIONS = [
   "¿Dónde está el contrato del local?",
@@ -53,8 +53,10 @@ export function AssistantView({
     setTurns((t) => [...t, { q, a: null }]);
     setLoading(true);
     try {
-      const res = await askDocAssistant(q, history);
-      setTurns((t) => t.map((turn, i) => (i === t.length - 1 ? { ...turn, a: res } : turn)));
+      const res = await askDocAssistantStream(q, history, (partial) => {
+        setTurns((t) => t.map((turn, i) => (i === t.length - 1 ? { ...turn, partial } : turn)));
+      });
+      setTurns((t) => t.map((turn, i) => (i === t.length - 1 ? { ...turn, a: res, partial: undefined } : turn)));
     } catch {
       setTurns((t) => t.map((turn, i) => (i === t.length - 1 ? { ...turn, a: null, error: true } : turn)));
     } finally {
@@ -102,7 +104,11 @@ export function AssistantView({
                 <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]"><Bot className="h-3.5 w-3.5" /></span>
                 <div className="max-w-[85%] space-y-2">
                   {t.a === null && !t.error ? (
-                    <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-sm bg-[var(--surface-sunken)] px-3.5 py-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Buscando…</div>
+                    t.partial ? (
+                      <div className="whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-[var(--surface-sunken)] px-3.5 py-2 text-sm text-[var(--text-primary)]">{t.partial}<span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-[var(--accent)] align-middle" /></div>
+                    ) : (
+                      <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-sm bg-[var(--surface-sunken)] px-3.5 py-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Buscando…</div>
+                    )
                   ) : t.error ? (
                     <div className="rounded-2xl rounded-tl-sm bg-[var(--data-error-50)] px-3.5 py-2 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">No pude procesar la pregunta. Reintentá.</div>
                   ) : (

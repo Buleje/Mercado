@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { generateText } from "ai";
+import { generateText, streamText } from "ai";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -12,9 +12,11 @@ import type { DbDocument } from "@/lib/types/documents";
 
 /**
  * POST /api/admin/documents/assistant — asistente de documentos.
- * Recibe una pregunta en lenguaje natural, arma un índice compacto de los docs del
- * tenant (nombre + categoría + tags + IA-tags + snippet de OCR) y le pide a la IA una
- * respuesta + los documentos relevantes. Sin IA configurada → fallback por keywords.
+ * Arma un índice compacto de los docs del tenant (nombre + categoría + tags +
+ * IA-tags + snippet de OCR) y le pide a la IA una respuesta + los documentos
+ * relevantes. `?stream=1` → transmite la respuesta token a token (protocolo:
+ * primera línea = JSON de candidatos, luego el texto con `@@DOCS:i,i` al final).
+ * Sin IA → fallback por keywords (solo modo no-stream).
  */
 const Body = z.object({
   question: z.string().min(2).max(500),
@@ -27,14 +29,15 @@ const AnswerSchema = z.object({
 
 type MatchedDoc = { id: string; name: string; category: string };
 
+function scoreDoc(d: DbDocument, terms: string[]): number {
+  const hay = `${d.name} ${d.category} ${d.tags.join(" ")} ${d.aiTags.join(" ")} ${d.ocrText ?? ""}`.toLowerCase();
+  return terms.reduce((s, t) => s + (hay.includes(t) ? 1 : 0), 0);
+}
+
 function keywordFallback(docs: DbDocument[], question: string): { answer: string; matchedDocs: MatchedDoc[] } {
   const terms = question.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
   const scored = docs
-    .map((d) => {
-      const hay = `${d.name} ${d.category} ${d.tags.join(" ")} ${d.aiTags.join(" ")} ${d.ocrText ?? ""}`.toLowerCase();
-      const score = terms.reduce((s, t) => s + (hay.includes(t) ? 1 : 0), 0);
-      return { d, score };
-    })
+    .map((d) => ({ d, score: scoreDoc(d, terms) }))
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
@@ -44,6 +47,22 @@ function keywordFallback(docs: DbDocument[], question: string): { answer: string
       : "No encontré documentos que coincidan. Probá describiéndolo con otras palabras.",
     matchedDocs: scored.map((x) => ({ id: x.d.id, name: x.d.name, category: x.d.category })),
   };
+}
+
+function buildIndex(docs: DbDocument[]): string {
+  return docs
+    .map((d, i) => {
+      const content = (d.ocrText ?? "").replace(/\s+/g, " ").slice(0, 600);
+      const tags = [...d.tags, ...d.aiTags].join(", ");
+      return `[${i}] "${d.name}" · categoría: ${d.category}${tags ? ` · etiquetas: ${tags}` : ""}${d.expiresAt ? ` · vence: ${d.expiresAt.slice(0, 10)}` : ""}${content ? ` · contenido: ${content}` : ""}`;
+    })
+    .join("\n");
+}
+
+function historyBlock(history: { q: string; a: string }[] | undefined): string {
+  return (history ?? []).length
+    ? `Conversación previa (usala para resolver referencias como "ese", "y el vencimiento", "el anterior"):\n${(history ?? []).map((h) => `Usuario: ${h.q}\nAsistente: ${h.a}`).join("\n")}\n\n`
+    : "";
 }
 
 export async function POST(req: NextRequest) {
@@ -58,6 +77,7 @@ export async function POST(req: NextRequest) {
     const parsed = Body.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     const question = parsed.data.question.trim();
+    const wantsStream = req.nextUrl.searchParams.get("stream") === "1";
 
     const all = await DocumentsDB.list(auth.tenantId, {});
     const docs = all.slice(0, 120);
@@ -70,33 +90,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ...keywordFallback(docs, question), source: "keyword" });
     }
 
-    const index = docs
-      .map((d, i) => {
-        const content = (d.ocrText ?? "").replace(/\s+/g, " ").slice(0, 600);
-        const tags = [...d.tags, ...d.aiTags].join(", ");
-        return `[${i}] "${d.name}" · categoría: ${d.category}${tags ? ` · etiquetas: ${tags}` : ""}${d.expiresAt ? ` · vence: ${d.expiresAt.slice(0, 10)}` : ""}${content ? ` · contenido: ${content}` : ""}`;
-      })
-      .join("\n");
+    const index = buildIndex(docs);
 
+    // ── Modo streaming: token a token, con protocolo de línea de candidatos ──
+    if (wantsStream) {
+      const prompt = `Sos el asistente de documentos de una bodega/negocio peruano.
+
+Índice de sus documentos (cada uno con su número [i]):
+${index}
+
+${historyBlock(parsed.data.history)}El usuario pregunta ahora: "${question}"
+
+Escribí la respuesta en español con tuteo peruano, breve y concreta. Si la respuesta está en el contenido de un documento, usala. En la ÚLTIMA línea escribí exactamente: @@DOCS: seguido de los números [i] de los documentos más relevantes separados por coma (máximo 5, el más relevante primero; dejalo vacío si ninguno aplica).`;
+
+      const result = streamText({ model: smartModel, prompt, temperature: 0.2 });
+      const candidates = docs.map((d) => ({ id: d.id, name: d.name, category: d.category }));
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          controller.enqueue(encoder.encode(JSON.stringify({ docs: candidates }) + "\n"));
+          try {
+            for await (const chunk of result.textStream) controller.enqueue(encoder.encode(chunk));
+          } catch (err) {
+            logger.warn("documents.assistant.stream_fail", { err: err instanceof Error ? err.message : String(err) });
+          }
+          controller.close();
+        },
+      });
+      return new NextResponse(stream, {
+        headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform" },
+      });
+    }
+
+    // ── Modo no-stream: JSON {answer, docRefs} ──
     const prompt = `Sos el asistente de documentos de una bodega/negocio peruano.
 
 Índice de sus documentos (cada uno con su número [i]):
 ${index}
 
-${(parsed.data.history ?? []).length ? `Conversación previa (usala para resolver referencias como "ese", "y el vencimiento", "el anterior"):\n${(parsed.data.history ?? []).map((h) => `Usuario: ${h.q}\nAsistente: ${h.a}`).join("\n")}\n\n` : ""}El usuario pregunta ahora: "${question}"
+${historyBlock(parsed.data.history)}El usuario pregunta ahora: "${question}"
 
-Devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma exacta:
+Devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma:
 {"answer": "<respuesta en español, tuteo peruano, breve y concreta; si la respuesta está en el contenido de un documento, usala>", "docRefs": [<números [i] de los documentos más relevantes, máximo 5, el más relevante primero; vacío si ninguno aplica>]}`;
 
     try {
       const { text } = await generateText({ model: smartModel, prompt, temperature: 0.2 });
-      const parsed = AnswerSchema.safeParse(JSON.parse(cleanJSONResponse(text)));
-      if (!parsed.success) throw new Error("bad_ai_shape");
-      const matchedDocs = parsed.data.docRefs
+      const validated = AnswerSchema.safeParse(JSON.parse(cleanJSONResponse(text)));
+      if (!validated.success) throw new Error("bad_ai_shape");
+      const matchedDocs = validated.data.docRefs
         .map((i) => docs[i])
         .filter((d): d is DbDocument => !!d)
         .map((d) => ({ id: d.id, name: d.name, category: d.category }));
-      return NextResponse.json({ answer: parsed.data.answer, matchedDocs, source: "ai" });
+      return NextResponse.json({ answer: validated.data.answer, matchedDocs, source: "ai" });
     } catch (err) {
       logger.warn("documents.assistant.ai_fail", { err: err instanceof Error ? err.message : String(err) });
       return NextResponse.json({ ...keywordFallback(docs, question), source: "keyword-fallback" });

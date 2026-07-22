@@ -259,6 +259,54 @@ export async function askDocAssistant(
   });
 }
 
+/**
+ * Variante en streaming: transmite la respuesta token a token (onToken con el texto
+ * parcial) y al terminar devuelve la respuesta final + los docs relevantes. Protocolo:
+ * 1ª línea = JSON de candidatos, luego el texto con `@@DOCS:i,i` al final. Si el stream
+ * no está disponible, cae al modo no-stream.
+ */
+export async function askDocAssistantStream(
+  question: string,
+  history: { q: string; a: string }[] | undefined,
+  onToken: (partialAnswer: string) => void,
+): Promise<DocAssistantAnswer> {
+  const res = await fetch(`${BASE}/assistant?stream=1`, {
+    method: "POST",
+    credentials: "include",
+    headers: csrfHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ question, history }),
+  });
+  if (!res.ok || !res.body) return askDocAssistant(question, history);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let candidates: DocAssistantAnswer["matchedDocs"] | null = null;
+  let answer = "";
+  const textUpTo = (s: string) => { const d = s.indexOf("@@DOCS:"); return d >= 0 ? s.slice(0, d).trim() : s; };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    if (!candidates) {
+      const nl = buffer.indexOf("\n");
+      if (nl < 0) continue;
+      try { candidates = JSON.parse(buffer.slice(0, nl)).docs ?? []; } catch { candidates = []; }
+      buffer = buffer.slice(nl + 1);
+    }
+    answer = buffer;
+    onToken(textUpTo(answer));
+  }
+
+  const dm = answer.indexOf("@@DOCS:");
+  const refs = dm >= 0
+    ? answer.slice(dm + 7).split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isInteger(n))
+    : [];
+  const matchedDocs = refs.map((i) => candidates?.[i]).filter((d): d is DocAssistantAnswer["matchedDocs"][number] => !!d);
+  return { answer: textUpTo(answer), matchedDocs, source: "ai-stream" };
+}
+
 /** Analiza el contenido de un doc con IA (texto + resumen + datos clave + tags). */
 export async function analyzeDoc(id: string): Promise<{ summary: string; keyFacts: string[]; tags: string[]; source: string; message?: string }> {
   return http(`${BASE}/${id}/analyze`, { method: "POST" });
