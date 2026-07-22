@@ -50,6 +50,9 @@ import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
 import LothMapaHerramientas from "./LothMapaHerramientas";
 import type { ModoMedicion } from "@/lib/forestal/loth-medicion";
 import { cargarWaybackReleases, EUDR_CUTOFF, releaseParaFecha, type WaybackRelease } from "@/lib/forestal/loth-wayback";
+import { arbolesEnFaja } from "@/lib/forestal/loth-faja";
+import { cargarElevaciones, construirPerfil, muestrearTraza, type PerfilElevacion } from "@/lib/forestal/loth-elevacion";
+import { descargarImagenMapa, type ImagenBase } from "@/lib/forestal/loth-mapa-imagen";
 import { printLothPlano, type PlanoBasemap } from "@/lib/forestal/loth-plano-print";
 import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
 import LothEudrRail from "./LothEudrRail";
@@ -156,6 +159,12 @@ export default function LothMapaView() {
   const [wayback, setWayback] = useState<WaybackRelease | null>(null);
   const [waybackSplit, setWaybackSplit] = useState(50);
   const [fullscreen, setFullscreen] = useState(false);
+  const [fajaAnchoM, setFajaAnchoM] = useState(0);
+  const [perfil, setPerfil] = useState<PerfilElevacion | null>(null);
+  const [perfilCargando, setPerfilCargando] = useState(false);
+  const [descargando, setDescargando] = useState(false);
+  /** bbox visible del mapa — lo necesita la descarga en PNG. */
+  const [vista, setVista] = useState<{ latMin: number; latMax: number; lngMin: number; lngMax: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -407,6 +416,60 @@ export default function LothMapaView() {
     if (r) setWayback(r);
   };
 
+  /** Perfil de terreno de la traza que se esté midiendo. */
+  const verPerfil = async () => {
+    const traza = medicion ?? [];
+    if (traza.length < 2) return;
+    setPerfilCargando(true);
+    setError(null);
+    try {
+      const muestras = muestrearTraza(traza, 60);
+      const elevaciones = await cargarElevaciones(muestras);
+      if (elevaciones.length === 0) {
+        setError("El servicio de altitudes no respondió. Probá de nuevo en un momento.");
+        return;
+      }
+      setPerfil(construirPerfil(muestras, elevaciones));
+    } finally {
+      setPerfilCargando(false);
+    }
+  };
+
+  /** PNG de la vista actual con el polígono, el censo y las referencias. */
+  const descargarPng = async () => {
+    if (!vista) return;
+    setDescargando(true);
+    setError(null);
+    try {
+      const BASE_PNG: Record<BasemapId, ImagenBase> = { topo: "topo", sat: "sat", street: "street" };
+      await descargarImagenMapa({
+        bounds: vista,
+        ancho: 1400,
+        alto: Math.round((1400 * 560) / 912),
+        base: BASE_PNG[basemap],
+        parcela: parcela.vertices,
+        lineas: carto.vias.map((v) => ({ puntos: v.puntos, color: viaMeta(v.tipo).color, dash: !!viaMeta(v.tipo).dash })),
+        puntos: [
+          ...censoShown.map((t) => ({
+            lat: t.lat,
+            lng: t.lng,
+            color: t.categoria ? CATEGORIA_COLOR[t.categoria] : "#15803d",
+            label: t.code,
+            forma: "triangulo" as const,
+          })),
+          ...geoShown.map((g) => ({ lat: g.lat, lng: g.lng, color: SECTION_COLOR[g.section] ?? "#334155", label: g.code })),
+          ...carto.referencias.map((r) => ({ lat: r.lat, lng: r.lng, color: referenciaMeta(r.tipo).color, label: r.nombre })),
+        ],
+        titulo: `Área de aprovechamiento${plan?.parcelaCorta ? ` · ${plan.parcelaCorta}` : ""}`,
+        fecha: new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDescargando(false);
+    }
+  };
+
   const addViaPoint = useCallback((v: LatLng) => setViaDraft((d) => [...(d ?? []), v]), []);
   const toggleOverlay = useCallback(
     (id: OverlayId) => setOverlays((o) => (o.includes(id) ? o.filter((x) => x !== id) : [...o, id])),
@@ -448,7 +511,10 @@ export default function LothMapaView() {
   }, [carto]);
 
   const onCursor = useCallback((p: LatLng | null) => setCursor(p), []);
-  const onView = useCallback((v: { metersPerPixel: number }) => setMetersPerPixel(v.metersPerPixel), []);
+  const onView = useCallback((v: { metersPerPixel: number; bounds?: { latMin: number; latMax: number; lngMin: number; lngMax: number } }) => {
+    setMetersPerPixel(v.metersPerPixel);
+    if (v.bounds) setVista(v.bounds);
+  }, []);
 
   // ── Exports ────────────────────────────────────────────────────────────────
   const doExportGeoJson = useCallback(() => {
@@ -692,6 +758,22 @@ export default function LothMapaView() {
             fullscreen={fullscreen}
             onFullscreen={() => setFullscreen((v) => !v)}
             zonaDefault={zonaSugerida}
+            fajaAnchoM={fajaAnchoM}
+            onFajaAncho={setFajaAnchoM}
+            cauces={carto.vias.filter((v) => v.tipo === "rio").length}
+            arbolesEnFaja={
+              fajaAnchoM > 0
+                ? carto.vias
+                    .filter((v) => v.tipo === "rio")
+                    .reduce((total, v) => total + arbolesEnFaja(censoAll, v.puntos, fajaAnchoM).length, 0)
+                : 0
+            }
+            perfil={perfil}
+            perfilCargando={perfilCargando}
+            onPerfil={verPerfil}
+            onCerrarPerfil={() => setPerfil(null)}
+            descargando={descargando}
+            onDescargarImagen={descargarPng}
           />
 
           {error && (
@@ -724,6 +806,7 @@ export default function LothMapaView() {
               medicionModo={medicionModo}
               onMedicionPunto={addMedicionPunto}
               fullscreen={fullscreen}
+              fajaAnchoM={fajaAnchoM}
               centrarEn={centrarEn}
               parcela={parcela.vertices}
               declarada={declarada}

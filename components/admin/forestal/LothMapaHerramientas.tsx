@@ -15,11 +15,13 @@
  */
 
 import { useState } from "react";
-import { Check, History, Loader2, Locate, Maximize2, Minimize2, Search, Table, X } from "@buleje/design-system/icons";
+import { Check, Download, History, Loader2, Locate, Maximize2, Minimize2, Search, Table, TrendingUp, Waves, X } from "@buleje/design-system/icons";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { formatDistance, fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
 import { formatArea, medir, type ModoMedicion } from "@/lib/forestal/loth-medicion";
 import { esAnteriorAlCorte, EUDR_CUTOFF, type WaybackRelease } from "@/lib/forestal/loth-wayback";
+import { FAJA_SUGERIDA } from "@/lib/forestal/loth-faja";
+import { PENDIENTE_CRITICA_PCT, perfilToSvgPath, type PerfilElevacion } from "@/lib/forestal/loth-elevacion";
 
 const CHIP =
   "inline-flex h-9 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold transition disabled:opacity-40";
@@ -46,6 +48,22 @@ interface Props {
   fullscreen: boolean;
   onFullscreen: () => void;
   zonaDefault: string;
+
+  /** Faja de protección de cauces (m a cada lado; 0 = apagada). */
+  fajaAnchoM: number;
+  onFajaAncho: (m: number) => void;
+  /** Cauces dibujados: sin ellos la faja no tiene sobre qué apoyarse. */
+  cauces: number;
+  /** Árboles del censo que caen dentro de la faja. */
+  arbolesEnFaja: number;
+
+  perfil: PerfilElevacion | null;
+  perfilCargando: boolean;
+  onPerfil: () => void;
+  onCerrarPerfil: () => void;
+
+  descargando: boolean;
+  onDescargarImagen: () => void;
 }
 
 export default function LothMapaHerramientas({
@@ -64,6 +82,16 @@ export default function LothMapaHerramientas({
   fullscreen,
   onFullscreen,
   zonaDefault,
+  fajaAnchoM,
+  onFajaAncho,
+  cauces,
+  arbolesEnFaja,
+  perfil,
+  perfilCargando,
+  onPerfil,
+  onCerrarPerfil,
+  descargando,
+  onDescargarImagen,
 }: Props) {
   const [irOpen, setIrOpen] = useState(false);
   const [este, setEste] = useState("");
@@ -139,6 +167,35 @@ export default function LothMapaHerramientas({
           <Search className="h-3.5 w-3.5" /> Ir a coordenada
         </button>
 
+        {/* Faja marginal */}
+        <button
+          type="button"
+          onClick={() => onFajaAncho(fajaAnchoM > 0 ? 0 : FAJA_SUGERIDA.rio)}
+          disabled={cauces === 0}
+          aria-pressed={fajaAnchoM > 0}
+          title={cauces === 0 ? "Trazá primero un río o quebrada" : "Franja de protección a los lados del cauce"}
+          className={`${CHIP} ${fajaAnchoM > 0 ? "border-transparent bg-[#0284c7] text-white" : OFF}`}
+        >
+          <Waves className="h-3.5 w-3.5" /> Faja de protección
+        </button>
+
+        {/* Perfil de terreno */}
+        <button
+          type="button"
+          onClick={perfil ? onCerrarPerfil : onPerfil}
+          disabled={perfilCargando || (!perfil && (medicion?.length ?? 0) < 2)}
+          aria-pressed={!!perfil}
+          title="Perfil de altitud de la traza que estés midiendo"
+          className={`${CHIP} ${perfil ? "border-transparent bg-[#0f766e] text-white" : OFF}`}
+        >
+          {perfilCargando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <TrendingUp className="h-3.5 w-3.5" />}
+          Perfil de terreno
+        </button>
+
+        <button type="button" onClick={onDescargarImagen} disabled={descargando} className={`${CHIP} ${OFF}`}>
+          {descargando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Imagen PNG
+        </button>
+
         <button type="button" onClick={onFullscreen} className={`${CHIP} ${OFF}`}>
           {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           {fullscreen ? "Salir" : "Pantalla completa"}
@@ -209,6 +266,68 @@ export default function LothMapaHerramientas({
               <X className="h-3.5 w-3.5" /> Cerrar
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Panel: faja de protección */}
+      {fajaAnchoM > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[#0284c7]/60 bg-[#0284c7]/10 p-3">
+          <Waves className="h-4 w-4 text-[#0284c7]" />
+          <label className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
+            Ancho a cada lado
+            <input
+              type="number"
+              min={5}
+              max={500}
+              value={fajaAnchoM}
+              onChange={(e) => onFajaAncho(Math.max(0, Math.min(500, Number(e.target.value) || 0)))}
+              className="h-9 w-20 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
+            />
+            m
+          </label>
+          <span className="text-xs font-semibold text-[var(--text-tertiary)]">
+            sugerido {FAJA_SUGERIDA.rio} m en ríos y {FAJA_SUGERIDA.quebrada} m en quebradas — el ancho real lo fija la ANA
+          </span>
+          {arbolesEnFaja > 0 && (
+            <span className="ml-auto rounded-full bg-[var(--data-error-500)]/15 px-2.5 py-1 text-xs font-black text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+              {arbolesEnFaja} árbol(es) del censo dentro de la faja
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Panel: perfil de terreno */}
+      {perfil && perfil.puntos.length >= 2 && (
+        <div className="space-y-2 rounded-xl border-2 border-[#0f766e]/60 bg-[#0f766e]/10 p-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <TrendingUp className="h-4 w-4 text-[#0f766e]" />
+            <span className="text-sm font-bold text-[var(--text-primary)]">
+              {perfil.elevMinM.toFixed(0)}–{perfil.elevMaxM.toFixed(0)} m s.n.m. · desnivel {perfil.desnivelM.toFixed(0)} m
+            </span>
+            <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+              ↑{perfil.ascensoM.toFixed(0)} m · ↓{perfil.descensoM.toFixed(0)} m · pendiente máx {perfil.pendienteMaxPct.toFixed(1)}%
+            </span>
+            <button
+              type="button"
+              onClick={onCerrarPerfil}
+              className="ml-auto inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)]"
+            >
+              <X className="h-3.5 w-3.5" /> Cerrar
+            </button>
+          </div>
+          <svg viewBox="0 0 600 90" className="h-24 w-full" role="img" aria-label="Perfil de altitud de la traza">
+            <path d={`${perfilToSvgPath(perfil, 600, 90)} L596,86 L4,86 Z`} fill="#0f766e" fillOpacity="0.18" />
+            <path d={perfilToSvgPath(perfil, 600, 90)} fill="none" stroke="#0f766e" strokeWidth="2" />
+          </svg>
+          {perfil.advertencia && (
+            <p className="text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              {perfil.advertencia}
+            </p>
+          )}
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            Altitudes del modelo digital de terreno (Open-Meteo). Referencia de planificación: sobre {PENDIENTE_CRITICA_PCT}% el
+            arrastre mecanizado deja de ser viable.
+          </p>
         </div>
       )}
 

@@ -23,6 +23,7 @@ import { dominantZone, gridLabel, utmGrid, vertexCode } from "@/lib/forestal/lot
 import { referenciaMeta, viaMeta, type LothReferencia, type LothVia } from "@/lib/forestal/loth-cartografia";
 import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
 import type { WaybackRelease } from "@/lib/forestal/loth-wayback";
+import { construirFaja } from "@/lib/forestal/loth-faja";
 import {
   arbolPopupHtml,
   censoColor,
@@ -76,6 +77,8 @@ interface Props {
   onMedicionPunto: (v: LatLng) => void;
   /** Cambia al entrar/salir de pantalla completa: Leaflet debe re-medirse. */
   fullscreen: boolean;
+  /** Ancho (m a cada lado) de la faja de protección sobre los cauces; 0 = apagada. */
+  fajaAnchoM: number;
   /** Pedido de centrado (cambia `n` en cada pedido). */
   centrarEn: { p: LatLng; n: number } | null;
   parcela: LatLng[];
@@ -95,8 +98,8 @@ interface Props {
   /** Click en el punto medio de un lado (inserta antes de `index`). */
   onInsertVertex: (index: number, v: LatLng) => void;
   onCursor: (p: LatLng | null) => void;
-  /** Escala viva del mapa (para la barra gráfica y el denominador 1:X). */
-  onView: (v: { zoom: number; metersPerPixel: number }) => void;
+  /** Escala + encuadre vivos (barra gráfica, denominador 1:X y descarga en PNG). */
+  onView: (v: { zoom: number; metersPerPixel: number; bounds: { latMin: number; latMax: number; lngMin: number; lngMax: number } }) => void;
 }
 
 export default function LothMapaCanvas({
@@ -116,6 +119,7 @@ export default function LothMapaCanvas({
   medicionModo,
   onMedicionPunto,
   fullscreen,
+  fajaAnchoM,
   centrarEn,
   parcela,
   declarada,
@@ -146,6 +150,7 @@ export default function LothMapaCanvas({
   const posRef = useRef<any>(null);
   const waybackRef = useRef<any>(null);
   const medicionRef = useRef<any>(null);
+  const fajaRef = useRef<any>(null);
   const overlayRef = useRef<Record<string, any>>({});
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const fittedRef = useRef(0);
@@ -166,6 +171,7 @@ export default function LothMapaCanvas({
       markersRef.current = L.layerGroup().addTo(map);
       viasRef.current = L.layerGroup().addTo(map);
       posRef.current = L.layerGroup().addTo(map);
+      fajaRef.current = L.layerGroup().addTo(map);
       medicionRef.current = L.layerGroup().addTo(map);
       // Pane propio para la imagen histórica: va encima de la base y debajo de
       // los vectores, y su clip-path es el que hace la "cortina" del comparador.
@@ -359,7 +365,12 @@ export default function LothMapaCanvas({
       const zoom = map.getZoom();
       const lat = map.getCenter().lat;
       const metersPerPixel = (40_075_016.686 * Math.cos((lat * Math.PI) / 180)) / (256 * 2 ** zoom);
-      onView({ zoom, metersPerPixel });
+      const b = map.getBounds();
+      onView({
+        zoom,
+        metersPerPixel,
+        bounds: { latMin: b.getSouth(), latMax: b.getNorth(), lngMin: b.getWest(), lngMax: b.getEast() },
+      });
     };
     emit();
     map.on("moveend zoomend", emit);
@@ -541,6 +552,22 @@ export default function LothMapaCanvas({
     if (!pane) return;
     pane.style.clipPath = wayback ? `inset(0 ${100 - waybackSplit}% 0 0)` : "";
   }, [ready, wayback, waybackSplit]);
+
+  // ── Faja marginal de protección sobre los cauces ───────────────────────────
+  useEffect(() => {
+    const L = LRef.current;
+    const group = fajaRef.current;
+    if (!ready || !L || !group) return;
+    group.clearLayers();
+    if (!fajaAnchoM || fajaAnchoM <= 0) return;
+    const estilo = { color: "#0284c7", weight: 1, fillColor: "#0284c7", fillOpacity: 0.18, interactive: false };
+    for (const via of vias.filter((v) => v.tipo === "rio")) {
+      const faja = construirFaja(via.puntos, fajaAnchoM);
+      for (const t of faja.tramos) L.polygon(t, estilo).addTo(group);
+      // Discos en los quiebres: sin ellos la faja queda "mordida" en las curvas.
+      for (const d of faja.discos) L.circle(d.centro, { ...estilo, radius: d.radioM }).addTo(group);
+    }
+  }, [ready, vias, fajaAnchoM]);
 
   // ── Cinta métrica ──────────────────────────────────────────────────────────
   useEffect(() => {
