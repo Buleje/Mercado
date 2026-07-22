@@ -33,6 +33,8 @@ export interface Placed {
   cites?: boolean;
   status: RadarEstado;
   bal?: RadarBalance;
+  /** Presente sólo si el nodo representa un grupo colapsado de N líneas. */
+  grupo?: { cuenta: number };
 }
 
 export const KIND_ACCENT: Record<NodeKind, string> = {
@@ -130,7 +132,14 @@ export function Node({
     >
       {/* Halo de coincidencia: resalta el nodo que matchea la búsqueda. */}
       {match && <rect x={-3} y={-3} width={NODE_W + 6} height={NODE_H + 6} rx={16} fill="none" stroke="var(--accent)" strokeWidth={2} opacity={0.45} />}
-      <rect width={NODE_W} height={NODE_H} rx={14} fill={fill} stroke={stroke} strokeWidth={match || pinned ? 2.5 : warn ? 2 : 1.5} filter={dim ? undefined : "url(#ctp-node-shadow)"} />
+      {/* Un grupo colapsado se dibuja como una pila: se lee que hay más detrás. */}
+      {n.grupo && (
+        <>
+          <rect x={5} y={-5} width={NODE_W - 10} height={NODE_H} rx={14} fill={fill} stroke={stroke} strokeWidth={1} opacity={0.45} />
+          <rect x={2.5} y={-2.5} width={NODE_W - 5} height={NODE_H} rx={14} fill={fill} stroke={stroke} strokeWidth={1} opacity={0.7} />
+        </>
+      )}
+      <rect width={NODE_W} height={NODE_H} rx={14} fill={fill} stroke={stroke} strokeWidth={match || pinned ? 2.5 : warn ? 2 : 1.5} strokeDasharray={n.grupo ? "7 3" : undefined} filter={dim ? undefined : "url(#ctp-node-shadow)"} />
       {/* pill de acento por columna (inset, no borde a sangre) */}
       <rect x={9} y={11} width={3.5} height={NODE_H - 30} rx={1.75} fill={accent} />
       <text x={20} y={20} fontSize={11} fontWeight={700} fill="var(--text-primary)">{trunc(n.top, 22)}</text>
@@ -145,6 +154,16 @@ export function Node({
           {/* En 0% no se dibuja relleno: un mínimo de 2px se lee como "algo hay". */}
           {pct > 0 && <rect x={20} y={NODE_H - 12} width={Math.max(2, (barW * pct) / 100)} height={4} rx={2} fill={barColor(n.kind, bal)} />}
           <text x={20 + barW + 4} y={NODE_H - 8} fontSize={7.5} fontWeight={700} fill="var(--text-tertiary)" textAnchor="start">{pct}%</text>
+        </>
+      )}
+
+      {/* Cuántas líneas hay dentro del grupo + cómo abrirlo. */}
+      {n.grupo && (
+        <>
+          <rect x={NODE_W - 62} y={NODE_H - 21} width={54} height={14} rx={7} fill="var(--surface-sunken)" />
+          <text x={NODE_W - 35} y={NODE_H - 11} fontSize={7.5} fontWeight={800} fill="var(--text-secondary)" textAnchor="middle">
+            {n.grupo.cuenta} líneas ▸
+          </text>
         </>
       )}
 

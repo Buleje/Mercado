@@ -27,12 +27,17 @@ import {
   ArrowDownUp,
   Boxes,
   CheckCircle2,
+  Clock,
   Eye,
   FileDown,
+  Gauge,
+  Layers,
   Maximize2,
+  Share2,
   PackageOpen,
   FileSpreadsheet,
   RefreshCw,
+  Route,
   Search,
   ShieldAlert,
   TreePine,
@@ -48,10 +53,26 @@ import {
   grosorArista,
   ordenarNodos,
   radarToCsv,
+  type RadarBalance,
+  type RadarEstado,
   type RadarOrden,
 } from "@/lib/forestal/ctp-radar";
+import { analizarTiempo } from "@/lib/forestal/ctp-radar-tiempo";
+import { analizarRendimiento, alertasRendimiento } from "@/lib/forestal/ctp-radar-rendimiento";
+import { cadenaDeIngreso } from "@/lib/forestal/ctp-radar-cadena";
+import {
+  agregarAristas,
+  agruparColumna,
+  construirResolver,
+  esGrupo,
+  UMBRAL_AGRUPAR,
+  type GrupoNodo,
+} from "@/lib/forestal/ctp-radar-grupos";
 import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
 import CtpNodeDetailLoader, { type DetailTarget } from "./CtpNodeDetailLoader";
+import CtpRadarCronologia from "./CtpRadarCronologia";
+import CtpRadarRendimiento from "./CtpRadarRendimiento";
+import CtpRadarCadenaGtf from "./CtpRadarCadenaGtf";
 import {
   BalanceLinea,
   COL_GAP,
@@ -71,6 +92,15 @@ import {
 
 /** Qué subconjunto de la cadena se ilumina. */
 type Foco = "todos" | "huecos" | "parciales" | "cites";
+
+/** Las tres lecturas del mismo período: qué salió de dónde, cuándo, y con qué rinde. */
+type Vista = "cadena" | "cronologia" | "rendimiento";
+
+const VISTAS: { key: Vista; label: string; icon: typeof Share2; hint: string }[] = [
+  { key: "cadena", label: "Cadena", icon: Share2, hint: "El grafo GTF → corrida → despacho" },
+  { key: "cronologia", label: "Cronología", icon: Clock, hint: "La cadena en el tiempo y las fechas imposibles" },
+  { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Producto por m³ de troza y mermas anómalas" },
+];
 
 const ORDENES: { key: RadarOrden; label: string; hint: string }[] = [
   { key: "linea", label: "Por línea", hint: "Orden del libro (como se registró)" },
@@ -92,6 +122,12 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const [zoom, setZoom] = useState(1);
   const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<DetailTarget | null>(null);
+  const [vista, setVista] = useState<Vista>("cadena");
+  /** null = automático (agrupa sólo si la columna no entra). */
+  const [agruparManual, setAgruparManual] = useState<boolean | null>(null);
+  const [expandidos, setExpandidos] = useState<ReadonlySet<string>>(new Set());
+  /** Ingreso que se está siguiendo aguas abajo (vista de auditoría). */
+  const [seguirId, setSeguirId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -116,10 +152,83 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     [g, a],
   );
 
+  /** Cronología y rendimiento: las otras dos lecturas del mismo grafo. */
+  const hoy = useMemo(() => new Date(), []);
+  const tiempo = useMemo(() => (g ? analizarTiempo(g, hoy) : null), [g, hoy]);
+  const rendimiento = useMemo(() => (g ? analizarRendimiento(g) : []), [g]);
+  const cadenaSeguida = useMemo(() => (g && seguirId ? cadenaDeIngreso(g, seguirId) : null), [g, seguirId]);
+
+  /**
+   * Agrupación por columna: ingresos por especie, producción por producto y
+   * despachos por destino. Automática cuando la columna no entra en pantalla
+   * (`UMBRAL_AGRUPAR`), o forzada/desactivada a mano.
+   */
+  const agrupacion = useMemo(() => {
+    if (!g) return null;
+    const opts = {
+      forzar: agruparManual === true,
+      umbral: agruparManual === false ? Number.POSITIVE_INFINITY : UMBRAL_AGRUPAR,
+    };
+    return {
+      ing: agruparColumna(g.ingresos, "ing", (w) => w.species ?? "—", (w) => w.volumeM3, opts),
+      cor: agruparColumna(g.corridas, "cor", (c) => c.productType ?? c.label, (c) => c.quantity, opts),
+      des: agruparColumna(g.despachos, "des", (d) => d.destino || "Sin destino", (d) => d.quantity, opts),
+    };
+  }, [g, agruparManual]);
+
+  const hayAgrupacion = !!agrupacion && (agrupacion.ing.agrupada || agrupacion.cor.agrupada || agrupacion.des.agrupada);
+
+  /** id real → id dibujado (el propio, o el del grupo que lo contiene). */
+  const resolver = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!agrupacion) return m;
+    // Cada columna tiene su propio tipo de nodo; sólo hace falta el `id`.
+    const sumar = (col: { agrupada: boolean; grupos: GrupoNodo<{ id: string }>[] }) => {
+      if (!col.agrupada) return;
+      for (const [k, v] of construirResolver(col.grupos, expandidos)) m.set(k, v);
+    };
+    sumar(agrupacion.ing);
+    sumar(agrupacion.cor);
+    sumar(agrupacion.des);
+    return m;
+  }, [agrupacion, expandidos]);
+
   const layout = useMemo(() => {
     if (!g || !a) return null;
     const cols: [Placed[], Placed[], Placed[]] = [[], [], []];
-    const rows = Math.max(g.ingresos.length, g.corridas.length, g.despachos.length, 1);
+
+    // Estado y saldo de un grupo = la suma de sus miembros, con el PEOR estado
+    // (un grupo con un hueco adentro no puede verse sano desde afuera).
+    const PESO: Record<RadarEstado, number> = { warn: 0, parcial: 1, ok: 2, muted: 3 };
+    const balanceGrupo = (ids: string[], mapa: Map<string, RadarBalance>): { bal: RadarBalance; estado: RadarEstado } => {
+      let total = 0, cubierto = 0;
+      let peor: RadarEstado | null = null;
+      for (const id of ids) {
+        const b = mapa.get(id);
+        if (!b) continue;
+        total += b.total;
+        cubierto += b.cubierto;
+        if (peor === null || PESO[b.estado] < PESO[peor]) peor = b.estado;
+      }
+      const estado = peor ?? "ok";
+      const r = (n: number) => Number(n.toFixed(4));
+      return {
+        estado,
+        bal: {
+          id: "grupo", total: r(total), cubierto: r(cubierto), sinAtribuir: r(Math.max(0, total - cubierto)),
+          pct: total > 0 ? Math.min(100, Math.round((cubierto / total) * 100)) : null, estado,
+        },
+      };
+    };
+
+    // Cuántas filas ocupa cada columna ya resuelta (grupos + miembros abiertos).
+    const filasDe = <T extends { id: string }>(nodos: T[], col: { agrupada: boolean; grupos: GrupoNodo<T>[] }): number =>
+      col.agrupada ? col.grupos.reduce((s, gr) => s + (expandidos.has(gr.id) ? gr.miembros.length : 1), 0) : nodos.length;
+
+    const filas = agrupacion
+      ? [filasDe(g.ingresos, agrupacion.ing), filasDe(g.corridas, agrupacion.cor), filasDe(g.despachos, agrupacion.des)]
+      : [g.ingresos.length, g.corridas.length, g.despachos.length];
+    const rows = Math.max(...filas, 1);
     const H = rows * (NODE_H + GAP_Y) - GAP_Y + PAD * 2;
     const colX = [PAD, PAD + NODE_W + COL_GAP, PAD + 2 * (NODE_W + COL_GAP)];
 
@@ -127,44 +236,89 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
     // índice): con el orden configurable, indexar el array original desalinearía
     // las etiquetas respecto del nodo dibujado.
     const place = <T extends { id: string }>(
-      arr: T[], ci: number, kind: NodeKind, f: (n: T) => Omit<Placed, "id" | "kind" | "x" | "y" | "status">,
+      arr: T[], ci: number, kind: NodeKind,
+      col: { agrupada: boolean; grupos: GrupoNodo<T>[] } | null,
+      mapa: Map<string, RadarBalance>,
+      f: (n: T) => Omit<Placed, "id" | "kind" | "x" | "y" | "status">,
+      etiquetaGrupo: (gr: GrupoNodo<T>) => { sub: string; vol: string },
     ) => {
-      const colH = arr.length * (NODE_H + GAP_Y) - GAP_Y;
+      const items: Omit<Placed, "x" | "y">[] = [];
+      if (col?.agrupada) {
+        for (const gr of col.grupos) {
+          if (expandidos.has(gr.id)) {
+            for (const n of arr.filter((x) => gr.miembros.some((m) => m.id === x.id))) {
+              items.push({ id: n.id, kind, status: a.estado.get(n.id) ?? "ok", ...f(n) });
+            }
+          } else {
+            const { bal, estado } = balanceGrupo(gr.miembros.map((m) => m.id), mapa);
+            const et = etiquetaGrupo(gr);
+            items.push({
+              id: gr.id, kind, status: estado, top: gr.etiqueta, sub: et.sub, vol: et.vol, bal,
+              grupo: { cuenta: gr.miembros.length },
+              cites: gr.miembros.some((m) => (m as { cites?: boolean }).cites === true),
+            });
+          }
+        }
+      } else {
+        for (const n of arr) items.push({ id: n.id, kind, status: a.estado.get(n.id) ?? "ok", ...f(n) });
+      }
+
+      const colH = items.length * (NODE_H + GAP_Y) - GAP_Y;
       const y0 = (H - colH) / 2;
-      arr.forEach((n, i) =>
-        cols[ci].push({
-          id: n.id, kind, x: colX[ci], y: y0 + i * (NODE_H + GAP_Y),
-          status: a.estado.get(n.id) ?? "ok", ...f(n),
-        }),
-      );
+      items.forEach((n, i) => cols[ci].push({ ...n, x: colX[ci], y: y0 + i * (NODE_H + GAP_Y) }));
     };
 
-    place(ordenarNodos(g.ingresos, orden, a.ingresos, (w) => w.volumeM3), 0, "ingreso", (w) => {
-      const bal = a.ingresos.get(w.id);
-      const saldo = bal && bal.sinAtribuir > 0 ? ` · ${fmtNum(bal.sinAtribuir)} sin usar` : "";
-      return { top: `GTF ${w.gtf || "—"}`, sub: w.species ?? "—", vol: `${fmtNum(w.volumeM3)} m³${saldo}`, cites: w.cites, bal };
-    });
-    place(ordenarNodos(g.corridas, orden, a.corridas, (c) => c.quantity), 1, "corrida", (c) => ({
-      top: `Corrida #${c.lineNo}`, sub: c.label, cites: c.cites, bal: a.corridas.get(c.id),
-      vol: c.quantity ? `${fmtNum(c.quantity)} ${c.unit ?? ""}`.trim() : "",
-    }));
-    place(ordenarNodos(g.despachos, orden, a.despachos, (d) => d.quantity), 2, "despacho", (d) => {
-      const bal = a.despachos.get(d.id);
-      const falta = bal && bal.sinAtribuir > 0 ? ` · falta ${fmtNum(bal.sinAtribuir)}` : "";
-      const cantidad = `${fmtNum(d.quantity)} ${d.unit ?? ""}`.trim();
-      return { top: `Despacho #${d.lineNo}`, sub: d.destino || d.label, vol: d.quantity ? `${cantidad}${falta}` : "", bal };
-    });
+    place(
+      ordenarNodos(g.ingresos, orden, a.ingresos, (w) => w.volumeM3), 0, "ingreso", agrupacion?.ing ?? null, a.ingresos,
+      (w) => {
+        const bal = a.ingresos.get(w.id);
+        const saldo = bal && bal.sinAtribuir > 0 ? ` · ${fmtNum(bal.sinAtribuir)} sin usar` : "";
+        return { top: `GTF ${w.gtf || "—"}`, sub: w.species ?? "—", vol: `${fmtNum(w.volumeM3)} m³${saldo}`, cites: w.cites, bal };
+      },
+      (gr) => ({ sub: `${gr.miembros.length} guías de ingreso`, vol: `${fmtNum(gr.total)} m³ en total` }),
+    );
+    place(
+      ordenarNodos(g.corridas, orden, a.corridas, (c) => c.quantity), 1, "corrida", agrupacion?.cor ?? null, a.corridas,
+      (c) => ({
+        top: `Corrida #${c.lineNo}`, sub: c.label, cites: c.cites, bal: a.corridas.get(c.id),
+        vol: c.quantity ? `${fmtNum(c.quantity)} ${c.unit ?? ""}`.trim() : "",
+      }),
+      (gr) => ({ sub: `${gr.miembros.length} corridas`, vol: `${fmtNum(gr.total)} producidos` }),
+    );
+    place(
+      ordenarNodos(g.despachos, orden, a.despachos, (d) => d.quantity), 2, "despacho", agrupacion?.des ?? null, a.despachos,
+      (d) => {
+        const bal = a.despachos.get(d.id);
+        const falta = bal && bal.sinAtribuir > 0 ? ` · falta ${fmtNum(bal.sinAtribuir)}` : "";
+        const cantidad = `${fmtNum(d.quantity)} ${d.unit ?? ""}`.trim();
+        return { top: `Despacho #${d.lineNo}`, sub: d.destino || d.label, vol: d.quantity ? `${cantidad}${falta}` : "", bal };
+      },
+      (gr) => ({ sub: `${gr.miembros.length} despachos`, vol: `${fmtNum(gr.total)} despachados` }),
+    );
 
     const pos = new Map<string, Placed>();
     for (const c of cols) for (const n of c) pos.set(n.id, n);
     return { cols, pos, W: colX[2] + NODE_W + PAD, H };
-  }, [g, a, orden]);
+  }, [g, a, orden, agrupacion, expandidos]);
+
+  /**
+   * Aristas en el espacio dibujado: cuando un extremo está colapsado, las N
+   * líneas paralelas se funden en una y sus volúmenes se suman (si no, un grupo
+   * de 40 dibujaría 40 líneas encima de la misma).
+   */
+  const aristas = useMemo(() => {
+    if (!g) return { consumos: [], origenes: [] };
+    return {
+      consumos: agregarAristas(g.consumos, (e) => e.volumeM3, resolver),
+      origenes: agregarAristas(g.origenes, (e) => e.quantity, resolver),
+    };
+  }, [g, resolver]);
 
   /** Volumen máximo de cada tipo de arista, para escalar el grosor. */
   const maxFlujo = useMemo(() => ({
-    consumo: Math.max(0, ...(g?.consumos ?? []).map((e) => Number(e.volumeM3) || 0)),
-    origen: Math.max(0, ...(g?.origenes ?? []).map((e) => Number(e.quantity) || 0)),
-  }), [g]);
+    consumo: Math.max(0, ...aristas.consumos.map((e) => e.valor)),
+    origen: Math.max(0, ...aristas.origenes.map((e) => e.valor)),
+  }), [aristas]);
 
   // Nodos que matchean la búsqueda (GTF, especie, destino, línea).
   const matchIds = useMemo(() => {
@@ -178,17 +332,20 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   }, [g, query]);
 
   // Conjunto conectado a las semillas: búsqueda > pin > hover > foco.
+  // Todo se resuelve al espacio DIBUJADO: si el nodo semilla está dentro de un
+  // grupo colapsado, lo que se ilumina es el grupo.
   const active = useMemo(() => {
     if (!g || !a) return null;
+    const vis = (id: string) => resolver.get(id) ?? id;
     const porFoco: Record<Foco, string[]> = {
       todos: [],
-      huecos: [...a.warnIds],
-      parciales: despachosParciales.map((d) => d.id),
-      cites: [...citesIds],
+      huecos: [...a.warnIds].map(vis),
+      parciales: despachosParciales.map((d) => vis(d.id)),
+      cites: [...citesIds].map(vis),
     };
-    const seeds = matchIds && matchIds.size ? [...matchIds]
-      : pinned ? [pinned]
-      : hover ? [hover]
+    const seeds = matchIds && matchIds.size ? [...matchIds].map(vis)
+      : pinned ? [vis(pinned)]
+      : hover ? [vis(hover)]
       : porFoco[foco];
     if (!seeds || seeds.length === 0) return null;
     const nodes = new Set<string>(seeds);
@@ -206,14 +363,21 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
           }
         }
       };
-      walk(g.consumos, "c");
-      walk(g.origenes, "o");
+      walk(aristas.consumos, "c");
+      walk(aristas.origenes, "o");
     }
     return { nodes, edges };
-  }, [g, a, pinned, hover, foco, matchIds, citesIds, despachosParciales]);
+  }, [g, a, pinned, hover, foco, matchIds, citesIds, despachosParciales, aristas, resolver]);
 
   const isEmpty = g && g.ingresos.length === 0 && g.corridas.length === 0 && g.despachos.length === 0;
-  const edgeAmber = (id: string) => a?.warnIds.has(id) ?? false;
+  // Los extremos pueden ser grupos, que no están en `warnIds` (ids reales):
+  // el estado del nodo DIBUJADO ya resume el peor caso de sus miembros.
+  const edgeAmber = (id: string) => (layout?.pos.get(id)?.status ?? "ok") === "warn";
+  /** Coincidencias de búsqueda llevadas al espacio dibujado. */
+  const matchVisibles = useMemo(
+    () => (matchIds ? new Set([...matchIds].map((id) => resolver.get(id) ?? id)) : null),
+    [matchIds, resolver],
+  );
 
   // De un id de nodo → el objetivo para abrir su ficha completa.
   const targetFor = (id: string): DetailTarget | null => {
@@ -232,6 +396,20 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       ?? "";
 
   const toggleFoco = (f: Foco) => setFoco((prev) => (prev === f ? "todos" : f));
+
+  /** Abre o cierra un grupo colapsado (tocar el nodo-pila). */
+  const alternarGrupo = (id: string) =>
+    setExpandidos((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id); else s.add(id);
+      return s;
+    });
+
+  /** Desde cualquier vista: abrir el nodo en su ficha editable. */
+  const abrirNodo = (id: string) => {
+    const t = targetFor(id);
+    if (t) setDetail(t);
+  };
 
   /** CSV del grafo con los saldos — para cruzar en Excel o adjuntar al informe. */
   const exportarCsv = () => {
@@ -323,6 +501,47 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             <SummaryChip icon={ShieldAlert} tone="danger" value={a.totales.citesCount} label="Ingresos CITES" onClick={() => toggleFoco("cites")} activo={foco === "cites"} />
           </div>
 
+          {/* Tres lecturas del mismo período. Apiladas serían tres pantallas de
+              scroll; como pestañas, cada pregunta tiene su lugar. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex h-11 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+              {VISTAS.map((v) => {
+                const Icon = v.icon;
+                const alertas = v.key === "cronologia" ? (tiempo?.anomalias.length ?? 0)
+                  : v.key === "rendimiento" ? alertasRendimiento(rendimiento).length
+                  : 0;
+                return (
+                  <button
+                    key={v.key} type="button" title={v.hint} onClick={() => setVista(v.key)} aria-pressed={vista === v.key}
+                    className={`flex h-full items-center gap-1.5 px-3.5 text-sm font-bold transition ${vista === v.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" /> {v.label}
+                    {alertas > 0 && (
+                      <span className={`ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums ${vista === v.key ? "bg-white/25 text-white" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/20 dark:text-[var(--data-warning-500)]"}`}>
+                        {alertas}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {seguirId && (
+              <button type="button" onClick={() => setSeguirId(null)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
+                <XIcon className="h-3.5 w-3.5" /> Dejar de seguir la GTF
+              </button>
+            )}
+          </div>
+
+          {/* Seguimiento de una GTF: la vista que se arma a mano cuando OSINFOR
+              pregunta por un ingreso puntual. */}
+          {cadenaSeguida && (
+            <CtpRadarCadenaGtf
+              cadena={cadenaSeguida}
+              onCerrar={() => setSeguirId(null)}
+              onVerNodo={(kind, id, gtf) => setDetail(kind === "ingreso" ? { kind, id, gtf: gtf ?? "" } : { kind, id })}
+            />
+          )}
+
           {/* Huecos accionables: la cadena rota, con el arreglo a un click. El
               libro los admite; el certificado exige cadena completa. */}
           {totalHuecos > 0 && (
@@ -371,142 +590,188 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
             </div>
           )}
 
-          {/* Controles: buscar dentro de la cadena, ordenar y escalar el dibujo. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-[15rem] flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar GTF, especie, destino o «corrida 2»…"
-                aria-label="Buscar en la cadena de custodia"
-                className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] focus:outline-none"
-              />
-              {query && (
-                <button type="button" onClick={() => setQuery("")} title="Limpiar búsqueda" className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
-                  <XIcon className="h-3.5 w-3.5" />
+          {vista === "cadena" && (
+            <>
+            {/* Controles: buscar dentro de la cadena, ordenar y escalar el dibujo. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-[15rem] flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Buscar GTF, especie, destino o «corrida 2»…"
+                  aria-label="Buscar en la cadena de custodia"
+                  className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] focus:outline-none"
+                />
+                {query && (
+                  <button type="button" onClick={() => setQuery("")} title="Limpiar búsqueda" className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
+                    <XIcon className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {matchIds && (
+                <span className="shrink-0 text-xs font-bold text-[var(--text-secondary)]">
+                  {matchIds.size} {matchIds.size === 1 ? "coincidencia" : "coincidencias"}
+                </span>
+              )}
+
+              {/* Orden de las columnas: por línea del libro, por urgencia o por tamaño. */}
+              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                <span className="flex h-full items-center gap-1.5 border-r-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)]">
+                  <ArrowDownUp className="h-3.5 w-3.5" aria-hidden="true" /> Orden
+                </span>
+                {ORDENES.map((o) => (
+                  <button
+                    key={o.key} type="button" title={o.hint} onClick={() => setOrden(o.key)} aria-pressed={orden === o.key}
+                    className={`h-full px-2.5 text-xs font-bold transition ${orden === o.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Zoom: con muchas líneas la cadena no entra; achicar la deja de un vistazo. */}
+              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                <button type="button" title="Alejar" aria-label="Alejar" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, Number((z - 0.15).toFixed(2))))} disabled={zoom <= ZOOM_MIN} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+                  <ZoomOut className="h-4 w-4" />
+                </button>
+                <button type="button" title="Restablecer el tamaño" onClick={() => setZoom(1)} className="h-full border-x-2 border-[var(--rule-base)] px-2 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+                  {Math.round(zoom * 100)}%
+                </button>
+                <button type="button" title="Acercar" aria-label="Acercar" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, Number((z + 0.15).toFixed(2))))} disabled={zoom >= ZOOM_MAX} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+                  <ZoomIn className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Agrupar: con muchas líneas el grafo no entra en pantalla. Se
+                  activa solo, pero se puede forzar o desarmar a mano. */}
+              <button
+                type="button"
+                onClick={() => setAgruparManual((v) => (v === null ? !hayAgrupacion : !v))}
+                aria-pressed={hayAgrupacion}
+                title={hayAgrupacion ? "Ver línea por línea" : "Agrupar por especie, producto y destino"}
+                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition ${
+                  hayAgrupacion
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 text-[var(--accent)]"
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                }`}
+              >
+                <Layers className="h-4 w-4" /> {hayAgrupacion ? "Agrupado" : "Agrupar"}
+              </button>
+              {hayAgrupacion && expandidos.size > 0 && (
+                <button type="button" onClick={() => setExpandidos(new Set())} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+                  Cerrar los {expandidos.size} grupos abiertos
+                </button>
+              )}
+
+              {foco !== "todos" && (
+                <button type="button" onClick={() => setFoco("todos")} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
+                  <Maximize2 className="h-3.5 w-3.5" /> Ver toda la cadena
                 </button>
               )}
             </div>
-            {matchIds && (
-              <span className="shrink-0 text-xs font-bold text-[var(--text-secondary)]">
-                {matchIds.size} {matchIds.size === 1 ? "coincidencia" : "coincidencias"}
-              </span>
-            )}
 
-            {/* Orden de las columnas: por línea del libro, por urgencia o por tamaño. */}
-            <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-              <span className="flex h-full items-center gap-1.5 border-r-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)]">
-                <ArrowDownUp className="h-3.5 w-3.5" aria-hidden="true" /> Orden
-              </span>
-              {ORDENES.map((o) => (
-                <button
-                  key={o.key} type="button" title={o.hint} onClick={() => setOrden(o.key)} aria-pressed={orden === o.key}
-                  className={`h-full px-2.5 text-xs font-bold transition ${orden === o.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}
-                >
-                  {o.label}
-                </button>
-              ))}
+            {/* Leyenda */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+              <Legend swatch="var(--accent)" icon={PackageOpen} text="Ingreso (GTF)" />
+              <Legend swatch="var(--data-info-500)" icon={Boxes} text="Producción" />
+              <Legend swatch="var(--data-success-600)" icon={Truck} text="Despacho" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-50)] px-2.5 py-1 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"><AlertTriangle className="h-3.5 w-3.5" /> Hueco en la cadena</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-info-50)] px-2.5 py-1 text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]"><span className="font-bold">½</span> Atribución incompleta</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-50)] px-2.5 py-1 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]"><ShieldAlert className="h-3.5 w-3.5" /> CITES</span>
+              <span className="text-[var(--text-tertiary)]">El grosor de cada línea es el volumen que pasó por ese eslabón.</span>
             </div>
 
-            {/* Zoom: con muchas líneas la cadena no entra; achicar la deja de un vistazo. */}
-            <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-              <button type="button" title="Alejar" aria-label="Alejar" onClick={() => setZoom((z) => Math.max(ZOOM_MIN, Number((z - 0.15).toFixed(2))))} disabled={zoom <= ZOOM_MIN} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
-                <ZoomOut className="h-4 w-4" />
-              </button>
-              <button type="button" title="Restablecer el tamaño" onClick={() => setZoom(1)} className="h-full border-x-2 border-[var(--rule-base)] px-2 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-                {Math.round(zoom * 100)}%
-              </button>
-              <button type="button" title="Acercar" aria-label="Acercar" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, Number((z + 0.15).toFixed(2))))} disabled={zoom >= ZOOM_MAX} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
-                <ZoomIn className="h-4 w-4" />
-              </button>
+            <div className="grid grid-cols-3 gap-2 text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Ingreso · {g.ingresos.length}</span>
+              <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Producción · {g.corridas.length}</span>
+              <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Despacho · {g.despachos.length}</span>
             </div>
 
-            {foco !== "todos" && (
-              <button type="button" onClick={() => setFoco("todos")} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 text-xs font-bold text-[var(--accent)]">
-                <Maximize2 className="h-3.5 w-3.5" /> Ver toda la cadena
-              </button>
-            )}
-          </div>
-
-          {/* Leyenda */}
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
-            <Legend swatch="var(--accent)" icon={PackageOpen} text="Ingreso (GTF)" />
-            <Legend swatch="var(--data-info-500)" icon={Boxes} text="Producción" />
-            <Legend swatch="var(--data-success-600)" icon={Truck} text="Despacho" />
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-50)] px-2.5 py-1 text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"><AlertTriangle className="h-3.5 w-3.5" /> Hueco en la cadena</span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-info-50)] px-2.5 py-1 text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]"><span className="font-bold">½</span> Atribución incompleta</span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-error-50)] px-2.5 py-1 text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]"><ShieldAlert className="h-3.5 w-3.5" /> CITES</span>
-            <span className="text-[var(--text-tertiary)]">El grosor de cada línea es el volumen que pasó por ese eslabón.</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Ingreso · {g.ingresos.length}</span>
-            <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Producción · {g.corridas.length}</span>
-            <span className="rounded-lg bg-[var(--surface-sunken)] py-1.5">Despacho · {g.despachos.length}</span>
-          </div>
-
-          {/* Barra del nodo fijado: su balance + la ficha completa (drill-in). */}
-          {pinnedNode && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2">
-              <div className="min-w-0 space-y-1">
-                <div className="text-sm">
-                  <span className="font-bold text-[var(--text-primary)]">{pinnedNode.top}</span>
-                  <span className="text-[var(--text-tertiary)]"> · {pinnedNode.sub}</span>
+            {/* Barra del nodo fijado: su balance + la ficha completa (drill-in). */}
+            {pinnedNode && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] dark:bg-[var(--accent)]/12 px-3 py-2">
+                <div className="min-w-0 space-y-1">
+                  <div className="text-sm">
+                    <span className="font-bold text-[var(--text-primary)]">{pinnedNode.top}</span>
+                    <span className="text-[var(--text-tertiary)]"> · {pinnedNode.sub}</span>
+                  </div>
+                  {pinnedNode.bal && <BalanceLinea bal={pinnedNode.bal} unidad={unidadDe(pinnedNode.id)} kind={pinnedNode.kind} />}
                 </div>
-                {pinnedNode.bal && <BalanceLinea bal={pinnedNode.bal} unidad={unidadDe(pinnedNode.id)} kind={pinnedNode.kind} />}
+                <div className="flex shrink-0 items-center gap-2">
+                  {/* Sólo para ingresos: aislar SU cadena aguas abajo. */}
+                  {pinnedNode.kind === "ingreso" && !esGrupo(pinnedNode.id) && (
+                    <button type="button" onClick={() => setSeguirId(pinnedNode.id)} title="Ver a dónde terminó esta guía, paso por paso" className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent)]/15">
+                      <Route className="h-3.5 w-3.5" /> Seguir esta GTF
+                    </button>
+                  )}
+                  <button type="button" onClick={() => { const t = targetFor(pinnedNode.id); if (t) setDetail(t); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
+                    <Eye className="h-3.5 w-3.5" /> Ver ficha completa
+                  </button>
+                  <button type="button" onClick={() => setPinned(null)} title="Soltar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+                    <XIcon className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <button type="button" onClick={() => { const t = targetFor(pinnedNode.id); if (t) setDetail(t); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
-                  <Eye className="h-3.5 w-3.5" /> Ver ficha completa
-                </button>
-                <button type="button" onClick={() => setPinned(null)} title="Soltar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
-                  <XIcon className="h-4 w-4" />
-                </button>
-              </div>
+            )}
+
+            {/* Mobile: la cadena es más ancha que la pantalla → se desliza. Sin este
+                aviso, en el celu solo se veía media cadena y parecía cortada. */}
+            <p className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] sm:hidden">
+              Deslizá para ver toda la cadena <span aria-hidden>→</span> · tocá un nodo para el detalle
+            </p>
+            <div className="relative">
+            <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)]">
+              {/* Click en el fondo = soltar el pin. */}
+              <svg
+                viewBox={`0 0 ${layout.W} ${layout.H}`} width={layout.W * zoom} className="max-w-none" style={{ minWidth: zoom >= 1 ? "100%" : undefined }}
+                role="img" aria-label="Grafo de cadena de custodia"
+                onClick={() => setPinned(null)}
+              >
+                <defs>
+                  {/* Sombra suave editorial para los nodos. */}
+                  <filter id="ctp-node-shadow" x="-20%" y="-20%" width="140%" height="150%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0f172a" floodOpacity="0.10" />
+                  </filter>
+                </defs>
+                {aristas.consumos.map((e) => {
+                  const k = `c:${e.from}->${e.to}`;
+                  const onE = !active || active.edges.has(k);
+                  const amberE = edgeAmber(e.to);
+                  return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={`${fmtNum(e.valor)} m³`} flow={!!active && active.edges.has(k) && !amberE} width={grosorArista(e.valor, maxFlujo.consumo)} />;
+                })}
+                {aristas.origenes.map((e) => {
+                  const k = `o:${e.from}->${e.to}`;
+                  const onE = !active || active.edges.has(k);
+                  const amberE = edgeAmber(e.from) || edgeAmber(e.to);
+                  return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={fmtNum(e.valor)} flow={!!active && active.edges.has(k) && !amberE} width={grosorArista(e.valor, maxFlujo.origen)} />;
+                })}
+                {layout.cols.flat().map((n) => (
+                  <Node
+                    key={n.id} n={n}
+                    dim={!!active && !active.nodes.has(n.id)}
+                    pinned={pinned === n.id}
+                    match={!!matchVisibles?.has(n.id)}
+                    onHover={setHover}
+                    onPin={(id) => (esGrupo(id) ? alternarGrupo(id) : setPinned((p) => (p === id ? null : id)))}
+                  />
+                ))}
+              </svg>
             </div>
+            {/* Fade en el borde derecho (mobile) — señala que hay más cadena al deslizar. */}
+            <div aria-hidden className="pointer-events-none absolute right-0.5 top-0.5 bottom-0.5 w-12 rounded-r-2xl bg-linear-to-l from-[var(--surface-sunken)] to-transparent sm:hidden" />
+            </div>
+            </>
           )}
 
-          {/* Mobile: la cadena es más ancha que la pantalla → se desliza. Sin este
-              aviso, en el celu solo se veía media cadena y parecía cortada. */}
-          <p className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] sm:hidden">
-            Deslizá para ver toda la cadena <span aria-hidden>→</span> · tocá un nodo para el detalle
-          </p>
-          <div className="relative">
-          <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)]">
-            {/* Click en el fondo = soltar el pin. */}
-            <svg
-              viewBox={`0 0 ${layout.W} ${layout.H}`} width={layout.W * zoom} className="max-w-none" style={{ minWidth: zoom >= 1 ? "100%" : undefined }}
-              role="img" aria-label="Grafo de cadena de custodia"
-              onClick={() => setPinned(null)}
-            >
-              <defs>
-                {/* Sombra suave editorial para los nodos. */}
-                <filter id="ctp-node-shadow" x="-20%" y="-20%" width="140%" height="150%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0f172a" floodOpacity="0.10" />
-                </filter>
-              </defs>
-              {g.consumos.map((e) => {
-                const k = `c:${e.from}->${e.to}`;
-                const onE = !active || active.edges.has(k);
-                const amberE = edgeAmber(e.to);
-                return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={`${fmtNum(e.volumeM3)} m³`} flow={!!active && active.edges.has(k) && !amberE} width={grosorArista(e.volumeM3, maxFlujo.consumo)} />;
-              })}
-              {g.origenes.map((e) => {
-                const k = `o:${e.from}->${e.to}`;
-                const onE = !active || active.edges.has(k);
-                const amberE = edgeAmber(e.from) || edgeAmber(e.to);
-                return <Edge key={k} a={layout.pos.get(e.from)} b={layout.pos.get(e.to)} on={onE} dim={!!active && !active.edges.has(k)} amber={amberE} label={fmtNum(e.quantity)} flow={!!active && active.edges.has(k) && !amberE} width={grosorArista(e.quantity, maxFlujo.origen)} />;
-              })}
-              {layout.cols.flat().map((n) => (
-                <Node key={n.id} n={n} dim={!!active && !active.nodes.has(n.id)} pinned={pinned === n.id} match={!!matchIds?.has(n.id)} onHover={setHover} onPin={(id) => setPinned((p) => (p === id ? null : id))} />
-              ))}
-            </svg>
-          </div>
-          {/* Fade en el borde derecho (mobile) — señala que hay más cadena al deslizar. */}
-          <div aria-hidden className="pointer-events-none absolute right-0.5 top-0.5 bottom-0.5 w-12 rounded-r-2xl bg-linear-to-l from-[var(--surface-sunken)] to-transparent sm:hidden" />
-          </div>
+          {vista === "cronologia" && tiempo && (
+            <CtpRadarCronologia g={g} t={tiempo} onVerNodo={abrirNodo} />
+          )}
+
+          {vista === "rendimiento" && (
+            <CtpRadarRendimiento rs={rendimiento} onVerCorrida={abrirNodo} />
+          )}
         </>
       )}
 

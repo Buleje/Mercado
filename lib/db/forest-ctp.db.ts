@@ -740,12 +740,12 @@ export class ForestCtpDB {
     const [ing, ctp] = await Promise.all([
       prisma.woodEntry.findMany({
         where: woodWhere,
-        select: { id: true, gtfNumber: true, speciesCommonName: true, volumeM3: true, speciesCites: true },
+        select: { id: true, gtfNumber: true, speciesCommonName: true, volumeM3: true, speciesCites: true, entryDate: true },
         orderBy: { entryDate: "asc" }, take: 300,
       }),
       prisma.forestCtpEntry.findMany({
         where: ctpWhere,
-        select: { id: true, section: true, lineNo: true, productType: true, speciesCommon: true, quantity: true, unit: true, destino: true, gtfNumber: true, cites: true },
+        select: { id: true, section: true, lineNo: true, productType: true, speciesCommon: true, quantity: true, unit: true, destino: true, gtfNumber: true, cites: true, entryDate: true },
         orderBy: { lineNo: "asc" }, take: 300,
       }),
     ]);
@@ -766,9 +766,9 @@ export class ForestCtpDB {
     const corridaIdSet = new Set(corridaIds);
 
     return {
-      ingresos: ing.map((w) => ({ id: w.id, gtf: w.gtfNumber, species: w.speciesCommonName, volumeM3: Number(w.volumeM3 ?? 0), cites: w.speciesCites })),
-      corridas: corridas.map((c) => ({ id: c.id, lineNo: c.lineNo, label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`, quantity: Number(c.quantity ?? 0), unit: c.unit, cites: c.cites })),
-      despachos: despachos.map((d) => ({ id: d.id, lineNo: d.lineNo, label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, quantity: Number(d.quantity ?? 0), unit: d.unit, destino: d.destino, gtf: d.gtfNumber })),
+      ingresos: ing.map((w) => ({ id: w.id, gtf: w.gtfNumber, species: w.speciesCommonName, volumeM3: Number(w.volumeM3 ?? 0), cites: w.speciesCites, fecha: w.entryDate.toISOString() })),
+      corridas: corridas.map((c) => ({ id: c.id, lineNo: c.lineNo, label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`, quantity: Number(c.quantity ?? 0), unit: c.unit, cites: c.cites, productType: c.productType, species: c.speciesCommon, fecha: c.entryDate.toISOString() })),
+      despachos: despachos.map((d) => ({ id: d.id, lineNo: d.lineNo, label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, quantity: Number(d.quantity ?? 0), unit: d.unit, destino: d.destino, gtf: d.gtfNumber, fecha: d.entryDate.toISOString() })),
       // Edge sólo si ambos extremos siguen en el grafo (endpoint vivo).
       consumos: consumos
         .filter((c) => ingIds.has(c.woodEntryId) && corridaIdSet.has(c.ctpEntryId))
@@ -1105,9 +1105,9 @@ export interface KardexEspecie {
 }
 
 export interface TrazaGrafo {
-  ingresos: { id: string; gtf: string; species: string | null; volumeM3: number; cites: boolean }[];
-  corridas: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; cites: boolean }[];
-  despachos: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; destino: string | null; gtf: string | null }[];
+  ingresos: { id: string; gtf: string; species: string | null; volumeM3: number; cites: boolean; fecha: string }[];
+  corridas: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; cites: boolean; productType: string | null; species: string | null; fecha: string }[];
+  despachos: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; destino: string | null; gtf: string | null; fecha: string }[];
   /** woodEntryId → corridaId (m³ consumido). */
   consumos: { from: string; to: string; volumeM3: number }[];
   /** corridaId → despachoId (cantidad atribuida). */

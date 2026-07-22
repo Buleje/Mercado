@@ -12,12 +12,15 @@ import type { TrazaGrafo } from "@/lib/db/forest-ctp.db";
 
 const vacio: TrazaGrafo = { ingresos: [], corridas: [], despachos: [], consumos: [], origenes: [] };
 
+/** Fecha date-only cualquiera: este módulo no mira el tiempo (eso es ctp-radar-tiempo). */
+const F = "2026-06-01T00:00:00.000Z";
+
 /** Cadena mínima completa: 10 m³ de GTF → corrida → despacho, todo cuadrado. */
 function cadenaCompleta(): TrazaGrafo {
   return {
-    ingresos: [{ id: "w1", gtf: "GTF-001", species: "Tornillo", volumeM3: 10, cites: false }],
-    corridas: [{ id: "c1", lineNo: 1, label: "Aserrío tornillo", quantity: 6, unit: "m3", cites: false }],
-    despachos: [{ id: "d1", lineNo: 5, label: "Envío Lima", quantity: 6, unit: "m3", destino: "Lima", gtf: "GTF-900" }],
+    ingresos: [{ id: "w1", gtf: "GTF-001", species: "Tornillo", volumeM3: 10, cites: false, fecha: F }],
+    corridas: [{ id: "c1", lineNo: 1, label: "Aserrío tornillo", quantity: 6, unit: "m3", cites: false, productType: "Aserrío", species: "Tornillo", fecha: F }],
+    despachos: [{ id: "d1", lineNo: 5, label: "Envío Lima", quantity: 6, unit: "m3", destino: "Lima", gtf: "GTF-900", fecha: F }],
     consumos: [{ from: "w1", to: "c1", volumeM3: 10 }],
     origenes: [{ from: "c1", to: "d1", quantity: 6 }],
   };
@@ -122,7 +125,7 @@ describe("balance del radar", () => {
 
   it("suma varias GTF hacia una misma corrida", () => {
     const g = cadenaCompleta();
-    g.ingresos.push({ id: "w2", gtf: "GTF-002", species: "Cumala", volumeM3: 5, cites: true });
+    g.ingresos.push({ id: "w2", gtf: "GTF-002", species: "Cumala", volumeM3: 5, cites: true, fecha: F });
     g.consumos = [
       { from: "w1", to: "c1", volumeM3: 10 },
       { from: "w2", to: "c1", volumeM3: 5 },
@@ -157,7 +160,7 @@ describe("ayudas de lectura", () => {
 
   it("ordenar por estado pone primero lo que hay que mirar", () => {
     const g = cadenaCompleta();
-    g.corridas.push({ id: "c2", lineNo: 2, label: "Huérfana", quantity: 3, unit: "m3", cites: false });
+    g.corridas.push({ id: "c2", lineNo: 2, label: "Huérfana", quantity: 3, unit: "m3", cites: false, productType: "Aserrío", species: "Tornillo", fecha: F });
     const a = analizarRadar(g);
     const orden = ordenarNodos(g.corridas, "estado", a.corridas, (c) => c.quantity);
     expect(orden[0].id).toBe("c2"); // la huérfana (warn) primero
@@ -169,7 +172,7 @@ describe("ayudas de lectura", () => {
 
   it("ordenar no muta el arreglo de entrada", () => {
     const g = cadenaCompleta();
-    g.corridas.push({ id: "c2", lineNo: 2, label: "Otra", quantity: 99, unit: "m3", cites: false });
+    g.corridas.push({ id: "c2", lineNo: 2, label: "Otra", quantity: 99, unit: "m3", cites: false, productType: "Aserrío", species: "Tornillo", fecha: F });
     const a = analizarRadar(g);
     ordenarNodos(g.corridas, "volumen", a.corridas, (c) => c.quantity);
     expect(g.corridas[0].id).toBe("c1");
