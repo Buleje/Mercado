@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { FileText, HardDrive, AlarmClock, Receipt, Tag as TagIcon, TrendingUp } from "lucide-react";
+import { FileText, HardDrive, AlarmClock, Receipt, Tag as TagIcon, TrendingUp, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BulejeDonutChart } from "@/components/ui-system/charts";
 import type { DbDocument } from "@/lib/types/documents";
@@ -97,6 +97,21 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
           </div>
         ))}
       </div>
+
+      {/* Exportar comprobantes al contador */}
+      {stats.facturasCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/8 p-3 dark:bg-[var(--data-success-500)]/12">
+          <p className="text-sm font-semibold text-[var(--text-secondary)]">
+            {stats.facturasCount} comprobante(s) detectado(s) por IA — {money(stats.facturado)} en total
+          </p>
+          <a
+            href="/api/admin/documents/export/comprobantes"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 py-2 text-sm font-bold text-white hover:opacity-90 dark:bg-[var(--data-success-500)]"
+          >
+            <FileSpreadsheet className="h-4 w-4" /> Exportar a Excel
+          </a>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Dona por categoría */}

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check,
   PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink, ChevronLeft, ChevronRight, GitCompare,
-  FileSpreadsheet, Plus, Link as LinkChain,
+  FileSpreadsheet, Plus, Link as LinkChain, Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -783,9 +783,20 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
   const [signerRole, setSignerRole] = useState("");
   const [signing, setSigning] = useState(false);
   const [result, setResult] = useState<{ versionNumber: number; sha: string } | null>(null);
+  // Mi firma guardada (por-dispositivo, localStorage) para firmar con 1 clic.
+  const [savedSig, setSavedSig] = useState<{ png: string; name: string; role?: string } | null>(null);
+  const [savedNote, setSavedNote] = useState<string | null>(null);
 
   const w = 480;
   const h = 160;
+
+  const MY_SIG_KEY = "doc-my-signature";
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(MY_SIG_KEY);
+      if (raw) setSavedSig(JSON.parse(raw));
+    } catch { /* localStorage no disponible */ }
+  }, []);
 
   useEffect(() => {
     const c = canvasRef.current;
@@ -828,17 +839,10 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
     ctx.fillRect(0, 0, w, h);
   }
 
-  async function handleSign() {
-    if (!signerName.trim()) return;
+  async function doSign(name: string, role: string | undefined, png: string) {
     setSigning(true);
     try {
-      const c = canvasRef.current!;
-      const dataUrl = c.toDataURL("image/png");
-      const r = await signDocument(docId, {
-        signerName: signerName.trim(),
-        signerRole: signerRole.trim() || undefined,
-        signatureImagePngBase64: dataUrl,
-      });
+      const r = await signDocument(docId, { signerName: name, signerRole: role || undefined, signatureImagePngBase64: png });
       setResult({ versionNumber: r.version.versionNumber, sha: r.originalSha256 });
       onSigned();
     } catch (e) {
@@ -846,6 +850,31 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
     } finally {
       setSigning(false);
     }
+  }
+
+  async function handleSign() {
+    if (!signerName.trim()) return;
+    await doSign(signerName.trim(), signerRole.trim(), canvasRef.current!.toDataURL("image/png"));
+  }
+
+  // Guarda el trazo actual + nombre como "mi firma" (localStorage, por dispositivo).
+  function saveMySignature() {
+    if (!signerName.trim()) { setSavedNote("Escribí tu nombre antes de guardar."); return; }
+    const png = canvasRef.current!.toDataURL("image/png");
+    const sig = { png, name: signerName.trim(), role: signerRole.trim() || undefined };
+    try {
+      localStorage.setItem(MY_SIG_KEY, JSON.stringify(sig));
+      setSavedSig(sig);
+      setSavedNote("Firma guardada en este dispositivo.");
+    } catch {
+      setSavedNote("No se pudo guardar (localStorage).");
+    }
+  }
+
+  function forgetMySignature() {
+    try { localStorage.removeItem(MY_SIG_KEY); } catch { /* noop */ }
+    setSavedSig(null);
+    setSavedNote(null);
   }
 
   return (
@@ -858,6 +887,27 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
         <p className="text-xs text-[var(--text-tertiary)] mb-4">
           Estampa un sello visual + hash SHA-256 en la última página del PDF. NO es firma criptográfica RENIEC — es un sello con audit trail.
         </p>
+
+        {/* Firma guardada: firmar con 1 clic */}
+        {savedSig && !result && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/5 p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={savedSig.png} alt="Mi firma" className="h-10 w-24 rounded bg-white object-contain" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-[var(--text-primary)]">{savedSig.name}</p>
+              {savedSig.role && <p className="truncate text-xs text-[var(--text-tertiary)]">{savedSig.role}</p>}
+            </div>
+            <button
+              onClick={() => doSign(savedSig.name, savedSig.role, savedSig.png)}
+              disabled={signing}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white hover:bg-primary-dark disabled:opacity-50"
+            >
+              {signing && <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />}
+              <PencilLine className="h-3.5 w-3.5" /> Firmar con mi firma
+            </button>
+            <button onClick={forgetMySignature} className="text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]">Olvidar</button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <label className="block">
@@ -891,7 +941,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             className="block"
           />
         </div>
-        <div className="flex items-center gap-2 mt-3">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           <button onClick={clear} className="px-3 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)]">Limpiar</button>
           <button
             onClick={handleSign}
@@ -901,6 +951,10 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             {signing && <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
             <PencilLine className="h-3.5 w-3.5" /> Firmar PDF
           </button>
+          <button onClick={saveMySignature} className="px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary inline-flex items-center gap-1.5" title="Guardá tu firma para reusarla con 1 clic">
+            <Save className="h-3.5 w-3.5" /> Guardar mi firma
+          </button>
+          {savedNote && <span className="text-xs font-semibold text-[var(--text-tertiary)]">{savedNote}</span>}
         </div>
 
         {result && (
