@@ -25,7 +25,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors,
+  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -44,6 +44,7 @@ import { CalendarView } from "./CalendarView";
 import { StampModal } from "./StampModal";
 import { DashboardView } from "./DashboardView";
 import { SmartFolderModal } from "./SmartFolderModal";
+import { CameraScanModal } from "./CameraScanModal";
 import { loadSmartFolders, saveSmartFolders, matchesSmartFolder, describeRules, type SmartFolder } from "@/lib/documentos/smart-folders";
 import { AssistantView } from "./AssistantView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
@@ -240,6 +241,7 @@ export default function DocumentosModule() {
   const [smartFolders, setSmartFolders] = useState<SmartFolder[]>([]);
   const [activeSmartId, setActiveSmartId] = useState<string | null>(null);
   const [smartModal, setSmartModal] = useState<SmartFolder | "new" | null>(null);
+  const [showCameraScan, setShowCameraScan] = useState(false);
   useEffect(() => { setSmartFolders(loadSmartFolders()); }, []);
   const persistSmart = useCallback((next: SmartFolder[]) => { setSmartFolders(next); saveSmartFolders(next); }, []);
 
@@ -710,6 +712,13 @@ export default function DocumentosModule() {
           title="Tomá una foto de un documento — la IA lo nombra, clasifica y detecta su vencimiento"
         >
           <Camera className="h-4 w-4" /> Escanear
+        </button>
+        <button
+          onClick={() => setShowCameraScan(true)}
+          className="hidden sm:inline-flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+          title="Fotografiá varias páginas y combinálas en un solo PDF"
+        >
+          <Scan className="h-4 w-4" /> Escanear a PDF
         </button>
         <button
           onClick={() => setShowTemplates(true)}
@@ -1526,6 +1535,14 @@ export default function DocumentosModule() {
 
       {stampTarget && (
         <StampModal doc={stampTarget} onClose={() => setStampTarget(null)} onDone={refresh} />
+      )}
+
+      {showCameraScan && (
+        <CameraScanModal
+          folderId={filterMode === "folder" ? activeFolderId : null}
+          onClose={() => setShowCameraScan(false)}
+          onDone={refresh}
+        />
       )}
 
       {smartModal && (

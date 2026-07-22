@@ -428,3 +428,12 @@ export async function rotateDoc(id: string, degrees: 90 | 180 | 270 = 90): Promi
 export async function splitDoc(id: string): Promise<{ created: DbDocument[]; count: number }> {
   return http(`${BASE}/${id}/split`, { method: "POST", body: JSON.stringify({}) });
 }
+
+/** Combina varias fotos (páginas escaneadas) en un PDF nuevo. */
+export async function scanToPdf(pages: Blob[], name?: string, folderId?: string | null): Promise<{ document: DbDocument; pageCount: number }> {
+  const fd = new FormData();
+  pages.forEach((b, i) => fd.append("pages", b, `pagina-${i + 1}.png`));
+  if (name) fd.append("name", name);
+  if (folderId) fd.append("folderId", folderId);
+  return http(`${BASE}/scan-to-pdf`, { method: "POST", body: fd });
+}
