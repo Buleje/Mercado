@@ -52,6 +52,7 @@ import {
 import LothEntryForm, { SECTION_META } from "./LothEntryForm";
 import LothCaratulaForm from "./LothCaratulaForm";
 import LothTraceView from "./LothTraceView";
+import LothCensoRendimientoPanel from "./LothCensoRendimientoPanel";
 import LothPlanView from "./LothPlanView";
 import LothGtfView from "./LothGtfView";
 import LothAnalyticsView from "./LothAnalyticsView";
@@ -179,6 +180,10 @@ export default function LothLibroOperaciones() {
     }
   }, [view]);
   const [allEntries, setAllEntries] = useState<LothEntry[]>([]);
+  /** Censo del plan activo — alimenta el cuadro "censo vs realidad". */
+  const [censoArboles, setCensoArboles] = useState<
+    { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
+  >([]);
   const [exportMenu, setExportMenu] = useState(false);
   const [exporting, setExporting] = useState<"pdf" | "excel" | null>(null);
   const [printingLabels, setPrintingLabels] = useState(false);
@@ -272,6 +277,26 @@ export default function LothLibroOperaciones() {
         throw new Error(d.message ?? d.error ?? `HTTP ${res.status}`);
       }
       setAllEntries((await res.json()).entries ?? []);
+
+      // El censo del plan activo: sin él, la trazabilidad arranca en la tala y
+      // el volumen ESTIMADO (el que sustenta la autorización) no se compara.
+      const planRes = await fetch("/api/admin/forestal/plan?active=1", { credentials: "include" });
+      const planId = planRes.ok ? ((await planRes.json()).active?.id ?? null) : null;
+      if (planId) {
+        const cRes = await fetch(`/api/admin/forestal/plan/census?planId=${encodeURIComponent(planId)}`, { credentials: "include" });
+        if (cRes.ok) {
+          const trees = (await cRes.json()).trees ?? [];
+          setCensoArboles(
+            trees.map((t: { treeCode: string; speciesCommon: string; dapM: string | null; volumenEstimadoM3: string | null; estado: string }) => ({
+              treeCode: t.treeCode,
+              speciesCommon: t.speciesCommon,
+              dapM: t.dapM != null ? Number(t.dapM) : null,
+              volumenEstimadoM3: t.volumenEstimadoM3 != null ? Number(t.volumenEstimadoM3) : null,
+              estado: t.estado,
+            })),
+          );
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -484,7 +509,12 @@ export default function LothLibroOperaciones() {
               <p className="mt-2 text-sm">Cargando trazabilidad...</p>
             </div>
           ) : (
-            <LothTraceView entries={allEntries} caratula={caratula} />
+            <>
+              <div className="mb-4">
+                <LothCensoRendimientoPanel censo={censoArboles} entries={allEntries} />
+              </div>
+              <LothTraceView entries={allEntries} caratula={caratula} />
+            </>
           )}
         </>
       )}
