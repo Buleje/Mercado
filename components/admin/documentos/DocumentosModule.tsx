@@ -343,9 +343,14 @@ export default function DocumentosModule() {
       }),
     [documents]
   );
-  const handleIndexAll = useCallback(
-    async (onProgress: (done: number, total: number) => void) => {
-      const list = indexableDocs;
+  // Todos los documentos analizables (PDF/texto), estén o no ya indexados. Sirve
+  // para RE-indexar (que los viejos ganen la descripción rica nueva).
+  const reindexableDocs = useMemo(
+    () => documents.filter((d) => d.mimeType === "application/pdf" || d.mimeType.startsWith("text/")),
+    [documents]
+  );
+  const runIndex = useCallback(
+    async (list: DbDocument[], onProgress: (done: number, total: number) => void) => {
       onProgress(0, list.length);
       let done = 0;
       for (const d of list) {
@@ -355,7 +360,15 @@ export default function DocumentosModule() {
       }
       await refresh();
     },
-    [indexableDocs, refresh]
+    [refresh]
+  );
+  const handleIndexAll = useCallback(
+    (onProgress: (done: number, total: number) => void) => runIndex(indexableDocs, onProgress),
+    [indexableDocs, runIndex]
+  );
+  const handleReindexAll = useCallback(
+    (onProgress: (done: number, total: number) => void) => runIndex(reindexableDocs, onProgress),
+    [reindexableDocs, runIndex]
   );
 
   const totalSize = useMemo(() => documents.reduce((s, d) => s + d.size, 0), [documents]);
@@ -1345,6 +1358,8 @@ export default function DocumentosModule() {
               onApprove={(id) => { patch(id, { status: "approved" }); }}
               indexableCount={indexableDocs.length}
               onIndexAll={handleIndexAll}
+              reindexableCount={reindexableDocs.length}
+              onReindexAll={handleReindexAll}
             />
           ) : filterMode === "dashboard" ? (
             <DashboardView docs={documents} />

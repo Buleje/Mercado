@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2, History, Plus, X } from "lucide-react";
+import { Sparkles, Send, FileText, Loader2, User, Bot, PenLine, Share2, CheckCircle2, History, Plus, X, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { askDocAssistantStream, type DocAssistantAnswer } from "@/hooks/use-documents";
 
@@ -39,6 +39,8 @@ export function AssistantView({
   onApprove,
   indexableCount,
   onIndexAll,
+  reindexableCount,
+  onReindexAll,
 }: {
   onOpenDoc: (id: string) => void;
   onSign: (id: string) => void;
@@ -46,6 +48,8 @@ export function AssistantView({
   onApprove: (id: string) => void;
   indexableCount: number;
   onIndexAll: (onProgress: (done: number, total: number) => void) => Promise<void>;
+  reindexableCount: number;
+  onReindexAll: (onProgress: (done: number, total: number) => void) => Promise<void>;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
@@ -82,11 +86,12 @@ export function AssistantView({
     if (activeId === id) newConversation();
   };
 
-  const runIndexAll = async () => {
+  const runIndex = async (mode: "new" | "all") => {
     if (indexing) return;
-    setIndexing({ done: 0, total: indexableCount });
+    if (mode === "all" && !confirm(`¿Re-describir los ${reindexableCount} documentos con IA? Los ya analizados también se actualizan con la descripción rica.`)) return;
+    setIndexing({ done: 0, total: mode === "all" ? reindexableCount : indexableCount });
     try {
-      await onIndexAll((done, total) => setIndexing({ done, total }));
+      await (mode === "all" ? onReindexAll : onIndexAll)((done, total) => setIndexing({ done, total }));
     } finally {
       setTimeout(() => setIndexing(null), 1500);
     }
@@ -122,11 +127,20 @@ export function AssistantView({
         <div className="flex items-center gap-1.5">
           {indexing ? (
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent)]"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Indexando {indexing.done}/{indexing.total}</span>
-          ) : indexableCount > 0 ? (
-            <button onClick={runIndexAll} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--accent)]/40 px-2 py-0.5 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10">
-              <Sparkles className="h-3 w-3" /> Indexar {indexableCount}
-            </button>
-          ) : null}
+          ) : (
+            <>
+              {indexableCount > 0 && (
+                <button onClick={() => runIndex("new")} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--accent)]/40 px-2 py-0.5 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10">
+                  <Sparkles className="h-3 w-3" /> Indexar {indexableCount}
+                </button>
+              )}
+              {reindexableCount > 0 && (
+                <button onClick={() => runIndex("all")} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Re-describir TODOS los documentos con IA (los viejos ganan la descripción rica)">
+                  <RefreshCw className="h-3 w-3" /> Re-indexar todo
+                </button>
+              )}
+            </>
+          )}
           {conversations.length > 0 && (
             <div className="relative">
               <button onClick={() => setShowConvos((s) => !s)} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Conversaciones guardadas">
