@@ -307,8 +307,8 @@ export async function askDocAssistantStream(
   return { answer: textUpTo(answer), matchedDocs, source: "ai-stream" };
 }
 
-/** Analiza el contenido de un doc con IA (texto + resumen + datos clave + tags). */
-export async function analyzeDoc(id: string): Promise<{ summary: string; keyFacts: string[]; tags: string[]; source: string; message?: string }> {
+/** Analiza el contenido de un doc con IA (texto + descripción rica + datos + entidades + tags). */
+export async function analyzeDoc(id: string): Promise<{ summary: string; description?: string; keyFacts: string[]; tags: string[]; entities?: Record<string, string[]> | null; source: string; message?: string }> {
   return http(`${BASE}/${id}/analyze`, { method: "POST" });
 }
 

@@ -32,8 +32,10 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     }
     return NextResponse.json({
       summary: result.summary,
+      description: result.description,
       keyFacts: result.keyFacts,
       tags: result.tags,
+      entities: result.entities,
       textLength: result.textLength,
       source: result.source,
     });

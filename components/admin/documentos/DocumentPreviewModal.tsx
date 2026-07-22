@@ -394,6 +394,48 @@ function VersionsTab({
 
 interface EntityOpt { id: string; name: string }
 
+// ── Descripción rica generada por IA (buscable) ──────────────────────────────
+type DocEntities = { people?: string[]; orgs?: string[]; places?: string[]; dates?: string[]; amounts?: string[] };
+const ENTITY_LABEL: { key: keyof DocEntities; label: string }[] = [
+  { key: "people", label: "Personas" },
+  { key: "orgs", label: "Empresas" },
+  { key: "places", label: "Lugares" },
+  { key: "dates", label: "Fechas" },
+  { key: "amounts", label: "Montos" },
+];
+
+function DescriptionSection({ doc }: { doc: DbDocument }) {
+  const meta = doc.ocrMetadata as { description?: string; summary?: string; entities?: DocEntities } | null | undefined;
+  const description = meta?.description || meta?.summary;
+  const entities = meta?.entities;
+  const hasEntities = entities && ENTITY_LABEL.some(({ key }) => (entities[key]?.length ?? 0) > 0);
+  if (!description && !hasEntities) return null;
+  return (
+    <section className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-4">
+      <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+        <Sparkles className="h-4 w-4 text-[var(--accent)]" /> Descripción (IA)
+      </p>
+      {description && <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{description}</p>}
+      {hasEntities && (
+        <div className="mt-3 space-y-1.5">
+          {ENTITY_LABEL.map(({ key, label }) => {
+            const vals = entities?.[key] ?? [];
+            if (vals.length === 0) return null;
+            return (
+              <div key={key} className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] w-16 shrink-0">{label}</span>
+                {vals.map((v, i) => (
+                  <span key={i} className="rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-semibold text-[var(--text-secondary)]">{v}</span>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Datos estructurados (facturas/recibos extraídos por IA) ───────────────────
 type StructuredData = { docType?: string | null; ruc?: string | null; razonSocial?: string | null; numero?: string | null; fecha?: string | null; moneda?: string | null; total?: number | string | null; igv?: number | string | null };
 
@@ -667,6 +709,9 @@ function DetailsTab({ doc, allDocs, onPatched }: { doc: DbDocument; allDocs: DbD
 
   return (
     <div className="p-5 space-y-4 max-w-2xl mx-auto">
+      {/* Descripción rica generada por IA (buscable) */}
+      <DescriptionSection doc={doc} />
+
       {/* Datos estructurados extraídos por IA (facturas/recibos) */}
       <StructuredCard doc={doc} />
 

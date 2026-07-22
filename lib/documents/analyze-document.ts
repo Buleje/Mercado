@@ -25,18 +25,47 @@ const StructuredSchema = z
   })
   .partial();
 
+const EntitiesSchema = z
+  .object({
+    people: z.array(z.string().max(80)).max(12).default([]),
+    orgs: z.array(z.string().max(80)).max(12).default([]),
+    places: z.array(z.string().max(80)).max(12).default([]),
+    dates: z.array(z.string().max(40)).max(12).default([]),
+    amounts: z.array(z.string().max(40)).max(12).default([]),
+  })
+  .partial();
+
 const ResultSchema = z.object({
   summary: z.string(),
-  keyFacts: z.array(z.string()).max(10).default([]),
-  tags: z.array(z.string()).max(8).default([]),
+  description: z.string().default(""),
+  keyFacts: z.array(z.string()).max(14).default([]),
+  tags: z.array(z.string()).max(14).default([]),
+  entities: EntitiesSchema.nullish(),
   structured: StructuredSchema.nullish(),
 });
 
 export type StructuredData = z.infer<typeof StructuredSchema>;
+export type DocEntities = z.infer<typeof EntitiesSchema>;
 
 export type AnalyzeResult =
-  | { ok: true; summary: string; keyFacts: string[]; tags: string[]; structured: StructuredData | null; textLength: number; source: string }
+  | {
+      ok: true;
+      summary: string;
+      description: string;
+      keyFacts: string[];
+      tags: string[];
+      entities: DocEntities | null;
+      structured: StructuredData | null;
+      textLength: number;
+      source: string;
+    }
   | { ok: false; error: string; status: number };
+
+/** Aplana las entidades en una lista de términos (para buscar). */
+function flattenEntities(e: DocEntities | null | undefined): string[] {
+  if (!e) return [];
+  return [...(e.people ?? []), ...(e.orgs ?? []), ...(e.places ?? []), ...(e.dates ?? []), ...(e.amounts ?? [])].filter(Boolean);
+}
 
 export function isAnalyzableMime(mimeType: string): boolean {
   return mimeType === "application/pdf" || mimeType.startsWith("text/");
@@ -70,24 +99,29 @@ export async function analyzeDocumentContent(
   if (!text) return { ok: false, error: "no_text", status: 422 };
 
   let summary = "";
+  let description = "";
   let keyFacts: string[] = [];
   let tags: string[] = [];
+  let entities: DocEntities | null = null;
   let structured: StructuredData | null = null;
   if (getActiveProvider() !== "none") {
     try {
-      const prompt = `Analizá este documento de una bodega/negocio peruano y devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma:
-{"summary": "<resumen en 1-2 frases, español>", "keyFacts": ["<dato clave con su valor, ej. 'Renta: S/1500 mensuales'>", ...máximo 8], "tags": ["<etiqueta corta en minúscula>", ...máximo 6], "structured": {"docType": "<factura|boleta|recibo|contrato|guia|cotizacion|otro>", "ruc": "<RUC 11 dígitos o null>", "razonSocial": "<nombre del emisor o null>", "numero": "<nº de documento o null>", "fecha": "<fecha AAAA-MM-DD o null>", "moneda": "<PEN|USD o null>", "total": <monto total como número o null>, "igv": <IGV como número o null>}}
+      const prompt = `Sos un archivista experto. Analizá a fondo este documento de una bodega/negocio peruano y devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma:
+{"summary": "<resumen en 1-2 frases>", "description": "<DESCRIPCIÓN DETALLADA Y BUSCABLE en 3-5 frases: qué tipo de documento es, quiénes son las partes involucradas, fechas clave, montos, el propósito y cualquier dato que alguien podría usar para encontrarlo después. Escribí en español, natural y completo.>", "keyFacts": ["<dato clave con su valor, ej. 'Renta: S/1500 mensuales'>", ...máximo 12], "tags": ["<etiqueta corta en minúscula; incluí tipo, partes, tema>", ...máximo 12], "entities": {"people": ["<personas mencionadas>"], "orgs": ["<empresas/organizaciones>"], "places": ["<direcciones/lugares>"], "dates": ["<fechas relevantes>"], "amounts": ["<montos, ej. 'S/1500'>"]}, "structured": {"docType": "<factura|boleta|recibo|contrato|guia|cotizacion|carta|otro>", "ruc": "<RUC 11 dígitos o null>", "razonSocial": "<emisor o null>", "numero": "<nº o null>", "fecha": "<AAAA-MM-DD o null>", "moneda": "<PEN|USD o null>", "total": <número o null>, "igv": <número o null>}}
 
-En "structured" extraé lo que sea un comprobante (factura/boleta/recibo/guía); si el documento no tiene esos datos, poné structured en null. Los montos como número sin símbolo.
+La "description" es lo más importante: tiene que ser rica en términos para que el documento aparezca en búsquedas por nombre de persona, empresa, lugar, fecha o tema. En "structured" completá solo si es un comprobante; si no, structured en null. Montos como número sin símbolo.
 
 Documento:
-${text.slice(0, 8000)}`;
+${text.slice(0, 10000)}`;
       const { text: out } = await generateText({ model: smartModel, prompt, temperature: 0.2 });
       const parsed = ResultSchema.safeParse(JSON.parse(cleanJSONResponse(out)));
       if (parsed.success) {
         summary = parsed.data.summary;
+        description = parsed.data.description;
         keyFacts = parsed.data.keyFacts;
         tags = parsed.data.tags;
+        const e = parsed.data.entities;
+        entities = e && flattenEntities(e).length > 0 ? e : null;
         // Solo guardamos structured si tiene al menos un campo con valor.
         const s = parsed.data.structured;
         structured = s && Object.values(s).some((v) => v !== null && v !== undefined && v !== "") ? s : null;
@@ -97,21 +131,39 @@ ${text.slice(0, 8000)}`;
     }
   }
 
+  // ⭐ Texto buscable = texto crudo + enriquecimiento IA. La búsqueda del listado
+  // matchea `ocrText`, así que meter acá la descripción/entidades/datos hace que
+  // el documento aparezca al buscar por cualquier término descrito por la IA.
+  const entitiesFlat = flattenEntities(entities);
+  const searchable = [
+    text,
+    description ? `\n\n[Descripción] ${description}` : "",
+    keyFacts.length ? `\n[Datos] ${keyFacts.join("; ")}` : "",
+    entitiesFlat.length ? `\n[Entidades] ${entitiesFlat.join(", ")}` : "",
+    tags.length ? `\n[Etiquetas] ${tags.join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .slice(0, 20000);
+
   await DocumentsDB.update(tenantId, docId, {
-    ocrText: text,
+    ocrText: searchable,
     ocrMetadata: {
       ...(doc.ocrMetadata ?? {}),
       summary,
+      description,
       keyFacts,
+      entities,
       structured,
+      rawTextLength: text.length,
       analyzedAt: new Date().toISOString(),
     },
-    aiTags: Array.from(new Set([...doc.aiTags, ...tags.map((t) => t.toLowerCase())])).slice(0, 12),
+    aiTags: Array.from(new Set([...doc.aiTags, ...tags.map((t) => t.toLowerCase())])).slice(0, 14),
   });
 
   DocumentsDB.log(tenantId, { documentId: docId, actorId, action: "ai_categorize" }).catch((err) =>
     logger.warn("documents.analyze.audit_fail", { err: String(err) }),
   );
 
-  return { ok: true, summary, keyFacts, tags, structured, textLength: text.length, source: summary ? "ai" : "text-only" };
+  return { ok: true, summary, description, keyFacts, tags, entities, structured, textLength: text.length, source: summary ? "ai" : "text-only" };
 }
