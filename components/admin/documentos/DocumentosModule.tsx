@@ -25,7 +25,7 @@ import {
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2,
-  CalendarDays, Stamp, Combine,
+  CalendarDays, Stamp, Combine, LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -42,6 +42,7 @@ import { FolderGlyph } from "./folder-visuals";
 import { ActivityView } from "./ActivityView";
 import { CalendarView } from "./CalendarView";
 import { StampModal } from "./StampModal";
+import { DashboardView } from "./DashboardView";
 import { AssistantView } from "./AssistantView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
 
@@ -153,7 +154,7 @@ function MatchSnippet({ text, term }: { text: string | null; term: string }) {
 }
 
 interface BuiltinCategory {
-  id: "all" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "trash";
+  id: "all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "activity" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -161,6 +162,7 @@ interface BuiltinCategory {
 
 const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "all", label: "Todos", icon: FolderArchive, color: "text-primary" },
+  { id: "dashboard", label: "Resumen", icon: LayoutDashboard, color: "text-primary" },
   { id: "assistant", label: "Asistente IA", icon: Sparkles, color: "text-[var(--accent)]" },
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-slate-500" },
@@ -194,7 +196,7 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "trash">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "dashboard" | "assistant" | "favorites" | "recent" | "expiring" | "calendar" | "folder" | "activity" | "trash">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
   // Resultado del análisis IA de contenido (resumen + datos clave).
@@ -1036,7 +1038,8 @@ export default function DocumentosModule() {
 
         {/* ─── Main list ─── */}
         <div className="space-y-4">
-          {/* Toolbar */}
+          {/* Toolbar — solo en vistas tipo lista (no en resumen/asistente/actividad/calendario) */}
+          {filterMode !== "dashboard" && filterMode !== "assistant" && filterMode !== "activity" && filterMode !== "calendar" && (
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex-1 min-w-[220px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
@@ -1090,6 +1093,7 @@ export default function DocumentosModule() {
               </button>
             </div>
           </div>
+          )}
 
           {/* Indicador del modo de búsqueda IA (semántica) */}
           {semantic && (
@@ -1265,6 +1269,8 @@ export default function DocumentosModule() {
               indexableCount={indexableDocs.length}
               onIndexAll={handleIndexAll}
             />
+          ) : filterMode === "dashboard" ? (
+            <DashboardView docs={documents} />
           ) : filterMode === "calendar" ? (
             <CalendarView docs={documents} onOpenDoc={setPreview} />
           ) : filterMode === "activity" ? (
