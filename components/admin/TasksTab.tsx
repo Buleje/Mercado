@@ -1,9 +1,9 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback } from "react";
-import { ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
+import { ClipboardList, ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
@@ -104,15 +104,19 @@ export default function TasksTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Tareas & Asignaciones</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Coordina el trabajo del equipo</p>
-        </div>
+      {/* El título de la pantalla vive acá (antes era un h2 y el hub tenía que
+          poner el suyo): AdminModuleHeader ya resuelve el responsive del
+          encabezado + acciones. */}
+      <AdminModuleHeader
+        title="Tareas & Asignaciones"
+        description="Coordina el trabajo del equipo"
+        icon={ClipboardList}
+        noBorder
+      >
         <button onClick={openCreate} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Plus className="h-4 w-4" /> Nueva Tarea
         </button>
-      </div>
+      </AdminModuleHeader>
 
       {/* Status filter tabs */}
       <div className="flex items-center gap-1.5">

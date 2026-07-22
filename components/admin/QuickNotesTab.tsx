@@ -1,7 +1,8 @@
 "use client";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { StickyNote, Plus, Trash2, Pin, PinOff, Edit3, Check, X, Search } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -138,11 +139,12 @@ export default function QuickNotesTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-        <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Notas Rápidas</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Apuntes, recordatorios y pendientes del día a día</p>
-        </div>
+      <AdminModuleHeader
+        title="Notas Rápidas"
+        description="Apuntes, recordatorios y pendientes del día a día"
+        icon={StickyNote}
+        noBorder
+      >
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
@@ -152,7 +154,7 @@ export default function QuickNotesTab() {
             <Plus className="h-4 w-4" /> Nueva nota
           </button>
         </div>
-      </div>
+      </AdminModuleHeader>
 
       {/* Stats */}
       <div className="flex flex-wrap items-center gap-6 text-sm">

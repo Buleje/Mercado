@@ -349,6 +349,10 @@ function AdminPage() {
           : sidebarCompact ? "md:ml-[60px]"
           /* configMode: sidebar (260px) + config panel (400px) = 660px */
           : sidebarConfigMode ? "md:ml-[660px]"
+          /* Un solo valor: el sidebar ya no se auto-compacta por ancho (ver
+             AdminSidebar), así que entre 768 y 1023px el margen coincide con
+             sus 260px reales. Antes reservaba 260px para un sidebar que ahí
+             medía 60px → 200px de hueco muerto y el contenido descentrado. */
           : "md:ml-[260px]",
       )}>
         {/* ADR-087: alertas operativas — adentro del shell para respetar

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { ClipboardList, CheckSquare, StickyNote } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CheckSquare, StickyNote } from "@buleje/design-system/icons";
+import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -32,11 +32,11 @@ export default function EquipoHubModule({ initialTab }: { initialTab?: string } 
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        eyebrow="Operaciones · Equipo"
-        title="Equipo"
-        description="Coordina al equipo: tareas pendientes y notas de turno."
-        icon={ClipboardList}
+      <AdminBreadcrumb
+        items={[
+          { label: "Equipo" },
+          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
+        ]}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "tareas" && <TasksTab />}

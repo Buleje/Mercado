@@ -657,18 +657,16 @@ export function AdminSidebar({
     });
   }, []);
 
-  // ── Auto-collapse on narrow screens (<1024px) ──
-  const [isNarrow, setIsNarrow] = React.useState(false);
-  React.useEffect(() => {
-    const mql = window.matchMedia("(max-width: 1023px)");
-    const handler = (e: MediaQueryListEvent) => setIsNarrow(e.matches);
-    setIsNarrow(mql.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
-
-  // Effective compact: parent focusMode OR local compact toggle OR narrow viewport
-  const effectiveCompact = focusMode || isCompact || isNarrow;
+  // Brandon 2026-07-22: se quitó el auto-colapso por ancho (<1024px). Debajo de
+  // ese umbral el menú se reducía SOLO a íconos —sin etiquetas, imposible de
+  // leer para quien no se sabe los símbolos de memoria— justo en las
+  // resoluciones de laptop más comunes y en cualquier pantalla con zoom del
+  // navegador. Además el shell reservaba 260px para ese sidebar de 60px, así
+  // que el contenido quedaba corrido con 200px muertos al costado.
+  // Ahora el modo compacto es SIEMPRE una decisión del usuario (el toggle del
+  // pie del sidebar, que se recuerda en localStorage) o del modo foco.
+  // Debajo de 768px no hay sidebar fijo: ahí manda el menú móvil.
+  const effectiveCompact = focusMode || isCompact;
 
   // Track which multi-tab categories are expanded (shows sub-tabs).
   // Acordeón ESTRICTO (single-open): solo 1 categoría abierta a la vez.
@@ -1338,8 +1336,11 @@ export function AdminSidebar({
             </Link>
           )}
 
-          {/* ── Compact mode toggle (hidden when auto-collapsed on narrow screens) ── */}
-          {!focusMode && !isNarrow && (
+          {/* ── Compact mode toggle ──
+              Antes se ocultaba cuando el sidebar se auto-colapsaba por ancho.
+              Sin ese auto-colapso, este botón es la única forma de compactar:
+              se muestra siempre (salvo en modo foco, que ya fuerza compacto). */}
+          {!focusMode && (
             <>
               <div className={cn("my-1.5 border-t", themeClasses.border)} />
               <button
