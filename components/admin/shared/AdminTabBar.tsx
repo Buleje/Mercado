@@ -212,8 +212,8 @@ export default function AdminTabBar({
 
   return (
     <>
-    <div className={cn("relative", className)}>
-      {!wrap && canScrollLeft && (
+    <div className={cn("@container relative", className)}>
+      {canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
           className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-linear-to-r from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
@@ -225,12 +225,18 @@ export default function AdminTabBar({
 
       <div
         ref={tabsRef}
-        onScroll={wrap ? undefined : checkScroll}
+        onScroll={checkScroll}
         className={cn(
           "-mx-1 flex gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
-          wrap ? "flex-wrap gap-y-1" : "overflow-x-auto scroll-smooth scrollbar-none",
+          // Angosto: una sola fila que se desliza (recupera ~90px verticales
+          // que las 3 filas del wrap le robaban al contenido). Desde 48rem de
+          // CONTENEDOR —no de viewport, que ignora el ancho del sidebar—
+          // vuelve el wrap de siempre.
+          wrap
+            ? "overflow-x-auto scroll-smooth scrollbar-none @min-[48rem]:flex-wrap @min-[48rem]:gap-y-1 @min-[48rem]:overflow-x-visible"
+            : "overflow-x-auto scroll-smooth scrollbar-none",
         )}
-        style={wrap ? undefined : { scrollbarWidth: "none" }}
+        style={{ scrollbarWidth: "none" }}
       >
         {orderedTabs.map((tab) => {
           const Icon = tab.icon;
@@ -258,12 +264,11 @@ export default function AdminTabBar({
                 // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
                 // Desktop: layout original más compacto.
                 "flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-3 py-2.5 text-sm transition-all duration-[var(--dur-base)] sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-sm",
-                // En wrap + pantalla chica cada tab crece y centra su contenido:
-                // las filas quedan justificadas de borde a borde (sin borde
-                // derecho irregular), que era lo que se veía desalineado.
-                // OJO: grow (no flex-1) — flex-1 pone basis:0% y rompe el wrap
-                // (todas las tabs se aplastan en una sola línea).
-                wrap && "max-sm:grow max-sm:justify-center max-sm:px-2",
+                // El `grow` de antes (tabs estiradas para justificar las filas
+                // en móvil) ya no aplica: en angosto la barra es una sola fila
+                // deslizable, no un wrap de varias filas. Se conserva sólo el
+                // padding compacto.
+                wrap && "max-sm:px-2",
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === tab.id
                   ? "border-primary bg-primary/5 font-semibold text-primary"
@@ -306,7 +311,7 @@ export default function AdminTabBar({
         )}
       </div>
 
-      {!wrap && canScrollRight && (
+      {canScrollRight && (
         <button
           onClick={() => scrollTabs("right")}
           className="absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-linear-to-l from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
