@@ -17,6 +17,8 @@ import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type P
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
 import LothPoaPanel from "./LothPoaPanel";
 import LothCensoImportModal from "./LothCensoImportModal";
+import AdminModal from "@/components/admin/shared/AdminModal";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import LothZafraPanel from "./LothZafraPanel";
 import { analizarZafra } from "@/lib/forestal/loth-zafra";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -195,7 +197,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
         </select>
         <button
           type="button"
-          onClick={() => setShowPlanForm((v) => !v)}
+          onClick={() => setShowPlanForm(true)}
           className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90"
         >
           <Plus className="h-4 w-4" /> Nuevo plan
@@ -217,7 +219,18 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
         </div>
       )}
 
-      {showPlanForm && <PlanForm onClose={() => setShowPlanForm(false)} onSaved={() => { setShowPlanForm(false); loadPlans(); }} />}
+      {/* El plan es la base maestra del libro: se carga en un modal enfocado, no
+          en un panel que empuja el resto de la pestaña fuera de la vista. */}
+      <AdminModal
+        open={showPlanForm}
+        onClose={() => setShowPlanForm(false)}
+        title="Nuevo plan de manejo"
+        description="El permiso aprobado que autoriza el aprovechamiento. De acá cuelgan las especies y el censo."
+        icon={FileText}
+        variant="wide"
+      >
+        {showPlanForm && <PlanForm onClose={() => setShowPlanForm(false)} onSaved={() => { setShowPlanForm(false); loadPlans(); }} />}
+      </AdminModal>
 
       {loading && <div className="p-6 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
 
@@ -346,8 +359,8 @@ function PlanForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
-      {err && <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)]">{err}</div>}
+    <form onSubmit={submit} className="space-y-4 p-5">
+      {err && <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">{err}</div>}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Field label="Tipo"><select value={f.planType} onChange={(e) => set("planType", e.target.value)} className={cls}><option>PO</option><option>PMFI</option><option>DEMA</option></select></Field>
         <Field label="N° de plan"><input value={f.planNumber} onChange={(e) => set("planNumber", e.target.value)} placeholder="PO 12" className={cls} /></Field>
@@ -366,10 +379,10 @@ function PlanForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
         <Field label="Vigencia desde"><input type="date" value={f.vigenciaDesde} onChange={(e) => set("vigenciaDesde", e.target.value)} className={cls} /></Field>
         <Field label="Vigencia hasta"><input type="date" value={f.vigenciaHasta} onChange={(e) => set("vigenciaHasta", e.target.value)} className={cls} /></Field>
       </div>
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="h-10 rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-        <button type="submit" disabled={busy || f.titularName.trim().length < 2} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Crear plan"}
+      <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
+        <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button type="submit" disabled={busy || f.titularName.trim().length < 2} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear plan
         </button>
       </div>
     </form>
@@ -385,6 +398,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
   const [edit, setEdit] = useState({ volumenAutorizadoM3: "", arbolesAutorizados: "", precioVentaSoles: "", valorEstadoNaturalSoles: "" });
   const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
   const setE = (k: keyof typeof edit, v: string) => setEdit((p) => ({ ...p, [k]: v }));
+  const { confirm } = useConfirm();
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -406,10 +420,18 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
       onChange();
     } finally { setBusy(false); }
   }
-  async function del(id: string) {
-    // Confirmar: la especie autorizada alimenta el balance y la rentabilidad del libro.
-    if (!window.confirm("¿Borrar esta especie autorizada del plan? Afecta el balance de saldo y la rentabilidad. Esta acción no se puede deshacer.")) return;
-    await fetch(`/api/admin/forestal/plan/species?id=${id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
+  async function del(s: Species) {
+    // La especie autorizada alimenta el balance y la rentabilidad del libro: se
+    // confirma con el diálogo del DS (accesible, con foco atrapado), no con el
+    // `window.confirm` del navegador, que además ignora el tema.
+    const ok = await confirm({
+      title: `¿Borrar ${s.speciesCommon} del plan?`,
+      description: `Se quitan ${s.volumenAutorizadoM3 ?? "—"} m³ autorizados. Afecta el balance de saldo y la rentabilidad del libro. No se puede deshacer.`,
+      intent: "danger",
+      confirmLabel: "Sí, borrar la especie",
+    });
+    if (!ok) return;
+    await fetch(`/api/admin/forestal/plan/species?id=${s.id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
     onChange();
   }
 
@@ -445,17 +467,32 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
   }
 
   return (
-    <Panel title="Especies autorizadas" action={<AddBtn open={open} onClick={() => setOpen((v) => !v)} />}>
-      {open && (
-        <form onSubmit={add} className="mb-3 grid grid-cols-2 items-end gap-2 rounded-xl bg-[var(--surface-canvas)] p-3 lg:grid-cols-6">
-          <Field label="Especie"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" className={cls} /></Field>
-          <Field label="Vol. autoriz. m³"><input type="number" step="0.0001" value={f.volumenAutorizadoM3} onChange={(e) => set("volumenAutorizadoM3", e.target.value)} className={cls} /></Field>
-          <Field label="N° árboles"><input type="number" value={f.arbolesAutorizados} onChange={(e) => set("arbolesAutorizados", e.target.value)} className={cls} /></Field>
-          <Field label="Precio S//m³"><input type="number" step="0.01" value={f.precioVentaSoles} onChange={(e) => set("precioVentaSoles", e.target.value)} className={cls} /></Field>
-          <Field label="VEN S//m³"><input type="number" step="0.01" value={f.valorEstadoNaturalSoles} onChange={(e) => set("valorEstadoNaturalSoles", e.target.value)} className={cls} /></Field>
-          <button type="submit" disabled={busy} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Agregar</button>
+    <Panel title="Especies autorizadas" action={<AddBtn onClick={() => setOpen(true)} />}>
+      <AdminModal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Agregar especie autorizada"
+        description="Lo que el plan permite aprovechar de esta especie. El libro controla el saldo contra este volumen."
+        icon={TreePine}
+        variant="wide"
+      >
+        <form onSubmit={add} className="space-y-4 p-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" autoFocus className={cls} /></Field>
+            <Field label="Volumen autorizado (m³) *"><input type="number" step="0.0001" value={f.volumenAutorizadoM3} onChange={(e) => set("volumenAutorizadoM3", e.target.value)} placeholder="120.5" className={cls} /></Field>
+            <Field label="N° de árboles autorizados"><input type="number" value={f.arbolesAutorizados} onChange={(e) => set("arbolesAutorizados", e.target.value)} placeholder="45" className={cls} /></Field>
+            <Field label="Precio de venta (S/ por m³)"><input type="number" step="0.01" value={f.precioVentaSoles} onChange={(e) => set("precioVentaSoles", e.target.value)} placeholder="850.00" className={cls} /></Field>
+            <Field label="Valor en estado natural (S/ por m³)"><input type="number" step="0.01" value={f.valorEstadoNaturalSoles} onChange={(e) => set("valorEstadoNaturalSoles", e.target.value)} placeholder="12.50" className={cls} /></Field>
+          </div>
+          <p className="text-xs text-[var(--text-tertiary)]">El VEN es la base del derecho de aprovechamiento que se paga al Estado; el precio de venta alimenta la rentabilidad del libro.</p>
+          <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
+            <button type="button" onClick={() => setOpen(false)} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+            <button type="submit" disabled={busy || !f.speciesCommon.trim() || !(Number(f.volumenAutorizadoM3) > 0)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Agregar especie
+            </button>
+          </div>
         </form>
-      )}
+      </AdminModal>
       <Table head={["Especie", "Vol. autoriz.", "N° árb.", "Precio/m³", "VEN/m³", ""]}>
         {species.map((s) => editingId === s.id ? (
           <tr key={s.id} className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
@@ -481,7 +518,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
             <Cell right>
               <span className="inline-flex items-center gap-2">
                 <button onClick={() => startEdit(s)} title="Editar autorización" className="text-[var(--text-tertiary)] hover:text-[var(--accent)]"><Pencil className="h-4 w-4" /></button>
-                <button onClick={() => del(s.id)} title="Borrar" className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button>
+                <button onClick={() => void del(s)} title={`Borrar ${s.speciesCommon}`} className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button>
               </span>
             </Cell>
           </tr>
@@ -524,6 +561,7 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
   }, [trees, q, estadoFilter, catFilter, categorias]);
   // Un árbol cuya especie NO está autorizada en el plan = tala potencialmente ilegal.
   const outOfPlan = (name: string) => authorizedSpecies.size > 0 && !authorizedSpecies.has(normSp(name));
+  const { confirm } = useConfirm();
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -564,10 +602,17 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
     } finally { setBusy(false); }
   }
 
-  async function del(id: string) {
-    // Confirmar: el árbol del censo es el punto de partida de la trazabilidad.
-    if (!window.confirm("¿Borrar este árbol del censo? Es el origen de la cadena de custodia. Esta acción no se puede deshacer.")) return;
-    await fetch(`/api/admin/forestal/plan/census?id=${id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
+  async function del(t: Tree) {
+    // El árbol del censo es el punto de partida de la trazabilidad: si ya fue
+    // talado, borrarlo deja la cadena sin origen. Se avisa con nombre y código.
+    const ok = await confirm({
+      title: `¿Borrar el árbol ${t.treeCode} del censo?`,
+      description: `${t.speciesCommon ?? "Sin especie"} · es el origen de la cadena de custodia. Si ya se taló, su trazabilidad queda sin punto de partida. No se puede deshacer.`,
+      intent: "danger",
+      confirmLabel: "Sí, borrar el árbol",
+    });
+    if (!ok) return;
+    await fetch(`/api/admin/forestal/plan/census?id=${t.id}`, { method: "DELETE", headers: csrfHeaders(), credentials: "include" });
     onChange();
   }
 
@@ -575,7 +620,7 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
     <Panel title={`Censo forestal (${trees.length})`} action={
       <div className="flex gap-2">
         <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> Importar censo</button>
-        <AddBtn open={open} onClick={() => setOpen((v) => !v)} />
+        <AddBtn onClick={() => setOpen(true)} />
       </div>
     }>
       <LothCensoImportModal
@@ -590,17 +635,32 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
         onImport={doImport}
       />
       {msg && <p className="mb-3 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{msg}</p>}
-      {open && (
-        <form onSubmit={add} className="mb-3 grid grid-cols-2 items-end gap-2 rounded-xl bg-[var(--surface-canvas)] p-3 lg:grid-cols-7">
-          <Field label="Código"><input value={f.treeCode} onChange={(e) => set("treeCode", e.target.value)} placeholder="85-TOR" className={cls} /></Field>
-          <Field label="Especie"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" className={cls} /></Field>
-          <Field label="DAP (m)"><input type="number" step="0.001" value={f.dapM} onChange={(e) => set("dapM", e.target.value)} className={cls} /></Field>
-          <Field label="Hc (m)"><input type="number" step="0.01" value={f.alturaComercialM} onChange={(e) => set("alturaComercialM", e.target.value)} className={cls} /></Field>
-          <Field label="ff"><input type="number" step="0.01" value={f.factorForma} onChange={(e) => set("factorForma", e.target.value)} className={cls} /></Field>
-          <Field label={`Vol. est. ${auto > 0 ? auto.toFixed(4) : ""}`}><input disabled value={auto > 0 ? auto.toFixed(4) : ""} placeholder="auto" className={`${cls} opacity-70`} /></Field>
-          <button type="submit" disabled={busy} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Agregar</button>
+      <AdminModal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Agregar árbol al censo"
+        description="Cada árbol censado es el punto de partida de la cadena de custodia; la Tala lo jala por su código."
+        icon={TreePine}
+        variant="wide"
+      >
+        <form onSubmit={add} className="space-y-4 p-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Código del árbol *"><input value={f.treeCode} onChange={(e) => set("treeCode", e.target.value)} placeholder="85-TOR" autoFocus className={cls} /></Field>
+            <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" className={cls} /></Field>
+            <Field label="DAP — diámetro a la altura del pecho (m)"><input type="number" step="0.001" value={f.dapM} onChange={(e) => set("dapM", e.target.value)} placeholder="0.850" className={cls} /></Field>
+            <Field label="Altura comercial (m)"><input type="number" step="0.01" value={f.alturaComercialM} onChange={(e) => set("alturaComercialM", e.target.value)} placeholder="18.00" className={cls} /></Field>
+            <Field label="Factor de forma"><input type="number" step="0.01" value={f.factorForma} onChange={(e) => set("factorForma", e.target.value)} placeholder="0.65" className={cls} /></Field>
+            <Field label="Volumen estimado (m³)"><input disabled value={auto > 0 ? auto.toFixed(4) : ""} placeholder="se calcula solo" className={`${cls} opacity-70`} /></Field>
+          </div>
+          <p className="text-xs text-[var(--text-tertiary)]">El volumen sale de DAP² × π/4 × altura comercial × factor de forma. Si el árbol está por debajo del DMC de su especie, el libro va a bloquear su tala.</p>
+          <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
+            <button type="button" onClick={() => setOpen(false)} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+            <button type="submit" disabled={busy || !f.treeCode.trim() || !f.speciesCommon.trim()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Agregar al censo
+            </button>
+          </div>
         </form>
-      )}
+      </AdminModal>
       {trees.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[180px]">
@@ -640,7 +700,7 @@ function CensusPanel({ planId, trees, authorizedSpecies, categorias, dmcOverride
             <Cell right><Mono bold>{n(t.volumenEstimadoM3)}</Mono></Cell>
             <Cell><CategoriaTag categoria={categorias.get(t.id)} /></Cell>
             <Cell><EstadoTag estado={t.estado} /></Cell>
-            <Cell right><button onClick={() => del(t.id)} className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button></Cell>
+            <Cell right><button onClick={() => void del(t)} title={`Borrar ${t.treeCode}`} className="text-[var(--data-error-600)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button></Cell>
           </tr>
           );
         })}
@@ -1058,8 +1118,8 @@ function Cell({ children, right }: { children: React.ReactNode; right?: boolean 
 function Mono({ children, bold }: { children: React.ReactNode; bold?: boolean }) {
   return <span className={`font-mono tabular-nums text-[var(--text-primary)] ${bold ? "font-bold" : ""}`}>{children}</span>;
 }
-function AddBtn({ open, onClick }: { open: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white hover:opacity-90"><Plus className="h-3.5 w-3.5" />{open ? "Cerrar" : "Agregar"}</button>;
+function AddBtn({ onClick }: { onClick: () => void }) {
+  return <button type="button" onClick={onClick} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-success-700)] px-3 text-xs font-bold text-white hover:opacity-90"><Plus className="h-3.5 w-3.5" />Agregar</button>;
 }
 function Meta({ k, v }: { k: string; v: string | null }) {
   return <div><span className="text-[var(--text-tertiary)]">{k}: </span><span className="font-medium text-[var(--text-primary)]">{v || "—"}</span></div>;

@@ -6,10 +6,11 @@
  * Interna, no oficial (la GTF oficial se emite vía SNIFFS).
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { FileText, Plus, Printer, Ban, Loader2, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, FileText, Plus, Printer, Ban, Loader2, Trash2, Truck, LogIn } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
 interface GtfItem {
@@ -63,6 +64,11 @@ export default function LothGtfView() {
     window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: CTP_MODULE_TAB_ID } }));
   }
 
+  /**
+   * Anular no borra: deja la guía visible con su motivo. Por eso el motivo es
+   * obligatorio y se pide en un modal, no en un input de 8rem dentro de la celda
+   * (donde no entraba una razón de verdad y se perdía al hacer scroll).
+   */
   async function annul(id: string, reason: string) {
     await fetch("/api/admin/forestal/gtf", {
       method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include",
@@ -71,18 +77,62 @@ export default function LothGtfView() {
     setAnnulId(null); load();
   }
 
+  const gtfAnular = annulId ? gtfs.find((g) => g.id === annulId) ?? null : null;
+
+  // Resumen del período: lo que un titular quiere saber sin leer la tabla.
+  const resumen = useMemo(() => {
+    const vivas = gtfs.filter((g) => g.status !== "anulada");
+    return {
+      emitidas: vivas.length,
+      anuladas: gtfs.length - vivas.length,
+      volumen: vivas.reduce((s, g) => s + Number(g.volumenTotalM3 ?? 0), 0),
+      pendientes: vivas.filter((g) => g.tipo !== "producto" && sinIngresar.has(g.gtfNumber)).length,
+    };
+  }, [gtfs, sinIngresar]);
+
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Truck className="h-4 w-4" /> Guías de Transporte Forestal · interno (oficial = SNIFFS)</div>
-        <button type="button" onClick={() => setShowForm((v) => !v)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90">
+        <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90">
           <Plus className="h-4 w-4" /> Emitir GTF
         </button>
       </div>
 
-      {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
+      {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">{error}</div>}
 
-      {showForm && <GtfForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
+      {!loading && gtfs.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <ResumenChip valor={resumen.emitidas} label="Guías emitidas" />
+          <ResumenChip valor={resumen.volumen.toFixed(3)} sufijo="m³" label="Volumen movilizado" />
+          <ResumenChip valor={resumen.pendientes} label="Sin ingresar al CTP" tono={resumen.pendientes > 0 ? "warning" : undefined} />
+          <ResumenChip valor={resumen.anuladas} label="Anuladas" tono={resumen.anuladas > 0 ? "danger" : undefined} />
+        </div>
+      )}
+
+      {/* Emitir: el formulario es un documento (12 campos + lista de trozas), no
+          un panel que empuje la tabla — va en modal ancho con footer fijo. */}
+      <AdminModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title="Emitir Guía de Transporte Forestal"
+        description="Interna (no oficial). Las trozas deben estar registradas en el Libro de Operaciones."
+        icon={Truck}
+        variant="info"
+      >
+        {showForm && <GtfForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
+      </AdminModal>
+
+      {/* Anular: pide motivo obligatorio y explica que la guía NO se borra. */}
+      <AdminModal
+        open={!!gtfAnular}
+        onClose={() => setAnnulId(null)}
+        title={gtfAnular ? `Anular la GTF ${gtfAnular.gtfNumber}` : "Anular GTF"}
+        description="La guía queda en el libro con su motivo. No se borra."
+        icon={Ban}
+      >
+        {gtfAnular && <AnularGtfForm gtf={gtfAnular} onConfirm={(r) => annul(gtfAnular.id, r)} onCancel={() => setAnnulId(null)} />}
+      </AdminModal>
 
       {loading && <div className="p-6 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
 
@@ -115,11 +165,9 @@ export default function LothGtfView() {
                         </button>
                       )}
                       <button type="button" onClick={() => printGtf(g)} title="Imprimir" className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Imprimir</button>
-                      {g.status !== "anulada" && (annulId === g.id ? (
-                        <AnnulInline onConfirm={(r) => annul(g.id, r)} onCancel={() => setAnnulId(null)} />
-                      ) : (
-                        <button type="button" onClick={() => setAnnulId(g.id)} className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"><Ban className="h-3.5 w-3.5" /></button>
-                      ))}
+                      {g.status !== "anulada" && (
+                        <button type="button" onClick={() => setAnnulId(g.id)} title="Anular esta guía" aria-label={`Anular la GTF ${g.gtfNumber}`} className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><Ban className="h-3.5 w-3.5" /></button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -133,14 +181,64 @@ export default function LothGtfView() {
   );
 }
 
-function AnnulInline({ onConfirm, onCancel }: { onConfirm: (r: string) => void; onCancel: () => void }) {
-  const [r, setR] = useState("");
+/** Ficha de resumen de la pestaña. */
+function ResumenChip({ valor, label, sufijo, tono }: { valor: number | string; label: string; sufijo?: string; tono?: "warning" | "danger" }) {
+  const color = tono === "danger"
+    ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+    : tono === "warning"
+      ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+      : "text-[var(--text-primary)]";
+  const borde = tono === "danger" ? "border-[var(--data-error-500)]" : tono === "warning" ? "border-[var(--data-warning-500)]" : "border-[var(--rule-base)]";
   return (
-    <span className="inline-flex items-center gap-1">
-      <input value={r} onChange={(e) => setR(e.target.value)} placeholder="Motivo" autoFocus className="h-8 w-32 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs text-[var(--text-primary)] outline-none" />
-      <button type="button" disabled={r.trim().length < 3} onClick={() => onConfirm(r.trim())} className="h-8 rounded-lg bg-[var(--data-error-600)] px-2 text-xs font-bold text-white disabled:opacity-50">OK</button>
-      <button type="button" onClick={onCancel} className="h-8 rounded-lg border-2 border-[var(--rule-base)] px-2 text-xs font-bold text-[var(--text-primary)]">✕</button>
-    </span>
+    <div className={`rounded-2xl border-2 ${borde} bg-[var(--surface-raised)] px-3.5 py-3`}>
+      <div className={`font-mono text-2xl font-bold tabular-nums leading-none ${color}`}>
+        {valor}
+        {sufijo && <span className="ml-1 text-sm font-semibold">{sufijo}</span>}
+      </div>
+      <p className="mt-1 text-[length:var(--ts-2xs)] font-semibold uppercase leading-tight tracking-wide text-[var(--text-tertiary)]">{label}</p>
+    </div>
+  );
+}
+
+/**
+ * Cuerpo del modal de anulación. El motivo va a `annulledReason` y queda en el
+ * libro: es lo que lee un fiscalizador para entender por qué esa guía no vale.
+ */
+function AnularGtfForm({ gtf, onConfirm, onCancel }: { gtf: Gtf; onConfirm: (r: string) => void; onCancel: () => void }) {
+  const [r, setR] = useState("");
+  const [busy, setBusy] = useState(false);
+  const valido = r.trim().length >= 3;
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); if (!valido || busy) return; setBusy(true); onConfirm(r.trim()); }}
+      className="space-y-4 p-5"
+    >
+      <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+        <p>
+          Se anulan <strong>{gtf.volumenTotalM3 ? Number(gtf.volumenTotalM3).toFixed(4) : "—"} m³</strong>
+          {gtf.destino ? <> con destino <strong>{gtf.destino}</strong></> : null}. La guía sigue apareciendo en el libro, marcada como anulada.
+        </p>
+      </div>
+      <label className="block">
+        <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Motivo de la anulación *</span>
+        <textarea
+          value={r}
+          onChange={(e) => setR(e.target.value)}
+          rows={3}
+          autoFocus
+          placeholder="Ej.: error en la placa del vehículo; se reemplaza por la GTF 001-0000126."
+          className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
+        />
+        <span className="mt-1 block text-xs text-[var(--text-tertiary)]">Mínimo 3 caracteres. Queda registrado en el libro.</span>
+      </label>
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button type="submit" disabled={!valido || busy} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Anular la guía
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -243,9 +341,11 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
     } catch (e) { setErr(e instanceof Error ? e.message : String(e)); setBusy(false); }
   }
 
+  // Vive dentro de AdminModal: el padding y el footer los pone el form, y el
+  // footer va `sticky` para que "Emitir" no quede debajo de la lista de trozas.
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5">
-      {err && <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)]">{err}</div>}
+    <form onSubmit={submit} className="space-y-4 p-5">
+      {err && <div className="rounded-lg border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">{err}</div>}
       {libroErr && (
         <div className="rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-700)]">
           No se pudo cargar el Libro de Operaciones ({libroErr}). La validación GTF ↔ libro está desactivada temporalmente.
@@ -319,11 +419,14 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
         )}
       </div>
 
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-[var(--text-tertiary)]">{items.length} ítems · {totalVol.toFixed(4)} m³</span>
+      <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-wrap items-center justify-between gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
+        <span className="text-xs font-semibold text-[var(--text-tertiary)]">
+          {items.length} {items.length === 1 ? "ítem" : "ítems"} · <span className="font-mono tabular-nums">{totalVol.toFixed(4)}</span> m³
+          {items.length === 0 && <span className="ml-2 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">— agregá al menos una troza</span>}
+        </span>
         <div className="flex gap-2">
-          <button type="button" onClick={onClose} className="h-10 rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Emitir GTF"}</button>
+          <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
         </div>
       </div>
     </form>

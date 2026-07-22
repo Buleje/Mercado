@@ -22,6 +22,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { MapPin, Loader2, Camera, Route, Undo2, Check, X } from "@buleje/design-system/icons";
 import { BRAND_GEO } from "@/lib/geo";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import {
   computeEudrReadiness,
@@ -114,6 +115,7 @@ function toOps(entries: LothEntryDTO[]): OpForEudr[] {
 }
 
 export default function LothMapaView() {
+  const { confirm } = useConfirm();
   const [raw, setRaw] = useState<LothEntryDTO[] | null>(null);
   const [trees, setTrees] = useState<CensusTreeDTO[]>([]);
   /** Especies autorizadas + parámetros del POA: pintan el censo por categoría. */
@@ -353,9 +355,17 @@ export default function LothMapaView() {
     setDraft([]);
   };
   const clearParcela = useCallback(async () => {
-    if (!window.confirm("¿Borrar el polígono del área de aprovechamiento?")) return;
+    // El polígono sostiene el área declarada, el cross-check del POA y el DDS
+    // de EUDR: borrarlo no es un "ok" al pasar, va con el diálogo del DS.
+    const ok = await confirm({
+      title: "¿Borrar el polígono del área de aprovechamiento?",
+      description: "Se pierden los vértices dibujados y con ellos el área calculada, el cross-check contra el POA y la geometría del expediente EUDR. Vas a tener que volver a dibujarlo o importarlo.",
+      intent: "danger",
+      confirmLabel: "Sí, borrar el polígono",
+    });
+    if (!ok) return;
     await persistParcela({ vertices: [], nota: "", deforestacionCero: false });
-  }, [persistParcela]);
+  }, [persistParcela, confirm]);
   const toggleDeforestacion = useCallback(
     (v: boolean) => persistParcela({ vertices: parcela.vertices, nota: parcela.nota, deforestacionCero: v }),
     [persistParcela, parcela.vertices, parcela.nota],
