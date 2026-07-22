@@ -31,6 +31,25 @@ export function referenciaMeta(tipo: string): { tipo: ReferenciaTipo; label: str
   return REFERENCIA_TIPOS.find((t) => t.tipo === tipo) ?? REFERENCIA_TIPOS[REFERENCIA_TIPOS.length - 1];
 }
 
+/**
+ * Tipos de vía del plano: los mismos que rotula un mapa forestal oficial
+ * (vía de acceso, vía marginal, trocha de arrastre, río/quebrada).
+ */
+export const VIA_TIPOS = [
+  { tipo: "acceso", label: "Vía de acceso", color: "#a21caf", dash: "" },
+  { tipo: "marginal", label: "Vía marginal", color: "#65a30d", dash: "10 6" },
+  { tipo: "trocha", label: "Trocha de arrastre", color: "#b45309", dash: "4 5" },
+  { tipo: "rio", label: "Río / quebrada", color: "#0284c7", dash: "" },
+] as const;
+
+export type ViaTipo = (typeof VIA_TIPOS)[number]["tipo"];
+
+const VIA_SET = new Set<string>(VIA_TIPOS.map((t) => t.tipo));
+
+export function viaMeta(tipo: string): { tipo: ViaTipo; label: string; color: string; dash: string } {
+  return VIA_TIPOS.find((t) => t.tipo === tipo) ?? VIA_TIPOS[0];
+}
+
 /** Movilidades del cuadro de acceso (las que usa un plan de manejo en selva). */
 export const MOVILIDADES = ["auto-camioneta", "moto lineal", "bote / peque-peque", "a pie", "avioneta"] as const;
 
@@ -52,8 +71,17 @@ export interface LothAcceso {
   movilidad: string;
 }
 
+export interface LothVia {
+  id: string;
+  nombre: string;
+  tipo: ViaTipo;
+  /** Traza de la vía ([lat, lng]); mínimo 2 puntos. */
+  puntos: LatLng[];
+}
+
 export interface LothCartografia {
   referencias: LothReferencia[];
+  vias: LothVia[];
   accesos: LothAcceso[];
   /** Nota al pie de la lámina de dispersión (opcional). */
   nota: string;
@@ -61,11 +89,13 @@ export interface LothCartografia {
 }
 
 export function emptyCartografia(): LothCartografia {
-  return { referencias: [], accesos: [], nota: "", updatedAt: null };
+  return { referencias: [], vias: [], accesos: [], nota: "", updatedAt: null };
 }
 
 const MAX_REFERENCIAS = 120;
 const MAX_ACCESOS = 20;
+const MAX_VIAS = 40;
+const MAX_PUNTOS_VIA = 500;
 
 const str = (v: unknown, max: number): string => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
@@ -118,6 +148,29 @@ export function normalizeCartografia(raw: unknown): LothCartografia {
     });
   });
 
+  const viasRaw = Array.isArray(o.vias) ? o.vias.slice(0, MAX_VIAS) : [];
+  const vias: LothVia[] = [];
+  viasRaw.forEach((v, i) => {
+    const it = (v ?? {}) as Record<string, unknown>;
+    const rawPts = Array.isArray(it.puntos) ? it.puntos.slice(0, MAX_PUNTOS_VIA) : [];
+    const puntos: LatLng[] = [];
+    for (const p of rawPts) {
+      const pair = p as unknown[];
+      if (!Array.isArray(pair) || pair.length < 2) continue;
+      const lat = Number(pair[0]);
+      const lng = Number(pair[1]);
+      if (validLatLng(lat, lng)) puntos.push([lat, lng]);
+    }
+    if (puntos.length < 2) return; // una vía de un solo punto no es una vía
+    const nombre = str(it.nombre, 80) || `Vía ${i + 1}`;
+    vias.push({
+      id: str(it.id, 40) || fallbackId("via", i, nombre),
+      nombre,
+      tipo: VIA_SET.has(String(it.tipo)) ? (String(it.tipo) as ViaTipo) : "acceso",
+      puntos,
+    });
+  });
+
   const accRaw = Array.isArray(o.accesos) ? o.accesos.slice(0, MAX_ACCESOS) : [];
   const accesos: LothAcceso[] = [];
   accRaw.forEach((a, i) => {
@@ -134,6 +187,7 @@ export function normalizeCartografia(raw: unknown): LothCartografia {
 
   return {
     referencias,
+    vias,
     accesos,
     nota: str(o.nota, 300),
     updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : null,
@@ -142,7 +196,7 @@ export function normalizeCartografia(raw: unknown): LothCartografia {
 
 /** ¿Hay algo que dibujar/imprimir? */
 export function hasCartografia(c: LothCartografia | null | undefined): boolean {
-  return !!c && (c.referencias.length > 0 || c.accesos.length > 0);
+  return !!c && (c.referencias.length > 0 || c.vias.length > 0 || c.accesos.length > 0);
 }
 
 /** Punto de una referencia en el formato del mapa. */

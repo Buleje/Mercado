@@ -19,7 +19,7 @@
  */
 import "leaflet/dist/leaflet.css";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { MapPin, Loader2, Camera } from "@buleje/design-system/icons";
+import { MapPin, Loader2, Camera, Route, Undo2, Check, X } from "@buleje/design-system/icons";
 import { BRAND_GEO } from "@/lib/geo";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
@@ -35,19 +35,24 @@ import {
   type OpForEudr,
   type EudrPoint,
 } from "@/lib/forestal/loth-geo";
-import { dominantZone, hullBuffer, zoneLabel } from "@/lib/forestal/loth-utm";
+import { dominantZone, formatDistance, hullBuffer, zoneLabel } from "@/lib/forestal/loth-utm";
 import { buildKml } from "@/lib/forestal/loth-coords-io";
 import {
   emptyCartografia,
   normalizeCartografia,
   referenciaMeta,
+  viaMeta,
   type LothCartografia,
 } from "@/lib/forestal/loth-cartografia";
+import { lineLengthM } from "@/lib/forestal/loth-utm";
+import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
 import { printLothPlano, type PlanoBasemap } from "@/lib/forestal/loth-plano-print";
 import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
 import LothEudrRail from "./LothEudrRail";
 import LothMapaCanvasRaw, { type BasemapId } from "./LothMapaCanvas";
 import LothMapaChrome, { type LegendItem } from "./LothMapaChrome";
+import LothCampoBar, { type PosicionCampo } from "./LothCampoBar";
+import LothCaratulaBanner, { type CaratulaUbicacion } from "./LothCaratulaBanner";
 import LothContextoPanel from "./LothContextoPanel";
 import LothCoordsModal from "./LothCoordsModal";
 import LothMapaDrawBar from "./LothMapaDrawBar";
@@ -83,6 +88,7 @@ interface ActivePlan {
   region: string | null;
 }
 interface Caratula {
+  id: string | null;
   departamento: string | null;
   provincia: string | null;
   distrito: string | null;
@@ -127,6 +133,13 @@ export default function LothMapaView() {
   const [carto, setCarto] = useState<LothCartografia>(emptyCartografia());
   const [markMode, setMarkMode] = useState(false);
   const [savingCarto, setSavingCarto] = useState(false);
+  const [overlays, setOverlays] = useState<OverlayId[]>([]);
+  /** Traza en curso del modo "dibujar vía" (null = inactivo). */
+  const [viaDraft, setViaDraft] = useState<LatLng[] | null>(null);
+  const [campoActivo, setCampoActivo] = useState(false);
+  const [posicion, setPosicion] = useState<PosicionCampo | null>(null);
+  /** Pedido de centrado: el canvas lo consume por `fitKey`-style. */
+  const [centrarEn, setCentrarEn] = useState<{ p: LatLng; n: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,6 +161,7 @@ export default function LothMapaView() {
         setCaratula(
           active
             ? {
+                id: active.id ?? null,
                 departamento: active.departamento ?? null,
                 provincia: active.provincia ?? null,
                 distrito: active.distrito ?? null,
@@ -215,9 +229,14 @@ export default function LothMapaView() {
       ...sectionsPresent
         .filter((s) => !hidden.has(s))
         .map((s) => ({ label: SECTION_LABEL[s] ?? s, color: SECTION_COLOR[s] ?? "#334155", shape: "dot" as const })),
+      ...[...new Map(carto.vias.map((v) => [viaMeta(v.tipo).label, viaMeta(v.tipo).color])).entries()].map(([label, color]) => ({
+        label,
+        color,
+        shape: "line" as const,
+      })),
       ...(showGrid ? [{ label: "Cuadrícula UTM (WGS 84)", color: "#64748b", shape: "grid" as const }] : []),
     ],
-    [declarada, showCenso, censoEstados, sectionsPresent, hidden, showGrid],
+    [declarada, showCenso, censoEstados, sectionsPresent, hidden, showGrid, carto.vias],
   );
 
   // ── Persistencia de la parcela ─────────────────────────────────────────────
@@ -312,6 +331,29 @@ export default function LothMapaView() {
     setMarkMode(false);
   }, []);
 
+  const centrar = useCallback((p: LatLng) => setCentrarEn((c) => ({ p, n: (c?.n ?? 0) + 1 })), []);
+
+  const addViaPoint = useCallback((v: LatLng) => setViaDraft((d) => [...(d ?? []), v]), []);
+  const toggleOverlay = useCallback(
+    (id: OverlayId) => setOverlays((o) => (o.includes(id) ? o.filter((x) => x !== id) : [...o, id])),
+    [],
+  );
+
+  /** Cierra el trazado y suma la vía a la cartografía (se nombra en el panel). */
+  const terminarVia = () => {
+    const pts = viaDraft ?? [];
+    if (pts.length >= 2) {
+      setCarto((c) => ({
+        ...c,
+        vias: [
+          ...c.vias,
+          { id: `via-${c.vias.length + 1}-${c.vias.length}`, nombre: `Vía ${c.vias.length + 1}`, tipo: "acceso" as const, puntos: pts },
+        ],
+      }));
+    }
+    setViaDraft(null);
+  };
+
   const guardarCartografia = useCallback(async () => {
     setSavingCarto(true);
     setError(null);
@@ -320,7 +362,7 @@ export default function LothMapaView() {
         method: "PUT",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ referencias: carto.referencias, accesos: carto.accesos, nota: carto.nota }),
+        body: JSON.stringify({ referencias: carto.referencias, vias: carto.vias, accesos: carto.accesos, nota: carto.nota }),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
       setCarto(normalizeCartografia((await r.json()).cartografia));
@@ -417,7 +459,18 @@ export default function LothMapaView() {
       const m = referenciaMeta(r.tipo);
       return { lat: r.lat, lng: r.lng, nombre: r.nombre, tipoLabel: m.label, color: m.color };
     }),
+    vias: carto.vias.map((v) => {
+      const m = viaMeta(v.tipo);
+      return { nombre: v.nombre, tipoLabel: m.label, color: m.color, dash: m.dash, puntos: v.puntos };
+    }),
     accesos: carto.accesos.map((a) => ({ lugar: a.lugar, tiempo: a.tiempo, movilidad: a.movilidad })),
+    overlays: OVERLAYS.filter((o) => overlays.includes(o.id)).map((o) => ({
+      label: o.label,
+      fuente: o.fuente,
+      url: o.url,
+      opacity: o.opacity,
+      color: o.color,
+    })),
     meta: {
       titulo: "Plano de ubicación del área de aprovechamiento",
       mapaNumero: "1",
@@ -506,8 +559,48 @@ export default function LothMapaView() {
               sections={sectionsPresent}
               hidden={hidden}
               onToggleSection={toggleSection}
+              overlays={overlays}
+              onToggleOverlay={toggleOverlay}
+              drawingVia={viaDraft !== null}
+              onDrawVia={() => (viaDraft === null ? setViaDraft([]) : terminarVia())}
             />
           </div>
+
+          <LothCaratulaBanner
+            caratula={
+              caratula
+                ? {
+                    id: caratula.id,
+                    titularName: caratula.titularName,
+                    departamento: caratula.departamento,
+                    provincia: caratula.provincia,
+                    distrito: caratula.distrito,
+                  }
+                : null
+            }
+            titularSugerido={plan?.titularName ?? null}
+            onSaved={(c: CaratulaUbicacion) =>
+              setCaratula({
+                id: c.id,
+                departamento: c.departamento,
+                provincia: c.provincia,
+                distrito: c.distrito,
+                titularName: c.titularName,
+                tituloHabilitante: caratula?.tituloHabilitante ?? null,
+              })
+            }
+          />
+
+          <LothCampoBar
+            activo={campoActivo}
+            posicion={posicion}
+            parcela={parcela.vertices}
+            declarada={declarada}
+            onToggle={() => setCampoActivo((v) => !v)}
+            onPosicion={setPosicion}
+            onMarcarAqui={marcarReferencia}
+            onCentrar={centrar}
+          />
 
           {error && (
             <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
@@ -522,6 +615,12 @@ export default function LothMapaView() {
               referencias={carto.referencias}
               markMode={markMode}
               onMarkReferencia={marcarReferencia}
+              vias={carto.vias}
+              viaDraft={viaDraft}
+              onViaPoint={addViaPoint}
+              overlays={overlays}
+              posicion={posicion}
+              centrarEn={centrarEn}
               parcela={parcela.vertices}
               declarada={declarada}
               draft={draft}
@@ -551,6 +650,43 @@ export default function LothMapaView() {
                 onSave={saveDraw}
                 onCancel={cancelDraw}
               />
+            )}
+
+            {viaDraft !== null && (
+              <div className="absolute inset-x-3 top-3 z-30 flex flex-wrap items-center gap-2 rounded-2xl border-2 border-[#a21caf] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-lg backdrop-blur">
+                <Route className="h-4 w-4 text-[#a21caf]" />
+                <span className="text-xs font-bold text-[var(--text-primary)]">
+                  Tocá el mapa para trazar la vía · <b className="font-mono tabular-nums">{viaDraft.length}</b> punto(s)
+                  {viaDraft.length >= 2 && (
+                    <span className="text-[var(--text-tertiary)]"> · {formatDistance(lineLengthM(viaDraft))}</span>
+                  )}
+                </span>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setViaDraft((d) => (d ? d.slice(0, -1) : d))}
+                    disabled={viaDraft.length === 0}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                  >
+                    <Undo2 className="h-3.5 w-3.5" /> Deshacer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={terminarVia}
+                    disabled={viaDraft.length < 2}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg bg-[#a21caf] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-40"
+                  >
+                    <Check className="h-3.5 w-3.5" /> Terminar vía
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViaDraft(null)}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                  >
+                    <X className="h-3.5 w-3.5" /> Cancelar
+                  </button>
+                </div>
+              </div>
             )}
 
             {/* Estado vacío */}

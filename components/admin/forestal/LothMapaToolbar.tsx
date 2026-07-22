@@ -7,8 +7,9 @@
  * `LothMapaView`.
  */
 
-import { Eye, EyeOff, Grid3x3, Layers, TreePine } from "@buleje/design-system/icons";
+import { Eye, EyeOff, Grid3x3, Layers, Route, ShieldCheck, TreePine } from "@buleje/design-system/icons";
 import type { BasemapId } from "./LothMapaCanvas";
+import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
 import { SECTION_COLOR, SECTION_LABEL } from "./loth-mapa-shared";
 
 const BASEMAPS: { id: BasemapId; label: string }[] = [
@@ -30,6 +31,10 @@ interface Props {
   sections: string[];
   hidden: Set<string>;
   onToggleSection: (s: string) => void;
+  overlays: OverlayId[];
+  onToggleOverlay: (id: OverlayId) => void;
+  drawingVia: boolean;
+  onDrawVia: () => void;
 }
 
 export default function LothMapaToolbar({
@@ -43,6 +48,10 @@ export default function LothMapaToolbar({
   sections,
   hidden,
   onToggleSection,
+  overlays,
+  onToggleOverlay,
+  drawingVia,
+  onDrawVia,
 }: Props) {
   return (
     <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1.5">
@@ -76,6 +85,39 @@ export default function LothMapaToolbar({
         >
           <Grid3x3 className="h-3.5 w-3.5" /> Cuadrícula
         </button>
+        <button
+          type="button"
+          onClick={onDrawVia}
+          aria-pressed={drawingVia}
+          title="Dibujar la carretera, la trocha o el río sobre el mapa"
+          className={`${CHIP} ${
+            drawingVia
+              ? "border-transparent bg-[#a21caf] text-white"
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+          }`}
+        >
+          <Route className="h-3.5 w-3.5" /> {drawingVia ? "Trazando…" : "Trazar vía"}
+        </button>
+        {OVERLAYS.map((o) => {
+          const on = overlays.includes(o.id);
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => onToggleOverlay(o.id)}
+              aria-pressed={on}
+              title={`${o.detalle} — ${o.fuente}`}
+              className={`${CHIP} ${
+                on
+                  ? "border-transparent text-white"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+              }`}
+              style={on ? { backgroundColor: o.color } : undefined}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" /> {o.label}
+            </button>
+          );
+        })}
         {censoCount > 0 && (
           <button
             type="button"

@@ -20,7 +20,8 @@ import { useEffect, useRef, useState } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import { dominantZone, gridLabel, utmGrid, vertexCode } from "@/lib/forestal/loth-utm";
-import { referenciaMeta, type LothReferencia } from "@/lib/forestal/loth-cartografia";
+import { referenciaMeta, viaMeta, type LothReferencia, type LothVia } from "@/lib/forestal/loth-cartografia";
+import { OVERLAYS, type OverlayId } from "./loth-mapa-overlays";
 import {
   arbolPopupHtml,
   operacionPopupHtml,
@@ -55,6 +56,17 @@ interface Props {
   /** Modo "marcar referencia": el próximo click en el mapa crea una. */
   markMode: boolean;
   onMarkReferencia: (v: LatLng) => void;
+  /** Vías del plano (acceso, marginal, trocha, río). */
+  vias: LothVia[];
+  /** Traza en curso del modo "dibujar vía" (vacío = inactivo). */
+  viaDraft: LatLng[] | null;
+  onViaPoint: (v: LatLng) => void;
+  /** Capas oficiales encendidas (SERNANP / SERFOR). */
+  overlays: OverlayId[];
+  /** Posición del dispositivo en campo (null = seguimiento apagado). */
+  posicion: { lat: number; lng: number; accuracy: number } | null;
+  /** Pedido de centrado (cambia `n` en cada pedido). */
+  centrarEn: { p: LatLng; n: number } | null;
   parcela: LatLng[];
   declarada: boolean;
   draft: LatLng[];
@@ -82,6 +94,12 @@ export default function LothMapaCanvas({
   referencias,
   markMode,
   onMarkReferencia,
+  vias,
+  viaDraft,
+  onViaPoint,
+  overlays,
+  posicion,
+  centrarEn,
   parcela,
   declarada,
   draft,
@@ -107,6 +125,9 @@ export default function LothMapaCanvas({
   const draftRef = useRef<any>(null);
   const markersRef = useRef<any>(null);
   const refsRef = useRef<any>(null);
+  const viasRef = useRef<any>(null);
+  const posRef = useRef<any>(null);
+  const overlayRef = useRef<Record<string, any>>({});
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const fittedRef = useRef(0);
   const [ready, setReady] = useState(false);
@@ -124,6 +145,8 @@ export default function LothMapaCanvas({
       gridRef.current = L.layerGroup().addTo(map);
       parcelaRef.current = L.layerGroup().addTo(map);
       markersRef.current = L.layerGroup().addTo(map);
+      viasRef.current = L.layerGroup().addTo(map);
+      posRef.current = L.layerGroup().addTo(map);
       refsRef.current = L.layerGroup().addTo(map);
       draftRef.current = L.layerGroup().addTo(map);
       setReady(true);
@@ -151,6 +174,108 @@ export default function LothMapaCanvas({
     }).addTo(map);
     baseRef.current.bringToBack();
   }, [ready, basemap]);
+
+  // ── Capas oficiales del Estado (SERNANP / SERFOR) ──────────────────────────
+  // Son MapServer de Esri, no teselas: se pide un PNG transparente del bbox
+  // visible y se re-pide al mover. Sin dependencias (no hace falta esri-leaflet).
+  useEffect(() => {
+    const L = LRef.current;
+    const map = mapRef.current;
+    if (!ready || !L || !map) return;
+
+    // Defensivo: si la prop llega sin definir (hot-reload, consumidor nuevo) la
+    // capa simplemente no pinta — nunca revienta el mapa en runtime.
+    const active = Array.isArray(overlays) ? overlays : [];
+    const sync = () => {
+      const b = map.getBounds();
+      const size = map.getSize();
+      const bbox = `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`;
+      const w = Math.max(64, Math.min(2048, Math.round(size.x)));
+      const h = Math.max(64, Math.min(2048, Math.round(size.y)));
+      // Quitar las capas apagadas.
+      for (const [id, layer] of Object.entries(overlayRef.current)) {
+        if (!active.includes(id as OverlayId)) {
+          map.removeLayer(layer);
+          delete overlayRef.current[id];
+        }
+      }
+      for (const id of active) {
+        const def = OVERLAYS.find((o) => o.id === id);
+        if (!def) continue;
+        const url = `${def.url}/export?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=${w},${h}&format=png32&transparent=true&f=image`;
+        const bounds = L.latLngBounds(b.getSouthWest(), b.getNorthEast());
+        const existing = overlayRef.current[id];
+        if (existing) {
+          existing.setBounds(bounds);
+          existing.setUrl(url);
+        } else {
+          overlayRef.current[id] = L.imageOverlay(url, bounds, { opacity: def.opacity, interactive: false, zIndex: 250 }).addTo(map);
+        }
+      }
+    };
+
+    sync();
+    map.on("moveend zoomend", sync);
+    return () => {
+      map.off("moveend zoomend", sync);
+    };
+  }, [ready, overlays]);
+
+  // ── Vías del plano + traza en curso ────────────────────────────────────────
+  useEffect(() => {
+    const L = LRef.current;
+    const group = viasRef.current;
+    if (!ready || !L || !group) return;
+    group.clearLayers();
+    for (const v of vias) {
+      const meta = viaMeta(v.tipo);
+      // Casing blanco debajo: una línea fina sobre el satélite no se lee.
+      L.polyline(v.puntos, { color: "#fff", weight: 6, opacity: 0.55, interactive: false }).addTo(group);
+      L.polyline(v.puntos, {
+        color: meta.color,
+        weight: 3,
+        opacity: 0.95,
+        dashArray: meta.dash || undefined,
+      })
+        .bindTooltip(`${v.nombre} · ${meta.label}`, { sticky: true })
+        .addTo(group);
+    }
+    if (viaDraft && viaDraft.length > 0) {
+      if (viaDraft.length >= 2) {
+        L.polyline(viaDraft, { color: "#0f172a", weight: 3, dashArray: "6 5" }).addTo(group);
+      }
+      viaDraft.forEach((p, i) =>
+        L.circleMarker(p, {
+          radius: 4,
+          color: "#fff",
+          weight: 2,
+          fillColor: "#0f172a",
+          fillOpacity: 1,
+          bubblingMouseEvents: false,
+        })
+          .bindTooltip(String(i + 1), { permanent: true, direction: "top", className: "loth-vertex-label", offset: [0, -6] })
+          .addTo(group),
+      );
+    }
+  }, [ready, vias, viaDraft]);
+
+  // Modo "dibujar vía": cada click agrega un punto a la traza.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || viaDraft === null) return;
+    map.doubleClickZoom.disable();
+    (map.getContainer() as HTMLElement).style.cursor = "crosshair";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onClick = (e: any) => onViaPoint([e.latlng.lat, e.latlng.lng]);
+    map.on("click", onClick);
+    return () => {
+      map.off("click", onClick);
+      if (mapRef.current) {
+        mapRef.current.doubleClickZoom.enable();
+        (mapRef.current.getContainer() as HTMLElement).style.cursor = "";
+      }
+    };
+  }, [ready, viaDraft, onViaPoint]);
 
   // ── Cuadrícula UTM (se recalcula al mover/zoomear) ─────────────────────────
   useEffect(() => {
@@ -365,6 +490,30 @@ export default function LothMapaCanvas({
         .addTo(group);
     }
   }, [ready, geo, censo, parcela, declarada]);
+
+  // ── Mi posición en campo (GPS del dispositivo) ─────────────────────────────
+  useEffect(() => {
+    const L = LRef.current;
+    const group = posRef.current;
+    if (!ready || !L || !group) return;
+    group.clearLayers();
+    if (!posicion) return;
+    const p: LatLng = [posicion.lat, posicion.lng];
+    // Círculo de precisión REAL (en metros): si el GPS dice ±30 m, se ve ±30 m.
+    if (posicion.accuracy > 0) {
+      L.circle(p, { radius: posicion.accuracy, color: "#2563eb", weight: 1, fillColor: "#2563eb", fillOpacity: 0.12, interactive: false }).addTo(group);
+    }
+    L.circleMarker(p, { radius: 7, color: "#fff", weight: 3, fillColor: "#2563eb", fillOpacity: 1 })
+      .bindTooltip("Estás acá", { direction: "top", offset: [0, -8] })
+      .addTo(group);
+  }, [ready, posicion]);
+
+  // Centrar a pedido (botón "Centrar" del modo campo).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !centrarEn) return;
+    map.setView(centrarEn.p, Math.max(map.getZoom(), 16), { animate: true });
+  }, [ready, centrarEn]);
 
   // ── Referencias del plano ──────────────────────────────────────────────────
   useEffect(() => {

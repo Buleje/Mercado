@@ -93,6 +93,22 @@ export interface PlanoReferencia {
   tipoLabel: string;
   color: string;
 }
+/** Vía a dibujar en la lámina (traza + estilo). */
+export interface PlanoVia {
+  nombre: string;
+  tipoLabel: string;
+  color: string;
+  dash: string;
+  puntos: LatLng[];
+}
+/** Capa oficial superpuesta (MapServer del Estado). */
+export interface PlanoOverlay {
+  label: string;
+  fuente: string;
+  url: string;
+  opacity: number;
+  color: string;
+}
 /** Fila del cuadro "ACCESO A LA UMF". */
 export interface PlanoAcceso {
   lugar: string;
@@ -115,7 +131,9 @@ export interface PlanoOptions {
   basemap?: PlanoBasemap;
   variante?: PlanoVariante;
   referencias?: PlanoReferencia[];
+  vias?: PlanoVia[];
   accesos?: PlanoAcceso[];
+  overlays?: PlanoOverlay[];
 }
 
 const esc = (s: unknown): string =>
@@ -174,7 +192,9 @@ export function printLothPlano(opts: PlanoOptions): void {
   const basemap: PlanoBasemap = opts.basemap ?? "topo";
   const variante: PlanoVariante = opts.variante ?? "ubicacion";
   const referencias = opts.referencias ?? [];
+  const vias = opts.vias ?? [];
   const accesos = opts.accesos ?? [];
+  const overlays = opts.overlays ?? [];
   const esDispersion = variante === "dispersion";
 
   // ── 1. Encuadre ────────────────────────────────────────────────────────────
@@ -183,6 +203,7 @@ export function printLothPlano(opts: PlanoOptions): void {
     ...puntos.map((p): LatLng => [p.lat, p.lng]),
     ...censo.map((t): LatLng => [t.lat, t.lng]),
     ...referencias.map((r): LatLng => [r.lat, r.lng]),
+    ...vias.flatMap((v) => v.puntos),
   ];
   if (all.length === 0) all.push([BRAND_GEO.lat, BRAND_GEO.lng]);
   const { latMin, latMax, lngMin, lngMax, cosLat } = frameBounds(all);
@@ -196,6 +217,13 @@ export function printLothPlano(opts: PlanoOptions): void {
   const bbox = `${lngMin},${latMin},${lngMax},${latMax}`;
   const imgUrl = exportUrl(BASEMAPS[basemap], bbox, FRAME_W, FRAME_H);
   const fallbackUrl = exportUrl(BASEMAPS.satelite, bbox, FRAME_W, FRAME_H);
+  // Capas oficiales: PNG transparente del mismo bbox, apilado sobre la base.
+  const overlayImgs = overlays
+    .map(
+      (o) =>
+        `<img class="ovl" style="opacity:${o.opacity}" src="${o.url}/export?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=${FRAME_W},${FRAME_H}&format=png32&transparent=true&f=image" alt="${esc(o.label)}" onerror="this.style.display='none'" />`,
+    )
+    .join("");
 
   // ── 2. Escala + cuadrícula ─────────────────────────────────────────────────
   const groundWidthM = lngRange * cosLat * 111_320;
@@ -295,6 +323,17 @@ export function printLothPlano(opts: PlanoOptions): void {
     })
     .join("");
 
+  const svgVias = vias
+    .filter((v) => v.puntos.length >= 2)
+    .map((v) => {
+      const d = v.puntos.map(([la, ln], i) => `${i === 0 ? "M" : "L"}${px(ln).toFixed(1)},${py(la).toFixed(1)}`).join(" ");
+      return (
+        `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="6" stroke-opacity="0.6" stroke-linecap="round" />` +
+        `<path d="${d}" fill="none" stroke="${v.color}" stroke-width="3" stroke-linecap="round"${v.dash ? ` stroke-dasharray="${v.dash}"` : ""} />`
+      );
+    })
+    .join("");
+
   const svgRefs = referencias
     .map((r) => {
       const x = px(r.lng);
@@ -358,6 +397,13 @@ export function printLothPlano(opts: PlanoOptions): void {
       (e) => `<li><span class="sw tri" style="border-bottom-color:${ESTADO_COLOR[e] ?? CENSO_COLOR}"></span>${esc(ESTADO_LABEL[e] ?? e)}</li>`,
     ),
     ...seccionesLeyenda.map(([label, color]) => `<li><span class="sw dot" style="background:${color}"></span>${esc(label)}</li>`),
+    ...[...new Map(vias.map((v) => [v.tipoLabel, v] as const)).entries()].map(
+      ([label, v]) =>
+        `<li><span class="sw" style="border-top:3px ${v.dash ? "dashed" : "solid"} ${v.color};height:1px"></span>${esc(label)}</li>`,
+    ),
+    ...overlays.map(
+      (o) => `<li><span class="sw" style="background:${o.color}66;border:1px solid ${o.color}"></span>${esc(o.label)} · ${esc(o.fuente)}</li>`,
+    ),
     ...[...new Map(referencias.map((r) => [r.tipoLabel, r.color])).entries()].map(
       ([label, color]) => `<li><span class="sw dot" style="background:${color}"></span>${esc(label)}</li>`,
     ),
@@ -419,6 +465,7 @@ export function printLothPlano(opts: PlanoOptions): void {
   .mapwrap { position: relative; padding: 17px 46px; border: 1px solid #111827; background: #fff; }
   .frame { position: relative; width: 100%; aspect-ratio: ${FRAME_W} / ${FRAME_H}; border: 1.5px solid #111827; overflow: hidden; background: #e5e7eb; }
   .frame > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
+  .frame > img.ovl { pointer-events: none; }
   .frame > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
   .ruler { position: absolute; font-size: 8px; font-weight: 700; color: #374151; letter-spacing: .2px; }
   .ruler.top, .ruler.bot { left: 46px; right: 46px; height: 17px; }
@@ -484,8 +531,9 @@ export function printLothPlano(opts: PlanoOptions): void {
 
     <div class="frame">
       <img src="${imgUrl}" alt="Base cartográfica del área de aprovechamiento" onerror="this.onerror=null;this.src='${fallbackUrl}'" />
+      ${overlayImgs}
       <svg viewBox="0 0 ${FRAME_W} ${FRAME_H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        ${gridPaths}${svgParcela}${svgCenso}${svgPuntos}${svgVertices}${svgRefs}${svgScaleBar}
+        ${gridPaths}${svgVias}${svgParcela}${svgCenso}${svgPuntos}${svgVertices}${svgRefs}${svgScaleBar}
       </svg>
 
       ${coordOverlay}
@@ -525,7 +573,7 @@ export function printLothPlano(opts: PlanoOptions): void {
   </div>
 
   <p class="note">
-    Fuente: ${esc(meta.fuente)}. Elaborado por ${dash(meta.elaboradoPor)} desde el Libro de Operaciones del Titular (LO-TH) —
+    Fuente: ${esc(meta.fuente)}${overlays.length ? ` · capas oficiales: ${overlays.map((o) => `${esc(o.label)} (${esc(o.fuente)})`).join(", ")}` : ""}. Elaborado por ${dash(meta.elaboradoPor)} desde el Libro de Operaciones del Titular (LO-TH) —
     geometría declarada por el titular y censo forestal registrado en el plan de manejo. Coordenadas proyectadas UTM sobre
     Datum WGS 84, zona ${esc(zoneLabel(zone, south))}; la conversión es analítica (serie de Snyder, error &lt; 1 m) y no sustituye un
     levantamiento geodésico. Documento de referencia para fiscalización y para la Declaración de Diligencia Debida (EUDR ·

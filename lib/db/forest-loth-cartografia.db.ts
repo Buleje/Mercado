@@ -40,7 +40,7 @@ export const ForestLothCartografiaDB = {
       action: "loth_cartografia_update",
       entity: "ForestLothCartografia",
       entityId: tenantId,
-      detail: `Actualizó la cartografía del plano (${carto.referencias.length} referencia(s) · ${carto.accesos.length} tramo(s) de acceso)`,
+      detail: `Actualizó la cartografía del plano (${carto.referencias.length} referencia(s) · ${carto.vias.length} vía(s) · ${carto.accesos.length} tramo(s) de acceso)`,
       user,
     });
     return carto;

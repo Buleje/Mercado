@@ -240,6 +240,13 @@ export function distanceM(a: LatLng, b: LatLng): number {
   return 2 * R_EARTH * Math.asin(Math.min(1, Math.sqrt(s)));
 }
 
+/** Longitud de una polilínea ABIERTA (m) — traza de una vía, no un anillo. */
+export function lineLengthM(path: LatLng[]): number {
+  let total = 0;
+  for (let i = 1; i < path.length; i++) total += distanceM(path[i - 1], path[i]);
+  return total;
+}
+
 /** Perímetro del anillo cerrado (m). */
 export function perimeterM(ring: LatLng[]): number {
   if (ring.length < 2) return 0;

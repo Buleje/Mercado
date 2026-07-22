@@ -16,7 +16,7 @@ import { formatDistance, formatDms, formatMeters, niceBarLength, toUtm } from "@
 export interface LegendItem {
   label: string;
   color: string;
-  shape: "dot" | "tree" | "poly" | "grid";
+  shape: "dot" | "tree" | "poly" | "grid" | "line";
 }
 
 interface Props {
@@ -50,6 +50,9 @@ function Swatch({ item }: { item: LegendItem }) {
         aria-hidden="true"
       />
     );
+  }
+  if (item.shape === "line") {
+    return <span className="h-0 w-4 flex-none border-t-[3px]" style={{ borderColor: item.color }} aria-hidden="true" />;
   }
   if (item.shape === "grid") {
     return <span className="h-0 w-4 flex-none border-t-2 border-dashed" style={{ borderColor: item.color }} aria-hidden="true" />;

@@ -16,11 +16,13 @@ import { CardTitle } from "@buleje/design-system";
 import {
   MOVILIDADES,
   REFERENCIA_TIPOS,
+  VIA_TIPOS,
   type LothAcceso,
   type LothCartografia,
   type LothReferencia,
+  type LothVia,
 } from "@/lib/forestal/loth-cartografia";
-import { formatMeters, toUtm } from "@/lib/forestal/loth-utm";
+import { formatDistance, formatMeters, lineLengthM, toUtm } from "@/lib/forestal/loth-utm";
 
 const INPUT =
   "h-10 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)]";
@@ -52,6 +54,10 @@ export default function LothContextoPanel({
   const patchRef = (id: string, patch: Partial<LothReferencia>) =>
     onChange({ ...cartografia, referencias: referencias.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
   const delRef = (id: string) => onChange({ ...cartografia, referencias: referencias.filter((r) => r.id !== id) });
+
+  const patchVia = (id: string, patch: Partial<LothVia>) =>
+    onChange({ ...cartografia, vias: cartografia.vias.map((v) => (v.id === id ? { ...v, ...patch } : v)) });
+  const delVia = (id: string) => onChange({ ...cartografia, vias: cartografia.vias.filter((v) => v.id !== id) });
 
   const patchAcc = (id: string, patch: Partial<LothAcceso>) =>
     onChange({ ...cartografia, accesos: accesos.map((a) => (a.id === id ? { ...a, ...patch } : a)) });
@@ -157,6 +163,56 @@ export default function LothContextoPanel({
                   </li>
                 );
               })}
+            </ul>
+          )}
+        </div>
+
+        {/* Vías */}
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+            Vías y ríos ({cartografia.vias.length})
+          </p>
+          {cartografia.vias.length === 0 ? (
+            <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
+              Usá <b>Trazar vía</b> arriba del mapa para dibujar la carretera, la trocha de arrastre o el río.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {cartografia.vias.map((v) => (
+                <li key={v.id} className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      value={v.nombre}
+                      onChange={(e) => patchVia(v.id, { nombre: e.target.value })}
+                      aria-label="Nombre de la vía"
+                      className={`${INPUT} min-w-[8rem] flex-1 font-bold`}
+                    />
+                    <select
+                      value={v.tipo}
+                      onChange={(e) => patchVia(v.id, { tipo: e.target.value as LothVia["tipo"] })}
+                      aria-label="Tipo de vía"
+                      className={`${INPUT} w-44`}
+                    >
+                      {VIA_TIPOS.map((t) => (
+                        <option key={t.tipo} value={t.tipo}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => delVia(v.id)}
+                      aria-label={`Borrar ${v.nombre}`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-700)] hover:bg-[var(--surface-raised)] dark:text-[var(--data-error-500)]"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <p className="mt-1 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                    {v.puntos.length} punto(s) · {formatDistance(lineLengthM(v.puntos))}
+                  </p>
+                </li>
+              ))}
             </ul>
           )}
         </div>

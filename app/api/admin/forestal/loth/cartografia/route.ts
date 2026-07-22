@@ -13,7 +13,7 @@ import { withApiHandler } from "@/lib/api-handler";
  * UMF…) y el cuadro de ACCESOS (tramo · tiempo · movilidad).
  *
  * GET — lee la cartografía del tenant.
- * PUT — la reemplaza { referencias[], accesos[], nota }.
+ * PUT — la reemplaza { referencias[], vias[], accesos[], nota }.
  *
  * Guard: requireAdmin → rate limit → spec:forestal:loth-libro.
  */
@@ -31,6 +31,17 @@ const putSchema = z.object({
       }),
     )
     .max(120)
+    .default([]),
+  vias: z
+    .array(
+      z.object({
+        id: z.string().trim().max(40).optional(),
+        nombre: z.string().trim().max(80),
+        tipo: z.string().trim().max(20),
+        puntos: z.array(z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)])).max(500),
+      }),
+    )
+    .max(40)
     .default([]),
   accesos: z
     .array(
