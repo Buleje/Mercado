@@ -139,7 +139,7 @@ export function AdminTopHeader({
         // en cel. Anulamos también el bg-image (bg-none) para que no quede el
         // gradient encima. En sm+ se respeta el theme configurado.
         "max-sm:bg-[var(--surface-raised)]! max-sm:bg-none! max-sm:text-[var(--text-primary)]! max-sm:border-[var(--rule-base)]!",
-        "border-b px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
+        "@container border-b px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
         headerThemeClasses,
         presentationMode && "hidden!"
       )}
@@ -169,7 +169,7 @@ export function AdminTopHeader({
             // Brandon 2026-05-28: en MOBILE = botón lupa cuadrado branded
             // (teal-soft + accent), igual que la hamburguesa. En sm+ vuelve a
             // ser el pill ancho con placeholder y atajo ⌘K (theme-aware).
-            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-xl sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer transition-all shrink-0 sm:shrink",
+            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-xl sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer transition-all shrink-0 sm:shrink sm:min-w-11",
             "max-sm:bg-[var(--accent-soft)]! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
             "sm:border",
             isAutoDarkTheme
@@ -208,7 +208,7 @@ export function AdminTopHeader({
             rel="noopener noreferrer"
             title="Abrir tienda en nueva pestaña"
             className={cn(
-              "hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0",
+              "hidden @min-[72rem]:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0",
               isAutoDarkTheme
                 ? "border-[color-mix(in oklab, var(--accent) 30%, transparent)] bg-[color-mix(in oklab, var(--accent) 10%, transparent)] text-[color-mix(in oklab, var(--accent) 60%, white)] hover:bg-[color-mix(in oklab, var(--accent) 18%, transparent)]"
                 : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
@@ -232,7 +232,7 @@ export function AdminTopHeader({
       </div>
 
       {/* Right: actions */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex min-w-0 items-center gap-1">
         {/* Ver mi tienda — CTA explícito que abre el storefront público en pestaña
             nueva (Brandon 2026-06-07). El dueño salta de administrar a ver lo que
             ve el cliente. Siempre visible (ícono en mobile, +label en sm+). */}
@@ -254,7 +254,7 @@ export function AdminTopHeader({
             )}
           >
             <StoreIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-            <span className="hidden sm:inline">Ver mi tienda</span>
+            <span className="hidden @min-[56rem]:inline">Ver mi tienda</span>
             <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
           </Link>
         )}
@@ -262,7 +262,7 @@ export function AdminTopHeader({
         <AdminChatNavButton />
         {/* Mensajes de la plataforma (Buleje → dueño) — Messenger ADR-132 */}
         <AdminPlatformInboxButton />
-        <div className="hidden sm:block">
+        <div className="hidden @min-[44rem]:block">
           <NotificationBell />
         </div>
 
