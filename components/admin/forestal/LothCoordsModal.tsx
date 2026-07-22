@@ -83,7 +83,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[88vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-2xl">
+      <div className="flex max-h-[88vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
         <header className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Importar coordenadas</p>

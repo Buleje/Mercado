@@ -773,6 +773,11 @@ export class ForestLothDB {
         hcM: t.alturaComercialM ? Number(t.alturaComercialM) : null,
         vol: t.volumenEstimadoM3 ? Number(t.volumenEstimadoM3) : null,
         meta: t.parcelaCorta ?? null,
+        // Coordenada del censo: el alta de Tala la hereda como GPS de la
+        // operación (cobertura EUDR sin volver al monte) — ver LothGpsField.
+        utmZona: t.utmZona ?? null,
+        utmX: t.utmX ? Number(t.utmX) : null,
+        utmY: t.utmY ? Number(t.utmY) : null,
       }));
     }
 

@@ -29,6 +29,8 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
 import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
 import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
+import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
+import LothGpsField from "./LothGpsField";
 
 interface Props {
   section: LothSection;
@@ -114,8 +116,6 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   // ── GPS + foto de evidencia ───────────────────────────────────────────
   const [gpsLat, setGpsLat] = useState<number | null>(null);
   const [gpsLng, setGpsLng] = useState<number | null>(null);
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [gpsError, setGpsError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -127,6 +127,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     kind: string; code: string | null; species: string | null; scientific: string | null; cites?: boolean;
     dapM?: number | null; hcM?: number | null; vol?: number | null; productType?: string | null;
     quantity?: number | null; unit?: string | null; meta?: string | null; trozaCode?: string | null;
+    utmZona?: string | null; utmX?: number | null; utmY?: number | null;
   }
   const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -209,6 +210,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       if (it.code) setTreeCode(it.code);
       if (it.dapM) { setDiamMayor(String(it.dapM)); setDiamMenor(String(it.dapM)); }
       if (it.hcM) setLengthM(String(it.hcM));
+      aplicarCoordCenso(it.code, it.utmZona ?? null, it.utmX ?? null, it.utmY ?? null);
     } else if (section === "trozado") {
       // Prefill un código de troza COMPLETO y válido (árbol + "-A"); el operador lo
       // ajusta a B/C… para las siguientes trozas del mismo árbol. Antes quedaba
@@ -251,9 +253,31 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     treeCode: string; speciesCommon: string | null; speciesScientific: string | null;
     cites: boolean; dapM: string | null; alturaComercialM: string | null;
     volumenEstimadoM3: string | null; estado: string;
+    utmZona: string | null; utmX: string | null; utmY: string | null;
   }
   const [censusTree, setCensusTree] = useState<CensusTree | null>(null);
+  /** Coordenada UTM del árbol elegido (del picker o del lookup por código). */
+  const [censoUtm, setCensoUtm] = useState<{ code: string; zona: string | null; x: number; y: number } | null>(null);
   const [censusChecked, setCensusChecked] = useState(false);
+
+  /**
+   * El censo ya trae la coordenada del árbol: la operación la hereda como GPS
+   * si todavía no tiene una (el GPS del teléfono, más preciso, siempre gana).
+   */
+  function aplicarCoordCenso(code: string | null, zona: string | null, x: number | null, y: number | null) {
+    if (x == null || y == null || x <= 0 || y <= 0) {
+      setCensoUtm(null);
+      return;
+    }
+    setCensoUtm({ code: code ?? "", zona, x, y });
+    if (gpsLat != null || gpsLng != null) return;
+    const { zone, south } = parseUtmZone(zona);
+    const [la, ln] = fromUtm(x, y, zone, south);
+    if (Number.isFinite(la) && Number.isFinite(ln) && Math.abs(la) <= 90 && Math.abs(ln) <= 180) {
+      setGpsLat(la);
+      setGpsLng(ln);
+    }
+  }
 
   async function lookupCensus(code: string) {
     const c = code.trim();
@@ -272,6 +296,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       const slugMatch = speciesOptions.find((s) => s.commonName.toLowerCase() === common);
       if (slugMatch) setSpeciesSlug(slugMatch.slug);
       else if (tree.speciesCommon) { setSpeciesSlug("otro"); setCustomSpecies(tree.speciesCommon); }
+      aplicarCoordCenso(tree.treeCode, tree.utmZona, tree.utmX ? Number(tree.utmX) : null, tree.utmY ? Number(tree.utmY) : null);
       // Prefill de medidas estimadas (solo en Tala; el usuario ajusta a lo real)
       if (section === "tala") {
         if (tree.dapM && !diamMayor) setDiamMayor(String(Number(tree.dapM)));
@@ -351,27 +376,6 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     return { label: "N° de GTF", value: gtfNumber.trim() || "—", unit: "" };
   }, [fields, volumeM3, autoVolume, quantity, unit, section, gtfNumber]);
 
-  function captureGps() {
-    if (!navigator.geolocation) {
-      setGpsError("Geolocalización no disponible en este dispositivo.");
-      return;
-    }
-    setGpsLoading(true);
-    setGpsError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGpsLat(pos.coords.latitude);
-        setGpsLng(pos.coords.longitude);
-        setGpsLoading(false);
-      },
-      (err) => {
-        setGpsError(`No se pudo obtener la ubicación: ${err.message}`);
-        setGpsLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
-
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -405,7 +409,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     setDiamMayor(""); setDiamMenor(""); setLengthM(""); setVolumeM3("");
     setQuantity(""); setPieces(""); setGtfNumber(""); setDiscarded(false);
     setConsumoInterno(false); setObservations("");
-    setGpsLat(null); setGpsLng(null); setGpsError(null);
+    setGpsLat(null); setGpsLng(null); setCensoUtm(null);
     setPhotoUrl(null); setPhotoError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -864,40 +868,16 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
               Evidencia de campo <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
             </CardTitle>
 
-            {/* GPS */}
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={captureGps}
-                disabled={gpsLoading}
-                className="inline-flex h-12 items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {gpsLoading
-                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : <MapPin className="h-4 w-4 text-[var(--data-success-600)]" />
-                }
-                {gpsLoading ? "Obteniendo GPS…" : gpsLat != null ? "Actualizar ubicación GPS" : "Capturar ubicación GPS"}
-              </button>
-              {gpsError && (
-                <p className="flex items-center gap-1.5 text-xs text-[var(--data-error-700)]">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{gpsError}
-                </p>
-              )}
-              {gpsLat != null && gpsLng != null && (
-                <p className="flex items-center gap-1.5 text-xs text-[var(--data-success-700)]">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-mono tabular-nums">{gpsLat.toFixed(6)}, {gpsLng.toFixed(6)}</span>
-                  <a
-                    href={`https://www.openstreetmap.org/?mlat=${gpsLat}&mlon=${gpsLng}#map=17/${gpsLat}/${gpsLng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-0.5 underline underline-offset-2"
-                  >
-                    Ver en mapa <ExternalLink className="h-3 w-3" />
-                  </a>
-                </p>
-              )}
-            </div>
+            {/* GPS — teléfono, censo o UTM tecleada */}
+            <LothGpsField
+              lat={gpsLat}
+              lng={gpsLng}
+              onChange={(la, ln) => {
+                setGpsLat(la);
+                setGpsLng(ln);
+              }}
+              censo={censoUtm}
+            />
 
             {/* Foto */}
             <div className="space-y-2">
