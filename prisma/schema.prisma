@@ -4690,8 +4690,28 @@ model DocumentFolder {
   parent    DocumentFolder?  @relation("DocumentFolderTree", fields: [parentId], references: [id], onDelete: Cascade)
   children  DocumentFolder[] @relation("DocumentFolderTree")
   documents Document[]
+  shares    DocumentFolderShare[]
 
   @@index([tenantId, parentId])
+}
+
+model DocumentFolderShare {
+  id           String    @id @default(cuid())
+  folderId     String
+  tenantId     String
+  token        String    @unique
+  expiresAt    DateTime
+  password     String?
+  createdById  String
+  createdAt    DateTime  @default(now())
+  accessCount  Int       @default(0)
+  lastAccessAt DateTime?
+  revokedAt    DateTime?
+
+  folder DocumentFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([tenantId, createdAt])
 }
 
 model DocumentVersion {

@@ -24,7 +24,7 @@ import {
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
-  ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine,
+  ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -36,6 +36,7 @@ import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
 import { MoveToFolderModal } from "./MoveToFolderModal";
 import { FolderEditModal } from "./FolderEditModal";
+import { FolderShareModal } from "./FolderShareModal";
 import { FolderGlyph } from "./folder-visuals";
 import { ActivityView } from "./ActivityView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
@@ -132,6 +133,8 @@ export default function DocumentosModule() {
   const [signDoc, setSignDoc] = useState<DbDocument | null>(null);
   // Personalizar carpeta (nombre + color + ícono).
   const [editingFolder, setEditingFolder] = useState<DbDocumentFolder | null>(null);
+  // Compartir carpeta completa por link.
+  const [sharingFolder, setSharingFolder] = useState<DbDocumentFolder | null>(null);
   // Editor de taxonomía de etiquetas.
   const [showTags, setShowTags] = useState(false);
 
@@ -788,6 +791,15 @@ export default function DocumentosModule() {
                       </button>
                       <button
                         type="button"
+                        onClick={(e) => { e.stopPropagation(); setSharingFolder(f); }}
+                        className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
+                        aria-label={`Compartir carpeta ${f.name}`}
+                        title="Compartir carpeta por link"
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f); }}
                         className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)] transition-all"
                         aria-label={`Eliminar carpeta ${f.name}`}
@@ -1224,6 +1236,10 @@ export default function DocumentosModule() {
           onSave={(patch) => updateFolder(editingFolder.id, patch)}
           onClose={() => setEditingFolder(null)}
         />
+      )}
+
+      {sharingFolder && (
+        <FolderShareModal folder={sharingFolder} onClose={() => setSharingFolder(null)} />
       )}
 
       {showTags && (

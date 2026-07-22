@@ -776,6 +776,77 @@ export class DocumentsDB {
     });
   }
 
+  // ── Folder shares (compartir carpeta completa) ──────────────────────────────
+
+  static async createFolderShare(
+    tenantId: string,
+    folderId: string,
+    input: { createdById: string; expiresInDays?: number }
+  ): Promise<{ token: string; expiresAt: string } | null> {
+    const folder = await prisma.documentFolder.findFirst({
+      where: { id: folderId, tenantId },
+      select: { id: true },
+    });
+    if (!folder) return null;
+    const ttlDays = Math.max(1, Math.min(90, input.expiresInDays ?? 30));
+    const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
+    const s = await prisma.documentFolderShare.create({
+      data: { folderId, tenantId, token: randomToken(24), expiresAt, createdById: input.createdById },
+    });
+    return { token: s.token, expiresAt: s.expiresAt.toISOString() };
+  }
+
+  /**
+   * Vista pública por token de carpeta. Valida token + expiry + revoke. Devuelve la
+   * carpeta + sus documentos directos (no borrados). NO requiere tenantId.
+   */
+  static async findByFolderShareToken(token: string): Promise<{
+    folder: { id: string; name: string };
+    docs: { id: string; name: string; mimeType: string; size: number; uploadedAt: string }[];
+    expiresAt: string;
+  } | null> {
+    const share = await prisma.documentFolderShare.findUnique({
+      where: { token },
+      include: { folder: { select: { id: true, name: true } } },
+    });
+    if (!share || share.revokedAt || share.expiresAt.getTime() < Date.now()) return null;
+    const docs = await prisma.document.findMany({
+      where: { folderId: share.folderId, tenantId: share.tenantId, deletedAt: null },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, mimeType: true, size: true, uploadedAt: true },
+    });
+    return {
+      folder: { id: share.folder.id, name: share.folder.name },
+      docs: docs.map((d) => ({ id: d.id, name: d.name, mimeType: d.mimeType, size: d.size, uploadedAt: d.uploadedAt.toISOString() })),
+      expiresAt: share.expiresAt.toISOString(),
+    };
+  }
+
+  /** storagePath de un doc dentro de una carpeta compartida (valida pertenencia). */
+  static async getFolderShareDocPath(
+    token: string,
+    docId: string
+  ): Promise<{ storagePath: string; mimeType: string; name: string } | null> {
+    const share = await prisma.documentFolderShare.findUnique({
+      where: { token },
+      select: { folderId: true, tenantId: true, revokedAt: true, expiresAt: true },
+    });
+    if (!share || share.revokedAt || share.expiresAt.getTime() < Date.now()) return null;
+    const doc = await prisma.document.findFirst({
+      where: { id: docId, folderId: share.folderId, tenantId: share.tenantId, deletedAt: null },
+      select: { storagePath: true, mimeType: true, name: true },
+    });
+    return doc ? { storagePath: doc.storagePath, mimeType: doc.mimeType, name: doc.name } : null;
+  }
+
+  static async incrementFolderShareAccess(token: string): Promise<void> {
+    // `token` es @unique → update directo (no updateMany, que exigiría tenantId).
+    await prisma.documentFolderShare.update({
+      where: { token },
+      data: { accessCount: { increment: 1 }, lastAccessAt: new Date() },
+    });
+  }
+
   // ── Audit log ──────────────────────────────────────────────────────────────
 
   static async log(
