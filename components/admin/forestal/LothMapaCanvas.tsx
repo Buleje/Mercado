@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { pointInPolygon } from "@/lib/forestal/loth-geo";
 import { dominantZone, gridLabel, utmGrid, vertexCode } from "@/lib/forestal/loth-utm";
+import { referenciaMeta, type LothReferencia } from "@/lib/forestal/loth-cartografia";
 import {
   arbolPopupHtml,
   operacionPopupHtml,
@@ -49,6 +50,11 @@ const MAX_PERMANENT_LABELS = 12;
 interface Props {
   geo: GeoEntry[];
   censo: CensoTree[];
+  /** Referencias del plano (centros poblados, campamentos, ingreso a la UMF…). */
+  referencias: LothReferencia[];
+  /** Modo "marcar referencia": el próximo click en el mapa crea una. */
+  markMode: boolean;
+  onMarkReferencia: (v: LatLng) => void;
   parcela: LatLng[];
   declarada: boolean;
   draft: LatLng[];
@@ -73,6 +79,9 @@ interface Props {
 export default function LothMapaCanvas({
   geo,
   censo,
+  referencias,
+  markMode,
+  onMarkReferencia,
   parcela,
   declarada,
   draft,
@@ -97,6 +106,7 @@ export default function LothMapaCanvas({
   const parcelaRef = useRef<any>(null);
   const draftRef = useRef<any>(null);
   const markersRef = useRef<any>(null);
+  const refsRef = useRef<any>(null);
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const fittedRef = useRef(0);
   const [ready, setReady] = useState(false);
@@ -114,6 +124,7 @@ export default function LothMapaCanvas({
       gridRef.current = L.layerGroup().addTo(map);
       parcelaRef.current = L.layerGroup().addTo(map);
       markersRef.current = L.layerGroup().addTo(map);
+      refsRef.current = L.layerGroup().addTo(map);
       draftRef.current = L.layerGroup().addTo(map);
       setReady(true);
     });
@@ -354,6 +365,47 @@ export default function LothMapaCanvas({
         .addTo(group);
     }
   }, [ready, geo, censo, parcela, declarada]);
+
+  // ── Referencias del plano ──────────────────────────────────────────────────
+  useEffect(() => {
+    const L = LRef.current;
+    const group = refsRef.current;
+    if (!ready || !L || !group) return;
+    group.clearLayers();
+    for (const r of referencias) {
+      const meta = referenciaMeta(r.tipo);
+      L.marker([r.lat, r.lng], {
+        keyboard: false,
+        icon: L.divIcon({
+          className: "loth-ref-pin",
+          html: `<span style="background:${meta.color}"></span>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        }),
+      })
+        .bindTooltip(r.nombre, { permanent: true, direction: "right", className: "loth-ref-label", offset: [8, 0] })
+        .bindPopup(
+          `<div style="font:600 12px/1.5 system-ui"><b>${r.nombre.replace(/</g, "&lt;")}</b><br/>${meta.label}${
+            r.nota ? `<br/><span style="opacity:.75">${r.nota.replace(/</g, "&lt;")}</span>` : ""
+          }</div>`,
+        )
+        .addTo(group);
+    }
+  }, [ready, referencias]);
+
+  // Modo "marcar referencia": un click deja el punto donde se tocó.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !markMode) return;
+    (map.getContainer() as HTMLElement).style.cursor = "crosshair";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onClick = (e: any) => onMarkReferencia([e.latlng.lat, e.latlng.lng]);
+    map.on("click", onClick);
+    return () => {
+      map.off("click", onClick);
+      if (mapRef.current) (mapRef.current.getContainer() as HTMLElement).style.cursor = "";
+    };
+  }, [ready, markMode, onMarkReferencia]);
 
   // ── Encuadre (cuando el orquestador lo pide) ───────────────────────────────
   useEffect(() => {

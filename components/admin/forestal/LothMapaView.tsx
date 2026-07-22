@@ -37,11 +37,18 @@ import {
 } from "@/lib/forestal/loth-geo";
 import { dominantZone, hullBuffer, zoneLabel } from "@/lib/forestal/loth-utm";
 import { buildKml } from "@/lib/forestal/loth-coords-io";
+import {
+  emptyCartografia,
+  normalizeCartografia,
+  referenciaMeta,
+  type LothCartografia,
+} from "@/lib/forestal/loth-cartografia";
 import { printLothPlano, type PlanoBasemap } from "@/lib/forestal/loth-plano-print";
 import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
 import LothEudrRail from "./LothEudrRail";
 import LothMapaCanvasRaw, { type BasemapId } from "./LothMapaCanvas";
 import LothMapaChrome, { type LegendItem } from "./LothMapaChrome";
+import LothContextoPanel from "./LothContextoPanel";
 import LothCoordsModal from "./LothCoordsModal";
 import LothMapaDrawBar from "./LothMapaDrawBar";
 import LothMapaToolbar from "./LothMapaToolbar";
@@ -116,19 +123,26 @@ export default function LothMapaView() {
   const [saving, setSaving] = useState(false);
   const [coordsOpen, setCoordsOpen] = useState(false);
 
+  // Contexto del plano: referencias del territorio + cuadro de acceso.
+  const [carto, setCarto] = useState<LothCartografia>(emptyCartografia());
+  const [markMode, setMarkMode] = useState(false);
+  const [savingCarto, setSavingCarto] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [eRes, pRes, plRes, cRes] = await Promise.all([
+      const [eRes, pRes, plRes, cRes, gRes] = await Promise.all([
         fetch("/api/admin/forestal/loth?limit=500&includeAnnulled=1", { credentials: "include" }),
         fetch("/api/admin/forestal/loth/parcela", { credentials: "include" }),
         fetch("/api/admin/forestal/plan?active=1", { credentials: "include" }),
         fetch("/api/admin/forestal/loth/caratula", { credentials: "include" }),
+        fetch("/api/admin/forestal/loth/cartografia", { credentials: "include" }),
       ]);
       if (!eRes.ok) throw new Error((await eRes.json().catch(() => ({}))).message ?? `HTTP ${eRes.status}`);
       setRaw((await eRes.json()).entries ?? []);
       if (pRes.ok) setParcela(normalizeParcela((await pRes.json()).parcela));
+      if (gRes.ok) setCarto(normalizeCartografia((await gRes.json()).cartografia));
       if (cRes.ok) {
         const active = (await cRes.json()).active;
         setCaratula(
@@ -279,6 +293,44 @@ export default function LothMapaView() {
       }),
     [],
   );
+  /** Marca una referencia donde el usuario tocó (se renombra en el panel). */
+  const marcarReferencia = useCallback((v: LatLng) => {
+    setCarto((c) => ({
+      ...c,
+      referencias: [
+        ...c.referencias,
+        {
+          id: `ref-${c.referencias.length + 1}-${c.referencias.length}`,
+          nombre: `Referencia ${c.referencias.length + 1}`,
+          tipo: "centro_poblado" as const,
+          lat: v[0],
+          lng: v[1],
+          nota: "",
+        },
+      ],
+    }));
+    setMarkMode(false);
+  }, []);
+
+  const guardarCartografia = useCallback(async () => {
+    setSavingCarto(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/forestal/loth/cartografia", {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ referencias: carto.referencias, accesos: carto.accesos, nota: carto.nota }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      setCarto(normalizeCartografia((await r.json()).cartografia));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSavingCarto(false);
+    }
+  }, [carto]);
+
   const onCursor = useCallback((p: LatLng | null) => setCursor(p), []);
   const onView = useCallback((v: { metersPerPixel: number }) => setMetersPerPixel(v.metersPerPixel), []);
 
@@ -350,37 +402,62 @@ export default function LothMapaView() {
     return zoneLabel(dominantZone(ref), ref[0][0] < 0);
   }, [parcela.vertices, censoAll]);
 
-  const doPrintPlano = () => {
+  const planoBase = () => ({
+    parcela: parcela.vertices,
+    puntos: geoShown.map((g) => ({
+      lat: g.lat,
+      lng: g.lng,
+      label: g.code,
+      seccionLabel: SECTION_LABEL[g.section] ?? g.section,
+      color: SECTION_COLOR[g.section] ?? "#334155",
+    })),
+    censo: censoShown.map((t) => ({ lat: t.lat, lng: t.lng, code: t.code, species: t.species, estado: t.estado })),
+    basemap: PRINT_BASEMAP[basemap],
+    referencias: carto.referencias.map((r) => {
+      const m = referenciaMeta(r.tipo);
+      return { lat: r.lat, lng: r.lng, nombre: r.nombre, tipoLabel: m.label, color: m.color };
+    }),
+    accesos: carto.accesos.map((a) => ({ lugar: a.lugar, tiempo: a.tiempo, movilidad: a.movilidad })),
+    meta: {
+      titulo: "Plano de ubicación del área de aprovechamiento",
+      mapaNumero: "1",
+      sector: parcela.nota || plan?.parcelaCorta || null,
+      distrito: caratula?.distrito ?? null,
+      provincia: caratula?.provincia ?? null,
+      departamento: caratula?.departamento ?? plan?.region ?? null,
+      titular: plan?.titularName ?? caratula?.titularName ?? null,
+      tituloHabilitante: plan?.tituloHabilitante ?? caratula?.tituloHabilitante ?? null,
+      planNumber: plan?.planNumber ?? null,
+      resolucion: plan?.resolucionNumber ?? null,
+      arffs: plan?.arffs ?? null,
+      parcelaCorta: plan?.parcelaCorta ?? null,
+      areaAutorizadaHa: plan?.areaHa ?? null,
+      elaboradoPor: plan?.titularName ?? null,
+      fuente: "Esri World Topo/Imagery · censo forestal y GPS de campo del Libro de Operaciones",
+    },
+  });
+
+  /** Mapa 2: dispersión del censo + referencias + cuadro de acceso. */
+  const doPrintDispersion = () => {
     try {
+      const base = planoBase();
       printLothPlano({
-        parcela: parcela.vertices,
-        puntos: geoShown.map((g) => ({
-          lat: g.lat,
-          lng: g.lng,
-          label: g.code,
-          seccionLabel: SECTION_LABEL[g.section] ?? g.section,
-          color: SECTION_COLOR[g.section] ?? "#334155",
-        })),
-        censo: censoShown.map((t) => ({ lat: t.lat, lng: t.lng, code: t.code, species: t.species, estado: t.estado })),
-        basemap: PRINT_BASEMAP[basemap],
+        ...base,
+        variante: "dispersion",
         meta: {
-          titulo: "Plano de ubicación del área de aprovechamiento",
-          mapaNumero: "1",
-          sector: parcela.nota || plan?.parcelaCorta || null,
-          distrito: caratula?.distrito ?? null,
-          provincia: caratula?.provincia ?? null,
-          departamento: caratula?.departamento ?? plan?.region ?? null,
-          titular: plan?.titularName ?? caratula?.titularName ?? null,
-          tituloHabilitante: plan?.tituloHabilitante ?? caratula?.tituloHabilitante ?? null,
-          planNumber: plan?.planNumber ?? null,
-          resolucion: plan?.resolucionNumber ?? null,
-          arffs: plan?.arffs ?? null,
-          parcelaCorta: plan?.parcelaCorta ?? null,
-          areaAutorizadaHa: plan?.areaHa ?? null,
-          elaboradoPor: plan?.titularName ?? null,
-          fuente: "Esri World Topo/Imagery · censo forestal y GPS de campo del Libro de Operaciones",
+          ...base.meta,
+          titulo: "Plano de dispersión y accesos de la UMF",
+          mapaNumero: "2",
         },
       });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const doPrintPlano = () => {
+    try {
+      printLothPlano(planoBase());
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -442,6 +519,9 @@ export default function LothMapaView() {
             <LothMapaCanvas
               geo={geoShown}
               censo={censoShown}
+              referencias={carto.referencias}
+              markMode={markMode}
+              onMarkReferencia={marcarReferencia}
               parcela={parcela.vertices}
               declarada={declarada}
               draft={draft}
@@ -519,6 +599,16 @@ export default function LothMapaView() {
           if (!drawMode) startDraw();
           setCoordsOpen(true);
         }}
+      />
+
+      <LothContextoPanel
+        cartografia={carto}
+        markMode={markMode}
+        saving={savingCarto}
+        onChange={setCarto}
+        onSave={guardarCartografia}
+        onToggleMark={() => setMarkMode((v) => !v)}
+        onPrintDispersion={doPrintDispersion}
       />
 
       <LothCoordsModal

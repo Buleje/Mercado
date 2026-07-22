@@ -31,7 +31,9 @@ export type LothAuditEntity =
   // KV (como ForestLothCites): el cierre de período del libro.
   | "ForestLothCierre"
   // KV: el polígono del área de aprovechamiento (cumplimiento EUDR).
-  | "ForestLothParcela";
+  | "ForestLothParcela"
+  // KV: referencias y accesos del plano (contexto cartográfico).
+  | "ForestLothCartografia";
 
 /** Acciones auditables del LO-TH. */
 export type LothAuditAction =
@@ -51,7 +53,9 @@ export type LothAuditAction =
   | "loth_periodo_cerrar"
   | "loth_periodo_reabrir"
   // Parcela de aprovechamiento (polígono EUDR, KV)
-  | "loth_parcela_update";
+  | "loth_parcela_update"
+  // Referencias + cuadro de acceso del plano (KV)
+  | "loth_cartografia_update";
 
 /**
  * Registra un evento del LO-TH. No se await-ea a propósito: la auditoría no debe

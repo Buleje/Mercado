@@ -1453,6 +1453,27 @@ body {
 .loth-midpoint {
   cursor: copy;
 }
+/* Referencia del plano (centro poblado, campamento, ingreso…): pin circular. */
+.loth-ref-pin span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.55);
+}
+.leaflet-tooltip.loth-ref-label {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.3);
+  border-radius: 4px;
+  box-shadow: none;
+  color: #0f172a;
+  font: 700 11px/1.25 system-ui, sans-serif;
+  padding: 1px 5px;
+}
+.leaflet-tooltip.loth-ref-label::before {
+  display: none;
+}
 .loth-grid-label {
   background: rgba(255, 255, 255, 0.82);
   border-radius: 3px;

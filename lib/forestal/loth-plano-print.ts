@@ -85,12 +85,37 @@ export interface PlanoMeta {
   fuente: string;
 }
 
+/** Referencia del territorio a dibujar (centro poblado, campamento, ingreso…). */
+export interface PlanoReferencia {
+  lat: number;
+  lng: number;
+  nombre: string;
+  tipoLabel: string;
+  color: string;
+}
+/** Fila del cuadro "ACCESO A LA UMF". */
+export interface PlanoAcceso {
+  lugar: string;
+  tiempo: string;
+  movilidad: string;
+}
+
+/**
+ * `ubicacion` (Mapa 1) = dónde queda la UMF: cuadro de coordenadas de los
+ * vértices. `dispersion` (Mapa 2) = qué hay dentro y cómo se llega: cada árbol
+ * censado rotulado, las referencias del territorio y el cuadro de acceso.
+ */
+export type PlanoVariante = "ubicacion" | "dispersion";
+
 export interface PlanoOptions {
   parcela: LatLng[];
   puntos: PlanoPunto[];
   censo: PlanoArbol[];
   meta: PlanoMeta;
   basemap?: PlanoBasemap;
+  variante?: PlanoVariante;
+  referencias?: PlanoReferencia[];
+  accesos?: PlanoAcceso[];
 }
 
 const esc = (s: unknown): string =>
@@ -147,12 +172,17 @@ const northArrowSvg = `<svg viewBox="0 0 60 76" xmlns="http://www.w3.org/2000/sv
 export function printLothPlano(opts: PlanoOptions): void {
   const { parcela, puntos, censo, meta } = opts;
   const basemap: PlanoBasemap = opts.basemap ?? "topo";
+  const variante: PlanoVariante = opts.variante ?? "ubicacion";
+  const referencias = opts.referencias ?? [];
+  const accesos = opts.accesos ?? [];
+  const esDispersion = variante === "dispersion";
 
   // ── 1. Encuadre ────────────────────────────────────────────────────────────
   const all: LatLng[] = [
     ...parcela,
     ...puntos.map((p): LatLng => [p.lat, p.lng]),
     ...censo.map((t): LatLng => [t.lat, t.lng]),
+    ...referencias.map((r): LatLng => [r.lat, r.lng]),
   ];
   if (all.length === 0) all.push([BRAND_GEO.lat, BRAND_GEO.lng]);
   const { latMin, latMax, lngMin, lngMax, cosLat } = frameBounds(all);
@@ -246,7 +276,13 @@ export function printLothPlano(opts: PlanoOptions): void {
       const x = px(t.lng);
       const y = py(t.lat);
       const fill = t.estado === "talado" ? "#b45309" : t.estado === "descartado" ? "#6b7280" : CENSO_COLOR;
-      return `<polygon points="${x.toFixed(1)},${(y - 5).toFixed(1)} ${(x + 4.5).toFixed(1)},${(y + 3.5).toFixed(1)} ${(x - 4.5).toFixed(1)},${(y + 3.5).toFixed(1)}" fill="${fill}" stroke="#fff" stroke-width="1.1" />`;
+      const tri = `<polygon points="${x.toFixed(1)},${(y - 5).toFixed(1)} ${(x + 4.5).toFixed(1)},${(y + 3.5).toFixed(1)} ${(x - 4.5).toFixed(1)},${(y + 3.5).toFixed(1)}" fill="${fill}" stroke="#fff" stroke-width="1.1" />`;
+      if (!esDispersion) return tri;
+      // Mapa 2: el árbol censado se identifica en el plano (dispersión).
+      return (
+        tri +
+        `<text x="${(x + 6).toFixed(1)}" y="${(y + 3).toFixed(1)}" font-size="9.5" font-weight="700" fill="#111827" stroke="#fff" stroke-width="2.4" paint-order="stroke">${esc(t.code)}</text>`
+      );
     })
     .join("");
 
@@ -256,6 +292,17 @@ export function printLothPlano(opts: PlanoOptions): void {
       const y = py(p.lat).toFixed(1);
       return `<circle cx="${x}" cy="${y}" r="5.5" fill="${p.color}" stroke="#fff" stroke-width="1.8" />` +
         `<text x="${x}" y="${(py(p.lat) - 9).toFixed(1)}" font-size="10" font-weight="700" text-anchor="middle" fill="#111827" stroke="#fff" stroke-width="2.4" paint-order="stroke">${esc(p.label)}</text>`;
+    })
+    .join("");
+
+  const svgRefs = referencias
+    .map((r) => {
+      const x = px(r.lng);
+      const y = py(r.lat);
+      return (
+        `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${r.color}" stroke="#fff" stroke-width="2" />` +
+        `<text x="${(x + 9).toFixed(1)}" y="${(y + 4).toFixed(1)}" font-size="11" font-weight="700" fill="#111827" stroke="#fff" stroke-width="2.6" paint-order="stroke">${esc(r.nombre)}</text>`
+      );
     })
     .join("");
 
@@ -282,12 +329,20 @@ export function printLothPlano(opts: PlanoOptions): void {
   const coordTable = verticesUtm.length
     ? `<table class="coord"><thead><tr><th>VÉRTICE</th><th>ESTE (m)</th><th>NORTE (m)</th></tr></thead><tbody>${coordRows}</tbody></table>`
     : "";
-  const coordOverlay =
-    verticesUtm.length > 0 && verticesUtm.length <= OVERLAY_MAX
+  const accesoTable = accesos.length
+    ? `<table class="coord"><thead><tr><th>TRAMO</th><th>TIEMPO</th><th>MOVILIDAD</th></tr></thead><tbody>${accesos
+        .map((a) => `<tr><td>${esc(a.lugar)}</td><td>${dash(a.tiempo)}</td><td>${dash(a.movilidad)}</td></tr>`)
+        .join("")}</tbody></table>`
+    : "";
+  const coordOverlay = esDispersion
+    ? accesoTable
+      ? `<div class="box coordbox" style="width:250px"><div class="box-h">ACCESO A LA UMF</div>${accesoTable}</div>`
+      : ""
+    : verticesUtm.length > 0 && verticesUtm.length <= OVERLAY_MAX
       ? `<div class="box coordbox"><div class="box-h">COORDENADAS UTM · ${esc(zoneLabel(zone, south))}</div>${coordTable}</div>`
       : "";
   const coordBelow =
-    verticesUtm.length > OVERLAY_MAX
+    !esDispersion && verticesUtm.length > OVERLAY_MAX
       ? `<section class="below"><h2>COORDENADAS UTM DE LOS VÉRTICES · WGS 84 ZONA ${esc(zoneLabel(zone, south))}</h2><div class="coordcols">${coordTable}</div></section>`
       : "";
 
@@ -303,6 +358,9 @@ export function printLothPlano(opts: PlanoOptions): void {
       (e) => `<li><span class="sw tri" style="border-bottom-color:${ESTADO_COLOR[e] ?? CENSO_COLOR}"></span>${esc(ESTADO_LABEL[e] ?? e)}</li>`,
     ),
     ...seccionesLeyenda.map(([label, color]) => `<li><span class="sw dot" style="background:${color}"></span>${esc(label)}</li>`),
+    ...[...new Map(referencias.map((r) => [r.tipoLabel, r.color])).entries()].map(
+      ([label, color]) => `<li><span class="sw dot" style="background:${color}"></span>${esc(label)}</li>`,
+    ),
     `<li><span class="sw grid"></span>Cuadrícula UTM cada ${esc(formatDistance(step))}</li>`,
   ]
     .filter(Boolean)
@@ -427,7 +485,7 @@ export function printLothPlano(opts: PlanoOptions): void {
     <div class="frame">
       <img src="${imgUrl}" alt="Base cartográfica del área de aprovechamiento" onerror="this.onerror=null;this.src='${fallbackUrl}'" />
       <svg viewBox="0 0 ${FRAME_W} ${FRAME_H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        ${gridPaths}${svgParcela}${svgCenso}${svgPuntos}${svgVertices}${svgScaleBar}
+        ${gridPaths}${svgParcela}${svgCenso}${svgPuntos}${svgVertices}${svgRefs}${svgScaleBar}
       </svg>
 
       ${coordOverlay}
