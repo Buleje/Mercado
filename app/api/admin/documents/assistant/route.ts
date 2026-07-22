@@ -16,7 +16,10 @@ import type { DbDocument } from "@/lib/types/documents";
  * tenant (nombre + categoría + tags + IA-tags + snippet de OCR) y le pide a la IA una
  * respuesta + los documentos relevantes. Sin IA configurada → fallback por keywords.
  */
-const Body = z.object({ question: z.string().min(2).max(500) });
+const Body = z.object({
+  question: z.string().min(2).max(500),
+  history: z.array(z.object({ q: z.string().max(500), a: z.string().max(1500) })).max(6).optional(),
+});
 const AnswerSchema = z.object({
   answer: z.string(),
   docRefs: z.array(z.number().int().min(0)).max(5),
@@ -80,7 +83,7 @@ export async function POST(req: NextRequest) {
 Índice de sus documentos (cada uno con su número [i]):
 ${index}
 
-El usuario pregunta: "${question}"
+${(parsed.data.history ?? []).length ? `Conversación previa (usala para resolver referencias como "ese", "y el vencimiento", "el anterior"):\n${(parsed.data.history ?? []).map((h) => `Usuario: ${h.q}\nAsistente: ${h.a}`).join("\n")}\n\n` : ""}El usuario pregunta ahora: "${question}"
 
 Devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma exacta:
 {"answer": "<respuesta en español, tuteo peruano, breve y concreta; si la respuesta está en el contenido de un documento, usala>", "docRefs": [<números [i] de los documentos más relevantes, máximo 5, el más relevante primero; vacío si ninguno aplica>]}`;

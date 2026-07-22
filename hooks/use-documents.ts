@@ -249,10 +249,13 @@ export interface DocAssistantAnswer {
   matchedDocs: { id: string; name: string; category: string }[];
   source: string;
 }
-export async function askDocAssistant(question: string): Promise<DocAssistantAnswer> {
+export async function askDocAssistant(
+  question: string,
+  history?: { q: string; a: string }[],
+): Promise<DocAssistantAnswer> {
   return http<DocAssistantAnswer>(`${BASE}/assistant`, {
     method: "POST",
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, history }),
   });
 }
 

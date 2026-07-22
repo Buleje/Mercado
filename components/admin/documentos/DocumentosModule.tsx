@@ -225,6 +225,31 @@ export default function DocumentosModule() {
     return m;
   }, [documents]);
 
+  // Docs analizables (PDF/texto) que todavía no fueron indexados por la IA.
+  const indexableDocs = useMemo(
+    () =>
+      documents.filter((d) => {
+        const analyzable = d.mimeType === "application/pdf" || d.mimeType.startsWith("text/");
+        const indexed = !!(d.ocrMetadata && (d.ocrMetadata as Record<string, unknown>).analyzedAt);
+        return analyzable && !indexed;
+      }),
+    [documents]
+  );
+  const handleIndexAll = useCallback(
+    async (onProgress: (done: number, total: number) => void) => {
+      const list = indexableDocs;
+      onProgress(0, list.length);
+      let done = 0;
+      for (const d of list) {
+        await analyzeDoc(d.id).catch((err) => console.warn("[documentos] analyze fail", d.id, err));
+        done += 1;
+        onProgress(done, list.length);
+      }
+      await refresh();
+    },
+    [indexableDocs, refresh]
+  );
+
   const totalSize = useMemo(() => documents.reduce((s, d) => s + d.size, 0), [documents]);
   const favCount = useMemo(() => documents.filter((d) => d.favorite).length, [documents]);
   const expiringSoonCount = useMemo(
@@ -1118,6 +1143,8 @@ export default function DocumentosModule() {
               onSign={(id) => { const d = documents.find((x) => x.id === id); if (d) setSignDoc(d); }}
               onShare={(id) => { const d = documents.find((x) => x.id === id); if (d) setWhatsappDoc(d); }}
               onApprove={(id) => { patch(id, { status: "approved" }); }}
+              indexableCount={indexableDocs.length}
+              onIndexAll={handleIndexAll}
             />
           ) : filterMode === "activity" ? (
             <ActivityView />
