@@ -59,6 +59,12 @@ interface Props {
   /** Cambia cuando el orquestador quiere re-encuadrar (ej. al terminar de cargar). */
   fitKey: number;
   onAddVertex: (v: LatLng) => void;
+  /** Arrastre de un vértice del borrador. */
+  onMoveVertex: (index: number, v: LatLng) => void;
+  /** Click derecho sobre un vértice. */
+  onDeleteVertex: (index: number) => void;
+  /** Click en el punto medio de un lado (inserta antes de `index`). */
+  onInsertVertex: (index: number, v: LatLng) => void;
   onCursor: (p: LatLng | null) => void;
   /** Escala viva del mapa (para la barra gráfica y el denominador 1:X). */
   onView: (v: { zoom: number; metersPerPixel: number }) => void;
@@ -76,6 +82,9 @@ export default function LothMapaCanvas({
   center,
   fitKey,
   onAddVertex,
+  onMoveVertex,
+  onDeleteVertex,
+  onInsertVertex,
   onCursor,
   onView,
 }: Props) {
@@ -250,24 +259,65 @@ export default function LothMapaCanvas({
     );
   }, [ready, parcela, declarada, drawMode]);
 
-  // ── Borrador en vivo ───────────────────────────────────────────────────────
+  // ── Borrador en vivo: vértices arrastrables + puntos medios para insertar ──
   useEffect(() => {
     const L = LRef.current;
     const group = draftRef.current;
     if (!ready || !L || !group) return;
     group.clearLayers();
     if (!drawMode || draft.length === 0) return;
+
     if (draft.length >= 3) {
       L.polygon(draft, { color: PARCELA_COLOR, weight: 2, dashArray: "6 4", fillColor: PARCELA_COLOR, fillOpacity: 0.1 }).addTo(group);
     } else if (draft.length === 2) {
       L.polyline(draft, { color: PARCELA_COLOR, weight: 2, dashArray: "6 4" }).addTo(group);
     }
-    draft.forEach((v, i) =>
-      L.circleMarker(v, { radius: 5, color: "#fff", weight: 2, fillColor: PARCELA_COLOR, fillOpacity: 1 })
-        .bindTooltip(vertexCode(i), { permanent: true, direction: "top", className: "loth-vertex-label", offset: [0, -6] })
-        .addTo(group),
-    );
-  }, [ready, draft, drawMode]);
+
+    // Puntos medios de cada lado: un click parte el lado en dos (vértice nuevo).
+    if (draft.length >= 2) {
+      draft.forEach((v, i) => {
+        const next = draft[(i + 1) % draft.length];
+        if (draft.length === 2 && i === 1) return; // con 2 puntos hay un solo lado
+        const mid: LatLng = [(v[0] + next[0]) / 2, (v[1] + next[1]) / 2];
+        L.circleMarker(mid, {
+          radius: 4,
+          color: PARCELA_COLOR,
+          weight: 1.5,
+          fillColor: "#fff",
+          fillOpacity: 0.85,
+          className: "loth-midpoint",
+          // Sin esto el click también llega al mapa y agrega un 2º vértice al
+          // final: los Path de Leaflet burbujean sus eventos de mouse por default.
+          bubblingMouseEvents: false,
+        })
+          .bindTooltip("Insertar vértice acá", { direction: "top", className: "loth-vertex-label", offset: [0, -6] })
+          .on("click", () => onInsertVertex(i + 1, mid))
+          .addTo(group);
+      });
+    }
+
+    // Vértices: arrastrar mueve, click derecho borra.
+    const rotula = draft.length <= MAX_PERMANENT_LABELS;
+    draft.forEach((v, i) => {
+      const marker = L.marker(v, {
+        draggable: true,
+        keyboard: false,
+        icon: L.divIcon({ className: "loth-vertex-handle", html: "", iconSize: [14, 14], iconAnchor: [7, 7] }),
+        title: `${vertexCode(i)} — arrastrá para mover · click derecho para borrar`,
+      });
+      if (rotula) {
+        marker.bindTooltip(vertexCode(i), { permanent: true, direction: "top", className: "loth-vertex-label", offset: [0, -8] });
+      }
+      marker
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .on("dragend", (e: any) => {
+          const p = e.target.getLatLng();
+          onMoveVertex(i, [p.lat, p.lng]);
+        })
+        .on("contextmenu", () => onDeleteVertex(i))
+        .addTo(group);
+    });
+  }, [ready, draft, drawMode, onInsertVertex, onMoveVertex, onDeleteVertex]);
 
   // ── Censo + operaciones ────────────────────────────────────────────────────
   useEffect(() => {

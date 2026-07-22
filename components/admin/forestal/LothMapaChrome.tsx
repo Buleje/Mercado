@@ -66,7 +66,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
   return (
     <>
       {/* Lectura de coordenadas del cursor */}
-      <div className="pointer-events-none absolute right-3 top-3 z-[500] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur">
+      <div className="pointer-events-none absolute right-3 top-3 z-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
           {utm ? `UTM ${utm.zone}${utm.band} · WGS 84` : "UTM · WGS 84"}
         </p>
@@ -87,7 +87,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
       </div>
 
       {/* Norte + escala gráfica */}
-      <div className="pointer-events-none absolute bottom-3 left-3 z-[500] flex items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur">
+      <div className="pointer-events-none absolute bottom-3 left-3 z-20 flex items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-md backdrop-blur">
         <div className="flex flex-col items-center text-[var(--text-primary)]">
           <Compass className="h-6 w-6" />
           <span className="text-[length:var(--ts-2xs)] font-black leading-none">N</span>
@@ -107,7 +107,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel }: Props)
 
       {/* Leyenda */}
       {items.length > 0 && (
-        <div className="pointer-events-none absolute bottom-3 right-3 z-[500] max-w-[230px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 shadow-md backdrop-blur">
+        <div className="pointer-events-none absolute bottom-3 right-3 z-20 max-w-[230px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 shadow-md backdrop-blur">
           <p className="border-b-2 border-[var(--rule-base)] px-3 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-widest text-[var(--text-secondary)]">
             Leyenda
           </p>

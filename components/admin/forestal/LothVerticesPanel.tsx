@@ -11,7 +11,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { ClipboardCopy, Check, FileSpreadsheet, Printer } from "@buleje/design-system/icons";
+import { ClipboardCopy, Check, Clipboard, FileSpreadsheet, Globe, Printer } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { LatLng } from "@/lib/forestal/loth-geo";
 import { polygonAreaHa } from "@/lib/forestal/loth-geo";
@@ -30,9 +30,11 @@ interface Props {
   vertices: LatLng[];
   censoCount: number;
   onPrintPlano: () => void;
+  onExportKml: () => void;
+  onImportCoords: () => void;
 }
 
-export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano }: Props) {
+export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, onExportKml, onImportCoords }: Props) {
   const [copied, setCopied] = useState(false);
 
   const { zone, south, rows, areaHa, perimKm } = useMemo(() => {
@@ -104,6 +106,14 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano }
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
+            onClick={onImportCoords}
+            title="Pegar el cuadro de coordenadas del plan o subir KML/GeoJSON"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          >
+            <Clipboard className="h-3.5 w-3.5" /> Importar
+          </button>
+          <button
+            type="button"
             onClick={copy}
             disabled={rows.length === 0}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
@@ -121,6 +131,15 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano }
           </button>
           <button
             type="button"
+            onClick={onExportKml}
+            disabled={rows.length === 0}
+            title="Descargar KML para Google Earth (área + censo + operaciones)"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+          >
+            <Globe className="h-3.5 w-3.5" /> KML
+          </button>
+          <button
+            type="button"
             onClick={onPrintPlano}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
           >
@@ -131,7 +150,7 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano }
 
       {rows.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">
-          Dibujá el polígono del área de aprovechamiento para generar el cuadro de coordenadas.
+          Dibujá el polígono o <b>importá</b> el cuadro de coordenadas del plan para generar la tabla.
           {censoCount > 0 && <> Podés partir del censo: <b>{censoCount}</b> árbol(es) georreferenciado(s) en el mapa.</>}
         </p>
       ) : (

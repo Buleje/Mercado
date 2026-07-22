@@ -35,12 +35,14 @@ import {
   type OpForEudr,
   type EudrPoint,
 } from "@/lib/forestal/loth-geo";
-import { hullBuffer } from "@/lib/forestal/loth-utm";
+import { dominantZone, hullBuffer, zoneLabel } from "@/lib/forestal/loth-utm";
+import { buildKml } from "@/lib/forestal/loth-coords-io";
 import { printLothPlano, type PlanoBasemap } from "@/lib/forestal/loth-plano-print";
 import { printLothEudrDds } from "@/lib/forestal/loth-eudr-print";
 import LothEudrRail from "./LothEudrRail";
 import LothMapaCanvasRaw, { type BasemapId } from "./LothMapaCanvas";
 import LothMapaChrome, { type LegendItem } from "./LothMapaChrome";
+import LothCoordsModal from "./LothCoordsModal";
 import LothMapaDrawBar from "./LothMapaDrawBar";
 import LothMapaToolbar from "./LothMapaToolbar";
 import LothVerticesPanel from "./LothVerticesPanel";
@@ -112,6 +114,7 @@ export default function LothMapaView() {
   const [drawMode, setDrawMode] = useState(false);
   const [draft, setDraft] = useState<LatLng[]>([]);
   const [saving, setSaving] = useState(false);
+  const [coordsOpen, setCoordsOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -257,6 +260,15 @@ export default function LothMapaView() {
   };
 
   const addVertex = useCallback((v: LatLng) => setDraft((d) => [...d, v]), []);
+  const moveVertex = useCallback(
+    (i: number, v: LatLng) => setDraft((d) => d.map((old, idx) => (idx === i ? v : old))),
+    [],
+  );
+  const deleteVertex = useCallback((i: number) => setDraft((d) => d.filter((_, idx) => idx !== i)), []);
+  const insertVertex = useCallback(
+    (i: number, v: LatLng) => setDraft((d) => [...d.slice(0, i), v, ...d.slice(i)]),
+    [],
+  );
   const toggleSection = useCallback(
     (s: string) =>
       setHidden((h) => {
@@ -295,6 +307,48 @@ export default function LothMapaView() {
   const doPrintDds = useCallback(() => {
     printLothEudrDds().catch((err) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
+
+  /** Descarga genérica de un texto como archivo (KML / GeoJSON). */
+  const download = (content: string, filename: string, mime: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /** KML del área + censo + operaciones — para abrirlo en Google Earth. */
+  const doExportKml = () => {
+    const kml = buildKml({
+      ring: parcela.vertices,
+      name: `Área de aprovechamiento${plan?.parcelaCorta ? ` · ${plan.parcelaCorta}` : ""}`,
+      description: [plan?.titularName, plan?.tituloHabilitante, plan?.planNumber].filter(Boolean).join(" · "),
+      points: [
+        ...censoAll.map((t) => ({
+          lat: t.lat,
+          lng: t.lng,
+          name: t.code,
+          description: `Censo · ${t.species}${t.volumeM3 != null ? ` · ${t.volumeM3.toFixed(4)} m³` : ""}`,
+        })),
+        ...geoAll.map((g) => ({
+          lat: g.lat,
+          lng: g.lng,
+          name: g.code,
+          description: `${SECTION_LABEL[g.section] ?? g.section}${g.species ? ` · ${g.species}` : ""}`,
+        })),
+      ],
+    });
+    download(kml, "area-aprovechamiento.kml", "application/vnd.google-earth.kml+xml");
+  };
+
+  /** Zona UTM sugerida al importar: la del polígono o la del censo. */
+  const zonaSugerida = useMemo(() => {
+    const ref = parcela.vertices.length ? parcela.vertices : censoAll.map((t): LatLng => [t.lat, t.lng]);
+    if (ref.length === 0) return "18L";
+    return zoneLabel(dominantZone(ref), ref[0][0] < 0);
+  }, [parcela.vertices, censoAll]);
 
   const doPrintPlano = () => {
     try {
@@ -397,6 +451,9 @@ export default function LothMapaView() {
               center={center}
               fitKey={fitKey}
               onAddVertex={addVertex}
+              onMoveVertex={moveVertex}
+              onDeleteVertex={deleteVertex}
+              onInsertVertex={insertVertex}
               onCursor={onCursor}
               onView={onView}
             />
@@ -409,6 +466,7 @@ export default function LothMapaView() {
                 saving={saving}
                 canWrapCenso={censoAll.length > 0}
                 onWrapCenso={envolverCenso}
+                onImportCoords={() => setCoordsOpen(true)}
                 onUndo={() => setDraft((d) => d.slice(0, -1))}
                 onSave={saveDraw}
                 onCancel={cancelDraw}
@@ -417,7 +475,7 @@ export default function LothMapaView() {
 
             {/* Estado vacío */}
             {raw !== null && totalPuntos === 0 && !declarada && !drawMode && (
-              <div className="pointer-events-none absolute inset-0 z-[550] flex items-center justify-center p-6">
+              <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center p-6">
                 <div className="pointer-events-auto max-w-md rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
                   <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" />
                   <p className="text-sm font-bold text-[var(--text-primary)]">Todavía no hay geolocalización</p>
@@ -456,6 +514,21 @@ export default function LothMapaView() {
         vertices={drawMode && draft.length >= 3 ? draft : parcela.vertices}
         censoCount={censoAll.length}
         onPrintPlano={doPrintPlano}
+        onExportKml={doExportKml}
+        onImportCoords={() => {
+          if (!drawMode) startDraw();
+          setCoordsOpen(true);
+        }}
+      />
+
+      <LothCoordsModal
+        open={coordsOpen}
+        zonaDefault={zonaSugerida}
+        onClose={() => setCoordsOpen(false)}
+        onApply={(vertices) => {
+          if (!drawMode) setDrawMode(true);
+          setDraft(vertices);
+        }}
       />
     </div>
   );

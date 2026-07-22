@@ -1439,6 +1439,20 @@ body {
 .leaflet-tooltip.loth-vertex-label::before {
   display: none;
 }
+/* Manija de vértice del borrador: cuadrado teal arrastrable (estilo CAD). */
+.loth-vertex-handle {
+  background: #0d9488;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.5);
+  cursor: grab;
+}
+.loth-vertex-handle:active {
+  cursor: grabbing;
+}
+.loth-midpoint {
+  cursor: copy;
+}
 .loth-grid-label {
   background: rgba(255, 255, 255, 0.82);
   border-radius: 3px;
