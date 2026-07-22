@@ -36,7 +36,7 @@ export default function AsistenteIAHubModule({ initialTab }: { initialTab?: stri
     <div className="space-y-4">
       <AdminBreadcrumb
         items={[
-          { label: "Asistente IA" },
+          { label: "Asistente IA", onClick: () => setSub(TABS[0].id) },
           { label: TABS.find((t) => t.id === sub)?.label ?? "" },
         ]}
       />

@@ -52,7 +52,7 @@ export default function MensajesHubModule({ initialTab }: { initialTab?: string 
     <div className="space-y-4">
       <AdminBreadcrumb
         items={[
-          { label: "Mensajes" },
+          { label: "Mensajes", onClick: () => setSub(TABS[0].id) },
           { label: TABS.find((t) => t.id === sub)?.label ?? "" },
         ]}
       />

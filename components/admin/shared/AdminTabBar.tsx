@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -51,6 +52,31 @@ export default function AdminTabBar({
   rightSlot,
 }: AdminTabBarProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
+
+  /**
+   * Alt+← / Alt+→ recorren las sub-tabs del módulo activo.
+   * Alt+1..9 ya está tomado para saltar entre MÓDULOS (useKeyboardShortcuts),
+   * así que acá van las flechas: mismo gesto mental que cambiar de pestaña.
+   * Se saltean las deshabilitadas y da la vuelta al llegar al extremo.
+   */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+      // Mismo guard que el resto de atajos: nada de robar teclas mientras se
+      // escribe en un campo o hay un modal abierto.
+      if (isEditableTarget(e.target) || isModalOpen()) return;
+      const usables = tabs.filter((t) => !t.disabled);
+      if (usables.length < 2) return;
+      const i = usables.findIndex((t) => t.id === activeTab);
+      if (i === -1) return;
+      e.preventDefault();
+      const paso = e.key === "ArrowRight" ? 1 : -1;
+      const siguiente = usables[(i + paso + usables.length) % usables.length];
+      onTabChange(siguiente.id);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [tabs, activeTab, onTabChange]);
 
   // Register tabs in sidebar context so sidebar can render them
   useEffect(() => {

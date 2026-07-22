@@ -36,7 +36,7 @@ export default function SistemaHubModule({ initialTab }: { initialTab?: string }
     <div className="space-y-4">
       <AdminBreadcrumb
         items={[
-          { label: "Sistema" },
+          { label: "Sistema", onClick: () => setSub(TABS[0].id) },
           { label: TABS.find((t) => t.id === sub)?.label ?? "" },
         ]}
       />

@@ -33,6 +33,9 @@ const SHORTCUT_SECTIONS = [
   {
     title: "Navegación",
     shortcuts: [
+      // Sub-tabs: Alt+1..9 ya salta entre módulos, así que dentro de un módulo
+      // las flechas recorren sus pestañas (AdminTabBar).
+      ["Alt + ← / →", "Pestaña anterior / siguiente del módulo"],
       ["Alt + 1", "Asistente IA"],
       ["Alt + 2", "Ventas & Caja"],
       ["Alt + 3", "Inventario"],

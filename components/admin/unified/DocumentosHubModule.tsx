@@ -48,7 +48,7 @@ export default function DocumentosHubModule({ initialTab }: { initialTab?: strin
     <div className="space-y-4">
       <AdminBreadcrumb
         items={[
-          { label: "Documentos" },
+          { label: "Documentos", onClick: () => setSub(TABS[0].id) },
           { label: TABS.find((t) => t.id === sub)?.label ?? "" },
         ]}
       />

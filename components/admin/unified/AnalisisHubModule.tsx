@@ -37,7 +37,7 @@ export default function AnalisisHubModule({ initialTab }: { initialTab?: string 
     <div className="space-y-4">
       <AdminBreadcrumb
         items={[
-          { label: "Análisis" },
+          { label: "Análisis", onClick: () => setSub(TABS[0].id) },
           { label: TABS.find((t) => t.id === sub)?.label ?? "" },
         ]}
       />

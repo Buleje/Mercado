@@ -59,7 +59,7 @@ export default function CrecimientoHubModule({ initialTab }: { initialTab?: stri
     <div className="space-y-4">
       <AdminBreadcrumb
         items={[
-          { label: "Crecimiento" },
+          { label: "Crecimiento", onClick: () => setSub(TABS[0].id) },
           { label: TABS.find((t) => t.id === sub)?.label ?? "" },
         ]}
       />

@@ -34,7 +34,7 @@ export default function EquipoHubModule({ initialTab }: { initialTab?: string } 
     <div className="space-y-4">
       <AdminBreadcrumb
         items={[
-          { label: "Equipo" },
+          { label: "Equipo", onClick: () => setSub(TABS[0].id) },
           { label: TABS.find((t) => t.id === sub)?.label ?? "" },
         ]}
       />
