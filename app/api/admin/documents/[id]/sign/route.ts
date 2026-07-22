@@ -35,6 +35,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     signatureImagePngBase64: parsed.data.signatureImagePngBase64,
     actorId: auth.username,
     ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
+    viewerRole: auth.role,
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 

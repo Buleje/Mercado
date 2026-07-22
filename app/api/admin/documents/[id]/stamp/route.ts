@@ -30,6 +30,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     customText: parsed.data.customText,
     actorId: auth.username,
     ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
+    viewerRole: auth.role,
   });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 

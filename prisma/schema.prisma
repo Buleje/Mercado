@@ -4655,6 +4655,10 @@ model Document {
   aiCategory  String?
   aiTags      String[] @default([])
 
+  // Permisos a nivel documento: si está vacío, lo ven todos los admins; si tiene
+  // roles, solo esos (los roles privilegiados —admin/owner/manager— ven todo).
+  allowedRoles String[] @default([])
+
   // ADR-119 — anti-spam del cron de vencimiento. Se setea al enviar el aviso
   // de WhatsApp y se limpia al cambiar expiresAt para re-armar el ciclo.
   expiryReminderSentAt DateTime?
@@ -4684,6 +4688,9 @@ model DocumentFolder {
   name      String
   color     String?
   icon      String?
+  // Permisos por carpeta: vacío = todos los admins; con roles = solo esos.
+  // Los documentos dentro heredan esta restricción.
+  allowedRoles String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

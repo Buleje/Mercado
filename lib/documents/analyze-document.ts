@@ -57,8 +57,9 @@ export async function analyzeDocumentContent(
   tenantId: string,
   docId: string,
   actorId: string,
+  viewerRole?: string,
 ): Promise<AnalyzeResult> {
-  const doc = await DocumentsDB.getById(tenantId, docId);
+  const doc = await DocumentsDB.getById(tenantId, docId, viewerRole);
   if (!doc) return { ok: false, error: "not_found", status: 404 };
 
   const buf = await downloadFromStorage(doc.storagePath);

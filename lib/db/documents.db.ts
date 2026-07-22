@@ -2,6 +2,7 @@ import "server-only";
 import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { canRoleSeeDoc, isPrivilegedRole } from "@/lib/documents/doc-access";
 import type {
   Document as PDocument,
   DocumentFolder as PDocumentFolder,
@@ -68,6 +69,7 @@ function mapDoc(
     ocrMetadata: (d.ocrMetadata as Record<string, unknown> | null) ?? null,
     aiCategory: d.aiCategory,
     aiTags: d.aiTags,
+    allowedRoles: d.allowedRoles ?? [],
     uploadedById: d.uploadedById,
     uploadedAt: toISOReq(d.uploadedAt),
     updatedAt: toISOReq(d.updatedAt),
@@ -87,6 +89,7 @@ function mapFolder(
     name: f.name,
     color: f.color,
     icon: f.icon,
+    allowedRoles: f.allowedRoles ?? [],
     createdAt: toISOReq(f.createdAt),
     updatedAt: toISOReq(f.updatedAt),
     documentCount: f._count?.documents,
@@ -157,7 +160,8 @@ export class DocumentsDB {
 
   static async list(
     tenantId: string,
-    filters: DocumentListFilters = {}
+    filters: DocumentListFilters = {},
+    viewerRole?: string
   ): Promise<DbDocument[]> {
     const where: Record<string, unknown> = { tenantId };
 
@@ -199,15 +203,31 @@ export class DocumentsDB {
       include: { _count: { select: { versions: true, shares: true } } },
       take: 500,
     });
-    return docs.map(mapDoc);
+    const mapped = docs.map(mapDoc);
+
+    // Permisos por doc/carpeta: los roles no privilegiados solo ven lo permitido.
+    if (viewerRole && !isPrivilegedRole(viewerRole)) {
+      const folders = await prisma.documentFolder.findMany({
+        where: { tenantId },
+        select: { id: true, allowedRoles: true },
+      });
+      const folderRoles = new Map(folders.map((f) => [f.id, f.allowedRoles ?? []]));
+      return mapped.filter((d) => canRoleSeeDoc(viewerRole, d.allowedRoles, d.folderId ? folderRoles.get(d.folderId) ?? [] : []));
+    }
+    return mapped;
   }
 
-  static async getById(tenantId: string, id: string): Promise<DbDocument | null> {
+  static async getById(tenantId: string, id: string, viewerRole?: string): Promise<DbDocument | null> {
     const doc = await prisma.document.findFirst({
       where: { id, tenantId, deletedAt: null },
-      include: { _count: { select: { versions: true, shares: true } } },
+      include: { _count: { select: { versions: true, shares: true } }, folder: { select: { allowedRoles: true } } },
     });
-    return doc ? mapDoc(doc) : null;
+    if (!doc) return null;
+    // Permisos: un rol no privilegiado no puede acceder a un doc restringido.
+    if (viewerRole && !isPrivilegedRole(viewerRole) && !canRoleSeeDoc(viewerRole, doc.allowedRoles ?? [], doc.folder?.allowedRoles ?? [])) {
+      return null;
+    }
+    return mapDoc(doc);
   }
 
   /**
@@ -280,6 +300,7 @@ export class DocumentsDB {
       ocrMetadata?: Record<string, unknown>;
       aiCategory?: string;
       aiTags?: string[];
+      allowedRoles?: string[];
     }
   ): Promise<DbDocument | null> {
     const existing = await prisma.document.findFirst({
@@ -559,7 +580,7 @@ export class DocumentsDB {
   static async updateFolder(
     tenantId: string,
     id: string,
-    patch: { name?: string; parentId?: string | null; color?: string | null; icon?: string | null }
+    patch: { name?: string; parentId?: string | null; color?: string | null; icon?: string | null; allowedRoles?: string[] }
   ): Promise<DbDocumentFolder | null> {
     const existing = await prisma.documentFolder.findFirst({ where: { id, tenantId } });
     if (!existing) return null;

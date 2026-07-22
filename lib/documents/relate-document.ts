@@ -19,10 +19,11 @@ export async function linkDocuments(
   bId: string,
   link: boolean,
   actorId: string,
+  viewerRole?: string,
 ): Promise<RelateResult> {
   if (aId === bId) return { ok: false, error: "cannot_relate_self", status: 400 };
 
-  const [a, b] = await Promise.all([DocumentsDB.getById(tenantId, aId), DocumentsDB.getById(tenantId, bId)]);
+  const [a, b] = await Promise.all([DocumentsDB.getById(tenantId, aId, viewerRole), DocumentsDB.getById(tenantId, bId, viewerRole)]);
   if (!a || !b) return { ok: false, error: "not_found", status: 404 };
 
   const aRel = new Set(getRelatedIds(a.ocrMetadata));

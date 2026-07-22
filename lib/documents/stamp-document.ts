@@ -15,9 +15,9 @@ export type StampDocumentResult =
 export async function stampDocument(
   tenantId: string,
   documentId: string,
-  input: { preset: StampPreset; customText?: string; actorId: string; ipAddress?: string },
+  input: { preset: StampPreset; customText?: string; actorId: string; ipAddress?: string; viewerRole?: string },
 ): Promise<StampDocumentResult> {
-  const doc = await DocumentsDB.getById(tenantId, documentId);
+  const doc = await DocumentsDB.getById(tenantId, documentId, input.viewerRole);
   if (!doc) return { ok: false, error: "not_found", status: 404 };
   if (doc.mimeType !== "application/pdf") return { ok: false, error: "only_pdf_stampable", status: 415 };
 

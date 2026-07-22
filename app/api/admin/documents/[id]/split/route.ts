@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await ctx.params;
-  const result = await splitDocument(auth.tenantId, id, { actorId: auth.username });
+  const result = await splitDocument(auth.tenantId, id, { actorId: auth.username, viewerRole: auth.role });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json({ created: result.created, count: result.created.length });
 }

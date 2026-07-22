@@ -23,9 +23,10 @@ export async function applySignature(
     signatureImagePngBase64?: string;
     actorId: string;
     ipAddress?: string;
+    viewerRole?: string;
   },
 ): Promise<ApplySignatureResult> {
-  const doc = await DocumentsDB.getById(tenantId, documentId);
+  const doc = await DocumentsDB.getById(tenantId, documentId, input.viewerRole);
   if (!doc) return { ok: false, error: "not_found", status: 404 };
   if (doc.mimeType !== "application/pdf") return { ok: false, error: "only_pdf_signable", status: 415 };
 

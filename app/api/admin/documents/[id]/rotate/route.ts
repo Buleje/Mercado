@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
 
-  const result = await rotateDocument(auth.tenantId, id, parsed.data.degrees, auth.username);
+  const result = await rotateDocument(auth.tenantId, id, parsed.data.degrees, auth.username, auth.role);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
   return NextResponse.json({ version: result.version });
 }

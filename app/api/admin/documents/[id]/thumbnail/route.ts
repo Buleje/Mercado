@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const doc = await DocumentsDB.getById(auth.tenantId, id);
+    const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
     if (doc.mimeType !== "application/pdf") return NextResponse.json({ error: "not_pdf" }, { status: 415 });
 
@@ -41,7 +41,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       status: 200,
       headers: {
         "Content-Type": "image/png",
-        "Cache-Control": "private, max-age=3600",
+        // Los docs restringidos no se cachean (evita fuga por caché tras cambio de sesión).
+        "Cache-Control": doc.allowedRoles.length > 0 ? "private, no-store" : "private, max-age=3600",
         "X-Frame-Options": "SAMEORIGIN",
       },
     });

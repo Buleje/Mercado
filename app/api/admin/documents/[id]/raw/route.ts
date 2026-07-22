@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const doc = await DocumentsDB.getById(auth.tenantId, id);
+    const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     const buf = await downloadFromStorage(doc.storagePath);
@@ -33,13 +33,16 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     // ?download=1 → fuerza la descarga (attachment); por defecto se muestra inline
     // (para la vista previa dentro del modal).
     const disposition = req.nextUrl.searchParams.get("download") === "1" ? "attachment" : "inline";
+    // Los documentos con permisos restringidos NO se cachean en el navegador
+    // (evita servir contenido cacheado tras cambiar de sesión en un equipo compartido).
+    const cache = doc.allowedRoles.length > 0 ? "private, no-store" : "private, max-age=60";
     return new NextResponse(new Uint8Array(buf), {
       status: 200,
       headers: {
         "Content-Type": doc.mimeType || "application/octet-stream",
         "Content-Disposition": `${disposition}; filename="${safeName}"`,
         "Content-Length": String(buf.length),
-        "Cache-Control": "private, max-age=60",
+        "Cache-Control": cache,
         "X-Frame-Options": "SAMEORIGIN",
       },
     });

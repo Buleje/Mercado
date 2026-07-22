@@ -10,8 +10,9 @@ export async function editPdfPages(
   documentId: string,
   spec: { index: number; rotate?: number }[],
   actorId: string,
+  viewerRole?: string,
 ): Promise<{ ok: true; version: DbDocumentVersion | null } | { ok: false; error: string; status: number }> {
-  const doc = await DocumentsDB.getById(tenantId, documentId);
+  const doc = await DocumentsDB.getById(tenantId, documentId, viewerRole);
   if (!doc) return { ok: false, error: "not_found", status: 404 };
   if (doc.mimeType !== "application/pdf") return { ok: false, error: "only_pdf", status: 415 };
   if (spec.length === 0) return { ok: false, error: "empty_result", status: 400 };
@@ -43,8 +44,9 @@ export async function rotateDocument(
   documentId: string,
   deg: number,
   actorId: string,
+  viewerRole?: string,
 ): Promise<{ ok: true; version: DbDocumentVersion | null } | { ok: false; error: string; status: number }> {
-  const doc = await DocumentsDB.getById(tenantId, documentId);
+  const doc = await DocumentsDB.getById(tenantId, documentId, viewerRole);
   if (!doc) return { ok: false, error: "not_found", status: 404 };
   if (doc.mimeType !== "application/pdf") return { ok: false, error: "only_pdf", status: 415 };
 
@@ -73,9 +75,9 @@ export async function rotateDocument(
 export async function splitDocument(
   tenantId: string,
   documentId: string,
-  input: { actorId: string; folderId?: string | null },
+  input: { actorId: string; folderId?: string | null; viewerRole?: string },
 ): Promise<{ ok: true; created: DbDocument[] } | { ok: false; error: string; status: number }> {
-  const doc = await DocumentsDB.getById(tenantId, documentId);
+  const doc = await DocumentsDB.getById(tenantId, documentId, input.viewerRole);
   if (!doc) return { ok: false, error: "not_found", status: 404 };
   if (doc.mimeType !== "application/pdf") return { ok: false, error: "only_pdf", status: 415 };
 

@@ -16,6 +16,8 @@ const PatchBody = z.object({
   favorite: z.boolean().optional(),
   status: z.enum(["none", "draft", "review", "approved", "archived"]).optional(),
   expiresAt: z.string().nullable().optional(),
+  // Permisos por documento (roles admin que pueden verlo; vacío = todos).
+  allowedRoles: z.array(z.string().max(30)).max(10).optional(),
   // ADR-119 — vincular el documento a una entidad del negocio.
   customerId: z.string().nullable().optional(),
   orderId: z.string().nullable().optional(),
@@ -34,7 +36,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const doc = await DocumentsDB.getById(auth.tenantId, id);
+    const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     const signedUrl = await getSignedUrl(doc.storagePath);
@@ -72,7 +74,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
     }
 
-    const before = await DocumentsDB.getById(auth.tenantId, id);
+    const before = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!before) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
     const expiresAtDate =
@@ -90,6 +92,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       favorite: parsed.data.favorite,
       status: parsed.data.status,
       expiresAt: expiresAtDate,
+      allowedRoles: parsed.data.allowedRoles,
       customerId: parsed.data.customerId,
       orderId: parsed.data.orderId,
       supplierId: parsed.data.supplierId,

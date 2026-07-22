@@ -13,6 +13,7 @@ const PatchBody = z.object({
   parentId: z.string().nullable().optional(),
   color: z.string().max(20).nullable().optional(),
   icon: z.string().max(40).nullable().optional(),
+  allowedRoles: z.array(z.string().max(30)).max(10).optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };

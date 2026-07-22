@@ -39,14 +39,14 @@ export interface UseDocumentsResult {
   refresh: () => Promise<void>;
   upload: (files: File[], opts?: { folderId?: string | null; onProgress?: (done: number, total: number) => void }) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
-  patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
+  patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
   remove: (id: string) => Promise<void>;
   restore: (id: string) => Promise<void>;
   purge: (id: string) => Promise<void>;
   bulk: (action: "delete" | "move" | "tag" | "favorite", ids: string[], extra?: Record<string, unknown>) => Promise<number>;
   createFolder: (input: { name: string; parentId?: string | null; color?: string; icon?: string }) => Promise<DbDocumentFolder>;
   moveFolder: (id: string, parentId: string | null) => Promise<void>;
-  updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null }) => Promise<void>;
+  updateFolder: (id: string, patch: { name?: string; color?: string | null; icon?: string | null; allowedRoles?: string[] }) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
 }
 
@@ -204,7 +204,7 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
   }, [fetchAll]);
 
   // Editar metadata de la carpeta (nombre / color / ícono).
-  const updateFolder = useCallback(async (id: string, patch: { name?: string; color?: string | null; icon?: string | null }) => {
+  const updateFolder = useCallback(async (id: string, patch: { name?: string; color?: string | null; icon?: string | null; allowedRoles?: string[] }) => {
     await http(`${BASE}/folders/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
     await fetchAll();
   }, [fetchAll]);
@@ -380,6 +380,7 @@ export async function patchDocument(
   body: Partial<{
     name: string;
     expiresAt: string | null;
+    allowedRoles: string[];
     customerId: string | null;
     supplierId: string | null;
     orderId: string | null;

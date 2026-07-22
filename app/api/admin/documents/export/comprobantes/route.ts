@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
 
-    const docs = await DocumentsDB.list(auth.tenantId, {});
+    const docs = await DocumentsDB.list(auth.tenantId, {}, auth.role);
     const rows = docs
       .map((d) => {
         const s = d.ocrMetadata?.structured as Structured | undefined;

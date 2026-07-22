@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
 
-  const result = await linkDocuments(auth.tenantId, id, parsed.data.relatedId, parsed.data.link, auth.username);
+  const result = await linkDocuments(auth.tenantId, id, parsed.data.relatedId, parsed.data.link, auth.username, auth.role);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 
   return NextResponse.json({ relatedIds: result.relatedIds });

@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     orderId: f.orderId,
     supplierId: f.supplierId,
     deletedOnly,
-  });
+  }, auth.role);
 
   return NextResponse.json({ documents: docs, ...(semanticTerms ? { semanticTerms } : {}) });
 }
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
     // Auto-análisis de contenido (fire-and-forget): los PDFs/texto se indexan solos
     // para que el asistente los pueda leer sin apretar "Analizar con IA".
     if (isAnalyzableMime(mime)) {
-      analyzeDocumentContent(auth.tenantId, draft.id, auth.username).catch((err) =>
+      analyzeDocumentContent(auth.tenantId, draft.id, auth.username, auth.role).catch((err) =>
         logger.warn("documents.autoanalyze_fail", { err: String(err) }),
       );
     }

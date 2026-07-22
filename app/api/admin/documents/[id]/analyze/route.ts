@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await ctx.params;
-    const result = await analyzeDocumentContent(auth.tenantId, id, auth.username);
+    const result = await analyzeDocumentContent(auth.tenantId, id, auth.username, auth.role);
     if (!result.ok) {
       const message =
         result.error === "no_text"

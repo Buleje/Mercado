@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     const question = parsed.data.question.trim();
     const wantsStream = req.nextUrl.searchParams.get("stream") === "1";
 
-    const all = await DocumentsDB.list(auth.tenantId, {});
+    const all = await DocumentsDB.list(auth.tenantId, {}, auth.role);
     const docs = all.slice(0, 120);
 
     if (docs.length === 0) {

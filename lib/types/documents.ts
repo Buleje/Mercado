@@ -58,6 +58,8 @@ export interface DbDocument {
   ocrMetadata: Record<string, unknown> | null;
   aiCategory: string | null;
   aiTags: string[];
+  /** Permisos por documento: vacío = todos los admins; con roles = solo esos. */
+  allowedRoles: string[];
   uploadedById: string;
   uploadedAt: string;
   updatedAt: string;
@@ -73,6 +75,8 @@ export interface DbDocumentFolder {
   name: string;
   color: string | null;
   icon: string | null;
+  /** Permisos por carpeta: vacío = todos los admins; con roles = solo esos. */
+  allowedRoles: string[];
   createdAt: string;
   updatedAt: string;
   documentCount?: number;
