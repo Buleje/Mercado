@@ -72,7 +72,7 @@ export default function AdminChatHead() {
       const j = (await res.json()) as { data: ChatThreadView[] };
       const list = j.data ?? [];
       setThreads(list);
-      // Badge para el ícono del nav (AdminChatNavButton escucha)
+      // Badge para el ícono del nav (AdminMensajesMenu escucha)
       const unread = list.reduce((n, t) => n + t.unreadForSeller, 0);
       window.dispatchEvent(new CustomEvent("buleje:admin-chat-unread", { detail: { unread } }));
     } catch { /* polling no crítico */ }

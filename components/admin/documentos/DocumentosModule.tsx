@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
@@ -721,26 +722,32 @@ export default function DocumentosModule() {
         description="Drive del negocio: contratos, licencias, facturas. Te avisa antes de que venzan."
         icon={FolderArchive}
       >
-        <button
-          onClick={() => scanInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
-          title="Tomá una foto de un documento — la IA lo nombra, clasifica y detecta su vencimiento"
-        >
-          <Camera className="h-4 w-4" /> Escanear
-        </button>
-        <button
-          onClick={() => setShowCameraScan(true)}
-          className="hidden sm:inline-flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
-          title="Fotografiá varias páginas y combinálas en un solo PDF"
-        >
-          <Scan className="h-4 w-4" /> Escanear a PDF
-        </button>
-        <button
-          onClick={() => setShowTemplates(true)}
-          className="hidden sm:inline-flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
-        >
-          <Sparkles className="h-4 w-4" /> Generar plantilla
-        </button>
+        {/* Cuatro botones en el header no entraban en pantallas medianas: se
+            partían en dos filas y competían con el primario. Ahora queda UNA
+            acción principal (Subir archivos) y el resto en el menú del DS. */}
+        <ModuleActionMenu
+          label="Escanear y crear"
+          items={[
+            {
+              label: "Escanear un documento",
+              description: "La IA lo nombra, clasifica y detecta su vencimiento",
+              icon: Camera,
+              onClick: () => scanInputRef.current?.click(),
+            },
+            {
+              label: "Escanear a PDF",
+              description: "Varias páginas en un solo archivo",
+              icon: Scan,
+              onClick: () => setShowCameraScan(true),
+            },
+            {
+              label: "Generar plantilla",
+              description: "Contratos y actas listos para completar",
+              icon: Sparkles,
+              onClick: () => setShowTemplates(true),
+            },
+          ]}
+        />
         <button
           onClick={() => fileInputRef.current?.click()}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"

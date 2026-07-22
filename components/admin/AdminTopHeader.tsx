@@ -22,8 +22,7 @@ import { useEffect, useState } from "react";
 import { Menu, Search, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
 import Link from "next/link";
 import NotificationBell from "@/components/notifications/NotificationBell";
-import AdminChatNavButton from "@/components/admin/AdminChatNavButton";
-import AdminPlatformInboxButton from "@/components/admin/AdminPlatformInboxButton";
+import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
@@ -64,8 +63,6 @@ export interface AdminTopHeaderProps {
   userName: string;
   userRole: string;
   tenantSlug?: string | null;
-  tenantName?: string | null;
-  tenantLogoUrl?: string | null;
   onOpenMobileNav: () => void;
   onOpenSearch: () => void;
   onOpenCierreDiario: () => void;
@@ -86,8 +83,6 @@ export function AdminTopHeader({
   userName,
   userRole,
   tenantSlug,
-  tenantName,
-  tenantLogoUrl,
   onOpenMobileNav,
   onOpenSearch,
   onOpenCierreDiario,
@@ -198,37 +193,6 @@ export function AdminTopHeader({
           </kbd>
         </button>
 
-        {/* Chip de tenant activo — reemplaza la barra superior gruesa.
-            Dark mode: usa bg-white/5 + border-white/20 para contraste.
-            Texto en claro (primary) en light, en claro (gray-100) en dark. */}
-        {tenantSlug && (
-          <Link
-            href={`/t/${tenantSlug}/tienda`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Abrir tienda en nueva pestaña"
-            className={cn(
-              "hidden @min-[72rem]:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0",
-              isAutoDarkTheme
-                ? "border-[color-mix(in oklab, var(--accent) 30%, transparent)] bg-[color-mix(in oklab, var(--accent) 10%, transparent)] text-[color-mix(in oklab, var(--accent) 60%, white)] hover:bg-[color-mix(in oklab, var(--accent) 18%, transparent)]"
-                : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
-            )}
-          >
-            {tenantLogoUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={tenantLogoUrl}
-                alt=""
-                className="h-5 w-5 rounded-md object-cover bg-white/30 shrink-0"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-              />
-            ) : (
-              <StoreIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-            )}
-            <span className="truncate max-w-[120px]">{tenantName || tenantSlug}</span>
-            <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
-          </Link>
-        )}
       </div>
 
       {/* Right: actions */}
@@ -258,10 +222,10 @@ export function AdminTopHeader({
             <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
           </Link>
         )}
-        {/* Chat con clientes — bandeja Messenger (Brandon 2026-06-06) */}
-        <AdminChatNavButton />
-        {/* Mensajes de la plataforma (Buleje → dueño) — Messenger ADR-132 */}
-        <AdminPlatformInboxButton />
+        {/* Chat con clientes + mensajes de la plataforma en UN botón con el
+            total sin leer. Eran dos íconos sueltos con badges que competían
+            entre sí y llenaban la barra (ADR-132 + Messenger 2026-06-06). */}
+        <AdminMensajesMenu />
         <div className="hidden @min-[44rem]:block">
           <NotificationBell />
         </div>
