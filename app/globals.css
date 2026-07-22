@@ -1423,6 +1423,34 @@ body {
   isolation: isolate;
 }
 
+/* ── Rótulos cartográficos del mapa forestal (LO-TH / CTP) ──
+ * Etiquetas de vértice (C.001…) y de cuadrícula UTM: tipografía de plano —
+ * chica, monoespaciada, sin la "cajita" default del tooltip de Leaflet. */
+.leaflet-tooltip.loth-vertex-label {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.35);
+  border-radius: 4px;
+  box-shadow: none;
+  color: #0f172a;
+  font: 700 10px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+.leaflet-tooltip.loth-vertex-label::before {
+  display: none;
+}
+.loth-grid-label {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 3px;
+  color: #0f172a;
+  font: 700 9px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  padding: 0 3px;
+  white-space: nowrap;
+  width: max-content !important;
+  height: auto !important;
+  pointer-events: none;
+}
+
 /* ── Mejora 18: Button loading indicator for admin panel ───────────────── */
 [data-admin-shell] button[disabled],
 [data-admin-shell="true"] button[disabled] {
