@@ -17,6 +17,8 @@ import { analizarPoa, defaultPoaConfig, CATEGORIA_COLOR, CATEGORIA_LABEL, type P
 import { printLothPoa } from "@/lib/forestal/loth-poa-print";
 import LothPoaPanel from "./LothPoaPanel";
 import LothCensoImportModal from "./LothCensoImportModal";
+import LothZafraPanel from "./LothZafraPanel";
+import { analizarZafra } from "@/lib/forestal/loth-zafra";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 
@@ -139,6 +141,23 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
   /** Categoría POA por árbol — la muestra el censo como badge. */
   const categoriaPorArbol = useMemo(() => new Map(poa.arboles.map((a) => [a.id, a.categoria])), [poa.arboles]);
 
+  /**
+   * Zafra: el saldo autorizado NO se acumula al período siguiente, así que el
+   * avance se mide contra la vigencia del plan. `hoy` entra por parámetro para
+   * que el cálculo sea puro y testeable.
+   */
+  const zafra = useMemo(
+    () =>
+      analizarZafra({
+        vigenciaDesde: plan?.vigenciaDesde ?? null,
+        vigenciaHasta: plan?.vigenciaHasta ?? null,
+        autorizadoM3: autorizadoTotal,
+        movilizadoM3: movilizadoTotal,
+        hoy: new Date(),
+      }),
+    [plan, autorizadoTotal, movilizadoTotal],
+  );
+
   const savePoaConfig = useCallback(async () => {
     if (!planId) return;
     setPoaSaving(true);
@@ -259,6 +278,9 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
               })
             }
           />
+
+          {/* Zafra: ¿llego con los tiempos de la vigencia? */}
+          <LothZafraPanel zafra={zafra} />
 
           {/* Control por especie — ¿estoy dentro de lo autorizado? (compliance OSINFOR) */}
           <EspecieControlPanel rows={controlRows} loading={detailLoading} />
