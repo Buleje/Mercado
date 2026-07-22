@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Palette, Globe } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -32,11 +32,11 @@ export default function MiTiendaHubModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        eyebrow="Tienda · Personalización"
-        title="Mi Tienda"
-        description="Diseña la identidad visual y la página pública de tu tienda online."
-        icon={Palette}
+      <AdminBreadcrumb
+        items={[
+          { label: "Mi Tienda" },
+          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
+        ]}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "identidad" && <StoreCustomizer />}

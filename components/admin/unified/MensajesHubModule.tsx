@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { MessageCircle, MessageSquare, Inbox, FileText, Settings, BellRing } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -50,11 +50,11 @@ export default function MensajesHubModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        eyebrow="Comunicación · Mensajes"
-        title="Mensajes"
-        description="Bandeja unificada: WhatsApp del negocio, chats con clientes y soporte."
-        icon={MessageCircle}
+      <AdminBreadcrumb
+        items={[
+          { label: "Mensajes" },
+          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
+        ]}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "whatsapp" && <WhatsAppInboxTab onGoToConfig={() => setSub("bot")} />}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Megaphone, Heart, Users, Target, Gift, HeartHandshake, Repeat, Radio } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -57,11 +57,11 @@ export default function CrecimientoHubModule({ initialTab }: { initialTab?: stri
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        eyebrow="Marketing & Fidelización"
-        title="Crecimiento"
-        description="Todo lo que hace volver a tus clientes en un solo lugar: campañas segmentadas, puntos, RFM, gift cards, Socio Buleje, suscripciones y lives."
-        icon={Megaphone}
+      <AdminBreadcrumb
+        items={[
+          { label: "Crecimiento" },
+          { label: TABS.find((t) => t.id === sub)?.label ?? "" },
+        ]}
       />
       <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "campanas" && <CampanasTab initialSegment={campaignSegment} onConsumeSegment={consumeSegment} />}
