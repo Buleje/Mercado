@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { useDocuments, getSignedDownloadUrl } from "@/hooks/use-documents";
+import { useDocuments, getSignedDownloadUrl, analyzeDoc } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
@@ -109,6 +109,9 @@ export default function DocumentosModule() {
   const [filterMode, setFilterMode] = useState<"all" | "assistant" | "favorites" | "recent" | "expiring" | "folder" | "activity" | "trash">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
+  // Resultado del análisis IA de contenido (resumen + datos clave).
+  const [analyzeResult, setAnalyzeResult] = useState<{ name: string; summary: string; keyFacts: string[] } | null>(null);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<DbDocument | null>(null);
@@ -475,6 +478,34 @@ export default function DocumentosModule() {
     }
   };
 
+  // ── Analizar contenido con IA (para que el asistente pueda leerlo) ──
+  const handleAnalyze = useCallback(async (doc: DbDocument) => {
+    if (analyzingId) return;
+    setAnalyzingId(doc.id);
+    try {
+      const r = await analyzeDoc(doc.id);
+      setAnalyzeResult({
+        name: doc.name,
+        summary: r.summary || "Guardé el texto del documento. El asistente ya puede usar su contenido.",
+        keyFacts: r.keyFacts ?? [],
+      });
+      setTimeout(() => setAnalyzeResult(null), 15000);
+      await refresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setAnalyzeResult({
+        name: doc.name,
+        summary: /no_text|422/.test(msg)
+          ? "No pude extraer texto (¿es una imagen o un escaneo? usá el botón Escanear)."
+          : "No pude analizar el documento. Reintentá.",
+        keyFacts: [],
+      });
+      setTimeout(() => setAnalyzeResult(null), 8000);
+    } finally {
+      setAnalyzingId(null);
+    }
+  }, [analyzingId, refresh]);
+
   return (
     <div
       className="space-y-6 relative"
@@ -586,6 +617,33 @@ export default function DocumentosModule() {
             )}
           </div>
           <button onClick={() => setScanResult(null)} className="ml-auto p-1 rounded-md hover:bg-emerald-100" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+        </div>
+      )}
+
+      {/* Indicador de análisis IA en curso */}
+      {analyzingId && !analyzeResult && (
+        <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--accent)]/10 px-4 py-2.5 text-sm font-bold text-[var(--accent)]">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" /> Analizando el contenido con IA…
+        </div>
+      )}
+
+      {/* Resultado del análisis IA de contenido */}
+      {analyzeResult && (
+        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--accent)]/10 p-3.5">
+          <Wand2 className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
+          <div className="min-w-0 flex-1 text-sm">
+            <p className="font-extrabold text-[var(--text-primary)]">Analizado: {analyzeResult.name}</p>
+            <p className="mt-0.5 text-[var(--text-secondary)]">{analyzeResult.summary}</p>
+            {analyzeResult.keyFacts.length > 0 && (
+              <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                {analyzeResult.keyFacts.slice(0, 6).map((f, i) => (
+                  <li key={i} className="rounded-md bg-[var(--surface-raised)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{f}</li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">El asistente IA ya puede responder con el contenido de este documento.</p>
+          </div>
+          <button onClick={() => setAnalyzeResult(null)} className="shrink-0 rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
       )}
 
@@ -1173,6 +1231,7 @@ export default function DocumentosModule() {
                           <RowActions
                             favorite={!!doc.favorite}
                             onPreview={() => setPreview(doc)}
+                            onAnalyze={() => handleAnalyze(doc)}
                             onRename={() => startRename(doc)}
                             onMove={() => setMovingDoc(doc)}
                             onWhatsApp={() => setWhatsappDoc(doc)}
@@ -1553,8 +1612,8 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
 // ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
 // la vista lista. Dropdown `position: fixed` para no quedar recortado por el
 // overflow del contenedor de la tabla. ──
-function RowActions({ onPreview, onDownload, onRename, onMove, onWhatsApp, onSign, onToggleFav, onDelete, favorite }: {
-  onPreview: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
+function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onWhatsApp, onSign, onToggleFav, onDelete, favorite }: {
+  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onWhatsApp: () => void; onSign: () => void; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -1597,6 +1656,7 @@ function RowActions({ onPreview, onDownload, onRename, onMove, onWhatsApp, onSig
       {open && pos && (
         <div className="fixed z-50 min-w-[170px] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, right: pos.right }} onClick={(e) => e.stopPropagation()}>
           {item(Eye, "Ver", onPreview)}
+          {item(Wand2, "Analizar con IA", onAnalyze)}
           {item(Pencil, "Renombrar", onRename)}
           {item(FolderInput, "Mover a carpeta", onMove)}
           {item(MessageCircle, "Enviar por WhatsApp", onWhatsApp)}

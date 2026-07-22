@@ -256,6 +256,11 @@ export async function askDocAssistant(question: string): Promise<DocAssistantAns
   });
 }
 
+/** Analiza el contenido de un doc con IA (texto + resumen + datos clave + tags). */
+export async function analyzeDoc(id: string): Promise<{ summary: string; keyFacts: string[]; tags: string[]; source: string; message?: string }> {
+  return http(`${BASE}/${id}/analyze`, { method: "POST" });
+}
+
 // ── Taxonomía de etiquetas ──────────────────────────────────────────────────
 
 export async function fetchTags(): Promise<{ tag: string; count: number }[]> {

@@ -152,6 +152,7 @@
     "tailwind-variants": "^3.2.2",
     "twilio": "^6.0.0",
     "ubigeo-peru": "^2.0.2",
+    "unpdf": "^1.6.2",
     "vaul": "^1.1.2",
     "web-push": "^3.6.7",
     "web-vitals": "^5.1.0",
