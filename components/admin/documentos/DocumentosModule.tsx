@@ -39,6 +39,7 @@ import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
 import { FolderGlyph } from "./folder-visuals";
 import { ActivityView } from "./ActivityView";
+import { AssistantView } from "./AssistantView";
 import { TagTaxonomyModal } from "./TagTaxonomyModal";
 
 // ─────────────────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: s
 }
 
 interface BuiltinCategory {
-  id: "all" | "favorites" | "recent" | "expiring" | "activity" | "trash";
+  id: "all" | "assistant" | "favorites" | "recent" | "expiring" | "activity" | "trash";
   label: string;
   icon: typeof Folder;
   color: string;
@@ -73,6 +74,7 @@ interface BuiltinCategory {
 
 const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "all", label: "Todos", icon: FolderArchive, color: "text-primary" },
+  { id: "assistant", label: "Asistente IA", icon: Sparkles, color: "text-[var(--accent)]" },
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
   { id: "recent", label: "Recientes", icon: Clock, color: "text-slate-500" },
   { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-red-500" },
@@ -104,7 +106,7 @@ export default function DocumentosModule() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [semantic, setSemantic] = useState(false);
-  const [filterMode, setFilterMode] = useState<"all" | "favorites" | "recent" | "expiring" | "folder" | "activity" | "trash">("all");
+  const [filterMode, setFilterMode] = useState<"all" | "assistant" | "favorites" | "recent" | "expiring" | "folder" | "activity" | "trash">("all");
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<{ name: string; expiresAt: string | null } | null>(null);
 
@@ -1023,7 +1025,7 @@ export default function DocumentosModule() {
           )}
 
           {/* Filtro por estado (workflow) */}
-          {filterMode !== "activity" && filterMode !== "trash" && (statusFilter !== null || STATUS_ORDER.some((k) => statusCounts[k] > 0)) && (
+          {filterMode !== "activity" && filterMode !== "trash" && filterMode !== "assistant" && (statusFilter !== null || STATUS_ORDER.some((k) => statusCounts[k] > 0)) && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</span>
               <button
@@ -1052,7 +1054,9 @@ export default function DocumentosModule() {
             </div>
           )}
 
-          {filterMode === "activity" ? (
+          {filterMode === "assistant" ? (
+            <AssistantView onOpenDoc={(id) => { const d = documents.find((x) => x.id === id); if (d) setPreview(d); }} />
+          ) : filterMode === "activity" ? (
             <ActivityView />
           ) : loading && documents.length === 0 ? (
             <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-10 text-center text-sm text-[var(--text-tertiary)]">

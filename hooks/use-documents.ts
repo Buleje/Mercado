@@ -243,6 +243,19 @@ export async function fetchRecentActivity(limit = 40): Promise<DbDocumentActivit
   return r.activity;
 }
 
+/** Asistente de documentos: pregunta en lenguaje natural → respuesta + docs relevantes. */
+export interface DocAssistantAnswer {
+  answer: string;
+  matchedDocs: { id: string; name: string; category: string }[];
+  source: string;
+}
+export async function askDocAssistant(question: string): Promise<DocAssistantAnswer> {
+  return http<DocAssistantAnswer>(`${BASE}/assistant`, {
+    method: "POST",
+    body: JSON.stringify({ question }),
+  });
+}
+
 // ── Taxonomía de etiquetas ──────────────────────────────────────────────────
 
 export async function fetchTags(): Promise<{ tag: string; count: number }[]> {
