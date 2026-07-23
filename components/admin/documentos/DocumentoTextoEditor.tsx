@@ -221,13 +221,38 @@ export default function DocumentoTextoEditor({
     setBloques((prev) => {
       const nuevo: BloqueTexto = {
         id: Math.max(-1, ...prev.map((b) => b.id)) + 1,
-        tipo: "parrafo", texto: "", formatoMixto: false, enTabla: false,
+        tipo: "parrafo", texto: "", negrita: false, cursiva: false,
+        formatoMixto: false, enTabla: false,
       };
       const indice = despuesDe === undefined ? prev.length - 1 : prev.findIndex((b) => b.id === despuesDe);
       const copia = [...prev];
       copia.splice(indice + 1, 0, nuevo);
       return copia;
     });
+    setSucio(true);
+  };
+
+  /** Prende o apaga la negrita/cursiva de TODO el párrafo. */
+  const formatear = (id: number, cambio: { negrita?: boolean; cursiva?: boolean }) => {
+    instantanea();
+    ultimoEditado.current = null;
+    setBloques((prev) => prev.map((b) => (b.id === id ? { ...b, ...cambio } : b)));
+    setSucio(true);
+  };
+
+  /** Cambia el rol del párrafo. En .md/.txt el tipo ES el prefijo de la línea. */
+  const cambiarTipo = (id: number, tipo: BloqueTexto["tipo"]) => {
+    instantanea();
+    ultimoEditado.current = null;
+    setBloques((prev) => prev.map((b) => {
+      if (b.id !== id) return b;
+      if (formato === "plano") {
+        const sinPrefijo = b.texto.replace(/^(#{1,6}\s+|\s*[-*+]\s+)/, "");
+        const prefijo = tipo === "titulo" ? "# " : tipo === "subtitulo" ? "## " : tipo === "lista" ? "- " : "";
+        return { ...b, tipo, texto: `${prefijo}${sinPrefijo}` };
+      }
+      return { ...b, tipo };
+    }));
     setSucio(true);
   };
 
@@ -337,6 +362,7 @@ export default function DocumentoTextoEditor({
             <FilaBloqueTexto
               key={b.id}
               bloque={b}
+              formato={formato}
               posicion={i + 1}
               puedeSubir={i > 0 && !b.enTabla && !bloques[i - 1].enTabla}
               puedeBajar={i < bloques.length - 1 && !b.enTabla && !bloques[i + 1].enTabla}
@@ -344,6 +370,8 @@ export default function DocumentoTextoEditor({
               onBorrar={borrar}
               onMover={mover}
               onInsertar={insertar}
+              onFormato={formatear}
+              onTipo={cambiarTipo}
             />
           ))}
           {bloques.length === 0 && (

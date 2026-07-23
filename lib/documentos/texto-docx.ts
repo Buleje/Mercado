@@ -36,6 +36,9 @@ export interface BloqueTexto {
   id: number;
   tipo: "titulo" | "subtitulo" | "parrafo" | "lista";
   texto: string;
+  /** Formato UNIFORME del párrafo (el del primer tramo con texto). */
+  negrita: boolean;
+  cursiva: boolean;
   /**
    * true si el párrafo mezcla varios formatos: editarlo unifica el formato.
    * El editor lo avisa en vez de sorprender al usuario después.
@@ -106,6 +109,21 @@ function tipoDeParrafo(p: Element): BloqueTexto["tipo"] {
   return "parrafo";
 }
 
+/** Negrita/cursiva del primer tramo con texto — el formato "del párrafo". */
+function formatoDeParrafo(p: Element): { negrita: boolean; cursiva: boolean } {
+  const run = hijosPorNombre(p, "r").find((r) => r.getElementsByTagNameNS(W, "t").length > 0);
+  const rPr = run ? primerHijo(run, "rPr") : null;
+  const activo = (nombre: string) => {
+    if (!rPr) return false;
+    const el = primerHijo(rPr, nombre);
+    if (!el) return false;
+    // `<w:b w:val="0"/>` es negrita APAGADA, no prendida.
+    const val = el.getAttributeNS(W, "val") ?? el.getAttribute("w:val");
+    return val !== "0" && val !== "false" && val !== "none";
+  };
+  return { negrita: activo("b"), cursiva: activo("i") };
+}
+
 /** ¿El párrafo mezcla formatos? (más de un run con `rPr` distinto). */
 function tieneFormatoMixto(p: Element): boolean {
   const runs = hijosPorNombre(p, "r").filter((r) => r.getElementsByTagNameNS(W, "t").length > 0);
@@ -157,6 +175,7 @@ export async function leerDocx(datos: ArrayBuffer): Promise<DocumentoTexto> {
       id: i,
       tipo: tipoDeParrafo(p),
       texto: textoDeParrafo(p),
+      ...formatoDeParrafo(p),
       formatoMixto: tieneFormatoMixto(p),
       enTabla: esDescendienteDeTabla(p),
     });
@@ -174,6 +193,8 @@ export function leerPlano(texto: string): DocumentoTexto {
       // En Markdown, `#` marca título: se refleja en el editor.
       tipo: /^#{2,}\s/.test(linea) ? "subtitulo" : /^#\s/.test(linea) ? "titulo" : /^\s*[-*+]\s/.test(linea) ? "lista" : "parrafo",
       texto: linea,
+      negrita: false,
+      cursiva: false,
       formatoMixto: false,
       enTabla: false,
     })),
@@ -187,8 +208,10 @@ export function generarPlano(bloques: BloqueTexto[]): string {
 /**
  * Reemplaza el texto de un `<w:p>` conservando su formato de párrafo (`pPr`) y
  * el del primer tramo (`rPr`). Los saltos de línea vuelven a ser `<w:br/>`.
+ *
+ * @returns el run nuevo, por si hay que ajustarle el formato.
  */
-function reescribirParrafo(doc: XMLDocument, p: Element, texto: string): void {
+function reescribirParrafo(doc: XMLDocument, p: Element, texto: string): Element {
   const runs = hijosPorNombre(p, "r");
   const modelo = runs.find((r) => r.getElementsByTagNameNS(W, "t").length > 0) ?? runs[0] ?? null;
   const rPr = modelo ? primerHijo(modelo, "rPr") : null;
@@ -211,6 +234,55 @@ function reescribirParrafo(doc: XMLDocument, p: Element, texto: string): void {
   });
 
   p.appendChild(run);
+  return run;
+}
+
+/** Prende o apaga negrita/cursiva en el `rPr` de un run. */
+function fijarFormatoRun(doc: XMLDocument, run: Element, negrita: boolean, cursiva: boolean): void {
+  let rPr = primerHijo(run, "rPr");
+  if (!rPr) {
+    if (!negrita && !cursiva) return;
+    rPr = doc.createElementNS(W, "w:rPr");
+    run.insertBefore(rPr, run.firstChild); // rPr va PRIMERO dentro del run
+  }
+  // En orden i, luego b (cada uno al frente): quedan b,i como pide el esquema.
+  for (const [nombre, activo] of [["i", cursiva], ["b", negrita]] as const) {
+    const el = primerHijo(rPr, nombre);
+    if (activo) {
+      if (el) { el.removeAttribute("w:val"); } // limpiar un posible val="0"
+      else rPr.insertBefore(doc.createElementNS(W, `w:${nombre}`), rPr.firstChild);
+    } else if (el) {
+      rPr.removeChild(el);
+    }
+  }
+}
+
+/** Estilo de párrafo según el tipo elegido en el editor. */
+function fijarTipo(doc: XMLDocument, p: Element, tipo: BloqueTexto["tipo"]): void {
+  const estilo = tipo === "titulo" ? "Heading1" : tipo === "subtitulo" ? "Heading2" : null;
+  let pPr = primerHijo(p, "pPr");
+  if (!pPr && !estilo) return;
+  if (!pPr) {
+    pPr = doc.createElementNS(W, "w:pPr");
+    p.insertBefore(pPr, p.firstChild); // pPr debe ser el primer hijo del párrafo
+  }
+  const pStyle = primerHijo(pPr, "pStyle");
+  if (estilo) {
+    if (pStyle) {
+      pStyle.setAttributeNS(W, "w:val", estilo);
+    } else {
+      const nuevo = doc.createElementNS(W, "w:pStyle");
+      nuevo.setAttributeNS(W, "w:val", estilo);
+      pPr.insertBefore(nuevo, pPr.firstChild); // pStyle va primero dentro de pPr
+    }
+  } else if (pStyle) {
+    pPr.removeChild(pStyle);
+  }
+  // Si dejó de ser lista, la viñeta/numeración se va con el tipo.
+  if (tipo !== "lista") {
+    const numPr = primerHijo(pPr, "numPr");
+    if (numPr) pPr.removeChild(numPr);
+  }
 }
 
 /**
@@ -234,13 +306,22 @@ export async function escribirDocx(
   // Instantánea: `getElementsByTagNameNS` devuelve una lista VIVA, y agregar o
   // borrar párrafos mientras se la recorre corre los índices.
   const parrafos = Array.from(doc.getElementsByTagNameNS(W, "p"));
-  const previos = new Map(originales.map((b) => [b.id, b.texto]));
+  const previos = new Map(originales.map((b) => [b.id, b]));
   const vivos = new Set(bloques.map((b) => b.id));
 
-  // 1) Reescrituras: bloques existentes cuyo texto cambió.
+  // 1) Reescrituras: bloques existentes cuyo texto, tipo o formato cambió.
   for (const b of bloques) {
     const p = parrafos[b.id];
-    if (p && previos.get(b.id) !== b.texto) reescribirParrafo(doc, p, b.texto);
+    const previo = previos.get(b.id);
+    if (!p || !previo) continue;
+    const cambio = previo.texto !== b.texto || previo.tipo !== b.tipo
+      || previo.negrita !== b.negrita || previo.cursiva !== b.cursiva;
+    if (!cambio) continue;
+    const run = reescribirParrafo(doc, p, b.texto);
+    if (previo.negrita !== b.negrita || previo.cursiva !== b.cursiva) {
+      fijarFormatoRun(doc, run, b.negrita, b.cursiva);
+    }
+    if (previo.tipo !== b.tipo) fijarTipo(doc, p, b.tipo);
   }
 
   // 2) Altas: cada bloque nuevo clona el párrafo del bloque ANTERIOR en el
@@ -256,7 +337,9 @@ export async function escribirDocx(
     }
     modelo = modelo ?? parrafos[parrafos.length - 1];
     const nuevo = modelo ? (modelo.cloneNode(true) as Element) : doc.createElementNS(W, "w:p");
-    reescribirParrafo(doc, nuevo, b.texto);
+    const run = reescribirParrafo(doc, nuevo, b.texto);
+    if (b.negrita || b.cursiva) fijarFormatoRun(doc, run, b.negrita, b.cursiva);
+    fijarTipo(doc, nuevo, b.tipo);
     nuevos.set(b.id, nuevo);
   }
 

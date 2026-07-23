@@ -122,7 +122,7 @@ describe("guardar sin arruinar el documento", () => {
     const doc = await leerDocx(await docxDePrueba());
     const originales = doc.bloques.map((b) => ({ ...b }));
     const nuevoId = doc.bloques.length + 10; // id que no existe = párrafo nuevo
-    const editados = [...doc.bloques, { id: nuevoId, tipo: "parrafo" as const, texto: "Cláusula adicional", formatoMixto: false, enTabla: false }];
+    const editados = [...doc.bloques, { id: nuevoId, tipo: "parrafo" as const, texto: "Cláusula adicional", negrita: false, cursiva: false, formatoMixto: false, enTabla: false }];
 
     const { bloques } = await reabrir(await escribirDocx(doc, editados, originales));
     expect(bloques.at(-1)?.texto).toBe("Cláusula adicional");
@@ -132,7 +132,7 @@ describe("guardar sin arruinar el documento", () => {
   it("el sectPr queda último — si no, Word da el archivo por corrupto", async () => {
     const doc = await leerDocx(await docxDePrueba());
     const originales = doc.bloques.map((b) => ({ ...b }));
-    const editados = [...doc.bloques, { id: 99, tipo: "parrafo" as const, texto: "Final", formatoMixto: false, enTabla: false }];
+    const editados = [...doc.bloques, { id: 99, tipo: "parrafo" as const, texto: "Final", negrita: false, cursiva: false, formatoMixto: false, enTabla: false }];
 
     const zip = await JSZip.loadAsync(await (await escribirDocx(doc, editados, originales)).arrayBuffer());
     const xml = await zip.file("word/document.xml")!.async("string");
@@ -191,5 +191,39 @@ describe("texto plano", () => {
 
   it("no se rompe con saltos de Windows", () => {
     expect(leerPlano("a\r\nb").bloques.map((b) => b.texto)).toEqual(["a", "b"]);
+  });
+});
+
+describe("formato por párrafo", () => {
+  it("negrita y cursiva del párrafo llegan al archivo y se releen", async () => {
+    const doc = await leerDocx(await docxDePrueba());
+    const originales = doc.bloques.map((b) => ({ ...b }));
+    const editados = doc.bloques.map((b) => (b.id === 1 ? { ...b, negrita: true, cursiva: true } : b));
+
+    const { bloques } = await reabrir(await escribirDocx(doc, editados, originales));
+    expect(bloques[1].negrita).toBe(true);
+    expect(bloques[1].cursiva).toBe(true);
+    // Los demás párrafos ni se tocaron.
+    expect(bloques[2].negrita).toBe(false);
+  });
+
+  it("cambiar el tipo escribe el estilo Heading y vuelve como subtítulo", async () => {
+    const doc = await leerDocx(await docxDePrueba());
+    const originales = doc.bloques.map((b) => ({ ...b }));
+    const editados = doc.bloques.map((b) => (b.id === 2 ? { ...b, tipo: "subtitulo" as const } : b));
+
+    const { bloques } = await reabrir(await escribirDocx(doc, editados, originales));
+    expect(bloques[2].tipo).toBe("subtitulo");
+  });
+
+  it("volver un título a normal le quita el estilo", async () => {
+    const doc = await leerDocx(await docxDePrueba());
+    const titulo = doc.bloques.find((b) => b.tipo === "titulo");
+    if (!titulo) return; // el fixture no trae título: nada que probar
+    const originales = doc.bloques.map((b) => ({ ...b }));
+    const editados = doc.bloques.map((b) => (b.id === titulo.id ? { ...b, tipo: "parrafo" as const } : b));
+
+    const { bloques } = await reabrir(await escribirDocx(doc, editados, originales));
+    expect(bloques[titulo.id].tipo).toBe("parrafo");
   });
 });
