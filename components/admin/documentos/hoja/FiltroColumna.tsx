@@ -10,6 +10,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { Check, Search, X } from "@buleje/design-system/icons";
 import { valoresDeColumna } from "@/lib/documentos/hoja-analisis";
 import type { CeldaHoja } from "@/lib/documentos/xlsx-formato";
@@ -59,7 +60,7 @@ export default function FiltroColumna({
         className="flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
         <div className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-4 py-3">
-          <h2 className="text-sm font-bold text-[var(--text-primary)]">Filtrar por la columna {etiqueta}</h2>
+          <CardTitle as="h2">Filtrar por la columna {etiqueta}</CardTitle>
           <button type="button" onClick={onCerrar} title="Cerrar"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
             <X className="h-4 w-4" aria-hidden /><span className="sr-only">Cerrar</span>
