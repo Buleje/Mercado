@@ -1,31 +1,34 @@
 "use client";
 
 /**
- * HojaCalculoEditor — abre una planilla del drive, la muestra CON el formato
- * del archivo y guarda los cambios de vuelta como versión nueva.
+ * HojaCalculoEditor — la planilla del drive, editable como en Excel.
  *
- * Antes, para corregir un precio había que: descargar, abrir Excel, editar,
- * guardar y volver a subirla (perdiendo el hilo de versiones si le cambiabas
- * el nombre). Ahora se edita en la pestaña y al guardar queda en su lugar.
+ * Muestra el archivo CON su formato, deja trabajar con las herramientas de
+ * siempre (rangos, copiar/pegar, deshacer, formato, fórmulas, insertar filas)
+ * y guarda de vuelta como versión nueva del mismo documento.
  *
- * CÓMO SE GUARDA (lo que hace que esto sea usable con archivos de verdad):
- * no se regenera la planilla, se editan las celdas tocadas DENTRO del archivo
- * original. Gráficos, tablas dinámicas, formato condicional, validaciones y
- * todo lo que el editor no muestra siguen ahí después de guardar. Las fórmulas
- * también: sólo se pierde la de una celda si se la pisa a mano, y el libro
- * queda marcado para que Excel recalcule al abrirlo.
+ * CÓMO SE GUARDA (lo que hace que esto sirva con archivos de verdad): no se
+ * regenera la planilla, se editan las celdas tocadas DENTRO del archivo
+ * original. Gráficos, tablas dinámicas, formato condicional y validaciones
+ * siguen ahí después de guardar.
  *
  * Guarda con Ctrl+S y también solo, a los 2 minutos de la última tecla. Cada
  * guardado es una versión más: siempre se puede volver atrás.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Check, Columns3, Loader2, Rows3, Save, Table } from "@buleje/design-system/icons";
+import { AlertTriangle, ArrowLeft, Check, Loader2, Save, Table } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { leerXlsxConFormato, numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
-import { abrirPaquete, guardarCambios, type CambioCelda } from "@/lib/documentos/xlsx-escritura";
+import { formatearValor, leerXlsxConFormato, numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
+import { abrirPaquete, guardarCambios } from "@/lib/documentos/xlsx-escritura";
 import { formatoDe, generarCsv, parsearCsv } from "@/lib/documentos/hoja-calculo";
+import { celdasDe, etiquetaRango, normalizar, type Punto, type Rango } from "@/lib/documentos/hoja-rango";
+import { esFormula, evaluarFormula } from "@/lib/documentos/hoja-formulas";
+import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
 import GrillaHoja, { type Seleccion } from "./hoja/GrillaHoja";
+import BarraHerramientas from "./hoja/BarraHerramientas";
+import BuscarReemplazar from "./hoja/BuscarReemplazar";
+import { useEditorHoja } from "./hoja/useEditorHoja";
 import type JSZipType from "jszip";
 
 type Estado = "cargando" | "listo" | "guardando" | "error";
@@ -40,18 +43,14 @@ export default function HojaCalculoEditor({
   nombre: string;
   mimeType: string;
 }) {
-  const [hojas, setHojas] = useState<HojaFormato[]>([]);
-  const [activa, setActiva] = useState(0);
-  const [seleccion, setSeleccion] = useState<Seleccion>({ fila: 0, columna: 0 });
+  const [inicial, setInicial] = useState<HojaFormato[] | null>(null);
   const [estado, setEstado] = useState<Estado>("cargando");
   const [error, setError] = useState<string | null>(null);
-  const [sucio, setSucio] = useState(false);
   const [guardadoEn, setGuardadoEn] = useState<Date | null>(null);
+  const [buscando, setBuscando] = useState(false);
+  const [resaltado, setResaltado] = useState<Punto | null>(null);
   const formato = useMemo(() => formatoDe(mimeType, nombre), [mimeType, nombre]);
-  /** El .xlsx original, que se conserva y se edita en el lugar. */
   const paquete = useRef<JSZipType | null>(null);
-  /** Celdas tocadas desde que se abrió: lo único que se reescribe al guardar. */
-  const cambios = useRef<Map<string, CambioCelda>>(new Map());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Cargar ────────────────────────────────────────────────────────────────
@@ -67,12 +66,12 @@ export default function HojaCalculoEditor({
 
         if (formato === "csv") {
           if (cancelado) return;
-          setHojas([hojaDesdeCsv(new TextDecoder().decode(buf))]);
+          setInicial([hojaDesdeCsv(new TextDecoder().decode(buf))]);
         } else {
           const [leidas, zip] = await Promise.all([leerXlsxConFormato(buf), abrirPaquete(buf)]);
           if (cancelado) return;
           paquete.current = zip;
-          setHojas(leidas);
+          setInicial(leidas);
         }
         setEstado("listo");
       } catch (e) {
@@ -84,17 +83,112 @@ export default function HojaCalculoEditor({
     return () => { cancelado = true; };
   }, [docId, formato]);
 
+  if (estado === "cargando" || !inicial) {
+    return (
+      <div className="p-16 text-center text-[var(--text-tertiary)]">
+        <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+        <p className="mt-2 text-sm">Abriendo la planilla…</p>
+      </div>
+    );
+  }
+  if (estado === "error") {
+    return (
+      <div className="m-6 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-6 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+        <AlertTriangle className="mb-2 h-6 w-6" /> {error}
+      </div>
+    );
+  }
+
+  // El editor se monta recién con el archivo cargado: así el historial y los
+  // cambios pendientes arrancan sobre datos reales y no sobre un placeholder.
+  return (
+    <EditorCargado
+      key={docId}
+      inicial={inicial}
+      docId={docId}
+      nombre={nombre}
+      formato={formato}
+      paquete={paquete}
+      guardadoEn={guardadoEn}
+      setGuardadoEn={setGuardadoEn}
+      buscando={buscando}
+      setBuscando={setBuscando}
+      resaltado={resaltado}
+      setResaltado={setResaltado}
+      timerRef={timerRef}
+      autoguardadoMs={AUTOGUARDADO_MS}
+    />
+  );
+}
+
+function EditorCargado({
+  inicial, docId, nombre, formato, paquete, guardadoEn, setGuardadoEn,
+  buscando, setBuscando, resaltado, setResaltado, timerRef, autoguardadoMs,
+}: {
+  inicial: HojaFormato[];
+  docId: string;
+  nombre: string;
+  formato: "xlsx" | "csv";
+  paquete: React.RefObject<JSZipType | null>;
+  guardadoEn: Date | null;
+  setGuardadoEn: (d: Date) => void;
+  buscando: boolean;
+  setBuscando: (b: boolean) => void;
+  resaltado: Punto | null;
+  setResaltado: (p: Punto | null) => void;
+  timerRef: React.RefObject<ReturnType<typeof setTimeout> | null>;
+  autoguardadoMs: number;
+}) {
+  const editor = useEditorHoja(inicial);
+  const { hojas, activa, setActiva, sucio, ejecutar, deshacer, rehacer, puede } = editor;
+  const [seleccion, setSeleccion] = useState<Seleccion>({ fila: 0, columna: 0 });
+  const [rango, setRango] = useState<Rango>({ ancla: { fila: 0, columna: 0 }, foco: { fila: 0, columna: 0 } });
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const hoja = hojas[activa];
+  const sel = useMemo(() => normalizar(rango), [rango]);
+
+  /**
+   * Las fórmulas se recalculan en pantalla apenas cambia una celda: si no, el
+   * usuario ve totales que ya no son ciertos hasta abrir el archivo en Excel.
+   */
+  const hojaCalculada = useMemo(() => {
+    if (!hoja) return hoja;
+    const conFormula = hoja.filas.some((f) => f.some((c) => c.formula));
+    if (!conFormula) return hoja;
+    const leer = (f: number, c: number) => {
+      const celda = hoja.filas[f]?.[c];
+      if (!celda) return "";
+      return celda.formula ? `=${celda.formula}` : celda.crudo;
+    };
+    return {
+      ...hoja,
+      filas: hoja.filas.map((fila) => fila.map((celda) => {
+        if (!celda.formula) return celda;
+        const resultado = evaluarFormula(`=${celda.formula}`, leer);
+        // El resultado se vuelve a vestir con el formato de la celda: si no,
+        // una columna de importes pasa de "S/ 56,650.00" a "56650" al editar.
+        const n = Number(resultado);
+        const texto = Number.isFinite(n) && resultado !== ""
+          ? formatearValor(n, celda.numFmt)
+          : resultado;
+        return { ...celda, texto };
+      })),
+    };
+  }, [hoja]);
+
   // ── Guardar ───────────────────────────────────────────────────────────────
   const guardar = useCallback(async () => {
-    if (estado === "guardando" || hojas.length === 0) return;
-    setEstado("guardando");
+    if (guardando || !hoja) return;
+    setGuardando(true);
     setError(null);
     try {
       const blob = formato === "csv"
         ? new Blob([generarCsv(hojas[0].filas.map((f) => f.map((c) => c.crudo)))], { type: "text/csv" })
         : await guardarCambios(
             paquete.current ?? (() => { throw new Error("Se perdió el archivo original; recargá la página."); })(),
-            [...cambios.current.values()],
+            editor.cambiosParaArchivo(),
           );
 
       const fd = new FormData();
@@ -112,31 +206,44 @@ export default function HojaCalculoEditor({
         }
         throw new Error(j.error === "too_large" ? "El archivo quedó demasiado grande." : (j.message ?? `No se pudo guardar (HTTP ${r.status})`));
       }
-      // Lo guardado ya está en el paquete: no hace falta volver a aplicarlo.
-      cambios.current.clear();
-      setSucio(false);
+      editor.marcarGuardado();
       setGuardadoEn(new Date());
-      setEstado("listo");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setEstado("listo");
+    } finally {
+      setGuardando(false);
     }
-  }, [docId, estado, formato, hojas, nombre]);
+  }, [docId, editor, formato, guardando, hoja, hojas, nombre, paquete, setGuardadoEn]);
 
   useEffect(() => {
-    if (!sucio || estado !== "listo") return;
+    if (!sucio || guardando) return;
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => { void guardar(); }, AUTOGUARDADO_MS);
+    timerRef.current = setTimeout(() => { void guardar(); }, autoguardadoMs);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [sucio, estado, guardar]);
+  }, [sucio, guardando, guardar, timerRef, autoguardadoMs]);
 
+  // ── Atajos globales ───────────────────────────────────────────────────────
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); void guardar(); }
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      const atajos: Record<string, () => void> = {
+        s: () => void guardar(),
+        z: () => (e.shiftKey ? rehacer() : deshacer()),
+        y: rehacer,
+        f: () => setBuscando(true),
+        b: () => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: { negrita: true } }),
+        i: () => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: { cursiva: true } }),
+        u: () => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: { subrayado: true } }),
+      };
+      const accion = atajos[k];
+      if (!accion) return;
+      e.preventDefault();
+      accion();
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [guardar]);
+  }, [deshacer, ejecutar, guardar, rehacer, sel, setBuscando]);
 
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => { if (sucio) e.preventDefault(); };
@@ -144,67 +251,41 @@ export default function HojaCalculoEditor({
     return () => window.removeEventListener("beforeunload", h);
   }, [sucio]);
 
-  // ── Edición ───────────────────────────────────────────────────────────────
-  const editarCelda = useCallback((fila: number, columna: number, valor: string) => {
-    setHojas((prev) => prev.map((h, i) => {
-      if (i !== activa) return h;
-      const filas = h.filas.map((f, fi) => (fi === fila
-        ? f.map((c, ci) => (ci === columna
-          // El valor escrito manda sobre el formato viejo: si la celda tenía
-          // "S/ 22.00", al escribir 25 se ve 25 hasta abrirlo en Excel, que le
-          // vuelve a aplicar el formato de la celda.
-          ? { ...c, texto: valor, crudo: valor, formula: undefined }
-          : c))
-        : f));
-      return { ...h, filas };
-    }));
-    cambios.current.set(`${activa}-${fila}-${columna}`, {
-      hoja: activa, fila: fila + 1, columna: columna + 1, valor,
-    });
-    setSucio(true);
-  }, [activa]);
+  // ── Acciones de la barra ──────────────────────────────────────────────────
+  const acciones = useMemo(() => ({
+    formato: (f: CambioFormato) => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: f }),
+    insertar: (eje: "fila" | "columna") =>
+      ejecutar({ tipo: "estructura", eje, indice: (eje === "fila" ? sel.filaIni : sel.colIni) + 1, delta: 1 }),
+    eliminar: (eje: "fila" | "columna") =>
+      ejecutar({ tipo: "estructura", eje, indice: (eje === "fila" ? sel.filaIni : sel.colIni) + 1, delta: -1 }),
+    /**
+     * Autosuma: pone `=SUMA(...)` debajo de la selección, sobre la columna
+     * seleccionada. Es el gesto más repetido de cualquier planilla.
+     */
+    autosuma: () => {
+      const col = numeroALetra(sel.colIni + 1);
+      const desde = sel.filaIni + 1;
+      const hasta = sel.filaFin + 1;
+      ejecutar({
+        tipo: "valores",
+        celdas: [{ fila: sel.filaFin + 1, columna: sel.colIni, valor: `=SUMA(${col}${desde}:${col}${hasta})` }],
+      });
+    },
+    deshacer, rehacer,
+    buscar: () => setBuscando(true),
+  }), [deshacer, ejecutar, rehacer, sel, setBuscando]);
 
-  const agregarFila = () => {
-    setHojas((prev) => prev.map((h, i) => {
-      if (i !== activa) return h;
-      const cols = h.filas[0]?.length ?? 1;
-      return {
-        ...h,
-        filas: [...h.filas, Array.from({ length: cols }, () => ({ texto: "", crudo: "" }))],
-        altos: [...h.altos, 20],
-        filasOcultas: [...h.filasOcultas, false],
-      };
-    }));
-  };
-  const agregarColumna = () => {
-    setHojas((prev) => prev.map((h, i) => (i === activa ? {
-      ...h,
-      filas: h.filas.map((f) => [...f, { texto: "", crudo: "" }]),
-      anchos: [...h.anchos, 64],
-      columnasOcultas: [...h.columnasOcultas, false],
-    } : h)));
-  };
+  const accionesGrilla = useMemo(() => ({
+    editar: (celdas: { fila: number; columna: number; valor: string }[]) =>
+      ejecutar({ tipo: "valores", celdas }),
+    ancho: (columna: number, anchoPx: number) => ejecutar({ tipo: "ancho", columna, anchoPx }),
+  }), [ejecutar]);
 
-  const hoja = hojas[activa];
-  const celda = hoja?.filas[seleccion.fila]?.[seleccion.columna];
+  if (!hoja || !hojaCalculada) return null;
+
+  const celda = hoja.filas[seleccion.fila]?.[seleccion.columna];
   const visibles = hojas.filter((h) => !h.oculta);
-
-  if (estado === "cargando") {
-    return (
-      <div className="p-16 text-center text-[var(--text-tertiary)]">
-        <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-        <p className="mt-2 text-sm">Abriendo la planilla…</p>
-      </div>
-    );
-  }
-  if (estado === "error" && !hoja) {
-    return (
-      <div className="m-6 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-6 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-        <AlertTriangle className="mb-2 h-6 w-6" /> {error}
-      </div>
-    );
-  }
-  if (!hoja) return null;
+  const contenido = celda?.formula ? `=${celda.formula}` : celda?.crudo ?? "";
 
   return (
     <div className="flex h-screen flex-col bg-[var(--surface-canvas)]">
@@ -226,54 +307,56 @@ export default function HojaCalculoEditor({
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button type="button" onClick={agregarFila} title="Agregar una fila al final"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-            <Rows3 className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Fila</span>
-            <span className="sr-only sm:hidden">Agregar fila</span>
-          </button>
-          <button type="button" onClick={agregarColumna} title="Agregar una columna al final"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
-            <Columns3 className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Columna</span>
-            <span className="sr-only sm:hidden">Agregar columna</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => void guardar()}
-            disabled={estado === "guardando" || !sucio}
-            title="Guardar en el panel (Ctrl+S)"
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
-          >
-            {estado === "guardando" ? <Loader2 className="h-4 w-4 animate-spin" /> : sucio ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-            {estado === "guardando" ? "Guardando…" : "Guardar"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => void guardar()}
+          disabled={guardando || !sucio}
+          title="Guardar en el panel (Ctrl+S)"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
+        >
+          {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : sucio ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+          {guardando ? "Guardando…" : "Guardar"}
+        </button>
       </header>
+
+      <BarraHerramientas acciones={acciones} puede={puede} etiquetaSeleccion={etiquetaRango(sel)} />
+
+      {buscando && (
+        <BuscarReemplazar
+          hoja={hojaCalculada}
+          onIr={(p) => { setResaltado(p); setSeleccion(p); setRango({ ancla: p, foco: p }); }}
+          onReemplazar={(celdas) => { ejecutar({ tipo: "valores", celdas }); setBuscando(false); setResaltado(null); }}
+          onCerrar={() => { setBuscando(false); setResaltado(null); }}
+        />
+      )}
 
       {/* Barra de fórmulas: qué celda es y qué tiene realmente adentro. */}
       <div className="flex items-center gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5">
-        <span className="w-16 shrink-0 rounded-md border border-[var(--rule-base)] px-2 py-0.5 text-center text-xs font-bold text-[var(--text-secondary)]">
-          {numeroALetra(seleccion.columna + 1)}{seleccion.fila + 1}
+        <span className="w-20 shrink-0 rounded-md border border-[var(--rule-base)] px-2 py-0.5 text-center text-xs font-bold text-[var(--text-secondary)]">
+          {etiquetaRango(sel)}
         </span>
-        <span className="min-w-0 flex-1 truncate font-mono text-xs text-[var(--text-secondary)]">
-          {celda?.formula ? `=${celda.formula}` : celda?.crudo || ""}
-        </span>
+        <input
+          value={contenido}
+          onChange={(e) => ejecutar({ tipo: "valores", celdas: [{ ...seleccion, valor: e.target.value }] })}
+          aria-label="Contenido de la celda"
+          placeholder="Escribí un valor o una fórmula (=SUMA(B2:B10))"
+          className={`min-w-0 flex-1 bg-transparent text-xs text-[var(--text-primary)] outline-none ${esFormula(contenido) ? "font-mono" : ""}`}
+        />
       </div>
 
       {error && (
         <p className="border-b-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">{error}</p>
-      )}
-      {hoja.tieneFormulas && (
-        <p className="border-b border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-          Esta hoja tiene fórmulas y se conservan. Sólo se pierde la de una celda si la pisás a mano; Excel recalcula el resto al abrir.
-        </p>
       )}
 
       {visibles.length > 1 && (
         <div className="flex gap-1 overflow-x-auto border-b-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5">
           {hojas.map((h, i) => h.oculta ? null : (
             <button key={h.nombre + i} type="button"
-              onClick={() => { setActiva(i); setSeleccion({ fila: 0, columna: 0 }); }}
+              onClick={() => {
+                setActiva(i);
+                setSeleccion({ fila: 0, columna: 0 });
+                setRango({ ancla: { fila: 0, columna: 0 }, foco: { fila: 0, columna: 0 } });
+              }}
               className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                 i === activa ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               }`}>
@@ -285,10 +368,13 @@ export default function HojaCalculoEditor({
 
       <GrillaHoja
         key={activa}
-        hoja={hoja}
+        hoja={hojaCalculada}
         seleccion={seleccion}
+        rango={rango}
         onSeleccion={setSeleccion}
-        onEditar={editarCelda}
+        onRango={setRango}
+        acciones={accionesGrilla}
+        resaltado={resaltado}
       />
     </div>
   );

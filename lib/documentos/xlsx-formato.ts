@@ -39,6 +39,8 @@ export interface CeldaHoja {
   crudo: string;
   /** true si el valor sale de una fórmula (editarla la reemplaza). */
   formula?: string;
+  /** Código de formato de Excel — hace falta para reformatear al recalcular. */
+  numFmt?: string;
   estilo?: EstiloCelda;
   /** Cuántas celdas ocupa, si es el ancla de una celda combinada. */
   colspan?: number;
@@ -286,6 +288,7 @@ export async function leerXlsxConFormato(datos: ArrayBuffer): Promise<HojaFormat
           texto: formatearValor(bruto, cell.numFmt),
           crudo: valorCrudo(v),
           formula,
+          numFmt: cell.numFmt || undefined,
           estilo: estiloDeCelda(cell, bruto),
           colspan: span?.colspan,
           rowspan: span?.rowspan,

@@ -18,6 +18,8 @@
 
 import type JSZipType from "jszip";
 import { numeroALetra } from "./xlsx-formato";
+import { aplicarFormato, STYLES_VACIO, type CambioFormato } from "./xlsx-estilos";
+import { fijarAnchoColumna, moverEstructura, type Eje } from "./xlsx-estructura";
 
 const NS_SS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -28,6 +30,45 @@ export interface CambioCelda {
   fila: number;
   columna: number;
   valor: string;
+}
+
+/** Formato aplicado a una celda (barra de herramientas). */
+export interface CambioEstilo {
+  hoja: number;
+  fila: number;
+  columna: number;
+  formato: CambioFormato;
+}
+
+/** Fila o columna insertada o eliminada. `delta` +1 inserta, -1 elimina. */
+export interface CambioEstructura {
+  hoja: number;
+  eje: Eje;
+  /** Posición en base 1. */
+  indice: number;
+  delta: 1 | -1;
+}
+
+/** Ancho de columna arrastrado por el usuario, en píxeles. */
+export interface CambioAncho {
+  hoja: number;
+  /** Columna en base 1. */
+  columna: number;
+  anchoPx: number;
+}
+
+/**
+ * Todo lo que el editor puede haber cambiado.
+ *
+ * El ORDEN importa: primero la estructura (inserciones y borrados corren las
+ * direcciones de todo lo demás), después los valores, el formato y los anchos,
+ * que ya se expresan en las coordenadas nuevas.
+ */
+export interface Cambios {
+  estructura?: CambioEstructura[];
+  celdas?: CambioCelda[];
+  estilos?: CambioEstilo[];
+  anchos?: CambioAncho[];
 }
 
 /** Abre el paquete .xlsx conservándolo entero. */
@@ -151,6 +192,15 @@ function escribirCelda(doc: XMLDocument, sheetData: Element, fila: number, colum
 
   if (valor === "") return; // celda vacía: sin hijos, con su estilo intacto
 
+  // Fórmula escrita por el usuario: se guarda COMO fórmula, no como texto, y
+  // sin `<v>`: `fullCalcOnLoad` hace que Excel la calcule al abrir.
+  if (valor.trimStart().startsWith("=")) {
+    const f = doc.createElementNS(NS_SS, "f");
+    f.textContent = valor.trimStart().slice(1);
+    celda.appendChild(f);
+    return;
+  }
+
   const numero = comoNumero(valor);
   if (numero !== null) {
     const v = doc.createElementNS(NS_SS, "v");
@@ -166,6 +216,46 @@ function escribirCelda(doc: XMLDocument, sheetData: Element, fila: number, colum
   t.textContent = valor;
   is.appendChild(t);
   celda.appendChild(is);
+}
+
+/** Busca (o crea) la celda para leer su índice de estilo actual. */
+function estiloDeCelda(sheetData: Element, fila: number, columna: number): number {
+  const ref = `${numeroALetra(columna)}${fila}`;
+  const rows = sheetData.getElementsByTagNameNS(NS_SS, "row");
+  for (let i = 0; i < rows.length; i++) {
+    if (numeroDeFila(rows[i]) !== fila) continue;
+    for (let j = 0; j < rows[i].children.length; j++) {
+      if (rows[i].children[j].getAttribute("r") === ref) {
+        return Number(rows[i].children[j].getAttribute("s")) || 0;
+      }
+    }
+  }
+  return 0;
+}
+
+/** Apunta la celda a un índice de estilo, creándola si hace falta. */
+function fijarEstilo(doc: XMLDocument, sheetData: Element, fila: number, columna: number, indice: number): void {
+  const ref = `${numeroALetra(columna)}${fila}`;
+  let row: Element | null = null;
+  const rows = sheetData.getElementsByTagNameNS(NS_SS, "row");
+  for (let i = 0; i < rows.length; i++) {
+    if (numeroDeFila(rows[i]) === fila) { row = rows[i]; break; }
+  }
+  if (!row) {
+    row = doc.createElementNS(NS_SS, "row");
+    row.setAttribute("r", String(fila));
+    insertarOrdenado(sheetData, row, numeroDeFila);
+  }
+  let celda: Element | null = null;
+  for (let i = 0; i < row.children.length; i++) {
+    if (row.children[i].getAttribute("r") === ref) { celda = row.children[i]; break; }
+  }
+  if (!celda) {
+    celda = doc.createElementNS(NS_SS, "c");
+    celda.setAttribute("r", ref);
+    insertarOrdenado(row, celda, columnaDeCelda);
+  }
+  celda.setAttribute("s", String(indice));
 }
 
 /**
@@ -192,25 +282,40 @@ async function forzarRecalculo(zip: JSZipType): Promise<void> {
   zip.file("xl/workbook.xml", new XMLSerializer().serializeToString(doc));
 }
 
+function serializar(doc: XMLDocument): string {
+  return new XMLSerializer().serializeToString(doc);
+}
+
 /**
  * Aplica los cambios al paquete y devuelve el .xlsx listo para subir.
  *
- * Sólo se reescriben los XML de las hojas que tuvieron cambios.
+ * Sólo se abren los XML de las hojas que tuvieron cambios; `styles.xml` sólo
+ * si se tocó el formato.
  */
-export async function guardarCambios(zip: JSZipType, cambios: CambioCelda[]): Promise<Blob> {
-  if (cambios.length === 0) {
+export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCelda[]): Promise<Blob> {
+  // Compatibilidad: antes esta función recibía sólo la lista de celdas.
+  const todo: Cambios = Array.isArray(cambios) ? { celdas: cambios } : cambios;
+  const { estructura = [], celdas = [], estilos = [], anchos = [] } = todo;
+  const hayAlgo = estructura.length + celdas.length + estilos.length + anchos.length > 0;
+  if (!hayAlgo) {
     return zip.generateAsync({ type: "blob", compression: "DEFLATE" });
   }
 
   const rutas = await rutasDeHojas(zip);
-  const porHoja = new Map<number, CambioCelda[]>();
-  for (const c of cambios) {
-    const lista = porHoja.get(c.hoja) ?? [];
-    lista.push(c);
-    porHoja.set(c.hoja, lista);
+
+  // `styles.xml` es del libro entero, no de una hoja: se abre una sola vez.
+  let stylesDoc: XMLDocument | null = null;
+  if (estilos.length > 0) {
+    const xml = (await zip.file("xl/styles.xml")?.async("string")) ?? STYLES_VACIO;
+    stylesDoc = new DOMParser().parseFromString(xml, "application/xml");
   }
 
-  for (const [indice, lista] of porHoja) {
+  const hojasTocadas = new Set<number>([
+    ...estructura.map((c) => c.hoja), ...celdas.map((c) => c.hoja),
+    ...estilos.map((c) => c.hoja), ...anchos.map((c) => c.hoja),
+  ]);
+
+  for (const indice of hojasTocadas) {
     const ruta = rutas[indice];
     const xml = ruta ? await zip.file(ruta)?.async("string") : undefined;
     if (!xml) continue;
@@ -219,14 +324,40 @@ export async function guardarCambios(zip: JSZipType, cambios: CambioCelda[]): Pr
     if (doc.getElementsByTagName("parsererror").length > 0) {
       throw new Error(`No se pudo leer la hoja ${indice + 1} del archivo.`);
     }
+
+    // 1) Estructura primero: corre las direcciones de todo lo demás.
+    for (const c of estructura.filter((c) => c.hoja === indice)) {
+      moverEstructura(doc, c.eje, c.indice, c.delta);
+    }
+
     let sheetData = doc.getElementsByTagNameNS(NS_SS, "sheetData")[0] as Element | undefined;
     if (!sheetData) {
       sheetData = doc.createElementNS(NS_SS, "sheetData");
       doc.documentElement.appendChild(sheetData);
     }
-    for (const c of lista) escribirCelda(doc, sheetData, c.fila, c.columna, c.valor);
-    zip.file(ruta, new XMLSerializer().serializeToString(doc));
+
+    // 2) Valores.
+    for (const c of celdas.filter((c) => c.hoja === indice)) {
+      escribirCelda(doc, sheetData, c.fila, c.columna, c.valor);
+    }
+
+    // 3) Formato.
+    if (stylesDoc) {
+      for (const c of estilos.filter((c) => c.hoja === indice)) {
+        const actual = estiloDeCelda(sheetData, c.fila, c.columna);
+        fijarEstilo(doc, sheetData, c.fila, c.columna, aplicarFormato(stylesDoc, actual, c.formato));
+      }
+    }
+
+    // 4) Anchos de columna.
+    for (const c of anchos.filter((c) => c.hoja === indice)) {
+      fijarAnchoColumna(doc, c.columna, c.anchoPx);
+    }
+
+    zip.file(ruta, serializar(doc));
   }
+
+  if (stylesDoc) zip.file("xl/styles.xml", serializar(stylesDoc));
 
   await forzarRecalculo(zip);
   return zip.generateAsync({

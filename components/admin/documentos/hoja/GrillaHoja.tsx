@@ -3,36 +3,52 @@
 /**
  * GrillaHoja — la planilla en pantalla, con el formato del archivo.
  *
- * DOS DECISIONES QUE DEFINEN ESTE COMPONENTE:
+ * TRES DECISIONES QUE DEFINEN ESTE COMPONENTE:
  *
  * 1. UNA SOLA CELDA EDITABLE. La primera versión ponía un `<input>` por celda:
  *    con un catálogo real de 68 columnas eso son miles de inputs, el navegador
- *    se arrastra y encima ninguno puede mostrar el formato del archivo (colores,
- *    negritas, celdas combinadas). Acá las celdas son texto formateado y hay un
- *    único editor que aparece sobre la celda activa, como en Excel.
+ *    se arrastra y ninguno puede mostrar el formato del archivo. Acá las celdas
+ *    son texto formateado y hay un único editor sobre la celda activa.
  *
  * 2. SÓLO SE DIBUJAN LAS FILAS VISIBLES. Con el alto real de cada fila se sabe
- *    qué rango cae en pantalla; el resto se compensa con dos espaciadores. Una
- *    planilla de miles de filas abre igual de rápido que una de diez.
+ *    qué rango cae en pantalla; el resto se compensa con espaciadores.
+ *
+ * 3. EL PORTAPAPELES ES EL DEL SISTEMA. Copiar acá y pegar en Excel funciona,
+ *    y al revés también, porque se usa el mismo formato TSV que usa Excel.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CeldaHoja, HojaFormato } from "@/lib/documentos/xlsx-formato";
 import { numeroALetra } from "@/lib/documentos/xlsx-formato";
+import {
+  aTsv, celdasDe, dentro, desdeTsv, destinoPegado, normalizar,
+  type Punto, type Rango,
+} from "@/lib/documentos/hoja-rango";
 
-export interface Seleccion { fila: number; columna: number }
+export type Seleccion = Punto;
 
-const ANCHO_CANAL = 46;   // la columna de números de fila
-const MARGEN_FILAS = 8;   // filas de más arriba y abajo, para que el scroll no parpadee
+const ANCHO_CANAL = 46;
+const MARGEN_FILAS = 8;
 const ALTO_ENCABEZADO = 26;
+/** Ancho mínimo al arrastrar: por debajo, la columna deja de poder agarrarse. */
+const ANCHO_MINIMO = 28;
+
+export interface AccionesGrilla {
+  editar: (celdas: { fila: number; columna: number; valor: string }[]) => void;
+  ancho: (columna: number, anchoPx: number) => void;
+}
 
 export default function GrillaHoja({
-  hoja, seleccion, onSeleccion, onEditar,
+  hoja, seleccion, rango, onSeleccion, onRango, acciones, resaltado,
 }: {
   hoja: HojaFormato;
   seleccion: Seleccion;
+  rango: Rango;
   onSeleccion: (s: Seleccion) => void;
-  onEditar: (fila: number, columna: number, valor: string) => void;
+  onRango: (r: Rango) => void;
+  acciones: AccionesGrilla;
+  /** Celda a la que saltó el buscador, para marcarla. */
+  resaltado?: Punto | null;
 }) {
   const contenedor = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLInputElement>(null);
@@ -40,10 +56,13 @@ export default function GrillaHoja({
   const [borrador, setBorrador] = useState("");
   const [scrollTop, setScrollTop] = useState(0);
   const [alto, setAlto] = useState(600);
+  const arrastrando = useRef(false);
+  /** Columna que se está redimensionando y desde qué x empezó. */
+  const resize = useRef<{ columna: number; xInicial: number; anchoInicial: number } | null>(null);
 
   const totalCols = hoja.filas[0]?.length ?? 0;
+  const sel = useMemo(() => normalizar(rango), [rango]);
 
-  /** Suma acumulada de altos: dice dónde empieza cada fila. */
   const offsets = useMemo(() => {
     const out = [0];
     for (let i = 0; i < hoja.filas.length; i++) {
@@ -52,11 +71,9 @@ export default function GrillaHoja({
     return out;
   }, [hoja]);
 
-  /** Filas y columnas que Excel dejó fijas ("Inmovilizar paneles"). */
   const fijas = Math.min(hoja.congelado.filas, hoja.filas.length);
   const fijasCol = Math.min(hoja.congelado.columnas, totalCols);
 
-  /** Dónde arranca cada columna: para pegar las congeladas a la izquierda. */
   const izquierdas = useMemo(() => {
     const out = [ANCHO_CANAL];
     for (let i = 0; i < hoja.anchos.length; i++) {
@@ -65,15 +82,15 @@ export default function GrillaHoja({
     return out;
   }, [hoja.anchos, hoja.columnasOcultas]);
 
-  /** Alto del encabezado + el de las filas congeladas: el techo del scroll. */
   const techo = useMemo(() => {
     let h = ALTO_ENCABEZADO;
     for (let i = 0; i < fijas; i++) h += hoja.filasOcultas[i] ? 0 : hoja.altos[i] ?? 20;
     return h;
   }, [fijas, hoja.altos, hoja.filasOcultas]);
+  const techoRef = useRef(0);
+  useEffect(() => { techoRef.current = techo; }, [techo]);
 
-  const rango = useMemo(() => {
-    // Las congeladas se dibujan siempre aparte: el rango virtual empieza después.
+  const visible = useMemo(() => {
     const desde = Math.max(fijas, buscarFila(offsets, scrollTop) - MARGEN_FILAS);
     const hasta = Math.min(hoja.filas.length, buscarFila(offsets, scrollTop + alto) + MARGEN_FILAS);
     return { desde, hasta: Math.max(desde, hasta) };
@@ -88,21 +105,41 @@ export default function GrillaHoja({
     return () => ro.disconnect();
   }, []);
 
+  // El buscador manda a una celda que puede estar fuera de la parte visible.
+  useEffect(() => {
+    if (!resaltado) return;
+    const el = contenedor.current;
+    if (!el) return;
+    const arriba = offsets[resaltado.fila];
+    if (arriba < el.scrollTop + techoRef.current || arriba > el.scrollTop + el.clientHeight) {
+      el.scrollTop = Math.max(0, arriba - techoRef.current - 40);
+    }
+  }, [resaltado, offsets]);
+
   const abrirEditor = useCallback((texto: string) => {
     setBorrador(texto);
     setEditando(true);
-    // El input se monta en este render; enfocarlo después.
     requestAnimationFrame(() => editorRef.current?.focus());
   }, []);
 
-  const confirmar = useCallback((mover: 0 | 1) => {
-    onEditar(seleccion.fila, seleccion.columna, borrador);
-    setEditando(false);
-    if (mover) onSeleccion({ ...seleccion, fila: Math.min(hoja.filas.length - 1, seleccion.fila + 1) });
-    contenedor.current?.focus();
-  }, [borrador, hoja.filas.length, onEditar, onSeleccion, seleccion]);
+  /** Contenido crudo de una celda, con el `=` de las fórmulas. */
+  const crudoDe = useCallback((f: number, c: number) => {
+    const celda = hoja.filas[f]?.[c];
+    if (!celda) return "";
+    return celda.formula ? `=${celda.formula}` : celda.crudo;
+  }, [hoja.filas]);
 
-  /** Deja la celda seleccionada dentro de la parte visible. */
+  const confirmar = useCallback((mover: 0 | 1) => {
+    acciones.editar([{ fila: seleccion.fila, columna: seleccion.columna, valor: borrador }]);
+    setEditando(false);
+    if (mover) {
+      const destino = { fila: Math.min(hoja.filas.length - 1, seleccion.fila + 1), columna: seleccion.columna };
+      onSeleccion(destino);
+      onRango({ ancla: destino, foco: destino });
+    }
+    contenedor.current?.focus();
+  }, [acciones, borrador, hoja.filas.length, onRango, onSeleccion, seleccion]);
+
   const asegurarVisible = useCallback((f: number) => {
     const el = contenedor.current;
     if (!el) return;
@@ -112,34 +149,100 @@ export default function GrillaHoja({
     else if (abajo > el.scrollTop + el.clientHeight) el.scrollTop = abajo - el.clientHeight;
   }, [offsets]);
 
-  // El techo cambia con la hoja; se lee por ref para no rehacer el callback.
-  const techoRef = useRef(0);
-  useEffect(() => { techoRef.current = techo; }, [techo]);
+  // ── Portapapeles ──────────────────────────────────────────────────────────
+  // Se enganchan los eventos nativos: así el navegador entrega el contenido
+  // real del portapapeles del sistema, sin pedir permisos especiales.
+  useEffect(() => {
+    const el = contenedor.current;
+    if (!el) return;
+
+    const copiar = (e: ClipboardEvent, cortar: boolean) => {
+      if (editando) return;
+      const matriz: string[][] = [];
+      for (let f = sel.filaIni; f <= sel.filaFin; f++) {
+        const fila: string[] = [];
+        for (let c = sel.colIni; c <= sel.colFin; c++) fila.push(crudoDe(f, c));
+        matriz.push(fila);
+      }
+      e.clipboardData?.setData("text/plain", aTsv(matriz));
+      e.preventDefault();
+      if (cortar) acciones.editar(celdasDe(sel).map((p) => ({ ...p, valor: "" })));
+    };
+
+    const pegar = (e: ClipboardEvent) => {
+      if (editando) return;
+      const texto = e.clipboardData?.getData("text/plain");
+      if (!texto) return;
+      e.preventDefault();
+      acciones.editar(destinoPegado(desdeTsv(texto), sel));
+    };
+
+    const onCopy = (e: ClipboardEvent) => copiar(e, false);
+    const onCut = (e: ClipboardEvent) => copiar(e, true);
+    el.addEventListener("copy", onCopy);
+    el.addEventListener("cut", onCut);
+    el.addEventListener("paste", pegar);
+    return () => {
+      el.removeEventListener("copy", onCopy);
+      el.removeEventListener("cut", onCut);
+      el.removeEventListener("paste", pegar);
+    };
+  }, [acciones, crudoDe, editando, sel]);
+
+  // ── Redimensionar columnas ────────────────────────────────────────────────
+  useEffect(() => {
+    const mover = (e: MouseEvent) => {
+      const r = resize.current;
+      if (!r) return;
+      acciones.ancho(r.columna, Math.max(ANCHO_MINIMO, r.anchoInicial + (e.clientX - r.xInicial)));
+    };
+    const soltar = () => { resize.current = null; };
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+    return () => {
+      window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mouseup", soltar);
+    };
+  }, [acciones]);
 
   const teclado = (e: React.KeyboardEvent) => {
     if (editando) return;
     const { fila, columna } = seleccion;
-    const mover = (df: number, dc: number) => {
-      const f = Math.max(0, Math.min(hoja.filas.length - 1, fila + df));
-      const c = Math.max(0, Math.min(totalCols - 1, columna + dc));
-      onSeleccion({ fila: f, columna: c });
-      asegurarVisible(f);
+
+    const irA = (f: number, c: number, extender: boolean) => {
+      const destino = {
+        fila: Math.max(0, Math.min(hoja.filas.length - 1, f)),
+        columna: Math.max(0, Math.min(totalCols - 1, c)),
+      };
+      onSeleccion(destino);
+      // Shift extiende la selección desde donde empezó, como en Excel.
+      onRango(extender ? { ancla: rango.ancla, foco: destino } : { ancla: destino, foco: destino });
+      asegurarVisible(destino.fila);
       e.preventDefault();
     };
+
     switch (e.key) {
-      case "ArrowDown": return mover(1, 0);
-      case "ArrowUp": return mover(-1, 0);
-      case "ArrowLeft": return mover(0, -1);
-      case "ArrowRight": case "Tab": return mover(0, e.shiftKey && e.key === "Tab" ? -1 : 1);
-      case "PageDown": return mover(20, 0);
-      case "PageUp": return mover(-20, 0);
-      case "Home": return mover(0, -columna);
+      case "ArrowDown": return irA(fila + 1, columna, e.shiftKey);
+      case "ArrowUp": return irA(fila - 1, columna, e.shiftKey);
+      case "ArrowLeft": return irA(fila, columna - 1, e.shiftKey);
+      case "ArrowRight": return irA(fila, columna + 1, e.shiftKey);
+      case "Tab": return irA(fila, columna + (e.shiftKey ? -1 : 1), false);
+      case "PageDown": return irA(fila + 20, columna, e.shiftKey);
+      case "PageUp": return irA(fila - 20, columna, e.shiftKey);
+      case "Home": return irA(e.ctrlKey ? 0 : fila, 0, e.shiftKey);
+      case "End": return irA(e.ctrlKey ? hoja.filas.length - 1 : fila, totalCols - 1, e.shiftKey);
       case "Enter": case "F2":
         e.preventDefault();
-        return abrirEditor(hoja.filas[fila]?.[columna]?.crudo ?? "");
+        return abrirEditor(crudoDe(fila, columna));
       case "Delete": case "Backspace":
         e.preventDefault();
-        return onEditar(fila, columna, "");
+        return acciones.editar(celdasDe(sel).map((p) => ({ ...p, valor: "" })));
+      case "a": case "A":
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          onRango({ ancla: { fila: 0, columna: 0 }, foco: { fila: hoja.filas.length - 1, columna: totalCols - 1 } });
+        }
+        return;
       default:
         // Escribir directamente reemplaza el contenido, como en Excel.
         if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
@@ -149,56 +252,72 @@ export default function GrillaHoja({
     }
   };
 
-  const celdaActiva = hoja.filas[seleccion.fila]?.[seleccion.columna];
-
-  /** Una fila de la planilla. `fija` = pegada arriba (panel congelado). */
   const renderFila = (f: number, fija: boolean) => {
     const fila = hoja.filas[f];
     if (!fila || hoja.filasOcultas[f]) return null;
-    // Las fijas se apilan bajo el encabezado, cada una tras la anterior.
     const top = fija ? ALTO_ENCABEZADO + (offsets[f] - offsets[0]) : undefined;
+    const filaEnSeleccion = f >= sel.filaIni && f <= sel.filaFin;
+
     return (
       <tr key={f} style={{ height: hoja.altos[f] }}>
         <th
           scope="row"
+          onMouseDown={() => {
+            onSeleccion({ fila: f, columna: 0 });
+            onRango({ ancla: { fila: f, columna: 0 }, foco: { fila: f, columna: totalCols - 1 } });
+          }}
           style={fija ? { position: "sticky", top, zIndex: 25 } : undefined}
-          className={`sticky left-0 z-10 border border-[var(--rule-base)] px-1 text-center text-[length:var(--ts-2xs)] font-bold ${
-            f === seleccion.fila
-              ? "bg-[var(--accent)] text-white"
-              : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+          className={`sticky left-0 z-10 cursor-pointer border border-[var(--rule-base)] px-1 text-center text-[length:var(--ts-2xs)] font-bold ${
+            filaEnSeleccion ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           }`}
+          title={`Fila ${f + 1} — clic para seleccionarla entera`}
         >
           {f + 1}
         </th>
         {fila.map((celda, c) => {
           if (celda.tapada) return null;
           const activa = f === seleccion.fila && c === seleccion.columna;
+          const esResaltado = resaltado?.fila === f && resaltado?.columna === c;
           const colFija = c < fijasCol;
           const pegado: React.CSSProperties = (fija || colFija)
             ? {
                 position: "sticky",
                 top: fija ? top : undefined,
                 left: colFija ? izquierdas[c] : undefined,
-                // Sin fondo propio, el contenido de abajo se transparenta al
-                // pasar por debajo de una celda pegada.
                 backgroundColor: celda.estilo?.fondo ?? "var(--surface-raised)",
                 zIndex: fija && colFija ? 24 : fija ? 22 : 12,
               }
             : {};
+
           return (
             <td
               key={c}
               hidden={hoja.columnasOcultas[c]}
               colSpan={celda.colspan}
               rowSpan={celda.rowspan}
-              onMouseDown={() => { setEditando(false); onSeleccion({ fila: f, columna: c }); }}
-              onDoubleClick={() => abrirEditor(celda.crudo)}
+              onMouseDown={(e) => {
+                if (e.button !== 0) return;
+                setEditando(false);
+                arrastrando.current = true;
+                onSeleccion({ fila: f, columna: c });
+                onRango(e.shiftKey
+                  ? { ancla: rango.ancla, foco: { fila: f, columna: c } }
+                  : { ancla: { fila: f, columna: c }, foco: { fila: f, columna: c } });
+              }}
+              onMouseEnter={() => {
+                if (arrastrando.current) onRango({ ancla: rango.ancla, foco: { fila: f, columna: c } });
+              }}
+              onDoubleClick={() => abrirEditor(crudoDe(f, c))}
               style={{ ...estiloTd(celda), ...pegado }}
               className={`relative overflow-hidden border border-[var(--rule-soft)] px-1.5 text-sm ${
                 activa ? "outline outline-2 -outline-offset-2 outline-[var(--accent)]" : ""
-              }`}
+              } ${esResaltado ? "ring-2 ring-inset ring-[var(--data-warning-500)]" : ""}`}
               title={celda.formula ? `=${celda.formula}` : undefined}
             >
+              {/* La selección se pinta encima, así no tapa el color del archivo. */}
+              {dentro(sel, f, c) && !activa && (
+                <span aria-hidden className="pointer-events-none absolute inset-0 bg-[var(--accent)]/15" />
+              )}
               {activa && editando ? (
                 <input
                   ref={editorRef}
@@ -206,15 +325,16 @@ export default function GrillaHoja({
                   onChange={(e) => setBorrador(e.target.value)}
                   onBlur={() => confirmar(0)}
                   onKeyDown={(e) => {
+                    e.stopPropagation();
                     if (e.key === "Enter") { e.preventDefault(); confirmar(1); }
                     else if (e.key === "Escape") { e.preventDefault(); setEditando(false); contenedor.current?.focus(); }
                     else if (e.key === "Tab") { e.preventDefault(); confirmar(0); }
                   }}
                   aria-label={`${numeroALetra(c + 1)}${f + 1}`}
-                  className="absolute inset-0 z-10 w-full bg-[var(--surface-raised)] px-1.5 text-sm text-[var(--text-primary)] outline-2 outline-[var(--accent)]"
+                  className="absolute inset-0 z-20 w-full bg-[var(--surface-raised)] px-1.5 text-sm text-[var(--text-primary)] outline-2 outline-[var(--accent)]"
                 />
               ) : (
-                <span className="block truncate">{celda.texto}</span>
+                <span className="relative block truncate">{celda.texto}</span>
               )}
             </td>
           );
@@ -229,11 +349,12 @@ export default function GrillaHoja({
       tabIndex={0}
       onKeyDown={teclado}
       onScroll={(e) => setScrollTop((e.target as HTMLDivElement).scrollTop)}
-      className="min-h-0 flex-1 overflow-auto outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--accent)]/40"
+      onMouseUp={() => { arrastrando.current = false; }}
+      className="min-h-0 flex-1 overflow-auto outline-none"
       role="grid"
       aria-label={`Hoja ${hoja.nombre}`}
     >
-      <table className="border-collapse" style={{ tableLayout: "fixed", width: "max-content" }}>
+      <table className="border-collapse select-none" style={{ tableLayout: "fixed", width: "max-content" }}>
         <colgroup>
           <col style={{ width: ANCHO_CANAL }} />
           {hoja.anchos.map((w, i) => (
@@ -247,33 +368,44 @@ export default function GrillaHoja({
               <th
                 key={c}
                 hidden={hoja.columnasOcultas[c]}
+                onMouseDown={(e) => {
+                  if ((e.target as HTMLElement).dataset.asa) return; // el asa de resize manda
+                  onSeleccion({ fila: 0, columna: c });
+                  onRango({ ancla: { fila: 0, columna: c }, foco: { fila: hoja.filas.length - 1, columna: c } });
+                }}
                 style={c < fijasCol ? { position: "sticky", left: izquierdas[c], zIndex: 28 } : undefined}
-                className={`sticky top-0 z-20 border border-[var(--rule-base)] px-1 text-[length:var(--ts-2xs)] font-bold ${
-                  c === seleccion.columna
+                className={`sticky top-0 z-20 cursor-pointer border border-[var(--rule-base)] px-1 text-[length:var(--ts-2xs)] font-bold ${
+                  c >= sel.colIni && c <= sel.colFin
                     ? "bg-[var(--accent)] text-white"
                     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                 }`}
+                title={`Columna ${numeroALetra(c + 1)} — clic para seleccionarla; arrastrá el borde para cambiar el ancho`}
               >
                 {numeroALetra(c + 1)}
+                {/* Asa de redimensionado, sobre el borde derecho. */}
+                <span
+                  data-asa="1"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    resize.current = { columna: c + 1, xInicial: e.clientX, anchoInicial: hoja.anchos[c] ?? 64 };
+                  }}
+                  onDoubleClick={(e) => { e.stopPropagation(); acciones.ancho(c + 1, 140); }}
+                  className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-[var(--accent)]"
+                />
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {/* Las filas congeladas se dibujan siempre y quedan pegadas arriba:
-              en un catálogo largo, perder el encabezado al bajar lo vuelve
-              ilegible (es el "Inmovilizar paneles" del archivo). */}
           {Array.from({ length: fijas }, (_, f) => renderFila(f, true))}
-          {rango.desde > fijas && <tr style={{ height: offsets[rango.desde] - offsets[fijas] }} aria-hidden />}
-          {hoja.filas.slice(rango.desde, rango.hasta).map((_, i) => renderFila(rango.desde + i, false))}
-          {rango.hasta < hoja.filas.length && (
-            <tr style={{ height: offsets[hoja.filas.length] - offsets[rango.hasta] }} aria-hidden />
+          {visible.desde > fijas && <tr style={{ height: offsets[visible.desde] - offsets[fijas] }} aria-hidden />}
+          {hoja.filas.slice(visible.desde, visible.hasta).map((_, i) => renderFila(visible.desde + i, false))}
+          {visible.hasta < hoja.filas.length && (
+            <tr style={{ height: offsets[hoja.filas.length] - offsets[visible.hasta] }} aria-hidden />
           )}
         </tbody>
       </table>
-      <p className="sr-only" aria-live="polite">
-        {numeroALetra(seleccion.columna + 1)}{seleccion.fila + 1}: {celdaActiva?.texto || "vacía"}
-      </p>
     </div>
   );
 }
@@ -292,7 +424,6 @@ function estiloTd(celda: CeldaHoja): React.CSSProperties {
     textAlign: e.alineacion,
     verticalAlign: e.alineacionVertical === "middle" ? "middle" : e.alineacionVertical,
     whiteSpace: e.ajustarTexto ? "normal" : undefined,
-    // Los bordes del archivo se marcan más fuerte que la cuadrícula base.
     borderTopColor: e.bordes?.arriba ? "var(--rule-strong)" : undefined,
     borderBottomColor: e.bordes?.abajo ? "var(--rule-strong)" : undefined,
     borderLeftColor: e.bordes?.izq ? "var(--rule-strong)" : undefined,

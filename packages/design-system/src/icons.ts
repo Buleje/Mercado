@@ -202,6 +202,11 @@ export {
   BotMessageSquare,
   Bot,
   Palette,
+  // Formato de texto en el editor de planillas/documentos
+  Bold,
+  Italic,
+  Underline,
+  Sigma,
   Heart,
   HeartHandshake,
 
