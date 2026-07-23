@@ -5,27 +5,38 @@
  * deja editar y lo guarda de vuelta como VERSIÓN NUEVA del mismo documento.
  *
  * Hermano de HojaCalculoEditor: mismo trato (pestaña propia, Ctrl+S,
- * autoguardado, aviso al cerrar) para que editar un contrato se sienta igual
- * que editar una lista de precios.
+ * autoguardado, deshacer, aviso al cerrar) para que editar un contrato se
+ * sienta igual que editar una lista de precios.
  *
  * Se edita por PÁRRAFO, no en un lienzo libre: así el .docx original se
  * conserva entero y sólo se reescribe el texto que cambió (ver texto-docx.ts).
- * El precio de esa fidelidad es que un párrafo con formatos mezclados se
+ * Los párrafos se pueden mover e insertar en el medio — el archivo guarda ese
+ * orden. El precio de la fidelidad es que un párrafo con formatos mezclados se
  * unifica al editarlo — y eso el editor lo avisa ANTES, no después.
+ *
+ * Deshacer va por instantáneas de los bloques: un paso por párrafo editado o
+ * por operación (mover, insertar, borrar), no por tecla.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Check, FileText, Loader2, Plus, Save, Trash2 } from "@buleje/design-system/icons";
+import {
+  AlertTriangle, ArrowLeft, Check, Download, FileText, Loader2, Plus, Redo2, Save, Undo2,
+} from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   escribirDocx, formatoTextoDe, generarPlano, leerDocx, leerPlano,
   type BloqueTexto, type DocumentoTexto,
 } from "@/lib/documentos/texto-docx";
+import FilaBloqueTexto from "./FilaBloqueTexto";
 
 type Estado = "cargando" | "listo" | "guardando" | "error";
 
 /** Ver nota en HojaCalculoEditor: cada autoguardado gasta presupuesto de rate limit. */
 const AUTOGUARDADO_MS = 120_000;
+/** Tope de instantáneas de deshacer: suficiente para trabajar, acotado en memoria. */
+const MAX_HISTORIAL = 100;
+
+const BOTON_HEADER = "inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-40 disabled:hover:bg-[var(--surface-raised)]";
 
 export default function DocumentoTextoEditor({
   docId, nombre, mimeType,
@@ -44,6 +55,15 @@ export default function DocumentoTextoEditor({
   /** Estado al abrir: define qué párrafos se reescriben y cuáles ni se tocan. */
   const originales = useRef<BloqueTexto[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Instantáneas para deshacer/rehacer; viven en un ref (no re-renderizan). */
+  const historial = useRef<{ pasado: BloqueTexto[][]; futuro: BloqueTexto[][] }>({ pasado: [], futuro: [] });
+  /** Espejo de los bloques, para tomar instantáneas fuera del ciclo de render. */
+  const bloquesRef = useRef<BloqueTexto[]>([]);
+  bloquesRef.current = bloques;
+  /** Último párrafo tipeado: escribir seguido en el mismo es UN paso de deshacer. */
+  const ultimoEditado = useRef<number | null>(null);
+  const [, setVersion] = useState(0); // habilita/deshabilita los botones
 
   useEffect(() => {
     let cancelado = false;
@@ -67,14 +87,19 @@ export default function DocumentoTextoEditor({
     return () => { cancelado = true; };
   }, [docId, formato]);
 
+  const generarBlob = useCallback(async (): Promise<Blob> => {
+    if (!documento) throw new Error("El documento todavía no cargó.");
+    return formato === "docx"
+      ? await escribirDocx(documento, bloques, originales.current)
+      : new Blob([generarPlano(bloques)], { type: mimeType || "text/plain" });
+  }, [bloques, documento, formato, mimeType]);
+
   const guardar = useCallback(async () => {
     if (estado === "guardando" || !documento) return;
     setEstado("guardando");
     setError(null);
     try {
-      const blob = formato === "docx"
-        ? await escribirDocx(documento, bloques, originales.current)
-        : new Blob([generarPlano(bloques)], { type: mimeType || "text/plain" });
+      const blob = await generarBlob();
 
       const fd = new FormData();
       fd.append("file", new File([blob], nombre, { type: blob.type }));
@@ -101,7 +126,22 @@ export default function DocumentoTextoEditor({
       setError(e instanceof Error ? e.message : String(e));
       setEstado("listo");
     }
-  }, [bloques, docId, documento, estado, formato, mimeType, nombre]);
+  }, [bloques, docId, documento, estado, generarBlob, nombre]);
+
+  /** Baja el documento como se ve ahora, sin pasar por el servidor. */
+  const descargar = useCallback(async () => {
+    try {
+      const blob = await generarBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombre;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [generarBlob, nombre]);
 
   useEffect(() => {
     if (!sucio || estado !== "listo") return;
@@ -110,13 +150,45 @@ export default function DocumentoTextoEditor({
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [sucio, estado, guardar]);
 
+  // ── Deshacer / rehacer ────────────────────────────────────────────────────
+  const instantanea = useCallback(() => {
+    historial.current.pasado.push(bloquesRef.current.map((b) => ({ ...b })));
+    if (historial.current.pasado.length > MAX_HISTORIAL) historial.current.pasado.shift();
+    historial.current.futuro = [];
+    setVersion((v) => v + 1);
+  }, []);
+
+  const deshacer = useCallback(() => {
+    const previo = historial.current.pasado.pop();
+    if (!previo) return;
+    historial.current.futuro.push(bloquesRef.current.map((b) => ({ ...b })));
+    ultimoEditado.current = null;
+    setBloques(previo);
+    setSucio(true);
+    setVersion((v) => v + 1);
+  }, []);
+
+  const rehacer = useCallback(() => {
+    const siguiente = historial.current.futuro.pop();
+    if (!siguiente) return;
+    historial.current.pasado.push(bloquesRef.current.map((b) => ({ ...b })));
+    ultimoEditado.current = null;
+    setBloques(siguiente);
+    setSucio(true);
+    setVersion((v) => v + 1);
+  }, []);
+
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); void guardar(); }
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "s") { e.preventDefault(); void guardar(); }
+      else if (k === "z") { e.preventDefault(); if (e.shiftKey) rehacer(); else deshacer(); }
+      else if (k === "y") { e.preventDefault(); rehacer(); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [guardar]);
+  }, [deshacer, guardar, rehacer]);
 
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => { if (sucio) e.preventDefault(); };
@@ -124,23 +196,63 @@ export default function DocumentoTextoEditor({
     return () => window.removeEventListener("beforeunload", h);
   }, [sucio]);
 
+  // ── Operaciones sobre los bloques ─────────────────────────────────────────
   const editar = (id: number, texto: string) => {
+    // Seguir tipeando el mismo párrafo no apila un paso por tecla.
+    if (ultimoEditado.current !== id) {
+      instantanea();
+      ultimoEditado.current = id;
+    }
     setBloques((prev) => prev.map((b) => (b.id === id ? { ...b, texto } : b)));
     setSucio(true);
   };
+
   const borrar = (id: number) => {
+    instantanea();
+    ultimoEditado.current = null;
     setBloques((prev) => prev.filter((b) => b.id !== id));
     setSucio(true);
   };
-  const agregar = () => {
-    setBloques((prev) => [
-      ...prev,
-      { id: Math.max(0, ...prev.map((b) => b.id)) + 1, tipo: "parrafo", texto: "", formatoMixto: false, enTabla: false },
-    ]);
+
+  /** Inserta un párrafo nuevo debajo del bloque dado (o al final). */
+  const insertar = (despuesDe?: number) => {
+    instantanea();
+    ultimoEditado.current = null;
+    setBloques((prev) => {
+      const nuevo: BloqueTexto = {
+        id: Math.max(-1, ...prev.map((b) => b.id)) + 1,
+        tipo: "parrafo", texto: "", formatoMixto: false, enTabla: false,
+      };
+      const indice = despuesDe === undefined ? prev.length - 1 : prev.findIndex((b) => b.id === despuesDe);
+      const copia = [...prev];
+      copia.splice(indice + 1, 0, nuevo);
+      return copia;
+    });
+    setSucio(true);
+  };
+
+  const mover = (id: number, delta: -1 | 1) => {
+    const indice = bloques.findIndex((b) => b.id === id);
+    const destino = indice + delta;
+    if (indice < 0 || destino < 0 || destino >= bloques.length) return;
+    // Una tabla viaja entera al guardar: no se cruza ni se mueve por partes.
+    if (bloques[indice].enTabla || bloques[destino].enTabla) return;
+    instantanea();
+    ultimoEditado.current = null;
+    setBloques((prev) => {
+      const copia = [...prev];
+      [copia[indice], copia[destino]] = [copia[destino], copia[indice]];
+      return copia;
+    });
     setSucio(true);
   };
 
   const mixtos = bloques.filter((b) => b.formatoMixto).length;
+  const palabras = useMemo(
+    () => bloques.reduce((n, b) => n + (b.texto.match(/\S+/g)?.length ?? 0), 0),
+    [bloques],
+  );
+  const caracteres = useMemo(() => bloques.reduce((n, b) => n + b.texto.length, 0), [bloques]);
 
   if (estado === "cargando") {
     return (
@@ -179,10 +291,20 @@ export default function DocumentoTextoEditor({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <button type="button" onClick={agregar} title="Agregar un párrafo al final"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+          <button type="button" onClick={deshacer} disabled={historial.current.pasado.length === 0}
+            title="Deshacer (Ctrl+Z)" className={`${BOTON_HEADER} w-10 px-0`}>
+            <Undo2 className="h-4 w-4" aria-hidden /><span className="sr-only">Deshacer</span>
+          </button>
+          <button type="button" onClick={rehacer} disabled={historial.current.futuro.length === 0}
+            title="Rehacer (Ctrl+Y)" className={`${BOTON_HEADER} w-10 px-0`}>
+            <Redo2 className="h-4 w-4" aria-hidden /><span className="sr-only">Rehacer</span>
+          </button>
+          <button type="button" onClick={() => insertar()} title="Agregar un párrafo al final" className={BOTON_HEADER}>
             <Plus className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Párrafo</span>
             <span className="sr-only sm:hidden">Agregar párrafo</span>
+          </button>
+          <button type="button" onClick={() => void descargar()} title="Descargar una copia con los cambios de ahora" className={`${BOTON_HEADER} w-10 px-0`}>
+            <Download className="h-4 w-4" aria-hidden /><span className="sr-only">Descargar copia</span>
           </button>
           <button
             type="button"
@@ -211,8 +333,18 @@ export default function DocumentoTextoEditor({
         {/* Ancho de lectura como el de una hoja; rem explícitos porque en este
             proyecto `max-w-*` está redefinido y mide el doble. */}
         <div className="mx-auto w-full max-w-[48rem] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-8">
-          {bloques.map((b) => (
-            <FilaBloque key={b.id} bloque={b} onEditar={editar} onBorrar={borrar} />
+          {bloques.map((b, i) => (
+            <FilaBloqueTexto
+              key={b.id}
+              bloque={b}
+              posicion={i + 1}
+              puedeSubir={i > 0 && !b.enTabla && !bloques[i - 1].enTabla}
+              puedeBajar={i < bloques.length - 1 && !b.enTabla && !bloques[i + 1].enTabla}
+              onEditar={editar}
+              onBorrar={borrar}
+              onMover={mover}
+              onInsertar={insertar}
+            />
           ))}
           {bloques.length === 0 && (
             <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
@@ -221,63 +353,12 @@ export default function DocumentoTextoEditor({
           )}
         </div>
       </div>
-    </div>
-  );
-}
 
-/** Estilo de cada párrafo según su rol en el documento. */
-const ESTILO_TIPO: Record<BloqueTexto["tipo"], string> = {
-  titulo: "text-2xl font-black leading-tight",
-  subtitulo: "text-lg font-bold leading-snug",
-  lista: "text-base leading-relaxed",
-  parrafo: "text-base leading-relaxed",
-};
-
-function FilaBloque({
-  bloque, onEditar, onBorrar,
-}: {
-  bloque: BloqueTexto;
-  onEditar: (id: number, texto: string) => void;
-  onBorrar: (id: number) => void;
-}) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  // El textarea crece con el texto: un párrafo largo no debería tener su
-  // propia barra de scroll dentro del documento.
-  const ajustar = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
-  }, []);
-  useEffect(() => { ajustar(); }, [ajustar, bloque.texto]);
-
-  return (
-    <div className="group relative flex items-start gap-2">
-      {bloque.tipo === "lista" && (
-        <span aria-hidden className="mt-[0.9rem] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--text-tertiary)]" />
-      )}
-      <textarea
-        ref={ref}
-        value={bloque.texto}
-        onChange={(e) => { onEditar(bloque.id, e.target.value); ajustar(); }}
-        rows={1}
-        aria-label={`Párrafo ${bloque.id + 1}${bloque.formatoMixto ? " (formatos mezclados)" : ""}`}
-        data-bloque={bloque.id}
-        className={`w-full resize-none overflow-hidden rounded-lg bg-transparent px-2 py-1.5 text-[var(--text-primary)] outline-none focus:bg-[var(--accent-soft)] focus:ring-2 focus:ring-[var(--accent)] dark:focus:bg-[var(--accent)]/12 ${ESTILO_TIPO[bloque.tipo]} ${
-          bloque.formatoMixto ? "border-l-4 border-[var(--data-warning-500)]" : ""
-        } ${bloque.enTabla ? "border-l-4 border-[var(--rule-strong)]" : ""}`}
-        title={bloque.enTabla ? "Este párrafo está dentro de una tabla del documento" : undefined}
-      />
-      <button
-        type="button"
-        onClick={() => onBorrar(bloque.id)}
-        title={`Borrar el párrafo ${bloque.id + 1}`}
-        className="mt-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] opacity-0 transition hover:bg-[var(--surface-canvas)] hover:text-[var(--data-error-600)] focus:opacity-100 group-hover:opacity-100"
-      >
-        <Trash2 className="h-4 w-4" aria-hidden />
-        <span className="sr-only">Borrar párrafo {bloque.id + 1}</span>
-      </button>
+      <footer className="flex items-center justify-end gap-4 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
+        <span>{bloques.length === 1 ? "1 párrafo" : `${bloques.length} párrafos`}</span>
+        <span>{palabras === 1 ? "1 palabra" : `${palabras.toLocaleString("es-PE")} palabras`}</span>
+        <span>{caracteres.toLocaleString("es-PE")} caracteres</span>
+      </footer>
     </div>
   );
 }

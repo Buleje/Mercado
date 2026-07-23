@@ -216,8 +216,12 @@ function reescribirParrafo(doc: XMLDocument, p: Element, texto: string): void {
 /**
  * Guarda los cambios en el .docx original.
  *
- * Sólo se tocan los párrafos cuyo texto cambió respecto de `originales`: todo
- * lo demás —incluidos los otros archivos del zip— sale idéntico.
+ * Sólo se tocan los párrafos cuyo texto cambió respecto de `originales`; los
+ * agregados heredan el formato del bloque anterior, y al final el CUERPO se
+ * re-encadena en el orden del editor — así insertar en el medio o mover un
+ * párrafo queda en el archivo tal como se ve en pantalla. Una tabla viaja
+ * entera (sus párrafos no se reordenan por dentro); todo lo demás del zip
+ * sale idéntico.
  */
 export async function escribirDocx(
   documento: DocumentoTexto,
@@ -233,35 +237,62 @@ export async function escribirDocx(
   const previos = new Map(originales.map((b) => [b.id, b.texto]));
   const vivos = new Set(bloques.map((b) => b.id));
 
+  // 1) Reescrituras: bloques existentes cuyo texto cambió.
   for (const b of bloques) {
     const p = parrafos[b.id];
-    if (p) {
-      if (previos.get(b.id) === b.texto) continue; // intacto: ni se lo mira
-      reescribirParrafo(doc, p, b.texto);
-      continue;
-    }
-    // Párrafo agregado en el editor: se clona el último para heredar su
-    // formato (así el texto nuevo sale con la fuente del documento, no con la
-    // de Word por defecto).
-    const cuerpo = parrafos[parrafos.length - 1]?.parentNode
-      ?? doc.getElementsByTagNameNS(W, "body")[0];
-    if (!cuerpo) continue;
-    const modelo = parrafos[parrafos.length - 1];
-    const nuevo = modelo
-      ? (modelo.cloneNode(true) as Element)
-      : doc.createElementNS(W, "w:p");
-    reescribirParrafo(doc, nuevo, b.texto);
-    // `sectPr` (márgenes y tamaño de hoja) tiene que quedar SIEMPRE último
-    // dentro del body, o Word da el archivo por corrupto.
-    const sectPr = cuerpo.nodeType === 1 ? primerHijo(cuerpo as Element, "sectPr") : null;
-    if (sectPr) cuerpo.insertBefore(nuevo, sectPr);
-    else cuerpo.appendChild(nuevo);
+    if (p && previos.get(b.id) !== b.texto) reescribirParrafo(doc, p, b.texto);
   }
 
-  // Párrafos eliminados en el editor.
-  for (const p of parrafos) {
-    const idx = parrafos.indexOf(p);
-    if (previos.has(idx) && !vivos.has(idx)) p.parentNode?.removeChild(p);
+  // 2) Altas: cada bloque nuevo clona el párrafo del bloque ANTERIOR en el
+  //    editor (o el último del documento) para heredar la fuente y el estilo.
+  const nuevos = new Map<number, Element>();
+  for (let i = 0; i < bloques.length; i++) {
+    const b = bloques[i];
+    if (parrafos[b.id]) continue;
+    let modelo: Element | undefined;
+    for (let j = i - 1; j >= 0; j--) {
+      const candidato = parrafos[bloques[j].id];
+      if (candidato) { modelo = candidato; break; }
+    }
+    modelo = modelo ?? parrafos[parrafos.length - 1];
+    const nuevo = modelo ? (modelo.cloneNode(true) as Element) : doc.createElementNS(W, "w:p");
+    reescribirParrafo(doc, nuevo, b.texto);
+    nuevos.set(b.id, nuevo);
+  }
+
+  // 3) Bajas.
+  for (let i = 0; i < parrafos.length; i++) {
+    if (previos.has(i) && !vivos.has(i)) parrafos[i].parentNode?.removeChild(parrafos[i]);
+  }
+
+  // 4) Orden del cuerpo. Se recorre el orden del editor re-encadenando los
+  //    nodos de PRIMER NIVEL: un párrafo suelto es él mismo; uno de tabla, su
+  //    tabla entera (que aparece una sola vez, cuando toca su primer párrafo).
+  const body = doc.getElementsByTagNameNS(W, "body")[0];
+  if (body) {
+    const topDe = (el: Element): Element => {
+      let n: Element = el;
+      while (n.parentElement && n.parentElement !== body) n = n.parentElement;
+      return n;
+    };
+    let anterior: Element | null = null;
+    for (const b of bloques) {
+      const propio = nuevos.get(b.id);
+      const existente = parrafos[b.id];
+      if (!propio && !existente) continue;
+      const top = propio ?? topDe(existente!);
+      if (top === anterior) continue; // otro párrafo de la misma tabla
+      if (anterior) {
+        if (anterior.nextElementSibling !== top) body.insertBefore(top, anterior.nextSibling);
+      } else if (body.firstElementChild !== top) {
+        body.insertBefore(top, body.firstElementChild);
+      }
+      anterior = top;
+    }
+    // `sectPr` (márgenes y tamaño de hoja) tiene que quedar SIEMPRE último
+    // dentro del body, o Word da el archivo por corrupto.
+    const sectPr = primerHijo(body, "sectPr");
+    if (sectPr) body.appendChild(sectPr);
   }
 
   const xml = new XMLSerializer().serializeToString(doc);
