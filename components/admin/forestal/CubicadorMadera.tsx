@@ -9,9 +9,10 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 import {
-  cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3,
+  cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3, ESPECIES_MADERA,
   type PiezaCubicada, type Unidad,
 } from "@/lib/forestal/cubicacion";
 import {
@@ -39,11 +40,8 @@ const UNIDADES: { v: Unidad; label: string }[] = [
 const RANGO_ESPESOR = Array.from({ length: 10 }, (_, i) => i + 1);   // 1 a 10
 const RANGO_ANCHO = Array.from({ length: 30 }, (_, i) => i + 1);     // 1 a 30
 const RANGO_LARGO = Array.from({ length: 39 }, (_, i) => i + 2);     // 2 a 40
-// Especies de madera comunes en la Selva Central peruana (menú de la cubicación).
-const ESPECIES = [
-  "Tornillo", "Cedro", "Capirona", "Shihuahuaco", "Cumala", "Moena",
-  "Estoraque", "Lupuna", "Bolaina", "Catahua", "Copaiba", "Ishpingo", "Caoba", "Marupá",
-];
+// Especies de madera comunes en la Selva Central peruana (single-source en cubicacion.ts).
+const ESPECIES = ESPECIES_MADERA;
 // Solo los errores DUROS cortan el dictado; no-speech/network/aborted son
 // transitorios en modo continuo y el reconocedor se reinicia solo.
 const ERR_MSG: Record<string, string> = {
@@ -94,6 +92,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
   const [precioPt, setPrecioPt] = useState(""); // S/ por pie tablar → valor del lote
   const [showResumen, setShowResumen] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false); // ya quedó registrado en el Libro CTP
   const [paused, setPaused] = useState(false); // "pausar" por voz → ignora números hasta "continúa"
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
@@ -400,6 +400,54 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     return { triples, resto: nums.slice(i) };
   }, [listening, liveText]);
 
+  /**
+   * Registra el lote cubicado en el Libro CTP como PRODUCCIÓN (unit "pt").
+   * Sin consumos: el libro admite huecos y la materia prima se atribuye
+   * después en el Libro — forzarla acá fabricaría atribuciones inventadas.
+   */
+  const enviarAlLibro = async () => {
+    if (!rows.length || enviando) return;
+    const especies = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[];
+    const speciesCommon = especies.length === 1 ? especies[0] : (especie || null);
+    const resumenTxt = resumen.slice(0, 6).map((g) => `${g.cantidad}× ${g.label}`).join("; ");
+    const seguro = window.confirm(
+      `¿Registrar en el Libro CTP como PRODUCCIÓN?\n\n${totales.piezas} piezas · ${fmtPt(totales.pt)} PT (${fmtM3(totales.m3)} m³)` +
+      `${speciesCommon ? ` · ${speciesCommon}` : ""}\n\nLa materia prima (guías consumidas) se atribuye después, en el Libro.`,
+    );
+    if (!seguro) return;
+    setEnviando(true);
+    setErrMsg(null);
+    try {
+      const r = await fetch("/api/admin/forestal/ctp", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...csrfHeaders() },
+        credentials: "include",
+        body: JSON.stringify({
+          section: "produccion",
+          productType: "Madera aserrada",
+          speciesCommon,
+          quantity: Math.round(totales.pt * 100) / 100,
+          unit: "pt",
+          pieces: totales.piezas,
+          observations: `Cubicado con la herramienta por voz — ${rows.length} filas. ${resumenTxt}`.slice(0, 1000),
+        }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(
+          j?.error === "spec_disabled"
+            ? "El Libro CTP no está habilitado para esta tienda."
+            : (j?.message ?? j?.error ?? `HTTP ${r.status}`),
+        );
+      }
+      setEnviado(true);
+    } catch (e) {
+      setErrMsg(`No se pudo registrar en el Libro: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   const exportarCSV = () => {
     const head = ["Cantidad", "Espesor", "uEsp", "Ancho", "uAnc", "Largo", "uLar", "Especie", "PieTablar", "m3", "ValorS/"];
     const lines = rows.map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3, (r.pieTablar * precio).toFixed(2)].join(","));
@@ -578,6 +626,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Table className="h-4 w-4 text-[var(--accent)]" /> Lote cubicado ({rows.length})</h3>
           {rows.length > 0 && (
             <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => void enviarAlLibro()} disabled={enviando} title="Registrar este lote como producción en el Libro CTP" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95 disabled:opacity-50">
+                <Send className="h-3.5 w-3.5" /> {enviando ? "Registrando…" : "Enviar al Libro"}
+              </button>
               <button type="button" onClick={() => setShowResumen((v) => !v)} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showResumen ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                 <Table className="h-3.5 w-3.5" /> Resumen
               </button>
@@ -591,6 +642,22 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             </div>
           )}
         </div>
+
+        {enviado && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2 dark:bg-[var(--data-success-500)]/12">
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+              <Check className="h-4 w-4" /> Registrado en el Libro CTP como producción. Atribuí la materia prima (guías) desde el Libro.
+            </span>
+            <span className="flex gap-2">
+              <a href="/admin?tab=ctp-libro-operaciones" className="rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
+                Ver en el Libro
+              </a>
+              <button type="button" onClick={() => { limpiar(); setEnviado(false); }} className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                Vaciar el lote
+              </button>
+            </span>
+          </div>
+        )}
 
         {/* Resumen por medida — agrupado, para liquidar por tipo de pieza */}
         {showResumen && rows.length > 0 && (

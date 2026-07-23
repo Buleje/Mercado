@@ -29,6 +29,13 @@ export interface PiezaCubicada {
 
 export const PT_POR_M3 = 423.78;
 
+/** Especies comerciales de la Selva Central — single-source para todas las
+ *  herramientas forestales (cubicadores, calculadoras). */
+export const ESPECIES_MADERA = [
+  "Tornillo", "Cedro", "Capirona", "Shihuahuaco", "Cumala", "Moena",
+  "Estoraque", "Lupuna", "Bolaina", "Catahua", "Copaiba", "Ishpingo", "Caoba", "Marupá",
+] as const;
+
 // ─── Conversiones de longitud ───────────────────────────────────────────────
 const toInches = (v: number, u: Unidad): number =>
   u === "pulg" ? v : u === "cm" ? v / 2.54 : u === "m" ? v * 39.3700787 : v * 12;

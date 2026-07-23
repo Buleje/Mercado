@@ -342,6 +342,7 @@ export {
   Rocket,
   RotateCcw,
   Route,
+  Ruler,
   Scale,
   Scan,
   ScanBarcode,

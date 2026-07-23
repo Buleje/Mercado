@@ -8,23 +8,25 @@
  */
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Wrench, Calculator, Activity } from "@buleje/design-system/icons";
+import { Wrench, Calculator, Activity, Ruler, Gauge } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
-const CubicadorMadera = dynamic(() => import("./CubicadorMadera"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-64 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]">
-      <Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando cubicador…
-    </div>
-  ),
-});
+const cargando = (
+  <div className="flex h-64 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]">
+    <Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando herramienta…
+  </div>
+);
+const CubicadorMadera = dynamic(() => import("./CubicadorMadera"), { ssr: false, loading: () => cargando });
+const CubicadorTrozas = dynamic(() => import("./CubicadorTrozas"), { ssr: false, loading: () => cargando });
+const CalculadoraRendimiento = dynamic(() => import("./CalculadoraRendimiento"), { ssr: false, loading: () => cargando });
 
-type Tool = "cubicador";
+type Tool = "cubicador" | "trozas" | "rendimiento";
 const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
 const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }[] = [
-  { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Pie tablar + m³ por voz" },
+  { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Aserrada: pie tablar + m³ por voz" },
+  { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza: Smalian en patio, contra la GTF" },
+  { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Coeficiente de aserrío (%) con tu histórico del Libro" },
 ];
 const TOOL_TAB_ITEMS = TOOLS.map((t) => ({ id: t.key, label: t.label, icon: t.icon, title: t.hint }));
 
@@ -36,7 +38,7 @@ export default function ForestalHerramientas() {
       <AdminModuleHeader
         eyebrow="Forestal · Herramientas"
         title="Herramientas Forestales"
-        description="Utilidades especializadas para el negocio forestal. Empezá dictando medidas al cubicador; se sumarán más herramientas acá."
+        description="Cubicá aserrada por voz, verificá trozas contra la GTF y calculá el coeficiente de rendimiento del aserrío."
         icon={Wrench}
       />
 
@@ -48,14 +50,13 @@ export default function ForestalHerramientas() {
         activeTab={tool}
         onTabChange={(id) => setTool(id as Tool)}
         draggable={TOOLS.length > 1}
-        rightSlot={
-          <span className="hidden text-[length:var(--ts-2xs)] italic text-[var(--text-tertiary)] sm:inline">
-            más herramientas pronto
-          </span>
-        }
       />
 
-      <div className="mt-6">{tool === "cubicador" && <CubicadorMadera />}</div>
+      <div className="mt-6">
+        {tool === "cubicador" && <CubicadorMadera />}
+        {tool === "trozas" && <CubicadorTrozas />}
+        {tool === "rendimiento" && <CalculadoraRendimiento />}
+      </div>
     </div>
   );
 }
