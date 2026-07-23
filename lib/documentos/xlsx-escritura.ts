@@ -19,7 +19,10 @@
 import type JSZipType from "jszip";
 import { numeroALetra } from "./xlsx-formato";
 import { aplicarFormato, STYLES_VACIO, type CambioFormato } from "./xlsx-estilos";
-import { fijarAnchoColumna, moverEstructura, moverFormulaCruzada, type Eje } from "./xlsx-estructura";
+import {
+  fijarAltoFila, fijarAnchoColumna, fijarCongelado, fijarVisibilidad,
+  moverEstructura, moverFormulaCruzada, type Eje,
+} from "./xlsx-estructura";
 
 const NS_SS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -64,6 +67,30 @@ export interface CambioCombinada {
   modo: "agregar" | "quitar";
 }
 
+/** Alto de fila arrastrado, en píxeles. */
+export interface CambioAltoFila {
+  hoja: number;
+  /** Fila en base 1. */
+  fila: number;
+  altoPx: number;
+}
+
+/** Fila o columna ocultada/mostrada. */
+export interface CambioVisibilidad {
+  hoja: number;
+  eje: Eje;
+  /** Posición en base 1. */
+  indice: number;
+  oculta: boolean;
+}
+
+/** Paneles congelados (0/0 descongela). El último del lote manda. */
+export interface CambioCongelado {
+  hoja: number;
+  filas: number;
+  columnas: number;
+}
+
 /**
  * Todo lo que el editor puede haber cambiado.
  *
@@ -77,6 +104,9 @@ export interface Cambios {
   estilos?: CambioEstilo[];
   anchos?: CambioAncho[];
   combinadas?: CambioCombinada[];
+  altos?: CambioAltoFila[];
+  visibilidad?: CambioVisibilidad[];
+  congelados?: CambioCongelado[];
 }
 
 /** Abre el paquete .xlsx conservándolo entero. */
@@ -369,8 +399,12 @@ function serializar(doc: XMLDocument): string {
 export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCelda[]): Promise<Blob> {
   // Compatibilidad: antes esta función recibía sólo la lista de celdas.
   const todo: Cambios = Array.isArray(cambios) ? { celdas: cambios } : cambios;
-  const { estructura = [], celdas = [], estilos = [], anchos = [], combinadas = [] } = todo;
-  const hayAlgo = estructura.length + celdas.length + estilos.length + anchos.length + combinadas.length > 0;
+  const {
+    estructura = [], celdas = [], estilos = [], anchos = [], combinadas = [],
+    altos = [], visibilidad = [], congelados = [],
+  } = todo;
+  const hayAlgo = estructura.length + celdas.length + estilos.length + anchos.length
+    + combinadas.length + altos.length + visibilidad.length + congelados.length > 0;
   if (!hayAlgo) {
     return zip.generateAsync({ type: "blob", compression: "DEFLATE" });
   }
@@ -387,7 +421,8 @@ export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCe
   const hojasTocadas = new Set<number>([
     ...estructura.map((c) => c.hoja), ...celdas.map((c) => c.hoja),
     ...estilos.map((c) => c.hoja), ...anchos.map((c) => c.hoja),
-    ...combinadas.map((c) => c.hoja),
+    ...combinadas.map((c) => c.hoja), ...altos.map((c) => c.hoja),
+    ...visibilidad.map((c) => c.hoja), ...congelados.map((c) => c.hoja),
   ]);
 
   for (const indice of hojasTocadas) {
@@ -430,9 +465,18 @@ export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCe
       }
     }
 
-    // 5) Anchos de columna.
+    // 5) Anchos de columna, altos de fila, visibilidad y paneles.
     for (const c of anchos.filter((c) => c.hoja === indice)) {
       fijarAnchoColumna(doc, c.columna, c.anchoPx);
+    }
+    for (const c of altos.filter((c) => c.hoja === indice)) {
+      fijarAltoFila(doc, c.fila, c.altoPx);
+    }
+    for (const c of visibilidad.filter((c) => c.hoja === indice)) {
+      fijarVisibilidad(doc, c.eje, c.indice, c.oculta);
+    }
+    for (const c of congelados.filter((c) => c.hoja === indice)) {
+      fijarCongelado(doc, c.filas, c.columnas);
     }
 
     zip.file(ruta, serializar(doc));

@@ -13,7 +13,7 @@ import { useState } from "react";
 import {
   AlignCenter, AlignLeft, AlignRight, ArrowDownAZ, ArrowUpAZ, Bold, CalendarDays, Combine,
   Filter, Grid3x3, Italic, Paintbrush, Palette, Percent, Plus, Redo2, Search, Sigma,
-  Trash2, Underline, Undo2,
+  Snowflake, Trash2, Underline, Undo2,
 } from "@buleje/design-system/icons";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
 import { ajustarDecimales, FORMATOS } from "@/lib/documentos/xlsx-estilos";
@@ -32,6 +32,7 @@ export interface AccionesBarra {
   eliminar: (eje: "fila" | "columna") => void;
   autosuma: () => void;
   combinar: () => void;
+  congelar: () => void;
   deshacer: () => void;
   rehacer: () => void;
   buscar: () => void;
@@ -109,6 +110,9 @@ export default function BarraHerramientas({
       </button>
       <button type="button" className={BOTON} onClick={acciones.combinar} title="Combinar o separar las celdas seleccionadas">
         <Combine className="h-4 w-4" aria-hidden /><span className="sr-only">Combinar o separar celdas</span>
+      </button>
+      <button type="button" className={BOTON} onClick={acciones.congelar} title="Congelar los paneles en la celda seleccionada (o descongelar)">
+        <Snowflake className="h-4 w-4" aria-hidden /><span className="sr-only">Congelar o descongelar paneles</span>
       </button>
 
       <Separador />

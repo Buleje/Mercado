@@ -36,6 +36,12 @@ export type Accion =
   | { tipo: "estructura"; eje: "fila" | "columna"; indice: number; delta: 1 | -1; datos?: CeldaHoja[] }
   /** Cambiar el ancho de una columna. */
   | { tipo: "ancho"; columna: number; anchoPx: number }
+  /** Cambiar el alto de una fila (base 1, alto en píxeles de pantalla). */
+  | { tipo: "alto"; fila: number; altoPx: number }
+  /** Ocultar o mostrar una fila/columna (base 1). */
+  | { tipo: "visibilidad"; eje: "fila" | "columna"; indice: number; oculta: boolean }
+  /** Congelar paneles: N filas y M columnas quedan fijas (0,0 = descongelar). */
+  | { tipo: "congelar"; filas: number; columnas: number }
   /** Combinar un rango en una sola celda visible (la ancla). */
   | ({ tipo: "combinar" } & Rect)
   /** Separar un bloque combinado. */
@@ -289,6 +295,45 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
       };
     }
 
+    case "alto": {
+      const i = accion.fila - 1;
+      const altos = [...hoja.altos];
+      const previo = altos[i] ?? 20;
+      altos[i] = accion.altoPx;
+      return {
+        hoja: { ...hoja, altos },
+        inversa: { tipo: "alto", fila: accion.fila, altoPx: previo },
+      };
+    }
+
+    case "visibilidad": {
+      const i = accion.indice - 1;
+      if (accion.eje === "fila") {
+        const ocultas = [...hoja.filasOcultas];
+        const previo = ocultas[i] ?? false;
+        ocultas[i] = accion.oculta;
+        return {
+          hoja: { ...hoja, filasOcultas: ocultas },
+          inversa: { ...accion, oculta: previo },
+        };
+      }
+      const ocultas = [...hoja.columnasOcultas];
+      const previo = ocultas[i] ?? false;
+      ocultas[i] = accion.oculta;
+      return {
+        hoja: { ...hoja, columnasOcultas: ocultas },
+        inversa: { ...accion, oculta: previo },
+      };
+    }
+
+    case "congelar": {
+      const previo = hoja.congelado;
+      return {
+        hoja: { ...hoja, congelado: { filas: accion.filas, columnas: accion.columnas } },
+        inversa: { tipo: "congelar", filas: previo.filas, columnas: previo.columnas },
+      };
+    }
+
     /**
      * Combinar marca las celdas con las MISMAS señales que pone la lectura del
      * archivo: el ancla lleva el tamaño del bloque, las de su fila quedan
@@ -399,6 +444,25 @@ export function remapearPendientes(acciones: Accion[], eje: "fila" | "columna", 
         if (v !== null) out.push({ ...a, columna: v + 1 });
         break;
       }
+      case "alto": {
+        if (eje === "columna") { out.push(a); break; }
+        const v = mover(a.fila - 1);
+        if (v !== null) out.push({ ...a, fila: v + 1 });
+        break;
+      }
+      case "visibilidad": {
+        if (a.eje !== eje) { out.push(a); break; }
+        const v = mover(a.indice - 1);
+        if (v !== null) out.push({ ...a, indice: v + 1 });
+        break;
+      }
+      case "congelar": {
+        // Insertar por encima de la línea congelada agranda el panel fijo.
+        if (eje === "fila" && i0 < a.filas) out.push({ ...a, filas: Math.max(0, a.filas + delta) });
+        else if (eje === "columna" && i0 < a.columnas) out.push({ ...a, columnas: Math.max(0, a.columnas + delta) });
+        else out.push(a);
+        break;
+      }
       case "combinar": case "descombinar": {
         const ini = eje === "fila" ? mover(a.filaIni) : mover(a.colIni);
         const iniVal = ini ?? i0; // el ancla borrada: el bloque arranca donde estaba
@@ -426,7 +490,10 @@ export function remapearPendientes(acciones: Accion[], eje: "fila" | "columna", 
  * primero (mueve las direcciones de todo lo demás).
  */
 export function aCambiosDeArchivo(pasos: Accion[], hoja: number): Cambios {
-  const cambios: Cambios = { estructura: [], celdas: [], estilos: [], anchos: [], combinadas: [] };
+  const cambios: Cambios = {
+    estructura: [], celdas: [], estilos: [], anchos: [], combinadas: [],
+    altos: [], visibilidad: [], congelados: [],
+  };
   for (const a of pasos) {
     switch (a.tipo) {
       case "valores":
@@ -465,6 +532,15 @@ export function aCambiosDeArchivo(pasos: Accion[], hoja: number): Cambios {
         break;
       case "ancho":
         cambios.anchos!.push({ hoja, columna: a.columna, anchoPx: a.anchoPx });
+        break;
+      case "alto":
+        cambios.altos!.push({ hoja, fila: a.fila, altoPx: a.altoPx });
+        break;
+      case "visibilidad":
+        cambios.visibilidad!.push({ hoja, eje: a.eje, indice: a.indice, oculta: a.oculta });
+        break;
+      case "congelar":
+        cambios.congelados!.push({ hoja, filas: a.filas, columnas: a.columnas });
         break;
       case "combinar":
       case "descombinar":

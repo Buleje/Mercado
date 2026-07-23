@@ -134,7 +134,12 @@ export function useEditorHoja(inicial: HojaFormato[]) {
 
   /** Todo lo pendiente, listo para escribir en el archivo. */
   const cambiosParaArchivo = useCallback((): Cambios => {
-    const total: Cambios = { estructura: [], celdas: [], estilos: [], anchos: [], combinadas: [] };
+    // OJO: cada tipo de cambio que exista en `Cambios` tiene que agregarse
+    // acá — uno que falte se pierde EN SILENCIO al guardar.
+    const total: Cambios = {
+      estructura: [], celdas: [], estilos: [], anchos: [], combinadas: [],
+      altos: [], visibilidad: [], congelados: [],
+    };
     for (const [hoja, acciones] of pendientes.current) {
       const parcial = aCambiosDeArchivo(acciones, hoja);
       total.estructura!.push(...(parcial.estructura ?? []));
@@ -142,6 +147,9 @@ export function useEditorHoja(inicial: HojaFormato[]) {
       total.estilos!.push(...(parcial.estilos ?? []));
       total.anchos!.push(...(parcial.anchos ?? []));
       total.combinadas!.push(...(parcial.combinadas ?? []));
+      total.altos!.push(...(parcial.altos ?? []));
+      total.visibilidad!.push(...(parcial.visibilidad ?? []));
+      total.congelados!.push(...(parcial.congelados ?? []));
     }
     return total;
   }, []);

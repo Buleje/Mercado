@@ -43,6 +43,8 @@ const ANCHO_MINIMO = 28;
 export interface AccionesGrilla {
   editar: (celdas: { fila: number; columna: number; valor: string }[]) => void;
   ancho: (columna: number, anchoPx: number) => void;
+  /** Alto de una fila (base 1), en píxeles sin zoom. */
+  alto?: (fila: number, altoPx: number) => void;
   /** Clic derecho sobre una celda: el editor decide qué menú mostrar. */
   menu?: (x: number, y: number, fila: number, columna: number) => void;
   /** Ctrl+rueda: acercar (+) o alejar (−). */
@@ -80,6 +82,8 @@ export default function GrillaHoja({
   const arrastrando = useRef(false);
   /** Columna que se está redimensionando y desde qué x empezó. */
   const resize = useRef<{ columna: number; xInicial: number; anchoInicial: number } | null>(null);
+  /** Fila que se está redimensionando (base 0) y desde qué y empezó. */
+  const resizeFila = useRef<{ fila: number; yInicial: number; altoInicial: number } | null>(null);
   /** Arrastre del cuadradito de la esquina (rellenar hacia abajo). */
   const rellenando = useRef(false);
   const [filaRelleno, setFilaRelleno] = useState<number | null>(null);
@@ -324,7 +328,14 @@ export default function GrillaHoja({
       const enPantalla = Math.max(ANCHO_MINIMO, r.anchoInicial + (e.clientX - r.xInicial));
       acciones.ancho(r.columna, anchoParaArchivo(enPantalla));
     };
-    const soltar = () => { resize.current = null; };
+    const moverFila = (e: MouseEvent) => {
+      const r = resizeFila.current;
+      if (!r) return;
+      // El alto viaja SIN zoom: el estado y el archivo miden en escala 1.
+      const nuevo = Math.max(12, Math.round((r.altoInicial + (e.clientY - r.yInicial)) / zoom));
+      acciones.alto?.(r.fila + 1, nuevo);
+    };
+    const soltar = () => { resize.current = null; resizeFila.current = null; };
     const soltarRelleno = () => {
       if (!rellenando.current) return;
       rellenando.current = false;
@@ -332,14 +343,16 @@ export default function GrillaHoja({
       setFilaRelleno(null);
     };
     window.addEventListener("mousemove", mover);
+    window.addEventListener("mousemove", moverFila);
     window.addEventListener("mouseup", soltar);
     window.addEventListener("mouseup", soltarRelleno);
     return () => {
       window.removeEventListener("mousemove", mover);
+      window.removeEventListener("mousemove", moverFila);
       window.removeEventListener("mouseup", soltar);
       window.removeEventListener("mouseup", soltarRelleno);
     };
-  }, [acciones, aplicarRelleno, filaRelleno]);
+  }, [acciones, aplicarRelleno, filaRelleno, zoom]);
 
   const teclado = (e: React.KeyboardEvent) => {
     if (editando) return;
@@ -398,7 +411,8 @@ export default function GrillaHoja({
       <tr key={f} style={{ height: altos[f] }}>
         <th
           scope="row"
-          onMouseDown={() => {
+          onMouseDown={(e) => {
+            if ((e.target as HTMLElement).dataset.asa) return; // el asa de resize manda
             onSeleccion({ fila: f, columna: 0 });
             onRango({ ancla: { fila: f, columna: 0 }, foco: { fila: f, columna: totalCols - 1 } });
           }}
@@ -406,9 +420,19 @@ export default function GrillaHoja({
           className={`sticky left-0 z-10 cursor-pointer border border-[var(--rule-base)] px-1 text-center text-[length:var(--ts-2xs)] font-bold ${
             filaEnSeleccion ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           }`}
-          title={`Fila ${f + 1} — clic para seleccionarla entera`}
+          title={`Fila ${f + 1} — clic para seleccionarla; arrastrá el borde para cambiar el alto`}
         >
           {f + 1}
+          {/* Asa de alto, sobre el borde inferior. */}
+          <span
+            data-asa="1"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              resizeFila.current = { fila: f, yInicial: e.clientY, altoInicial: altos[f] ?? 20 };
+            }}
+            className="absolute bottom-0 left-0 h-1.5 w-full cursor-row-resize hover:bg-[var(--accent)]"
+          />
         </th>
         {fila.map((celda, c) => {
           if (celda.tapada) return null;

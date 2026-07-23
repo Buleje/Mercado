@@ -269,6 +269,124 @@ export function moverEstructura(doc: XMLDocument, eje: Eje, indice: number, delt
   dim?.parentNode?.removeChild(dim);
 }
 
+/** Busca (o crea, en orden) el `<row>` de una fila en `sheetData`. */
+function filaDe(doc: XMLDocument, fila: number): Element | null {
+  const sheetData = doc.getElementsByTagNameNS(NS, "sheetData")[0];
+  if (!sheetData) return null;
+  for (const row of hijos(sheetData, "row")) {
+    if (Number(row.getAttribute("r")) === fila) return row;
+  }
+  const nueva = doc.createElementNS(NS, "row");
+  nueva.setAttribute("r", String(fila));
+  for (const row of hijos(sheetData, "row")) {
+    if (Number(row.getAttribute("r")) > fila) {
+      sheetData.insertBefore(nueva, row);
+      return nueva;
+    }
+  }
+  sheetData.appendChild(nueva);
+  return nueva;
+}
+
+/** Alto de una fila (base 1) en píxeles de pantalla → puntos del archivo. */
+export function fijarAltoFila(doc: XMLDocument, fila: number, altoPx: number): void {
+  const row = filaDe(doc, fila);
+  if (!row) return;
+  row.setAttribute("ht", (altoPx * (72 / 96)).toFixed(2));
+  row.setAttribute("customHeight", "1");
+}
+
+/**
+ * Aísla la columna (base 1) en su propio `<col>`, partiendo el tramo que la
+ * contenga, y devuelve su elemento con los atributos del tramo original.
+ */
+function colPropia(doc: XMLDocument, columna: number): Element {
+  const hojaEl = doc.documentElement;
+  let cols = doc.getElementsByTagNameNS(NS, "cols")[0] as Element | undefined;
+  if (!cols) {
+    cols = doc.createElementNS(NS, "cols");
+    const sheetData = doc.getElementsByTagNameNS(NS, "sheetData")[0];
+    if (sheetData) hojaEl.insertBefore(cols, sheetData);
+    else hojaEl.appendChild(cols);
+  }
+  let heredada: Element | null = null;
+  for (const col of [...hijos(cols, "col")]) {
+    const min = Number(col.getAttribute("min"));
+    const max = Number(col.getAttribute("max"));
+    if (columna < min || columna > max) continue;
+    if (min === max) return col; // ya está sola
+    heredada = col;
+    if (columna > min) {
+      const izq = col.cloneNode(true) as Element;
+      izq.setAttribute("max", String(columna - 1));
+      cols.insertBefore(izq, col);
+    }
+    if (columna < max) {
+      const der = col.cloneNode(true) as Element;
+      der.setAttribute("min", String(columna + 1));
+      cols.insertBefore(der, col);
+    }
+    col.parentNode?.removeChild(col);
+    break;
+  }
+  const propia = heredada ? (heredada.cloneNode(false) as Element) : doc.createElementNS(NS, "col");
+  propia.setAttribute("min", String(columna));
+  propia.setAttribute("max", String(columna));
+  if (!propia.getAttribute("width")) {
+    propia.setAttribute("width", "8.43"); // el ancho por defecto de Excel
+  }
+  cols.appendChild(propia);
+  return propia;
+}
+
+/** Oculta o muestra una fila o columna (base 1). */
+export function fijarVisibilidad(doc: XMLDocument, eje: Eje, indice: number, oculta: boolean): void {
+  if (eje === "fila") {
+    const row = filaDe(doc, indice);
+    if (!row) return;
+    if (oculta) row.setAttribute("hidden", "1");
+    else row.removeAttribute("hidden");
+    return;
+  }
+  const col = colPropia(doc, indice);
+  if (oculta) col.setAttribute("hidden", "1");
+  else col.removeAttribute("hidden");
+}
+
+/**
+ * Congela (o descongela, con 0/0) los paneles de la hoja: el `<pane>` de la
+ * primera `sheetView`, con la celda de arranque del panel móvil.
+ */
+export function fijarCongelado(doc: XMLDocument, filas: number, columnas: number): void {
+  const raiz = doc.documentElement;
+  let sheetViews = doc.getElementsByTagNameNS(NS, "sheetViews")[0] as Element | undefined;
+  if (!sheetViews) {
+    sheetViews = doc.createElementNS(NS, "sheetViews");
+    // El esquema lo pide antes de sheetFormatPr/cols/sheetData.
+    const antesDe = ["sheetFormatPr", "cols", "sheetData"]
+      .map((n) => doc.getElementsByTagNameNS(NS, n)[0])
+      .find(Boolean);
+    if (antesDe) raiz.insertBefore(sheetViews, antesDe);
+    else raiz.appendChild(sheetViews);
+  }
+  let vista = hijos(sheetViews, "sheetView")[0];
+  if (!vista) {
+    vista = doc.createElementNS(NS, "sheetView");
+    vista.setAttribute("workbookViewId", "0");
+    sheetViews.appendChild(vista);
+  }
+  for (const pane of hijos(vista, "pane")) vista.removeChild(pane);
+  if (filas <= 0 && columnas <= 0) return;
+  const pane = doc.createElementNS(NS, "pane");
+  if (columnas > 0) pane.setAttribute("xSplit", String(columnas));
+  if (filas > 0) pane.setAttribute("ySplit", String(filas));
+  pane.setAttribute("topLeftCell", `${numALetra(columnas + 1)}${filas + 1}`);
+  pane.setAttribute("activePane", columnas > 0 && filas > 0 ? "bottomRight" : filas > 0 ? "bottomLeft" : "topRight");
+  pane.setAttribute("state", "frozen");
+  // `pane` va primero dentro de la vista, antes de `selection`.
+  vista.insertBefore(pane, vista.firstChild);
+}
+
 /**
  * Cambia el ancho de una columna (base 1), como al arrastrar su borde.
  *

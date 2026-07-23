@@ -17,7 +17,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Check, Download, Loader2, Save, Table } from "@buleje/design-system/icons";
+import { AlertTriangle, ArrowLeft, Check, Download, Loader2, Printer, Save, Table } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatearValor, leerXlsxConFormato, numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
 import { abrirPaquete, guardarCambios } from "@/lib/documentos/xlsx-escritura";
@@ -26,6 +26,7 @@ import { celdasDe, etiquetaRango, normalizar, type Punto, type Rango } from "@/l
 import { esFormula, evaluarFormula } from "@/lib/documentos/hoja-formulas";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
 import { filasOcultasPorFiltro, ordenDeFilas, resumir, type Direccion } from "@/lib/documentos/hoja-analisis";
+import { imprimirHoja } from "@/lib/documentos/documentos-print";
 import {
   duplicarHoja, eliminarHoja, nombreHojaLibre, nuevaHoja, renombrarEnFormula, renombrarHoja,
 } from "@/lib/documentos/xlsx-hojas";
@@ -392,6 +393,22 @@ function EditorCargado({
       for (const m of merges.filter(dentro)) ejecutar({ tipo: "descombinar", ...m });
       ejecutar({ tipo: "combinar", filaIni: sel.filaIni, colIni: sel.colIni, filaFin: sel.filaFin, colFin: sel.colFin });
     },
+    /**
+     * Congelar es un toggle: con paneles puestos los quita; sin paneles,
+     * congela lo que queda arriba y a la izquierda de la selección (en A1,
+     * la primera fila — el gesto más común de un catálogo).
+     */
+    congelar: () => {
+      if (!hoja) return;
+      if (hoja.congelado.filas > 0 || hoja.congelado.columnas > 0) {
+        ejecutar({ tipo: "congelar", filas: 0, columnas: 0 });
+        return;
+      }
+      const filas = sel.filaIni, columnas = sel.colIni;
+      ejecutar(filas === 0 && columnas === 0
+        ? { tipo: "congelar", filas: 1, columnas: 0 }
+        : { tipo: "congelar", filas, columnas });
+    },
     deshacer, rehacer,
     buscar: () => setBuscando(true),
     ordenar: (d: Direccion) => ordenarRef.current(sel.colIni, d),
@@ -489,6 +506,7 @@ function EditorCargado({
     editar: (celdas: { fila: number; columna: number; valor: string }[]) =>
       ejecutar({ tipo: "valores", celdas }),
     ancho: (columna: number, anchoPx: number) => ejecutar({ tipo: "ancho", columna, anchoPx }),
+    alto: (fila: number, altoPx: number) => ejecutar({ tipo: "alto", fila, altoPx }),
     menu: (x: number, y: number, fila: number, columna: number) => setMenu({ x, y, fila, columna }),
     zoom: cambiarZoom,
   }), [cambiarZoom, ejecutar]);
@@ -505,8 +523,28 @@ function EditorCargado({
     ordenar: (d: Direccion) => ordenar(menu?.columna ?? sel.colIni, d),
     filtrar: () => setFiltrando(menu?.columna ?? sel.colIni),
     combinar: () => acciones.combinar(),
+    ocultar: (eje: "fila" | "columna") => {
+      const desde = eje === "fila" ? sel.filaIni : sel.colIni;
+      const hasta = eje === "fila" ? sel.filaFin : sel.colFin;
+      for (let i = desde; i <= hasta; i++) ejecutar({ tipo: "visibilidad", eje, indice: i + 1, oculta: true });
+    },
+    /** Con una sola celda seleccionada se muestra TODO; con un rango, lo del rango. */
+    mostrarOcultas: () => {
+      if (!hoja) return;
+      const unaSola = sel.filaIni === sel.filaFin && sel.colIni === sel.colFin;
+      hoja.filasOcultas.forEach((oculta, i) => {
+        if (oculta && (unaSola || (i >= sel.filaIni && i <= sel.filaFin))) {
+          ejecutar({ tipo: "visibilidad", eje: "fila", indice: i + 1, oculta: false });
+        }
+      });
+      hoja.columnasOcultas.forEach((oculta, i) => {
+        if (oculta && (unaSola || (i >= sel.colIni && i <= sel.colFin))) {
+          ejecutar({ tipo: "visibilidad", eje: "columna", indice: i + 1, oculta: false });
+        }
+      });
+    },
     limpiar: () => ejecutar({ tipo: "valores", celdas: celdasDe(sel).map((p) => ({ ...p, valor: "" })) }),
-  }), [acciones, ejecutar, menu, ordenar, sel]);
+  }), [acciones, ejecutar, hoja, menu, ordenar, sel]);
 
   if (!hoja || !hojaCalculada || !hojaVisible || !resumen) return null;
 
@@ -535,6 +573,15 @@ function EditorCargado({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { if (hojaVisible) imprimirHoja(hojaVisible, nombre); }}
+            title="Imprimir o guardar PDF de la hoja actual"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+          >
+            <Printer className="h-4 w-4" aria-hidden />
+            <span className="sr-only">Imprimir o guardar PDF</span>
+          </button>
           <button
             type="button"
             onClick={() => void descargar()}

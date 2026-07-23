@@ -20,8 +20,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, Check, Download, FileText, Loader2, Plus, Redo2, Save, Undo2,
+  AlertTriangle, ArrowLeft, Check, Download, FileText, Loader2, Plus, Printer, Redo2, Save, Undo2,
 } from "@buleje/design-system/icons";
+import { imprimirTexto } from "@/lib/documentos/documentos-print";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   escribirDocx, formatoTextoDe, generarPlano, leerDocx, leerPlano,
@@ -327,6 +328,9 @@ export default function DocumentoTextoEditor({
           <button type="button" onClick={() => insertar()} title="Agregar un párrafo al final" className={BOTON_HEADER}>
             <Plus className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Párrafo</span>
             <span className="sr-only sm:hidden">Agregar párrafo</span>
+          </button>
+          <button type="button" onClick={() => imprimirTexto(bloques, nombre)} title="Imprimir o guardar PDF" className={`${BOTON_HEADER} w-10 px-0`}>
+            <Printer className="h-4 w-4" aria-hidden /><span className="sr-only">Imprimir o guardar PDF</span>
           </button>
           <button type="button" onClick={() => void descargar()} title="Descargar una copia con los cambios de ahora" className={`${BOTON_HEADER} w-10 px-0`}>
             <Download className="h-4 w-4" aria-hidden /><span className="sr-only">Descargar copia</span>

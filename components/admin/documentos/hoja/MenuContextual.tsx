@@ -11,7 +11,7 @@
 
 import { useEffect, useRef } from "react";
 import {
-  ArrowDownAZ, ArrowUpAZ, Combine, Copy, Filter, Plus, Scissors, Trash2,
+  ArrowDownAZ, ArrowUpAZ, Combine, Copy, Eye, EyeOff, Filter, Plus, Scissors, Trash2,
 } from "@buleje/design-system/icons";
 
 export interface OpcionesMenu {
@@ -25,6 +25,8 @@ export interface OpcionesMenu {
   ordenar: (direccion: "asc" | "desc") => void;
   filtrar: () => void;
   combinar: () => void;
+  ocultar: (eje: "fila" | "columna") => void;
+  mostrarOcultas: () => void;
   limpiar: () => void;
 }
 
@@ -55,7 +57,7 @@ export default function MenuContextual({
   }, [onCerrar]);
 
   // Si el menú no entra hacia abajo o a la derecha, se abre para el otro lado.
-  const ancho = 232, altoAprox = 330;
+  const ancho = 232, altoAprox = 440;
   const izq = typeof window !== "undefined" && x + ancho > window.innerWidth ? x - ancho : x;
   const arriba = typeof window !== "undefined" && y + altoAprox > window.innerHeight
     ? Math.max(8, y - altoAprox)
@@ -87,6 +89,12 @@ export default function MenuContextual({
       <Item icono={ArrowUpAZ} texto={`Ordenar por ${columna} (Z→A)`} onClick={ejecutar(() => opciones.ordenar("desc"))} />
       <Item icono={Filter} texto={`Filtrar por ${columna}`} onClick={ejecutar(opciones.filtrar)} />
       <Item icono={Combine} texto="Combinar o separar celdas" onClick={ejecutar(opciones.combinar)} />
+
+      <Separador />
+
+      <Item icono={EyeOff} texto="Ocultar la fila" onClick={ejecutar(() => opciones.ocultar("fila"))} />
+      <Item icono={EyeOff} texto={`Ocultar la columna ${columna}`} onClick={ejecutar(() => opciones.ocultar("columna"))} />
+      <Item icono={Eye} texto="Mostrar filas y columnas ocultas" onClick={ejecutar(opciones.mostrarOcultas)} />
 
       <Separador />
 

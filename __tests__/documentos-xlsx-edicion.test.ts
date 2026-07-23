@@ -360,3 +360,57 @@ describe("las OTRAS hojas siguen a la editada (moverFormulaCruzada)", () => {
     expect(f.formula).toBe("Datos!B4*2");
   });
 });
+
+describe("alto de fila, visibilidad y paneles congelados", () => {
+  it("el alto llega como puntos con customHeight", async () => {
+    const zip = await abrirPaquete(await libro());
+    const blob = await guardarCambios(zip, { altos: [{ hoja: 0, fila: 2, altoPx: 48 }] });
+    const xml = await (await JSZip.loadAsync(await blob.arrayBuffer())).file("xl/worksheets/sheet1.xml")!.async("string");
+    expect(xml).toMatch(/<row r="2"[^>]*ht="36.00"[^>]*customHeight="1"/);
+    const hoja = await primeraHoja(blob);
+    expect(hoja.altos[1]).toBe(48); // 36pt vuelven como 48px
+  });
+
+  it("ocultar una fila y una columna se relee como oculta", async () => {
+    const zip = await abrirPaquete(await libro());
+    const blob = await guardarCambios(zip, {
+      visibilidad: [
+        { hoja: 0, eje: "fila", indice: 3, oculta: true },
+        { hoja: 0, eje: "columna", indice: 2, oculta: true },
+      ],
+    });
+    const hoja = await primeraHoja(blob);
+    expect(hoja.filasOcultas[2]).toBe(true);
+    expect(hoja.columnasOcultas[1]).toBe(true);
+  });
+
+  it("mostrar de vuelta quita el atributo", async () => {
+    const zip = await abrirPaquete(await libro());
+    await guardarCambios(zip, { visibilidad: [{ hoja: 0, eje: "fila", indice: 3, oculta: true }] });
+    const blob = await guardarCambios(zip, { visibilidad: [{ hoja: 0, eje: "fila", indice: 3, oculta: false }] });
+    const hoja = await primeraHoja(blob);
+    expect(hoja.filasOcultas[2]).toBe(false);
+  });
+
+  it("ocultar una columna del medio de un tramo no arrastra a sus vecinas", async () => {
+    const zip = await abrirPaquete(await libro());
+    const blob = await guardarCambios(zip, { visibilidad: [{ hoja: 0, eje: "columna", indice: 1, oculta: true }] });
+    const hoja = await primeraHoja(blob);
+    expect(hoja.columnasOcultas[0]).toBe(true);
+    expect(hoja.columnasOcultas[1]).toBe(false);
+    // El ancho custom de la columna A sobrevive al split del tramo.
+    expect(hoja.anchos[0]).toBeGreaterThan(150);
+  });
+
+  it("congelar escribe el pane y se relee; 0/0 lo quita", async () => {
+    const zip = await abrirPaquete(await libro());
+    const blob = await guardarCambios(zip, { congelados: [{ hoja: 0, filas: 1, columnas: 2 }] });
+    const hoja = await primeraHoja(blob);
+    expect(hoja.congelado).toEqual({ filas: 1, columnas: 2 });
+    const xml = await (await JSZip.loadAsync(await blob.arrayBuffer())).file("xl/worksheets/sheet1.xml")!.async("string");
+    expect(xml).toMatch(/<pane[^>]*xSplit="2"[^>]*ySplit="1"[^>]*topLeftCell="C2"[^>]*state="frozen"/);
+
+    const blob2 = await guardarCambios(zip, { congelados: [{ hoja: 0, filas: 0, columnas: 0 }] });
+    expect((await primeraHoja(blob2)).congelado).toEqual({ filas: 0, columnas: 0 });
+  });
+});
