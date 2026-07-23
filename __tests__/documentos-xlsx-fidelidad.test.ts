@@ -83,11 +83,39 @@ describe("leer con el formato del archivo", () => {
     expect(hoja.filas[1][1].crudo).toBe("22");
   });
 
-  it("marca la celda combinada y tapa las que quedan debajo", async () => {
+  it("marca la celda combinada y tapa las que quedan a su derecha", async () => {
     const [hoja] = await leerXlsxConFormato(await libroDePrueba());
     expect(hoja.filas[6][0].colspan).toBe(3);
     expect(hoja.filas[6][1].tapada).toBe(true);
     expect(hoja.filas[6][2].tapada).toBe(true);
+  });
+
+  it("EL BUG DE LOS DATOS CORRIDOS: un merge vertical marca continuación, no rowspan", async () => {
+    // Con `rowspan`, un merge que cruza el borde de las filas dibujadas
+    // desarmaba la tabla: los datos aparecían en la fila y la columna
+    // equivocadas, y algunos duplicados. Las filas de abajo del bloque se
+    // marcan como continuación y se dibujan vacías, en su lugar exacto.
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Guias");
+    ws.getCell("A1").value = "GTF-0001";
+    ws.getCell("B1").value = "Especie 1";
+    ws.getCell("B2").value = "Especie 2";
+    ws.getCell("B3").value = "Especie 3";
+    ws.mergeCells("A1:A3");
+
+    const [hoja] = await leerXlsxConFormato((await wb.xlsx.writeBuffer()) as ArrayBuffer);
+    // El ancla lleva el dato.
+    expect(hoja.filas[0][0].crudo).toBe("GTF-0001");
+    expect(hoja.filas[0][0].rowspan).toBe(3);
+    // Las de abajo son continuación: se dibujan, pero vacías.
+    expect(hoja.filas[1][0].continuaArriba).toBe(true);
+    expect(hoja.filas[2][0].continuaArriba).toBe(true);
+    // Y NO están marcadas como "tapadas": si no se dibujaran, la fila tendría
+    // una celda menos y todo lo de la derecha se correría una columna.
+    expect(hoja.filas[1][0].tapada).toBeUndefined();
+    // Los datos de al lado siguen en su columna.
+    expect(hoja.filas[1][1].crudo).toBe("Especie 2");
+    expect(hoja.filas[2][1].crudo).toBe("Especie 3");
   });
 
   it("conserva el panel congelado para que el encabezado no se pierda", async () => {

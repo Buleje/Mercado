@@ -153,6 +153,12 @@ function EditorCargado({
   const [filtros, setFiltros] = useState<Map<number, Set<string>>>(new Map());
   const [filtrando, setFiltrando] = useState<number | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number; fila: number; columna: number } | null>(null);
+  /** Escala de la vista. Se acota para que la planilla siga siendo usable. */
+  const [zoom, setZoom] = useState(1);
+
+  const cambiarZoom = useCallback((delta: number | null) => {
+    setZoom((z) => (delta === null ? 1 : Math.min(2, Math.max(0.5, Math.round((z + delta) * 10) / 10))));
+  }, []);
 
   const hoja = hojas[activa];
   const sel = useMemo(() => normalizar(rango), [rango]);
@@ -265,6 +271,10 @@ function EditorCargado({
         z: () => (e.shiftKey ? rehacer() : deshacer()),
         y: rehacer,
         f: () => setBuscando(true),
+        "+": () => cambiarZoom(0.1),
+        "=": () => cambiarZoom(0.1),
+        "-": () => cambiarZoom(-0.1),
+        "0": () => cambiarZoom(null),
         b: () => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: { negrita: true } }),
         i: () => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: { cursiva: true } }),
         u: () => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: { subrayado: true } }),
@@ -276,7 +286,7 @@ function EditorCargado({
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [deshacer, ejecutar, guardar, rehacer, sel, setBuscando]);
+  }, [cambiarZoom, deshacer, ejecutar, guardar, rehacer, sel, setBuscando]);
 
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => { if (sucio) e.preventDefault(); };
@@ -353,7 +363,8 @@ function EditorCargado({
       ejecutar({ tipo: "valores", celdas }),
     ancho: (columna: number, anchoPx: number) => ejecutar({ tipo: "ancho", columna, anchoPx }),
     menu: (x: number, y: number, fila: number, columna: number) => setMenu({ x, y, fila, columna }),
-  }), [ejecutar]);
+    zoom: cambiarZoom,
+  }), [cambiarZoom, ejecutar]);
 
   /** Las del clic derecho: las mismas de siempre, pero sobre la celda apuntada. */
   const opcionesMenu = useMemo(() => ({
@@ -463,6 +474,7 @@ function EditorCargado({
         onRango={setRango}
         acciones={accionesGrilla}
         resaltado={resaltado}
+        zoom={zoom}
       />
 
       <BarraEstado
@@ -471,6 +483,8 @@ function EditorCargado({
         filtradas={ocultasPorFiltro}
         hojas={visibles.length}
         hojaActual={hoja.nombre}
+        zoom={zoom}
+        onZoom={cambiarZoom}
       />
 
       {menu && (

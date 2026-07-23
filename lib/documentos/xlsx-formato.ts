@@ -42,11 +42,20 @@ export interface CeldaHoja {
   /** Código de formato de Excel — hace falta para reformatear al recalcular. */
   numFmt?: string;
   estilo?: EstiloCelda;
-  /** Cuántas celdas ocupa, si es el ancla de una celda combinada. */
+  /** Cuántas COLUMNAS ocupa, si es el ancla de una celda combinada. */
   colspan?: number;
+  /** Cuántas FILAS ocupa el bloque combinado (informativo: no se usa rowspan). */
   rowspan?: number;
-  /** true si está tapada por una celda combinada: no se dibuja. */
+  /** Tapada por el `colspan` de una celda a su izquierda: no se dibuja. */
   tapada?: boolean;
+  /**
+   * Tapada por una celda combinada de una fila de ARRIBA.
+   *
+   * Se dibuja igual —vacía y sin borde superior, heredando el relleno del
+   * ancla— en vez de usar `rowspan`: un rowspan que cruza el borde de las
+   * filas dibujadas desarma la tabla entera y corre los datos de columna.
+   */
+  continuaArriba?: boolean;
 }
 
 export interface HojaFormato {
@@ -292,6 +301,8 @@ export async function leerXlsxConFormato(datos: ArrayBuffer): Promise<HojaFormat
     // que en Excel no se ven.
     const spans = new Map<string, { colspan: number; rowspan: number }>();
     const tapadas = new Set<string>();
+    /** Celdas cubiertas por un merge que viene de una fila anterior. */
+    const continuacion = new Map<string, string>();
     const merges: string[] = Array.isArray(ws.model?.merges) ? ws.model.merges : [];
     for (const rango of merges) {
       const m = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(rango);
@@ -302,7 +313,12 @@ export async function leerXlsxConFormato(datos: ArrayBuffer): Promise<HojaFormat
       spans.set(`${fil1}-${col1}`, { colspan: col2 - col1 + 1, rowspan: fil2 - fil1 + 1 });
       for (let f = fil1; f <= fil2; f++) {
         for (let c = col1; c <= col2; c++) {
-          if (f !== fil1 || c !== col1) tapadas.add(`${f}-${c}`);
+          if (f === fil1 && c === col1) continue;
+          // Sólo se descartan las que tapa el `colspan` DENTRO de la misma
+          // fila del ancla; las de las filas siguientes se dibujan vacías.
+          if (f === fil1) tapadas.add(`${f}-${c}`);
+          else if (c === col1) continuacion.set(`${f}-${c}`, `${fil1}-${col1}`);
+          else tapadas.add(`${f}-${c}`);
         }
       }
     }
@@ -328,15 +344,19 @@ export async function leerXlsxConFormato(datos: ArrayBuffer): Promise<HojaFormat
 
         const bruto = formula ? (v as { result?: unknown }).result : v;
         const span = spans.get(`${f}-${c}`);
+        const vieneDeArriba = continuacion.get(`${f}-${c}`);
         celdas.push({
           texto: formatearValor(bruto, cell.numFmt),
           crudo: valorCrudo(v),
           formula,
           numFmt: cell.numFmt || undefined,
           estilo: estiloDeCelda(cell, bruto),
-          colspan: span?.colspan,
+          // El bloque combinado se dibuja con el colspan del ancla y las filas
+          // de abajo como continuación; su ancho vale para las dos.
+          colspan: span?.colspan ?? (vieneDeArriba ? spans.get(vieneDeArriba)?.colspan : undefined),
           rowspan: span?.rowspan,
           tapada: tapadas.has(`${f}-${c}`) || undefined,
+          continuaArriba: vieneDeArriba ? true : undefined,
         });
       }
       filas.push(celdas);

@@ -45,10 +45,12 @@ export interface AccionesGrilla {
   ancho: (columna: number, anchoPx: number) => void;
   /** Clic derecho sobre una celda: el editor decide qué menú mostrar. */
   menu?: (x: number, y: number, fila: number, columna: number) => void;
+  /** Ctrl+rueda: acercar (+) o alejar (−). */
+  zoom?: (delta: number) => void;
 }
 
 export default function GrillaHoja({
-  hoja, seleccion, rango, onSeleccion, onRango, acciones, resaltado,
+  hoja, seleccion, rango, onSeleccion, onRango, acciones, resaltado, zoom = 1,
 }: {
   hoja: HojaFormato;
   seleccion: Seleccion;
@@ -58,6 +60,15 @@ export default function GrillaHoja({
   acciones: AccionesGrilla;
   /** Celda a la que saltó el buscador, para marcarla. */
   resaltado?: Punto | null;
+  /**
+   * Escala de la vista (1 = 100%).
+   *
+   * Se aplica a los tamaños, no con `transform: scale`: así el texto se
+   * rasteriza nítido en cada nivel y las medidas de scroll siguen siendo
+   * reales (con `scale` el contenedor mide otra cosa y la virtualización
+   * calcularía mal qué filas están a la vista).
+   */
+  zoom?: number;
 }) {
   const { resolved: tema } = useTheme();
   const contenedor = useRef<HTMLDivElement>(null);
@@ -97,8 +108,14 @@ export default function GrillaHoja({
    * texto que tiene que mostrar.
    */
   const anchos = useMemo(
-    () => Array.from({ length: totalCols }, (_, i) => anchoEnPantalla(hoja.anchos[i] ?? 64)),
-    [hoja.anchos, totalCols],
+    () => Array.from({ length: totalCols }, (_, i) => Math.round(anchoEnPantalla(hoja.anchos[i] ?? 64) * zoom)),
+    [hoja.anchos, totalCols, zoom],
+  );
+
+  /** Alto de cada fila con el zoom aplicado. */
+  const altos = useMemo(
+    () => hoja.filas.map((_, i) => Math.round((hoja.altos[i] ?? 20) * zoom)),
+    [hoja.altos, hoja.filas, zoom],
   );
 
   const sel = useMemo(() => normalizar(rango), [rango]);
@@ -106,10 +123,10 @@ export default function GrillaHoja({
   const offsets = useMemo(() => {
     const out = [0];
     for (let i = 0; i < hoja.filas.length; i++) {
-      out.push(out[i] + (hoja.filasOcultas[i] ? 0 : hoja.altos[i] ?? 20));
+      out.push(out[i] + (hoja.filasOcultas[i] ? 0 : altos[i] ?? 20));
     }
     return out;
-  }, [hoja]);
+  }, [altos, hoja.filas.length, hoja.filasOcultas]);
 
   const fijas = Math.min(hoja.congelado.filas, hoja.filas.length);
   const fijasCol = Math.min(hoja.congelado.columnas, totalCols);
@@ -132,9 +149,9 @@ export default function GrillaHoja({
 
   const techo = useMemo(() => {
     let h = ALTO_ENCABEZADO;
-    for (let i = 0; i < fijas; i++) h += hoja.filasOcultas[i] ? 0 : hoja.altos[i] ?? 20;
+    for (let i = 0; i < fijas; i++) h += hoja.filasOcultas[i] ? 0 : altos[i] ?? 20;
     return h;
-  }, [fijas, hoja.altos, hoja.filasOcultas]);
+  }, [altos, fijas, hoja.filasOcultas]);
   const techoRef = useRef(0);
   useEffect(() => { techoRef.current = techo; }, [techo]);
 
@@ -270,6 +287,23 @@ export default function GrillaHoja({
     if (celdas.length > 0) acciones.editar(celdas);
   }, [acciones, crudoDe, sel]);
 
+  // ── Ctrl+rueda para acercar y alejar ──────────────────────────────────────
+  // Se registra a mano con `passive: false`: React marca `onWheel` como pasivo
+  // y ahí `preventDefault()` no tiene efecto — el navegador haría ADEMÁS su
+  // propio zoom de página, encima del de la planilla.
+  useEffect(() => {
+    const el = contenedor.current;
+    const alZoom = acciones.zoom;
+    if (!el || !alZoom) return;
+    const rueda = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      alZoom(e.deltaY < 0 ? 0.1 : -0.1);
+    };
+    el.addEventListener("wheel", rueda, { passive: false });
+    return () => el.removeEventListener("wheel", rueda);
+  }, [acciones.zoom]);
+
   // ── Redimensionar columnas ────────────────────────────────────────────────
   useEffect(() => {
     const mover = (e: MouseEvent) => {
@@ -352,7 +386,7 @@ export default function GrillaHoja({
     const filaEnSeleccion = f >= sel.filaIni && f <= sel.filaFin;
 
     return (
-      <tr key={f} style={{ height: hoja.altos[f] }}>
+      <tr key={f} style={{ height: altos[f] }}>
         <th
           scope="row"
           onMouseDown={() => {
@@ -387,7 +421,6 @@ export default function GrillaHoja({
               key={c}
               hidden={hoja.columnasOcultas[c]}
               colSpan={celda.colspan}
-              rowSpan={celda.rowspan}
               onMouseDown={(e) => {
                 if (e.button !== 0) return;
                 setEditando(false);
@@ -412,7 +445,15 @@ export default function GrillaHoja({
                 acciones.menu(e.clientX, e.clientY, f, c);
               }}
               onDoubleClick={() => abrirEditor(crudoDe(f, c))}
-              style={{ ...estiloTd(celda, tema), ...pegado, paddingLeft: PADDING_CELDA, paddingRight: PADDING_CELDA }}
+              style={{
+                ...estiloTd(celda, tema, zoom),
+                ...pegado,
+                paddingLeft: PADDING_CELDA,
+                paddingRight: PADDING_CELDA,
+                // Continuación de una celda combinada de arriba: sin línea
+                // divisoria, para que el bloque se lea como uno solo.
+                ...(celda.continuaArriba ? { borderTopColor: "transparent" } : null),
+              }}
               className={`relative overflow-hidden border border-[var(--rule-soft)] ${
                 activa ? "outline outline-2 -outline-offset-2 outline-[var(--accent)]" : ""
               } ${esResaltado ? "ring-2 ring-inset ring-[var(--data-warning-500)]" : ""}`}
@@ -447,7 +488,7 @@ export default function GrillaHoja({
                     else if (e.key === "Tab") { e.preventDefault(); confirmar(0); }
                   }}
                   aria-label={`${numeroALetra(c + 1)}${f + 1}`}
-                  style={{ fontFamily: FUENTE_HOJA, fontSize: TAMANO_BASE_PX, paddingLeft: PADDING_CELDA, paddingRight: PADDING_CELDA }}
+                  style={{ fontFamily: FUENTE_HOJA, fontSize: TAMANO_BASE_PX * zoom, paddingLeft: PADDING_CELDA, paddingRight: PADDING_CELDA }}
                   className="absolute inset-0 z-20 w-full bg-[var(--surface-raised)] text-[var(--text-primary)] outline-2 outline-[var(--accent)]"
                 />
               ) : (
@@ -455,7 +496,7 @@ export default function GrillaHoja({
                 // si lo pide, la celda tiene el alto reservado para varias
                 // líneas y truncar dejaba media frase con puntos suspensivos.
                 <span className={celda.estilo?.ajustarTexto ? "relative block whitespace-pre-wrap break-words" : "relative block truncate"}>
-                  {celda.texto}
+                  {celda.continuaArriba ? "" : celda.texto}
                 </span>
               )}
             </td>
@@ -482,7 +523,7 @@ export default function GrillaHoja({
           tableLayout: "fixed",
           width: anchoTotal,
           fontFamily: FUENTE_HOJA,
-          fontSize: TAMANO_BASE_PX,
+          fontSize: TAMANO_BASE_PX * zoom,
         }}
       >
         <colgroup>
@@ -547,7 +588,7 @@ export default function GrillaHoja({
 }
 
 /** Estilo de la celda tal como viene del archivo. */
-function estiloTd(celda: CeldaHoja, tema: "light" | "dark"): React.CSSProperties {
+function estiloTd(celda: CeldaHoja, tema: "light" | "dark", zoom: number): React.CSSProperties {
   const e = celda.estilo;
   // Excel alinea el contenido ABAJO de la celda cuando no se dice otra cosa;
   // con el centrado del navegador, una fila alta se ve flotando.
@@ -565,7 +606,7 @@ function estiloTd(celda: CeldaHoja, tema: "light" | "dark"): React.CSSProperties
     backgroundColor: e.fondo,
     // El tamaño del archivo está en PUNTOS: aplicarlo como píxeles hacía que
     // un título de 16 pt se viera igual de chico que el texto normal.
-    fontSize: e.tamano ? `${ptAPx(e.tamano)}px` : undefined,
+    fontSize: e.tamano ? `${ptAPx(e.tamano) * zoom}px` : undefined,
     textAlign: e.alineacion,
     verticalAlign: e.alineacionVertical ?? "bottom",
     whiteSpace: e.ajustarTexto ? "normal" : undefined,
