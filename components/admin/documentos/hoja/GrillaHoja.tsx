@@ -65,7 +65,27 @@ export default function GrillaHoja({
   const rellenando = useRef(false);
   const [filaRelleno, setFilaRelleno] = useState<number | null>(null);
 
-  const totalCols = hoja.filas[0]?.length ?? 0;
+  /**
+   * Cuántas columnas hay de verdad.
+   *
+   * No alcanza con `anchos.length` ni con la primera fila: al insertar
+   * columnas o al escribir fuera de los límites, una fila puede quedar más
+   * larga que la lista de anchos. Si el `<colgroup>` no cubre TODAS, las
+   * columnas sobrantes toman ancho automático y cambian de tamaño según qué
+   * filas estén dibujadas — que es exactamente el ancho "que se mueve solo"
+   * al hacer scroll.
+   */
+  const totalCols = useMemo(
+    () => Math.max(hoja.anchos.length, ...hoja.filas.map((f) => f.length), 1),
+    [hoja.anchos.length, hoja.filas],
+  );
+
+  /** Ancho de cada columna, completando las que no tengan uno declarado. */
+  const anchos = useMemo(
+    () => Array.from({ length: totalCols }, (_, i) => hoja.anchos[i] ?? 64),
+    [hoja.anchos, totalCols],
+  );
+
   const sel = useMemo(() => normalizar(rango), [rango]);
 
   const offsets = useMemo(() => {
@@ -81,11 +101,19 @@ export default function GrillaHoja({
 
   const izquierdas = useMemo(() => {
     const out = [ANCHO_CANAL];
-    for (let i = 0; i < hoja.anchos.length; i++) {
-      out.push(out[i] + (hoja.columnasOcultas[i] ? 0 : hoja.anchos[i] ?? 64));
+    for (let i = 0; i < anchos.length; i++) {
+      out.push(out[i] + (hoja.columnasOcultas[i] ? 0 : anchos[i]));
     }
     return out;
-  }, [hoja.anchos, hoja.columnasOcultas]);
+  }, [anchos, hoja.columnasOcultas]);
+
+  /**
+   * Ancho total en píxeles. Se declara explícito en vez de dejar
+   * `width: max-content`: con `max-content` el navegador MIDE el contenido
+   * dibujado, así que al cambiar las filas visibles (virtualización) la tabla
+   * cambiaba de ancho sola.
+   */
+  const anchoTotal = izquierdas[izquierdas.length - 1] ?? ANCHO_CANAL;
 
   const techo = useMemo(() => {
     let h = ALTO_ENCABEZADO;
@@ -423,17 +451,17 @@ export default function GrillaHoja({
       role="grid"
       aria-label={`Hoja ${hoja.nombre}`}
     >
-      <table className="border-collapse select-none" style={{ tableLayout: "fixed", width: "max-content" }}>
+      <table className="border-collapse select-none" style={{ tableLayout: "fixed", width: anchoTotal }}>
         <colgroup>
           <col style={{ width: ANCHO_CANAL }} />
-          {hoja.anchos.map((w, i) => (
+          {anchos.map((w, i) => (
             <col key={i} style={{ width: hoja.columnasOcultas[i] ? 0 : w }} />
           ))}
         </colgroup>
         <thead>
           <tr style={{ height: ALTO_ENCABEZADO }}>
             <th className="sticky left-0 top-0 z-30 border border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
-            {hoja.anchos.map((_, c) => (
+            {anchos.map((_, c) => (
               <th
                 key={c}
                 hidden={hoja.columnasOcultas[c]}
@@ -457,7 +485,7 @@ export default function GrillaHoja({
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    resize.current = { columna: c + 1, xInicial: e.clientX, anchoInicial: hoja.anchos[c] ?? 64 };
+                    resize.current = { columna: c + 1, xInicial: e.clientX, anchoInicial: anchos[c] };
                   }}
                   onDoubleClick={(e) => { e.stopPropagation(); acciones.ancho(c + 1, 140); }}
                   className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-[var(--accent)]"
@@ -468,10 +496,16 @@ export default function GrillaHoja({
         </thead>
         <tbody>
           {Array.from({ length: fijas }, (_, f) => renderFila(f, true))}
-          {visible.desde > fijas && <tr style={{ height: offsets[visible.desde] - offsets[fijas] }} aria-hidden />}
+          {visible.desde > fijas && (
+            <tr style={{ height: offsets[visible.desde] - offsets[fijas] }} aria-hidden>
+              <td colSpan={totalCols + 1} />
+            </tr>
+          )}
           {hoja.filas.slice(visible.desde, visible.hasta).map((_, i) => renderFila(visible.desde + i, false))}
           {visible.hasta < hoja.filas.length && (
-            <tr style={{ height: offsets[hoja.filas.length] - offsets[visible.hasta] }} aria-hidden />
+            <tr style={{ height: offsets[hoja.filas.length] - offsets[visible.hasta] }} aria-hidden>
+              <td colSpan={totalCols + 1} />
+            </tr>
           )}
         </tbody>
       </table>

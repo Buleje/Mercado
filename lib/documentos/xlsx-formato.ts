@@ -133,6 +133,10 @@ export function colorHex(c: ColorExcel): string | undefined {
 export function formatearValor(valor: unknown, numFmt?: string): string {
   if (valor === null || valor === undefined) return "";
   if (valor instanceof Date) return valor.toLocaleDateString("es-PE");
+  // Un valor de exceljs puede ser un objeto: texto con formato ("richText"),
+  // un hipervínculo, una fórmula o un error. Sin desenvolverlo, la celda
+  // mostraba "[object Object]".
+  if (typeof valor === "object") return textoDeValor(valor);
   if (typeof valor !== "number") return String(valor);
   if (!numFmt || numFmt === "General") return String(valor);
 
@@ -159,6 +163,31 @@ export function formatearValor(valor: unknown, numFmt?: string): string {
   const moneda = /\[?\$?(s\/|us\$|\$|€|£)/.exec(f)?.[1];
   if (moneda) out = `${moneda.toUpperCase().replace("S/", "S/ ")}${out}`.replace("$ ", "$");
   return out;
+}
+
+/**
+ * Cualquier valor de exceljs → texto plano.
+ *
+ * Los tipos que llegan como objeto son: texto con formato mezclado
+ * (`richText`), hipervínculo (`text` + `hyperlink`), fórmula (`result`) y
+ * error (`error`). Cada uno tiene su forma de decir "lo que se lee".
+ */
+export function textoDeValor(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (v instanceof Date) return v.toLocaleDateString("es-PE");
+  if (typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    if (Array.isArray(o.richText)) {
+      return o.richText.map((r) => String((r as { text?: string }).text ?? "")).join("");
+    }
+    if ("text" in o) return textoDeValor(o.text);          // hipervínculo
+    if ("result" in o) return textoDeValor(o.result);      // fórmula
+    if ("error" in o) return String(o.error);
+    if ("hyperlink" in o) return String(o.hyperlink);
+  }
+  return String(v);
 }
 
 /**
@@ -221,16 +250,8 @@ function estiloDeCelda(cell: WS, valor: unknown): EstiloCelda | undefined {
 
 /** El valor sin formato — lo que el usuario edita y lo que se guarda. */
 function valorCrudo(valor: unknown): string {
-  if (valor === null || valor === undefined) return "";
   if (valor instanceof Date) return valor.toISOString().slice(0, 10);
-  if (typeof valor === "object") {
-    const o = valor as Record<string, unknown>;
-    if ("result" in o) return valorCrudo(o.result);
-    if ("text" in o) return String(o.text);
-    if (Array.isArray(o.richText)) return o.richText.map((r) => String((r as { text?: string }).text ?? "")).join("");
-    if ("error" in o) return String(o.error);
-  }
-  return String(valor);
+  return textoDeValor(valor);
 }
 
 /** Lee un .xlsx completo con su formato, listo para mostrar. */

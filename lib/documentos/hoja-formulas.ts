@@ -95,9 +95,12 @@ function tokenizar(entrada: string): Token[] {
     if (dos === "<=" || dos === ">=" || dos === "<>") { tokens.push({ t: "op", v: dos }); i += 2; continue; }
     if ("+-*/^&=<>%".includes(c)) { tokens.push({ t: "op", v: c }); i++; continue; }
 
-    if (/[A-Za-z$_]/.test(c)) {
+    // `\p{L}` y no `[A-Za-z]`: los nombres en español llevan Ñ y tildes
+    // (AÑO, DÍA, JERARQUÍA). Con el rango ASCII, "AÑO(" se cortaba en la Ñ y
+    // la función quedaba sin reconocer.
+    if (/[\p{L}$_]/u.test(c)) {
       let s = "";
-      while (i < entrada.length && /[A-Za-z0-9$_.]/.test(entrada[i])) { s += entrada[i]; i++; }
+      while (i < entrada.length && /[\p{L}0-9$_.]/u.test(entrada[i])) { s += entrada[i]; i++; }
       // ¿Rango? "A1:B9"
       if (entrada[i] === ":" && /^\$?[A-Za-z]+\$?\d+$/.test(s)) {
         i++;
@@ -214,7 +217,10 @@ class Parser {
     const clave = `${coord.fila}-${coord.columna}`;
     if (this.ctx.visitando.has(clave)) return ERROR_CICLO;
     const bruto = this.ctx.leer(coord.fila, coord.columna);
-    if (bruto === "") return 0;
+    // Una celda vacía se devuelve como texto vacío, no como 0: si no, ESBLANCO
+    // diría que no lo está. En las cuentas sigue valiendo cero, porque `num("")`
+    // es 0 y las funciones de suma descartan lo que no es número.
+    if (bruto === "") return "";
     // Una celda puede contener otra fórmula: se resuelve en cadena.
     if (esFormula(bruto)) {
       this.ctx.visitando.add(clave);
@@ -239,6 +245,21 @@ class Parser {
     return out;
   }
 
+  /** Valores de un rango conservando su forma de tabla (filas × columnas). */
+  private matrizRango(a: string, b: string): Valor[][] {
+    const ini = refACoordenada(a), fin = refACoordenada(b);
+    if (!ini || !fin) return [];
+    const out: Valor[][] = [];
+    for (let f = Math.min(ini.fila, fin.fila); f <= Math.max(ini.fila, fin.fila); f++) {
+      const fila: Valor[] = [];
+      for (let c = Math.min(ini.columna, fin.columna); c <= Math.max(ini.columna, fin.columna); c++) {
+        fila.push(this.valorDeRef(coordenadaARef(f, c)));
+      }
+      out.push(fila);
+    }
+    return out;
+  }
+
   private llamada(nombre: string): Valor {
     if (nombre === "TRUE" || nombre === "VERDADERO") return true;
     if (nombre === "FALSE" || nombre === "FALSO") return false;
@@ -246,15 +267,23 @@ class Parser {
     this.avanzar(); // (
 
     const args: Valor[][] = [];
+    const matrices: (Valor[][] | null)[] = [];
     while (this.actual() && this.actual()!.t !== ")") {
       const tk = this.actual()!;
-      if (tk.t === "rango") { this.avanzar(); args.push(this.valoresRango(tk.a, tk.b)); }
-      else args.push([this.comparacion()]);
+      if (tk.t === "rango") {
+        this.avanzar();
+        args.push(this.valoresRango(tk.a, tk.b));
+        // BUSCARV y las de referencia necesitan la tabla, no la lista plana.
+        matrices.push(this.matrizRango(tk.a, tk.b));
+      } else {
+        args.push([this.comparacion()]);
+        matrices.push(null);
+      }
       if (this.actual()?.t === ",") this.avanzar();
     }
     if (this.actual()?.t === ")") this.avanzar();
 
-    return aplicar(nombre, args);
+    return aplicar(nombre, args, matrices);
   }
 
   private actual(): Token | undefined { return this.tokens[this.i]; }
@@ -296,58 +325,360 @@ function numeros(args: Valor[][]): number[] {
     .map((v) => num(v));
 }
 
-function aplicar(nombre: string, args: Valor[][]): Valor {
+/** Serie de números 1..n, para las funciones de fecha. */
+const MS_DIA = 86400 * 1000;
+/** Excel cuenta los días desde el 1900-01-01 (con su bug del año bisiesto). */
+const EPOCA_EXCEL = Date.UTC(1899, 11, 30);
+
+function aSerieExcel(d: Date): number {
+  return Math.round((d.getTime() - EPOCA_EXCEL) / MS_DIA);
+}
+
+function desdeSerieExcel(n: number): Date {
+  return new Date(EPOCA_EXCEL + n * MS_DIA);
+}
+
+/** Interpreta un valor como fecha: sirve tanto el número de serie como "2026-07-22". */
+function comoFecha(v: Valor): Date | null {
+  if (typeof v === "number") return desdeSerieExcel(v);
+  const t = texto(v).trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (iso) return new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])));
+  const pe = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
+  if (pe) return new Date(Date.UTC(Number(pe[3]), Number(pe[2]) - 1, Number(pe[1])));
+  return null;
+}
+
+/** Redondeo a `d` decimales sin arrastrar la cola binaria del flotante. */
+function redondear(v: number, d: number): number {
+  const f = 10 ** d;
+  return Math.round((v + Number.EPSILON) * f) / f;
+}
+
+/** La n-ésima menor/mayor de una lista. */
+function kEsimo(nums: number[], k: number, mayor: boolean): Valor {
+  if (k < 1 || k > nums.length) return ERROR_VALOR;
+  const orden = [...nums].sort((a, b) => (mayor ? b - a : a - b));
+  return orden[k - 1];
+}
+
+function mediana(nums: number[]): Valor {
+  if (nums.length === 0) return ERROR_DIV0;
+  const o = [...nums].sort((a, b) => a - b);
+  const m = Math.floor(o.length / 2);
+  return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2;
+}
+
+function desviacion(nums: number[], muestral: boolean): Valor {
+  const n = nums.length;
+  if (n < (muestral ? 2 : 1)) return ERROR_DIV0;
+  const media = nums.reduce((a, b) => a + b, 0) / n;
+  const suma = nums.reduce((a, b) => a + (b - media) ** 2, 0);
+  return Math.sqrt(suma / (muestral ? n - 1 : n));
+}
+
+/**
+ * Aplica una función por su nombre.
+ *
+ * @param args     cada argumento ya evaluado y aplanado.
+ * @param matrices para las funciones que necesitan la FORMA de un rango
+ *   (BUSCARV mira una columna concreta de la tabla, no una lista suelta).
+ */
+function aplicar(nombre: string, args: Valor[][], matrices: (Valor[][] | null)[] = []): Valor {
   const planos = args.flat();
   const nums = numeros(args);
   const primero = planos[0];
+  const arg = (i: number): Valor => args[i]?.[0] ?? "";
+  const numArg = (i: number, porDefecto = 0) => (args[i] ? num(args[i][0]) : porDefecto);
 
   switch (nombre) {
+    // ── Suma y cuenta ──────────────────────────────────────────────────────
     case "SUM": case "SUMA": return nums.reduce((a, b) => a + b, 0);
     case "AVERAGE": case "PROMEDIO": return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : ERROR_DIV0;
     case "MIN": return nums.length ? Math.min(...nums) : 0;
     case "MAX": return nums.length ? Math.max(...nums) : 0;
     case "COUNT": case "CONTAR": return nums.length;
     case "COUNTA": case "CONTARA": return planos.filter((v) => texto(v) !== "").length;
-    case "ROUND": case "REDONDEAR": {
-      const d = args[1] ? num(args[1][0]) : 0;
-      const factor = 10 ** d;
-      return Math.round(num(primero) * factor) / factor;
+    case "COUNTBLANK": case "CONTAR.BLANCO": return planos.filter((v) => texto(v) === "").length;
+    case "PRODUCT": case "PRODUCTO": return nums.reduce((a, b) => a * b, 1);
+    case "SUBTOTAL": case "SUBTOTALES": {
+      // SUBTOTALES(código; rango) — se soportan los códigos usuales.
+      const codigo = num(primero) % 100;
+      const resto = numeros(args.slice(1));
+      const porCodigo: Record<number, Valor> = {
+        1: resto.length ? resto.reduce((a, b) => a + b, 0) / resto.length : ERROR_DIV0,
+        2: resto.length,
+        3: args.slice(1).flat().filter((v) => texto(v) !== "").length,
+        4: resto.length ? Math.max(...resto) : 0,
+        5: resto.length ? Math.min(...resto) : 0,
+        6: resto.reduce((a, b) => a * b, 1),
+        9: resto.reduce((a, b) => a + b, 0),
+      };
+      return porCodigo[codigo] ?? ERROR_VALOR;
+    }
+
+    // ── Estadística ────────────────────────────────────────────────────────
+    case "MEDIAN": case "MEDIANA": return mediana(nums);
+    case "STDEV": case "DESVEST": return desviacion(nums, true);
+    case "STDEVP": case "DESVESTP": return desviacion(nums, false);
+    case "LARGE": case "K.ESIMO.MAYOR": return kEsimo(numeros([args[0] ?? []]), numArg(1, 1), true);
+    case "SMALL": case "K.ESIMO.MENOR": return kEsimo(numeros([args[0] ?? []]), numArg(1, 1), false);
+    case "RANK": case "JERARQUIA": case "JERARQUÍA": {
+      const v = num(primero);
+      const lista = numeros([args[1] ?? []]);
+      const desc = numArg(2, 0) === 0;
+      const orden = [...lista].sort((a, b) => (desc ? b - a : a - b));
+      const i = orden.indexOf(v);
+      return i === -1 ? ERROR_VALOR : i + 1;
+    }
+
+    // ── Matemática ─────────────────────────────────────────────────────────
+    case "ROUND": case "REDONDEAR": return redondear(num(primero), numArg(1));
+    case "ROUNDUP": case "REDONDEAR.MAS": {
+      const f = 10 ** numArg(1);
+      const v = num(primero);
+      return (v < 0 ? -Math.ceil(Math.abs(v) * f) : Math.ceil(v * f)) / f;
+    }
+    case "ROUNDDOWN": case "REDONDEAR.MENOS": {
+      const f = 10 ** numArg(1);
+      const v = num(primero);
+      return (v < 0 ? -Math.floor(Math.abs(v) * f) : Math.floor(v * f)) / f;
+    }
+    case "CEILING": case "MULTIPLO.SUPERIOR": {
+      const paso = numArg(1, 1) || 1;
+      return Math.ceil(num(primero) / paso) * paso;
+    }
+    case "FLOOR": case "MULTIPLO.INFERIOR": {
+      const paso = numArg(1, 1) || 1;
+      return Math.floor(num(primero) / paso) * paso;
     }
     case "ABS": return Math.abs(num(primero));
     case "INT": case "ENTERO": return Math.floor(num(primero));
-    case "SQRT": case "RAIZ": return Math.sqrt(num(primero));
-    case "POWER": case "POTENCIA": return num(primero) ** num(args[1]?.[0] ?? 0);
-    case "PRODUCT": case "PRODUCTO": return nums.reduce((a, b) => a * b, 1);
+    case "TRUNC": case "TRUNCAR": {
+      const f = 10 ** numArg(1);
+      return Math.trunc(num(primero) * f) / f;
+    }
+    case "MOD": case "RESIDUO": {
+      const d = numArg(1);
+      if (d === 0) return ERROR_DIV0;
+      // Excel devuelve el signo del divisor, JS el del dividendo.
+      return ((num(primero) % d) + d) % d;
+    }
+    case "SQRT": case "RAIZ": {
+      const v = num(primero);
+      return v < 0 ? ERROR_VALOR : Math.sqrt(v);
+    }
+    case "POWER": case "POTENCIA": return num(primero) ** numArg(1);
+    case "EXP": return Math.exp(num(primero));
+    case "LN": return num(primero) > 0 ? Math.log(num(primero)) : ERROR_VALOR;
+    case "LOG": {
+      const base = args[1] ? numArg(1) : 10;
+      return num(primero) > 0 ? Math.log(num(primero)) / Math.log(base) : ERROR_VALOR;
+    }
+    case "LOG10": return num(primero) > 0 ? Math.log10(num(primero)) : ERROR_VALOR;
+    case "SIGN": case "SIGNO": return Math.sign(num(primero));
+    case "PI": return Math.PI;
+
+    // ── Lógica ─────────────────────────────────────────────────────────────
     case "IF": case "SI": {
       const cond = primero;
-      const verdadero = args[1]?.[0] ?? true;
-      const falso = args[2]?.[0] ?? false;
       const esVerdad = typeof cond === "boolean" ? cond : num(cond) !== 0;
-      return esVerdad ? verdadero : falso;
+      return esVerdad ? (args[1] ? arg(1) : true) : (args[2] ? arg(2) : false);
     }
-    case "CONCATENATE": case "CONCATENAR": return planos.map(texto).join("");
-    case "UPPER": case "MAYUSC": return texto(primero).toUpperCase();
-    case "LOWER": case "MINUSC": return texto(primero).toLowerCase();
-    case "TRIM": case "ESPACIOS": return texto(primero).trim();
-    case "LEN": case "LARGO": return texto(primero).length;
-    case "IFERROR": case "SI.ERROR": {
-      const v = primero;
-      return typeof v === "string" && v.startsWith("#") ? (args[1]?.[0] ?? "") : v;
+    case "IFS": case "SI.CONJUNTO": {
+      for (let i = 0; i + 1 < args.length; i += 2) {
+        const c = args[i][0];
+        if (typeof c === "boolean" ? c : num(c) !== 0) return args[i + 1][0];
+      }
+      return ERROR_VALOR;
     }
+    case "AND": case "Y": return planos.every((v) => (typeof v === "boolean" ? v : num(v) !== 0));
+    case "OR": case "O": return planos.some((v) => (typeof v === "boolean" ? v : num(v) !== 0));
+    case "NOT": case "NO": return !(typeof primero === "boolean" ? primero : num(primero) !== 0);
+    case "IFERROR": case "SI.ERROR":
+      return typeof primero === "string" && primero.startsWith("#") ? arg(1) : primero;
+    case "ISBLANK": case "ESBLANCO": return texto(primero) === "";
+    case "ISNUMBER": case "ESNUMERO": return typeof primero === "number";
+    case "ISTEXT": case "ESTEXTO": return typeof primero === "string" && !primero.startsWith("#");
+    case "ISERROR": case "ESERROR": return typeof primero === "string" && primero.startsWith("#");
+
+    // ── Condicionales ──────────────────────────────────────────────────────
     case "SUMIF": case "SUMAR.SI": {
-      // SUMAR.SI(rango; criterio; [rango_suma])
       const rango = args[0] ?? [];
-      const criterio = texto(args[1]?.[0] ?? "");
+      const criterio = texto(arg(1));
       const suma = args[2] ?? rango;
       let total = 0;
       rango.forEach((v, i) => { if (cumple(v, criterio)) total += num(suma[i] ?? 0); });
       return total;
     }
-    case "COUNTIF": case "CONTAR.SI": {
+    case "COUNTIF": case "CONTAR.SI":
+      return (args[0] ?? []).filter((v) => cumple(v, texto(arg(1)))).length;
+    case "AVERAGEIF": case "PROMEDIO.SI": {
       const rango = args[0] ?? [];
-      const criterio = texto(args[1]?.[0] ?? "");
-      return rango.filter((v) => cumple(v, criterio)).length;
+      const criterio = texto(arg(1));
+      const prom = args[2] ?? rango;
+      const elegidos: number[] = [];
+      rango.forEach((v, i) => { if (cumple(v, criterio)) elegidos.push(num(prom[i] ?? 0)); });
+      return elegidos.length ? elegidos.reduce((a, b) => a + b, 0) / elegidos.length : ERROR_DIV0;
     }
+    case "SUMIFS": case "SUMAR.SI.CONJUNTO": {
+      // SUMAR.SI.CONJUNTO(rango_suma; rango1; criterio1; …)
+      const suma = args[0] ?? [];
+      let total = 0;
+      for (let i = 0; i < suma.length; i++) {
+        let pasa = true;
+        for (let a = 1; a + 1 < args.length; a += 2) {
+          if (!cumple(args[a][i] ?? "", texto(args[a + 1][0]))) { pasa = false; break; }
+        }
+        if (pasa) total += num(suma[i]);
+      }
+      return total;
+    }
+    case "COUNTIFS": case "CONTAR.SI.CONJUNTO": {
+      const largo = args[0]?.length ?? 0;
+      let cuenta = 0;
+      for (let i = 0; i < largo; i++) {
+        let pasa = true;
+        for (let a = 0; a + 1 < args.length; a += 2) {
+          if (!cumple(args[a][i] ?? "", texto(args[a + 1][0]))) { pasa = false; break; }
+        }
+        if (pasa) cuenta++;
+      }
+      return cuenta;
+    }
+
+    // ── Búsqueda ───────────────────────────────────────────────────────────
+    case "VLOOKUP": case "BUSCARV": {
+      // BUSCARV(valor; tabla; columna; [exacto]) — el "exacto" por defecto es
+      // FALSO en Excel, pero acá se asume exacto: la coincidencia aproximada
+      // sobre datos sin ordenar devuelve resultados silenciosamente erróneos.
+      const buscado = texto(primero).toLowerCase();
+      const tabla = matrices[1];
+      const col = numArg(2, 1);
+      if (!tabla || col < 1) return ERROR_VALOR;
+      for (const fila of tabla) {
+        if (texto(fila[0] ?? "").toLowerCase() === buscado) {
+          return fila[col - 1] ?? "";
+        }
+      }
+      return "#N/A";
+    }
+    case "HLOOKUP": case "BUSCARH": {
+      const buscado = texto(primero).toLowerCase();
+      const tabla = matrices[1];
+      const fila = numArg(2, 1);
+      if (!tabla || tabla.length === 0 || fila < 1) return ERROR_VALOR;
+      const cabecera = tabla[0];
+      for (let c = 0; c < cabecera.length; c++) {
+        if (texto(cabecera[c] ?? "").toLowerCase() === buscado) {
+          return tabla[fila - 1]?.[c] ?? "";
+        }
+      }
+      return "#N/A";
+    }
+    case "MATCH": case "COINCIDIR": {
+      const buscado = texto(primero).toLowerCase();
+      const lista = args[1] ?? [];
+      const i = lista.findIndex((v) => texto(v).toLowerCase() === buscado);
+      return i === -1 ? "#N/A" : i + 1;
+    }
+    case "INDEX": case "INDICE": {
+      const tabla = matrices[0];
+      if (!tabla) return ERROR_VALOR;
+      const f = numArg(1, 1), c = numArg(2, 1);
+      // Un rango de una sola columna se indexa por fila; uno de una fila, por columna.
+      if (tabla.length === 1) return tabla[0][f - 1] ?? ERROR_REF;
+      if ((tabla[0]?.length ?? 0) === 1 && !args[2]) return tabla[f - 1]?.[0] ?? ERROR_REF;
+      return tabla[f - 1]?.[c - 1] ?? ERROR_REF;
+    }
+
+    // ── Texto ──────────────────────────────────────────────────────────────
+    case "CONCATENATE": case "CONCATENAR": return planos.map(texto).join("");
+    case "TEXTJOIN": case "UNIRCADENAS": {
+      const sep = texto(primero);
+      const ignorarVacios = typeof arg(1) === "boolean" ? (arg(1) as boolean) : true;
+      const partes = args.slice(2).flat().map(texto);
+      return (ignorarVacios ? partes.filter((p) => p !== "") : partes).join(sep);
+    }
+    case "UPPER": case "MAYUSC": return texto(primero).toUpperCase();
+    case "LOWER": case "MINUSC": return texto(primero).toLowerCase();
+    case "PROPER": case "NOMPROPIO":
+      return texto(primero).toLowerCase().replace(/(^|\s)(\p{L})/gu, (_, a, b) => a + b.toUpperCase());
+    case "TRIM": case "ESPACIOS": return texto(primero).trim().replace(/\s+/g, " ");
+    case "LEN": case "LARGO": return texto(primero).length;
+    case "LEFT": case "IZQUIERDA": return texto(primero).slice(0, args[1] ? numArg(1) : 1);
+    case "RIGHT": case "DERECHA": {
+      const n = args[1] ? numArg(1) : 1;
+      return n <= 0 ? "" : texto(primero).slice(-n);
+    }
+    case "MID": case "EXTRAE": {
+      const inicio = Math.max(1, numArg(1, 1));
+      return texto(primero).substr(inicio - 1, numArg(2));
+    }
+    case "FIND": case "ENCONTRAR": {
+      const i = texto(arg(1)).indexOf(texto(primero));
+      return i === -1 ? "#¡VALOR!" : i + 1;
+    }
+    case "SEARCH": case "HALLAR": {
+      const i = texto(arg(1)).toLowerCase().indexOf(texto(primero).toLowerCase());
+      return i === -1 ? "#¡VALOR!" : i + 1;
+    }
+    case "SUBSTITUTE": case "SUSTITUIR":
+      return texto(primero).split(texto(arg(1))).join(texto(arg(2)));
+    case "REPLACE": case "REEMPLAZAR": {
+      const t = texto(primero);
+      const inicio = Math.max(1, numArg(1, 1));
+      return t.slice(0, inicio - 1) + texto(arg(3)) + t.slice(inicio - 1 + numArg(2));
+    }
+    case "REPT": case "REPETIR": return texto(primero).repeat(Math.max(0, numArg(1)));
+    case "VALUE": case "VALOR": {
+      const n = Number(texto(primero).replace(/[^\d.,-]/g, "").replace(/,/g, ""));
+      return Number.isFinite(n) ? n : ERROR_VALOR;
+    }
+    case "TEXT": case "TEXTO": {
+      // Sólo los formatos usuales; el resto vuelve como texto plano.
+      const v = num(primero);
+      const f = texto(arg(1));
+      if (f.includes("%")) return `${redondear(v * 100, 2)}%`;
+      const dec = (f.split(".")[1]?.match(/[0#]/g) ?? []).length;
+      return f.includes("#,##")
+        ? v.toLocaleString("es-PE", { minimumFractionDigits: dec, maximumFractionDigits: dec })
+        : v.toFixed(dec);
+    }
+
+    // ── Fechas ─────────────────────────────────────────────────────────────
+    case "TODAY": case "HOY": return aSerieExcel(new Date());
+    case "NOW": case "AHORA": return aSerieExcel(new Date());
+    case "YEAR": case "AÑO": case "ANO": { const d = comoFecha(primero); return d ? d.getUTCFullYear() : ERROR_VALOR; }
+    case "MONTH": case "MES": { const d = comoFecha(primero); return d ? d.getUTCMonth() + 1 : ERROR_VALOR; }
+    case "DAY": case "DIA": case "DÍA": { const d = comoFecha(primero); return d ? d.getUTCDate() : ERROR_VALOR; }
+    case "WEEKDAY": case "DIASEM": {
+      const d = comoFecha(primero);
+      return d ? d.getUTCDay() + 1 : ERROR_VALOR;
+    }
+    case "DATE": case "FECHA":
+      return aSerieExcel(new Date(Date.UTC(numArg(0), numArg(1) - 1, numArg(2))));
+    case "DAYS": case "DIAS": case "DÍAS": {
+      const a = comoFecha(primero), b = comoFecha(arg(1));
+      return a && b ? Math.round((a.getTime() - b.getTime()) / MS_DIA) : ERROR_VALOR;
+    }
+    case "EDATE": case "FECHA.MES": {
+      const d = comoFecha(primero);
+      if (!d) return ERROR_VALOR;
+      const nueva = new Date(d);
+      nueva.setUTCMonth(nueva.getUTCMonth() + numArg(1));
+      return aSerieExcel(nueva);
+    }
+
+    // ── Financieras de uso corriente ───────────────────────────────────────
+    case "PMT": case "PAGO": {
+      // PAGO(tasa; períodos; presente) — la cuota de un préstamo.
+      const tasa = num(primero), n = numArg(1), vp = numArg(2);
+      if (n === 0) return ERROR_DIV0;
+      if (tasa === 0) return -vp / n;
+      return -(vp * tasa) / (1 - (1 + tasa) ** -n);
+    }
+
     default: return ERROR_NOMBRE;
   }
 }
