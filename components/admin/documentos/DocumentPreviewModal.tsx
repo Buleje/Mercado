@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import { esHojaEditable } from "@/lib/documentos/hoja-calculo";
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check, Table,
-  PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink, ChevronLeft, ChevronRight, GitCompare,
+  Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
+  ChevronLeft, ChevronRight, GitCompareArrows as GitCompare,
   FileSpreadsheet, Plus, Link as LinkChain, Save,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
   getDocumentDetail, fetchVersions, fetchAudit, fetchShares, createShare, revokeShare,
