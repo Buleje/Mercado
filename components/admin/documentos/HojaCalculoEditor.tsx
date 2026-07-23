@@ -17,7 +17,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, Check, Loader2, Save, Table } from "@buleje/design-system/icons";
+import { AlertTriangle, ArrowLeft, Check, Download, Loader2, Save, Table } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatearValor, leerXlsxConFormato, numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
 import { abrirPaquete, guardarCambios } from "@/lib/documentos/xlsx-escritura";
@@ -26,7 +26,11 @@ import { celdasDe, etiquetaRango, normalizar, type Punto, type Rango } from "@/l
 import { esFormula, evaluarFormula } from "@/lib/documentos/hoja-formulas";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
 import { filasOcultasPorFiltro, ordenDeFilas, resumir, type Direccion } from "@/lib/documentos/hoja-analisis";
+import {
+  duplicarHoja, eliminarHoja, nombreHojaLibre, nuevaHoja, renombrarEnFormula, renombrarHoja,
+} from "@/lib/documentos/xlsx-hojas";
 import GrillaHoja, { type Seleccion } from "./hoja/GrillaHoja";
+import PestanasHojas from "./hoja/PestanasHojas";
 import BarraHerramientas from "./hoja/BarraHerramientas";
 import BuscarReemplazar from "./hoja/BuscarReemplazar";
 import BarraEstado from "./hoja/BarraEstado";
@@ -163,6 +167,11 @@ function EditorCargado({
   const hoja = hojas[activa];
   const sel = useMemo(() => normalizar(rango), [rango]);
 
+  const resetSeleccion = useCallback(() => {
+    setSeleccion({ fila: 0, columna: 0 });
+    setRango({ ancla: { fila: 0, columna: 0 }, foco: { fila: 0, columna: 0 } });
+  }, []);
+
   /**
    * Las fórmulas se recalculan en pantalla apenas cambia una celda: si no, el
    * usuario ve totales que ya no son ciertos hasta abrir el archivo en Excel.
@@ -261,6 +270,34 @@ function EditorCargado({
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [sucio, guardando, guardar, timerRef, autoguardadoMs]);
 
+  /**
+   * Baja el archivo como está ahora, sin pasar por el servidor.
+   *
+   * Los cambios pendientes se aplican sobre una COPIA del paquete: aplicarlos
+   * al zip vivo los dejaría puestos dos veces en el próximo guardado (una fila
+   * insertada aparecería dos veces).
+   */
+  const descargar = useCallback(async () => {
+    try {
+      const blob = formato === "csv"
+        ? new Blob([generarCsv(hojas[0].filas.map((f) => f.map((c) => c.crudo)))], { type: "text/csv" })
+        : await (async () => {
+            const zip = paquete.current;
+            if (!zip) throw new Error("Se perdió el archivo original; recargá la página.");
+            const copia = await abrirPaquete(await zip.generateAsync({ type: "arraybuffer" }));
+            return guardarCambios(copia, editor.cambiosParaArchivo());
+          })();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombre;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [editor, formato, hojas, nombre, paquete]);
+
   // ── Atajos globales ───────────────────────────────────────────────────────
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -358,6 +395,59 @@ function EditorCargado({
   }, [ejecutar, hojaCalculada, sel]);
   ordenarRef.current = ordenar;
 
+  /**
+   * Gestión de hojas: el ARCHIVO cambia primero (xlsx-hojas opera sobre el
+   * zip) y recién después la pantalla se pone a la par. Si la cirugía falla,
+   * no se toca nada y el error se muestra arriba.
+   */
+  const accionesHojas = useMemo(() => {
+    const conZip = async (fn: (zip: JSZipType) => Promise<void>) => {
+      const zip = paquete.current;
+      if (!zip) { setError("Se perdió el archivo original; recargá la página."); return; }
+      try {
+        await fn(zip);
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    };
+    return {
+      activar: (i: number) => { setActiva(i); resetSeleccion(); },
+      nueva: () => void conZip(async (zip) => {
+        const nombre = nombreHojaLibre(hojas.map((h) => h.nombre), `Hoja${hojas.length + 1}`);
+        await nuevaHoja(zip, nombre);
+        editor.agregarHoja(hojaNuevaFormato(nombre));
+        resetSeleccion();
+      }),
+      renombrar: (i: number, nombre: string) => void conZip(async (zip) => {
+        const viejo = hojas[i]?.nombre ?? "";
+        await renombrarHoja(zip, i, nombre);
+        editor.renombrarHojaEnEstado(i, nombre.trim(), (f) => renombrarEnFormula(f, viejo, nombre.trim()));
+      }),
+      duplicar: (i: number) => void conZip(async (zip) => {
+        const origen = hojas[i];
+        if (!origen) return;
+        const nombre = nombreHojaLibre(hojas.map((h) => h.nombre), `${origen.nombre} (copia)`);
+        await duplicarHoja(zip, i, nombre);
+        editor.agregarHoja(copiaDeHoja(origen, nombre), i);
+        resetSeleccion();
+      }),
+      eliminar: (i: number) => {
+        const nombre = hojas[i]?.nombre ?? "";
+        const seguro = window.confirm(
+          `¿Eliminar la hoja "${nombre}"? Sus datos se pierden y esto no se puede deshacer. ` +
+          "Si otra hoja la usa en una fórmula, esa fórmula queda rota.",
+        );
+        if (!seguro) return;
+        void conZip(async (zip) => {
+          await eliminarHoja(zip, i);
+          editor.quitarHoja(i);
+          resetSeleccion();
+        });
+      },
+    };
+  }, [editor, hojas, paquete, resetSeleccion, setActiva]);
+
   const accionesGrilla = useMemo(() => ({
     editar: (celdas: { fila: number; columna: number; valor: string }[]) =>
       ejecutar({ tipo: "valores", celdas }),
@@ -406,19 +496,35 @@ function EditorCargado({
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => void guardar()}
-          disabled={guardando || !sucio}
-          title="Guardar en el panel (Ctrl+S)"
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
-        >
-          {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : sucio ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-          {guardando ? "Guardando…" : "Guardar"}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void descargar()}
+            title="Descargar una copia con los cambios de ahora"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+          >
+            <Download className="h-4 w-4" aria-hidden />
+            <span className="sr-only">Descargar copia</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void guardar()}
+            disabled={guardando || !sucio}
+            title="Guardar en el panel (Ctrl+S)"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
+          >
+            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : sucio ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+            {guardando ? "Guardando…" : "Guardar"}
+          </button>
+        </div>
       </header>
 
-      <BarraHerramientas acciones={acciones} puede={puede} etiquetaSeleccion={etiquetaRango(sel)} />
+      <BarraHerramientas
+        acciones={acciones}
+        puede={puede}
+        etiquetaSeleccion={etiquetaRango(sel)}
+        tamanoSeleccion={celda?.estilo?.tamano ?? 11}
+      />
 
       {buscando && (
         <BuscarReemplazar
@@ -447,24 +553,6 @@ function EditorCargado({
         <p className="border-b-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">{error}</p>
       )}
 
-      {visibles.length > 1 && (
-        <div className="flex gap-1 overflow-x-auto border-b-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5">
-          {hojas.map((h, i) => h.oculta ? null : (
-            <button key={h.nombre + i} type="button"
-              onClick={() => {
-                setActiva(i);
-                setSeleccion({ fila: 0, columna: 0 });
-                setRango({ ancla: { fila: 0, columna: 0 }, foco: { fila: 0, columna: 0 } });
-              }}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                i === activa ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-              }`}>
-              {h.nombre}
-            </button>
-          ))}
-        </div>
-      )}
-
       <GrillaHoja
         key={activa}
         hoja={hojaVisible}
@@ -476,6 +564,11 @@ function EditorCargado({
         resaltado={resaltado}
         zoom={zoom}
       />
+
+      {/* Las pestañas van abajo, como en Excel; el CSV es una sola hoja fija. */}
+      {formato === "xlsx" && (
+        <PestanasHojas hojas={hojas} activa={activa} acciones={accionesHojas} />
+      )}
 
       <BarraEstado
         resumen={resumen}
@@ -537,6 +630,38 @@ function filaDatos(hoja: HojaFormato): number {
     if (textoArriba && numerosAbajo) return f + 1;
   }
   return 1;
+}
+
+/** Una hoja recién creada: vacía y con espacio para trabajar. Anchos y altos
+ *  en los valores por defecto del archivo, para que guarde y reabra igual. */
+function hojaNuevaFormato(nombre: string): HojaFormato {
+  const FILAS = 60, COLS = 15;
+  return {
+    nombre,
+    filas: Array.from({ length: FILAS }, () => Array.from({ length: COLS }, () => ({ texto: "", crudo: "" }))),
+    anchos: new Array(COLS).fill(64),
+    altos: new Array(FILAS).fill(20),
+    columnasOcultas: new Array(COLS).fill(false),
+    filasOcultas: new Array(FILAS).fill(false),
+    congelado: { filas: 0, columnas: 0 },
+    tieneFormulas: false,
+    oculta: false,
+  };
+}
+
+/** Copia de una hoja para mostrar el duplicado sin re-leer el archivo. */
+function copiaDeHoja(hoja: HojaFormato, nombre: string): HojaFormato {
+  return {
+    ...hoja,
+    nombre,
+    filas: hoja.filas.map((f) => f.map((c) => ({ ...c }))),
+    anchos: [...hoja.anchos],
+    altos: [...hoja.altos],
+    columnasOcultas: [...hoja.columnasOcultas],
+    filasOcultas: [...hoja.filasOcultas],
+    congelado: { ...hoja.congelado },
+    oculta: false,
+  };
 }
 
 /** Un .csv no tiene formato: se muestra como una hoja simple. */

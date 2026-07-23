@@ -37,12 +37,17 @@ export interface AccionesBarra {
 
 const BOTON = "flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-35 disabled:hover:bg-transparent";
 
+/** Tamaños de letra que ofrece Excel en su propia barra. */
+const TAMANOS = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36];
+
 export default function BarraHerramientas({
-  acciones, puede, etiquetaSeleccion,
+  acciones, puede, etiquetaSeleccion, tamanoSeleccion = 11,
 }: {
   acciones: AccionesBarra;
   puede: { deshacer: boolean; rehacer: boolean };
   etiquetaSeleccion: string;
+  /** Tamaño de letra de la celda seleccionada, para mostrarlo en el selector. */
+  tamanoSeleccion?: number;
 }) {
   const [paleta, setPaleta] = useState<"letra" | "fondo" | null>(null);
 
@@ -66,6 +71,17 @@ export default function BarraHerramientas({
       <button type="button" className={BOTON} onClick={() => acciones.formato({ subrayado: true })} title="Subrayado (Ctrl+U)">
         <Underline className="h-4 w-4" aria-hidden /><span className="sr-only">Subrayado</span>
       </button>
+      <select
+        value={String(tamanoSeleccion)}
+        onChange={(e) => acciones.formato({ tamano: Number(e.target.value) })}
+        title="Tamaño de letra"
+        aria-label="Tamaño de letra"
+        className="h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-xs font-bold text-[var(--text-secondary)] outline-none hover:bg-[var(--surface-sunken)]"
+      >
+        {(TAMANOS.includes(tamanoSeleccion) ? TAMANOS : [...TAMANOS, tamanoSeleccion].sort((a, b) => a - b)).map((t) => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
 
       <Separador />
 

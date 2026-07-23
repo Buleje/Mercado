@@ -74,6 +74,7 @@ function fusionarEstilo(actual: EstiloCelda | undefined, cambio: CambioFormato):
   if (cambio.cursiva !== undefined) e.cursiva = cambio.cursiva;
   if (cambio.subrayado !== undefined) e.subrayado = cambio.subrayado;
   if (cambio.color) e.color = cambio.color;
+  if (cambio.tamano !== undefined) e.tamano = cambio.tamano;
   if (cambio.alineacion) e.alineacion = cambio.alineacion;
   if (cambio.fondo !== undefined) {
     if (cambio.fondo === null) delete e.fondo;
@@ -94,6 +95,7 @@ function formatoActual(estilo: EstiloCelda | undefined): CambioFormato {
     subrayado: estilo?.subrayado ?? false,
     color: estilo?.color,
     fondo: estilo?.fondo ?? null,
+    tamano: estilo?.tamano,
     alineacion: estilo?.alineacion,
   };
 }
@@ -193,7 +195,10 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
         if (delta > 0) {
           const cols = hoja.filas[0]?.length ?? 1;
           const filas = [...hoja.filas];
-          filas.splice(i, 0, Array.from({ length: cols }, () => ({ ...CELDA_VACIA })));
+          // Si la acción trae datos es un deshacer de "eliminar fila": la fila
+          // vuelve con su contenido, no vacía.
+          filas.splice(i, 0, Array.from({ length: cols }, (_, k) =>
+            accion.datos?.[k] ? { ...accion.datos[k] } : { ...CELDA_VACIA }));
           const altos = [...hoja.altos]; altos.splice(i, 0, 20);
           const ocultas = [...hoja.filasOcultas]; ocultas.splice(i, 0, false);
           return {
@@ -217,7 +222,11 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
         return {
           hoja: {
             ...hoja,
-            filas: hoja.filas.map((f) => { const c = [...f]; c.splice(i, 0, { ...CELDA_VACIA }); return c; }),
+            filas: hoja.filas.map((f, k) => {
+              const c = [...f];
+              c.splice(i, 0, accion.datos?.[k] ? { ...accion.datos[k] } : { ...CELDA_VACIA });
+              return c;
+            }),
             anchos, columnasOcultas: ocultas,
           },
           inversa: { tipo: "estructura", eje, indice, delta: -1 },
@@ -270,6 +279,27 @@ export function aCambiosDeArchivo(pasos: Accion[], hoja: number): Cambios {
         break;
       case "estructura":
         cambios.estructura!.push({ hoja, eje: a.eje, indice: a.indice, delta: a.delta });
+        // Deshacer un "eliminar": la fila/columna vuelve al archivo CON sus
+        // valores y su formato, no vacía como una inserción común.
+        if (a.delta > 0 && a.datos) {
+          a.datos.forEach((celda, k) => {
+            const fila = a.eje === "fila" ? a.indice : k + 1;
+            const columna = a.eje === "fila" ? k + 1 : a.indice;
+            const valor = celda.formula ? `=${celda.formula}` : celda.crudo;
+            if (valor !== "") cambios.celdas!.push({ hoja, fila, columna, valor });
+            const e = celda.estilo;
+            if (e || celda.numFmt) {
+              cambios.estilos!.push({
+                hoja, fila, columna,
+                formato: {
+                  negrita: e?.negrita, cursiva: e?.cursiva, subrayado: e?.subrayado,
+                  color: e?.color, fondo: e?.fondo ?? undefined, alineacion: e?.alineacion,
+                  tamano: e?.tamano, numFmt: celda.numFmt,
+                },
+              });
+            }
+          });
+        }
         break;
       case "ancho":
         cambios.anchos!.push({ hoja, columna: a.columna, anchoPx: a.anchoPx });

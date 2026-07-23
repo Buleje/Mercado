@@ -85,6 +85,15 @@ export default function GrillaHoja({
   const [filaRelleno, setFilaRelleno] = useState<number | null>(null);
 
   /**
+   * Al montar (abrir el archivo o cambiar de hoja — la grilla se remonta por
+   * `key`), el teclado va directo a las celdas: crear una hoja y ponerse a
+   * escribir tiene que funcionar sin un clic de más.
+   */
+  useEffect(() => {
+    contenedor.current?.focus({ preventScroll: true });
+  }, []);
+
+  /**
    * Cuántas columnas hay de verdad.
    *
    * No alcanza con `anchos.length` ni con la primera fila: al insertar

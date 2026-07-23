@@ -21,6 +21,8 @@ export interface CambioFormato {
   subrayado?: boolean;
   /** `#rrggbb` para la letra. */
   color?: string;
+  /** Tamaño de la letra en puntos (11 es el normal de Excel). */
+  tamano?: number;
   /** `#rrggbb` para el relleno; `null` lo quita. */
   fondo?: string | null;
   alineacion?: "left" | "center" | "right";
@@ -93,6 +95,13 @@ function fuenteCon(doc: XMLDocument, base: Element | null, cambio: CambioFormato
     c.setAttribute("rgb", aArgb(cambio.color));
     f.appendChild(c);
   }
+  if (cambio.tamano !== undefined) {
+    const viejo = hijo(f, "sz");
+    if (viejo) f.removeChild(viejo);
+    const sz = doc.createElementNS(NS, "sz");
+    sz.setAttribute("val", String(cambio.tamano));
+    f.appendChild(sz);
+  }
   // Una fuente sin tamaño ni nombre hace que Excel la muestre diminuta.
   if (!hijo(f, "sz")) {
     const sz = doc.createElementNS(NS, "sz");
@@ -160,7 +169,7 @@ export function aplicarFormato(doc: XMLDocument, estiloActual: number, cambio: C
   const xf = base ? (base.cloneNode(true) as Element) : doc.createElementNS(NS, "xf");
 
   // ── Fuente ──
-  if (cambio.negrita !== undefined || cambio.cursiva !== undefined || cambio.subrayado !== undefined || cambio.color) {
+  if (cambio.negrita !== undefined || cambio.cursiva !== undefined || cambio.subrayado !== undefined || cambio.color || cambio.tamano !== undefined) {
     const fonts = contenedor(doc, "fonts");
     const lista = hijos(fonts, "font");
     const idActual = Number(xf.getAttribute("fontId") ?? 0);
