@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { ALL_TABS } from "@/app/admin/_lib/tab-data";
 import {
-  Search, X, Package, Users, ShoppingCart, FileText,
-  ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2,
-  LayoutDashboard, Monitor, Boxes, Truck, MapPin, RotateCcw,
-  BarChart3, DollarSign, UserCog, MessageSquare, Bell, Shield,
-  Settings, Bot, Star, Zap, Heart, ClipboardList, Target,
-  BookOpen, Calculator, ArrowRight,
+  Search, X, Package, Users, ShoppingCart, FileText, ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2, LayoutDashboard, Monitor, Boxes, Shield, Zap, ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +40,12 @@ interface GroupedResults {
   acciones: SearchResult[];
 }
 
-// ── Índice de módulos y tabs (hardcoded) ──────────────────────────────────────
+// ── Índice de módulos ─────────────────────────────────────────────────────────
+// Se DERIVA de ALL_TABS (el catálogo que arma el sidebar), no de una lista
+// aparte. La lista hardcodeada anterior había quedado vieja: sus 20 entradas
+// apuntaban a tabs que ya no existen —pos-caja, crm-clientes,
+// inventario-almacenes, precios-promos…— así que el buscador no encontraba
+// medio panel y lo que encontraba no llevaba a ningún lado.
 
 interface ModuleEntry {
   tab: string;
@@ -54,241 +55,40 @@ interface ModuleEntry {
   subtabs?: { id: string; label: string; keywords?: string[] }[];
 }
 
-const MODULE_INDEX: ModuleEntry[] = [
-  {
-    tab: "panel-principal",
-    label: "Panel Principal",
-    icon: LayoutDashboard,
-    keywords: ["panel", "dashboard", "inicio", "principal", "ejecutivo", "resumen", "kpi", "métricas", "agentes", "changelog"],
-    subtabs: [
-      { id: "panel-principal", label: "Panel principal", keywords: ["dashboard", "inicio", "ventas"] },
-      { id: "panel-principal", label: "Ejecutivo", keywords: ["ejecutivo", "gerencia", "resumen"] },
-      { id: "panel-principal", label: "Agentes IA", keywords: ["agentes", "ia", "inteligencia"] },
-      { id: "panel-principal", label: "Changelog", keywords: ["changelog", "versiones", "cambios"] },
-    ],
-  },
-  {
-    tab: "pos-caja",
-    label: "POS & Caja",
-    icon: Monitor,
-    keywords: ["pos", "caja", "punto de venta", "venta", "turno", "arqueo", "registradora", "cobro"],
-    subtabs: [
-      { id: "pos-caja", label: "Caja", keywords: ["pos", "venta", "cobrar"] },
-      { id: "pos-caja", label: "Caja registradora", keywords: ["caja", "registradora"] },
-      { id: "pos-caja", label: "Turnos", keywords: ["turno", "apertura", "cierre"] },
-      { id: "pos-caja", label: "Arqueo de caja", keywords: ["arqueo", "conteo", "efectivo"] },
-    ],
-  },
-  {
-    tab: "inventario-almacenes",
-    label: "Inventario & Almacenes",
-    icon: Boxes,
-    keywords: ["inventario", "stock", "almacén", "almacenes", "kardex", "lotes", "mermas", "ubicaciones", "transferencias", "reorden", "predicción"],
-    subtabs: [
-      { id: "inventario-almacenes", label: "Mi stock", keywords: ["stock", "existencias"] },
-      { id: "inventario-almacenes", label: "Kardex", keywords: ["kardex", "movimientos"] },
-      { id: "inventario-almacenes", label: "Vencimientos", keywords: ["lotes", "batch", "vencimiento", "fefo"] },
-      { id: "inventario-almacenes", label: "Perdidas", keywords: ["mermas", "pérdidas", "desperdicios"] },
-      { id: "inventario-almacenes", label: "Almacenes", keywords: ["almacenes", "bodega"] },
-      { id: "inventario-almacenes", label: "Ubicaciones", keywords: ["ubicaciones", "pasillo", "estante"] },
-      { id: "inventario-almacenes", label: "Transferencias", keywords: ["transferencias", "traslado"] },
-      { id: "inventario-almacenes", label: "Reorden", keywords: ["reorden", "reposición", "mínimo"] },
-      { id: "inventario-almacenes", label: "Prediccion IA", keywords: ["predicción", "demanda", "forecast"] },
-      { id: "inventario-almacenes", label: "Conteo fisico", keywords: ["conteo", "físico", "inventario físico"] },
-    ],
-  },
-  {
-    tab: "reposicion",
-    label: "Reposición Inteligente",
-    icon: RotateCcw,
-    keywords: ["reposición", "reorden", "auto-reorden", "reabastecimiento"],
-  },
-  {
-    tab: "pedidos",
-    label: "Pedidos",
-    icon: ShoppingCart,
-    keywords: ["pedidos", "órdenes", "orders", "entrega", "delivery", "pendiente", "confirmado"],
-  },
-  {
-    tab: "catalogo-tienda",
-    label: "Catálogo & Tienda",
-    icon: BookOpen,
-    keywords: ["catálogo", "tienda", "categorías", "combos", "kits", "bundles", "página inicio"],
-    subtabs: [
-      { id: "catalogo-tienda", label: "Categorías", keywords: ["categorías", "clasificación"] },
-      { id: "catalogo-tienda", label: "Combos & Kits", keywords: ["combos", "kits", "bundles", "paquetes"] },
-      { id: "catalogo-tienda", label: "Página de Inicio", keywords: ["página inicio", "home", "banner"] },
-    ],
-  },
-  {
-    tab: "precios-promos",
-    label: "Precios & Promociones",
-    icon: Tag,
-    keywords: ["precios", "promociones", "cupones", "descuentos", "benchmark", "ab test", "historial precios"],
-    subtabs: [
-      { id: "precios-promos", label: "Benchmark", keywords: ["benchmark", "competencia"] },
-      { id: "precios-promos", label: "Historial de Precios", keywords: ["historial", "precio"] },
-      { id: "precios-promos", label: "Promociones", keywords: ["promociones", "ofertas"] },
-      { id: "precios-promos", label: "Cupones", keywords: ["cupones", "descuentos", "código"] },
-      { id: "precios-promos", label: "A/B Tests", keywords: ["ab test", "experimento"] },
-    ],
-  },
-  {
-    tab: "compras",
-    label: "Compras",
-    icon: ShoppingBasket,
-    keywords: ["compras", "órdenes de compra", "cotizaciones", "rfq", "recepción", "aprobación"],
-    subtabs: [
-      { id: "compras", label: "Plan de compras", keywords: ["plan compras"] },
-      { id: "compras", label: "Cotizaciones", keywords: ["cotizaciones", "rfq"] },
-      { id: "compras", label: "Aprobacion", keywords: ["aprobación", "aprobar"] },
-      { id: "compras", label: "Recepci\u00f3n", keywords: ["recepción", "recibir"] },
-    ],
-  },
-  {
-    tab: "compras",
-    label: "Mis proveedores",
-    icon: Truck,
-    keywords: ["proveedores", "proveedor", "portal proveedor", "evaluación", "calidad proveedor", "pagos proveedor"],
-  },
-  {
-    tab: "logística",
-    label: "Logística",
-    icon: MapPin,
-    keywords: ["logística", "delivery", "entregas", "rutas", "flota", "envíos", "tracking", "costos envío"],
-    subtabs: [
-      { id: "logística", label: "Calendario de entregas", keywords: ["calendario", "entregas"] },
-      { id: "logística", label: "Rutas de delivery", keywords: ["rutas", "delivery"] },
-      { id: "logística", label: "Seguimiento de envios", keywords: ["seguimiento", "tracking"] },
-      { id: "logística", label: "Flota", keywords: ["flota", "vehículos", "moto"] },
-    ],
-  },
-  {
-    tab: "devoluciones-calidad",
-    label: "Devoluciones & Calidad",
-    icon: RotateCcw,
-    keywords: ["devoluciones", "calidad", "anomalías", "retorno", "reclamo"],
-  },
-  {
-    tab: "ventas-marketing",
-    label: "Ventas & Marketing",
-    icon: TrendingUp,
-    keywords: ["ventas", "marketing", "forecast", "campañas", "referidos", "conversión"],
-  },
-  {
-    tab: "crm-clientes",
-    label: "Mis clientes",
-    icon: Users,
-    keywords: ["crm", "clientes", "segmentos", "clv", "cliente 360", "segmentación"],
-    subtabs: [
-      { id: "crm-clientes", label: "Mis clientes", keywords: ["crm", "clientes"] },
-      { id: "crm-clientes", label: "Vista 360°", keywords: ["cliente 360", "360"] },
-      { id: "crm-clientes", label: "Segmentos", keywords: ["segmentos", "grupos"] },
-    ],
-  },
-  {
-    tab: "fidelizacion",
-    label: "Clientes frecuentes",
-    icon: Heart,
-    keywords: ["fidelización", "puntos", "loyalty", "wish list", "recompensas", "frecuentes"],
-  },
-  {
-    tab: "encuestas-soporte",
-    label: "Opiniones & Soporte",
-    icon: Star,
-    keywords: ["encuestas", "soporte", "nps", "tickets", "satisfacción", "reseñas", "opiniones"],
-  },
-  {
-    tab: "analytics-bi",
-    label: "Reportes avanzados",
-    icon: BarChart3,
-    keywords: ["analytics", "bi", "análisis", "mapa calor", "abc", "pareto", "bcg", "kpi", "cesta", "reportes"],
-  },
-  {
-    tab: "proyecciones",
-    label: "Proyecciones",
-    icon: TrendingUp,
-    keywords: ["proyecciones", "simulador", "estacionalidad", "períodos", "escenarios"],
-  },
-  {
-    tab: "finanzas",
-    label: "Finanzas",
-    icon: DollarSign,
-    keywords: ["finanzas", "p&g", "balance", "flujo caja", "presupuestos", "rentabilidad", "márgenes", "plata que entra", "ganancias"],
-  },
-  {
-    tab: "finanzas",
-    label: "Tesoreria",
-    icon: Calculator,
-    keywords: ["tesorería", "liquidez", "cheques", "conciliación", "cuentas cobrar", "me deben"],
-  },
-  {
-    tab: "finanzas",
-    label: "Facturacion",
-    icon: FileText,
-    keywords: ["facturación", "e-factura", "impuestos", "cuentas pagar", "les debo"],
-  },
-  {
-    tab: "finanzas",
-    label: "Gastos y activos",
-    icon: DollarSign,
-    keywords: ["gastos", "centros costo", "activos fijos", "seguros", "egresos"],
-  },
-  {
-    tab: "rrhh",
-    label: "Mi equipo",
-    icon: UserCog,
-    keywords: ["rrhh", "recursos humanos", "nómina", "sucursales", "personal", "empleados", "equipo"],
-  },
-  {
-    tab: "proyectos-tareas",
-    label: "Proyectos & Tareas",
-    icon: Target,
-    keywords: ["proyectos", "tareas", "kanban", "metas", "tablero"],
-  },
-  {
-    tab: "comunicaciones",
-    label: "Comunicaciones",
-    icon: MessageSquare,
-    keywords: ["comunicaciones", "chat", "plantillas", "notificaciones", "hub"],
-  },
-  {
-    tab: "alertas-automatizacion",
-    label: "Alertas y automatizacion",
-    icon: Bell,
-    keywords: ["alertas", "automatización", "recordatorios", "flujos", "reglas negocio"],
-  },
-  {
-    tab: "reportes-documentos",
-    label: "Reportes y documentos",
-    icon: FileText,
-    keywords: ["reportes", "documentos", "exportar", "importar", "informe"],
-  },
-  {
-    tab: "agenda-utilidades",
-    label: "Agenda y utilidades",
-    icon: ClipboardList,
-    keywords: ["agenda", "calendario", "notas", "filtros guardados"],
-  },
-  {
-    tab: "seguridad",
-    label: "Seguridad y auditoria",
-    icon: Shield,
-    keywords: ["seguridad", "usuarios", "roles", "permisos", "auditoría", "logs", "cumplimiento"],
-  },
-  {
-    tab: "sistema",
-    label: "Ajustes del sistema",
-    icon: Settings,
-    keywords: ["sistema", "backups", "webhooks", "salud sistema", "restaurar", "ajustes", "configuracion"],
-  },
-  {
-    tab: "agentes",
-    label: "Agentes IA",
-    icon: Bot,
-    keywords: ["agentes", "ia", "inteligencia artificial", "automatización ia", "orquestador"],
-  },
-];
+/** "Análisis" → "analisis": así "analisis" sin tilde también encuentra. */
+function sinTildes(t: string): string {
+  return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+/** Sinónimos de negocio que nadie deduce del label ("plata" → dinero, caja…). */
+const SINONIMOS: Record<string, string[]> = {
+  "vendor-dashboard": ["dashboard", "panel", "resumen", "home"],
+  "ventas-caja": ["pos", "punto de venta", "cobrar", "arqueo", "turno", "vender"],
+  inventario: ["stock", "almacen", "existencias", "merma", "vencimiento"],
+  productos: ["precios", "promos", "ofertas", "descuentos", "catalogo"],
+  plata: ["dinero", "finanzas", "gastos", "ingresos", "caja chica", "utilidad"],
+  clientes: ["crm", "compradores", "contactos"],
+  fiados: ["credito", "deuda", "prestado", "debe"],
+  pedidos: ["ordenes", "delivery", "envios"],
+  compras: ["proveedores", "abastecimiento", "reposicion"],
+  facturacion: ["sunat", "boleta", "factura", "comprobante", "electronica"],
+  documentos: ["drive", "archivos", "contratos", "licencias", "papeles"],
+  config: ["ajustes", "configuracion", "preferencias"],
+  "whatsapp-inbox": ["wa", "mensajes", "chat", "bot"],
+  "analytics-pro": ["metricas", "reportes", "bi", "estadisticas"],
+  auditoria: ["logs", "actividad", "historial", "seguridad"],
+  plan: ["suscripcion", "facturacion buleje", "limites", "upgrade"],
+};
+
+const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
+  const base = sinTildes(t.label).split(/[^a-z0-9]+/).filter((w) => w.length > 2);
+  return {
+    tab: t.id as string,
+    label: t.label,
+    icon: t.icon,
+    keywords: [...new Set([...base, ...(SINONIMOS[t.id as string] ?? [])])],
+  };
+});
 
 // ── Acciones rápidas ──────────────────────────────────────────────────────────
 
@@ -301,14 +101,14 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: "nuevo-producto",  label: "Nuevo producto",    icon: Package,      navigateTo: "inventario-almacenes", keywords: ["nuevo producto", "agregar producto", "crear producto"] },
-  { id: "nueva-orden",     label: "Nueva orden",       icon: ShoppingCart, navigateTo: "pos-caja",             keywords: ["nueva orden", "nueva venta", "crear pedido", "nuevo pedido"] },
-  { id: "cerrar-caja",     label: "Cerrar caja",       icon: Monitor,      navigateTo: "pos-caja",             keywords: ["cerrar caja", "arqueo", "cierre turno"] },
-  { id: "hacer-backup",    label: "Hacer backup",      icon: Shield,       navigateTo: "sistema",              keywords: ["backup", "respaldo", "copia seguridad"] },
+  { id: "nuevo-producto",  label: "Nuevo producto",    icon: Package,      navigateTo: "inventario", keywords: ["nuevo producto", "agregar producto", "crear producto"] },
+  { id: "nueva-orden",     label: "Nueva orden",       icon: ShoppingCart, navigateTo: "ventas-caja",             keywords: ["nueva orden", "nueva venta", "crear pedido", "nuevo pedido"] },
+  { id: "cerrar-caja",     label: "Cerrar caja",       icon: Monitor,      navigateTo: "ventas-caja",             keywords: ["cerrar caja", "arqueo", "cierre turno"] },
+  { id: "hacer-backup",    label: "Hacer backup",      icon: Shield,       navigateTo: "auditoria",              keywords: ["backup", "respaldo", "copia seguridad"] },
   { id: "nueva-compra",    label: "Nueva orden compra", icon: ShoppingBasket, navigateTo: "compras",           keywords: ["nueva compra", "orden compra"] },
-  { id: "registrar-merma", label: "Registrar merma",   icon: Zap,          navigateTo: "inventario-almacenes", keywords: ["merma", "pérdida", "registro merma"] },
-  { id: "nuevo-cliente",   label: "Nuevo cliente",     icon: Users,        navigateTo: "crm-clientes",         keywords: ["nuevo cliente", "agregar cliente", "crear cliente"] },
-  { id: "nuevo-cupon",     label: "Nuevo cupón",       icon: Tag,          navigateTo: "precios-promos",       keywords: ["nuevo cupón", "crear cupón", "descuento"] },
+  { id: "registrar-merma", label: "Registrar merma",   icon: Zap,          navigateTo: "inventario", keywords: ["merma", "pérdida", "registro merma"] },
+  { id: "nuevo-cliente",   label: "Nuevo cliente",     icon: Users,        navigateTo: "clientes",         keywords: ["nuevo cliente", "agregar cliente", "crear cliente"] },
+  { id: "nuevo-cupon",     label: "Nuevo cupón",       icon: Tag,          navigateTo: "productos",       keywords: ["nuevo cupón", "crear cupón", "descuento"] },
 ];
 
 // ── Highlight de texto coincidente ───────────────────────────────────────────
@@ -438,11 +238,11 @@ const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes
 
 const QUICK_ACCESS = [
   { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  { label: "Mis clientes",    tab: "crm-clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { label: "Caja",            tab: "pos-caja",             icon: Monitor,        color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { label: "Mi stock",        tab: "inventario", icon: Boxes,          color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { label: "Mis clientes",    tab: "clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
+  { label: "Caja",            tab: "ventas-caja",             icon: Monitor,        color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
   { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-[var(--surface-alt)] dark:bg-surface" },
-  { label: "Promociones",     tab: "precios-promos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
+  { label: "Promociones",     tab: "productos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 ];
 
 // ── Componente principal ──────────────────────────────────────────────────────
