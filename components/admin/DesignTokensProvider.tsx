@@ -20,6 +20,34 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_PRESET_SLUG, DESIGN_PRESETS, tokensToCssVars, type DesignTokens } from "@/lib/design-presets";
+import { useTheme } from "@/contexts/theme-context";
+
+/**
+ * Variables que describen el CLARO/OSCURO de la interfaz (fondos, texto,
+ * líneas), a diferencia de las que describen la MARCA (accent, tipografía,
+ * radios, colores semánticos).
+ *
+ * En modo oscuro estas NO se inyectan si el preset es claro: al ir inline en
+ * un `<div>`, ganarían siempre contra `:root.dark` de globals.css y dejarían
+ * el panel con fondos blancos y texto claro sobre claro. Se descubrió con el
+ * editor de planillas, que quedaba blanco entero con dark activo.
+ */
+const VARS_DE_SUPERFICIE = [
+  "--surface-canvas", "--surface-raised", "--surface-sunken",
+  "--text-primary", "--text-secondary", "--text-tertiary",
+  "--rule-soft", "--rule-base", "--rule-strong",
+] as const;
+
+/**
+ * ¿El preset ya es oscuro? Si el superadmin eligió un preset dark, sus
+ * superficies mandan y no hay nada que corregir.
+ *
+ * Los presets escriben el color como `oklch(L C H)`, donde L va de 0 a 1.
+ */
+function presetEsOscuro(surface: string): boolean {
+  const l = /oklch\(\s*([\d.]+)/.exec(surface);
+  return l ? Number(l[1]) < 0.5 : false;
+}
 
 interface DesignTokensProviderProps {
   tenantId?: string | null;
@@ -66,7 +94,15 @@ export default function DesignTokensProvider({
     };
   }, [tenantId]);
 
-  const styleObj = useMemo(() => tokensToCssVars(tokens) as React.CSSProperties, [tokens]);
+  const { resolved } = useTheme();
+
+  const styleObj = useMemo(() => {
+    const vars = tokensToCssVars(tokens);
+    if (resolved === "dark" && !presetEsOscuro(tokens.colors.surface)) {
+      for (const v of VARS_DE_SUPERFICIE) delete vars[v];
+    }
+    return vars as React.CSSProperties;
+  }, [tokens, resolved]);
 
   return (
     <div data-design-preset={tokens.meta.slug} style={styleObj}>

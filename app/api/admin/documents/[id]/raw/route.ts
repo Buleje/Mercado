@@ -26,6 +26,20 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const doc = await DocumentsDB.getById(auth.tenantId, id, auth.role);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+    // El contenido cambia cuando se sube/edita una versión, y `storagePath`
+    // cambia con ella: sirve de validador. Con `no-cache` el navegador siempre
+    // pregunta, pero se ahorra el cuerpo si nada cambió (304).
+    // Antes esto era `max-age=60` a secas: tras guardar una edición, recargar
+    // dentro del minuto mostraba el archivo VIEJO y parecía que el guardado se
+    // había perdido.
+    const etag = `"${Buffer.from(`${doc.storagePath}:${doc.size}`).toString("base64url").slice(0, 32)}"`;
+    if (req.headers.get("if-none-match") === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: { ETag: etag, "Cache-Control": "private, no-cache" },
+      });
+    }
+
     const buf = await downloadFromStorage(doc.storagePath);
     if (!buf) return NextResponse.json({ error: "storage_unavailable" }, { status: 502 });
 
@@ -35,7 +49,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const disposition = req.nextUrl.searchParams.get("download") === "1" ? "attachment" : "inline";
     // Los documentos con permisos restringidos NO se cachean en el navegador
     // (evita servir contenido cacheado tras cambiar de sesión en un equipo compartido).
-    const cache = doc.allowedRoles.length > 0 ? "private, no-store" : "private, max-age=60";
+    const cache = doc.allowedRoles.length > 0 ? "private, no-store" : "private, no-cache";
     return new NextResponse(new Uint8Array(buf), {
       status: 200,
       headers: {
@@ -43,6 +57,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         "Content-Disposition": `${disposition}; filename="${safeName}"`,
         "Content-Length": String(buf.length),
         "Cache-Control": cache,
+        ETag: etag,
         "X-Frame-Options": "SAMEORIGIN",
       },
     });

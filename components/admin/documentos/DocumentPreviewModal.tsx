@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { esHojaEditable } from "@/lib/documentos/hoja-calculo";
 import {
-  X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check,
+  X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check, Table,
   PencilLine, Sparkles, AlarmClock, Link2, Users, Truck, ExternalLink, ChevronLeft, ChevronRight, GitCompare,
   FileSpreadsheet, Plus, Link as LinkChain, Save,
 } from "lucide-react";
@@ -160,6 +161,19 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, onPre
                 title="Abrir en una pestaña nueva"
               >
                 <ExternalLink className="h-3.5 w-3.5" /> Abrir
+              </a>
+            )}
+            {/* Planillas: editarlas en el panel en vez de bajar → abrir Excel →
+                volver a subir. Guarda como versión nueva del mismo documento. */}
+            {esHojaEditable(doc.mimeType, doc.name) && (
+              <a
+                href={`/admin/documentos/${docId}/editar`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Editar la planilla en una pestaña nueva y guardarla acá mismo"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent)] text-xs font-bold text-white hover:bg-[var(--accent-600)] transition-colors"
+              >
+                <Table className="h-3.5 w-3.5" /> Editar planilla
               </a>
             )}
             {/* Descarga vía nuestro proxy (?download=1): confiable y con auth, no

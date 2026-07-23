@@ -28,7 +28,12 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 }
 
 export async function POST(req: NextRequest, ctx: Ctx) {
-  const rl = await applyRateLimit(req, "STRICT", "documents:version:upload");
+  // MODERATE (20 / 5 min) y no STRICT (10 / 15 min): desde que se puede editar
+  // una planilla dentro del panel, cada autoguardado pasa por acá. Con STRICT,
+  // diez minutos de edición seguida agotaban el presupuesto y el guardado
+  // empezaba a fallar en medio del trabajo. Sigue siendo un admin autenticado
+  // subiendo archivos a su propio tenant, con el tope de tamaño aparte.
+  const rl = await applyRateLimit(req, "MODERATE", "documents:version:upload");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
