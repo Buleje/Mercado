@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { esHojaEditable } from "@/lib/documentos/hoja-calculo";
+import { esTextoEditable } from "@/lib/documentos/texto-docx";
 import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check, Table,
   Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
@@ -164,17 +165,19 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, onPre
                 <ExternalLink className="h-3.5 w-3.5" /> Abrir
               </a>
             )}
-            {/* Planillas: editarlas en el panel en vez de bajar → abrir Excel →
-                volver a subir. Guarda como versión nueva del mismo documento. */}
-            {esHojaEditable(doc.mimeType, doc.name) && (
+            {/* Editar en el panel en vez de bajar → abrir Office → volver a
+                subir. Guarda como versión nueva del mismo documento. */}
+            {(esHojaEditable(doc.mimeType, doc.name) || esTextoEditable(doc.mimeType, doc.name)) && (
               <a
                 href={`/admin/documentos/${docId}/editar`}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Editar la planilla en una pestaña nueva y guardarla acá mismo"
+                title="Editar en una pestaña nueva y guardarlo acá mismo"
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent)] text-xs font-bold text-white hover:bg-[var(--accent-600)] transition-colors"
               >
-                <Table className="h-3.5 w-3.5" /> Editar planilla
+                {esHojaEditable(doc.mimeType, doc.name)
+                  ? <><Table className="h-3.5 w-3.5" /> Editar planilla</>
+                  : <><PencilLine className="h-3.5 w-3.5" /> Editar documento</>}
               </a>
             )}
             {/* Descarga vía nuestro proxy (?download=1): confiable y con auth, no

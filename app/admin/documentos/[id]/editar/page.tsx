@@ -17,22 +17,30 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, Loader2 } from "@buleje/design-system/icons";
 import { esHojaEditable } from "@/lib/documentos/hoja-calculo";
+import { esTextoEditable } from "@/lib/documentos/texto-docx";
 
-// exceljs pesa: se carga sólo cuando alguien abre el editor, no en el panel.
+const cargando = () => (
+  <div className="p-16 text-center text-[var(--text-tertiary)]">
+    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+    <p className="mt-2 text-sm">Preparando el editor…</p>
+  </div>
+);
+
+// exceljs y jszip pesan: se cargan sólo cuando alguien abre el editor que los
+// necesita, no en el panel ni en el editor del otro tipo de archivo.
 const HojaCalculoEditor = dynamic(() => import("@/components/admin/documentos/HojaCalculoEditor"), {
-  ssr: false,
-  loading: () => (
-    <div className="p-16 text-center text-[var(--text-tertiary)]">
-      <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-      <p className="mt-2 text-sm">Preparando el editor…</p>
-    </div>
-  ),
+  ssr: false, loading: cargando,
+});
+const DocumentoTextoEditor = dynamic(() => import("@/components/admin/documentos/DocumentoTextoEditor"), {
+  ssr: false, loading: cargando,
 });
 
 interface DocInfo {
   id: string;
   name: string;
   mimeType: string;
+  /** Qué editor abre este archivo. */
+  editor: "hoja" | "texto";
 }
 
 export default function EditarDocumentoPage({ params }: { params: Promise<{ id: string }> }) {
@@ -49,11 +57,14 @@ export default function EditarDocumentoPage({ params }: { params: Promise<{ id: 
         const j = await r.json();
         const d = j.document ?? j;
         if (cancelado) return;
-        if (!esHojaEditable(d.mimeType, d.name)) {
-          setError(`"${d.name}" no es una planilla. Por ahora el editor abre .xlsx y .csv.`);
+        const editor = esHojaEditable(d.mimeType, d.name) ? "hoja"
+          : esTextoEditable(d.mimeType, d.name) ? "texto"
+          : null;
+        if (!editor) {
+          setError(`"${d.name}" no se puede editar acá. El editor abre planillas (.xlsx, .csv) y documentos de texto (.docx, .txt, .md).`);
           return;
         }
-        setDoc({ id: d.id, name: d.name, mimeType: d.mimeType });
+        setDoc({ id: d.id, name: d.name, mimeType: d.mimeType, editor });
       } catch (e) {
         if (!cancelado) setError(e instanceof Error ? e.message : String(e));
       }
@@ -88,5 +99,6 @@ export default function EditarDocumentoPage({ params }: { params: Promise<{ id: 
     );
   }
 
-  return <HojaCalculoEditor docId={doc.id} nombre={doc.name} mimeType={doc.mimeType} />;
+  const Editor = doc.editor === "hoja" ? HojaCalculoEditor : DocumentoTextoEditor;
+  return <Editor docId={doc.id} nombre={doc.name} mimeType={doc.mimeType} />;
 }
