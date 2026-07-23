@@ -387,7 +387,7 @@ export default function CategoriesEditorTab() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden"
+            className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
           >
             <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
               <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
@@ -397,9 +397,9 @@ export default function CategoriesEditorTab() {
                 <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
                   Catálogo
                 </p>
-                <h2 id="new-cat-title" className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">
+                <CardTitle as="h2" id="new-cat-title" className="text-xl leading-tight">
                   Nueva categoría
-                </h2>
+                </CardTitle>
                 <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
                   Aparece en el POS, en el formulario de productos y en tu tienda online.
                 </p>
@@ -486,9 +486,9 @@ export default function CategoriesEditorTab() {
             <Layers className="h-7 w-7" strokeWidth={2} />
           </span>
           <div className="space-y-1">
-            <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+            <CardTitle className="text-lg">
               Todavía no tienes categorías
-            </h3>
+            </CardTitle>
             <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">
               Tu catálogo arranca limpio. Crea las categorías que usa tu negocio
               (Ej: Bebidas, Limpieza, Snacks) y aparecerán en el POS, el formulario
