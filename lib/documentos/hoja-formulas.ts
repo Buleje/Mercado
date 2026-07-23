@@ -19,8 +19,13 @@
 
 import { letraANumero, numeroALetra } from "./xlsx-formato";
 
-/** Cómo el evaluador consigue el valor de una celda. */
-export type LectorCelda = (fila: number, columna: number) => string;
+/**
+ * Cómo el evaluador consigue el valor de una celda.
+ *
+ * `hoja` llega cuando la fórmula la nombra (`Totales!B1`); sin ella es la hoja
+ * en la que vive la fórmula. Devolver `null` = esa hoja no existe (`#¡REF!`).
+ */
+export type LectorCelda = (fila: number, columna: number, hoja?: string) => string | null;
 
 export const ERROR_NOMBRE = "#¿NOMBRE?";
 export const ERROR_VALOR = "#¡VALOR!";
@@ -39,6 +44,8 @@ interface Ctx {
   leer: LectorCelda;
   /** Celdas ya en curso de cálculo: corta las referencias circulares. */
   visitando: Set<string>;
+  /** Hoja en la que vive la fórmula: las referencias sin nombre son de acá. */
+  hoja?: string;
 }
 
 /** "B2" → {fila: 1, columna: 1} (base 0). Ignora los `$` de las absolutas. */
@@ -57,11 +64,27 @@ export function coordenadaARef(fila: number, columna: number): string {
 type Token =
   | { t: "num"; v: number }
   | { t: "txt"; v: string }
-  | { t: "ref"; v: string }
-  | { t: "rango"; a: string; b: string }
+  | { t: "ref"; v: string; hoja?: string }
+  | { t: "rango"; a: string; b: string; hoja?: string }
   | { t: "fn"; v: string }
   | { t: "op"; v: string }
   | { t: "(" } | { t: ")" } | { t: "," };
+
+/** Tras un nombre de hoja y su `!`: lee la referencia (o el rango) que sigue. */
+function refTrasHoja(entrada: string, desde: number, hoja: string, tokens: Token[]): number {
+  let i = desde;
+  let ref = "";
+  while (i < entrada.length && /[A-Za-z0-9$]/.test(entrada[i])) { ref += entrada[i]; i++; }
+  if (entrada[i] === ":") {
+    i++;
+    let ref2 = "";
+    while (i < entrada.length && /[A-Za-z0-9$]/.test(entrada[i])) { ref2 += entrada[i]; i++; }
+    tokens.push({ t: "rango", a: ref, b: ref2, hoja });
+  } else {
+    tokens.push({ t: "ref", v: ref, hoja });
+  }
+  return i;
+}
 
 function tokenizar(entrada: string): Token[] {
   const tokens: Token[] = [];
@@ -76,6 +99,23 @@ function tokenizar(entrada: string): Token[] {
       while (i < entrada.length && entrada[i] !== '"') { s += entrada[i]; i++; }
       i++;
       tokens.push({ t: "txt", v: s });
+      continue;
+    }
+    // Nombre de hoja entre comillas simples: `'Lista precios'!B2`.
+    // El `''` interno es un apóstrofe escapado, como lo guarda Excel.
+    if (c === "'") {
+      let nombre = "";
+      i++;
+      while (i < entrada.length) {
+        if (entrada[i] === "'" && entrada[i + 1] === "'") { nombre += "'"; i += 2; continue; }
+        if (entrada[i] === "'") break;
+        nombre += entrada[i];
+        i++;
+      }
+      i++; // la comilla de cierre
+      if (entrada[i] === "!") {
+        i = refTrasHoja(entrada, i + 1, nombre, tokens);
+      }
       continue;
     }
     if (c === "(") { tokens.push({ t: "(" }); i++; continue; }
@@ -101,6 +141,11 @@ function tokenizar(entrada: string): Token[] {
     if (/[\p{L}$_]/u.test(c)) {
       let s = "";
       while (i < entrada.length && /[\p{L}0-9$_.]/u.test(entrada[i])) { s += entrada[i]; i++; }
+      // ¿Referencia a otra hoja? "Ventas!B2" o "Ventas!B2:B9".
+      if (entrada[i] === "!") {
+        i = refTrasHoja(entrada, i + 1, s, tokens);
+        continue;
+      }
       // ¿Rango? "A1:B9"
       if (entrada[i] === ":" && /^\$?[A-Za-z]+\$?\d+$/.test(s)) {
         i++;
@@ -199,7 +244,7 @@ class Parser {
     switch (tk.t) {
       case "num": return tk.v;
       case "txt": return tk.v;
-      case "ref": return this.valorDeRef(tk.v);
+      case "ref": return this.valorDeRef(tk.v, tk.hoja);
       case "rango": return ERROR_VALOR; // un rango suelto sólo vale dentro de una función
       case "(": {
         const v = this.comparacion();
@@ -211,20 +256,26 @@ class Parser {
     }
   }
 
-  private valorDeRef(ref: string): Valor {
+  private valorDeRef(ref: string, hojaRef?: string): Valor {
     const coord = refACoordenada(ref);
     if (!coord) return ERROR_REF;
-    const clave = `${coord.fila}-${coord.columna}`;
+    // La hoja nombrada manda; sin nombre, la referencia es de la hoja en la
+    // que vive la fórmula. La clave del ciclo lleva la hoja: A1 de Precios y
+    // A1 de Totales son celdas distintas.
+    const hoja = hojaRef ?? this.ctx.hoja;
+    const clave = `${hoja ?? ""}!${coord.fila}-${coord.columna}`;
     if (this.ctx.visitando.has(clave)) return ERROR_CICLO;
-    const bruto = this.ctx.leer(coord.fila, coord.columna);
+    const bruto = this.ctx.leer(coord.fila, coord.columna, hoja);
+    if (bruto === null) return ERROR_REF; // la hoja nombrada no existe
     // Una celda vacía se devuelve como texto vacío, no como 0: si no, ESBLANCO
     // diría que no lo está. En las cuentas sigue valiendo cero, porque `num("")`
     // es 0 y las funciones de suma descartan lo que no es número.
     if (bruto === "") return "";
-    // Una celda puede contener otra fórmula: se resuelve en cadena.
+    // Una celda puede contener otra fórmula: se resuelve en cadena, y sus
+    // referencias sin nombre son de LA HOJA DE ESA CELDA, no de la de partida.
     if (esFormula(bruto)) {
       this.ctx.visitando.add(clave);
-      const v = evaluarInterno(bruto, this.ctx);
+      const v = evaluarInterno(bruto, { ...this.ctx, hoja });
       this.ctx.visitando.delete(clave);
       return v;
     }
@@ -233,27 +284,27 @@ class Parser {
   }
 
   /** Valores de un rango, ya aplanados. */
-  private valoresRango(a: string, b: string): Valor[] {
+  private valoresRango(a: string, b: string, hoja?: string): Valor[] {
     const ini = refACoordenada(a), fin = refACoordenada(b);
     if (!ini || !fin) return [];
     const out: Valor[] = [];
     for (let f = Math.min(ini.fila, fin.fila); f <= Math.max(ini.fila, fin.fila); f++) {
       for (let c = Math.min(ini.columna, fin.columna); c <= Math.max(ini.columna, fin.columna); c++) {
-        out.push(this.valorDeRef(coordenadaARef(f, c)));
+        out.push(this.valorDeRef(coordenadaARef(f, c), hoja));
       }
     }
     return out;
   }
 
   /** Valores de un rango conservando su forma de tabla (filas × columnas). */
-  private matrizRango(a: string, b: string): Valor[][] {
+  private matrizRango(a: string, b: string, hoja?: string): Valor[][] {
     const ini = refACoordenada(a), fin = refACoordenada(b);
     if (!ini || !fin) return [];
     const out: Valor[][] = [];
     for (let f = Math.min(ini.fila, fin.fila); f <= Math.max(ini.fila, fin.fila); f++) {
       const fila: Valor[] = [];
       for (let c = Math.min(ini.columna, fin.columna); c <= Math.max(ini.columna, fin.columna); c++) {
-        fila.push(this.valorDeRef(coordenadaARef(f, c)));
+        fila.push(this.valorDeRef(coordenadaARef(f, c), hoja));
       }
       out.push(fila);
     }
@@ -272,9 +323,9 @@ class Parser {
       const tk = this.actual()!;
       if (tk.t === "rango") {
         this.avanzar();
-        args.push(this.valoresRango(tk.a, tk.b));
+        args.push(this.valoresRango(tk.a, tk.b, tk.hoja));
         // BUSCARV y las de referencia necesitan la tabla, no la lista plana.
-        matrices.push(this.matrizRango(tk.a, tk.b));
+        matrices.push(this.matrizRango(tk.a, tk.b, tk.hoja));
       } else {
         args.push([this.comparacion()]);
         matrices.push(null);
@@ -706,9 +757,11 @@ function evaluarInterno(formula: string, ctx: Ctx): Valor {
  *
  * @param leer cómo obtener el contenido crudo de otra celda (puede ser otra
  *   fórmula: se resuelve en cadena, cortando las referencias circulares).
+ * @param hoja nombre de la hoja donde vive la fórmula — hace que `Totales!B1`
+ *   y las referencias sin nombre resuelvan contra la hoja correcta.
  */
-export function evaluarFormula(formula: string, leer: LectorCelda): string {
-  const v = evaluarInterno(formula, { leer, visitando: new Set() });
+export function evaluarFormula(formula: string, leer: LectorCelda, hoja?: string): string {
+  const v = evaluarInterno(formula, { leer, visitando: new Set(), hoja });
   if (typeof v === "number") {
     if (!Number.isFinite(v)) return ERROR_VALOR;
     // Los flotantes binarios dejan colas de decimales que nadie quiere ver.

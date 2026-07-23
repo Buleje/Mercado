@@ -11,11 +11,12 @@
 
 import { useState } from "react";
 import {
-  AlignCenter, AlignLeft, AlignRight, ArrowDownAZ, ArrowUpAZ, Bold, Filter, Italic,
-  Paintbrush, Palette, Percent, Plus, Redo2, Search, Sigma, Trash2, Underline, Undo2,
+  AlignCenter, AlignLeft, AlignRight, ArrowDownAZ, ArrowUpAZ, Bold, CalendarDays, Combine,
+  Filter, Grid3x3, Italic, Paintbrush, Palette, Percent, Plus, Redo2, Search, Sigma,
+  Trash2, Underline, Undo2,
 } from "@buleje/design-system/icons";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
-import { FORMATOS } from "@/lib/documentos/xlsx-estilos";
+import { ajustarDecimales, FORMATOS } from "@/lib/documentos/xlsx-estilos";
 
 /** Paleta corta: los colores que se usan para marcar filas en una planilla. */
 const COLORES = [
@@ -30,6 +31,7 @@ export interface AccionesBarra {
   insertar: (eje: "fila" | "columna") => void;
   eliminar: (eje: "fila" | "columna") => void;
   autosuma: () => void;
+  combinar: () => void;
   deshacer: () => void;
   rehacer: () => void;
   buscar: () => void;
@@ -41,13 +43,15 @@ const BOTON = "flex h-9 w-9 items-center justify-center rounded-lg text-[var(--t
 const TAMANOS = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36];
 
 export default function BarraHerramientas({
-  acciones, puede, etiquetaSeleccion, tamanoSeleccion = 11,
+  acciones, puede, etiquetaSeleccion, tamanoSeleccion = 11, numFmtSeleccion,
 }: {
   acciones: AccionesBarra;
   puede: { deshacer: boolean; rehacer: boolean };
   etiquetaSeleccion: string;
   /** Tamaño de letra de la celda seleccionada, para mostrarlo en el selector. */
   tamanoSeleccion?: number;
+  /** Formato numérico de la celda seleccionada — base de los botones ±decimal. */
+  numFmtSeleccion?: string;
 }) {
   const [paleta, setPaleta] = useState<"letra" | "fondo" | null>(null);
 
@@ -100,6 +104,12 @@ export default function BarraHerramientas({
             <Icono className="h-4 w-4" aria-hidden /><span className="sr-only">{titulo}</span>
           </button>
         ))}
+      <button type="button" className={BOTON} onClick={() => acciones.formato({ bordes: true })} title="Poner todos los bordes">
+        <Grid3x3 className="h-4 w-4" aria-hidden /><span className="sr-only">Todos los bordes</span>
+      </button>
+      <button type="button" className={BOTON} onClick={acciones.combinar} title="Combinar o separar las celdas seleccionadas">
+        <Combine className="h-4 w-4" aria-hidden /><span className="sr-only">Combinar o separar celdas</span>
+      </button>
 
       <Separador />
 
@@ -109,7 +119,16 @@ export default function BarraHerramientas({
       <button type="button" className={BOTON} onClick={() => acciones.formato({ numFmt: FORMATOS.porcentaje })} title="Formato de porcentaje">
         <Percent className="h-4 w-4" aria-hidden /><span className="sr-only">Porcentaje</span>
       </button>
-      <button type="button" className={`${BOTON} w-auto px-2 text-xs font-bold`} onClick={() => acciones.formato({ numFmt: null, fondo: null, negrita: false, cursiva: false, subrayado: false })} title="Quitar el formato de la selección">
+      <button type="button" className={BOTON} onClick={() => acciones.formato({ numFmt: FORMATOS.fecha })} title="Formato de fecha (dd/mm/aaaa)">
+        <CalendarDays className="h-4 w-4" aria-hidden /><span className="sr-only">Formato de fecha</span>
+      </button>
+      <button type="button" className={`${BOTON} w-auto px-1.5 text-xs font-bold`} onClick={() => acciones.formato({ numFmt: ajustarDecimales(numFmtSeleccion, 1) })} title="Más decimales">
+        +,0<span className="sr-only"> más decimales</span>
+      </button>
+      <button type="button" className={`${BOTON} w-auto px-1.5 text-xs font-bold`} onClick={() => acciones.formato({ numFmt: ajustarDecimales(numFmtSeleccion, -1) })} title="Menos decimales">
+        −,0<span className="sr-only"> menos decimales</span>
+      </button>
+      <button type="button" className={`${BOTON} w-auto px-2 text-xs font-bold`} onClick={() => acciones.formato({ numFmt: null, fondo: null, bordes: null, negrita: false, cursiva: false, subrayado: false })} title="Quitar el formato de la selección">
         Limpiar
       </button>
 

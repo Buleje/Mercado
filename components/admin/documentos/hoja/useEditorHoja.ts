@@ -15,7 +15,8 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { HojaFormato } from "@/lib/documentos/xlsx-formato";
-import { aCambiosDeArchivo, aplicar, type Accion, type Paso } from "./estado-hoja";
+import { moverFormulaCruzada } from "@/lib/documentos/xlsx-estructura";
+import { aCambiosDeArchivo, aplicar, remapearPendientes, type Accion, type Paso } from "./estado-hoja";
 import type { Cambios } from "@/lib/documentos/xlsx-escritura";
 
 /** Tope de pasos guardados: suficiente para trabajar, acotado en memoria. */
@@ -42,65 +43,105 @@ export function useEditorHoja(inicial: HojaFormato[]) {
     return p;
   };
 
+  /**
+   * Aplica una acción sobre el espejo y fija el resultado en React.
+   *
+   * Si la acción mueve la estructura, las fórmulas de las OTRAS hojas que
+   * referencian a ésta por nombre ("Precios!B4") se corren igual que en el
+   * archivo — la pantalla y el guardado cuentan la misma historia.
+   * El espejo se actualiza YA: dos acciones en el mismo tick (separar y
+   * combinar, por ejemplo) ven cada una el estado de la anterior.
+   */
+  const aplicarYFijar = useCallback((indice: number, accion: Accion): Paso | null => {
+    const previa = hojasRef.current[indice];
+    if (!previa) return null;
+    const { hoja, inversa } = aplicar(previa, accion);
+    const nuevas = hojasRef.current.map((h, i) => {
+      if (i === indice) return hoja;
+      if (accion.tipo !== "estructura" || !h.tieneFormulas) return h;
+      let cambio = false;
+      const filas = h.filas.map((fila) => fila.map((c) => {
+        if (!c.formula) return c;
+        const nueva = moverFormulaCruzada(c.formula, previa.nombre, accion.eje, accion.indice, accion.delta);
+        if (nueva === c.formula) return c;
+        cambio = true;
+        return { ...c, formula: nueva };
+      }));
+      return cambio ? { ...h, filas } : h;
+    });
+    hojasRef.current = nuevas;
+    setHojas(nuevas);
+    return { accion, inversa };
+  }, []);
+
   const ejecutar = useCallback((accion: Accion, hojaIndice = activa) => {
-    setHojas((prev) => prev.map((h, i) => {
-      if (i !== hojaIndice) return h;
-      const { hoja, inversa } = aplicar(h, accion);
-      const pila = pilaDe(hojaIndice);
-      pila.hechos.push({ accion, inversa });
-      if (pila.hechos.length > MAX_HISTORIAL) pila.hechos.shift();
-      // Una acción nueva corta la rama de rehacer, como en cualquier editor.
-      pila.deshechos.length = 0;
-      const lista = pendientes.current.get(hojaIndice) ?? [];
-      lista.push(accion);
-      pendientes.current.set(hojaIndice, lista);
-      return hoja;
-    }));
+    // Los efectos (historial, pendientes, remapeo) van FUERA del updater de
+    // React: en StrictMode el updater corre DOS veces, y una acción de
+    // estructura duplicada insertaba dos filas en el archivo.
+    let lista = pendientes.current.get(hojaIndice) ?? [];
+    // Insertar/eliminar corre las direcciones: lo que ya estaba pendiente
+    // se re-expresa en las coordenadas nuevas (el archivo aplica primero
+    // TODA la estructura y después los valores).
+    if (accion.tipo === "estructura") {
+      lista = remapearPendientes(lista, accion.eje, accion.indice, accion.delta);
+    }
+    const paso = aplicarYFijar(hojaIndice, accion);
+    if (!paso) return;
+    const pila = pilaDe(hojaIndice);
+    pila.hechos.push(paso);
+    if (pila.hechos.length > MAX_HISTORIAL) pila.hechos.shift();
+    // Una acción nueva corta la rama de rehacer, como en cualquier editor.
+    pila.deshechos.length = 0;
+    lista.push(accion);
+    pendientes.current.set(hojaIndice, lista);
     setSucio(true);
     setVersion((v) => v + 1);
-  }, [activa]);
+  }, [activa, aplicarYFijar]);
 
   const deshacer = useCallback(() => {
     const pila = pilaDe(activa);
     const paso = pila.hechos.pop();
     if (!paso) return;
-    setHojas((prev) => prev.map((h, i) => {
-      if (i !== activa) return h;
-      const { hoja } = aplicar(h, paso.inversa);
-      return hoja;
-    }));
+    let lista = pendientes.current.get(activa) ?? [];
+    if (paso.inversa.tipo === "estructura") {
+      lista = remapearPendientes(lista, paso.inversa.eje, paso.inversa.indice, paso.inversa.delta);
+    }
+    if (!aplicarYFijar(activa, paso.inversa)) return;
     pila.deshechos.push(paso);
     // El archivo tiene que recibir la inversa: puede que lo deshecho ya se
     // haya guardado en una versión anterior.
-    const lista = pendientes.current.get(activa) ?? [];
     lista.push(paso.inversa);
     pendientes.current.set(activa, lista);
     setSucio(true);
     setVersion((v) => v + 1);
-  }, [activa]);
+  }, [activa, aplicarYFijar]);
 
   const rehacer = useCallback(() => {
     const pila = pilaDe(activa);
     const paso = pila.deshechos.pop();
     if (!paso) return;
-    setHojas((prev) => prev.map((h, i) => (i === activa ? aplicar(h, paso.accion).hoja : h)));
+    let lista = pendientes.current.get(activa) ?? [];
+    if (paso.accion.tipo === "estructura") {
+      lista = remapearPendientes(lista, paso.accion.eje, paso.accion.indice, paso.accion.delta);
+    }
+    if (!aplicarYFijar(activa, paso.accion)) return;
     pila.hechos.push(paso);
-    const lista = pendientes.current.get(activa) ?? [];
     lista.push(paso.accion);
     pendientes.current.set(activa, lista);
     setSucio(true);
     setVersion((v) => v + 1);
-  }, [activa]);
+  }, [activa, aplicarYFijar]);
 
   /** Todo lo pendiente, listo para escribir en el archivo. */
   const cambiosParaArchivo = useCallback((): Cambios => {
-    const total: Cambios = { estructura: [], celdas: [], estilos: [], anchos: [] };
+    const total: Cambios = { estructura: [], celdas: [], estilos: [], anchos: [], combinadas: [] };
     for (const [hoja, acciones] of pendientes.current) {
       const parcial = aCambiosDeArchivo(acciones, hoja);
       total.estructura!.push(...(parcial.estructura ?? []));
       total.celdas!.push(...(parcial.celdas ?? []));
       total.estilos!.push(...(parcial.estilos ?? []));
       total.anchos!.push(...(parcial.anchos ?? []));
+      total.combinadas!.push(...(parcial.combinadas ?? []));
     }
     return total;
   }, []);
@@ -125,7 +166,8 @@ export function useEditorHoja(inicial: HojaFormato[]) {
         pendientes.current.set(indiceNuevo, JSON.parse(JSON.stringify(origen)) as Accion[]);
       }
     }
-    setHojas((prev) => [...prev, hoja]);
+    hojasRef.current = [...hojasRef.current, hoja];
+    setHojas(hojasRef.current);
     setActiva(indiceNuevo);
     setSucio(true);
     setVersion((v) => v + 1);
@@ -134,7 +176,7 @@ export function useEditorHoja(inicial: HojaFormato[]) {
   /** Cambia el nombre en pantalla; `reemplazarRef` actualiza las fórmulas que
    *  nombraban a la hoja (el archivo ya se actualizó en xlsx-hojas). */
   const renombrarHojaEnEstado = useCallback((indice: number, nombre: string, reemplazarRef?: (formula: string) => string) => {
-    setHojas((prev) => prev.map((h, i) => {
+    hojasRef.current = hojasRef.current.map((h, i) => {
       const conNombre = i === indice ? { ...h, nombre } : h;
       if (!reemplazarRef || !conNombre.tieneFormulas) return conNombre;
       return {
@@ -145,7 +187,8 @@ export function useEditorHoja(inicial: HojaFormato[]) {
           return nueva === c.formula ? c : { ...c, formula: nueva };
         })),
       };
-    }));
+    });
+    setHojas(hojasRef.current);
     setSucio(true);
   }, []);
 
@@ -163,7 +206,8 @@ export function useEditorHoja(inicial: HojaFormato[]) {
     historial.current = remapear(historial.current);
     pendientes.current = remapear(pendientes.current);
     const tope = hojasRef.current.length - 2; // el índice máximo tras el borrado
-    setHojas((prev) => prev.filter((_, i) => i !== indice));
+    hojasRef.current = hojasRef.current.filter((_, i) => i !== indice);
+    setHojas(hojasRef.current);
     setActiva((prev) => Math.max(0, Math.min(prev > indice ? prev - 1 : prev, tope)));
     setSucio(true);
     setVersion((v) => v + 1);

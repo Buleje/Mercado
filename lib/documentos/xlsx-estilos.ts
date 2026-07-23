@@ -26,8 +26,29 @@ export interface CambioFormato {
   /** `#rrggbb` para el relleno; `null` lo quita. */
   fondo?: string | null;
   alineacion?: "left" | "center" | "right";
+  /** `true` = borde fino en los cuatro lados; `null` los quita. */
+  bordes?: true | null;
   /** Código de formato de Excel, ej. `"S/ "#,##0.00`. `null` vuelve a General. */
   numFmt?: string | null;
+}
+
+/**
+ * Suma o quita un decimal al código de formato, conservando su forma
+ * (moneda, miles, porcentaje). "General" arranca como entero.
+ * Los formatos sin dígitos (fecha) vuelven intactos.
+ */
+export function ajustarDecimales(numFmt: string | undefined, delta: 1 | -1): string {
+  const base = !numFmt || numFmt === "General" ? "0" : numFmt;
+  if (/\.[0#]+/.test(base)) {
+    return base.replace(/\.([0#]+)/, (_todo, dec: string) => {
+      const n = dec.length + delta;
+      return n <= 0 ? "" : `.${"0".repeat(n)}`;
+    });
+  }
+  if (delta < 0) return base;
+  const i = base.lastIndexOf("0");
+  if (i === -1) return base;
+  return `${base.slice(0, i + 1)}.0${base.slice(i + 1)}`;
 }
 
 const NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
@@ -188,6 +209,28 @@ export function aplicarFormato(doc: XMLDocument, estiloActual: number, cambio: C
       xf.setAttribute("fillId", String(indiceDe(lista, rellenoCon(doc, cambio.fondo), fills)));
     }
     xf.setAttribute("applyFill", "1");
+  }
+
+  // ── Bordes ──
+  if (cambio.bordes !== undefined) {
+    if (cambio.bordes === null) {
+      xf.setAttribute("borderId", "0"); // 0 = sin bordes, por especificación
+    } else {
+      const borders = contenedor(doc, "borders");
+      const lista = hijos(borders, "border");
+      const b = doc.createElementNS(NS, "border");
+      // El esquema exige este orden de lados.
+      for (const lado of ["left", "right", "top", "bottom"]) {
+        const el = doc.createElementNS(NS, lado);
+        el.setAttribute("style", "thin");
+        const color = doc.createElementNS(NS, "color");
+        color.setAttribute("indexed", "64"); // el "automático" de Excel
+        el.appendChild(color);
+        b.appendChild(el);
+      }
+      xf.setAttribute("borderId", String(indiceDe(lista, b, borders)));
+    }
+    xf.setAttribute("applyBorder", "1");
   }
 
   // ── Formato numérico ──

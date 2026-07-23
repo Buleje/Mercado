@@ -11,7 +11,7 @@
 
 import { useEffect, useRef } from "react";
 import {
-  ArrowDownAZ, ArrowUpAZ, Copy, Filter, Plus, Scissors, Trash2,
+  ArrowDownAZ, ArrowUpAZ, Combine, Copy, Filter, Plus, Scissors, Trash2,
 } from "@buleje/design-system/icons";
 
 export interface OpcionesMenu {
@@ -24,6 +24,7 @@ export interface OpcionesMenu {
   eliminarColumna: () => void;
   ordenar: (direccion: "asc" | "desc") => void;
   filtrar: () => void;
+  combinar: () => void;
   limpiar: () => void;
 }
 
@@ -85,6 +86,7 @@ export default function MenuContextual({
       <Item icono={ArrowDownAZ} texto={`Ordenar por ${columna} (A→Z)`} onClick={ejecutar(() => opciones.ordenar("asc"))} />
       <Item icono={ArrowUpAZ} texto={`Ordenar por ${columna} (Z→A)`} onClick={ejecutar(() => opciones.ordenar("desc"))} />
       <Item icono={Filter} texto={`Filtrar por ${columna}`} onClick={ejecutar(opciones.filtrar)} />
+      <Item icono={Combine} texto="Combinar o separar celdas" onClick={ejecutar(opciones.combinar)} />
 
       <Separador />
 

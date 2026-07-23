@@ -253,3 +253,110 @@ describe("todo junto", () => {
     expect(hoja.filas[2][0].crudo).toBe("Arroz");
   });
 });
+
+describe("celdas combinadas escritas al archivo", () => {
+  it("combinar agrega el rango y Excel lo relee", async () => {
+    const zip = await abrirPaquete(await libro());
+    const blob = await guardarCambios(zip, { combinadas: [{ hoja: 0, ref: "A1:C1", modo: "agregar" }] });
+    const hoja = await primeraHoja(blob);
+    expect(hoja.filas[0][0].colspan).toBe(3);
+    expect(hoja.filas[0][1].tapada).toBe(true);
+    // El combinado que ya traía el archivo sigue.
+    expect(hoja.filas[5][0].colspan).toBe(3);
+  });
+
+  it("separar quita el rango que traía el archivo", async () => {
+    const zip = await abrirPaquete(await libro());
+    const blob = await guardarCambios(zip, { combinadas: [{ hoja: 0, ref: "A6:C6", modo: "quitar" }] });
+    const hoja = await primeraHoja(blob);
+    expect(hoja.filas[5][0].colspan).toBeUndefined();
+    expect(hoja.filas[5][1].tapada).toBeUndefined();
+  });
+
+  it("mergeCells queda ANTES de pageMargins, donde lo exige el esquema", async () => {
+    const zip = await abrirPaquete(await libro());
+    const blob = await guardarCambios(zip, { combinadas: [{ hoja: 0, ref: "B2:C2", modo: "agregar" }] });
+    const xml = await (await JSZip.loadAsync(await blob.arrayBuffer())).file("xl/worksheets/sheet1.xml")!.async("string");
+    const posMerge = xml.indexOf("<mergeCells");
+    expect(posMerge).toBeGreaterThan(-1);
+    if (xml.includes("<pageMargins")) expect(posMerge).toBeLessThan(xml.indexOf("<pageMargins"));
+    expect(posMerge).toBeGreaterThan(xml.indexOf("</sheetData>"));
+    expect(/<mergeCells count="2">/.test(xml)).toBe(true);
+  });
+
+  it("separar y re-combinar el mismo rango termina combinado (el orden importa)", async () => {
+    const zip = await abrirPaquete(await libro());
+    const blob = await guardarCambios(zip, {
+      combinadas: [
+        { hoja: 0, ref: "A6:C6", modo: "quitar" },
+        { hoja: 0, ref: "A6:C6", modo: "agregar" },
+      ],
+    });
+    const hoja = await primeraHoja(blob);
+    expect(hoja.filas[5][0].colspan).toBe(3);
+  });
+});
+
+describe("decimales del formato numérico", () => {
+  it("suma y quita un decimal conservando la forma", async () => {
+    const { ajustarDecimales } = await import("@/lib/documentos/xlsx-estilos");
+    expect(ajustarDecimales(undefined, 1)).toBe("0.0");
+    expect(ajustarDecimales('"S/ "#,##0.00', 1)).toBe('"S/ "#,##0.000');
+    expect(ajustarDecimales('"S/ "#,##0.00', -1)).toBe('"S/ "#,##0.0');
+    expect(ajustarDecimales("0.0", -1)).toBe("0");
+    expect(ajustarDecimales("0", -1)).toBe("0");
+    expect(ajustarDecimales("0.00%", 1)).toBe("0.000%");
+    expect(ajustarDecimales("#,##0", 1)).toBe("#,##0.0");
+    // Una fecha no tiene decimales que ajustar.
+    expect(ajustarDecimales("dd/mm/yyyy", 1)).toBe("dd/mm/yyyy");
+  });
+});
+
+describe("las referencias a OTRA hoja no se corren", () => {
+  it("insertar una fila acá no mueve Resumen!B1", () => {
+    expect(moverFormula("Resumen!B1*2", "fila", 1, 1)).toBe("Resumen!B1*2");
+  });
+
+  it("con nombre entre comillas tampoco", () => {
+    expect(moverFormula("'Lista 2026'!B1+B3", "fila", 2, 1)).toBe("'Lista 2026'!B1+B4");
+  });
+
+  it("un rango de otra hoja viaja entero", () => {
+    expect(moverFormula("SUM(Precios!B2:B9)", "fila", 1, 1)).toBe("SUM(Precios!B2:B9)");
+  });
+
+  it("las referencias propias de la hoja se siguen corriendo", () => {
+    expect(moverFormula("Resumen!B1+B5", "fila", 3, 1)).toBe("Resumen!B1+B6");
+  });
+});
+
+describe("las OTRAS hojas siguen a la editada (moverFormulaCruzada)", () => {
+  it("corre la referencia calificada con la hoja editada", async () => {
+    const { moverFormulaCruzada } = await import("@/lib/documentos/xlsx-estructura");
+    expect(moverFormulaCruzada("Precios!B4*2", "Precios", "fila", 1, 1)).toBe("Precios!B5*2");
+    expect(moverFormulaCruzada("SUM('Lista 2026'!B2:B9)", "Lista 2026", "fila", 1, 1)).toBe("SUM('Lista 2026'!B3:B10)");
+  });
+
+  it("no toca ni las propias ni las de otras hojas", async () => {
+    const { moverFormulaCruzada } = await import("@/lib/documentos/xlsx-estructura");
+    expect(moverFormulaCruzada("B4+Otro!C1+Precios!B4", "Precios", "fila", 1, 1)).toBe("B4+Otro!C1+Precios!B5");
+  });
+
+  it("al guardar, insertar una fila en Datos corrige la fórmula del Resumen", async () => {
+    const wb = new ExcelJS.Workbook();
+    const datos = wb.addWorksheet("Datos");
+    datos.addRow(["Producto", "Precio"]);
+    datos.addRow(["Arroz", 10]);
+    datos.getCell("B3").value = { formula: "SUM(B2:B2)", result: 10 } as never;
+    const resumen = wb.addWorksheet("Resumen");
+    resumen.getCell("A1").value = { formula: "Datos!B3*2", result: 20 } as never;
+
+    const zip = await abrirPaquete((await wb.xlsx.writeBuffer()) as ArrayBuffer);
+    const blob = await guardarCambios(zip, { estructura: [{ hoja: 0, eje: "fila", indice: 1, delta: 1 }] });
+
+    const releido = new ExcelJS.Workbook();
+    await releido.xlsx.load(await blob.arrayBuffer());
+    const f = releido.getWorksheet("Resumen")!.getCell("A1").value as { formula?: string };
+    expect(f.formula).toBe("Datos!B4*2");
+  });
+});

@@ -288,3 +288,42 @@ describe("catálogo de funciones", () => {
     expect(ev('=SI.ERROR(BUSCARV("Quinua";A1:D4;2);"no está")')).toBe("no está");
   });
 });
+
+describe("fórmulas entre hojas", () => {
+  /** Dos hojas: Precios (B4=SUMA) y Totales (B1 apunta a Precios). */
+  const libro: Record<string, string[][]> = {
+    "Precios": [["Producto", "Precio"], ["Arroz", "10"], ["Azúcar", "20"], ["", "=SUM(B2:B3)"]],
+    "Lista 2026": [["Total", "=Precios!B4"]],
+  };
+  const leer = (hojaActiva: string) => (f: number, c: number, hoja?: string) => {
+    const nombre = hoja ?? hojaActiva;
+    const filas = Object.entries(libro).find(([n]) => n.toLowerCase() === nombre.toLowerCase())?.[1];
+    if (!filas) return null;
+    return filas[f]?.[c] ?? "";
+  };
+
+  it("resuelve una referencia con nombre de hoja", () => {
+    expect(evaluarFormula("=Precios!B2*2", leer("Lista 2026"), "Lista 2026")).toBe("20");
+  });
+
+  it("resuelve un rango de otra hoja", () => {
+    expect(evaluarFormula("=SUMA(Precios!B2:B3)", leer("Lista 2026"), "Lista 2026")).toBe("30");
+  });
+
+  it("los nombres con espacios van entre comillas simples", () => {
+    expect(evaluarFormula("='Lista 2026'!B1*2", leer("Precios"), "Precios")).toBe("60");
+  });
+
+  it("la fórmula de la otra hoja se evalúa EN su propia hoja", () => {
+    // Totales!B1 = Precios!B4 = SUM(B2:B3) — ese SUM es de Precios, no de Totales.
+    expect(evaluarFormula("='Lista 2026'!B1", leer("Precios"), "Precios")).toBe("30");
+  });
+
+  it("una hoja que no existe da #¡REF!", () => {
+    expect(evaluarFormula("=Fantasma!A1", leer("Precios"), "Precios")).toBe("#¡REF!");
+  });
+
+  it("no distingue mayúsculas en el nombre, como Excel", () => {
+    expect(evaluarFormula("=PRECIOS!B2", leer("Lista 2026"), "Lista 2026")).toBe("10");
+  });
+});

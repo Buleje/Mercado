@@ -19,7 +19,7 @@
 import type JSZipType from "jszip";
 import { numeroALetra } from "./xlsx-formato";
 import { aplicarFormato, STYLES_VACIO, type CambioFormato } from "./xlsx-estilos";
-import { fijarAnchoColumna, moverEstructura, type Eje } from "./xlsx-estructura";
+import { fijarAnchoColumna, moverEstructura, moverFormulaCruzada, type Eje } from "./xlsx-estructura";
 
 const NS_SS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -57,6 +57,13 @@ export interface CambioAncho {
   anchoPx: number;
 }
 
+/** Celdas combinadas o separadas ("A1:C1"). */
+export interface CambioCombinada {
+  hoja: number;
+  ref: string;
+  modo: "agregar" | "quitar";
+}
+
 /**
  * Todo lo que el editor puede haber cambiado.
  *
@@ -69,6 +76,7 @@ export interface Cambios {
   celdas?: CambioCelda[];
   estilos?: CambioEstilo[];
   anchos?: CambioAncho[];
+  combinadas?: CambioCombinada[];
 }
 
 /** Abre el paquete .xlsx conservándolo entero. */
@@ -109,6 +117,22 @@ export async function rutasDeHojas(zip: JSZipType): Promise<string[]> {
     rutas.push(destino ? `xl/${destino}` : `xl/worksheets/sheet${i + 1}.xml`);
   }
   return rutas;
+}
+
+/** Nombre visible de cada hoja, en el mismo orden que `rutasDeHojas`. */
+export async function nombresDeHojas(zip: JSZipType): Promise<string[]> {
+  const wbXml = await zip.file("xl/workbook.xml")?.async("string");
+  if (!wbXml) return [];
+  const doc = new DOMParser().parseFromString(wbXml, "application/xml");
+  return Array.from(doc.getElementsByTagNameNS(NS_SS, "sheet")).map((s) => s.getAttribute("name") ?? "");
+}
+
+function parsearHoja(xml: string, indice: number): XMLDocument {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  if (doc.getElementsByTagName("parsererror").length > 0) {
+    throw new Error(`No se pudo leer la hoja ${indice + 1} del archivo.`);
+  }
+  return doc;
 }
 
 /** ¿El texto representa un número? (mismo criterio que ve el usuario). */
@@ -259,6 +283,56 @@ function fijarEstilo(doc: XMLDocument, sheetData: Element, fila: number, columna
 }
 
 /**
+ * Combina o separa un rango en el XML de la hoja.
+ *
+ * `<mergeCells>` tiene POSICIÓN FIJA en el esquema (después de los datos,
+ * antes del formato condicional y la configuración de página): si se apoya en
+ * cualquier otro lado, Excel da el archivo por corrupto y lo "repara"
+ * descartándolo.
+ */
+function aplicarCombinada(doc: XMLDocument, ref: string, modo: "agregar" | "quitar"): void {
+  const raiz = doc.documentElement;
+  let cont = doc.getElementsByTagNameNS(NS_SS, "mergeCells")[0] as Element | undefined;
+
+  if (modo === "quitar") {
+    if (!cont) return;
+    for (const mc of Array.from(cont.children)) {
+      if (mc.getAttribute("ref") === ref) cont.removeChild(mc);
+    }
+    if (cont.children.length === 0) raiz.removeChild(cont);
+    else cont.setAttribute("count", String(cont.children.length));
+    return;
+  }
+
+  if (!cont) {
+    cont = doc.createElementNS(NS_SS, "mergeCells");
+    // Elementos que el esquema pone DESPUÉS de mergeCells: el contenedor se
+    // inserta antes del primero que exista.
+    const despues = new Set([
+      "phoneticPr", "conditionalFormatting", "dataValidations", "hyperlinks",
+      "printOptions", "pageMargins", "pageSetup", "headerFooter", "rowBreaks",
+      "colBreaks", "customProperties", "cellWatches", "ignoredErrors",
+      "smartTags", "drawing", "legacyDrawing", "legacyDrawingHF", "picture",
+      "oleObjects", "controls", "webPublishItems", "tableParts", "extLst",
+    ]);
+    let antesDe: Element | null = null;
+    for (let i = 0; i < raiz.children.length && !antesDe; i++) {
+      if (despues.has(raiz.children[i].localName)) antesDe = raiz.children[i];
+    }
+    if (antesDe) raiz.insertBefore(cont, antesDe);
+    else raiz.appendChild(cont);
+  }
+
+  const yaEsta = Array.from(cont.children).some((mc) => mc.getAttribute("ref") === ref);
+  if (!yaEsta) {
+    const mc = doc.createElementNS(NS_SS, "mergeCell");
+    mc.setAttribute("ref", ref);
+    cont.appendChild(mc);
+  }
+  cont.setAttribute("count", String(cont.children.length));
+}
+
+/**
  * Marca el libro para que Excel recalcule al abrirlo.
  *
  * Si se pisa una celda de la que dependen fórmulas, los resultados guardados
@@ -295,8 +369,8 @@ function serializar(doc: XMLDocument): string {
 export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCelda[]): Promise<Blob> {
   // Compatibilidad: antes esta función recibía sólo la lista de celdas.
   const todo: Cambios = Array.isArray(cambios) ? { celdas: cambios } : cambios;
-  const { estructura = [], celdas = [], estilos = [], anchos = [] } = todo;
-  const hayAlgo = estructura.length + celdas.length + estilos.length + anchos.length > 0;
+  const { estructura = [], celdas = [], estilos = [], anchos = [], combinadas = [] } = todo;
+  const hayAlgo = estructura.length + celdas.length + estilos.length + anchos.length + combinadas.length > 0;
   if (!hayAlgo) {
     return zip.generateAsync({ type: "blob", compression: "DEFLATE" });
   }
@@ -313,6 +387,7 @@ export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCe
   const hojasTocadas = new Set<number>([
     ...estructura.map((c) => c.hoja), ...celdas.map((c) => c.hoja),
     ...estilos.map((c) => c.hoja), ...anchos.map((c) => c.hoja),
+    ...combinadas.map((c) => c.hoja),
   ]);
 
   for (const indice of hojasTocadas) {
@@ -336,12 +411,18 @@ export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCe
       doc.documentElement.appendChild(sheetData);
     }
 
-    // 2) Valores.
+    // 2) Celdas combinadas: en orden, porque separar y re-combinar el mismo
+    //    rango tiene que terminar combinado.
+    for (const c of combinadas.filter((c) => c.hoja === indice)) {
+      aplicarCombinada(doc, c.ref, c.modo);
+    }
+
+    // 3) Valores.
     for (const c of celdas.filter((c) => c.hoja === indice)) {
       escribirCelda(doc, sheetData, c.fila, c.columna, c.valor);
     }
 
-    // 3) Formato.
+    // 4) Formato.
     if (stylesDoc) {
       for (const c of estilos.filter((c) => c.hoja === indice)) {
         const actual = estiloDeCelda(sheetData, c.fila, c.columna);
@@ -349,7 +430,7 @@ export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCe
       }
     }
 
-    // 4) Anchos de columna.
+    // 5) Anchos de columna.
     for (const c of anchos.filter((c) => c.hoja === indice)) {
       fijarAnchoColumna(doc, c.columna, c.anchoPx);
     }
@@ -358,6 +439,29 @@ export async function guardarCambios(zip: JSZipType, cambios: Cambios | CambioCe
   }
 
   if (stylesDoc) zip.file("xl/styles.xml", serializar(stylesDoc));
+
+  // Insertar/eliminar en una hoja corre también las referencias que las DEMÁS
+  // hojas le hacen por nombre ("Resumen!B1" → "Resumen!B2"), como Excel.
+  if (estructura.length > 0) {
+    const nombres = await nombresDeHojas(zip);
+    for (const c of estructura) {
+      const nombre = nombres[c.hoja];
+      if (!nombre) continue;
+      for (let j = 0; j < rutas.length; j++) {
+        if (j === c.hoja) continue;
+        const xml = await zip.file(rutas[j])?.async("string");
+        if (!xml || !xml.includes("<f")) continue;
+        const doc = parsearHoja(xml, j);
+        let cambio = false;
+        for (const f of Array.from(doc.getElementsByTagNameNS(NS_SS, "f"))) {
+          const texto = f.textContent ?? "";
+          const nuevo = moverFormulaCruzada(texto, nombre, c.eje, c.indice, c.delta);
+          if (nuevo !== texto) { f.textContent = nuevo; cambio = true; }
+        }
+        if (cambio) zip.file(rutas[j], serializar(doc));
+      }
+    }
+  }
 
   await forzarRecalculo(zip);
   return zip.generateAsync({

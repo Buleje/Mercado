@@ -73,7 +73,9 @@ function moverRef(ref: string, eje: Eje, desde: number, delta: number): string |
  * Reescribe las referencias de una fórmula.
  *
  * Se saltean los textos entre comillas: una fórmula como `SI(A1>0;"B2 ok";"")`
- * no debe tocar el "B2" que es parte del mensaje.
+ * no debe tocar el "B2" que es parte del mensaje. Y se saltean las referencias
+ * A OTRA HOJA (`Resumen!B1`, `'Lista 2026'!B1`): insertar una fila ACÁ no
+ * mueve las celdas de allá — correrlas dejaba los totales apuntando mal.
  */
 export function moverFormula(formula: string, eje: Eje, desde: number, delta: number): string {
   let salida = "";
@@ -86,12 +88,95 @@ export function moverFormula(formula: string, eje: Eje, desde: number, delta: nu
       i = corte;
       continue;
     }
+    // 'Nombre de hoja'!REF — el nombre entre comillas simples (con `''` como
+    // apóstrofe escapado) y su referencia viajan tal cual.
+    if (formula[i] === "'") {
+      let fin = i + 1;
+      while (fin < formula.length) {
+        if (formula[fin] === "'" && formula[fin + 1] === "'") { fin += 2; continue; }
+        if (formula[fin] === "'") break;
+        fin++;
+      }
+      let corte = Math.min(formula.length, fin + 1);
+      const ref = /^!\$?[A-Za-z]+\$?\d+(?::\$?[A-Za-z]+\$?\d+)?/.exec(formula.slice(corte));
+      if (ref) corte += ref[0].length;
+      salida += formula.slice(i, corte);
+      i = corte;
+      continue;
+    }
     const resto = formula.slice(i);
+    // Nombre de hoja sin comillas + `!` + referencia: tampoco se corre.
+    const conHoja = /^[\p{L}_][\p{L}0-9_.]*!\$?[A-Za-z]+\$?\d+(?::\$?[A-Za-z]+\$?\d+)?/u.exec(resto);
+    if (conHoja) {
+      salida += conHoja[0];
+      i += conHoja[0].length;
+      continue;
+    }
     const m = /^(\$?[A-Z]+\$?\d+)/.exec(resto);
     if (m) {
       const nueva = moverRef(m[1], eje, desde, delta);
       salida += nueva ?? "#REF!";
       i += m[1].length;
+      continue;
+    }
+    salida += formula[i];
+    i++;
+  }
+  return salida;
+}
+
+/**
+ * Corre las referencias que OTRA hoja hace a la hoja editada.
+ *
+ * El espejo de `moverFormula`: cuando se inserta una fila en Precios, el
+ * `Precios!B4` que vive en Resumen tiene que pasar a `Precios!B5` — Excel lo
+ * hace y si acá no, el total de Resumen queda apuntando a la celda corrida.
+ * Sólo se tocan las referencias calificadas con ESE nombre; el resto de la
+ * fórmula (referencias propias, textos) sale intacto.
+ */
+export function moverFormulaCruzada(formula: string, nombreHoja: string, eje: Eje, desde: number, delta: number): string {
+  const objetivo = nombreHoja.toLowerCase();
+  const moverParte = (ref: string): string =>
+    ref.split(":").map((r) => moverRef(r, eje, desde, delta) ?? "#REF!").join(":");
+
+  let salida = "";
+  let i = 0;
+  while (i < formula.length) {
+    if (formula[i] === '"') {
+      const fin = formula.indexOf('"', i + 1);
+      const corte = fin === -1 ? formula.length : fin + 1;
+      salida += formula.slice(i, corte);
+      i = corte;
+      continue;
+    }
+    if (formula[i] === "'") {
+      let fin = i + 1;
+      let nombre = "";
+      while (fin < formula.length) {
+        if (formula[fin] === "'" && formula[fin + 1] === "'") { nombre += "'"; fin += 2; continue; }
+        if (formula[fin] === "'") break;
+        nombre += formula[fin];
+        fin++;
+      }
+      const trasComilla = Math.min(formula.length, fin + 1);
+      const ref = /^!(\$?[A-Za-z]+\$?\d+(?::\$?[A-Za-z]+\$?\d+)?)/.exec(formula.slice(trasComilla));
+      if (ref && nombre.toLowerCase() === objetivo) {
+        salida += `${formula.slice(i, trasComilla)}!${moverParte(ref[1])}`;
+        i = trasComilla + ref[0].length;
+      } else {
+        const corte = ref ? trasComilla + ref[0].length : trasComilla;
+        salida += formula.slice(i, corte);
+        i = corte;
+      }
+      continue;
+    }
+    const resto = formula.slice(i);
+    const conHoja = /^([\p{L}_][\p{L}0-9_.]*)!(\$?[A-Za-z]+\$?\d+(?::\$?[A-Za-z]+\$?\d+)?)/u.exec(resto);
+    if (conHoja) {
+      salida += conHoja[1].toLowerCase() === objetivo
+        ? `${conHoja[1]}!${moverParte(conHoja[2])}`
+        : conHoja[0];
+      i += conHoja[0].length;
       continue;
     }
     salida += formula[i];

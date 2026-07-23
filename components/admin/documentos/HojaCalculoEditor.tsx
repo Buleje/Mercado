@@ -32,6 +32,7 @@ import {
 import GrillaHoja, { type Seleccion } from "./hoja/GrillaHoja";
 import PestanasHojas from "./hoja/PestanasHojas";
 import BarraHerramientas from "./hoja/BarraHerramientas";
+import { mergesDe } from "./hoja/estado-hoja";
 import BuscarReemplazar from "./hoja/BuscarReemplazar";
 import BarraEstado from "./hoja/BarraEstado";
 import MenuContextual from "./hoja/MenuContextual";
@@ -175,13 +176,21 @@ function EditorCargado({
   /**
    * Las fórmulas se recalculan en pantalla apenas cambia una celda: si no, el
    * usuario ve totales que ya no son ciertos hasta abrir el archivo en Excel.
+   *
+   * El lector resuelve también las referencias a OTRAS hojas (`Totales!B1`):
+   * sin nombre lee la hoja activa; con nombre busca la hoja en el libro (sin
+   * distinguir mayúsculas, como Excel) y `null` si no existe → `#¡REF!`.
    */
   const hojaCalculada = useMemo(() => {
     if (!hoja) return hoja;
     const conFormula = hoja.filas.some((f) => f.some((c) => c.formula));
     if (!conFormula) return hoja;
-    const leer = (f: number, c: number) => {
-      const celda = hoja.filas[f]?.[c];
+    const leer = (f: number, c: number, nombre?: string) => {
+      const origen = nombre === undefined || nombre.toLowerCase() === hoja.nombre.toLowerCase()
+        ? hoja
+        : hojas.find((h) => h.nombre.toLowerCase() === nombre.toLowerCase());
+      if (!origen) return null;
+      const celda = origen.filas[f]?.[c];
       if (!celda) return "";
       return celda.formula ? `=${celda.formula}` : celda.crudo;
     };
@@ -189,7 +198,7 @@ function EditorCargado({
       ...hoja,
       filas: hoja.filas.map((fila) => fila.map((celda) => {
         if (!celda.formula) return celda;
-        const resultado = evaluarFormula(`=${celda.formula}`, leer);
+        const resultado = evaluarFormula(`=${celda.formula}`, leer, hoja.nombre);
         // El resultado se vuelve a vestir con el formato de la celda: si no,
         // una columna de importes pasa de "S/ 56,650.00" a "56650" al editar.
         const n = Number(resultado);
@@ -199,7 +208,7 @@ function EditorCargado({
         return { ...celda, texto };
       })),
     };
-  }, [hoja]);
+  }, [hoja, hojas]);
 
   /**
    * La hoja que se dibuja: la calculada, con las filas que el filtro esconde.
@@ -355,11 +364,39 @@ function EditorCargado({
         celdas: [{ fila: sel.filaFin + 1, columna: sel.colIni, valor: `=SUMA(${col}${desde}:${col}${hasta})` }],
       });
     },
+    /**
+     * Combinar es un TOGGLE, como en Excel: sobre un bloque combinado lo
+     * separa; sobre un rango lo combina (absorbiendo los bloques que queden
+     * enteros adentro). Un bloque pisado a medias corta la operación.
+     */
+    combinar: () => {
+      if (!hoja) return;
+      const merges = mergesDe(hoja);
+      const bajoCursor = merges.find((m) =>
+        sel.filaIni >= m.filaIni && sel.filaFin <= m.filaFin && sel.colIni >= m.colIni && sel.colFin <= m.colFin);
+      if (bajoCursor) {
+        ejecutar({ tipo: "descombinar", ...bajoCursor });
+        return;
+      }
+      if (sel.filaIni === sel.filaFin && sel.colIni === sel.colFin) return;
+      const dentro = (m: { filaIni: number; colIni: number; filaFin: number; colFin: number }) =>
+        m.filaIni >= sel.filaIni && m.filaFin <= sel.filaFin && m.colIni >= sel.colIni && m.colFin <= sel.colFin;
+      const aMedias = merges.some((m) => {
+        const cruza = m.filaIni <= sel.filaFin && m.filaFin >= sel.filaIni && m.colIni <= sel.colFin && m.colFin >= sel.colIni;
+        return cruza && !dentro(m);
+      });
+      if (aMedias) {
+        setError("No se puede combinar: el rango pisa parte de otra celda combinada. Separala primero.");
+        return;
+      }
+      for (const m of merges.filter(dentro)) ejecutar({ tipo: "descombinar", ...m });
+      ejecutar({ tipo: "combinar", filaIni: sel.filaIni, colIni: sel.colIni, filaFin: sel.filaFin, colFin: sel.colFin });
+    },
     deshacer, rehacer,
     buscar: () => setBuscando(true),
     ordenar: (d: Direccion) => ordenarRef.current(sel.colIni, d),
     filtrar: () => setFiltrando(sel.colIni),
-  }), [deshacer, ejecutar, rehacer, sel, setBuscando]);
+  }), [deshacer, ejecutar, hoja, rehacer, sel, setBuscando]);
 
   /**
    * Ordenar el rango seleccionado por una columna.
@@ -467,6 +504,7 @@ function EditorCargado({
     eliminarColumna: () => acciones.eliminar("columna"),
     ordenar: (d: Direccion) => ordenar(menu?.columna ?? sel.colIni, d),
     filtrar: () => setFiltrando(menu?.columna ?? sel.colIni),
+    combinar: () => acciones.combinar(),
     limpiar: () => ejecutar({ tipo: "valores", celdas: celdasDe(sel).map((p) => ({ ...p, valor: "" })) }),
   }), [acciones, ejecutar, menu, ordenar, sel]);
 
@@ -524,6 +562,7 @@ function EditorCargado({
         puede={puede}
         etiquetaSeleccion={etiquetaRango(sel)}
         tamanoSeleccion={celda?.estilo?.tamano ?? 11}
+        numFmtSeleccion={celda?.numFmt}
       />
 
       {buscando && (

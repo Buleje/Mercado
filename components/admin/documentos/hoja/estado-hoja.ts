@@ -14,9 +14,18 @@
  */
 
 import type { CeldaHoja, EstiloCelda, HojaFormato } from "@/lib/documentos/xlsx-formato";
-import { colorLegible, formatearValor } from "@/lib/documentos/xlsx-formato";
+import { colorLegible, formatearValor, numeroALetra } from "@/lib/documentos/xlsx-formato";
+import { moverFormula } from "@/lib/documentos/xlsx-estructura";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
 import type { Cambios } from "@/lib/documentos/xlsx-escritura";
+
+/** Un bloque combinado, en coordenadas de pantalla (base 0, normalizado). */
+export interface Rect {
+  filaIni: number;
+  colIni: number;
+  filaFin: number;
+  colFin: number;
+}
 
 export type Accion =
   /** Escribir en una o muchas celdas (escribir, pegar, borrar un rango). */
@@ -26,7 +35,11 @@ export type Accion =
   /** Insertar o eliminar una fila/columna. */
   | { tipo: "estructura"; eje: "fila" | "columna"; indice: number; delta: 1 | -1; datos?: CeldaHoja[] }
   /** Cambiar el ancho de una columna. */
-  | { tipo: "ancho"; columna: number; anchoPx: number };
+  | { tipo: "ancho"; columna: number; anchoPx: number }
+  /** Combinar un rango en una sola celda visible (la ancla). */
+  | ({ tipo: "combinar" } & Rect)
+  /** Separar un bloque combinado. */
+  | ({ tipo: "descombinar" } & Rect);
 
 /** Una acción ya ejecutada, con lo necesario para deshacerla. */
 export interface Paso {
@@ -76,6 +89,10 @@ function fusionarEstilo(actual: EstiloCelda | undefined, cambio: CambioFormato):
   if (cambio.color) e.color = cambio.color;
   if (cambio.tamano !== undefined) e.tamano = cambio.tamano;
   if (cambio.alineacion) e.alineacion = cambio.alineacion;
+  if (cambio.bordes !== undefined) {
+    if (cambio.bordes === null) delete e.bordes;
+    else e.bordes = { arriba: true, abajo: true, izq: true, der: true };
+  }
   if (cambio.fondo !== undefined) {
     if (cambio.fondo === null) delete e.fondo;
     else {
@@ -97,6 +114,9 @@ function formatoActual(estilo: EstiloCelda | undefined): CambioFormato {
     fondo: estilo?.fondo ?? null,
     tamano: estilo?.tamano,
     alineacion: estilo?.alineacion,
+    // La inversa es todo-o-nada: una celda con bordes parciales vuelve con
+    // los cuatro. Es el precio de no guardar el detalle por lado.
+    bordes: estilo?.bordes ? true : null,
   };
 }
 
@@ -181,16 +201,30 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
             : celda))),
       };
       // La inversa de aplicar formato a N celdas que tenían formatos distintos
-      // son N acciones; se guarda la del conjunto tal como estaba.
+      // son N acciones; se guarda la del conjunto tal como estaba. `bordes`
+      // sólo viaja si la acción los tocó: su inversa es todo-o-nada y pisaría
+      // bordes parciales del archivo al deshacer cualquier otro formato.
+      const formatoInverso: CambioFormato = { ...(previos[0] ?? {}) };
+      if (accion.formato.bordes === undefined) delete formatoInverso.bordes;
       return {
         hoja: out,
-        inversa: { tipo: "formato", celdas: antes, formato: previos[0] ?? {} },
+        inversa: { tipo: "formato", celdas: antes, formato: formatoInverso },
       };
     }
 
     case "estructura": {
       const { eje, indice, delta } = accion;
       const i = indice - 1; // el archivo cuenta desde 1
+      /**
+       * Las fórmulas de la MISMA hoja corren sus referencias, igual que hace
+       * el archivo: si el total era `SUM(B2:B3)` y se insertó una fila arriba,
+       * en pantalla tiene que decir `SUM(B3:B4)` o el número mostrado miente.
+       */
+      const correrFormulas = (filas: CeldaHoja[][]): CeldaHoja[][] => filas.map((fila) => fila.map((c) => {
+        if (!c.formula) return c;
+        const nueva = moverFormula(c.formula, eje, indice, delta);
+        return nueva === c.formula ? c : { ...c, formula: nueva };
+      }));
       if (eje === "fila") {
         if (delta > 0) {
           const cols = hoja.filas[0]?.length ?? 1;
@@ -202,7 +236,7 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
           const altos = [...hoja.altos]; altos.splice(i, 0, 20);
           const ocultas = [...hoja.filasOcultas]; ocultas.splice(i, 0, false);
           return {
-            hoja: { ...hoja, filas, altos, filasOcultas: ocultas },
+            hoja: { ...hoja, filas: correrFormulas(filas), altos, filasOcultas: ocultas },
             inversa: { tipo: "estructura", eje, indice, delta: -1 },
           };
         }
@@ -211,7 +245,7 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
         const altos = hoja.altos.filter((_, k) => k !== i);
         const ocultas = hoja.filasOcultas.filter((_, k) => k !== i);
         return {
-          hoja: { ...hoja, filas, altos, filasOcultas: ocultas },
+          hoja: { ...hoja, filas: correrFormulas(filas), altos, filasOcultas: ocultas },
           inversa: { tipo: "estructura", eje, indice, delta: 1, datos: borrada },
         };
       }
@@ -222,11 +256,11 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
         return {
           hoja: {
             ...hoja,
-            filas: hoja.filas.map((f, k) => {
+            filas: correrFormulas(hoja.filas.map((f, k) => {
               const c = [...f];
               c.splice(i, 0, accion.datos?.[k] ? { ...accion.datos[k] } : { ...CELDA_VACIA });
               return c;
-            }),
+            })),
             anchos, columnasOcultas: ocultas,
           },
           inversa: { tipo: "estructura", eje, indice, delta: -1 },
@@ -236,7 +270,7 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
       return {
         hoja: {
           ...hoja,
-          filas: hoja.filas.map((f) => f.filter((_, k) => k !== i)),
+          filas: correrFormulas(hoja.filas.map((f) => f.filter((_, k) => k !== i))),
           anchos: hoja.anchos.filter((_, k) => k !== i),
           columnasOcultas: hoja.columnasOcultas.filter((_, k) => k !== i),
         },
@@ -254,7 +288,135 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
         inversa: { tipo: "ancho", columna: accion.columna, anchoPx: previo },
       };
     }
+
+    /**
+     * Combinar marca las celdas con las MISMAS señales que pone la lectura del
+     * archivo: el ancla lleva el tamaño del bloque, las de su fila quedan
+     * tapadas, y la primera columna de las filas de abajo se dibuja como
+     * continuación (vacía, sin borde superior) — nunca rowspan, que desarma
+     * la tabla virtualizada. Los valores de las celdas tapadas NO se borran:
+     * al separar, vuelven a verse.
+     */
+    case "combinar": case "descombinar": {
+      const { filaIni, colIni, filaFin, colFin } = accion;
+      const combinando = accion.tipo === "combinar";
+      const nfilas = filaFin - filaIni + 1;
+      const ncols = colFin - colIni + 1;
+      const out = {
+        ...asegurarTamano(hoja, filaFin + 1, colFin + 1),
+      };
+      out.filas = out.filas.map((fila, f) => {
+        if (f < filaIni || f > filaFin) return fila;
+        return fila.map((celda, c) => {
+          if (c < colIni || c > colFin) return celda;
+          const limpia: CeldaHoja = { ...celda };
+          delete limpia.colspan;
+          delete limpia.rowspan;
+          delete limpia.tapada;
+          delete limpia.continuaArriba;
+          if (!combinando) return limpia;
+          if (f === filaIni && c === colIni) {
+            return { ...limpia, colspan: ncols > 1 ? ncols : undefined, rowspan: nfilas > 1 ? nfilas : undefined };
+          }
+          if (f === filaIni) return { ...limpia, tapada: true };
+          if (c === colIni) return { ...limpia, continuaArriba: true, colspan: ncols > 1 ? ncols : undefined };
+          return { ...limpia, tapada: true };
+        });
+      });
+      return {
+        hoja: out,
+        inversa: { ...accion, tipo: combinando ? "descombinar" : "combinar" },
+      };
+    }
   }
+}
+
+/** Los bloques combinados de la hoja, reconstruidos desde sus señales. */
+export function mergesDe(hoja: HojaFormato): Rect[] {
+  const out: Rect[] = [];
+  hoja.filas.forEach((fila, f) => {
+    fila.forEach((celda, c) => {
+      if (celda.tapada || celda.continuaArriba) return;
+      const ncols = celda.colspan ?? 1;
+      const nfilas = celda.rowspan ?? 1;
+      if (ncols > 1 || nfilas > 1) {
+        out.push({ filaIni: f, colIni: c, filaFin: f + nfilas - 1, colFin: c + ncols - 1 });
+      }
+    });
+  });
+  return out;
+}
+
+/**
+ * Corre las coordenadas de las acciones PENDIENTES cuando se inserta o
+ * elimina una fila/columna.
+ *
+ * Sin esto, "escribí B5 y después inserté una fila arriba" guardaba el valor
+ * en la fila equivocada: el archivo aplica primero TODA la estructura y
+ * después los valores, así que todo lo pendiente tiene que quedar expresado
+ * en las coordenadas nuevas. Las acciones de estructura no se tocan: son un
+ * programa secuencial que el archivo repite en su orden.
+ */
+export function remapearPendientes(acciones: Accion[], eje: "fila" | "columna", indice: number, delta: 1 | -1): Accion[] {
+  const i0 = indice - 1; // la estructura cuenta desde 1; la pantalla desde 0
+  /** Corre una coordenada; null si estaba en la línea eliminada. */
+  const mover = (v: number): number | null => {
+    if (v < i0) return v;
+    if (delta < 0 && v === i0) return null;
+    return v + delta;
+  };
+  /** Para el FIN de un rango: si cae en la línea borrada, el rango se achica. */
+  const moverFin = (v: number): number => (delta < 0 && v >= i0 ? v - 1 : v >= i0 ? v + delta : v);
+
+  const out: Accion[] = [];
+  for (const a of acciones) {
+    switch (a.tipo) {
+      case "valores": {
+        const celdas = a.celdas.flatMap((c) => {
+          const v = eje === "fila" ? mover(c.fila) : mover(c.columna);
+          if (v === null) return [];
+          // Una fórmula pendiente también corre sus referencias.
+          const valor = c.valor.trimStart().startsWith("=")
+            ? `=${moverFormula(c.valor.trimStart().slice(1), eje, indice, delta)}`
+            : c.valor;
+          return [eje === "fila" ? { ...c, fila: v, valor } : { ...c, columna: v, valor }];
+        });
+        if (celdas.length > 0) out.push({ ...a, celdas });
+        break;
+      }
+      case "formato": {
+        const celdas = a.celdas.flatMap((c) => {
+          const v = eje === "fila" ? mover(c.fila) : mover(c.columna);
+          if (v === null) return [];
+          return [eje === "fila" ? { ...c, fila: v } : { ...c, columna: v }];
+        });
+        if (celdas.length > 0) out.push({ ...a, celdas });
+        break;
+      }
+      case "ancho": {
+        if (eje === "fila") { out.push(a); break; }
+        const v = mover(a.columna - 1);
+        if (v !== null) out.push({ ...a, columna: v + 1 });
+        break;
+      }
+      case "combinar": case "descombinar": {
+        const ini = eje === "fila" ? mover(a.filaIni) : mover(a.colIni);
+        const iniVal = ini ?? i0; // el ancla borrada: el bloque arranca donde estaba
+        const b = eje === "fila"
+          ? { ...a, filaIni: iniVal, filaFin: moverFin(a.filaFin) }
+          : { ...a, colIni: iniVal, colFin: moverFin(a.colFin) };
+        // Un bloque que quedó de una sola celda ya no es un combinado.
+        if (b.filaFin >= b.filaIni && b.colFin >= b.colIni && (b.filaFin > b.filaIni || b.colFin > b.colIni)) {
+          out.push(b);
+        }
+        break;
+      }
+      case "estructura":
+        out.push(a);
+        break;
+    }
+  }
+  return out;
 }
 
 /**
@@ -264,7 +426,7 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
  * primero (mueve las direcciones de todo lo demás).
  */
 export function aCambiosDeArchivo(pasos: Accion[], hoja: number): Cambios {
-  const cambios: Cambios = { estructura: [], celdas: [], estilos: [], anchos: [] };
+  const cambios: Cambios = { estructura: [], celdas: [], estilos: [], anchos: [], combinadas: [] };
   for (const a of pasos) {
     switch (a.tipo) {
       case "valores":
@@ -303,6 +465,14 @@ export function aCambiosDeArchivo(pasos: Accion[], hoja: number): Cambios {
         break;
       case "ancho":
         cambios.anchos!.push({ hoja, columna: a.columna, anchoPx: a.anchoPx });
+        break;
+      case "combinar":
+      case "descombinar":
+        cambios.combinadas!.push({
+          hoja,
+          ref: `${numeroALetra(a.colIni + 1)}${a.filaIni + 1}:${numeroALetra(a.colFin + 1)}${a.filaFin + 1}`,
+          modo: a.tipo === "combinar" ? "agregar" : "quitar",
+        });
         break;
     }
   }
