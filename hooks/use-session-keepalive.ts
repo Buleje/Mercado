@@ -18,6 +18,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getKeepAlive, KEEPALIVE_EVENT, KEEPALIVE_PING_EVENT } from "@/lib/session-keepalive";
+import { refrescarSesion } from "@/lib/auth/session-refresh";
 
 const REFRESH_INTERVAL_MS = 4 * 60 * 1000; // 4 min — por debajo del access de 15 min
 const ACTIVITY_THROTTLE_MS = 90 * 1000; // no refrescar por actividad más de 1 vez / 90s
@@ -51,12 +52,16 @@ export function useSessionKeepAlive(panel: "admin" | "superadmin"): { enabled: b
       inFlightRef.current = true;
       lastRefreshRef.current = Date.now();
       try {
-        const res =
+        // El panel admin pasa por la puerta única (lib/auth/session-refresh):
+        // este hook refresca por intervalo, por visibilidad Y por actividad del
+        // usuario, así que sin un throttle compartido con los otros emisores
+        // reventaba el límite del endpoint (20 req / 5 min).
+        const ok =
           panel === "admin"
-            ? await fetch("/api/auth/refresh", { method: "POST", credentials: "include" })
+            ? await refrescarSesion({ motivo: "keepalive" })
             : // GET rota el platform token cuando pasó la mitad de su vida / idle.
-              await fetch("/api/superadmin/auth", { method: "GET", credentials: "include" });
-        if (res.ok) {
+              (await fetch("/api/superadmin/auth", { method: "GET", credentials: "include" })).ok;
+        if (ok) {
           // Aviso a la UI (el switch muestra "renovada hace Xs") — prueba viva
           // de que el modo está funcionando.
           window.dispatchEvent(new CustomEvent(KEEPALIVE_PING_EVENT, { detail: Date.now() }));

@@ -18,6 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { refrescarSesion } from "@/lib/auth/session-refresh";
 import { Clock, ShieldCheck } from "@buleje/design-system/icons";
 import { KEEPALIVE_PING_EVENT } from "@/lib/session-keepalive";
 
@@ -95,12 +96,19 @@ export function SessionExpiryGuard({
 
   const stayConnected = useCallback(async () => {
     try {
-      await fetch(endpoint, { method, credentials: "include" });
+      // En admin va por la puerta única con `forzar`: acá el usuario PIDIÓ
+      // seguir conectado y la sesión está por vencer, así que el piso de
+      // tiempo no aplica (el backoff de 429 sí se respeta).
+      if (panel === "admin") {
+        await refrescarSesion({ forzar: true, motivo: "seguir-conectado" });
+      } else {
+        await fetch(endpoint, { method, credentials: "include" });
+      }
     } catch {
       /* red caída — el reloj se re-arma igual; reintentará en el próximo aviso */
     }
     arm();
-  }, [arm, endpoint, method]);
+  }, [arm, endpoint, method, panel]);
 
   if (!warning) return null;
 
