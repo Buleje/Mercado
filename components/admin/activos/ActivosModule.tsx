@@ -145,6 +145,7 @@ export default function ActivosModule() {
   return (
     <div className="space-y-5">
       <AdminModuleHeader
+        as="h2"
         eyebrow="Finanzas · Maquinaria"
         title="Activos & Maquinaria"
         description="Alquila tus equipos y mira la ganancia real de cada máquina."

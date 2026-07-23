@@ -30,7 +30,7 @@ export default function CatalogoTiendaModule() {
   return (
     <div className="space-y-4">
       <AdminModuleHeader
-        title="Promociones y Ofertas"
+        title="Promociones & Ofertas"
         description="Categorías, promociones, cupones y precios"
         icon={Tag}
       />

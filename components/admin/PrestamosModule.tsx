@@ -1010,6 +1010,7 @@ export default function PrestamosModule() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <AdminModuleHeader
+        as="h2"
         icon={DollarSign}
         eyebrow="Finanzas · Créditos y cuotas"
         title="Préstamos"

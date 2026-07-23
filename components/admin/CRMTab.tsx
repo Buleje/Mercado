@@ -496,6 +496,9 @@ export default function CRMTab() {
         </div>
 
         {/* Filtro segmento — chips estandar */}
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Segmento
+        </span>
         {([
           { key: "todos" as const, label: "Todos", count: customers.length },
           { key: "frecuente" as const, label: "Frecuente", count: segmentCounts.frecuente },
@@ -543,7 +546,11 @@ export default function CRMTab() {
 
       {/* Filtros secundarios: quick filter + frecuencia + tags */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Quick filters */}
+        {/* Cada grupo lleva su etiqueta: había TRES chips "Todos" en la misma
+            fila (segmento, estado y frecuencia) y no se sabía cuál filtraba qué. */}
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Estado
+        </span>
         {([
           { key: "todos" as QuickFilter,     label: "Todos" },
           { key: "activos" as QuickFilter,   label: "Activos" },
@@ -570,7 +577,10 @@ export default function CRMTab() {
           </button>
         ))}
 
-        <span className="text-[var(--text-tertiary)] dark:text-zinc-600">|</span>
+        <span aria-hidden className="mx-1 h-5 w-px bg-[var(--rule-base)]" />
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Frecuencia
+        </span>
 
         {/* Frecuencia de compra */}
         {([
@@ -804,8 +814,8 @@ export default function CRMTab() {
                         if (days === 0) { label = "Hoy"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
                         else if (days === 1) { label = "Ayer"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
                         else if (days < 7) { label = `Hace ${days}d`; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
-                        else if (days < 14) { label = "Hace 1 sem"; colorClass = "text-yellow-600 dark:text-yellow-400"; }
-                        else if (days < 30) { label = `Hace ${Math.floor(days / 7)} sem`; colorClass = "text-yellow-600 dark:text-yellow-400"; }
+                        else if (days < 14) { label = "Hace 1 sem"; colorClass = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"; }
+                        else if (days < 30) { label = `Hace ${Math.floor(days / 7)} sem`; colorClass = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"; }
                         else if (days < 90) { label = `Hace ${Math.floor(days / 30)} meses`; colorClass = "text-[var(--data-error-600)] dark:text-red-400"; }
                         else { label = "Inactivo"; colorClass = "text-[var(--text-tertiary)] dark:text-muted"; }
                         return <span className={cn("text-xs font-bold", colorClass)}>{label}</span>;

@@ -338,9 +338,11 @@ const OrderCard = memo(function OrderCard({
           )}
         </div>
 
-        {/* Action row */}
+        {/* Action row — `flex-wrap`: cuando los tres botones no entran, el
+            secundario baja de línea. Antes el principal se estrangulaba y
+            "PREPARANDO" quedaba cortado en "PREPARAN". */}
         <div
-          className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)]"
+          className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)]"
           onClick={(e) => e.stopPropagation()}
         >
           {primaryAction && (
@@ -348,7 +350,11 @@ const OrderCard = memo(function OrderCard({
               type="button"
               onClick={primaryAction.onClick}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-colors",
+                // `flex-auto` y NO `flex-1`: con basis 0 el botón "cabe" en cualquier
+                // línea (nunca envuelve) y el min-width lo desborda después. Con
+                // basis auto, si el texto no entra junto a los otros botones, la
+                // fila envuelve y el label sale entero.
+                "flex-auto whitespace-nowrap inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-colors",
                 "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90 active:scale-[0.99]",
               )}
             >
@@ -360,7 +366,7 @@ const OrderCard = memo(function OrderCard({
             <button
               type="button"
               onClick={onRejectYape}
-              className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--data-error-500)] bg-[var(--data-error-500)]/10 hover:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)]/30 transition-colors"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--data-error-500)] bg-[var(--data-error-500)]/10 hover:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)]/30 transition-colors"
               title="Rechazar Yape"
               aria-label="Rechazar Yape (pago falso)"
             >
@@ -371,7 +377,7 @@ const OrderCard = memo(function OrderCard({
             <button
               type="button"
               onClick={onMarkDeudaPaid}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
+              className="inline-flex items-center gap-1 h-10 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
               title="Marcar deuda como cobrada"
             >
               <Check className="h-3.5 w-3.5" /> Cobrado
@@ -381,7 +387,7 @@ const OrderCard = memo(function OrderCard({
             <button
               type="button"
               onClick={manualDeliverAction.onClick}
-              className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
               title="Marcar entregado (entrega manual sin delivery)"
               aria-label="Marcar como entregado manualmente"
             >

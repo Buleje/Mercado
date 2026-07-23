@@ -346,7 +346,11 @@ export default function CategoriesEditorTab() {
             disabled={!hasChanges || saving}
             className={cn(
               "inline-flex h-11 items-center gap-1.5 rounded-xl px-5 text-sm font-bold text-white transition-colors",
-              saved ? "bg-[var(--data-success-500)]" : "bg-[var(--accent)] hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed",
+              saved
+                ? "bg-[var(--data-success-500)]"
+                // Deshabilitado = gris de verdad: el teal al 40% parecía un
+                // botón activo más y confundía cuál era la acción principal.
+                : "bg-[var(--accent)] hover:brightness-105 disabled:bg-[var(--surface-sunken)] disabled:text-[var(--text-tertiary)] disabled:cursor-not-allowed",
             )}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}

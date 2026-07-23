@@ -935,6 +935,7 @@ export default function FiadosModule() {
   return (
     <div className="space-y-6">
       <AdminModuleHeader
+        as="h2"
         eyebrow="Cobros · Crédito"
         title="Fiados"
         description="Gestiona los créditos a clientes, cobranza por ruta, riesgo de morosidad y proyección de cobros."

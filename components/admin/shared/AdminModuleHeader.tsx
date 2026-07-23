@@ -38,6 +38,13 @@ import { cn } from "@/lib/utils";
 import type { LucideIcon } from "@buleje/design-system/icons";
 
 interface AdminModuleHeaderProps {
+  /**
+   * Nivel semántico del título. Un módulo montado DENTRO de un hub que ya
+   * puso su propio h1 (ej. Mi Plata → Activos) debe pasar `as="h2"`: dos h1
+   * en la misma página rompen la jerarquía para lectores de pantalla y SEO.
+   * El aspecto visual no cambia — PageTitle se ve igual en ambos niveles.
+   */
+  as?: "h1" | "h2";
   /** Línea pequeña arriba del título (ej: "Inventario · Catálogo"). */
   eyebrow?: string;
   /** Título principal — se renderiza con font-display italic. */
@@ -65,6 +72,7 @@ export default function AdminModuleHeader({
   description,
   icon: Icon,
   children,
+  as: nivel = "h1",
   noBorder = false,
   className,
 }: AdminModuleHeaderProps) {
@@ -100,7 +108,7 @@ export default function AdminModuleHeader({
           <div className="min-w-0">
             {eyebrow && <Kicker className="mb-1">{eyebrow}</Kicker>}
             <PageTitle
-              as="h1"
+              as={nivel}
               className="font-display tracking-tight leading-[1.05]"
             >
               {title}

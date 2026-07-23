@@ -302,7 +302,7 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
 
       <AdminModuleHeader
         eyebrow="Operaciones · Punto de venta"
-        title="Ventas y Caja"
+        title="Ventas & Caja"
         description="Vende, cobra, gestiona tu turno y cierra caja. Todo el flujo del mostrador en un solo lugar."
         icon={ShoppingCart}
       />

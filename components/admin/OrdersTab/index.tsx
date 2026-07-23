@@ -362,7 +362,9 @@ export default function OrdersTab() {
 
       {/* Print-only summary */}
       <div className="hidden print:block print-orders-summary">
-        <PageTitle className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
+        {/* `as="h2"`: este título sólo existe para la impresión; como h1
+            duplicaba el encabezado de la página para los lectores de pantalla. */}
+        <PageTitle as="h2" className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
         <p className="text-xs text-[var(--text-secondary)] mb-4">
           {new Date().toLocaleString("es-PE", { timeZone: "America/Lima" })} · {activeOrders.length} pedidos · S/{total.toFixed(2)} total
         </p>

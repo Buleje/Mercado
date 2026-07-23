@@ -115,6 +115,7 @@ export default function AdelantosModule() {
   return (
     <div>
       <AdminModuleHeader
+        as="h2"
         eyebrow="Finanzas · Adelantos"
         title="Adelantos & Liquidaciones"
         description="Adelantos de dinero a personas por servicios. Se liquidan con lo que te entregan (producto o servicio)."

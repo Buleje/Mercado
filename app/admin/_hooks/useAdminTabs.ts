@@ -50,6 +50,10 @@ function resolveInitialTab(): Tab {
     const migrated = TAB_MIGRATION[urlTab];
     if (migrated) return migrated;
     if (VALID_TABS.includes(urlTab as Tab)) return urlTab as Tab;
+    // Un ?tab explícito que no existe va a Inicio, NO al último tab guardado:
+    // caer en localStorage abría "cualquier cosa" según la sesión anterior, y
+    // el mismo link llevaba a cada persona a un lugar distinto.
+    return "vendor-dashboard";
   }
 
   // 2. Hash #...
@@ -58,6 +62,7 @@ function resolveInitialTab(): Tab {
     const migrated = TAB_MIGRATION[hash];
     if (migrated) return migrated;
     if (VALID_TABS.includes(hash as Tab)) return hash as Tab;
+    return "vendor-dashboard";
   }
 
   // 3. localStorage — "retomar último tab". Brandon 2026-05-28: SOLO en
