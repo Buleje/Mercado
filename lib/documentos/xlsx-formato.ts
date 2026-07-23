@@ -106,7 +106,15 @@ function aplicarTint(hex: string, tint: number): string {
 
 type ColorExcel = { argb?: string; theme?: number; tint?: number } | undefined;
 
-/** Color de exceljs (argb, tema o índice) → `#rrggbb`. */
+/**
+ * Color de exceljs (argb, tema o índice) → `#rrggbb`.
+ *
+ * Los temas 0 y 1 SIN matiz son el "color automático" de Excel: significan
+ * "el color de texto/fondo por defecto", no negro y blanco literales. Se
+ * devuelven como `undefined` para que mande el tema de la aplicación — si se
+ * fijaran a negro, en modo oscuro cada celda sin formato quedaría con letra
+ * negra sobre fondo oscuro, ilegible.
+ */
 export function colorHex(c: ColorExcel): string | undefined {
   if (!c) return undefined;
   if (typeof c.argb === "string" && c.argb.length >= 6) {
@@ -116,10 +124,25 @@ export function colorHex(c: ColorExcel): string | undefined {
     return `#${hex.toLowerCase()}`;
   }
   if (typeof c.theme === "number") {
+    if ((c.theme === 0 || c.theme === 1) && !c.tint) return undefined;   // automático
     const base = TEMA_OFFICE[c.theme] ?? "#000000";
     return c.tint ? aplicarTint(base, c.tint) : base;
   }
   return undefined;
+}
+
+/**
+ * ¿Este color de letra se puede leer sobre un fondo oscuro?
+ *
+ * Un archivo puede fijar el negro explícitamente (no como "automático"): en
+ * modo oscuro, respetarlo al pie de la letra deja la celda ilegible. Se avisa
+ * para poder ignorarlo sólo en ese caso.
+ */
+export function colorMuyOscuro(hex: string): boolean {
+  const n = parseInt(hex.replace("#", ""), 16);
+  if (!Number.isFinite(n)) return false;
+  const [r, g, b] = [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.35;
 }
 
 /**

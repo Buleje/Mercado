@@ -10,7 +10,8 @@ import { describe, expect, it } from "vitest";
 import ExcelJS from "exceljs";
 import JSZip from "jszip";
 import {
-  colorHex, colorLegible, formatearValor, leerXlsxConFormato, letraANumero, numeroALetra,
+  colorHex, colorLegible, colorMuyOscuro, formatearValor, leerXlsxConFormato,
+  letraANumero, numeroALetra, textoDeValor,
 } from "@/lib/documentos/xlsx-formato";
 import { abrirPaquete, guardarCambios, rutasDeHojas } from "@/lib/documentos/xlsx-escritura";
 
@@ -134,6 +135,46 @@ describe("colores", () => {
   it("resuelve los colores de tema, que son la mayoría", () => {
     expect(colorHex({ theme: 4 })).toBe("#4472c4");
     expect(colorHex({ theme: 4, tint: 0.6 })).not.toBe("#4472c4");
+  });
+
+  it("EL AUTOMÁTICO no se fija: en dark dejaría letra negra sobre fondo oscuro", () => {
+    // Los temas 0 y 1 sin matiz son el "color automático" de Excel, no negro
+    // y blanco literales. Casi toda celda sin formato viene así.
+    expect(colorHex({ theme: 1 })).toBeUndefined();
+    expect(colorHex({ theme: 0 })).toBeUndefined();
+    // Con matiz sí es una elección del autor y se respeta.
+    expect(colorHex({ theme: 1, tint: 0.5 })).toBeDefined();
+  });
+
+  it("detecta el color de letra que sería ilegible sobre fondo oscuro", () => {
+    expect(colorMuyOscuro("#000000")).toBe(true);
+    expect(colorMuyOscuro("#1f4e79")).toBe(true);
+    expect(colorMuyOscuro("#ffffff")).toBe(false);
+  });
+});
+
+describe("valores que llegan como objeto", () => {
+  // Antes terminaban en "[object Object]" dentro de la celda.
+  it("texto con formato mezclado (richText)", () => {
+    expect(textoDeValor({ richText: [{ text: "Nota " }, { text: "urgente" }] })).toBe("Nota urgente");
+  });
+
+  it("hipervínculo: se lee su texto, no la URL", () => {
+    expect(textoDeValor({ text: "Distribuidora Selva", hyperlink: "https://x.pe" })).toBe("Distribuidora Selva");
+  });
+
+  it("fórmula: su resultado", () => {
+    expect(textoDeValor({ formula: "SUM(A1:A2)", result: 30 })).toBe("30");
+  });
+
+  it("error de Excel", () => {
+    expect(textoDeValor({ error: "#DIV/0!" })).toBe("#DIV/0!");
+  });
+
+  it("nada raro con lo simple", () => {
+    expect(textoDeValor("hola")).toBe("hola");
+    expect(textoDeValor(42)).toBe("42");
+    expect(textoDeValor(null)).toBe("");
   });
 });
 

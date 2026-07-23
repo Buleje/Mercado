@@ -19,17 +19,24 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CeldaHoja, HojaFormato } from "@/lib/documentos/xlsx-formato";
-import { numeroALetra } from "@/lib/documentos/xlsx-formato";
+import { colorMuyOscuro, numeroALetra } from "@/lib/documentos/xlsx-formato";
+import { useTheme } from "@/contexts/theme-context";
 import {
   aTsv, celdasDe, dentro, desdeTsv, destinoPegado, normalizar,
   type Punto, type Rango,
 } from "@/lib/documentos/hoja-rango";
+import {
+  anchoEnPantalla, anchoParaArchivo, FUENTE_HOJA, ptAPx, TAMANO_BASE_PX,
+} from "@/lib/documentos/hoja-metricas";
 
 export type Seleccion = Punto;
 
 const ANCHO_CANAL = 46;
 const MARGEN_FILAS = 8;
 const ALTO_ENCABEZADO = 26;
+
+/** Excel deja ~3 px a cada lado; con más, el texto entra donde no debería. */
+const PADDING_CELDA = 3;
 /** Ancho mínimo al arrastrar: por debajo, la columna deja de poder agarrarse. */
 const ANCHO_MINIMO = 28;
 
@@ -52,6 +59,7 @@ export default function GrillaHoja({
   /** Celda a la que saltó el buscador, para marcarla. */
   resaltado?: Punto | null;
 }) {
+  const { resolved: tema } = useTheme();
   const contenedor = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLInputElement>(null);
   const [editando, setEditando] = useState(false);
@@ -80,9 +88,16 @@ export default function GrillaHoja({
     [hoja.anchos.length, hoja.filas],
   );
 
-  /** Ancho de cada columna, completando las que no tengan uno declarado. */
+  /**
+   * Ancho de cada columna EN PANTALLA.
+   *
+   * El archivo los trae en las métricas de Excel (Calibri 11); acá se escalan
+   * a la fuente con la que el navegador dibuja de verdad. Sin ese ajuste, en
+   * una máquina sin Calibri cada columna queda un tercio más angosta que el
+   * texto que tiene que mostrar.
+   */
   const anchos = useMemo(
-    () => Array.from({ length: totalCols }, (_, i) => hoja.anchos[i] ?? 64),
+    () => Array.from({ length: totalCols }, (_, i) => anchoEnPantalla(hoja.anchos[i] ?? 64)),
     [hoja.anchos, totalCols],
   );
 
@@ -260,7 +275,11 @@ export default function GrillaHoja({
     const mover = (e: MouseEvent) => {
       const r = resize.current;
       if (!r) return;
-      acciones.ancho(r.columna, Math.max(ANCHO_MINIMO, r.anchoInicial + (e.clientX - r.xInicial)));
+      // Se guarda en las métricas del archivo, no en píxeles de esta pantalla:
+      // si no, abrir y guardar en una máquina sin Calibri ensancharía la
+      // columna un poco más en cada vuelta.
+      const enPantalla = Math.max(ANCHO_MINIMO, r.anchoInicial + (e.clientX - r.xInicial));
+      acciones.ancho(r.columna, anchoParaArchivo(enPantalla));
     };
     const soltar = () => { resize.current = null; };
     const soltarRelleno = () => {
@@ -393,8 +412,8 @@ export default function GrillaHoja({
                 acciones.menu(e.clientX, e.clientY, f, c);
               }}
               onDoubleClick={() => abrirEditor(crudoDe(f, c))}
-              style={{ ...estiloTd(celda), ...pegado }}
-              className={`relative overflow-hidden border border-[var(--rule-soft)] px-1.5 text-sm ${
+              style={{ ...estiloTd(celda, tema), ...pegado, paddingLeft: PADDING_CELDA, paddingRight: PADDING_CELDA }}
+              className={`relative overflow-hidden border border-[var(--rule-soft)] ${
                 activa ? "outline outline-2 -outline-offset-2 outline-[var(--accent)]" : ""
               } ${esResaltado ? "ring-2 ring-inset ring-[var(--data-warning-500)]" : ""}`}
               title={celda.formula ? `=${celda.formula}` : undefined}
@@ -428,10 +447,16 @@ export default function GrillaHoja({
                     else if (e.key === "Tab") { e.preventDefault(); confirmar(0); }
                   }}
                   aria-label={`${numeroALetra(c + 1)}${f + 1}`}
-                  className="absolute inset-0 z-20 w-full bg-[var(--surface-raised)] px-1.5 text-sm text-[var(--text-primary)] outline-2 outline-[var(--accent)]"
+                  style={{ fontFamily: FUENTE_HOJA, fontSize: TAMANO_BASE_PX, paddingLeft: PADDING_CELDA, paddingRight: PADDING_CELDA }}
+                  className="absolute inset-0 z-20 w-full bg-[var(--surface-raised)] text-[var(--text-primary)] outline-2 outline-[var(--accent)]"
                 />
               ) : (
-                <span className="relative block truncate">{celda.texto}</span>
+                // `truncate` sólo cuando el archivo NO pide ajustar el texto:
+                // si lo pide, la celda tiene el alto reservado para varias
+                // líneas y truncar dejaba media frase con puntos suspensivos.
+                <span className={celda.estilo?.ajustarTexto ? "relative block whitespace-pre-wrap break-words" : "relative block truncate"}>
+                  {celda.texto}
+                </span>
               )}
             </td>
           );
@@ -451,7 +476,15 @@ export default function GrillaHoja({
       role="grid"
       aria-label={`Hoja ${hoja.nombre}`}
     >
-      <table className="border-collapse select-none" style={{ tableLayout: "fixed", width: anchoTotal }}>
+      <table
+        className="border-collapse select-none"
+        style={{
+          tableLayout: "fixed",
+          width: anchoTotal,
+          fontFamily: FUENTE_HOJA,
+          fontSize: TAMANO_BASE_PX,
+        }}
+      >
         <colgroup>
           <col style={{ width: ANCHO_CANAL }} />
           {anchos.map((w, i) => (
@@ -487,7 +520,7 @@ export default function GrillaHoja({
                     e.preventDefault();
                     resize.current = { columna: c + 1, xInicial: e.clientX, anchoInicial: anchos[c] };
                   }}
-                  onDoubleClick={(e) => { e.stopPropagation(); acciones.ancho(c + 1, 140); }}
+                  onDoubleClick={(e) => { e.stopPropagation(); acciones.ancho(c + 1, anchoParaArchivo(140)); }}
                   className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-[var(--accent)]"
                 />
               </th>
@@ -514,18 +547,27 @@ export default function GrillaHoja({
 }
 
 /** Estilo de la celda tal como viene del archivo. */
-function estiloTd(celda: CeldaHoja): React.CSSProperties {
+function estiloTd(celda: CeldaHoja, tema: "light" | "dark"): React.CSSProperties {
   const e = celda.estilo;
-  if (!e) return {};
+  // Excel alinea el contenido ABAJO de la celda cuando no se dice otra cosa;
+  // con el centrado del navegador, una fila alta se ve flotando.
+  if (!e) return { verticalAlign: "bottom" };
   return {
     fontWeight: e.negrita ? 700 : undefined,
     fontStyle: e.cursiva ? "italic" : undefined,
     textDecoration: e.subrayado ? "underline" : undefined,
-    color: e.color,
+    // Un color de letra oscuro fijado por el archivo, en una celda SIN relleno
+    // propio, sería ilegible en modo oscuro: ahí manda el color del tema. Si la
+    // celda tiene su propio fondo, el color del archivo se respeta tal cual.
+    color: tema === "dark" && !e.fondo && e.color && colorMuyOscuro(e.color)
+      ? undefined
+      : e.color,
     backgroundColor: e.fondo,
-    fontSize: e.tamano ? `${e.tamano}px` : undefined,
+    // El tamaño del archivo está en PUNTOS: aplicarlo como píxeles hacía que
+    // un título de 16 pt se viera igual de chico que el texto normal.
+    fontSize: e.tamano ? `${ptAPx(e.tamano)}px` : undefined,
     textAlign: e.alineacion,
-    verticalAlign: e.alineacionVertical === "middle" ? "middle" : e.alineacionVertical,
+    verticalAlign: e.alineacionVertical ?? "bottom",
     whiteSpace: e.ajustarTexto ? "normal" : undefined,
     borderTopColor: e.bordes?.arriba ? "var(--rule-strong)" : undefined,
     borderBottomColor: e.bordes?.abajo ? "var(--rule-strong)" : undefined,
