@@ -1,8 +1,10 @@
 "use client";
+
+import { EmptyState } from "@/components/admin/EmptyState";
 import { SectionTitle } from "@buleje/design-system";
  
 import { useState, useEffect, useMemo } from "react";
-import { ShoppingCart, TrendingDown, Loader2, AlertTriangle, CheckCircle2 } from "@buleje/design-system/icons";
+import { ShoppingCart, TrendingDown, Loader2, AlertTriangle, CheckCircle2, ShoppingBasket } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /* ── Helpers ── */
@@ -176,9 +178,12 @@ export default function SupplierPriceComparator({ productName = "" }: Props) {
         </div>
       )}
       {!loading && !error && groups.length === 0 && (
-        <div className="text-center py-12 text-[var(--text-tertiary)] text-sm">
-          No hay datos de compras registrados.
-        </div>
+        <EmptyState
+          icon={<ShoppingBasket className="h-9 w-9" aria-hidden />}
+          title="Todavía no hay compras para comparar"
+          description="El comparador cruza lo que te cobró cada proveedor por el mismo producto. Necesita al menos una compra registrada para tener con qué comparar."
+          actions={[{ label: "Registrar una compra", variant: "primary", onClick: () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: "compras" } })) }]}
+        />
       )}
 
       {/* Grupos de productos */}

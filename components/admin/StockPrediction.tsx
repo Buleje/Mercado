@@ -1,5 +1,7 @@
 "use client";
 
+import { EmptyState } from "@/components/admin/EmptyState";
+
 import { SectionTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { TrendingDown, AlertTriangle, RefreshCw, Package, ShoppingCart } from "@buleje/design-system/icons";
@@ -132,11 +134,15 @@ export default function StockPrediction() {
 
       {/* Empty state */}
       {!loading && !error && items.length === 0 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-8 text-center">
-          <Package className="h-10 w-10 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">No hay datos suficientes para predecir el stock</p>
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Se necesitan ventas registradas en los últimos 30 días</p>
-        </div>
+        <EmptyState
+          icon={<Package className="h-9 w-9" aria-hidden />}
+          title="Todavía no se puede predecir tu stock"
+          description="La predicción aprende del ritmo de venta de cada producto: necesita ventas registradas en los últimos 30 días para estimar cuándo se te acaba."
+          actions={[
+            { label: "Ir a Ventas & Caja", variant: "primary", onClick: () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: "ventas-caja" } })) },
+            { label: "Ver inventario", variant: "secondary", onClick: () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId: "inventario" } })) },
+          ]}
+        />
       )}
 
       {/* Table */}

@@ -7,6 +7,7 @@ import { m } from "@/components/admin/providers";
 import { SectionTitle } from "@buleje/design-system";
 import {
   ChevronRight,
+  History,
   ChevronDown,
   Globe,
   Store,
@@ -149,9 +150,9 @@ export function AdminSidebar({
   onSidebarFlyoutChange,
   flyoutTimerRef,
   favoriteTabItems: _favoriteTabItems,
-  recentTabItems: _recentTabItems,
-  recentCollapsed: _recentCollapsed,
-  onToggleRecentCollapsed: _onToggleRecentCollapsed,
+  recentTabItems,
+  recentCollapsed,
+  onToggleRecentCollapsed,
   favoriteTabs: _favoriteTabs,
   onToggleFavorite: _onToggleFavorite,
   customShortcutItems: _customShortcutItems,
@@ -953,6 +954,47 @@ export function AdminSidebar({
           "flex-1 overflow-y-auto py-2 transition-all duration-[var(--dur-base)] scrollbar-hide",
           effectiveCompact ? "px-1.5" : "px-2.5"
         )}>
+          {/* ── Recientes ──
+              El historial ya se calculaba y llegaba hasta acá, pero se
+              descartaba: nada lo mostraba. Es el atajo más usado de un panel
+              con 58 módulos — volver a lo último que tocaste sin recorrer el
+              acordeón. Se pliega y el estado se recuerda. */}
+          {!effectiveCompact && !sidebarSearch && recentTabItems.length > 0 && (
+            <div className="mb-2">
+              <button
+                type="button"
+                onClick={onToggleRecentCollapsed}
+                aria-expanded={!recentCollapsed}
+                className={cn(
+                  "flex w-full items-center gap-1.5 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider transition-colors",
+                  isDarkTheme ? "text-white/45 hover:text-white/70" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]",
+                )}
+              >
+                <History className="h-3 w-3 shrink-0" aria-hidden />
+                Recientes
+                <ChevronDown className={cn("ml-auto h-3 w-3 shrink-0 transition-transform", recentCollapsed && "-rotate-90")} aria-hidden />
+              </button>
+              {!recentCollapsed && recentTabItems.slice(0, 4).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={`recent-${id}`}
+                  onClick={() => navigateTab(id)}
+                  onMouseEnter={() => preloadTab(id)}
+                  onFocus={() => preloadTab(id)}
+                  className={cn(
+                    "group relative mb-px flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[length:var(--ts-sm)] font-medium transition-all",
+                    tab === id
+                      ? "bg-gray-50 dark:bg-zinc-800/50 text-[var(--text-primary)] font-semibold"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]/40",
+                  )}
+                >
+                  {Icon && <Icon className="h-[18px] w-[18px] shrink-0 opacity-70 transition-transform duration-[var(--dur-base)] group-hover:scale-110" />}
+                  <span className="flex-1 truncate text-left">{label}</span>
+                </button>
+              ))}
+              <div className={cn("mx-3 mt-1.5 border-t", themeClasses.border)} />
+            </div>
+          )}
+
           {/* ── Main modules (expanded mode) ── */}
           {!effectiveCompact && navCategories.map((category, catIdx) => {
             // 1. Filtros previos (RBAC + hidden user + template)

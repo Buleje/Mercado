@@ -305,7 +305,12 @@ function AdminPage() {
         shared={{
           activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
           visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
-          recentCollapsed, onToggleRecentCollapsed: () => setRecentCollapsed(c => !c),
+          recentCollapsed,
+          onToggleRecentCollapsed: () => setRecentCollapsed((c) => {
+            const next = !c;
+            try { localStorage.setItem("admin-recientes-plegado", next ? "true" : "false"); } catch { /* modo privado: no persiste, no rompe */ }
+            return next;
+          }),
           favoriteTabs, onToggleFavorite: toggleFavorite,
           resolvedShortcuts, editingShortcuts,
           onToggleEditingShortcuts: () => setEditingShortcuts(!editingShortcuts),

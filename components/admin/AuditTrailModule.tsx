@@ -1,4 +1,6 @@
 "use client";
+
+import { EmptyState } from "@/components/admin/EmptyState";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Shield, Search, RefreshCw, ChevronLeft, ChevronRight, User, Clock, FileText, Globe,
@@ -72,6 +74,15 @@ export default function AuditTrailModule() {
   const [entityFilter, setEntityFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("");
   const [period, setPeriod] = useState<Period>("all");
+
+  /** Vuelve a la vista sin filtros: el vacío casi siempre es un filtro de más. */
+  const resetFiltros = useCallback(() => {
+    setSearch("");
+    setEntityFilter("");
+    setActionFilter("");
+    setPeriod("all");
+    setPage(0);
+  }, []);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -234,11 +245,12 @@ export default function AuditTrailModule() {
             <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-10 text-center">
-            <Shield className="mx-auto mb-3 h-9 w-9 text-[var(--text-tertiary)] opacity-40" aria-hidden />
-            <p className="text-base font-bold text-[var(--text-primary)]">No hay registros para estos filtros</p>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">Probá ampliar el período o quitar filtros.</p>
-          </div>
+          <EmptyState
+            icon={<Shield className="h-9 w-9" aria-hidden />}
+            title="No hay registros para estos filtros"
+            description="La auditoría guarda quién hizo qué y cuándo. Si esperabas ver algo acá, lo más probable es que el período o los filtros estén dejando fuera esos movimientos."
+            actions={[{ label: "Quitar todos los filtros", variant: "primary", onClick: () => resetFiltros() }]}
+          />
         ) : (
           <>
             {/* Desktop: tabla */}
