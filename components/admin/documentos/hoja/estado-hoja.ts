@@ -135,11 +135,18 @@ export function aplicar(hoja: HojaFormato, accion: Accion): { hoja: HojaFormato;
           for (const c of cambios) {
             const previa = copia[c.columna] ?? CELDA_VACIA;
             const esFormula = c.valor.trimStart().startsWith("=");
+            // Si la celda tiene un formato (moneda, %, decimales), el valor
+            // escrito se muestra CON él: al ordenar una columna de precios,
+            // los importes tienen que seguir viéndose "S/ 1,250.00" y no 1250.
+            const numero = Number(c.valor);
+            const texto = esFormula || c.valor.trim() === "" || !previa.numFmt || !Number.isFinite(numero)
+              ? c.valor
+              : formatearValor(numero, previa.numFmt);
             copia[c.columna] = {
               ...previa,
               crudo: c.valor,
               formula: esFormula ? c.valor.trimStart().slice(1) : undefined,
-              texto: c.valor,
+              texto,
             };
           }
           return copia;

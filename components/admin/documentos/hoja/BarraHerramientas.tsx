@@ -11,8 +11,8 @@
 
 import { useState } from "react";
 import {
-  AlignCenter, AlignLeft, AlignRight, Bold, Italic, Paintbrush, Palette, Percent,
-  Plus, Redo2, Search, Sigma, Trash2, Underline, Undo2,
+  AlignCenter, AlignLeft, AlignRight, ArrowDownAZ, ArrowUpAZ, Bold, Filter, Italic,
+  Paintbrush, Palette, Percent, Plus, Redo2, Search, Sigma, Trash2, Underline, Undo2,
 } from "@buleje/design-system/icons";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
 import { FORMATOS } from "@/lib/documentos/xlsx-estilos";
@@ -25,6 +25,8 @@ const COLORES = [
 
 export interface AccionesBarra {
   formato: (f: CambioFormato) => void;
+  ordenar: (direccion: "asc" | "desc") => void;
+  filtrar: () => void;
   insertar: (eje: "fila" | "columna") => void;
   eliminar: (eje: "fila" | "columna") => void;
   autosuma: () => void;
@@ -102,6 +104,18 @@ export default function BarraHerramientas({
       </button>
       <button type="button" className={BOTON} onClick={acciones.buscar} title="Buscar y reemplazar (Ctrl+F)">
         <Search className="h-4 w-4" aria-hidden /><span className="sr-only">Buscar</span>
+      </button>
+
+      <Separador />
+
+      <button type="button" className={BOTON} onClick={() => acciones.ordenar("asc")} title="Ordenar de menor a mayor por la columna seleccionada">
+        <ArrowDownAZ className="h-4 w-4" aria-hidden /><span className="sr-only">Ordenar ascendente</span>
+      </button>
+      <button type="button" className={BOTON} onClick={() => acciones.ordenar("desc")} title="Ordenar de mayor a menor por la columna seleccionada">
+        <ArrowUpAZ className="h-4 w-4" aria-hidden /><span className="sr-only">Ordenar descendente</span>
+      </button>
+      <button type="button" className={BOTON} onClick={acciones.filtrar} title="Filtrar por los valores de la columna seleccionada">
+        <Filter className="h-4 w-4" aria-hidden /><span className="sr-only">Filtrar</span>
       </button>
 
       <Separador />

@@ -207,6 +207,9 @@ export {
   Italic,
   Underline,
   Sigma,
+  // Ordenar y filtrar en la planilla
+  ArrowDownAZ,
+  ArrowUpAZ,
   Heart,
   HeartHandshake,
 

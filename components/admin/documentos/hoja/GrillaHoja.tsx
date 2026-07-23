@@ -17,7 +17,7 @@
  *    y al revés también, porque se usa el mismo formato TSV que usa Excel.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CeldaHoja, HojaFormato } from "@/lib/documentos/xlsx-formato";
 import { numeroALetra } from "@/lib/documentos/xlsx-formato";
 import {
@@ -36,6 +36,8 @@ const ANCHO_MINIMO = 28;
 export interface AccionesGrilla {
   editar: (celdas: { fila: number; columna: number; valor: string }[]) => void;
   ancho: (columna: number, anchoPx: number) => void;
+  /** Clic derecho sobre una celda: el editor decide qué menú mostrar. */
+  menu?: (x: number, y: number, fila: number, columna: number) => void;
 }
 
 export default function GrillaHoja({
@@ -59,6 +61,9 @@ export default function GrillaHoja({
   const arrastrando = useRef(false);
   /** Columna que se está redimensionando y desde qué x empezó. */
   const resize = useRef<{ columna: number; xInicial: number; anchoInicial: number } | null>(null);
+  /** Arrastre del cuadradito de la esquina (rellenar hacia abajo). */
+  const rellenando = useRef(false);
+  const [filaRelleno, setFilaRelleno] = useState<number | null>(null);
 
   const totalCols = hoja.filas[0]?.length ?? 0;
   const sel = useMemo(() => normalizar(rango), [rango]);
@@ -119,8 +124,23 @@ export default function GrillaHoja({
   const abrirEditor = useCallback((texto: string) => {
     setBorrador(texto);
     setEditando(true);
-    requestAnimationFrame(() => editorRef.current?.focus());
   }, []);
+
+  /**
+   * El foco se toma en `useLayoutEffect` —no en un `requestAnimationFrame`—
+   * porque corre apenas React pone el input en el DOM, antes de que el
+   * navegador pinte. Con el rAF pasaba un frame entero sin foco y las teclas
+   * de ese rato se perdían: escribir "SELVA" rápido dejaba "SVA".
+   */
+  useLayoutEffect(() => {
+    if (!editando) return;
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    // Cursor al final, para poder seguir escribiendo.
+    const fin = el.value.length;
+    el.setSelectionRange(fin, fin);
+  }, [editando]);
 
   /** Contenido crudo de una celda, con el `=` de las fórmulas. */
   const crudoDe = useCallback((f: number, c: number) => {
@@ -189,6 +209,24 @@ export default function GrillaHoja({
     };
   }, [acciones, crudoDe, editando, sel]);
 
+  // ── Rellenar hacia abajo ──────────────────────────────────────────────────
+  /**
+   * Copia la selección hacia las filas de abajo, como el cuadradito de Excel.
+   * Si el bloque copiado tiene varias filas, se repite en ciclo.
+   */
+  const aplicarRelleno = useCallback((hasta: number) => {
+    if (hasta <= sel.filaFin) return;
+    const altoBloque = sel.filaFin - sel.filaIni + 1;
+    const celdas: { fila: number; columna: number; valor: string }[] = [];
+    for (let f = sel.filaFin + 1; f <= hasta; f++) {
+      const origen = sel.filaIni + ((f - sel.filaIni) % altoBloque);
+      for (let c = sel.colIni; c <= sel.colFin; c++) {
+        celdas.push({ fila: f, columna: c, valor: crudoDe(origen, c) });
+      }
+    }
+    if (celdas.length > 0) acciones.editar(celdas);
+  }, [acciones, crudoDe, sel]);
+
   // ── Redimensionar columnas ────────────────────────────────────────────────
   useEffect(() => {
     const mover = (e: MouseEvent) => {
@@ -197,13 +235,21 @@ export default function GrillaHoja({
       acciones.ancho(r.columna, Math.max(ANCHO_MINIMO, r.anchoInicial + (e.clientX - r.xInicial)));
     };
     const soltar = () => { resize.current = null; };
+    const soltarRelleno = () => {
+      if (!rellenando.current) return;
+      rellenando.current = false;
+      if (filaRelleno !== null) aplicarRelleno(filaRelleno);
+      setFilaRelleno(null);
+    };
     window.addEventListener("mousemove", mover);
     window.addEventListener("mouseup", soltar);
+    window.addEventListener("mouseup", soltarRelleno);
     return () => {
       window.removeEventListener("mousemove", mover);
       window.removeEventListener("mouseup", soltar);
+      window.removeEventListener("mouseup", soltarRelleno);
     };
-  }, [acciones]);
+  }, [acciones, aplicarRelleno, filaRelleno]);
 
   const teclado = (e: React.KeyboardEvent) => {
     if (editando) return;
@@ -305,7 +351,18 @@ export default function GrillaHoja({
                   : { ancla: { fila: f, columna: c }, foco: { fila: f, columna: c } });
               }}
               onMouseEnter={() => {
+                if (rellenando.current) { setFilaRelleno(f); return; }
                 if (arrastrando.current) onRango({ ancla: rango.ancla, foco: { fila: f, columna: c } });
+              }}
+              onContextMenu={(e) => {
+                if (!acciones.menu) return;
+                e.preventDefault();
+                // Clic derecho fuera de la selección: se pasa a esa celda.
+                if (!dentro(sel, f, c)) {
+                  onSeleccion({ fila: f, columna: c });
+                  onRango({ ancla: { fila: f, columna: c }, foco: { fila: f, columna: c } });
+                }
+                acciones.menu(e.clientX, e.clientY, f, c);
               }}
               onDoubleClick={() => abrirEditor(crudoDe(f, c))}
               style={{ ...estiloTd(celda), ...pegado }}
@@ -317,6 +374,18 @@ export default function GrillaHoja({
               {/* La selección se pinta encima, así no tapa el color del archivo. */}
               {dentro(sel, f, c) && !activa && (
                 <span aria-hidden className="pointer-events-none absolute inset-0 bg-[var(--accent)]/15" />
+              )}
+              {/* Vista previa de hasta dónde llega el relleno. */}
+              {filaRelleno !== null && f > sel.filaFin && f <= filaRelleno && c >= sel.colIni && c <= sel.colFin && (
+                <span aria-hidden className="pointer-events-none absolute inset-0 border border-dashed border-[var(--accent)] bg-[var(--accent)]/8" />
+              )}
+              {/* Cuadradito de relleno, sobre la esquina de la selección. */}
+              {f === sel.filaFin && c === sel.colFin && (
+                <span
+                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); rellenando.current = true; }}
+                  title="Arrastrá para copiar hacia abajo"
+                  className="absolute -bottom-[3px] -right-[3px] z-30 h-2 w-2 cursor-crosshair rounded-[1px] bg-[var(--accent)]"
+                />
               )}
               {activa && editando ? (
                 <input

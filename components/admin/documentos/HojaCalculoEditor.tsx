@@ -25,9 +25,13 @@ import { formatoDe, generarCsv, parsearCsv } from "@/lib/documentos/hoja-calculo
 import { celdasDe, etiquetaRango, normalizar, type Punto, type Rango } from "@/lib/documentos/hoja-rango";
 import { esFormula, evaluarFormula } from "@/lib/documentos/hoja-formulas";
 import type { CambioFormato } from "@/lib/documentos/xlsx-estilos";
+import { filasOcultasPorFiltro, ordenDeFilas, resumir, type Direccion } from "@/lib/documentos/hoja-analisis";
 import GrillaHoja, { type Seleccion } from "./hoja/GrillaHoja";
 import BarraHerramientas from "./hoja/BarraHerramientas";
 import BuscarReemplazar from "./hoja/BuscarReemplazar";
+import BarraEstado from "./hoja/BarraEstado";
+import MenuContextual from "./hoja/MenuContextual";
+import FiltroColumna from "./hoja/FiltroColumna";
 import { useEditorHoja } from "./hoja/useEditorHoja";
 import type JSZipType from "jszip";
 
@@ -145,6 +149,10 @@ function EditorCargado({
   const [rango, setRango] = useState<Rango>({ ancla: { fila: 0, columna: 0 }, foco: { fila: 0, columna: 0 } });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Valores visibles por columna. Es sólo de pantalla: no toca el archivo. */
+  const [filtros, setFiltros] = useState<Map<number, Set<string>>>(new Map());
+  const [filtrando, setFiltrando] = useState<number | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number; fila: number; columna: number } | null>(null);
 
   const hoja = hojas[activa];
   const sel = useMemo(() => normalizar(rango), [rango]);
@@ -177,6 +185,31 @@ function EditorCargado({
       })),
     };
   }, [hoja]);
+
+  /**
+   * La hoja que se dibuja: la calculada, con las filas que el filtro esconde.
+   * El filtro no se guarda en el archivo — es una lente para mirar.
+   */
+  const hojaVisible = useMemo(() => {
+    if (!hojaCalculada) return hojaCalculada;
+    if (filtros.size === 0) return hojaCalculada;
+    const porFiltro = filasOcultasPorFiltro(hojaCalculada.filas, filtros, filaDatos(hojaCalculada));
+    return {
+      ...hojaCalculada,
+      // Se respeta lo que ya venía oculto en el archivo.
+      filasOcultas: hojaCalculada.filasOcultas.map((o, i) => o || porFiltro[i]),
+    };
+  }, [hojaCalculada, filtros]);
+
+  const ocultasPorFiltro = useMemo(() => {
+    if (!hojaCalculada || filtros.size === 0) return 0;
+    return filasOcultasPorFiltro(hojaCalculada.filas, filtros, filaDatos(hojaCalculada)).filter(Boolean).length;
+  }, [hojaCalculada, filtros]);
+
+  const resumen = useMemo(
+    () => (hojaVisible ? resumir(hojaVisible.filas, sel) : null),
+    [hojaVisible, sel],
+  );
 
   // ── Guardar ───────────────────────────────────────────────────────────────
   const guardar = useCallback(async () => {
@@ -252,6 +285,10 @@ function EditorCargado({
   }, [sucio]);
 
   // ── Acciones de la barra ──────────────────────────────────────────────────
+  // `ordenar` se define más abajo (necesita la hoja calculada); la barra lo
+  // alcanza por referencia para no tener que reordenar las definiciones.
+  const ordenarRef = useRef<(columna: number, direccion: Direccion) => void>(() => {});
+
   const acciones = useMemo(() => ({
     formato: (f: CambioFormato) => ejecutar({ tipo: "formato", celdas: celdasDe(sel), formato: f }),
     insertar: (eje: "fila" | "columna") =>
@@ -273,15 +310,66 @@ function EditorCargado({
     },
     deshacer, rehacer,
     buscar: () => setBuscando(true),
+    ordenar: (d: Direccion) => ordenarRef.current(sel.colIni, d),
+    filtrar: () => setFiltrando(sel.colIni),
   }), [deshacer, ejecutar, rehacer, sel, setBuscando]);
+
+  /**
+   * Ordenar el rango seleccionado por una columna.
+   *
+   * Se reescriben los VALORES en el orden nuevo, en vez de mover las filas del
+   * archivo: así entra en el historial como cualquier otra edición (Ctrl+Z lo
+   * revierte) y no hay que remapear referencias.
+   *
+   * Si sólo hay una celda seleccionada se ordena la tabla entera de esa
+   * columna hacia abajo, que es lo que uno espera al pedir "ordenar por acá".
+   */
+  const ordenar = useCallback((columna: number, direccion: Direccion) => {
+    if (!hojaCalculada) return;
+    const unaSola = sel.filaIni === sel.filaFin && sel.colIni === sel.colFin;
+    const rangoOrden = unaSola
+      ? { filaIni: filaDatos(hojaCalculada), filaFin: hojaCalculada.filas.length - 1, colIni: 0, colFin: (hojaCalculada.filas[0]?.length ?? 1) - 1 }
+      : sel;
+
+    const orden = ordenDeFilas(hojaCalculada.filas, rangoOrden, columna, direccion);
+    const celdas: { fila: number; columna: number; valor: string }[] = [];
+    orden.forEach((origen, i) => {
+      const destino = rangoOrden.filaIni + i;
+      if (destino === origen) return; // esa fila ya estaba en su lugar
+      for (let c = rangoOrden.colIni; c <= rangoOrden.colFin; c++) {
+        const celda = hojaCalculada.filas[origen]?.[c];
+        celdas.push({
+          fila: destino, columna: c,
+          valor: celda?.formula ? `=${celda.formula}` : (celda?.crudo ?? ""),
+        });
+      }
+    });
+    if (celdas.length > 0) ejecutar({ tipo: "valores", celdas });
+  }, [ejecutar, hojaCalculada, sel]);
+  ordenarRef.current = ordenar;
 
   const accionesGrilla = useMemo(() => ({
     editar: (celdas: { fila: number; columna: number; valor: string }[]) =>
       ejecutar({ tipo: "valores", celdas }),
     ancho: (columna: number, anchoPx: number) => ejecutar({ tipo: "ancho", columna, anchoPx }),
+    menu: (x: number, y: number, fila: number, columna: number) => setMenu({ x, y, fila, columna }),
   }), [ejecutar]);
 
-  if (!hoja || !hojaCalculada) return null;
+  /** Las del clic derecho: las mismas de siempre, pero sobre la celda apuntada. */
+  const opcionesMenu = useMemo(() => ({
+    copiar: () => document.execCommand("copy"),
+    cortar: () => document.execCommand("cut"),
+    pegar: () => document.execCommand("paste"),
+    insertarFila: () => acciones.insertar("fila"),
+    insertarColumna: () => acciones.insertar("columna"),
+    eliminarFila: () => acciones.eliminar("fila"),
+    eliminarColumna: () => acciones.eliminar("columna"),
+    ordenar: (d: Direccion) => ordenar(menu?.columna ?? sel.colIni, d),
+    filtrar: () => setFiltrando(menu?.columna ?? sel.colIni),
+    limpiar: () => ejecutar({ tipo: "valores", celdas: celdasDe(sel).map((p) => ({ ...p, valor: "" })) }),
+  }), [acciones, ejecutar, menu, ordenar, sel]);
+
+  if (!hoja || !hojaCalculada || !hojaVisible || !resumen) return null;
 
   const celda = hoja.filas[seleccion.fila]?.[seleccion.columna];
   const visibles = hojas.filter((h) => !h.oculta);
@@ -368,7 +456,7 @@ function EditorCargado({
 
       <GrillaHoja
         key={activa}
-        hoja={hojaCalculada}
+        hoja={hojaVisible}
         seleccion={seleccion}
         rango={rango}
         onSeleccion={setSeleccion}
@@ -376,8 +464,65 @@ function EditorCargado({
         acciones={accionesGrilla}
         resaltado={resaltado}
       />
+
+      <BarraEstado
+        resumen={resumen}
+        etiqueta={etiquetaRango(sel)}
+        filtradas={ocultasPorFiltro}
+        hojas={visibles.length}
+        hojaActual={hoja.nombre}
+      />
+
+      {menu && (
+        <MenuContextual
+          x={menu.x}
+          y={menu.y}
+          columna={numeroALetra(menu.columna + 1)}
+          opciones={opcionesMenu}
+          onCerrar={() => setMenu(null)}
+        />
+      )}
+
+      {filtrando !== null && (
+        <FiltroColumna
+          filas={hojaCalculada.filas}
+          columna={filtrando}
+          etiqueta={numeroALetra(filtrando + 1)}
+          desdeFila={filaDatos(hojaCalculada)}
+          seleccionados={filtros.get(filtrando) ?? null}
+          onAplicar={(valores) => {
+            setFiltros((prev) => {
+              const copia = new Map(prev);
+              if (valores === null) copia.delete(filtrando);
+              else copia.set(filtrando, valores);
+              return copia;
+            });
+          }}
+          onCerrar={() => setFiltrando(null)}
+        />
+      )}
     </div>
   );
+}
+
+/**
+ * Desde qué fila arrancan los datos.
+ *
+ * Se supone una fila de encabezado cuando la primera fila con contenido tiene
+ * puro texto y la de abajo trae números: es el patrón de cualquier catálogo, y
+ * evita que ordenar o filtrar se lleve puesto el encabezado.
+ */
+function filaDatos(hoja: HojaFormato): number {
+  for (let f = 0; f < Math.min(hoja.filas.length - 1, 10); f++) {
+    const fila = hoja.filas[f];
+    const siguiente = hoja.filas[f + 1];
+    if (!fila || !siguiente) continue;
+    const textoArriba = fila.some((c) => (c.texto ?? "").trim() !== "") &&
+      fila.every((c) => (c.texto ?? "").trim() === "" || Number.isNaN(Number(c.crudo)));
+    const numerosAbajo = siguiente.some((c) => (c.crudo ?? "").trim() !== "" && !Number.isNaN(Number(c.crudo)));
+    if (textoArriba && numerosAbajo) return f + 1;
+  }
+  return 1;
 }
 
 /** Un .csv no tiene formato: se muestra como una hoja simple. */
