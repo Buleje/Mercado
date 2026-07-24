@@ -140,6 +140,33 @@ describe("comandos de voz", () => {
   });
 });
 
+describe("comandos de resumen y total por voz", () => {
+  it("cambia la dimensión del resumen con gatillo + dimensión", () => {
+    expect(detectarComando("muéstrame por especie")).toEqual({ tipo: "resumen", dimension: "especie" });
+    expect(detectarComando("resumen por largo")).toEqual({ tipo: "resumen", dimension: "largo" });
+    expect(detectarComando("agrupa por sección")).toEqual({ tipo: "resumen", dimension: "seccion" });
+    expect(detectarComando("agrupame por espesor")).toEqual({ tipo: "resumen", dimension: "espesor" });
+  });
+  it("'muéstrame por especie' gana sobre el comando de especie", () => {
+    // sin el gatillo de resumen, "especie X" fija la especie
+    expect(detectarComando("especie tornillo")?.tipo).toBe("especie");
+    // con gatillo, es resumen (no intenta fijar especie)
+    expect(detectarComando("muéstrame por especie")?.tipo).toBe("resumen");
+  });
+  it("gatillo de resumen sin dimensión abre el resumen tal cual", () => {
+    expect(detectarComando("resumen")).toEqual({ tipo: "resumen", dimension: "" });
+  });
+  it("dice el total con las frases de total", () => {
+    expect(detectarComando("cuánto llevo")?.tipo).toBe("total");
+    expect(detectarComando("lee el total")?.tipo).toBe("total");
+    expect(detectarComando("dame el total")?.tipo).toBe("total");
+  });
+  it("un dictado de medidas no dispara resumen ni total", () => {
+    expect(detectarComando("2 8 10")).toBeNull();
+    expect(detectarComando("dos por ocho por diez")).toBeNull();
+  });
+});
+
 describe("bugs de campo del dictado (regresión)", () => {
   it('dictar "dos PARA ocho" ya no pausa — el reconocedor confunde el "por"', () => {
     expect(detectarComando("dos para ocho por diez")).toBeNull();

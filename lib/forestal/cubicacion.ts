@@ -373,6 +373,11 @@ export type Comando =
   | { tipo: "fijar"; dimension: Dimension; valor: number }
   /** "quita el fijo" (todo) o "desfijá el largo" (una sola). */
   | { tipo: "desfijar"; dimension?: Dimension }
+  /** "muéstrame por especie" → cambia el agrupado del resumen (dim como string;
+   * el componente la valida contra DIMENSIONES_RESUMEN). */
+  | { tipo: "resumen"; dimension: string }
+  /** "cuánto llevo" / "lee el total" → dice el total en voz. */
+  | { tipo: "total" }
   | null;
 
 /** Frases-gatillo por comando (editables desde Ajustes). especie = prefijos. */
@@ -383,6 +388,9 @@ export interface ComandosCfg {
   especie: string[];
   fijar: string[];
   desfijar: string[];
+  /** Opcionales: la config vieja guardada no los trae → fallback al default. */
+  resumen?: string[];
+  total?: string[];
 }
 export const COMANDOS_DEFAULT: ComandosCfg = {
   pausar: ["pausa", "pausar", "para", "pare", "deten", "alto"],
@@ -391,7 +399,30 @@ export const COMANDOS_DEFAULT: ComandosCfg = {
   especie: ["especie", "madera"],
   fijar: ["fijo", "fija", "fijar", "fijalo", "deja fijo"],
   desfijar: ["quita el fijo", "quitar fijo", "saca el fijo", "desfija", "desfijar", "libera", "liberar", "sin fijo", "todo libre"],
+  resumen: ["resumen", "muestra", "muestrame", "agrupa", "agrupame", "agrupalo", "agrupar"],
+  total: ["cuanto llevo", "cuanto va", "cuanto tengo", "lee el total", "leer el total", "dame el total", "dime el total", "el total"],
 };
+
+/** Sinónimos de cada dimensión del RESUMEN (agrupado hablado del lote). */
+const PALABRAS_RESUMEN: Record<string, string[]> = {
+  especie: ["especie", "especies"],
+  seccion: ["seccion", "secciones", "escuadria"],
+  medida: ["medida completa", "medidas"],
+  espesor: ["espesor", "grueso", "grosor"],
+  ancho: ["ancho", "anchos", "anchura"],
+  largo: ["largo", "largos", "longitud"],
+};
+/** Qué dimensión de resumen nombra la frase (la primera por posición). */
+function dimensionResumenEn(s: string): string | undefined {
+  let mejor: { dim: string; pos: number } | undefined;
+  for (const dim of Object.keys(PALABRAS_RESUMEN)) {
+    for (const w of PALABRAS_RESUMEN[dim]) {
+      const pos = s.indexOf(` ${w}`);
+      if (pos >= 0 && (!mejor || pos < mejor.pos)) mejor = { dim, pos };
+    }
+  }
+  return mejor?.dim;
+}
 
 /** Sinónimos de cada dimensión, como los dice un maderero. */
 const PALABRAS_DIMENSION: Record<Dimension, string[]> = {
@@ -453,6 +484,13 @@ export function detectarComando(input: string, cfg: ComandosCfg = COMANDOS_DEFAU
   if (numeros.length >= 2) return null;
   const hit = (list: string[]) =>
     list.some((w) => { const t = stripAccents(w.toLowerCase()).trim(); return !!t && new RegExp(`(^|\\s)${escRe(t)}(\\s|$)`).test(s); });
+  // RESUMEN hablado (antes de especie: "muéstrame por especie" trae el gatillo
+  // de especie). Con gatillo pero sin dimensión → abre el resumen tal cual está.
+  if (hit(cfg.resumen ?? COMANDOS_DEFAULT.resumen!)) {
+    return { tipo: "resumen", dimension: dimensionResumenEn(s) ?? "" };
+  }
+  // TOTAL hablado ("cuánto llevo", "lee el total").
+  if (hit(cfg.total ?? COMANDOS_DEFAULT.total!)) return { tipo: "total" };
   // Borrar primero (más específico), luego especie, luego pausar/continuar.
   if (hit(cfg.borrarUltimo)) return { tipo: "borrar-ultimo" };
   for (const pre of cfg.especie) {

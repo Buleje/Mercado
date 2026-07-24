@@ -306,6 +306,21 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           if (found) { setEspecie(found); hablar(found); }
           else setErrMsg(`No reconocí la especie "${cmd.palabra}".`);
         }
+        else if (cmd.tipo === "resumen") {
+          setShowResumen(true);
+          const dim = cmd.dimension as DimensionResumen;
+          if ((DIMENSIONES_RESUMEN as readonly string[]).includes(dim)) {
+            setDimResumen(dim);
+            hablar(`resumen ${ETIQUETA_DIMENSION[dim].replace("Por ", "")}`);
+          } else {
+            hablar("resumen");
+          }
+        }
+        else if (cmd.tipo === "total") {
+          const t = totalVozRef.current;
+          const base = `${t.piezas} piezas, ${Math.round(t.pt)} pie tablar`;
+          hablar(t.conValor ? `${base}, ${Math.round(t.valor)} soles` : base);
+        }
         return;
       }
 
@@ -585,6 +600,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const conValor = precio > 0 || hayPreciosEspecie;
   const valorLote = useMemo(() => rows.reduce((a, r) => a + r.pieTablar * precioDe(r), 0), [rows, precioDe]);
   const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // Espejo del total para el comando de voz "cuánto llevo" (el handler del
+  // reconocedor vive en un closure; lee el ref para no quedar con datos viejos).
+  const totalVozRef = useRef({ piezas: 0, pt: 0, valor: 0, conValor: false });
+  useEffect(() => { totalVozRef.current = { piezas: totales.piezas, pt: totales.pt, valor: valorLote, conValor }; }, [totales, valorLote, conValor]);
 
   // Resumen agrupado por la dimensión elegida (especie/largo/sección/…), con el
   // valor resuelto por especie cuando corresponde.
