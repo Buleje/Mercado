@@ -12,6 +12,7 @@ import type {
   DocumentListFilters,
 } from "@/lib/types/documents";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { comprimirImagen } from "@/lib/documents/compress-image";
 
 const BASE = "/api/admin/documents";
 
@@ -113,23 +114,36 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
 
   const upload = useCallback(
     async (files: File[], opts?: { folderId?: string | null; onProgress?: (done: number, total: number) => void }) => {
+      // Las fotos grandes se comprimen ANTES de subir (varias veces más
+      // rápido con datos móviles); lo que no es imagen sale intacto.
+      const listos = await Promise.all(files.map((f) => comprimirImagen(f)));
+
+      // Pool de 3 subidas en paralelo: subir de a una hacía esperar N viajes
+      // completos; más de 3 satura conexiones lentas sin ganar tiempo.
       const out: DbDocument[] = [];
-      let i = 0;
-      for (const f of files) {
-        const fd = new FormData();
-        fd.append("file", f);
-        if (opts?.folderId !== undefined && opts.folderId !== null) {
-          fd.append("folderId", opts.folderId);
+      let hechos = 0;
+      let siguiente = 0;
+      const subirUno = async () => {
+        for (;;) {
+          const idx = siguiente++;
+          if (idx >= listos.length) return;
+          const f = listos[idx];
+          const fd = new FormData();
+          fd.append("file", f);
+          if (opts?.folderId !== undefined && opts.folderId !== null) {
+            fd.append("folderId", opts.folderId);
+          }
+          try {
+            const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd });
+            out.push(r.document);
+          } catch (e) {
+            console.error("upload_fail", f.name, e);
+          }
+          hechos++;
+          opts?.onProgress?.(hechos, listos.length);
         }
-        try {
-          const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd });
-          out.push(r.document);
-        } catch (e) {
-          console.error("upload_fail", f.name, e);
-        }
-        i++;
-        opts?.onProgress?.(i, files.length);
-      }
+      };
+      await Promise.all(Array.from({ length: Math.min(3, listos.length) }, subirUno));
       await fetchAll();
       return out;
     },

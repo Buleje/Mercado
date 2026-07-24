@@ -7,7 +7,7 @@ import {
   X, Download, History, Shield, Share2, FileText, Eye, Upload, Lock, Clipboard, Check, Table,
   Pencil as PencilLine, Sparkles, Clock as AlarmClock, Link2, Users, Truck, ExternalLink,
   ChevronLeft, ChevronRight, GitCompareArrows as GitCompare,
-  FileSpreadsheet, Plus, Link as LinkChain, Save,
+  FileSpreadsheet, Plus, Link as LinkChain, Save, Folder as FolderIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
@@ -15,8 +15,9 @@ import {
   uploadVersion, signDocument, patchDocument, relateDoc, docApproval,
 } from "@/hooks/use-documents";
 import { DOC_RESTRICTABLE_ROLES } from "@/lib/documents/doc-access";
+import { buildChildrenMap, flattenAll, folderPath } from "@/lib/documentos/folder-tree";
 import type {
-  DbDocument, DbDocumentVersion, DbDocumentAuditLog, DbDocumentShare,
+  DbDocument, DbDocumentFolder, DbDocumentVersion, DbDocumentAuditLog, DbDocumentShare,
 } from "@/lib/types/documents";
 
 type Tab = "preview" | "details" | "versions" | "audit" | "share" | "sign";
@@ -27,6 +28,8 @@ interface Props {
   onRefresh?: () => void;
   /** Lista completa (para resolver/elegir documentos relacionados). */
   allDocs?: DbDocument[];
+  /** Carpetas del drive (para mostrar la ubicación y mover desde Detalles). */
+  folders?: DbDocumentFolder[];
   /** Navegación entre documentos de la lista (undefined en los extremos). */
   onPrev?: () => void;
   onNext?: () => void;
@@ -50,7 +53,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 }
 
-export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, onPrev, onNext, position }: Props) {
+export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folders, onPrev, onNext, position }: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [doc, setDoc] = useState<DbDocument | null>(null);
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -231,7 +234,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, onPre
           )}
 
           {tab === "details" && (
-            <DetailsTab doc={doc} allDocs={allDocs ?? []} onPatched={(d) => { setDoc(d); onRefresh?.(); }} />
+            <DetailsTab doc={doc} allDocs={allDocs ?? []} folders={folders ?? []} onPatched={(d) => { setDoc(d); onRefresh?.(); }} />
           )}
 
           {tab === "versions" && (
@@ -682,7 +685,7 @@ function PermissionsSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d
   );
 }
 
-function DetailsTab({ doc, allDocs, onPatched }: { doc: DbDocument; allDocs: DbDocument[]; onPatched: (d: DbDocument) => void }) {
+function DetailsTab({ doc, allDocs, folders, onPatched }: { doc: DbDocument; allDocs: DbDocument[]; folders: DbDocumentFolder[]; onPatched: (d: DbDocument) => void }) {
   const [saving, setSaving] = useState<string | null>(null);
   const [customers, setCustomers] = useState<EntityOpt[]>([]);
   const [suppliers, setSuppliers] = useState<EntityOpt[]>([]);
@@ -725,8 +728,40 @@ function DetailsTab({ doc, allDocs, onPatched }: { doc: DbDocument; allDocs: DbD
     ? Math.ceil((new Date(doc.expiresAt).getTime() - Date.now()) / 86_400_000)
     : null;
 
+  const folderById = new Map(folders.map((f) => [f.id, f]));
+  const rutaCarpeta = doc.folderId ? folderPath(folderById, doc.folderId).map((f) => f.name).join(" › ") : null;
+  const arbolCarpetas = flattenAll(buildChildrenMap(folders));
+
   return (
     <div className="p-5 space-y-4 max-w-2xl mx-auto">
+      {/* Carpeta — dónde vive el documento, y mover sin salir del detalle */}
+      <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4">
+        <p className="text-sm font-bold text-[var(--text-primary)] mb-2 inline-flex items-center gap-1.5">
+          <FolderIcon className="h-4 w-4 text-[var(--accent)]" /> Carpeta
+        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {rutaCarpeta ? (
+            <span className="text-sm font-bold text-[var(--text-primary)]">{rutaCarpeta}</span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--rule-strong)] px-2 py-0.5 text-xs font-bold text-[var(--text-tertiary)]">
+              Sin carpeta (raíz)
+            </span>
+          )}
+          <select
+            value={doc.folderId ?? ""}
+            onChange={(e) => save("folder", { folderId: e.target.value || null })}
+            disabled={saving === "folder"}
+            aria-label="Mover a otra carpeta"
+            className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
+          >
+            <option value="">Sin carpeta (raíz)</option>
+            {arbolCarpetas.map(({ folder, depth }) => (
+              <option key={folder.id} value={folder.id}>{`${"  ".repeat(depth)}${depth > 0 ? "└ " : ""}${folder.name}`}</option>
+            ))}
+          </select>
+        </div>
+      </section>
+
       {/* Descripción rica generada por IA (buscable) */}
       <DescriptionSection doc={doc} />
 

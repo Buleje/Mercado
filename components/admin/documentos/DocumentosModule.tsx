@@ -33,6 +33,7 @@ import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { buildChildrenMap, flattenVisible, flattenAll, folderPath, descendantIds } from "@/lib/documentos/folder-tree";
+import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
@@ -334,20 +335,20 @@ export default function DocumentosModule() {
     return m;
   }, [documents]);
 
-  // Docs analizables (PDF/texto) que todavía no fueron indexados por la IA.
+  // Docs analizables (PDF/texto/Word/Excel — single-source en analyzable-mime)
+  // que todavía no fueron indexados por la IA.
   const indexableDocs = useMemo(
     () =>
       documents.filter((d) => {
-        const analyzable = d.mimeType === "application/pdf" || d.mimeType.startsWith("text/");
         const indexed = !!(d.ocrMetadata && (d.ocrMetadata as Record<string, unknown>).analyzedAt);
-        return analyzable && !indexed;
+        return isAnalyzableMime(d.mimeType) && !indexed;
       }),
     [documents]
   );
-  // Todos los documentos analizables (PDF/texto), estén o no ya indexados. Sirve
-  // para RE-indexar (que los viejos ganen la descripción rica nueva).
+  // Todos los documentos analizables, estén o no ya indexados. Sirve para
+  // RE-indexar (que los viejos ganen la descripción rica nueva).
   const reindexableDocs = useMemo(
-    () => documents.filter((d) => d.mimeType === "application/pdf" || d.mimeType.startsWith("text/")),
+    () => documents.filter((d) => isAnalyzableMime(d.mimeType)),
     [documents]
   );
   const runIndex = useCallback(
@@ -1392,6 +1393,8 @@ export default function DocumentosModule() {
                   isRenaming={renaming?.id === doc.id}
                   renameValue={renaming?.id === doc.id ? renaming.value : doc.name}
                   searchTerm={searchDebounced}
+                  folderNombre={filterMode === "folder" ? undefined : (doc.folderId ? folderById.get(doc.folderId)?.name ?? null : null)}
+                  onOpenFolder={() => { if (doc.folderId) { setFilterMode("folder"); setActiveFolderId(doc.folderId); } }}
                   onSelect={() => toggleSelect(doc.id)}
                   onPreview={() => setPreview(doc)}
                   onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
@@ -1479,7 +1482,15 @@ export default function DocumentosModule() {
                         <td className="px-4 py-3 hidden sm:table-cell">
                           <div className="flex flex-col items-start gap-1">
                             <span className="text-xs text-[var(--text-secondary)] capitalize">{doc.category}</span>
-                            <StatusControl status={doc.status} onChange={(s) => patch(doc.id, { status: s })} />
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <StatusControl status={doc.status} onChange={(s) => patch(doc.id, { status: s })} />
+                              {filterMode !== "folder" && (
+                                <FolderChip
+                                  nombre={doc.folderId ? folderById.get(doc.folderId)?.name ?? null : null}
+                                  onClick={() => { if (doc.folderId) { setFilterMode("folder"); setActiveFolderId(doc.folderId); } }}
+                                />
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right hidden md:table-cell tabular-nums text-xs text-[var(--text-secondary)]">{formatBytes(doc.size)}</td>
@@ -1522,6 +1533,7 @@ export default function DocumentosModule() {
           <DocumentPreviewModal
             docId={preview.id}
             allDocs={documents}
+            folders={folders}
             onClose={() => setPreview(null)}
             onRefresh={refresh}
             onPrev={idx > 0 ? () => setPreview(displayDocs[idx - 1]) : undefined}
@@ -1650,6 +1662,31 @@ function StorageRing({ usedBytes, quotaBytes }: { usedBytes: number; quotaBytes:
 }
 
 /** ADR-119 — badge de vencimiento con semáforo (rojo/ámbar/verde). */
+/**
+ * Chip de UBICACIÓN del documento en las vistas generales: con carpeta muestra
+ * el nombre (clic = abrirla); sin carpeta, un chip punteado que lo delata —
+ * lo suelto se ve de un vistazo y se arrastra a su lugar.
+ */
+function FolderChip({ nombre, onClick }: { nombre: string | null; onClick?: () => void }) {
+  if (nombre === null) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--rule-strong)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]" title="Este documento no está en ninguna carpeta">
+        <Folder className="h-3 w-3 shrink-0" /> Sin carpeta
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      title={`Abrir la carpeta "${nombre}"`}
+      className="inline-flex max-w-[140px] items-center gap-1 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-secondary)] transition hover:text-primary"
+    >
+      <Folder className="h-3 w-3 shrink-0" /> <span className="truncate">{nombre}</span>
+    </button>
+  );
+}
+
 function ExpiryBadge({ expiresAt, className }: { expiresAt: string | null; className?: string }) {
   const n = daysUntil(expiresAt);
   if (n === null) return null;
@@ -1754,7 +1791,7 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
 }
 
 function DocCard({
-  doc, selected, isRenaming, renameValue, searchTerm,
+  doc, selected, isRenaming, renameValue, searchTerm, folderNombre, onOpenFolder,
   onSelect, onPreview, onToggleFav, onRemove, onWhatsApp, onSetStatus,
   onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
   onDragStart, onDragEnd, dragging,
@@ -1764,6 +1801,9 @@ function DocCard({
   isRenaming: boolean;
   renameValue: string;
   searchTerm: string;
+  /** Nombre de la carpeta, null = sin carpeta, undefined = no mostrar el chip. */
+  folderNombre?: string | null;
+  onOpenFolder?: () => void;
   onSelect: () => void;
   onPreview: () => void;
   onToggleFav: () => void;
@@ -1860,6 +1900,7 @@ function DocCard({
           <MatchSnippet text={doc.ocrText} term={searchTerm} />
         )}
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {folderNombre !== undefined && <FolderChip nombre={folderNombre} onClick={onOpenFolder} />}
           <StatusControl status={doc.status} onChange={onSetStatus} />
           <ExpiryBadge expiresAt={doc.expiresAt} />
           <StructuredChip doc={doc} />
