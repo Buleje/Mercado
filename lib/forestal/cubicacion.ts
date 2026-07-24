@@ -302,11 +302,22 @@ export function mejoresNumeros(alternativas: string[]): number[] {
 
 // ─── Comandos de voz ────────────────────────────────────────────────────────
 
+/** Las tres dimensiones de una pieza, en el orden en que se dictan. */
+export const DIMENSIONES = ["espesor", "ancho", "largo"] as const;
+export type Dimension = (typeof DIMENSIONES)[number];
+
+/** Medidas que quedan FIJAS: lo fijo no se dicta, se repite en cada pieza. */
+export type MedidasFijas = Partial<Record<Dimension, number>>;
+
 export type Comando =
   | { tipo: "pausar" }
   | { tipo: "continuar" }
   | { tipo: "borrar-ultimo" }
   | { tipo: "especie"; palabra: string }
+  /** "pon fijo el largo a cuatro" → el largo deja de dictarse. */
+  | { tipo: "fijar"; dimension: Dimension; valor: number }
+  /** "quita el fijo" (todo) o "desfijá el largo" (una sola). */
+  | { tipo: "desfijar"; dimension?: Dimension }
   | null;
 
 /** Frases-gatillo por comando (editables desde Ajustes). especie = prefijos. */
@@ -315,13 +326,36 @@ export interface ComandosCfg {
   continuar: string[];
   borrarUltimo: string[];
   especie: string[];
+  fijar: string[];
+  desfijar: string[];
 }
 export const COMANDOS_DEFAULT: ComandosCfg = {
   pausar: ["pausa", "pausar", "para", "pare", "deten", "alto"],
   continuar: ["continua", "continuar", "reanuda", "sigue", "seguir", "dale", "adelante"],
   borrarUltimo: ["elimina el ultimo", "borra el ultimo", "quita el ultimo", "ultimo", "deshacer", "deshace", "borra eso"],
   especie: ["especie", "madera"],
+  fijar: ["fijo", "fija", "fijar", "fijalo", "deja fijo"],
+  desfijar: ["quita el fijo", "quitar fijo", "saca el fijo", "desfija", "desfijar", "libera", "liberar", "sin fijo", "todo libre"],
 };
+
+/** Sinónimos de cada dimensión, como los dice un maderero. */
+const PALABRAS_DIMENSION: Record<Dimension, string[]> = {
+  espesor: ["espesor", "grueso", "grosor"],
+  ancho: ["ancho", "anchura"],
+  largo: ["largo", "longitud", "long", "medida"],
+};
+
+/** Qué dimensión nombra la frase (la primera que aparezca). */
+function dimensionEn(s: string): Dimension | undefined {
+  let mejor: { dim: Dimension; pos: number } | undefined;
+  for (const dim of DIMENSIONES) {
+    for (const w of PALABRAS_DIMENSION[dim]) {
+      const pos = s.indexOf(` ${w}`);
+      if (pos >= 0 && (!mejor || pos < mejor.pos)) mejor = { dim, pos };
+    }
+  }
+  return mejor?.dim;
+}
 
 const escRe = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -337,9 +371,31 @@ const escRe = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * comandos de verdad se dicen solos ("pausa", "continuá", "borrá el último").
  */
 export function detectarComando(input: string, cfg: ComandosCfg = COMANDOS_DEFAULT): Comando {
+  // `normalizeText` deja las palabras-número como dígitos: "pon fijo el largo
+  // a cuatro" → "… largo a 4". Se usa para leer el valor a fijar.
+  const conNumeros = " " + normalizeText(input) + " ";
   const s = " " + stripAccents(input.toLowerCase()) + " ";
-  const cuantosNumeros = (normalizeText(input).match(/\d+(?:\.\d+)?/g) ?? []).length;
-  if (cuantosNumeros >= 2) return null;
+  const numeros = (conNumeros.match(/\d+(?:\.\d+)?/g) ?? []).map(Number);
+
+  const hitEn = (texto: string, list: string[]) =>
+    list.some((w) => {
+      const t = stripAccents(w.toLowerCase()).trim();
+      return !!t && new RegExp(`(^|\\s)${escRe(t)}(\\s|$)`).test(texto);
+    });
+
+  // ── FIJAR / DESFIJAR ── (antes del guard de números: llevan uno propio)
+  // Desfijar primero: "quita el fijo" contiene "fijo", que es gatillo de fijar.
+  if (hitEn(conNumeros, cfg.desfijar)) {
+    return { tipo: "desfijar", dimension: dimensionEn(conNumeros) };
+  }
+  if (hitEn(conNumeros, cfg.fijar) && numeros.length === 1) {
+    const dimension = dimensionEn(conNumeros);
+    const valor = numeros[0];
+    if (dimension && valor > 0) return { tipo: "fijar", dimension, valor };
+  }
+
+  // Una frase con dos o más números es un dictado de medidas, no un comando.
+  if (numeros.length >= 2) return null;
   const hit = (list: string[]) =>
     list.some((w) => { const t = stripAccents(w.toLowerCase()).trim(); return !!t && new RegExp(`(^|\\s)${escRe(t)}(\\s|$)`).test(s); });
   // Borrar primero (más específico), luego especie, luego pausar/continuar.
@@ -396,11 +452,45 @@ export function leerDictado(input: string): { cantidad: number; nums: number[] }
  * arrastrarlos a la siguiente frase). Ej.: [2,6,8, 2,8,10, 1] → 2 piezas, resto 1.
  */
 export function partirEnPiezas(nums: number[]): { piezas: Array<{ espesor: number; ancho: number; largo: number }>; resto: number[] } {
+  return partirConFijas(nums, {});
+}
+
+/** Cuántos números hay que dictar por pieza con estas medidas fijas. */
+export function numerosPorPieza(fijas: MedidasFijas): number {
+  return DIMENSIONES.filter((d) => !(typeof fijas[d] === "number" && fijas[d]! > 0)).length;
+}
+
+/**
+ * Parte el dictado en piezas RESPETANDO las medidas fijas.
+ *
+ * Con el largo fijo en 4, un lote entero se dicta de a dos números: "dos ocho,
+ * dos seis, dos diez" son tres tablas de 4 pies. Los números libres siguen el
+ * orden natural espesor → ancho → largo, salteando lo que está fijo; el
+ * sobrante se arrastra a la frase siguiente, como sin fijas.
+ *
+ * Con las tres fijas no queda nada que dictar: se devuelve todo como resto (el
+ * operador tiene que soltar alguna) en vez de inventar piezas por cada número.
+ */
+export function partirConFijas(
+  nums: number[],
+  fijas: MedidasFijas,
+): { piezas: Array<{ espesor: number; ancho: number; largo: number }>; resto: number[] } {
+  const libres = DIMENSIONES.filter((d) => !(typeof fijas[d] === "number" && fijas[d]! > 0));
+  const paso = libres.length;
+  if (paso === 0) return { piezas: [], resto: nums };
+
   const piezas: Array<{ espesor: number; ancho: number; largo: number }> = [];
   let i = 0;
-  for (; i + 3 <= nums.length; i += 3) {
-    const [e, a, l] = nums.slice(i, i + 3);
-    if (e > 0 && a > 0 && l > 0) piezas.push({ espesor: e, ancho: a, largo: l });
+  for (; i + paso <= nums.length; i += paso) {
+    const grupo = nums.slice(i, i + paso);
+    if (grupo.some((n) => !(n > 0))) continue;
+    const medidas: Record<Dimension, number> = {
+      espesor: fijas.espesor ?? 0,
+      ancho: fijas.ancho ?? 0,
+      largo: fijas.largo ?? 0,
+    };
+    libres.forEach((d, k) => { medidas[d] = grupo[k]; });
+    piezas.push({ espesor: medidas.espesor, ancho: medidas.ancho, largo: medidas.largo });
   }
   return { piezas, resto: nums.slice(i) };
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   cubicarPieza, parseDictado, parseVozDims, mejoresNumeros, partirEnPiezas, detectarComando,
-  leerDictado, medidaSospechosa,
+  leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza,
 } from "@/lib/forestal/cubicacion";
 
 describe("cubicarPieza", () => {
@@ -180,5 +180,83 @@ describe("bugs de campo del dictado (regresión)", () => {
     expect(medidaSospechosa(2, 8, 1)).toBe(true);    // largo de 1 pie
     expect(medidaSospechosa(20, 8, 10)).toBe(true);  // espesor de 20 pulgadas
     expect(medidaSospechosa(8, 2, 10)).toBe(true);   // más gruesa que ancha = dado vuelta
+  });
+});
+
+describe("medidas fijas por voz", () => {
+  it('"pon fijo el largo a cuatro" fija el largo', () => {
+    const c = detectarComando("pon fijo el largo a cuatro");
+    expect(c).toEqual({ tipo: "fijar", dimension: "largo", valor: 4 });
+  });
+
+  it("acepta las formas que usa un maderero", () => {
+    expect(detectarComando("fija el largo en cuatro")).toEqual({ tipo: "fijar", dimension: "largo", valor: 4 });
+    expect(detectarComando("largo fijo 4")).toEqual({ tipo: "fijar", dimension: "largo", valor: 4 });
+    expect(detectarComando("fijar espesor dos")).toEqual({ tipo: "fijar", dimension: "espesor", valor: 2 });
+    expect(detectarComando("pon fijo el ancho a ocho")).toEqual({ tipo: "fijar", dimension: "ancho", valor: 8 });
+    expect(detectarComando("fija el largo a tres punto cinco")).toEqual({ tipo: "fijar", dimension: "largo", valor: 3.5 });
+  });
+
+  it("desfijar: todo o una sola dimensión", () => {
+    expect(detectarComando("quita el fijo")).toEqual({ tipo: "desfijar", dimension: undefined });
+    expect(detectarComando("desfija el largo")).toEqual({ tipo: "desfijar", dimension: "largo" });
+    expect(detectarComando("libera el espesor")).toEqual({ tipo: "desfijar", dimension: "espesor" });
+    expect(detectarComando("todo libre")).toEqual({ tipo: "desfijar", dimension: undefined });
+  });
+
+  it("sin dimensión o sin valor no fija nada (no adivina)", () => {
+    expect(detectarComando("pon fijo a cuatro")).toBeNull();
+    expect(detectarComando("fija el largo")).toBeNull();
+  });
+
+  it("dictar medidas nunca se confunde con fijar", () => {
+    expect(detectarComando("dos ocho diez")).toBeNull();
+    expect(detectarComando("2 8 10")).toBeNull();
+  });
+
+  it("con el largo fijo, cada DOS números son una pieza", () => {
+    const r = partirConFijas([2, 8, 2, 6, 2, 10], { largo: 4 });
+    expect(r.piezas).toEqual([
+      { espesor: 2, ancho: 8, largo: 4 },
+      { espesor: 2, ancho: 6, largo: 4 },
+      { espesor: 2, ancho: 10, largo: 4 },
+    ]);
+    expect(r.resto).toEqual([]);
+  });
+
+  it("el sobrante se arrastra igual que sin fijas", () => {
+    const r = partirConFijas([2, 8, 2], { largo: 4 });
+    expect(r.piezas).toHaveLength(1);
+    expect(r.resto).toEqual([2]);
+  });
+
+  it("con espesor fijo, los libres siguen el orden ancho → largo", () => {
+    const r = partirConFijas([8, 10], { espesor: 2 });
+    expect(r.piezas).toEqual([{ espesor: 2, ancho: 8, largo: 10 }]);
+  });
+
+  it("con dos fijas, cada número suelto es una pieza", () => {
+    const r = partirConFijas([8, 6, 10], { espesor: 2, largo: 4 });
+    expect(r.piezas).toEqual([
+      { espesor: 2, ancho: 8, largo: 4 },
+      { espesor: 2, ancho: 6, largo: 4 },
+      { espesor: 2, ancho: 10, largo: 4 },
+    ]);
+  });
+
+  it("con las tres fijas no inventa piezas", () => {
+    const r = partirConFijas([5, 5], { espesor: 2, ancho: 8, largo: 4 });
+    expect(r.piezas).toEqual([]);
+    expect(r.resto).toEqual([5, 5]);
+  });
+
+  it("numerosPorPieza dice cuántos hay que dictar", () => {
+    expect(numerosPorPieza({})).toBe(3);
+    expect(numerosPorPieza({ largo: 4 })).toBe(2);
+    expect(numerosPorPieza({ espesor: 2, largo: 4 })).toBe(1);
+  });
+
+  it("sin fijas, partirEnPiezas sigue funcionando igual", () => {
+    expect(partirEnPiezas([2, 6, 8, 2, 8, 10]).piezas).toHaveLength(2);
   });
 });

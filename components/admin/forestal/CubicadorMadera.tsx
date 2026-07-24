@@ -9,12 +9,12 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2 } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, Lock, Unlock, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3, ESPECIES_MADERA,
-  esEco, leerDictado, medidaSospechosa,
-  type PiezaCubicada, type Unidad,
+  esEco, leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza, DIMENSIONES,
+  type PiezaCubicada, type Unidad, type MedidasFijas, type Dimension,
 } from "@/lib/forestal/cubicacion";
 import {
   loadConfig, saveConfig, CONFIG_DEFAULT, frasesToText, textToFrases,
@@ -120,6 +120,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [historialToken, setHistorialToken] = useState(0);
   const [form, setForm] = useState({ nombre: "", fecha: hoyISO(), cliente: "", notas: "" });
   const [paused, setPaused] = useState(false); // "pausar" por voz → ignora números hasta "continúa"
+  /** Medidas que quedan fijas ("pon fijo el largo a 4"): no se dictan más. */
+  const [fijas, setFijas] = useState<MedidasFijas>({});
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
   const especieRef = useRef(especie);
@@ -133,6 +135,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const reinicioRef = useRef<{ ultimo: number; seguidos: number }>({ ultimo: 0, seguidos: 0 });
   /** Wake Lock: la pantalla no se apaga mientras se dicta en el patio. */
   const wakeRef = useRef<{ release: () => Promise<void> } | null>(null);
+  /** Espejo de las fijas: el closure del reconocedor las lee siempre frescas. */
+  const fijasRef = useRef<MedidasFijas>({});
   // Guardamos SOLO en resultados FINALES (estables). Los intermedios se revisan
   // constantemente en Chrome real → committear sobre ellos causaba volteados y
   // duplicados. lastFinalRef = último índice final procesado (evita reprocesar);
@@ -146,6 +150,20 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   const resetVoz = () => { carryRef.current = { nums: [], ts: 0 }; lastFinalRef.current = -1; ecoRef.current = { hasta: 0, texto: "" }; };
   useEffect(() => { especieRef.current = especie; }, [especie]);
+  // Las fijas sobreviven al refresh: un lote de un mismo largo puede llevar
+  // toda la mañana y recargar la página no debería soltar la medida.
+  useEffect(() => { fijasRef.current = fijas; }, [fijas]);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`${storageKey()}-fijas`);
+      if (raw) setFijas(JSON.parse(raw) as MedidasFijas);
+    } catch { /* ignore */ }
+  }, []);
+  const aplicarFijas = useCallback((next: MedidasFijas) => {
+    fijasRef.current = next;
+    setFijas(next);
+    try { localStorage.setItem(`${storageKey()}-fijas`, JSON.stringify(next)); } catch { /* quota */ }
+  }, []);
   useEffect(() => { configRef.current = config; }, [config]);
   // Cargar config + voces disponibles (getVoices puede llegar async).
   useEffect(() => {
@@ -240,6 +258,26 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = { nums: [], ts: 0 }; setLiveText(""); hablar("en pausa"); }
         else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = { nums: [], ts: 0 }; setLiveText(""); hablar("sigo"); }
         else if (cmd.tipo === "borrar-ultimo") { borrarUltimo(); hablar("borrado"); }
+        else if (cmd.tipo === "fijar") {
+          // Fijar cambia cuántos números trae cada pieza: lo que quedó a medio
+          // dictar con la regla anterior ya no aplica.
+          carryRef.current = { nums: [], ts: 0 };
+          aplicarFijas({ ...fijasRef.current, [cmd.dimension]: cmd.valor });
+          setErrMsg(null);
+          hablar(`${cmd.dimension} fijo en ${cmd.valor}`);
+        }
+        else if (cmd.tipo === "desfijar") {
+          carryRef.current = { nums: [], ts: 0 };
+          if (cmd.dimension) {
+            const next = { ...fijasRef.current };
+            delete next[cmd.dimension];
+            aplicarFijas(next);
+            hablar(`${cmd.dimension} libre`);
+          } else {
+            aplicarFijas({});
+            hablar("todo libre");
+          }
+        }
         else if (cmd.tipo === "especie") {
           const found = ESPECIES.find((s) => sinAcentos(s).startsWith(cmd.palabra));
           if (found) { setEspecie(found); hablar(found); }
@@ -273,21 +311,18 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       // armaban piezas fantasma (dictaste "2 6", te fuiste, volviste con "8 10 12").
       const vigente = Date.now() - carryRef.current.ts < CARRY_TTL_MS ? carryRef.current.nums : [];
       const all = [...vigente, ...nums];
-      const totalPiezas = Math.floor(all.length / 3);
+      // Con medidas fijas, cada pieza necesita MENOS números dictados.
+      const { piezas: nuevas, resto } = partirConFijas(all, fijasRef.current);
       let added = 0;
       let ultima: { espesor: number; ancho: number; largo: number } | null = null;
-      for (let k = 0; k < totalPiezas; k++) {
-        const [espesor, ancho, largo] = all.slice(k * 3, k * 3 + 3);
-        if (espesor > 0 && ancho > 0 && largo > 0) {
-          addPieza({
-            cantidad: cantDictada, espesor, ancho, largo,
-            uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
-            especie: especieRef.current || undefined,
-          });
-          ultima = { espesor, ancho, largo }; added++;
-        }
+      for (const { espesor, ancho, largo } of nuevas) {
+        addPieza({
+          cantidad: cantDictada, espesor, ancho, largo,
+          uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
+          especie: especieRef.current || undefined,
+        });
+        ultima = { espesor, ancho, largo }; added++;
       }
-      const resto = all.slice(totalPiezas * 3);
       carryRef.current = { nums: resto, ts: resto.length > 0 ? Date.now() : 0 };
       setLiveText("");
       if (added && ultima) {
@@ -341,7 +376,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     };
     recRef.current = rec;
     return () => { wantListeningRef.current = false; try { rec.stop(); } catch { /* ignore */ } };
-  }, [addPieza, updateRow, borrarUltimo, hablar]);
+  }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas]);
 
   const stopLeer = useCallback(() => {
     readingRef.current = false; setReadingId(null);
@@ -519,11 +554,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const liveGroups = useMemo(() => {
     if (!listening || !liveText) return null;
     const nums = mejoresNumeros([liveText]);
+    // El tamaño del grupo depende de las fijas: con el largo fijo, cada DOS
+    // números ya son una pieza y así se ven mientras se dicta.
+    const paso = numerosPorPieza(fijas) || 3;
     const triples: number[][] = [];
     let i = 0;
-    for (; i + 3 <= nums.length; i += 3) triples.push(nums.slice(i, i + 3));
+    for (; i + paso <= nums.length; i += paso) triples.push(nums.slice(i, i + paso));
     return { triples, resto: nums.slice(i) };
-  }, [listening, liveText]);
+  }, [listening, liveText, fijas]);
 
   /**
    * Registra el lote cubicado en el Libro CTP como PRODUCCIÓN (unit "pt").
@@ -728,6 +766,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               <CmdField label="Continuar" value={frasesToText(config.comandos.continuar)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, continuar: textToFrases(v) } })} />
               <CmdField label="Borrar último" value={frasesToText(config.comandos.borrarUltimo)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, borrarUltimo: textToFrases(v) } })} />
               <CmdField label="Especie (prefijos)" value={frasesToText(config.comandos.especie)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, especie: textToFrases(v) } })} />
+              <CmdField label="Fijar medida" value={frasesToText(config.comandos.fijar)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, fijar: textToFrases(v) } })} />
+              <CmdField label="Soltar lo fijo" value={frasesToText(config.comandos.desfijar)} onChange={(v) => updateConfig({ comandos: { ...config.comandos, desfijar: textToFrases(v) } })} />
             </div>
           </div>
         )}
@@ -761,8 +801,40 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   </button>
                 </div>
                 <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                  Solo los números: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = espesor 2&Prime; · ancho 6&Prime; · largo 8 pies. Decí los 3 y una <b>micro-pausa</b> los guarda al toque — seguí con la siguiente sin esperar.
+                  {numerosPorPieza(fijas) === 3 ? (
+                    <>Solo los números: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = espesor 2&Prime; · ancho 6&Prime; · largo 8 pies. Decí los 3 y una <b>micro-pausa</b> los guarda al toque — seguí con la siguiente sin esperar.</>
+                  ) : (
+                    <>Con lo fijo puesto, dictá <b className="text-[var(--text-secondary)]">{numerosPorPieza(fijas) === 1 ? "un número" : `${numerosPorPieza(fijas)} números`}</b> por pieza ({DIMENSIONES.filter((d) => fijas[d] == null).join(" · ")}). Para soltarlo decí <b className="text-[var(--text-secondary)]">&ldquo;quitá el fijo&rdquo;</b>.</>
+                  )}
                 </p>
+
+                {/* Medidas fijas: lo que no hace falta volver a dictar */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {DIMENSIONES.map((d) => {
+                    const valor = fijas[d];
+                    const unidad = d === "largo" ? "pies" : "pulg";
+                    return valor ? (
+                      <span key={d} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-2 py-1 text-xs font-bold text-[var(--accent)]">
+                        <Lock className="h-3 w-3" aria-hidden />
+                        {d} fijo: {valor} {unidad}
+                        <button
+                          type="button"
+                          onClick={() => { const n = { ...fijas }; delete n[d]; aplicarFijas(n); }}
+                          aria-label={`Soltar el ${d} fijo`}
+                          title={`Soltar el ${d}`}
+                          className="ml-0.5 rounded p-0.5 hover:bg-[var(--surface-raised)]"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                  {Object.keys(fijas).length === 0 && (
+                    <span className="text-[length:var(--ts-2xs)] italic text-[var(--text-tertiary)]">
+                      Tip: decí <b className="not-italic text-[var(--text-secondary)]">&ldquo;pon fijo el largo a cuatro&rdquo;</b> y después dictá solo espesor y ancho.
+                    </span>
+                  )}
+                </div>
                 {/* Especie: menú que se aplica a lo que dictes */}
                 <label className="mt-2 inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
                   <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
@@ -778,6 +850,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   <span><b className="text-[var(--text-secondary)]">«pausá»</b> / <b className="text-[var(--text-secondary)]">«continuá»</b></span>
                   <span><b className="text-[var(--text-secondary)]">«eliminá el último»</b></span>
                   <span><b className="text-[var(--text-secondary)]">«especie tornillo»</b></span>
+                  <span><b className="text-[var(--text-secondary)]">«pon fijo el largo a cuatro»</b> / <b className="text-[var(--text-secondary)]">«quitá el fijo»</b></span>
                 </p>
 
                 {/* Caption en vivo AGRUPADO — cada bloque verde = una pieza, para
@@ -835,9 +908,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         {/* Carga manual rápida — dropdowns (sin tipear). Usa la especie de arriba. */}
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-[var(--rule-soft)] pt-3">
           <ManualField label="Cant." value={manual.cantidad} onChange={(v) => setManual({ ...manual, cantidad: v })} w="w-16" />
-          <ManualSelect label="Espesor (pulg)" value={manual.espesor} onChange={(v) => setManual({ ...manual, espesor: v })} opts={RANGO_ESPESOR} />
-          <ManualSelect label="Ancho (pulg)" value={manual.ancho} onChange={(v) => setManual({ ...manual, ancho: v })} opts={RANGO_ANCHO} />
-          <ManualSelect label="Largo (pies)" value={manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} opts={RANGO_LARGO} />
+          <ManualSelect label="Espesor (pulg)" value={fijas.espesor ? String(fijas.espesor) : manual.espesor} onChange={(v) => setManual({ ...manual, espesor: v })} opts={RANGO_ESPESOR} fijo={fijas.espesor != null} onFijar={() => aplicarFijas(fijas.espesor != null ? (() => { const n = { ...fijas }; delete n.espesor; return n; })() : { ...fijas, espesor: Number(manual.espesor) || 0 })} />
+          <ManualSelect label="Ancho (pulg)" value={fijas.ancho ? String(fijas.ancho) : manual.ancho} onChange={(v) => setManual({ ...manual, ancho: v })} opts={RANGO_ANCHO} fijo={fijas.ancho != null} onFijar={() => aplicarFijas(fijas.ancho != null ? (() => { const n = { ...fijas }; delete n.ancho; return n; })() : { ...fijas, ancho: Number(manual.ancho) || 0 })} />
+          <ManualSelect label="Largo (pies)" value={fijas.largo ? String(fijas.largo) : manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} opts={RANGO_LARGO} fijo={fijas.largo != null} onFijar={() => aplicarFijas(fijas.largo != null ? (() => { const n = { ...fijas }; delete n.largo; return n; })() : { ...fijas, largo: Number(manual.largo) || 0 })} />
           <button type="button" onClick={addManual} className="inline-flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Plus className="h-4 w-4" /> Agregar a mano</button>
         </div>
       </div>
@@ -1154,14 +1227,40 @@ function ManualField({ label, value, onChange, w = "w-20" }: { label: string; va
   );
 }
 
-function ManualSelect({ label, value, onChange, opts }: { label: string; value: string; onChange: (v: string) => void; opts: number[] }) {
+/**
+ * Select de la carga manual. El candado fija esa medida: queda puesta acá y
+ * deja de pedirse en el dictado (es el mismo estado que el comando de voz).
+ */
+function ManualSelect({ label, value, onChange, opts, fijo, onFijar }: {
+  label: string; value: string; onChange: (v: string) => void; opts: number[];
+  fijo?: boolean; onFijar?: () => void;
+}) {
   return (
     <label className="flex flex-col gap-0.5">
       <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
-        <option value="">—</option>
-        {opts.map((n) => <option key={n} value={n}>{n}</option>)}
-      </select>
+      <span className="flex items-center gap-1">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`h-10 w-20 rounded-xl border-2 bg-[var(--surface-canvas)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] ${fijo ? "border-[var(--accent)]" : "border-[var(--rule-base)]"}`}
+        >
+          <option value="">—</option>
+          {opts.map((n) => <option key={n} value={n}>{n}</option>)}
+        </select>
+        {onFijar && (
+          <button
+            type="button"
+            onClick={onFijar}
+            disabled={!fijo && !value}
+            aria-pressed={!!fijo}
+            aria-label={fijo ? `Soltar ${label}` : `Fijar ${label}`}
+            title={fijo ? "Soltar esta medida" : "Fijar esta medida (no se dicta más)"}
+            className={`flex h-10 w-8 items-center justify-center rounded-lg border transition disabled:opacity-30 ${fijo ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+          >
+            {fijo ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+          </button>
+        )}
+      </span>
     </label>
   );
 }
