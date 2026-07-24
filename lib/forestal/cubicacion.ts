@@ -37,9 +37,9 @@ export const ESPECIES_MADERA = [
 ] as const;
 
 // ─── Conversiones de longitud ───────────────────────────────────────────────
-const toInches = (v: number, u: Unidad): number =>
+export const toInches = (v: number, u: Unidad): number =>
   u === "pulg" ? v : u === "cm" ? v / 2.54 : u === "m" ? v * 39.3700787 : v * 12;
-const toFeet = (v: number, u: Unidad): number =>
+export const toFeet = (v: number, u: Unidad): number =>
   u === "pies" ? v : u === "pulg" ? v / 12 : u === "m" ? v * 3.2808399 : v / 30.48;
 const toMeters = (v: number, u: Unidad): number =>
   u === "m" ? v : u === "pulg" ? v * 0.0254 : u === "cm" ? v / 100 : v * 0.3048;

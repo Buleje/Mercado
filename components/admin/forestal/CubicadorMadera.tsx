@@ -27,6 +27,7 @@ import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import LiquidacionModal from "./LiquidacionModal";
 import EnviarLibroModal from "./EnviarLibroModal";
+import { clasificarTipo, tipoCorto, tonoTipo } from "@/lib/forestal/cubicacion-tipo";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -92,6 +93,13 @@ function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number,
     }
     synth.speak(u);
   } catch { /* TTS no disponible */ }
+}
+
+/** Clases del badge de la columna Tipo según el tono del DS. */
+function tipoBadgeCls(tono: "success" | "info" | "neutral"): string {
+  if (tono === "success") return "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]";
+  if (tono === "info") return "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]";
+  return "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
 }
 
 export default function CubicadorMadera({ onPresent }: { onPresent?: () => void }) {
@@ -1248,12 +1256,13 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste nada. Dictá o cargá una pieza para empezar.</p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full min-w-[860px] text-sm">
+            <table className="w-full min-w-[960px] text-sm">
               <thead>
                 <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                   <th className="px-2 py-2 text-center">N°</th>
                   <th className="px-3 py-2">Cant.</th><th className="px-3 py-2">Espesor</th><th className="px-3 py-2">Ancho</th><th className="px-3 py-2">Largo</th>
                   <th className="px-3 py-2">Medida</th>
+                  <th className="px-3 py-2">Tipo</th>
                   <th className="px-3 py-2">Especie</th><th className="px-3 py-2 text-right">Pie tablar</th><th className="px-3 py-2 text-right">m³</th><th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -1268,6 +1277,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                       : lastAdded?.id === r.id ? "bg-[var(--data-success-50)]" : "";
                   // Medida fuera de rango: se AVISA, no se corrige — el dato es del operario.
                   const rara = avisarRaras && medidaSospechosa(r.espesor, r.ancho, r.largo);
+                  const tipo = clasificarTipo(r);
                   return (
                   <tr key={r.id} id={`cub-row-${r.id}`} className={`border-t border-[var(--rule-soft)] transition-colors ${rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}>
                     <td className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{indice + 1}</td>
@@ -1277,6 +1287,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" /></td>
                     <td className="px-3 py-2 whitespace-nowrap font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
                       {r.espesor}×{r.ancho}×{r.largo}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span title={`Según sus medidas (espesor·ancho·largo): ${tipo}`} className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${tipoBadgeCls(tonoTipo(tipo))}`}>
+                        {tipoCorto(tipo)}
+                      </span>
                     </td>
                     <td className="px-3 py-2">
                       <select
@@ -1313,7 +1328,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--accent-soft)] font-bold text-[var(--text-primary)]">
-                  <td className="px-3 py-2.5" colSpan={7}>Total · {totales.piezas} piezas</td>
+                  <td className="px-3 py-2.5" colSpan={8}>Total · {totales.piezas} piezas</td>
                   <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtPt(totales.pt)} PT</td>
                   <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]">{fmtM3(totales.m3)}</td>
                   <td />
@@ -1321,6 +1336,16 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               </tfoot>
             </table>
           </div>
+        )}
+
+        {/* Leyenda del Tipo — cómo se clasifica cada pieza por su medida (SERFOR: esp·anc·largo) */}
+        {rows.length > 0 && (
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            <span className="font-bold uppercase tracking-wide">Tipo por medida:</span>
+            <span className="inline-flex items-center gap-1"><span className={`inline-block rounded-full px-1.5 py-0.5 font-bold ${tipoBadgeCls("success")}`}>Comercial</span> espesor ≥ 2&quot; · ancho ≥ 6&quot; · largo ≥ 6 pies</span>
+            <span className="inline-flex items-center gap-1"><span className={`inline-block rounded-full px-1.5 py-0.5 font-bold ${tipoBadgeCls("info")}`}>Paq. larga</span> largo ≥ 6 pies, sección menor</span>
+            <span className="inline-flex items-center gap-1"><span className={`inline-block rounded-full px-1.5 py-0.5 font-bold ${tipoBadgeCls("neutral")}`}>Paq. corta</span> largo &lt; 6 pies</span>
+          </p>
         )}
 
         {/* Precio → valor del lote (plata) */}
