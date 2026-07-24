@@ -10,8 +10,21 @@
  * la corrida que estás por anotar está dentro de lo normal del aserradero.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Gauge, Percent } from "@buleje/design-system/icons";
+import { Gauge, Percent, Download } from "@buleje/design-system/icons";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
+
+/** Totales de lo que ya está cubicado en las otras herramientas (localStorage). */
+function totalesCubicador(): { aserradoPt: number; trozasM3: number } {
+  let slug = "main";
+  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
+  const read = (k: string): unknown[] => { try { const v = JSON.parse(localStorage.getItem(k) || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const madera = read(`buleje-cubicacion-${slug}`) as { pieTablar?: number }[];
+  const trozas = read(`buleje-cubicacion-trozas-${slug}`) as { m3?: number }[];
+  return {
+    aserradoPt: madera.reduce((a, r) => a + (Number(r.pieTablar) || 0), 0),
+    trozasM3: trozas.reduce((a, r) => a + (Number(r.m3) || 0), 0),
+  };
+}
 
 /** Rangos orientativos del aserrío peruano (coeficiente output/input). */
 const RANGOS = [
@@ -34,6 +47,15 @@ export default function CalculadoraRendimiento() {
   const [unidad, setUnidad] = useState<"pt" | "m3">("pt");
   const [libro, setLibro] = useState<PromedioLibro | null>(null);
   const [libroError, setLibroError] = useState(false);
+  const [disponible, setDisponible] = useState<{ aserradoPt: number; trozasM3: number }>({ aserradoPt: 0, trozasM3: 0 });
+
+  // Lo que ya está cubicado en las otras herramientas — para traerlo de un toque.
+  useEffect(() => { setDisponible(totalesCubicador()); }, []);
+  const hayCubicado = disponible.aserradoPt > 0 || disponible.trozasM3 > 0;
+  const traerDelCubicador = () => {
+    if (disponible.trozasM3 > 0) setInputM3(String(Math.round(disponible.trozasM3 * 10000) / 10000));
+    if (disponible.aserradoPt > 0) { setSalida(String(Math.round(disponible.aserradoPt * 100) / 100)); setUnidad("pt"); }
+  };
 
   // Promedio real del Libro CTP (rendimientoPct de las corridas registradas).
   useEffect(() => {
@@ -64,7 +86,7 @@ export default function CalculadoraRendimiento() {
     const outM3 = unidad === "pt" ? out / PT_POR_M3 : out;
     const pct = (outM3 / inp) * 100;
     const rango = RANGOS.find((r) => pct <= r.hasta) ?? RANGOS[RANGOS.length - 1];
-    return { pct, outM3, rango, mermaM3: Math.max(0, inp - outM3) };
+    return { pct, outM3, rango, mermaM3: Math.max(0, inp - outM3), mermaPct: Math.max(0, 100 - pct) };
   }, [inputM3, salida, unidad]);
 
   const tonoCls = (tono: string) =>
@@ -79,9 +101,23 @@ export default function CalculadoraRendimiento() {
       <h3 className="mb-1 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
         <Gauge className="h-4 w-4 text-[var(--accent)]" /> Coeficiente de rendimiento
       </h3>
-      <p className="mb-4 text-xs text-[var(--text-tertiary)]">
+      <p className="mb-3 text-xs text-[var(--text-tertiary)]">
         Cuánto producto salió de la troza consumida — el porcentaje que va en cada registro de transformación del Libro CTP.
       </p>
+
+      {/* Cerrar el loop: traer lo cubicado en las otras herramientas de un toque */}
+      {hayCubicado && (
+        <button type="button" onClick={traerDelCubicador} className="mb-4 flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]/30 px-4 py-2.5 text-left transition hover:brightness-95">
+          <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--accent)]">
+            <Download className="h-4 w-4" /> Traer del cubicador
+          </span>
+          <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+            {disponible.trozasM3 > 0 && <>trozas {disponible.trozasM3.toLocaleString("es-PE", { maximumFractionDigits: 4 })} m³</>}
+            {disponible.trozasM3 > 0 && disponible.aserradoPt > 0 && " · "}
+            {disponible.aserradoPt > 0 && <>aserrado {disponible.aserradoPt.toLocaleString("es-PE", { maximumFractionDigits: 2 })} PT</>}
+          </span>
+        </button>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr]">
         {/* Entradas */}
@@ -122,7 +158,10 @@ export default function CalculadoraRendimiento() {
                 {fmtPct(resultado.pct)}<span className="text-2xl">%</span>
               </div>
               <div className={`text-xs font-bold ${tonoCls(resultado.rango.tono)}`}>{resultado.rango.label}</div>
-              <div className="mt-1 text-xs text-[var(--text-tertiary)]">
+              <div className="mt-1 text-sm font-bold text-[var(--text-secondary)]">
+                Merma <span className="font-mono tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtPct(resultado.mermaPct)}%</span>
+              </div>
+              <div className="text-xs text-[var(--text-tertiary)]">
                 {unidad === "pt" ? `${salida} PT = ${Number(resultado.outM3).toFixed(4)} m³ aserrados · ` : ""}
                 merma {Number(resultado.mermaM3).toFixed(4)} m³
               </div>
