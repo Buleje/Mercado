@@ -14,7 +14,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3, ESPECIES_MADERA,
   esEco, leerDictado, medidaSospechosa, partirConFijas, numerosPorPieza, DIMENSIONES,
-  type PiezaCubicada, type Unidad, type MedidasFijas, type Dimension,
+  type PiezaCubicada, type Unidad, type MedidasFijas,
 } from "@/lib/forestal/cubicacion";
 import {
   loadConfig, saveConfig, CONFIG_DEFAULT, frasesToText, textToFrases,
@@ -22,6 +22,7 @@ import {
 } from "@/lib/forestal/cubicador-config";
 import { exportarPDF, exportarExcel } from "@/lib/forestal/cubicador-export";
 import { hoyISO, nombreSugerido, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import { agruparPor, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION, type DimensionResumen } from "@/lib/forestal/cubicacion-resumen";
 import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
@@ -110,6 +111,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
   const [precioPt, setPrecioPt] = useState(""); // S/ por pie tablar → valor del lote
   const [showResumen, setShowResumen] = useState(false);
+  const [dimResumen, setDimResumen] = useState<DimensionResumen>("especie");
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false); // ya quedó registrado en el Libro CTP
   /** Cubicación guardada que se está editando (null = lote nuevo sin guardar). */
@@ -561,17 +563,15 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
   // Resumen: agrupa medidas idénticas (espesor×ancho×largo + unidades) con su
   // cantidad, pie tablar y valor — para liquidar/vender por tipo de pieza.
-  const resumen = useMemo(() => {
-    const map = new Map<string, { label: string; cantidad: number; pt: number; m3: number }>();
-    for (const r of rows) {
-      const key = `${r.espesor}${r.uEspesor}x${r.ancho}${r.uAncho}x${r.largo}${r.uLargo}${r.especie ?? ""}`;
-      const label = `${r.espesor}×${r.ancho}×${r.largo}${r.especie ? ` · ${r.especie}` : ""}`;
-      const cur = map.get(key) ?? { label, cantidad: 0, pt: 0, m3: 0 };
-      cur.cantidad += r.cantidad; cur.pt += r.pieTablar; cur.m3 += r.m3;
-      map.set(key, cur);
-    }
-    return [...map.values()].sort((a, b) => b.pt - a.pt);
-  }, [rows]);
+  // Resumen agrupado por la dimensión elegida (especie/largo/sección/…).
+  const resumen = useMemo(() => agruparPor(rows, dimResumen, precio), [rows, dimResumen, precio]);
+  const exportarResumenCSV = () => {
+    const csv = resumenACsv(resumen, dimResumen, precio > 0);
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `resumen-${dimResumen}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
 
   // Números del dictado en curso, AGRUPADOS en tríos (espesor·ancho·largo) para
   // que se vea cómo se cuadran las piezas en vivo — y no una barra continua que
@@ -597,7 +597,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     if (!rows.length || enviando) return;
     const especies = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[];
     const speciesCommon = especies.length === 1 ? especies[0] : (especie || null);
-    const resumenTxt = resumen.slice(0, 6).map((g) => `${g.cantidad}× ${g.label}`).join("; ");
+    const porMedida = agruparPor(rows, "medida").grupos;
+    const resumenTxt = porMedida.slice(0, 6).map((g) => `${g.cantidad}× ${g.label}`).join("; ");
     const seguro = window.confirm(
       `¿Registrar en el Libro CTP como PRODUCCIÓN?\n\n${totales.piezas} piezas · ${fmtPt(totales.pt)} PT (${fmtM3(totales.m3)} m³)` +
       `${speciesCommon ? ` · ${speciesCommon}` : ""}\n\nLa materia prima (guías consumidas) se atribuye después, en el Libro.`,
@@ -712,8 +713,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    * el comprador quiere el detalle por medida, el total en PT y el precio.
    */
   const compartirWhatsApp = () => {
-    const lineas = resumen.slice(0, 12).map((g) => `• ${g.cantidad}× ${g.label} = ${fmtPt(g.pt)} PT`);
-    const extra = resumen.length > 12 ? `\n…y ${resumen.length - 12} medidas más` : "";
+    const gruposWa = agruparPor(rows, "medida").grupos;
+    const lineas = gruposWa.slice(0, 12).map((g) => `• ${g.cantidad}× ${g.label} = ${fmtPt(g.pieTablar)} PT`);
+    const extra = gruposWa.length > 12 ? `\n…y ${gruposWa.length - 12} medidas más` : "";
     const texto = [
       `*Cubicación${especie ? ` · ${especie}` : ""}*`,
       `${totales.piezas} piezas · ${fmtPt(totales.pt)} PT · ${fmtM3(totales.m3)} m³`,
@@ -1089,26 +1091,70 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           </div>
         )}
 
-        {/* Resumen por medida — agrupado, para liquidar por tipo de pieza */}
+        {/* Resúmenes del lote — la misma madera leída por especie, largo, sección… */}
         {showResumen && rows.length > 0 && (
-          <div className="mb-3 overflow-x-auto rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]/40">
-            <table className="w-full min-w-[420px] text-sm">
-              <thead>
-                <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                  <th className="px-3 py-2">Medida (esp × anc × lar)</th><th className="px-3 py-2 text-right">Piezas</th><th className="px-3 py-2 text-right">Pie tablar</th>{precio > 0 && <th className="px-3 py-2 text-right">Valor</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {resumen.map((g) => (
-                  <tr key={g.label} className="border-t border-[var(--accent)]/20">
-                    <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{g.label}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{g.cantidad}</td>
-                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtPt(g.pt)}</td>
-                    {precio > 0 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--accent)]">S/ {soles(g.pt * precio)}</td>}
-                  </tr>
+          <div className="mb-3 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]/40 p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-1.5">
+                {DIMENSIONES_RESUMEN.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDimResumen(d)}
+                    aria-pressed={dimResumen === d}
+                    className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition ${dimResumen === d ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                  >
+                    {ETIQUETA_DIMENSION[d]}
+                  </button>
                 ))}
-              </tbody>
-            </table>
+              </div>
+              <button type="button" onClick={exportarResumenCSV} title="Descargar este resumen en CSV" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                <FileSpreadsheet className="h-3.5 w-3.5" /> CSV
+              </button>
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-[var(--accent)]/20 bg-[var(--surface-raised)]">
+              <table className="w-full min-w-[460px] text-sm">
+                <thead>
+                  <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                    <th className="px-3 py-2">{ETIQUETA_DIMENSION[dimResumen].replace("Por ", "")}</th>
+                    <th className="px-3 py-2 text-right">Piezas</th>
+                    <th className="px-3 py-2 text-right">Pie tablar</th>
+                    <th className="px-3 py-2 text-right">m³</th>
+                    <th className="px-3 py-2">Peso del lote</th>
+                    {precio > 0 && <th className="px-3 py-2 text-right">Valor</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {resumen.grupos.map((g) => (
+                    <tr key={g.clave} className="border-t border-[var(--accent)]/15">
+                      <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{g.label}</td>
+                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{g.cantidad}</td>
+                      <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtPt(g.pieTablar)}</td>
+                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(g.m3)}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-24 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                            <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${g.pctPt}%` }} />
+                          </div>
+                          <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{g.pctPt}%</span>
+                        </div>
+                      </td>
+                      {precio > 0 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--accent)]">S/ {soles(g.valor)}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-[var(--accent)]/40 font-bold text-[var(--text-primary)]">
+                    <td className="px-3 py-2">Total · {resumen.grupos.length} {resumen.grupos.length === 1 ? "grupo" : "grupos"}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">{resumen.total.cantidad}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">{fmtPt(resumen.total.pieTablar)}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(resumen.total.m3)}</td>
+                    <td className="px-3 py-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">100%</td>
+                    {precio > 0 && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(resumen.total.valor)}</td>}
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         )}
         {editingId && (
