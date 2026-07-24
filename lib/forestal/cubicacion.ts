@@ -222,13 +222,58 @@ export function parseVozDims(alternativas: string[]): DictadoParse {
  * separa a 2,6,9 manteniendo el orden dictado.
  */
 /**
- * Separa un token de dígitos PEGADOS por dictar rápido ("2810" = "2 8 10") en
- * números de madera válidos. Regla: un dígito 1-4 seguido de 0 forma una medida
- * de 2 cifras (10/20/30/40, de "diez/veinte/treinta/cuarenta"); el resto son
- * dígitos sueltos. No hay medidas de madera de 3+ cifras, así que un token largo
- * SIEMPRE está pegado. Los de 1-2 cifras (10, 12, 14, 28) se respetan y no entran acá.
+ * Rangos reales del comercio de madera aserrada peruana. Sirven para dos cosas:
+ * separar dígitos pegados eligiendo la lectura POSIBLE, y avisar cuando una
+ * medida dictada quedó rara (nunca se corrige sola: se marca).
+ */
+export const RANGOS_MEDIDA = {
+  espesor: { min: 1, max: 12 },   // pulgadas
+  ancho: { min: 1, max: 30 },     // pulgadas
+  largo: { min: 2, max: 30 },     // pies
+} as const;
+
+/** ¿Esta medida cae fuera de lo que se ve en un aserradero? */
+export function medidaSospechosa(espesor: number, ancho: number, largo: number): boolean {
+  const fuera = (v: number, r: { min: number; max: number }) => !(v >= r.min && v <= r.max);
+  return (
+    fuera(espesor, RANGOS_MEDIDA.espesor) ||
+    fuera(ancho, RANGOS_MEDIDA.ancho) ||
+    fuera(largo, RANGOS_MEDIDA.largo) ||
+    // Una tabla más gruesa que ancha casi siempre es un dictado dado vuelta.
+    espesor > ancho
+  );
+}
+
+/**
+ * Separa un token de dígitos PEGADOS por dictar rápido ("2810" = 2·8·10).
+ *
+ * POR QUÉ NO ALCANZA UNA REGLA FIJA: la versión anterior sólo unía "X0"
+ * (10/20/30/40), así que "2812" —un 2×8×12 de manual— salía 2,8,1,2: una
+ * pieza de 1 pie de largo y un 2 huérfano que corría TODO el dictado
+ * siguiente. Acá se prueban las particiones posibles y gana la que da tres
+ * medidas creíbles (espesor ≤ ancho, largo de verdad). Si ninguna cierra, se
+ * cae a dígitos sueltos, que es lo que hacía antes.
  */
 function separarPegados(s: string): number[] {
+  // 1) ¿Alguna partición en 3 números da una medida válida? Se prueban cortes
+  //    de 1-2 dígitos por número (no hay medidas de 3 cifras en madera).
+  const candidatas: number[][] = [];
+  for (const a of [1, 2]) {
+    for (const b of [1, 2]) {
+      for (const c of [1, 2]) {
+        if (a + b + c !== s.length) continue;
+        const e = Number(s.slice(0, a));
+        const an = Number(s.slice(a, a + b));
+        const l = Number(s.slice(a + b));
+        if (e > 0 && an > 0 && l > 0) candidatas.push([e, an, l]);
+      }
+    }
+  }
+  const buena = candidatas.find(([e, a, l]) => !medidaSospechosa(e, a, l));
+  if (buena) return buena;
+
+  // 2) Sin lectura válida: la regla vieja (X0 junto, el resto suelto). Ante la
+  //    duda no se inventa una medida — se devuelven los dígitos como vinieron.
   const out: number[] = [];
   let i = 0;
   while (i < s.length) {
@@ -284,9 +329,17 @@ const escRe = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Detecta un comando de voz en el dictado (pausar/continuar/borrar último/fijar
  * especie) según las frases configuradas. Si no hay comando, devuelve null y el
  * texto se trata como números.
+ *
+ * ⚠️ GUARD DE MEDIDAS (bug real de campo): el reconocedor confunde el "por" de
+ * "dos POR ocho" con "para", que es gatillo de pausar — dictar una medida
+ * frenaba el trabajo sin motivo. Y "alto" aparece hablando de madera. Regla:
+ * una frase con DOS O MÁS números es un dictado de medidas, no un comando; los
+ * comandos de verdad se dicen solos ("pausa", "continuá", "borrá el último").
  */
 export function detectarComando(input: string, cfg: ComandosCfg = COMANDOS_DEFAULT): Comando {
   const s = " " + stripAccents(input.toLowerCase()) + " ";
+  const cuantosNumeros = (normalizeText(input).match(/\d+(?:\.\d+)?/g) ?? []).length;
+  if (cuantosNumeros >= 2) return null;
   const hit = (list: string[]) =>
     list.some((w) => { const t = stripAccents(w.toLowerCase()).trim(); return !!t && new RegExp(`(^|\\s)${escRe(t)}(\\s|$)`).test(s); });
   // Borrar primero (más específico), luego especie, luego pausar/continuar.
@@ -300,6 +353,41 @@ export function detectarComando(input: string, cfg: ComandosCfg = COMANDOS_DEFAU
   if (hit(cfg.pausar)) return { tipo: "pausar" };
   if (hit(cfg.continuar)) return { tipo: "continuar" };
   return null;
+}
+
+/**
+ * ¿Lo que acaba de escuchar el micrófono es SU PROPIA VOZ?
+ *
+ * En el patio se trabaja con el parlante del celular: el cubicador repite
+ * "2, 6, 8" y el reconocedor lo escucha y lo vuelve a guardar — la pieza
+ * entraba DOS veces. Se compara por los números (el reconocedor puntúa
+ * distinto cada vez): misma secuencia = eco, no dictado nuevo.
+ *
+ * Sólo se usa dentro de la ventana en que el TTS estuvo hablando; fuera de
+ * ella, repetir la misma medida a propósito sigue siendo válido.
+ */
+export function esEco(textoEscuchado: string, textoDicho: string): boolean {
+  const nums = (t: string) => (normalizeText(t).match(/\d+(?:\.\d+)?/g) ?? []).join(",");
+  const a = nums(textoEscuchado);
+  return a !== "" && a === nums(textoDicho);
+}
+
+/**
+ * Lee una frase del dictado continuo separando la CANTIDAD de las medidas.
+ *
+ * Antes, "cinco piezas de dos por ocho por diez" entraba como [5,2,8,10]: se
+ * guardaba una pieza 5×2×8 y el 10 quedaba huérfano contaminando la frase
+ * siguiente. Ahora el número pegado a "piezas/tablas/tablones/unidades" se
+ * saca del pool y viaja como cantidad; sin esa palabra, todo son medidas.
+ */
+export function leerDictado(input: string): { cantidad: number; nums: number[] } {
+  const s = normalizeText(input);
+  const m = s.match(/(\d+)\s*(?:piezas?|tablas?|tablones?|listones?|unidades?|pzas?|pz)\b/);
+  if (!m) return { cantidad: 1, nums: mejoresNumeros([input]) };
+  const cantidad = Math.max(1, Math.min(999, Math.round(Number(m[1]))));
+  // Se quita SOLO esa aparición; el resto de la frase sigue siendo medidas.
+  const resto = s.replace(m[0], " ");
+  return { cantidad, nums: mejoresNumeros([resto]) };
 }
 
 /**

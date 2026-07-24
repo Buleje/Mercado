@@ -9,10 +9,11 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3, ESPECIES_MADERA,
+  esEco, leerDictado, medidaSospechosa,
   type PiezaCubicada, type Unidad,
 } from "@/lib/forestal/cubicacion";
 import {
@@ -59,9 +60,16 @@ const storageKey = () => {
 };
 const saveLocal = (next: PiezaCubicada[]) => { try { localStorage.setItem(storageKey(), JSON.stringify(next)); } catch { /* quota */ } };
 const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+/** Cuánto tiempo el micrófono debe desconfiar de lo que escucha tras hablar. */
+const MARGEN_ECO_MS = 700;
+/** Números sueltos que esperan a completar un trío: caducan solos. */
+const CARRY_TTL_MS = 25_000;
+
 // Voz que repite lo dictado (SpeechSynthesis). cancel() antes de hablar: en
 // dictado rápido gana el último, sin encolar audio viejo que quede atrás.
-function decir(texto: string, rate = 1.5, voiceURI = "") {
+// `onEco` publica la ventana en que suena el parlante — el reconocedor la usa
+// para no volver a guardar la pieza que él mismo acaba de cantar.
+function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number, texto: string) => void) {
   try {
     const synth = window.speechSynthesis;
     if (!synth) return;
@@ -70,6 +78,12 @@ function decir(texto: string, rate = 1.5, voiceURI = "") {
     u.lang = "es-PE";
     u.rate = rate;
     if (voiceURI) { const v = synth.getVoices().find((x) => x.voiceURI === voiceURI); if (v) u.voice = v; }
+    if (onEco) {
+      // Estimación por si `onend` no llega (pasa si se cancela a mitad).
+      const estimadoMs = Math.max(800, (texto.length / Math.max(0.6, rate)) * 90);
+      onEco(Date.now() + estimadoMs + MARGEN_ECO_MS, texto);
+      u.onend = () => onEco(Date.now() + MARGEN_ECO_MS, texto);
+    }
     synth.speak(u);
   } catch { /* TTS no disponible */ }
 }
@@ -87,6 +101,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [showAjustes, setShowAjustes] = useState(false);
   const speakOn = config.speak;
+  const avisarRaras = config.avisarRaras;
   const [editingId, setEditingId] = useState<string | null>(null); // fila que se edita por voz
   const [readingId, setReadingId] = useState<string | null>(null); // fila que se está leyendo
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
@@ -100,7 +115,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const especieRef = useRef(especie);
   const configRef = useRef(config);
   const wantListeningRef = useRef(false);
-  const carryRef = useRef<number[]>([]);               // números sueltos entre frases
+  /** Números sueltos entre frases + CUÁNDO llegaron (caducan a los 25s). */
+  const carryRef = useRef<{ nums: number[]; ts: number }>({ nums: [], ts: 0 });
+  /** Ventana en que suena el parlante, para descartar el eco de la propia voz. */
+  const ecoRef = useRef<{ hasta: number; texto: string }>({ hasta: 0, texto: "" });
+  /** Reinicios del reconocedor, para frenar un bucle start/end que queme CPU. */
+  const reinicioRef = useRef<{ ultimo: number; seguidos: number }>({ ultimo: 0, seguidos: 0 });
+  /** Wake Lock: la pantalla no se apaga mientras se dicta en el patio. */
+  const wakeRef = useRef<{ release: () => Promise<void> } | null>(null);
   // Guardamos SOLO en resultados FINALES (estables). Los intermedios se revisan
   // constantemente en Chrome real → committear sobre ellos causaba volteados y
   // duplicados. lastFinalRef = último índice final procesado (evita reprocesar);
@@ -112,7 +134,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const readingRef = useRef(false);                    // lectura de la tabla en curso
   const rowsRef = useRef<PiezaCubicada[]>([]);
   useEffect(() => { rowsRef.current = rows; }, [rows]);
-  const resetVoz = () => { carryRef.current = []; lastFinalRef.current = -1; };
+  const resetVoz = () => { carryRef.current = { nums: [], ts: 0 }; lastFinalRef.current = -1; ecoRef.current = { hasta: 0, texto: "" }; };
   useEffect(() => { especieRef.current = especie; }, [especie]);
   useEffect(() => { configRef.current = config; }, [config]);
   // Cargar config + voces disponibles (getVoices puede llegar async).
@@ -128,7 +150,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   }, []);
   const hablar = useCallback((texto: string) => {
     if (!configRef.current.speak) return;
-    decir(texto, configRef.current.voiceRate, configRef.current.voiceURI);
+    decir(texto, configRef.current.voiceRate, configRef.current.voiceURI, (hasta, dicho) => {
+      ecoRef.current = { hasta, texto: dicho };
+    });
   }, []);
 
   useEffect(() => {
@@ -160,7 +184,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const borrarUltimo = useCallback(() => {
     setRows((prev) => { if (!prev.length) return prev; const next = prev.slice(0, -1); saveLocal(next); return next; });
     setLastAdded(null);
-    carryRef.current = [];
+    carryRef.current = { nums: [], ts: 0 };
   }, []);
 
   // Actualiza las medidas de UNA fila (edición por voz). Estable.
@@ -194,11 +218,17 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     const procesarFinal = (idx: number, texto: string) => {
       lastFinalRef.current = idx;
 
+      // ── ECO DEL PARLANTE ──
+      // Trabajando con el altavoz del celular, el micrófono escucha la voz que
+      // repite la medida y la pieza entraba DOS veces. Si llega dentro de la
+      // ventana en que sonó el parlante y trae los mismos números, es el eco.
+      if (Date.now() < ecoRef.current.hasta && esEco(texto, ecoRef.current.texto)) return;
+
       // ── COMANDOS DE VOZ ──
       const cmd = detectarComando(texto, configRef.current.comandos);
       if (cmd) {
-        if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = []; setLiveText(""); hablar("en pausa"); }
-        else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = []; setLiveText(""); hablar("sigo"); }
+        if (cmd.tipo === "pausar") { pausedRef.current = true; setPaused(true); carryRef.current = { nums: [], ts: 0 }; setLiveText(""); hablar("en pausa"); }
+        else if (cmd.tipo === "continuar") { pausedRef.current = false; setPaused(false); carryRef.current = { nums: [], ts: 0 }; setLiveText(""); hablar("sigo"); }
         else if (cmd.tipo === "borrar-ultimo") { borrarUltimo(); hablar("borrado"); }
         else if (cmd.tipo === "especie") {
           const found = ESPECIES.find((s) => sinAcentos(s).startsWith(cmd.palabra));
@@ -208,7 +238,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         return;
       }
 
-      const nums = mejoresNumeros([texto]);
+      // Cantidad dictada ("cinco piezas de 2 8 10") separada de las medidas.
+      const { cantidad: cantDictada, nums } = leerDictado(texto);
 
       // ── MODO EDICIÓN: 3 números reemplazan la fila y sale ──
       if (modeRef.current.type === "edit") {
@@ -228,22 +259,35 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       if (pausedRef.current) return; // en pausa: ignora números
 
       // ── MODO AGREGAR: chunk en tríos, arrastra el sobrante a la próxima frase ──
-      const all = [...carryRef.current, ...nums];
+      // El sobrante CADUCA: números de hace rato pegados a una frase nueva
+      // armaban piezas fantasma (dictaste "2 6", te fuiste, volviste con "8 10 12").
+      const vigente = Date.now() - carryRef.current.ts < CARRY_TTL_MS ? carryRef.current.nums : [];
+      const all = [...vigente, ...nums];
       const totalPiezas = Math.floor(all.length / 3);
       let added = 0;
       let ultima: { espesor: number; ancho: number; largo: number } | null = null;
       for (let k = 0; k < totalPiezas; k++) {
         const [espesor, ancho, largo] = all.slice(k * 3, k * 3 + 3);
         if (espesor > 0 && ancho > 0 && largo > 0) {
-          addPieza({ cantidad: 1, espesor, ancho, largo, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especieRef.current || undefined });
+          addPieza({
+            cantidad: cantDictada, espesor, ancho, largo,
+            uEspesor: "pulg", uAncho: "pulg", uLargo: "pies",
+            especie: especieRef.current || undefined,
+          });
           ultima = { espesor, ancho, largo }; added++;
         }
       }
-      carryRef.current = all.slice(totalPiezas * 3);
+      const resto = all.slice(totalPiezas * 3);
+      carryRef.current = { nums: resto, ts: resto.length > 0 ? Date.now() : 0 };
       setLiveText("");
       if (added && ultima) {
         setAddedFlash(added); setErrMsg(null);
-        hablar(added === 1 ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}` : `${added} piezas`);
+        const raro = medidaSospechosa(ultima.espesor, ultima.ancho, ultima.largo);
+        hablar(
+          added > 1 ? `${added} piezas`
+            : raro ? `${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}. Revisá`
+              : `${cantDictada > 1 ? `${cantDictada} de ` : ""}${ultima.espesor}, ${ultima.ancho}, ${ultima.largo}`,
+        );
       }
     };
 
@@ -263,7 +307,21 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       // los índices a 0 → reseteamos lastFinalRef; el carry se conserva.
       if (!wantListeningRef.current) { setListening(false); return; }
       lastFinalRef.current = -1;
-      try { rec.start(); } catch { wantListeningRef.current = false; setListening(false); }
+      // Backoff: si el reconocedor corta al instante una y otra vez (micrófono
+      // ocupado, pestaña en segundo plano), reiniciar sin pausa quema CPU y
+      // batería en el celular. Tras 4 cortes seguidos y rápidos, se espacia.
+      const ahora = Date.now();
+      const rapido = ahora - reinicioRef.current.ultimo < 1200;
+      reinicioRef.current = { ultimo: ahora, seguidos: rapido ? reinicioRef.current.seguidos + 1 : 0 };
+      const espera = reinicioRef.current.seguidos >= 4
+        ? Math.min(4000, 250 * reinicioRef.current.seguidos)
+        : 0;
+      const arrancar = () => {
+        if (!wantListeningRef.current) return;
+        try { rec.start(); } catch { wantListeningRef.current = false; setListening(false); }
+      };
+      if (espera > 0) setTimeout(arrancar, espera);
+      else arrancar();
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onerror = (e: any) => {
@@ -280,6 +338,37 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
   }, []);
 
+  /**
+   * Mantiene la pantalla encendida mientras se dicta: en el patio el celular
+   * se bloqueaba a los 30 s y con la pantalla apagada Chrome corta el
+   * micrófono — había que desbloquear y volver a tocar el botón cada rato.
+   */
+  const wakeLock = useCallback(async (activar: boolean) => {
+    try {
+      if (activar) {
+        const nav = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } };
+        if (!nav.wakeLock || wakeRef.current) return;
+        wakeRef.current = await nav.wakeLock.request("screen");
+      } else if (wakeRef.current) {
+        const w = wakeRef.current;
+        wakeRef.current = null;
+        await w.release();
+      }
+    } catch { /* sin soporte o denegado: el dictado sigue igual */ }
+  }, []);
+
+  // El sistema puede soltar el lock al minimizar; se re-pide al volver.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && wantListeningRef.current) void wakeLock(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      void wakeLock(false);
+    };
+  }, [wakeLock]);
+
   const toggleListen = useCallback(() => {
     const rec = recRef.current;
     if (!rec) return;
@@ -289,13 +378,16 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     if (wantListeningRef.current) {
       wantListeningRef.current = false; rec.stop(); setListening(false);
       resetVoz(); setLiveText("");
+      void wakeLock(false);
       try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
       return;
     }
     wantListeningRef.current = true;
     resetVoz(); setLiveText(""); setErrMsg(null);
+    reinicioRef.current = { ultimo: 0, seguidos: 0 };
+    void wakeLock(true);
     try { rec.start(); setListening(true); } catch { /* ya corriendo */ }
-  }, [stopLeer]);
+  }, [stopLeer, wakeLock]);
 
   // Editar una fila por voz: seleccionás la fila, dictás 3 números y la cambia.
   const startEdit = useCallback((rowId: string) => {
@@ -348,6 +440,29 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     if (!(e > 0 && a > 0 && l > 0)) return;
     addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especie || undefined });
     setManual({ cantidad: "1", espesor: "", ancho: "", largo: "" });
+  };
+
+  /** Edición a mano de una fila (cantidad/medidas/especie) — sin pasar por voz. */
+  const editarCampo = (id: string, campo: "cantidad" | "espesor" | "ancho" | "largo", valor: number) => {
+    if (!(valor > 0)) return;
+    persist(rows.map((r) => {
+      if (r.id !== id) return r;
+      const upd = { ...r, [campo]: campo === "cantidad" ? Math.round(valor) : valor };
+      const { pieTablar, m3 } = cubicarPieza(upd);
+      return { ...upd, pieTablar, m3 };
+    }));
+  };
+  const editarEspecie = (id: string, especieNueva: string) => {
+    persist(rows.map((r) => (r.id === id ? { ...r, especie: especieNueva || undefined } : r)));
+  };
+  /** Duplica la fila justo debajo: el mismo tipo de pieza se repite todo el día. */
+  const duplicar = (id: string) => {
+    const i = rows.findIndex((r) => r.id === id);
+    if (i < 0) return;
+    const copia: PiezaCubicada = { ...rows[i], id: nuevoId() };
+    const next = [...rows.slice(0, i + 1), copia, ...rows.slice(i + 1)];
+    persist(next);
+    setLastAdded(copia);
   };
 
   const cambiarUnidad = (id: string, campo: "uEspesor" | "uAncho" | "uLargo", u: Unidad) => {
@@ -448,6 +563,24 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     }
   };
 
+  /**
+   * Manda el resumen por WhatsApp: en el patio se cierra el trato por chat, y
+   * el comprador quiere el detalle por medida, el total en PT y el precio.
+   */
+  const compartirWhatsApp = () => {
+    const lineas = resumen.slice(0, 12).map((g) => `• ${g.cantidad}× ${g.label} = ${fmtPt(g.pt)} PT`);
+    const extra = resumen.length > 12 ? `\n…y ${resumen.length - 12} medidas más` : "";
+    const texto = [
+      `*Cubicación${especie ? ` · ${especie}` : ""}*`,
+      `${totales.piezas} piezas · ${fmtPt(totales.pt)} PT · ${fmtM3(totales.m3)} m³`,
+      "",
+      ...lineas,
+      extra,
+      precio > 0 ? `\n*Total: S/ ${soles(valorLote)}* (S/ ${soles(precio)} por PT)` : "",
+    ].filter(Boolean).join("\n");
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+  };
+
   const exportarCSV = () => {
     const head = ["Cantidad", "Espesor", "uEsp", "Ancho", "uAnc", "Largo", "uLar", "Especie", "PieTablar", "m3", "ValorS/"];
     const lines = rows.map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3, (r.pieTablar * precio).toFixed(2)].join(","));
@@ -495,6 +628,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   {config.speak ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} El sistema repite {config.speak ? "SÍ" : "NO"}
                 </button>
                 <button type="button" onClick={() => decir("dos, seis, ocho", config.voiceRate, config.voiceURI)} className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Probar voz</button>
+                <button
+                  type="button"
+                  onClick={() => updateConfig({ avisarRaras: !config.avisarRaras })}
+                  title="Resalta las piezas con medidas fuera de lo común (no las cambia)"
+                  className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition ${config.avisarRaras ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" /> Avisar medidas raras {config.avisarRaras ? "SÍ" : "NO"}
+                </button>
               </div>
             </div>
             <div className="space-y-3">
@@ -635,6 +776,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               <button type="button" onClick={leerTabla} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${readingId ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                 {readingId ? <><Square className="h-3.5 w-3.5" /> Detener lectura</> : <><Volume2 className="h-3.5 w-3.5" /> Leer tabla</>}
               </button>
+              <button type="button" onClick={compartirWhatsApp} title="Mandar el resumen por WhatsApp" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+              </button>
               <button type="button" onClick={() => exportarPDF(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined }).catch(() => setErrMsg("No se pudo generar el PDF."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">PDF</button>
               <button type="button" onClick={() => exportarExcel(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined }).catch(() => setErrMsg("No se pudo generar el Excel."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Excel</button>
               <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
@@ -707,17 +851,37 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     : editando
                       ? "bg-[var(--accent-soft)] outline outline-2 -outline-offset-2 outline-[var(--data-warning-500)]"
                       : lastAdded?.id === r.id ? "bg-[var(--data-success-50)]" : "";
+                  // Medida fuera de rango: se AVISA, no se corrige — el dato es del operario.
+                  const rara = avisarRaras && medidaSospechosa(r.espesor, r.ancho, r.largo);
                   return (
-                  <tr key={r.id} id={`cub-row-${r.id}`} className={`border-t border-[var(--rule-soft)] transition-colors ${rowCls}`}>
-                    <td className="px-3 py-2 font-mono font-bold tabular-nums text-[var(--text-primary)]">{r.cantidad}</td>
-                    <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} onU={(u) => cambiarUnidad(r.id, "uEspesor", u)} /></td>
-                    <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} onU={(u) => cambiarUnidad(r.id, "uAncho", u)} /></td>
-                    <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} /></td>
-                    <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie ?? "—"}</td>
+                  <tr key={r.id} id={`cub-row-${r.id}`} className={`border-t border-[var(--rule-soft)] transition-colors ${rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}>
+                    <td className="px-3 py-2"><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} /></td>
+                    <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} onU={(u) => cambiarUnidad(r.id, "uEspesor", u)} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" /></td>
+                    <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} onU={(u) => cambiarUnidad(r.id, "uAncho", u)} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" /></td>
+                    <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" /></td>
+                    <td className="px-3 py-2">
+                      <select
+                        value={r.especie ?? ""}
+                        onChange={(e) => editarEspecie(r.id, e.target.value)}
+                        aria-label="Especie de la pieza"
+                        className="max-w-[110px] rounded-md border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                      >
+                        <option value="">—</option>
+                        {ESPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </td>
                     <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtPt(r.pieTablar)}</td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(r.m3)}</td>
                     <td className="px-3 py-2">
                       <div className="flex items-center justify-end gap-1.5">
+                        {rara && (
+                          <span title="Medida fuera de lo común — revisá que esté bien" className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                            <AlertTriangle className="h-4 w-4" />
+                          </span>
+                        )}
+                        <button type="button" onClick={() => duplicar(r.id)} aria-label="Duplicar esta fila" title="Duplicar (misma medida otra vez)" className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
                         <button type="button" onClick={() => startEdit(r.id)} aria-label={editando ? "Cancelar edición por voz" : "Editar esta fila por voz"} title={editando ? "Cancelar" : "Dictar nuevas medidas para esta fila"} className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border transition ${editando ? "animate-pulse border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}>
                           {editando ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
                         </button>
@@ -767,11 +931,29 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   );
 }
 
-function Dim({ v, u, onU }: { v: number; u: Unidad; onU: (u: Unidad) => void }) {
+/** Número editable en la tabla: se corrige a mano sin volver a dictar. */
+function Num({ v, onV, etiqueta, ancho = "w-14" }: { v: number; onV: (n: number) => void; etiqueta: string; ancho?: string }) {
+  return (
+    <input
+      type="number"
+      inputMode="decimal"
+      min={0}
+      step="any"
+      value={v}
+      aria-label={etiqueta}
+      onChange={(e) => { const n = Number(e.target.value); if (n > 0) onV(n); }}
+      className={`${ancho} rounded-md border border-transparent bg-transparent px-1 py-0.5 font-mono font-bold tabular-nums text-[var(--text-primary)] outline-none hover:border-[var(--rule-base)] focus:border-[var(--accent)]`}
+    />
+  );
+}
+
+function Dim({ v, u, onU, onV, etiqueta }: { v: number; u: Unidad; onU: (u: Unidad) => void; onV?: (n: number) => void; etiqueta?: string }) {
   return (
     <span className="inline-flex items-center gap-1">
-      <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{v}</span>
-      <select value={u} onChange={(e) => onU(e.target.value as Unidad)} className="rounded-md border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none">
+      {onV
+        ? <Num v={v} onV={onV} etiqueta={`${etiqueta ?? "Medida"} (${u})`} />
+        : <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{v}</span>}
+      <select value={u} onChange={(e) => onU(e.target.value as Unidad)} aria-label={`Unidad de ${etiqueta ?? "la medida"}`} className="rounded-md border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none">
         {UNIDADES.map((x) => <option key={x.v} value={x.v}>{x.label}</option>)}
       </select>
     </span>

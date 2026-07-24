@@ -11,6 +11,8 @@ export interface CubicadorConfig {
   voiceURI: string;
   /** El sistema repite en voz lo que se dicta/hace. */
   speak: boolean;
+  /** Resalta las filas con medidas fuera de lo común (no las corrige). */
+  avisarRaras: boolean;
   /** Frases-gatillo de cada comando (editables). */
   comandos: ComandosCfg;
 }
@@ -19,6 +21,7 @@ export const CONFIG_DEFAULT: CubicadorConfig = {
   voiceRate: 1.5,
   voiceURI: "",
   speak: true,
+  avisarRaras: true,
   comandos: COMANDOS_DEFAULT,
 };
 
@@ -38,6 +41,7 @@ export function loadConfig(): CubicadorConfig {
       voiceRate: typeof p.voiceRate === "number" ? p.voiceRate : CONFIG_DEFAULT.voiceRate,
       voiceURI: typeof p.voiceURI === "string" ? p.voiceURI : "",
       speak: typeof p.speak === "boolean" ? p.speak : true,
+      avisarRaras: typeof p.avisarRaras === "boolean" ? p.avisarRaras : true,
       comandos: {
         pausar: p.comandos?.pausar ?? COMANDOS_DEFAULT.pausar,
         continuar: p.comandos?.continuar ?? COMANDOS_DEFAULT.continuar,

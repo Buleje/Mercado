@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { cubicarPieza, parseDictado, parseVozDims, mejoresNumeros, partirEnPiezas, detectarComando } from "@/lib/forestal/cubicacion";
+import {
+  cubicarPieza, parseDictado, parseVozDims, mejoresNumeros, partirEnPiezas, detectarComando,
+  leerDictado, medidaSospechosa,
+} from "@/lib/forestal/cubicacion";
 
 describe("cubicarPieza", () => {
   it("pie tablar comercial 2x8x10 pulg/pulg/pies", () => {
@@ -134,5 +137,48 @@ describe("comandos de voz", () => {
   it("un dictado de números NO es comando", () => {
     expect(detectarComando("dos seis nueve")).toBeNull();
     expect(detectarComando("2 8 10")).toBeNull();
+  });
+});
+
+describe("bugs de campo del dictado (regresión)", () => {
+  it('dictar "dos PARA ocho" ya no pausa — el reconocedor confunde el "por"', () => {
+    expect(detectarComando("dos para ocho por diez")).toBeNull();
+    expect(detectarComando("cuatro por seis alto")).toBeNull();
+    expect(detectarComando("2 8 10 sigue")).toBeNull();
+  });
+
+  it("un comando dicho SOLO sigue funcionando", () => {
+    expect(detectarComando("pausa")?.tipo).toBe("pausar");
+    expect(detectarComando("continúa")?.tipo).toBe("continuar");
+    expect(detectarComando("borra el ultimo")?.tipo).toBe("borrar-ultimo");
+    expect(detectarComando("especie tornillo")?.tipo).toBe("especie");
+  });
+
+  it("números pegados: 2812 es 2·8·12, no 2·8·1 + 2 huérfano", () => {
+    expect(mejoresNumeros(["2812"])).toEqual([2, 8, 12]);
+    expect(mejoresNumeros(["2814"])).toEqual([2, 8, 14]);
+    expect(mejoresNumeros(["2810"])).toEqual([2, 8, 10]);
+    expect(mejoresNumeros(["268"])).toEqual([2, 6, 8]);
+  });
+
+  it("números pegados sin lectura creíble caen a dígitos sueltos (no inventa)", () => {
+    // 9999 no da ninguna medida válida de madera.
+    expect(mejoresNumeros(["9999"]).length).toBeGreaterThan(0);
+  });
+
+  it("la cantidad dictada no se confunde con el espesor", () => {
+    expect(leerDictado("cinco piezas de dos por ocho por diez")).toEqual({ cantidad: 5, nums: [2, 8, 10] });
+    expect(leerDictado("3 tablas 2 6 8")).toEqual({ cantidad: 3, nums: [2, 6, 8] });
+  });
+
+  it("sin la palabra piezas, todo son medidas", () => {
+    expect(leerDictado("dos ocho diez")).toEqual({ cantidad: 1, nums: [2, 8, 10] });
+  });
+
+  it("medidas fuera de rango se marcan (nunca se corrigen solas)", () => {
+    expect(medidaSospechosa(2, 8, 10)).toBe(false);
+    expect(medidaSospechosa(2, 8, 1)).toBe(true);    // largo de 1 pie
+    expect(medidaSospechosa(20, 8, 10)).toBe(true);  // espesor de 20 pulgadas
+    expect(medidaSospechosa(8, 2, 10)).toBe(true);   // más gruesa que ancha = dado vuelta
   });
 });
