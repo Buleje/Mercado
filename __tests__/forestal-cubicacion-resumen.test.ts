@@ -42,17 +42,17 @@ describe("agruparPor", () => {
     expect(s28.pieTablar).toBeCloseTo(37.33, 1);
   });
 
-  it("por tipo agrupa comercial vs paquetería según la medida", () => {
+  it("por tipo agrupa según la medida (comercial/corta/tabla)", () => {
     const mix = [
-      pieza(1, 2, 8, 10, "Tornillo"), // comercial
-      pieza(1, 2, 8, 4, "Cedro"),     // paq. corta (largo < 6)
-      pieza(1, 1, 4, 12, "Cedro"),    // paq. larga (sección menor)
+      pieza(1, 2, 8, 10, "Tornillo"), // Comercial (esp≥2, anc≥6, largo≥6)
+      pieza(1, 2, 8, 4, "Cedro"),     // Corta comercial (largo < 6)
+      pieza(1, 1, 4, 12, "Cedro"),    // Tabla (esp=1, anc≥3, largo≥6)
     ];
     const r = agruparPor(mix, "tipo");
     const labels = r.grupos.map((g) => g.label).sort();
     expect(labels).toContain("Comercial");
-    expect(labels).toContain("Paquetería corta");
-    expect(labels).toContain("Paquetería larga");
+    expect(labels).toContain("Corta comercial");
+    expect(labels).toContain("Tabla");
   });
 
   it("por medida distingue especie (dos 2×8 de especies distintas no se juntan)", () => {

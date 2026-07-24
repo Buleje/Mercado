@@ -96,11 +96,22 @@ function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number,
 }
 
 /** Clases del badge de la columna Tipo según el tono del DS. */
-function tipoBadgeCls(tono: "success" | "info" | "neutral"): string {
+function tipoBadgeCls(tono: "success" | "info" | "warning" | "neutral"): string {
   if (tono === "success") return "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]";
   if (tono === "info") return "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]";
+  if (tono === "warning") return "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]";
   return "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
 }
+
+/** Leyenda de los tipos comerciales por medida (SERFOR mide esp·anc·largo). */
+const TIPO_LEYENDA: { label: string; tono: "success" | "info" | "warning" | "neutral"; regla: string }[] = [
+  { label: "Comercial", tono: "success", regla: "esp ≥ 2\" · anc ≥ 6\" · largo ≥ 6 pies" },
+  { label: "Com. corta", tono: "success", regla: "esp ≥ 2\" · anc ≥ 6\" · largo < 6" },
+  { label: "Tabla", tono: "info", regla: "esp = 1\" · anc ≥ 3\" · largo ≥ 6" },
+  { label: "Paq. larga", tono: "neutral", regla: "6\"×6\" exacto · largo ≥ 6" },
+  { label: "Paq. corta", tono: "neutral", regla: "6\"×6\" exacto · largo < 6" },
+  { label: "L. angosta", tono: "warning", regla: "esp ≤ 5\" · anc ≤ 5\" · largo ≥ 6" },
+];
 
 export default function CubicadorMadera({ onPresent }: { onPresent?: () => void }) {
   const [rows, setRows] = useState<PiezaCubicada[]>([]);
@@ -1340,12 +1351,17 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
         {/* Leyenda del Tipo — cómo se clasifica cada pieza por su medida (SERFOR: esp·anc·largo) */}
         {rows.length > 0 && (
-          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            <span className="font-bold uppercase tracking-wide">Tipo por medida:</span>
-            <span className="inline-flex items-center gap-1"><span className={`inline-block rounded-full px-1.5 py-0.5 font-bold ${tipoBadgeCls("success")}`}>Comercial</span> espesor ≥ 2&quot; · ancho ≥ 6&quot; · largo ≥ 6 pies</span>
-            <span className="inline-flex items-center gap-1"><span className={`inline-block rounded-full px-1.5 py-0.5 font-bold ${tipoBadgeCls("info")}`}>Paq. larga</span> largo ≥ 6 pies, sección menor</span>
-            <span className="inline-flex items-center gap-1"><span className={`inline-block rounded-full px-1.5 py-0.5 font-bold ${tipoBadgeCls("neutral")}`}>Paq. corta</span> largo &lt; 6 pies</span>
-          </p>
+          <div className="mt-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Tipo por medida (espesor · ancho · largo)</span>
+            <div className="mt-1.5 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+              {TIPO_LEYENDA.map((t) => (
+                <span key={t.label} className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+                  <span className={`inline-block shrink-0 rounded-full px-1.5 py-0.5 font-bold ${tipoBadgeCls(t.tono)}`}>{t.label}</span>
+                  <span className="text-[var(--text-tertiary)]">{t.regla}</span>
+                </span>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Precio → valor del lote (plata) */}
