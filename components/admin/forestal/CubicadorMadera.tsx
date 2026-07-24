@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3, ESPECIES_MADERA,
@@ -21,6 +21,8 @@ import {
   type CubicadorConfig,
 } from "@/lib/forestal/cubicador-config";
 import { exportarPDF, exportarExcel } from "@/lib/forestal/cubicador-export";
+import { hoyISO, nombreSugerido, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
+import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -109,6 +111,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [showResumen, setShowResumen] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false); // ya quedó registrado en el Libro CTP
+  /** Cubicación guardada que se está editando (null = lote nuevo sin guardar). */
+  const [cubicacionActual, setCubicacionActual] = useState<{ id: string; nombre: string } | null>(null);
+  const [showGuardar, setShowGuardar] = useState(false);
+  const [showHistorial, setShowHistorial] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [guardadoOk, setGuardadoOk] = useState<string | null>(null);
+  const [historialToken, setHistorialToken] = useState(0);
+  const [form, setForm] = useState({ nombre: "", fecha: hoyISO(), cliente: "", notas: "" });
   const [paused, setPaused] = useState(false); // "pausar" por voz → ignora números hasta "continúa"
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
@@ -564,6 +574,77 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   };
 
   /**
+   * Guarda el lote como cubicación con nombre y fecha. Los totales los
+   * recalcula el servidor desde las piezas — el papel guardado no depende de
+   * lo que diga la pantalla.
+   */
+  const guardarCubicacion = async () => {
+    if (!rows.length || guardando) return;
+    setGuardando(true);
+    setErrMsg(null);
+    try {
+      const r = await fetch("/api/admin/forestal/cubicaciones", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...csrfHeaders() },
+        credentials: "include",
+        body: JSON.stringify({
+          id: cubicacionActual?.id || undefined,
+          nombre: form.nombre.trim() || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }),
+          fecha: form.fecha,
+          cliente: form.cliente.trim() || null,
+          especie: especie || null,
+          notas: form.notas.trim() || null,
+          precioPt: precio,
+          piezas: rows.map((p) => ({
+            id: p.id, cantidad: p.cantidad, espesor: p.espesor, ancho: p.ancho, largo: p.largo,
+            uEspesor: p.uEspesor, uAncho: p.uAncho, uLargo: p.uLargo, especie: p.especie ?? null,
+          })),
+        }),
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(
+          j?.error === "specialization_disabled" ? (j.message as string)
+            : j?.error === "validation_error" ? "Revisá los datos de la cubicación."
+              : (j?.message ?? `HTTP ${r.status}`),
+        );
+      }
+      const { cubicacion } = (await r.json()) as { cubicacion: CubicacionRegistro };
+      setCubicacionActual({ id: cubicacion.id, nombre: cubicacion.nombre });
+      setGuardadoOk(cubicacion.nombre);
+      setShowGuardar(false);
+      setHistorialToken((v) => v + 1);
+      setTimeout(() => setGuardadoOk(null), 6000);
+    } catch (e) {
+      setErrMsg(`No se pudo guardar: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  /** Carga una cubicación guardada en la tabla para seguir o re-exportar. */
+  const abrirCubicacion = (c: CubicacionRegistro) => {
+    if (rows.length > 0 && !cubicacionActual && !window.confirm("Vas a reemplazar el lote que tenés en pantalla y no está guardado. ¿Seguir?")) return;
+    persist(c.piezas);
+    setEspecie(c.especie ?? "");
+    setPrecioPt(c.precioPt ? String(c.precioPt) : "");
+    setForm({ nombre: c.nombre, fecha: c.fecha, cliente: c.cliente ?? "", notas: c.notas ?? "" });
+    setCubicacionActual(c.id ? { id: c.id, nombre: c.nombre } : null);
+    setShowHistorial(false);
+    setLastAdded(null);
+    setEnviado(false);
+  };
+
+  /** Arranca un lote en blanco (lo guardado queda en el historial). */
+  const nuevaCubicacion = () => {
+    if (rows.length > 0 && !cubicacionActual && !window.confirm("El lote actual no está guardado y se va a borrar. ¿Seguir?")) return;
+    limpiar();
+    setCubicacionActual(null);
+    setForm({ nombre: "", fecha: hoyISO(), cliente: "", notas: "" });
+    setEnviado(false);
+  };
+
+  /**
    * Manda el resumen por WhatsApp: en el patio se cierra el trato por chat, y
    * el comprador quiere el detalle por medida, el total en PT y el precio.
    */
@@ -764,9 +845,31 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       {/* Tabla acumulada */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Table className="h-4 w-4 text-[var(--accent)]" /> Lote cubicado ({rows.length})</h3>
+          <div className="min-w-0">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <Table className="h-4 w-4 text-[var(--accent)]" /> {cubicacionActual ? cubicacionActual.nombre : "Lote cubicado"} ({rows.length})
+            </h3>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              {cubicacionActual ? "Guardada — al tocar «Guardar» se actualiza esta misma cubicación." : "Sin guardar — vive sólo en este dispositivo hasta que la guardes."}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setShowHistorial((v) => !v)} title="Ver las cubicaciones guardadas" className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showHistorial ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+              <FileText className="h-3.5 w-3.5" /> Guardadas
+            </button>
+            {rows.length > 0 && (
+              <>
+                <button type="button" onClick={() => { setForm((f) => ({ ...f, nombre: f.nombre || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }) })); setShowGuardar((v) => !v); }} title="Guardar esta cubicación con nombre y fecha" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95">
+                  <Save className="h-3.5 w-3.5" /> {cubicacionActual ? "Actualizar" : "Guardar"}
+                </button>
+                <button type="button" onClick={nuevaCubicacion} title="Empezar un lote nuevo (lo guardado no se pierde)" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                  <Plus className="h-3.5 w-3.5" /> Nueva
+                </button>
+              </>
+            )}
+          </div>
           {rows.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex w-full flex-wrap gap-2">
               <button type="button" onClick={() => void enviarAlLibro()} disabled={enviando} title="Registrar este lote como producción en el Libro CTP" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95 disabled:opacity-50">
                 <Send className="h-3.5 w-3.5" /> {enviando ? "Registrando…" : "Enviar al Libro"}
               </button>
@@ -786,6 +889,88 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             </div>
           )}
         </div>
+
+        {/* Historial de cubicaciones guardadas */}
+        {showHistorial && (
+          <div className="mb-3">
+            <CubicacionesGuardadas onAbrir={abrirCubicacion} onCerrar={() => setShowHistorial(false)} recargarToken={historialToken} />
+          </div>
+        )}
+
+        {/* Formulario de guardado: nombre, fecha, cliente y notas */}
+        {showGuardar && (
+          <div className="mb-3 rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--surface-canvas)] p-4">
+            <p className="mb-3 text-sm font-bold text-[var(--text-primary)]">
+              {cubicacionActual ? "Actualizar la cubicación" : "Guardar esta cubicación"}
+              <span className="ml-2 font-mono text-xs font-normal text-[var(--text-tertiary)]">
+                {totales.piezas} piezas · {fmtPt(totales.pt)} PT{precio > 0 ? ` · S/ ${soles(valorLote)}` : ""}
+              </span>
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Nombre</span>
+                <input
+                  value={form.nombre}
+                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                  placeholder="Lote Tornillo · Sr. Pérez"
+                  maxLength={120}
+                  className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Fecha del trabajo</span>
+                <input
+                  type="date"
+                  value={form.fecha}
+                  onChange={(e) => setForm({ ...form, fecha: e.target.value || hoyISO() })}
+                  className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Cliente o destino (opcional)</span>
+                <input
+                  value={form.cliente}
+                  onChange={(e) => setForm({ ...form, cliente: e.target.value })}
+                  placeholder="Maderera del Centro"
+                  maxLength={120}
+                  className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Notas (opcional)</span>
+                <input
+                  value={form.notas}
+                  onChange={(e) => setForm({ ...form, notas: e.target.value })}
+                  placeholder="Entregado en camión, falta el saldo"
+                  maxLength={600}
+                  className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </label>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => void guardarCubicacion()} disabled={guardando}
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50">
+                {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {guardando ? "Guardando…" : cubicacionActual ? "Actualizar" : "Guardar"}
+              </button>
+              <button type="button" onClick={() => setShowGuardar(false)} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                Cancelar
+              </button>
+              <span className="text-xs text-[var(--text-tertiary)]">Queda en tu cuenta: la ves desde cualquier dispositivo.</span>
+            </div>
+          </div>
+        )}
+
+        {guardadoOk && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2 dark:bg-[var(--data-success-500)]/12">
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+              <Check className="h-4 w-4" /> Guardada como «{guardadoOk}».
+            </span>
+            <button type="button" onClick={() => { setShowHistorial(true); setGuardadoOk(null); }} className="rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
+              Ver guardadas
+            </button>
+          </div>
+        )}
 
         {enviado && (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2 dark:bg-[var(--data-success-500)]/12">

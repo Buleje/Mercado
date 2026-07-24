@@ -38,7 +38,10 @@ export type CtpAuditEntity =
   // KV: geolocalización de orígenes para el dossier EUDR (ADR-140).
   | "ForestOrigenGeo"
   // KV: zonas físicas del aserradero para el Mapa de Planta (ADR-142).
-  | "ForestPlantaZona";
+  | "ForestPlantaZona"
+  // KV: cubicaciones guardadas del cubicador — la medición del lote, previa al
+  // libro (al libro entra después como producción, con su propio registro).
+  | "ForestCubicacion";
 
 /**
  * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
@@ -81,7 +84,11 @@ export type CtpAuditAction =
   | "ctp_planta_zona_set"
   | "ctp_planta_zona_delete"
   // Ubicación de una troza/ingreso en una zona de la planta (ADR-142 follow-up)
-  | "ctp_planta_asignar";
+  | "ctp_planta_asignar"
+  // Cubicaciones guardadas del cubicador (la medición del lote, previa al libro)
+  | "ctp_cubicacion_create"
+  | "ctp_cubicacion_update"
+  | "ctp_cubicacion_delete";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no
