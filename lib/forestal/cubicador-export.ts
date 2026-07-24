@@ -5,6 +5,8 @@
  */
 import type { PiezaCubicada } from "./cubicacion";
 import { PT_POR_M3 } from "./cubicacion";
+import type { DatosLiquidacion, Liquidacion } from "./cubicacion-liquidacion";
+import { fechaLarga } from "./cubicacion-liquidacion";
 
 export interface ExportOpts {
   precioPt: number;      // S/ por pie tablar (0 = sin precio)
@@ -79,6 +81,46 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
   doc.text(`1 m³ = ${PT_POR_M3} pie tablar · documento generado por el cubicador de Buleje.`, 40, y + 20);
 
   doc.save(`cubicacion-${fecha()}.pdf`);
+}
+
+/** PDF de la liquidación por especie (comprobante para el comprador). */
+export async function exportarLiquidacionPDF(datos: DatosLiquidacion, liq: Liquidacion): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+  const autoTable = (await import("jspdf-autotable")).default;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const conValor = liq.total > 0;
+  const s = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  doc.setFont("helvetica", "bold"); doc.setFontSize(18);
+  doc.text("Liquidación de madera", 40, 46);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(110);
+  if (datos.emisor) doc.text(datos.emisor, 40, 62);
+  doc.text(`Cliente: ${datos.cliente || "—"}${datos.documento ? ` · ${datos.documento}` : ""}`, 40, datos.emisor ? 78 : 62);
+  doc.text(`Fecha: ${fechaLarga(datos.fecha)}`, 400, datos.emisor ? 78 : 62);
+
+  const head = [["Especie", "Piezas", "Pie tablar", ...(conValor ? ["S/ / PT", "Subtotal"] : [])]];
+  const body = liq.lineas.map((l) => [
+    l.especie, String(l.piezas), s(l.pieTablar),
+    ...(conValor ? [`S/ ${s(l.precioPt)}`, `S/ ${s(l.subtotal)}`] : []),
+  ]);
+  const foot = [[`Total · ${liq.totalPiezas} pzas`, String(liq.totalPiezas), `${s(liq.totalPt)} PT`, ...(conValor ? ["", `S/ ${s(liq.total)}`] : [])]];
+
+  autoTable(doc, {
+    head, body, foot,
+    startY: datos.emisor ? 92 : 78,
+    styles: { fontSize: 10, cellPadding: 6 },
+    headStyles: { fillColor: [0, 128, 96], textColor: 255 },
+    footStyles: { fillColor: [230, 244, 240], textColor: 20, fontStyle: "bold" },
+    columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+  });
+  let y = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 120;
+  if (datos.nota) {
+    doc.setFontSize(10); doc.setTextColor(80);
+    doc.text(doc.splitTextToSize(datos.nota, 515), 40, y + 22); y += 22 + datos.nota.split("\n").length * 12;
+  }
+  doc.setFontSize(9); doc.setTextColor(120);
+  doc.text(`${s(liq.totalM3)} m³ · documento generado por el cubicador de Buleje.`, 40, y + 24);
+  doc.save(`liquidacion-${datos.cliente ? datos.cliente.toLowerCase().replace(/\s+/g, "-").slice(0, 24) : fecha()}.pdf`);
 }
 
 /** Excel (.xlsx): una hoja con las filas, totales y formato numérico. */

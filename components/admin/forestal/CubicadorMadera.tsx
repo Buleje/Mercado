@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, Lock, Unlock, X, FileSpreadsheet } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, Lock, Unlock, X, FileSpreadsheet, Receipt } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3, ESPECIES_MADERA,
@@ -25,6 +25,7 @@ import { hoyISO, nombreSugerido, type CubicacionRegistro } from "@/lib/forestal/
 import { agruparPor, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION, type DimensionResumen } from "@/lib/forestal/cubicacion-resumen";
 import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
+import LiquidacionModal from "./LiquidacionModal";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -121,6 +122,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [showGuardar, setShowGuardar] = useState(false);
   const [showHistorial, setShowHistorial] = useState(false);
   const [showImportar, setShowImportar] = useState(false);
+  const [showLiquidacion, setShowLiquidacion] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [guardadoOk, setGuardadoOk] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
@@ -1004,6 +1006,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               <button type="button" onClick={leerTabla} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${readingId ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                 {readingId ? <><Square className="h-3.5 w-3.5" /> Detener lectura</> : <><Volume2 className="h-3.5 w-3.5" /> Leer tabla</>}
               </button>
+              <button type="button" onClick={() => setShowLiquidacion(true)} title="Comprobante de liquidación por especie para el comprador" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95">
+                <Receipt className="h-3.5 w-3.5" /> Liquidación
+              </button>
               <button type="button" onClick={compartirWhatsApp} title="Mandar el resumen por WhatsApp" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
               </button>
@@ -1330,6 +1335,16 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         <ImportarCubicacionModal
           onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
           onCerrar={() => setShowImportar(false)}
+        />
+      )}
+
+      {showLiquidacion && (
+        <LiquidacionModal
+          rows={rows}
+          precioDe={precioDe}
+          clienteInicial={form.cliente}
+          notaInicial={form.notas}
+          onCerrar={() => setShowLiquidacion(false)}
         />
       )}
     </div>
