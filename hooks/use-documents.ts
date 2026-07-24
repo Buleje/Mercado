@@ -38,7 +38,11 @@ export interface UseDocumentsResult {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  upload: (files: File[], opts?: { folderId?: string | null; onProgress?: (done: number, total: number) => void }) => Promise<DbDocument[]>;
+  upload: (files: File[], opts?: {
+    folderId?: string | null;
+    onProgress?: (done: number, total: number) => void;
+    onEstado?: (nombre: string, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error") => void;
+  }) => Promise<DbDocument[]>;
   scan: (file: File, opts?: { folderId?: string | null }) => Promise<{ document: DbDocument; scan: { ok: boolean; suggestedName?: string; category?: string; expiresAt?: string | null } }>;
   patch: (id: string, patch: Partial<{ name: string; folderId: string | null; category: string; tags: string[]; favorite: boolean; status: string; expiresAt: string | null; allowedRoles: string[]; customerId: string | null; orderId: string | null; supplierId: string | null }>) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -113,10 +117,23 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
   ]);
 
   const upload = useCallback(
-    async (files: File[], opts?: { folderId?: string | null; onProgress?: (done: number, total: number) => void }) => {
+    async (
+      files: File[],
+      opts?: {
+        folderId?: string | null;
+        onProgress?: (done: number, total: number) => void;
+        /** Estado por archivo, con su nombre ORIGINAL (el panel de progreso). */
+        onEstado?: (nombre: string, estado: "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error") => void;
+      },
+    ) => {
       // Las fotos grandes se comprimen ANTES de subir (varias veces más
       // rápido con datos móviles); lo que no es imagen sale intacto.
-      const listos = await Promise.all(files.map((f) => comprimirImagen(f)));
+      const listos = await Promise.all(files.map(async (f) => {
+        if (f.type.startsWith("image/")) opts?.onEstado?.(f.name, "comprimiendo");
+        const c = await comprimirImagen(f);
+        opts?.onEstado?.(f.name, "en-cola");
+        return c;
+      }));
 
       // Pool de 3 subidas en paralelo: subir de a una hacía esperar N viajes
       // completos; más de 3 satura conexiones lentas sin ganar tiempo.
@@ -128,16 +145,20 @@ export function useDocuments(filters: DocumentListFilters = {}): UseDocumentsRes
           const idx = siguiente++;
           if (idx >= listos.length) return;
           const f = listos[idx];
+          const nombreOriginal = files[idx].name; // la compresión pudo renombrar
           const fd = new FormData();
           fd.append("file", f);
           if (opts?.folderId !== undefined && opts.folderId !== null) {
             fd.append("folderId", opts.folderId);
           }
+          opts?.onEstado?.(nombreOriginal, "subiendo");
           try {
             const r = await http<{ document: DbDocument }>(BASE, { method: "POST", body: fd });
             out.push(r.document);
+            opts?.onEstado?.(nombreOriginal, "listo");
           } catch (e) {
             console.error("upload_fail", f.name, e);
+            opts?.onEstado?.(nombreOriginal, "error");
           }
           hechos++;
           opts?.onProgress?.(hechos, listos.length);

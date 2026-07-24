@@ -23,7 +23,7 @@ import {
   Upload, Search, Grid3x3, List, FolderArchive, FileText, Image as ImageIcon,
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
-  Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive,
+  Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
   ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack,
 } from "lucide-react";
@@ -62,6 +62,19 @@ function formatBytes(b: number): string {
   if (b < 1024 * 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(1)} MB`;
   return `${(b / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
+
+/** Estado de cada archivo mientras se sube (panel de progreso). */
+type EstadoArchivo = "en-cola" | "comprimiendo" | "subiendo" | "listo" | "error";
+
+/** Clave por tenant de las sugerencias IA que el usuario descartó. */
+function sugDescartadasKey(): string {
+  let slug = "main";
+  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
+  return `doc-sug-descartadas-${slug}`;
+}
+
+const fmtFechaCorta = (iso: string) =>
+  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 
 function getFileIcon(type: string): { Icon: typeof FileIcon; tint: string; bg: string } {
   // Tints por tipo de archivo (paleta categórica); con variante dark para que
@@ -213,6 +226,10 @@ export default function DocumentosModule() {
   const [preview, setPreview] = useState<DbDocument | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+  /** Estado por archivo de la subida en curso (panel abajo a la derecha). */
+  const [estadoSubida, setEstadoSubida] = useState<Map<string, EstadoArchivo> | null>(null);
+  /** Sugerencias IA descartadas por el usuario (persisten por tenant). */
+  const [sugDescartadas, setSugDescartadas] = useState<Set<string>>(new Set());
   const [dragOver, setDragOver] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   // Subcarpetas: `undefined` = no creando, `null` = crear en raíz, string = crear dentro de esa carpeta.
@@ -397,6 +414,48 @@ export default function DocumentosModule() {
   // ── Árbol de carpetas (subcarpetas anidadas) ──
   const childrenMap = useMemo(() => buildChildrenMap(folders), [folders]);
   const folderById = useMemo(() => new Map(folders.map((f) => [f.id, f])), [folders]);
+
+  // ── Sugerencias IA de organización (carpeta/vencimiento del auto-análisis) ──
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(sugDescartadasKey());
+      if (raw) setSugDescartadas(new Set(JSON.parse(raw) as string[]));
+    } catch { /* ignore */ }
+  }, []);
+  const descartarSugerencia = useCallback((docId: string) => {
+    setSugDescartadas((prev) => {
+      const s = new Set(prev);
+      s.add(docId);
+      try { localStorage.setItem(sugDescartadasKey(), JSON.stringify([...s])); } catch { /* quota */ }
+      return s;
+    });
+  }, []);
+  /** Sugerencias vigentes: la carpeta debe existir y el doc seguir suelto/sin vencimiento. */
+  const sugerenciasIA = useMemo(
+    () =>
+      documents
+        .flatMap((d) => {
+          const s = (d.ocrMetadata as Record<string, unknown> | null)?.sugerencias as
+            | { folderId?: string; folderName?: string; expiresAt?: string }
+            | null
+            | undefined;
+          if (!s || sugDescartadas.has(d.id)) return [];
+          const carpeta = s.folderId && !d.folderId && folderById.has(s.folderId)
+            ? { folderId: s.folderId, folderName: folderById.get(s.folderId)!.name }
+            : null;
+          const vence = s.expiresAt && !d.expiresAt ? s.expiresAt : null;
+          if (!carpeta && !vence) return [];
+          return [{ doc: d, carpeta, vence }];
+        })
+        .slice(0, 3),
+    [documents, sugDescartadas, folderById]
+  );
+  const aplicarSugerencia = useCallback(
+    async (docId: string, cambios: { folderId?: string; expiresAt?: string }) => {
+      await patch(docId, cambios);
+    },
+    [patch]
+  );
   const visibleFolderRows = useMemo(() => flattenVisible(childrenMap, expandedFolders), [childrenMap, expandedFolders]);
   const allFolderRows = useMemo(() => flattenAll(childrenMap), [childrenMap]);
   const activePath = useMemo(
@@ -432,17 +491,34 @@ export default function DocumentosModule() {
     async (files: FileList | File[]) => {
       const arr = Array.from(files);
       if (arr.length === 0) return;
-      setUploadProgress({ done: 0, total: arr.length });
+      // Duplicados: mismo nombre base que algo ya subido → avisar ANTES.
+      const base = (n: string) => n.replace(/\.[^.]+$/, "").trim().toLowerCase();
+      const existentes = new Set(documents.map((d) => base(d.name)));
+      const aSubir = arr.filter((f) => {
+        if (!existentes.has(base(f.name))) return true;
+        return window.confirm(`"${f.name}" ya existe en el drive. ¿Subirlo igual? Quedará duplicado.`);
+      });
+      if (aSubir.length === 0) return;
+      setUploadProgress({ done: 0, total: aSubir.length });
+      setEstadoSubida(new Map(aSubir.map((f) => [f.name, "en-cola" as EstadoArchivo])));
       try {
-        await upload(arr, {
+        await upload(aSubir, {
           folderId: activeFolderId,
           onProgress: (done, total) => setUploadProgress({ done, total }),
+          onEstado: (nombre, estado) =>
+            setEstadoSubida((prev) => {
+              const m = new Map(prev ?? []);
+              m.set(nombre, estado);
+              return m;
+            }),
         });
       } finally {
         setUploadProgress(null);
+        // Dejar ver los ✓ un instante antes de cerrar el panel.
+        setTimeout(() => setEstadoSubida(null), 2500);
       }
     },
-    [upload, activeFolderId]
+    [upload, activeFolderId, documents]
   );
 
   const onDrop = useCallback(
@@ -804,6 +880,49 @@ export default function DocumentosModule() {
             Ver
           </button>
           <button onClick={() => setExpiryBannerDismissed(true)} className="shrink-0 rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Descartar aviso"><X className="h-4 w-4" /></button>
+        </div>
+      )}
+
+      {/* Sugerencias IA de organización: carpeta + vencimiento detectados */}
+      {sugerenciasIA.length > 0 && (
+        <div className="rounded-2xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]/40 px-4 py-3">
+          <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
+            <Sparkles className="h-4 w-4" /> La IA sugiere organizar
+          </p>
+          <div className="space-y-2">
+            {sugerenciasIA.map(({ doc, carpeta, vence }) => (
+              <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--surface-raised)] px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-[var(--text-primary)]">{doc.name}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {carpeta && <>mover a <b className="text-[var(--accent)]">{carpeta.folderName}</b></>}
+                    {carpeta && vence && " · "}
+                    {vence && <>vence el <b className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtFechaCorta(vence)}</b> — lo agendo y te aviso antes</>}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void aplicarSugerencia(doc.id, {
+                      ...(carpeta ? { folderId: carpeta.folderId } : {}),
+                      ...(vence ? { expiresAt: vence } : {}),
+                    })}
+                    className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-95"
+                  >
+                    Aplicar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => descartarSugerencia(doc.id)}
+                    aria-label={`Descartar sugerencia para ${doc.name}`}
+                    className="rounded-lg border border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1542,6 +1661,34 @@ export default function DocumentosModule() {
           />
         );
       })()}
+
+      {/* Panel de progreso por archivo (subida en curso) */}
+      {estadoSubida && estadoSubida.size > 0 && (
+        <div className="fixed bottom-24 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-xl">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+            Subiendo {[...estadoSubida.values()].filter((e) => e === "listo").length}/{estadoSubida.size}
+          </p>
+          <ul className="max-h-48 space-y-1.5 overflow-y-auto">
+            {[...estadoSubida].map(([nombre, estado]) => (
+              <li key={nombre} className="flex items-center gap-2 text-sm">
+                {estado === "listo" ? (
+                  <Check className="h-4 w-4 shrink-0 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" />
+                ) : estado === "error" ? (
+                  <X className="h-4 w-4 shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
+                ) : estado === "en-cola" ? (
+                  <Clock className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
+                ) : (
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--accent)]" />
+                )}
+                <span className="min-w-0 flex-1 truncate text-[var(--text-primary)]">{nombre}</span>
+                <span className="shrink-0 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]">
+                  {estado === "comprimiendo" ? "comprimiendo" : estado === "subiendo" ? "subiendo" : estado === "listo" ? "listo" : estado === "error" ? "falló" : "en cola"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {showTemplates && (
         <TemplateGenerator

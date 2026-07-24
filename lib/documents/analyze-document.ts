@@ -43,6 +43,12 @@ const ResultSchema = z.object({
   tags: z.array(z.string()).max(14).default([]),
   entities: EntitiesSchema.nullish(),
   structured: StructuredSchema.nullish(),
+  sugerencia: z
+    .object({
+      carpeta: z.string().max(120).nullish(),
+      vencimiento: z.string().max(20).nullish(),
+    })
+    .nullish(),
 });
 
 export type StructuredData = z.infer<typeof StructuredSchema>;
@@ -157,12 +163,18 @@ export async function analyzeDocumentContent(
   let tags: string[] = [];
   let entities: DocEntities | null = null;
   let structured: StructuredData | null = null;
+  let sugerencias: { folderId?: string; folderName?: string; expiresAt?: string } | null = null;
+  // Carpetas del drive: la IA elige entre ELLAS (o ninguna) — nunca inventa.
+  const carpetas = await DocumentsDB.listFolders(tenantId).catch(() => []);
   if (getActiveProvider() !== "none") {
     try {
+      const listaCarpetas = carpetas.length > 0
+        ? `\nCarpetas disponibles del drive: ${carpetas.map((c) => `"${c.name}"`).join(", ")}.`
+        : "";
       const prompt = `Sos un archivista experto. Analizá a fondo este documento de una bodega/negocio peruano y devolvé SOLO un objeto JSON válido (sin markdown, sin texto extra) con esta forma:
-{"summary": "<resumen en 1-2 frases>", "description": "<DESCRIPCIÓN DETALLADA Y BUSCABLE en 3-5 frases: qué tipo de documento es, quiénes son las partes involucradas, fechas clave, montos, el propósito y cualquier dato que alguien podría usar para encontrarlo después. Escribí en español, natural y completo.>", "keyFacts": ["<dato clave con su valor, ej. 'Renta: S/1500 mensuales'>", ...máximo 12], "tags": ["<etiqueta corta en minúscula; incluí tipo, partes, tema>", ...máximo 12], "entities": {"people": ["<personas mencionadas>"], "orgs": ["<empresas/organizaciones>"], "places": ["<direcciones/lugares>"], "dates": ["<fechas relevantes>"], "amounts": ["<montos, ej. 'S/1500'>"]}, "structured": {"docType": "<factura|boleta|recibo|contrato|guia|cotizacion|carta|otro>", "ruc": "<RUC 11 dígitos o null>", "razonSocial": "<emisor o null>", "numero": "<nº o null>", "fecha": "<AAAA-MM-DD o null>", "moneda": "<PEN|USD o null>", "total": <número o null>, "igv": <número o null>}}
+{"summary": "<resumen en 1-2 frases>", "description": "<DESCRIPCIÓN DETALLADA Y BUSCABLE en 3-5 frases: qué tipo de documento es, quiénes son las partes involucradas, fechas clave, montos, el propósito y cualquier dato que alguien podría usar para encontrarlo después. Escribí en español, natural y completo.>", "keyFacts": ["<dato clave con su valor, ej. 'Renta: S/1500 mensuales'>", ...máximo 12], "tags": ["<etiqueta corta en minúscula; incluí tipo, partes, tema>", ...máximo 12], "entities": {"people": ["<personas mencionadas>"], "orgs": ["<empresas/organizaciones>"], "places": ["<direcciones/lugares>"], "dates": ["<fechas relevantes>"], "amounts": ["<montos, ej. 'S/1500'>"]}, "structured": {"docType": "<factura|boleta|recibo|contrato|guia|cotizacion|carta|otro>", "ruc": "<RUC 11 dígitos o null>", "razonSocial": "<emisor o null>", "numero": "<nº o null>", "fecha": "<AAAA-MM-DD o null>", "moneda": "<PEN|USD o null>", "total": <número o null>, "igv": <número o null>}, "sugerencia": {"carpeta": "<el nombre EXACTO de UNA de las carpetas disponibles si el documento claramente pertenece ahí, o null>", "vencimiento": "<AAAA-MM-DD si el documento tiene fecha de vencimiento, fin de vigencia o caducidad, o null>"}}
 
-La "description" es lo más importante: tiene que ser rica en términos para que el documento aparezca en búsquedas por nombre de persona, empresa, lugar, fecha o tema. En "structured" completá solo si es un comprobante; si no, structured en null. Montos como número sin símbolo.
+La "description" es lo más importante: tiene que ser rica en términos para que el documento aparezca en búsquedas por nombre de persona, empresa, lugar, fecha o tema. En "structured" completá solo si es un comprobante; si no, structured en null. Montos como número sin símbolo.${listaCarpetas} En "sugerencia.carpeta" solo un nombre de esa lista o null; en "vencimiento" SOLO la fecha en que el documento deja de valer (no fechas de emisión).
 
 Documento:
 ${text.slice(0, 10000)}`;
@@ -178,6 +190,22 @@ ${text.slice(0, 10000)}`;
         // Solo guardamos structured si tiene al menos un campo con valor.
         const s = parsed.data.structured;
         structured = s && Object.values(s).some((v) => v !== null && v !== undefined && v !== "") ? s : null;
+
+        // Sugerencias de organización: la carpeta debe EXISTIR (se resuelve a
+        // su id, sin inventar) y el vencimiento ser una fecha real AAAA-MM-DD.
+        const sug = parsed.data.sugerencia;
+        if (sug) {
+          const out2: { folderId?: string; folderName?: string; expiresAt?: string } = {};
+          if (sug.carpeta) {
+            const carpeta = carpetas.find((c) => c.name.trim().toLowerCase() === sug.carpeta!.trim().toLowerCase());
+            if (carpeta) { out2.folderId = carpeta.id; out2.folderName = carpeta.name; }
+          }
+          if (sug.vencimiento && /^\d{4}-\d{2}-\d{2}$/.test(sug.vencimiento)) {
+            const fecha = new Date(`${sug.vencimiento}T12:00:00Z`);
+            if (!Number.isNaN(fecha.getTime())) out2.expiresAt = fecha.toISOString();
+          }
+          if (out2.folderId || out2.expiresAt) sugerencias = out2;
+        }
       }
     } catch (err) {
       logger.warn("documents.analyze.ai_fail", { err: err instanceof Error ? err.message : String(err) });
@@ -208,6 +236,7 @@ ${text.slice(0, 10000)}`;
       keyFacts,
       entities,
       structured,
+      sugerencias,
       rawTextLength: text.length,
       analyzedAt: new Date().toISOString(),
     },
