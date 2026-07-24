@@ -67,6 +67,24 @@ describe("agruparPor", () => {
     expect(r.total.valor).toBeCloseTo(r.total.pieTablar * 4, 0);
   });
 
+  it("acepta un resolver de precio por especie (Tornillo ≠ Cedro)", () => {
+    const precioDe = (p: PiezaCubicada) => (p.especie === "Cedro" ? 10 : 3);
+    const r = agruparPor(lote, "especie", precioDe);
+    const cedro = r.grupos.find((g) => g.label === "Cedro")!;
+    const tornillo = r.grupos.find((g) => g.label === "Tornillo")!;
+    expect(cedro.valor).toBeCloseTo(34 * 10, 0);
+    expect(tornillo.valor).toBeCloseTo(37.34 * 3, 0);
+    expect(r.total.valor).toBeCloseTo(34 * 10 + 37.34 * 3, 0);
+  });
+
+  it("con resolver, un grupo que mezcla especies suma cada pieza a su precio", () => {
+    // Por largo, el grupo '10 pies' junta Tornillo (26.67 PT) y Cedro (30 PT)
+    const precioDe = (p: PiezaCubicada) => (p.especie === "Cedro" ? 10 : 3);
+    const r = agruparPor(lote, "largo", precioDe);
+    const l10 = r.grupos.find((g) => g.label === "10 pies")!;
+    expect(l10.valor).toBeCloseTo(26.67 * 3 + 30 * 10, 0);
+  });
+
   it("piezas sin especie caen en 'Sin especie'", () => {
     const r = agruparPor([pieza(1, 2, 8, 10)], "especie");
     expect(r.grupos[0].label).toBe("Sin especie");

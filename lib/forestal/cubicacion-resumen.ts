@@ -42,6 +42,12 @@ export interface ResumenLote {
   total: { cantidad: number; pieTablar: number; m3: number; valor: number };
 }
 
+/**
+ * Precio por pie tablar. Un número aplica a todo el lote; una función resuelve
+ * el precio por pieza (para precio por especie: Tornillo ≠ Cedro ≠ Caoba).
+ */
+export type PrecioPt = number | ((r: PiezaCubicada) => number);
+
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
@@ -79,34 +85,38 @@ function claveYLabel(r: PiezaCubicada, dim: DimensionResumen): { clave: string; 
  * pie tablar descendente (lo que más pesa en el lote, arriba); el porcentaje
  * es sobre el pie tablar total.
  */
-export function agruparPor(rows: PiezaCubicada[], dim: DimensionResumen, precioPt = 0): ResumenLote {
+export function agruparPor(rows: PiezaCubicada[], dim: DimensionResumen, precio: PrecioPt = 0): ResumenLote {
+  const precioDe = typeof precio === "function" ? precio : () => precio;
   const map = new Map<string, GrupoResumen>();
-  let totalPt = 0, totalM3 = 0, totalCant = 0;
+  let totalPt = 0, totalM3 = 0, totalCant = 0, totalValor = 0;
 
   for (const r of rows) {
     const { clave, label } = claveYLabel(r, dim);
     const g = map.get(clave) ?? { clave, label, cantidad: 0, pieTablar: 0, m3: 0, valor: 0, pctPt: 0 };
+    const valorPieza = r.pieTablar * precioDe(r);
     g.cantidad += r.cantidad;
     g.pieTablar += r.pieTablar;
     g.m3 += r.m3;
+    g.valor += valorPieza;
     map.set(clave, g);
     totalPt += r.pieTablar;
     totalM3 += r.m3;
     totalCant += r.cantidad;
+    totalValor += valorPieza;
   }
 
   const grupos = [...map.values()].map((g) => ({
     ...g,
     pieTablar: r2(g.pieTablar),
     m3: r4(g.m3),
-    valor: r2(g.pieTablar * precioPt),
+    valor: r2(g.valor),
     pctPt: totalPt > 0 ? Math.round((g.pieTablar / totalPt) * 1000) / 10 : 0,
   }));
   grupos.sort((a, b) => b.pieTablar - a.pieTablar || a.label.localeCompare(b.label));
 
   return {
     grupos,
-    total: { cantidad: totalCant, pieTablar: r2(totalPt), m3: r4(totalM3), valor: r2(totalPt * precioPt) },
+    total: { cantidad: totalCant, pieTablar: r2(totalPt), m3: r4(totalM3), valor: r2(totalValor) },
   };
 }
 

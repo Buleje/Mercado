@@ -110,7 +110,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [readingId, setReadingId] = useState<string | null>(null); // fila que se está leyendo
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
   const [precioPt, setPrecioPt] = useState(""); // S/ por pie tablar → valor del lote
+  const [preciosEspecie, setPreciosEspecie] = useState<Record<string, string>>({}); // especie(lowercase) → S/ por PT
   const [showResumen, setShowResumen] = useState(false);
+  const [showPreciosEsp, setShowPreciosEsp] = useState(false);
   const [dimResumen, setDimResumen] = useState<DimensionResumen>("especie");
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false); // ya quedó registrado en el Libro CTP
@@ -193,6 +195,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       if (raw) setRows(JSON.parse(raw) as PiezaCubicada[]);
       const pr = localStorage.getItem(`${storageKey()}-precio`);
       if (pr) setPrecioPt(pr);
+      const pe = localStorage.getItem(`${storageKey()}-precios-especie`);
+      if (pe) setPreciosEspecie(JSON.parse(pe) as Record<string, string>);
     } catch { /* ignore */ }
   }, []);
 
@@ -549,8 +553,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const deshacer = () => { if (lastAdded) { borrar(lastAdded.id); setLastAdded(null); } };
   const limpiar = () => { persist([]); setLastAdded(null); };
 
-  // Persistir el precio por PT (por tenant).
+  // Persistir el precio por PT (por tenant) y los precios por especie.
   useEffect(() => { try { localStorage.setItem(`${storageKey()}-precio`, precioPt); } catch { /* ignore */ } }, [precioPt]);
+  useEffect(() => { try { localStorage.setItem(`${storageKey()}-precios-especie`, JSON.stringify(preciosEspecie)); } catch { /* ignore */ } }, [preciosEspecie]);
 
   const totales = useMemo(() => ({
     piezas: rows.reduce((a, r) => a + r.cantidad, 0),
@@ -558,15 +563,32 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     m3: rows.reduce((a, r) => a + r.m3, 0),
   }), [rows]);
   const precio = Number(precioPt) || 0;
-  const valorLote = totales.pt * precio;
+
+  // Especies presentes en el lote (para el editor de precio por especie).
+  const especiesLote = useMemo(
+    () => [...new Set(rows.map((r) => r.especie?.trim()).filter((e): e is string => !!e))],
+    [rows],
+  );
+  // Precio por PT de una pieza: el de su especie si está seteado (>0), si no el global.
+  const precioDe = useCallback((r: PiezaCubicada) => {
+    const esp = r.especie?.trim().toLowerCase();
+    const pe = esp ? Number(preciosEspecie[esp]) : 0;
+    return pe > 0 ? pe : precio;
+  }, [preciosEspecie, precio]);
+  // ¿Hay algún precio por especie distinto del global? Cambia el rótulo de la liquidación.
+  const hayPreciosEspecie = useMemo(
+    () => especiesLote.some((e) => Number(preciosEspecie[e.toLowerCase()]) > 0),
+    [especiesLote, preciosEspecie],
+  );
+  const conValor = precio > 0 || hayPreciosEspecie;
+  const valorLote = useMemo(() => rows.reduce((a, r) => a + r.pieTablar * precioDe(r), 0), [rows, precioDe]);
   const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // Resumen: agrupa medidas idénticas (espesor×ancho×largo + unidades) con su
-  // cantidad, pie tablar y valor — para liquidar/vender por tipo de pieza.
-  // Resumen agrupado por la dimensión elegida (especie/largo/sección/…).
-  const resumen = useMemo(() => agruparPor(rows, dimResumen, precio), [rows, dimResumen, precio]);
+  // Resumen agrupado por la dimensión elegida (especie/largo/sección/…), con el
+  // valor resuelto por especie cuando corresponde.
+  const resumen = useMemo(() => agruparPor(rows, dimResumen, precioDe), [rows, dimResumen, precioDe]);
   const exportarResumenCSV = () => {
-    const csv = resumenACsv(resumen, dimResumen, precio > 0);
+    const csv = resumenACsv(resumen, dimResumen, conValor);
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a");
     a.href = url; a.download = `resumen-${dimResumen}-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -722,14 +744,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       "",
       ...lineas,
       extra,
-      precio > 0 ? `\n*Total: S/ ${soles(valorLote)}* (S/ ${soles(precio)} por PT)` : "",
+      conValor ? `\n*Total: S/ ${soles(valorLote)}*${hayPreciosEspecie ? " (precio por especie)" : ` (S/ ${soles(precio)} por PT)`}` : "",
     ].filter(Boolean).join("\n");
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
   };
 
   const exportarCSV = () => {
     const head = ["Cantidad", "Espesor", "uEsp", "Ancho", "uAnc", "Largo", "uLar", "Especie", "PieTablar", "m3", "ValorS/"];
-    const lines = rows.map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3, (r.pieTablar * precio).toFixed(2)].join(","));
+    const lines = rows.map((r) => [r.cantidad, r.espesor, r.uEspesor, r.ancho, r.uAncho, r.largo, r.uLargo, r.especie ?? "", r.pieTablar, r.m3, (r.pieTablar * precioDe(r)).toFixed(2)].join(","));
     const csv = "﻿" + [head.join(","), ...lines, ["TOTAL", "", "", "", "", "", "", "", totales.pt.toFixed(2), totales.m3.toFixed(3), valorLote.toFixed(2)].join(",")].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const a = document.createElement("a");
@@ -985,8 +1007,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               <button type="button" onClick={compartirWhatsApp} title="Mandar el resumen por WhatsApp" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
               </button>
-              <button type="button" onClick={() => exportarPDF(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined }).catch(() => setErrMsg("No se pudo generar el PDF."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">PDF</button>
-              <button type="button" onClick={() => exportarExcel(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined }).catch(() => setErrMsg("No se pudo generar el Excel."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Excel</button>
+              <button type="button" onClick={() => exportarPDF(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }).catch(() => setErrMsg("No se pudo generar el PDF."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">PDF</button>
+              <button type="button" onClick={() => exportarExcel(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }).catch(() => setErrMsg("No se pudo generar el Excel."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Excel</button>
               <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
               <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)]">Vaciar</button>
             </div>
@@ -1006,7 +1028,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             <p className="mb-3 text-sm font-bold text-[var(--text-primary)]">
               {cubicacionActual ? "Actualizar la cubicación" : "Guardar esta cubicación"}
               <span className="ml-2 font-mono text-xs font-normal text-[var(--text-tertiary)]">
-                {totales.piezas} piezas · {fmtPt(totales.pt)} PT{precio > 0 ? ` · S/ ${soles(valorLote)}` : ""}
+                {totales.piezas} piezas · {fmtPt(totales.pt)} PT{conValor ? ` · S/ ${soles(valorLote)}` : ""}
               </span>
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -1121,7 +1143,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     <th className="px-3 py-2 text-right">Pie tablar</th>
                     <th className="px-3 py-2 text-right">m³</th>
                     <th className="px-3 py-2">Peso del lote</th>
-                    {precio > 0 && <th className="px-3 py-2 text-right">Valor</th>}
+                    {conValor && <th className="px-3 py-2 text-right">Valor</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -1139,7 +1161,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                           <span className="font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{g.pctPt}%</span>
                         </div>
                       </td>
-                      {precio > 0 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--accent)]">S/ {soles(g.valor)}</td>}
+                      {conValor && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--accent)]">S/ {soles(g.valor)}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -1150,7 +1172,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">{fmtPt(resumen.total.pieTablar)}</td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(resumen.total.m3)}</td>
                     <td className="px-3 py-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">100%</td>
-                    {precio > 0 && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(resumen.total.valor)}</td>}
+                    {conValor && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(resumen.total.valor)}</td>}
                   </tr>
                 </tfoot>
               </table>
@@ -1250,12 +1272,50 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             <span className="text-sm text-[var(--text-tertiary)]">S/</span>
             <input type="number" inputMode="decimal" value={precioPt} onChange={(e) => setPrecioPt(e.target.value)} placeholder="0.00" className="h-9 w-24 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
             <span className="text-sm text-[var(--text-tertiary)]">por pie tablar</span>
+            {especiesLote.length > 0 && (
+              <button type="button" onClick={() => setShowPreciosEsp((v) => !v)} aria-expanded={showPreciosEsp} className="ml-1 inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                <Coins className="h-3.5 w-3.5" /> Por especie
+                {hayPreciosEspecie && <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />}
+              </button>
+            )}
           </label>
           <div className="text-right">
             <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Valor del lote</div>
             <div className="font-mono text-2xl font-extrabold tabular-nums text-[var(--accent)]">S/ {soles(valorLote)}</div>
           </div>
         </div>
+
+        {/* Precio por especie — Tornillo, Cedro, Caoba valen distinto. Vacío = usa el global. */}
+        {showPreciosEsp && especiesLote.length > 0 && (
+          <div className="mt-2 rounded-xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)]/30 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-[var(--text-secondary)]">Precio por especie (S/ por pie tablar)</span>
+              {hayPreciosEspecie && (
+                <button type="button" onClick={() => setPreciosEspecie({})} className="text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]">Limpiar</button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {especiesLote.map((esp) => {
+                const k = esp.toLowerCase();
+                return (
+                  <label key={k} className="flex items-center gap-2 rounded-lg bg-[var(--surface-raised)] px-2.5 py-1.5">
+                    <span className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--text-primary)]" title={esp}>{esp}</span>
+                    <span className="text-xs text-[var(--text-tertiary)]">S/</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={preciosEspecie[k] ?? ""}
+                      onChange={(e) => setPreciosEspecie((p) => ({ ...p, [k]: e.target.value }))}
+                      placeholder={precio > 0 ? soles(precio) : "0.00"}
+                      className="h-9 w-20 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                    />
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = usa el precio general. Se aplica al resumen, WhatsApp, PDF y Excel.</p>
+          </div>
+        )}
 
         {/* Conversiones */}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">

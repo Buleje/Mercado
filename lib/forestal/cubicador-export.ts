@@ -9,7 +9,15 @@ import { PT_POR_M3 } from "./cubicacion";
 export interface ExportOpts {
   precioPt: number;      // S/ por pie tablar (0 = sin precio)
   especieGlobal?: string;
+  /** Precio por pieza (para precio por especie). Si falta, se usa precioPt. */
+  precioDe?: (r: PiezaCubicada) => number;
 }
+
+/** Precio por PT de una pieza: resolver por especie si existe, si no el global. */
+const precioPieza = (r: PiezaCubicada, opts: ExportOpts) => opts.precioDe?.(r) ?? opts.precioPt;
+/** Hay valores que mostrar si el global > 0 o algún resolver da > 0. */
+const tieneValor = (rows: PiezaCubicada[], opts: ExportOpts) =>
+  opts.precioPt > 0 || rows.some((r) => precioPieza(r, opts) > 0);
 
 const fecha = () => new Date().toISOString().slice(0, 10);
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -36,12 +44,14 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
   const autoTable = (await import("jspdf-autotable")).default;
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const t = totales(rows);
-  const conPrecio = opts.precioPt > 0;
+  const conPrecio = tieneValor(rows, opts);
+  const totalValor = rows.reduce((a, r) => a + r.pieTablar * precioPieza(r, opts), 0);
+  const precioTxt = opts.precioDe ? "por especie" : `S/ ${opts.precioPt.toFixed(2)}/PT`;
 
   doc.setFont("helvetica", "bold"); doc.setFontSize(16);
   doc.text("Cubicación de madera", 40, 44);
   doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(110);
-  doc.text(`Fecha: ${fecha()}${opts.especieGlobal ? ` · Especie: ${opts.especieGlobal}` : ""}${conPrecio ? ` · Precio: S/ ${opts.precioPt.toFixed(2)}/PT` : ""}`, 40, 62);
+  doc.text(`Fecha: ${fecha()}${opts.especieGlobal ? ` · Especie: ${opts.especieGlobal}` : ""}${conPrecio ? ` · Precio: ${precioTxt}` : ""}`, 40, 62);
 
   const head = [["Cant.", "Espesor", "Ancho", "Largo", "Especie", "Pie tablar", "m³", ...(conPrecio ? ["Valor S/"] : [])]];
   const body = rows.map((r) => [
@@ -52,9 +62,9 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
     r.especie ?? "—",
     r.pieTablar.toFixed(2),
     r.m3.toFixed(4),
-    ...(conPrecio ? [(r.pieTablar * opts.precioPt).toFixed(2)] : []),
+    ...(conPrecio ? [(r.pieTablar * precioPieza(r, opts)).toFixed(2)] : []),
   ]);
-  const foot = [["", "", "", "", `Total · ${t.piezas} pzas`, `${t.pt.toFixed(2)} PT`, t.m3.toFixed(4), ...(conPrecio ? [`S/ ${(t.pt * opts.precioPt).toFixed(2)}`] : [])]];
+  const foot = [["", "", "", "", `Total · ${t.piezas} pzas`, `${t.pt.toFixed(2)} PT`, t.m3.toFixed(4), ...(conPrecio ? [`S/ ${r2(totalValor).toFixed(2)}`] : [])]];
 
   autoTable(doc, {
     head, body, foot,
@@ -76,7 +86,7 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
   const ExcelJS = (await import("exceljs")).default;
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Cubicación");
-  const conPrecio = opts.precioPt > 0;
+  const conPrecio = tieneValor(rows, opts);
 
   ws.columns = [
     { header: "Cantidad", key: "cant", width: 10 },
@@ -99,11 +109,12 @@ export async function exportarExcel(rows: PiezaCubicada[], opts: ExportOpts): Pr
     ws.addRow({
       cant: r.cantidad, esp: r.espesor, uesp: r.uEspesor, anc: r.ancho, uanc: r.uAncho,
       lar: r.largo, ular: r.uLargo, esp2: r.especie ?? "", pt: r.pieTablar, m3: r.m3,
-      ...(conPrecio ? { val: r.pieTablar * opts.precioPt } : {}),
+      ...(conPrecio ? { val: r.pieTablar * precioPieza(r, opts) } : {}),
     });
   }
   const t = totales(rows);
-  const totalRow = ws.addRow({ esp2: `Total · ${t.piezas} pzas`, pt: t.pt, m3: t.m3, ...(conPrecio ? { val: t.pt * opts.precioPt } : {}) });
+  const totalValor = r2(rows.reduce((a, r) => a + r.pieTablar * precioPieza(r, opts), 0));
+  const totalRow = ws.addRow({ esp2: `Total · ${t.piezas} pzas`, pt: t.pt, m3: t.m3, ...(conPrecio ? { val: totalValor } : {}) });
   totalRow.font = { bold: true };
 
   ws.getColumn("pt").numFmt = "0.00";
