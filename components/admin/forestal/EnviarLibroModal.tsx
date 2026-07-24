@@ -1,0 +1,88 @@
+"use client";
+
+/**
+ * EnviarLibroModal — registra el lote cubicado en el Libro CTP como PRODUCCIÓN
+ * y, opcionalmente, lo envuelve en un LOTE de producción (código L-YYYY-NNN con
+ * grado y certificado + QR). La materia prima (guías) se atribuye después en el
+ * Libro — acá no se fuerza, para no fabricar orígenes inventados (invariantes I2/I5).
+ */
+import { useEffect, useState } from "react";
+import { AlertTriangle, Boxes, Check, Loader2, Send, X } from "@buleje/design-system/icons";
+
+const GRADES = ["", "Exportación", "Grado A", "Grado B", "Grado C", "Primera", "Segunda"];
+
+export default function EnviarLibroModal({
+  piezas, pieTablar, m3, especie, enviando, onConfirmar, onCerrar,
+}: {
+  piezas: number;
+  pieTablar: number;
+  m3: number;
+  especie: string | null;
+  enviando: boolean;
+  onConfirmar: (opts: { grade: string; crearLote: boolean }) => void;
+  onCerrar: () => void;
+}) {
+  const [grade, setGrade] = useState("");
+  const [crearLote, setCrearLote] = useState(true);
+  const fmt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !enviando) onCerrar(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCerrar, enviando]);
+
+  return (
+    <div className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[8vh]" onClick={() => { if (!enviando) onCerrar(); }}>
+      <div className="w-full max-w-md rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)]" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+            <Send className="h-5 w-5 text-[var(--accent)]" /> Enviar al Libro CTP
+          </h3>
+          <button type="button" onClick={onCerrar} disabled={enviando} aria-label="Cerrar" className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Resumen de lo que se registra */}
+        <div className="mb-3 rounded-xl bg-[var(--accent-soft)]/40 px-4 py-3">
+          <div className="text-sm font-bold text-[var(--text-primary)]">{piezas} piezas · {fmt(pieTablar)} PT</div>
+          <div className="text-xs text-[var(--text-secondary)]">{fmt(m3)} m³{especie ? ` · ${especie}` : ""} · Madera aserrada (producción)</div>
+        </div>
+
+        {/* Grado */}
+        <label className="flex flex-col gap-1">
+          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Grado de calidad</span>
+          <select value={grade} onChange={(e) => setGrade(e.target.value)} className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+            {GRADES.map((g) => <option key={g} value={g}>{g || "— sin grado —"}</option>)}
+          </select>
+        </label>
+
+        {/* Crear lote */}
+        <button type="button" onClick={() => setCrearLote((v) => !v)} aria-pressed={crearLote} className={`mt-3 flex w-full items-start gap-3 rounded-xl border-2 p-3 text-left transition ${crearLote ? "border-[var(--accent)] bg-[var(--accent-soft)]/40" : "border-[var(--rule-base)]"}`}>
+          <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${crearLote ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-base)]"}`}>
+            {crearLote && <Check className="h-3.5 w-3.5" />}
+          </span>
+          <span>
+            <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]"><Boxes className="h-4 w-4 text-[var(--accent)]" /> Crear lote de producción</span>
+            <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">Le da un código <b>L-{new Date().getFullYear()}-NNN</b>, hereda la cadena de custodia y habilita certificado + QR en la pestaña Lotes.</span>
+          </span>
+        </button>
+
+        <p className="mt-3 flex items-start gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          La materia prima (guías consumidas) se atribuye después en el Libro. El certificado exige la cadena de custodia completa.
+        </p>
+
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" onClick={onCerrar} disabled={enviando} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50">
+            Cancelar
+          </button>
+          <button type="button" onClick={() => onConfirmar({ grade, crearLote })} disabled={enviando} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50">
+            {enviando ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando…</> : <><Send className="h-4 w-4" /> {crearLote ? "Registrar y crear lote" : "Registrar producción"}</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

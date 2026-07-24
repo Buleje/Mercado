@@ -26,6 +26,7 @@ import { agruparPor, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION, type 
 import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import LiquidacionModal from "./LiquidacionModal";
+import EnviarLibroModal from "./EnviarLibroModal";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -123,6 +124,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [showHistorial, setShowHistorial] = useState(false);
   const [showImportar, setShowImportar] = useState(false);
   const [showLiquidacion, setShowLiquidacion] = useState(false);
+  const [showEnviarModal, setShowEnviarModal] = useState(false);
+  const [loteCreado, setLoteCreado] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [guardadoOk, setGuardadoOk] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
@@ -632,25 +635,30 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     return { triples, resto: nums.slice(i) };
   }, [listening, liveText, fijas]);
 
+  /** Abre el modal para elegir grado y si se envuelve en un lote de producción. */
+  const enviarAlLibro = () => {
+    if (!rows.length || enviando) return;
+    setLoteCreado(null);
+    setShowEnviarModal(true);
+  };
+
   /**
-   * Registra el lote cubicado en el Libro CTP como PRODUCCIÓN (unit "pt").
-   * Sin consumos: el libro admite huecos y la materia prima se atribuye
-   * después en el Libro — forzarla acá fabricaría atribuciones inventadas.
+   * Registra el lote cubicado en el Libro CTP como PRODUCCIÓN (unit "pt") y,
+   * si se pidió, lo envuelve en un LOTE (código L-YYYY-NNN). Sin consumos: el
+   * libro admite huecos y la materia prima se atribuye después en el Libro —
+   * forzarla acá fabricaría atribuciones inventadas (invariantes I2/I5).
    */
-  const enviarAlLibro = async () => {
+  const confirmarEnvio = async ({ grade, crearLote }: { grade: string; crearLote: boolean }) => {
     if (!rows.length || enviando) return;
     const especies = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[];
     const speciesCommon = especies.length === 1 ? especies[0] : (especie || null);
     const porMedida = agruparPor(rows, "medida").grupos;
     const resumenTxt = porMedida.slice(0, 6).map((g) => `${g.cantidad}× ${g.label}`).join("; ");
-    const seguro = window.confirm(
-      `¿Registrar en el Libro CTP como PRODUCCIÓN?\n\n${totales.piezas} piezas · ${fmtPt(totales.pt)} PT (${fmtM3(totales.m3)} m³)` +
-      `${speciesCommon ? ` · ${speciesCommon}` : ""}\n\nLa materia prima (guías consumidas) se atribuye después, en el Libro.`,
-    );
-    if (!seguro) return;
+    const cantidad = Math.round(totales.pt * 100) / 100;
     setEnviando(true);
     setErrMsg(null);
     try {
+      // 1) Producción en el Libro CTP.
       const r = await fetch("/api/admin/forestal/ctp", {
         method: "POST",
         headers: { "content-type": "application/json", ...csrfHeaders() },
@@ -659,21 +667,42 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           section: "produccion",
           productType: "Madera aserrada",
           speciesCommon,
-          quantity: Math.round(totales.pt * 100) / 100,
+          quantity: cantidad,
           unit: "pt",
           pieces: totales.piezas,
           observations: `Cubicado con la herramienta por voz — ${rows.length} filas. ${resumenTxt}`.slice(0, 1000),
         }),
       });
+      const j = await r.json().catch(() => ({}));
       if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
         throw new Error(
           j?.error === "spec_disabled"
             ? "El Libro CTP no está habilitado para esta tienda."
             : (j?.message ?? j?.error ?? `HTTP ${r.status}`),
         );
       }
+      const entryId: string | undefined = j?.entry?.id;
+
+      // 2) Lote de producción que envuelve esa corrida (opcional).
+      if (crearLote && entryId) {
+        const rl = await fetch("/api/admin/forestal/lotes", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...csrfHeaders() },
+          credentials: "include",
+          body: JSON.stringify({
+            productType: "Madera aserrada",
+            speciesCommon,
+            unit: "pt",
+            grade: grade || null,
+            miembros: [{ produccionEntryId: entryId, quantity: cantidad }],
+          }),
+        });
+        const jl = await rl.json().catch(() => ({}));
+        if (!rl.ok) throw new Error(jl?.message ?? jl?.error ?? `No se pudo crear el lote (HTTP ${rl.status})`);
+        setLoteCreado(jl?.lote?.codigo ?? "creado");
+      }
       setEnviado(true);
+      setShowEnviarModal(false);
     } catch (e) {
       setErrMsg(`No se pudo registrar en el Libro: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -1125,9 +1154,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         {enviado && (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2 dark:bg-[var(--data-success-500)]/12">
             <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-              <Check className="h-4 w-4" /> Registrado en el Libro CTP como producción. Atribuí la materia prima (guías) desde el Libro.
+              <Check className="h-4 w-4" /> {loteCreado ? <>Registrado como lote <b>{loteCreado}</b>. El certificado + QR está en Lotes; atribuí las guías desde el Libro.</> : <>Registrado en el Libro CTP como producción. Atribuí la materia prima (guías) desde el Libro.</>}
             </span>
             <span className="flex gap-2">
+              {loteCreado && (
+                <a href="/admin?tab=forestal-lotes" className="rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
+                  Ver el lote
+                </a>
+              )}
               <a href="/admin?tab=ctp-libro-operaciones" className="rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95 dark:text-[var(--data-success-500)]">
                 Ver en el Libro
               </a>
@@ -1365,6 +1399,18 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           clienteInicial={form.cliente}
           notaInicial={form.notas}
           onCerrar={() => setShowLiquidacion(false)}
+        />
+      )}
+
+      {showEnviarModal && (
+        <EnviarLibroModal
+          piezas={totales.piezas}
+          pieTablar={totales.pt}
+          m3={totales.m3}
+          especie={(() => { const e = [...new Set(rows.map((r) => r.especie).filter(Boolean))] as string[]; return e.length === 1 ? e[0] : (especie || null); })()}
+          enviando={enviando}
+          onConfirmar={confirmarEnvio}
+          onCerrar={() => setShowEnviarModal(false)}
         />
       )}
     </div>
