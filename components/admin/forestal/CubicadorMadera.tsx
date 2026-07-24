@@ -238,13 +238,17 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     rec.lang = "es-PE";
     rec.interimResults = true;
     rec.continuous = true;
-    rec.maxAlternatives = 1; // confiamos en la hipótesis #1
+    // Tres hipótesis: `mejoresNumeros` elige la que da medidas creíbles para
+    // la medida que toca. NUNCA reordena los números DENTRO de una hipótesis
+    // (eso volteaba lo dictado); solo elige entre lecturas completas.
+    rec.maxAlternatives = 3;
 
     // Procesa SOLO resultados FINALES (estables) → sin duplicados ni valores
     // erráticos. El interim solo alimenta el caption. Cada final se procesa una
     // vez (lastFinalRef). Primero mira si es un COMANDO de voz; si no, números.
-    const procesarFinal = (idx: number, texto: string) => {
+    const procesarFinal = (idx: number, alternativas: string[]) => {
       lastFinalRef.current = idx;
+      const texto = alternativas[0] ?? "";
 
       // ── ECO DEL PARLANTE ──
       // Trabajando con el altavoz del celular, el micrófono escucha la voz que
@@ -286,11 +290,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         return;
       }
 
-      // Cantidad dictada ("cinco piezas de 2 8 10") separada de las medidas.
-      const { cantidad: cantDictada, nums } = leerDictado(texto);
-
       // ── MODO EDICIÓN: 3 números reemplazan la fila y sale ──
+      // Se leen SIN las fijas: al corregir una fila se dictan las tres medidas.
       if (modeRef.current.type === "edit") {
+        const nums = mejoresNumeros(alternativas);
         if (nums.length >= 3 && nums[0] > 0 && nums[1] > 0 && nums[2] > 0) {
           updateRow(modeRef.current.id, nums[0], nums[1], nums[2]);
           hablar(`${nums[0]}, ${nums[1]}, ${nums[2]}`);
@@ -306,11 +309,16 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
       if (pausedRef.current) return; // en pausa: ignora números
 
+      // Cantidad dictada ("cinco piezas de 2 8 10") separada de las medidas.
+      // Se pasan las fijas y cuántos números quedaron esperando: sin eso, un
+      // "quince" suelto se leería como espesor (imposible) y se partiría en 1·5.
+      const carryVigente = Date.now() - carryRef.current.ts < CARRY_TTL_MS ? carryRef.current.nums : [];
+      const { cantidad: cantDictada, nums } = leerDictado(alternativas, fijasRef.current, carryVigente.length);
+
       // ── MODO AGREGAR: chunk en tríos, arrastra el sobrante a la próxima frase ──
       // El sobrante CADUCA: números de hace rato pegados a una frase nueva
       // armaban piezas fantasma (dictaste "2 6", te fuiste, volviste con "8 10 12").
-      const vigente = Date.now() - carryRef.current.ts < CARRY_TTL_MS ? carryRef.current.nums : [];
-      const all = [...vigente, ...nums];
+      const all = [...carryVigente, ...nums];
       // Con medidas fijas, cada pieza necesita MENOS números dictados.
       const { piezas: nuevas, resto } = partirConFijas(all, fijasRef.current);
       let added = 0;
@@ -343,7 +351,13 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         const res = e.results[i];
         if (!res.isFinal) { interim += (res[0]?.transcript ?? "") + " "; continue; }
         if (i <= lastFinalRef.current) continue; // ya procesado este final
-        procesarFinal(i, res[0]?.transcript ?? "");
+        // Todas las hipótesis del motor, no sólo la primera.
+        const alts: string[] = [];
+        for (let k = 0; k < (res.length ?? 1); k++) {
+          const t = res[k]?.transcript;
+          if (typeof t === "string" && t.trim()) alts.push(t);
+        }
+        procesarFinal(i, alts.length ? alts : [""]);
       }
       if (interim.trim()) setLiveText(interim.trim()); // caption (no guarda)
     };
@@ -553,7 +567,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   // confunde en el dictado rápido.
   const liveGroups = useMemo(() => {
     if (!listening || !liveText) return null;
-    const nums = mejoresNumeros([liveText]);
+    const nums = mejoresNumeros([liveText], fijas);
     // El tamaño del grupo depende de las fijas: con el largo fijo, cada DOS
     // números ya son una pieza y así se ven mientras se dicta.
     const paso = numerosPorPieza(fijas) || 3;
@@ -1093,15 +1107,17 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste nada. Dictá o cargá una pieza para empezar.</p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <th className="px-2 py-2 text-center">N°</th>
                   <th className="px-3 py-2">Cant.</th><th className="px-3 py-2">Espesor</th><th className="px-3 py-2">Ancho</th><th className="px-3 py-2">Largo</th>
+                  <th className="px-3 py-2">Medida</th>
                   <th className="px-3 py-2">Especie</th><th className="px-3 py-2 text-right">Pie tablar</th><th className="px-3 py-2 text-right">m³</th><th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => {
+                {rows.map((r, indice) => {
                   const leyendo = readingId === r.id;
                   const editando = editingId === r.id;
                   const rowCls = leyendo
@@ -1113,10 +1129,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   const rara = avisarRaras && medidaSospechosa(r.espesor, r.ancho, r.largo);
                   return (
                   <tr key={r.id} id={`cub-row-${r.id}`} className={`border-t border-[var(--rule-soft)] transition-colors ${rowCls || (rara ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : "")}`}>
+                    <td className="px-2 py-2 text-center font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{indice + 1}</td>
                     <td className="px-3 py-2"><Num v={r.cantidad} onV={(n) => editarCampo(r.id, "cantidad", n)} etiqueta={`Cantidad de la fila ${r.espesor}×${r.ancho}×${r.largo}`} /></td>
                     <td className="px-3 py-2"><Dim v={r.espesor} u={r.uEspesor} onU={(u) => cambiarUnidad(r.id, "uEspesor", u)} onV={(n) => editarCampo(r.id, "espesor", n)} etiqueta="Espesor" /></td>
                     <td className="px-3 py-2"><Dim v={r.ancho} u={r.uAncho} onU={(u) => cambiarUnidad(r.id, "uAncho", u)} onV={(n) => editarCampo(r.id, "ancho", n)} etiqueta="Ancho" /></td>
                     <td className="px-3 py-2"><Dim v={r.largo} u={r.uLargo} onU={(u) => cambiarUnidad(r.id, "uLargo", u)} onV={(n) => editarCampo(r.id, "largo", n)} etiqueta="Largo" /></td>
+                    <td className="px-3 py-2 whitespace-nowrap font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
+                      {r.espesor}×{r.ancho}×{r.largo}
+                    </td>
                     <td className="px-3 py-2">
                       <select
                         value={r.especie ?? ""}
@@ -1152,7 +1172,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--accent-soft)] font-bold text-[var(--text-primary)]">
-                  <td className="px-3 py-2.5" colSpan={5}>Total · {totales.piezas} piezas</td>
+                  <td className="px-3 py-2.5" colSpan={7}>Total · {totales.piezas} piezas</td>
                   <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtPt(totales.pt)} PT</td>
                   <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]">{fmtM3(totales.m3)}</td>
                   <td />

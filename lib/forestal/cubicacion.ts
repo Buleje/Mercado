@@ -244,36 +244,61 @@ export function medidaSospechosa(espesor: number, ancho: number, largo: number):
   );
 }
 
+/** ¿Este valor es creíble para esta dimensión? (rangos del aserrío) */
+function valorPlausible(valor: number, dim: Dimension): boolean {
+  const r = RANGOS_MEDIDA[dim];
+  return valor >= r.min && valor <= r.max;
+}
+
 /**
  * Separa un token de dígitos PEGADOS por dictar rápido ("2810" = 2·8·10).
  *
- * POR QUÉ NO ALCANZA UNA REGLA FIJA: la versión anterior sólo unía "X0"
- * (10/20/30/40), así que "2812" —un 2×8×12 de manual— salía 2,8,1,2: una
- * pieza de 1 pie de largo y un 2 huérfano que corría TODO el dictado
- * siguiente. Acá se prueban las particiones posibles y gana la que da tres
- * medidas creíbles (espesor ≤ ancho, largo de verdad). Si ninguna cierra, se
- * cae a dígitos sueltos, que es lo que hacía antes.
+ * POR QUÉ ES ASÍ DE CUIDADOSO: el reconocedor pega los números cuando se
+ * habla rápido, y dónde cortarlos depende de QUÉ MEDIDA toca. Con el largo
+ * fijo se dictan dos números y "dos quince" llega como "215": cortarlo con
+ * una regla de tres números daba 2·1·5 — una tabla de 1 pulgada de ancho y
+ * un 5 huérfano que corría todo el dictado siguiente.
+ *
+ * Acá se prueban las particiones posibles asignando cada número a la
+ * dimensión que le toca (ciclando por las que NO están fijas) y validando el
+ * rango real de esa dimensión. Gana la lectura que completa piezas enteras y
+ * usa menos números; si ninguna cierra, se devuelven los dígitos como vinieron
+ * — ante la duda no se inventa una medida.
+ *
+ * @param libres dimensiones que hay que dictar, en orden.
+ * @param desde  posición del ciclo en la que arranca este token.
  */
-function separarPegados(s: string): number[] {
-  // 1) ¿Alguna partición en 3 números da una medida válida? Se prueban cortes
-  //    de 1-2 dígitos por número (no hay medidas de 3 cifras en madera).
-  const candidatas: number[][] = [];
-  for (const a of [1, 2]) {
-    for (const b of [1, 2]) {
-      for (const c of [1, 2]) {
-        if (a + b + c !== s.length) continue;
-        const e = Number(s.slice(0, a));
-        const an = Number(s.slice(a, a + b));
-        const l = Number(s.slice(a + b));
-        if (e > 0 && an > 0 && l > 0) candidatas.push([e, an, l]);
-      }
-    }
-  }
-  const buena = candidatas.find(([e, a, l]) => !medidaSospechosa(e, a, l));
-  if (buena) return buena;
+function separarPegados(s: string, libres: readonly Dimension[] = DIMENSIONES, desde = 0): number[] {
+  const paso = libres.length || 1;
+  const soluciones: number[][] = [];
 
-  // 2) Sin lectura válida: la regla vieja (X0 junto, el resto suelto). Ante la
-  //    duda no se inventa una medida — se devuelven los dígitos como vinieron.
+  const explorar = (pos: number, ciclo: number, acc: number[]) => {
+    if (soluciones.length >= 24) return;          // tope de seguridad
+    if (pos === s.length) { soluciones.push([...acc]); return; }
+    for (const largoCorte of [1, 2]) {
+      if (pos + largoCorte > s.length) continue;
+      const trozo = s.slice(pos, pos + largoCorte);
+      if (largoCorte === 2 && trozo[0] === "0") continue; // "05" no es 5
+      const valor = Number(trozo);
+      if (!(valor > 0)) continue;
+      if (!valorPlausible(valor, libres[ciclo % paso])) continue;
+      acc.push(valor);
+      explorar(pos + largoCorte, ciclo + 1, acc);
+      acc.pop();
+    }
+  };
+  explorar(0, desde, []);
+
+  if (soluciones.length > 0) {
+    // Preferimos la lectura que deja piezas COMPLETAS (cantidad múltiplo del
+    // paso, contando lo que ya venía del ciclo) y, entre esas, la más corta:
+    // el reconocedor pega números, no los inventa de a uno.
+    const puntaje = (sol: number[]) => ((desde + sol.length) % paso === 0 ? 0 : 1);
+    soluciones.sort((a, b) => puntaje(a) - puntaje(b) || a.length - b.length);
+    return soluciones[0];
+  }
+
+  // Sin lectura plausible: la regla vieja (X0 junto, el resto suelto).
   const out: number[] = [];
   let i = 0;
   while (i < s.length) {
@@ -286,18 +311,48 @@ function separarPegados(s: string): number[] {
   return out.filter((n) => n > 0);
 }
 
-export function mejoresNumeros(alternativas: string[]): number[] {
+export function mejoresNumeros(alternativas: string[], fijas: MedidasFijas = {}, yaDictados = 0): number[] {
   const alts = alternativas.filter(Boolean);
-  // Tokens de 3+ dígitos = números pegados por hablar rápido → separar; los de
-  // 1-2 cifras (y decimales) se respetan tal cual.
-  const expandir = (a: string) =>
-    (normalizeText(a).match(/\d+(?:\.\d+)?/g) ?? []).flatMap((t) =>
-      /^\d{3,}$/.test(t) ? separarPegados(t) : [parseFloat(t)]);
-  const primary = alts.length ? expandir(alts[0]) : [];
-  if (primary.length) return primary; // confía en la hipótesis #1
-  // alt[0] sin números → primera alternativa que traiga algo.
-  for (const a of alts.slice(1)) { const n = expandir(a); if (n.length) return n; }
-  return [];
+  const libres = DIMENSIONES.filter((d) => !(typeof fijas[d] === "number" && fijas[d]! > 0));
+  const ciclo = libres.length > 0 ? libres : DIMENSIONES;
+
+  // Números pegados por hablar rápido → separar sabiendo qué medida toca.
+  // También los de DOS cifras: con el largo fijo, "dos ocho" llega como "28",
+  // y 28 no es un espesor que exista — ahí hay dos medidas, no una. Si el
+  // valor SÍ es creíble para la medida que toca (un ancho de 28"), se respeta.
+  const expandir = (a: string) => {
+    const tokens = normalizeText(a).match(/\d+(?:\.\d+)?/g) ?? [];
+    const out: number[] = [];
+    for (const t of tokens) {
+      const entero = /^\d+$/.test(t);
+      // La medida que toca depende de lo que YA se dictó, incluidos los
+      // números sueltos que quedaron esperando de la frase anterior.
+      const dimActual = ciclo[(yaDictados + out.length) % ciclo.length];
+      const separable = entero && (t.length >= 3 || (t.length === 2 && !valorPlausible(Number(t), dimActual)));
+      if (separable) out.push(...separarPegados(t, ciclo, yaDictados + out.length));
+      else out.push(parseFloat(t));
+    }
+    return out;
+  };
+
+  // Cuántos números de la lectura caen en el rango de la medida que les toca:
+  // sirve para elegir ENTRE hipótesis del reconocedor, nunca para reordenar
+  // los números de una (eso volteaba las medidas dictadas).
+  const puntaje = (nums: number[]) => {
+    if (nums.length === 0) return -1;
+    const ok = nums.filter((n, i) => valorPlausible(n, ciclo[(yaDictados + i) % ciclo.length])).length;
+    const completa = (yaDictados + nums.length) % ciclo.length === 0 ? 0.5 : 0;
+    return ok / nums.length + completa;
+  };
+
+  const lecturas = alts.map(expandir);
+  if (lecturas.length === 0) return [];
+  let mejor = 0;
+  for (let i = 1; i < lecturas.length; i++) {
+    // Estrictamente mejor: ante empate gana la hipótesis principal del motor.
+    if (puntaje(lecturas[i]) > puntaje(lecturas[mejor]) + 0.001) mejor = i;
+  }
+  return lecturas[mejor];
 }
 
 // ─── Comandos de voz ────────────────────────────────────────────────────────
@@ -436,14 +491,15 @@ export function esEco(textoEscuchado: string, textoDicho: string): boolean {
  * siguiente. Ahora el número pegado a "piezas/tablas/tablones/unidades" se
  * saca del pool y viaja como cantidad; sin esa palabra, todo son medidas.
  */
-export function leerDictado(input: string): { cantidad: number; nums: number[] } {
-  const s = normalizeText(input);
+export function leerDictado(input: string | string[], fijas: MedidasFijas = {}, yaDictados = 0): { cantidad: number; nums: number[] } {
+  const alts = (Array.isArray(input) ? input : [input]).filter(Boolean);
+  const s = normalizeText(alts[0] ?? "");
   const m = s.match(/(\d+)\s*(?:piezas?|tablas?|tablones?|listones?|unidades?|pzas?|pz)\b/);
-  if (!m) return { cantidad: 1, nums: mejoresNumeros([input]) };
+  if (!m) return { cantidad: 1, nums: mejoresNumeros(alts, fijas, yaDictados) };
   const cantidad = Math.max(1, Math.min(999, Math.round(Number(m[1]))));
   // Se quita SOLO esa aparición; el resto de la frase sigue siendo medidas.
   const resto = s.replace(m[0], " ");
-  return { cantidad, nums: mejoresNumeros([resto]) };
+  return { cantidad, nums: mejoresNumeros([resto], fijas, yaDictados) };
 }
 
 /**

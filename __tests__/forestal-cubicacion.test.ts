@@ -260,3 +260,51 @@ describe("medidas fijas por voz", () => {
     expect(partirEnPiezas([2, 6, 8, 2, 8, 10]).piezas).toHaveLength(2);
   });
 });
+
+describe("dictar con medidas fijas: números pegados y de dos cifras (regresión)", () => {
+  const largoFijo = { largo: 4 };
+
+  it('con el largo fijo, "dos quince" pegado como "215" es 2 y 15 (no 2·1·5)', () => {
+    expect(mejoresNumeros(["215"], largoFijo)).toEqual([2, 15]);
+    expect(partirConFijas(mejoresNumeros(["215"], largoFijo), largoFijo).piezas)
+      .toEqual([{ espesor: 2, ancho: 15, largo: 4 }]);
+  });
+
+  it('con el largo fijo, "dos ocho" pegado como "28" es 2 y 8 (28 no es un espesor)', () => {
+    expect(mejoresNumeros(["28"], largoFijo)).toEqual([2, 8]);
+  });
+
+  it("con el largo fijo, 2 y 12 pegados", () => {
+    expect(mejoresNumeros(["212"], largoFijo)).toEqual([2, 12]);
+  });
+
+  it("respeta un valor de dos cifras que SÍ es creíble para su medida", () => {
+    // Ya se dictó el espesor: toca el ancho, y 15 es un ancho normal.
+    expect(mejoresNumeros(["15"], largoFijo, 1)).toEqual([15]);
+    // Sin fijas y con dos números esperando: toca el largo.
+    expect(mejoresNumeros(["15"], {}, 2)).toEqual([15]);
+  });
+
+  it("2 · 15 · 15 entra bien, junto o separado", () => {
+    expect(mejoresNumeros(["21515"])).toEqual([2, 15, 15]);
+    expect(mejoresNumeros(["2 15 15"])).toEqual([2, 15, 15]);
+    expect(partirEnPiezas([2, 15, 15]).piezas).toEqual([{ espesor: 2, ancho: 15, largo: 15 }]);
+  });
+
+  it("elige la hipótesis que trae la medida completa", () => {
+    // El motor a veces devuelve primero una lectura truncada.
+    expect(mejoresNumeros(["dos", "2 8 10"])).toEqual([2, 8, 10]);
+    // O una sin números (ruido del aserradero).
+    expect(mejoresNumeros(["mmm", "2 8 10"])).toEqual([2, 8, 10]);
+  });
+
+  it("ante empate se queda con la hipótesis principal (no reordena)", () => {
+    expect(mejoresNumeros(["2 8 10", "10 8 2"])).toEqual([2, 8, 10]);
+  });
+
+  it("una lectura imposible no se fuerza: devuelve los dígitos como vinieron", () => {
+    const r = mejoresNumeros(["9999"]);
+    expect(r.length).toBeGreaterThan(0);
+    expect(r.every((n) => n > 0)).toBe(true);
+  });
+});
