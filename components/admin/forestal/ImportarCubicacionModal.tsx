@@ -17,11 +17,13 @@ import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
 const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function ImportarCubicacionModal({
-  onAgregar, onCerrar,
+  onAgregar, onCerrar, filasActuales = 0,
 }: {
   /** Suma las piezas leídas al lote del cubicador. */
   onAgregar: (piezas: PiezaImportada[]) => void;
   onCerrar: () => void;
+  /** Filas que YA tiene el lote — se muestra que la importación se suma a ellas. */
+  filasActuales?: number;
 }) {
   const [resultado, setResultado] = useState<ResultadoImport | null>(null);
   const [nombreArchivo, setNombreArchivo] = useState("");
@@ -73,6 +75,13 @@ export default function ImportarCubicacionModal({
         <p className="mb-3 text-sm text-[var(--text-secondary)]">
           El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad.
         </p>
+
+        {filasActuales > 0 && (
+          <p className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 py-2 text-sm font-semibold text-[var(--accent)]">
+            <Check className="h-4 w-4 shrink-0" />
+            Ya tenés <b>{filasActuales}</b> {filasActuales === 1 ? "fila" : "filas"} en el lote. Lo que importes se <b>suma</b> — no se borra nada de lo anterior.
+          </p>
+        )}
 
         {/* Elegir archivo */}
         <div className="flex flex-wrap items-center gap-2">
@@ -162,7 +171,7 @@ export default function ImportarCubicacionModal({
                     Cancelar
                   </button>
                   <button type="button" onClick={() => { onAgregar(resultado.piezas); onCerrar(); }} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95">
-                    <Check className="h-4 w-4" /> Agregar {resultado.piezas.length} al lote
+                    <Check className="h-4 w-4" /> Agregar {resultado.piezas.length} al lote{filasActuales > 0 ? ` (quedará con ${filasActuales + resultado.piezas.length})` : ""}
                   </button>
                 </div>
               </>

@@ -45,13 +45,13 @@ describe("agruparPor", () => {
   it("por tipo agrupa según la medida (comercial/corta/tabla)", () => {
     const mix = [
       pieza(1, 2, 8, 10, "Tornillo"), // Comercial (esp≥2, anc≥6, largo≥6)
-      pieza(1, 2, 8, 4, "Cedro"),     // Corta comercial (largo < 6)
+      pieza(1, 2, 8, 4, "Cedro"),     // Corta (largo < 6)
       pieza(1, 1, 4, 12, "Cedro"),    // Tabla (esp=1, anc≥3, largo≥6)
     ];
     const r = agruparPor(mix, "tipo");
     const labels = r.grupos.map((g) => g.label).sort();
     expect(labels).toContain("Comercial");
-    expect(labels).toContain("Corta comercial");
+    expect(labels).toContain("Corta");
     expect(labels).toContain("Tabla");
   });
 
@@ -120,13 +120,13 @@ describe("resumenPorEspecie", () => {
   it("una entrada por especie con su desglose por tipo y total", () => {
     const rows = [
       pieza(2, 2, 8, 10, "Tornillo"), // Comercial
-      pieza(1, 2, 8, 4, "Tornillo"),  // Corta comercial
+      pieza(1, 2, 8, 4, "Tornillo"),  // Corta (largo < 6)
       pieza(3, 2, 6, 10, "Cedro"),    // Comercial
     ];
     const bloques = resumenPorEspecie(rows, 4);
     expect(bloques.map((b) => b.especie)).toEqual(["Tornillo", "Cedro"]); // Tornillo pesa más
     const tornillo = bloques.find((b) => b.especie === "Tornillo")!;
-    expect(tornillo.tipos.map((t) => t.label).sort()).toEqual(["Comercial", "Corta comercial"]);
+    expect(tornillo.tipos.map((t) => t.label).sort()).toEqual(["Comercial", "Corta"]);
     expect(tornillo.total.cantidad).toBe(3);
     // el total de la especie = suma de sus tipos
     const sumaPt = tornillo.tipos.reduce((a, t) => a + t.pieTablar, 0);

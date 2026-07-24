@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, Lock, Unlock, X, FileSpreadsheet, Receipt } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, Lock, Unlock, X, FileSpreadsheet, Receipt, Search } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3, ESPECIES_MADERA,
@@ -27,8 +27,9 @@ import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import LiquidacionModal from "./LiquidacionModal";
 import EnviarLibroModal from "./EnviarLibroModal";
-import { clasificarTipo } from "@/lib/forestal/cubicacion-tipo";
+import { clasificarTipo, ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge, tipoBadgeCls } from "./tipo-badge";
+import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -99,11 +100,11 @@ function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number,
 /** Leyenda de los tipos comerciales por medida (SERFOR mide esp·anc·largo). */
 const TIPO_LEYENDA: { label: string; tono: "success" | "info" | "warning" | "neutral"; regla: string }[] = [
   { label: "Comercial", tono: "success", regla: "esp ≥ 2\" · anc ≥ 6\" · largo ≥ 6 pies" },
-  { label: "Com. corta", tono: "success", regla: "esp ≥ 2\" · anc ≥ 6\" · largo < 6" },
   { label: "Tabla", tono: "info", regla: "esp = 1\" · anc ≥ 3\" · largo ≥ 6" },
   { label: "Paq. larga", tono: "neutral", regla: "6\"×6\" exacto · largo ≥ 6" },
   { label: "Paq. corta", tono: "neutral", regla: "6\"×6\" exacto · largo < 6" },
   { label: "L. angosta", tono: "warning", regla: "esp ≤ 5\" · anc ≤ 5\" · largo ≥ 6" },
+  { label: "Corta", tono: "warning", regla: "esp ≥ 1\" · anc ≥ 2\" · largo ≤ 5 (todo corto)" },
 ];
 
 export default function CubicadorMadera({ onPresent }: { onPresent?: () => void }) {
@@ -145,6 +146,16 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [paused, setPaused] = useState(false); // "pausar" por voz → ignora números hasta "continúa"
   /** Medidas que quedan fijas ("pon fijo el largo a 4"): no se dictan más. */
   const [fijas, setFijas] = useState<MedidasFijas>({});
+
+  // Toasts flotantes de acción (agregar / eliminar / guardar / importar…).
+  const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
+  const medidaTxt = (r: { espesor: number; ancho: number; largo: number; especie?: string }) =>
+    `${r.espesor}×${r.ancho}×${r.largo}${r.especie ? ` · ${r.especie}` : ""}`;
+
+  // Filtros de la tabla del lote (no tocan los datos, solo la vista).
+  const [filtroEspecie, setFiltroEspecie] = useState("");   // "" = todas
+  const [filtroTipo, setFiltroTipo] = useState<TipoComercial | "">("");
+  const [busqueda, setBusqueda] = useState("");             // medidas / texto libre
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const idRef = useRef(0);
   const especieRef = useRef(especie);
@@ -240,7 +251,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     const conId = nuevas.map((p) => ({ ...p, id: nuevoId() }));
     setRows((prev) => { const next = [...prev, ...conId]; saveLocal(next); return next; });
     setLastAdded(conId[conId.length - 1]);
-  }, []);
+    const piezas = nuevas.reduce((a, p) => a + p.cantidad, 0);
+    pushToast({ tono: "success", msg: `${conId.length} ${conId.length === 1 ? "fila importada" : "filas importadas"}`, detail: `${piezas} piezas al lote` });
+  }, [pushToast]);
 
   // Borra la última fila (comando de voz "elimina el último"). Estable.
   const borrarUltimo = useCallback(() => {
@@ -548,6 +561,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     if (!(e > 0 && a > 0 && l > 0)) return;
     addPieza({ cantidad: c, espesor: e, ancho: a, largo: l, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies", especie: especie || undefined });
     setManual({ cantidad: "1", espesor: "", ancho: "", largo: "" });
+    pushToast({ tono: "success", msg: "Pieza agregada", detail: medidaTxt({ espesor: e, ancho: a, largo: l, especie: especie || undefined }) });
   };
 
   /** Edición a mano de una fila (cantidad/medidas/especie) — sin pasar por voz. */
@@ -571,6 +585,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     const next = [...rows.slice(0, i + 1), copia, ...rows.slice(i + 1)];
     persist(next);
     setLastAdded(copia);
+    pushToast({ tono: "success", msg: "Fila duplicada", detail: medidaTxt(copia) });
   };
 
   const cambiarUnidad = (id: string, campo: "uEspesor" | "uAncho" | "uLargo", u: Unidad) => {
@@ -581,9 +596,21 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       return { ...upd, pieTablar, m3 };
     }));
   };
-  const borrar = (id: string) => { persist(rows.filter((r) => r.id !== id)); if (lastAdded?.id === id) setLastAdded(null); };
-  const deshacer = () => { if (lastAdded) { borrar(lastAdded.id); setLastAdded(null); } };
-  const limpiar = () => { persist([]); setLastAdded(null); };
+  const borrar = (id: string) => {
+    const prev = rows;
+    const victima = rows.find((r) => r.id === id);
+    persist(rows.filter((r) => r.id !== id));
+    if (lastAdded?.id === id) setLastAdded(null);
+    if (victima) pushToast({ tono: "warning", msg: "Fila eliminada", detail: medidaTxt(victima), undo: () => persist(prev) });
+  };
+  // Deshacer del flash de dictado: quita la última SIN toast (ya es una acción de deshacer).
+  const deshacer = () => { if (lastAdded) { persist(rows.filter((r) => r.id !== lastAdded.id)); setLastAdded(null); } };
+  const limpiar = () => {
+    if (rows.length === 0) return;
+    const prev = rows;
+    persist([]); setLastAdded(null);
+    pushToast({ tono: "warning", msg: "Lote vaciado", detail: `${prev.length} ${prev.length === 1 ? "fila" : "filas"}`, undo: () => persist(prev) });
+  };
 
   // Persistir el precio por PT (por tenant) y los precios por especie.
   useEffect(() => { try { localStorage.setItem(`${storageKey()}-precio`, precioPt); } catch { /* ignore */ } }, [precioPt]);
@@ -601,6 +628,36 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     () => [...new Set(rows.map((r) => r.especie?.trim()).filter((e): e is string => !!e))],
     [rows],
   );
+  // ¿Alguna pieza sin especie? (opción "Sin especie" en el filtro).
+  const haySinEspecie = useMemo(() => rows.some((r) => !r.especie?.trim()), [rows]);
+  // Tipos comerciales presentes, en el orden canónico (para el filtro por tipo).
+  const tiposLote = useMemo(() => {
+    const set = new Set<TipoComercial>(rows.map((r) => clasificarTipo(r)));
+    return ORDEN_TIPO.filter((t) => set.has(t));
+  }, [rows]);
+  // Vista filtrada del lote: conserva el índice original para el N° estable.
+  const filtrando = filtroEspecie !== "" || filtroTipo !== "" || busqueda.trim() !== "";
+  const norm = (s: string) => s.toLowerCase().replace(/[×*]/g, "x").replace(/\s+/g, "");
+  const filasVisibles = useMemo(() => {
+    const q = norm(busqueda);
+    return rows
+      .map((r, indice) => ({ r, indice }))
+      .filter(({ r }) => {
+        if (filtroEspecie && (r.especie?.trim() || "__sin__") !== filtroEspecie) return false;
+        if (filtroTipo && clasificarTipo(r) !== filtroTipo) return false;
+        if (q) {
+          const hay = norm(`${r.espesor}x${r.ancho}x${r.largo} ${r.especie ?? ""} ${clasificarTipo(r)}`);
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+  }, [rows, filtroEspecie, filtroTipo, busqueda]);
+  const limpiarFiltros = useCallback(() => { setFiltroEspecie(""); setFiltroTipo(""); setBusqueda(""); }, []);
+  // Totales de la vista (iguales al lote si no hay filtro activo).
+  const totalesVisibles = useMemo(() => filasVisibles.reduce(
+    (a, { r }) => ({ piezas: a.piezas + r.cantidad, pt: a.pt + r.pieTablar, m3: a.m3 + r.m3 }),
+    { piezas: 0, pt: 0, m3: 0 },
+  ), [filasVisibles]);
   // Precio por PT de una pieza: el de su especie si está seteado (>0), si no el global.
   const precioDe = useCallback((r: PiezaCubicada) => {
     const esp = r.especie?.trim().toLowerCase();
@@ -667,6 +724,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     const porMedida = agruparPor(rows, "medida").grupos;
     const resumenTxt = porMedida.slice(0, 6).map((g) => `${g.cantidad}× ${g.label}`).join("; ");
     const cantidad = Math.round(totales.pt * 100) / 100;
+    let codigoLote: string | null = null;
     setEnviando(true);
     setErrMsg(null);
     try {
@@ -711,12 +769,15 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         });
         const jl = await rl.json().catch(() => ({}));
         if (!rl.ok) throw new Error(jl?.message ?? jl?.error ?? `No se pudo crear el lote (HTTP ${rl.status})`);
-        setLoteCreado(jl?.lote?.codigo ?? "creado");
+        codigoLote = jl?.lote?.codigo ?? "creado";
+        setLoteCreado(codigoLote);
       }
       setEnviado(true);
       setShowEnviarModal(false);
+      pushToast({ tono: "success", msg: "Enviado al Libro CTP", detail: codigoLote ? `Lote ${codigoLote}` : undefined });
     } catch (e) {
       setErrMsg(`No se pudo registrar en el Libro: ${e instanceof Error ? e.message : String(e)}`);
+      pushToast({ tono: "error", msg: "No se pudo enviar al Libro", detail: e instanceof Error ? e.message : String(e) });
     } finally {
       setEnviando(false);
     }
@@ -764,8 +825,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       setShowGuardar(false);
       setHistorialToken((v) => v + 1);
       setTimeout(() => setGuardadoOk(null), 6000);
+      pushToast({ tono: "success", msg: "Cubicación guardada", detail: `«${cubicacion.nombre}»` });
     } catch (e) {
-      setErrMsg(`No se pudo guardar: ${e instanceof Error ? e.message : String(e)}`);
+      const msg = `No se pudo guardar: ${e instanceof Error ? e.message : String(e)}`;
+      setErrMsg(msg);
+      pushToast({ tono: "error", msg: "No se pudo guardar", detail: e instanceof Error ? e.message : String(e) });
     } finally {
       setGuardando(false);
     }
@@ -820,7 +884,13 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     const a = document.createElement("a");
     a.href = url; a.download = `cubicacion-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    pushToast({ tono: "success", msg: "CSV descargado" });
   };
+
+  /** Corre una descarga (PDF/Excel) avisando el resultado por toast. */
+  const descargarConAviso = (p: Promise<void>, ok: string, err: string) =>
+    p.then(() => pushToast({ tono: "success", msg: ok }))
+      .catch(() => { setErrMsg(err); pushToast({ tono: "error", msg: err }); });
 
   return (
     <div className="group relative space-y-4">
@@ -1073,8 +1143,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               <button type="button" onClick={compartirWhatsApp} title="Mandar el resumen por WhatsApp" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
               </button>
-              <button type="button" onClick={() => exportarPDF(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }).catch(() => setErrMsg("No se pudo generar el PDF."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">PDF</button>
-              <button type="button" onClick={() => exportarExcel(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }).catch(() => setErrMsg("No se pudo generar el Excel."))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Excel</button>
+              <button type="button" onClick={() => descargarConAviso(exportarPDF(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }), "PDF generado", "No se pudo generar el PDF.")} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">PDF</button>
+              <button type="button" onClick={() => descargarConAviso(exportarExcel(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }), "Excel generado", "No se pudo generar el Excel.")} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Excel</button>
               <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
               <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)]">Vaciar</button>
             </div>
@@ -1259,7 +1329,51 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         {rows.length === 0 ? (
           <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste nada. Dictá o cargá una pieza para empezar.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
+          <>
+            {/* Filtros de la vista — especie · tipo · buscar medida (no alteran los datos) */}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <div className="relative min-w-[180px] flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                <input
+                  type="text"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar medida (2x8, 8, tornillo…)"
+                  aria-label="Buscar por medida, especie o tipo"
+                  className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-base)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
+                />
+              </div>
+              <select
+                value={filtroTipo}
+                onChange={(e) => setFiltroTipo(e.target.value as TipoComercial | "")}
+                aria-label="Filtrar por tipo"
+                className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+              >
+                <option value="">Todos los tipos</option>
+                {tiposLote.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <select
+                value={filtroEspecie}
+                onChange={(e) => setFiltroEspecie(e.target.value)}
+                aria-label="Filtrar por especie"
+                className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+              >
+                <option value="">Todas las especies</option>
+                {especiesLote.map((e) => <option key={e} value={e}>{e}</option>)}
+                {haySinEspecie && <option value="__sin__">Sin especie</option>}
+              </select>
+              {filtrando && (
+                <>
+                  <span className="text-[length:var(--ts-xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
+                    {filasVisibles.length} de {rows.length}
+                  </span>
+                  <button type="button" onClick={limpiarFiltros} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                    <X className="h-4 w-4" /> Limpiar
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <table className="w-full min-w-[960px] text-sm">
               <thead>
                 <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -1271,7 +1385,15 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, indice) => {
+                {filasVisibles.length === 0 && (
+                  <tr>
+                    <td colSpan={11} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
+                      Ninguna pieza coincide con el filtro.{" "}
+                      <button type="button" onClick={limpiarFiltros} className="font-bold text-[var(--accent)] underline">Limpiar filtros</button>
+                    </td>
+                  </tr>
+                )}
+                {filasVisibles.map(({ r, indice }) => {
                   const leyendo = readingId === r.id;
                   const editando = editingId === r.id;
                   const rowCls = leyendo
@@ -1330,14 +1452,15 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--accent-soft)] font-bold text-[var(--text-primary)]">
-                  <td className="px-3 py-2.5" colSpan={8}>Total · {totales.piezas} piezas</td>
-                  <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtPt(totales.pt)} PT</td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]">{fmtM3(totales.m3)}</td>
+                  <td className="px-3 py-2.5" colSpan={8}>{filtrando ? "Filtro" : "Total"} · {(filtrando ? totalesVisibles : totales).piezas} piezas</td>
+                  <td className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]">{fmtPt((filtrando ? totalesVisibles : totales).pt)} PT</td>
+                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]">{fmtM3((filtrando ? totalesVisibles : totales).m3)}</td>
                   <td />
                 </tr>
               </tfoot>
             </table>
           </div>
+          </>
         )}
 
         {/* Leyenda del Tipo — cómo se clasifica cada pieza por su medida (SERFOR: esp·anc·largo) */}
@@ -1419,6 +1542,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
       {showImportar && (
         <ImportarCubicacionModal
+          filasActuales={rows.length}
           onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
           onCerrar={() => setShowImportar(false)}
         />
@@ -1445,6 +1569,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           onCerrar={() => setShowEnviarModal(false)}
         />
       )}
+
+      {/* Toasts flotantes de acción (agregar / eliminar / guardar / importar…) */}
+      <ActionToasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
