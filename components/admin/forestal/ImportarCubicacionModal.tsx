@@ -71,7 +71,7 @@ export default function ImportarCubicacionModal({
         </div>
 
         <p className="mb-3 text-sm text-[var(--text-secondary)]">
-          El archivo tiene que tener las columnas <b>Especie · Espesor · Ancho · Largo</b> (y opcional <b>Cantidad</b>), en el orden que quieras. El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad.
+          El archivo tiene que tener las columnas <b>Especie · Cantidad · Espesor · Ancho · Largo</b> (Cantidad opcional; por defecto 1). El espesor y el ancho se toman en pulgadas y el largo en pies, salvo que agregues columnas de unidad.
         </p>
 
         {/* Elegir archivo */}

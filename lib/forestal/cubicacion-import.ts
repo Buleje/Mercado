@@ -190,11 +190,11 @@ export function parsearFilasImportadas(matriz: Celda[][]): ResultadoImport {
 
 /** Encabezado + una fila de ejemplo para la plantilla descargable. */
 export const PLANTILLA_IMPORT: { headers: string[]; ejemplo: (string | number)[][] } = {
-  headers: ["Especie", "Espesor", "Ancho", "Largo", "Cantidad"],
+  headers: ["Especie", "Cantidad", "Espesor", "Ancho", "Largo"],
   ejemplo: [
-    ["Tornillo", 2, 8, 10, 5],
-    ["Cedro", 2, 6, 8, 3],
-    ["Capirona", 1.5, 4, 12, 10],
+    ["Tornillo", 5, 2, 8, 10],
+    ["Cedro", 3, 2, 6, 8],
+    ["Capirona", 10, 1.5, 4, 12],
   ],
 };
 
