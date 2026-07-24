@@ -3,7 +3,7 @@
  * por sección — para liquidar de la forma que pida cada cliente.
  */
 import { describe, expect, it } from "vitest";
-import { agruparPor, resumenACsv } from "@/lib/forestal/cubicacion-resumen";
+import { agruparPor, resumenACsv, resumenPorEspecie } from "@/lib/forestal/cubicacion-resumen";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 
 function pieza(cantidad: number, espesor: number, ancho: number, largo: number, especie?: string): PiezaCubicada {
@@ -113,6 +113,29 @@ describe("agruparPor", () => {
     const cm = { id: "x", cantidad: 1, espesor: 5, ancho: 20, largo: 3, uEspesor: "cm" as const, uAncho: "cm" as const, uLargo: "m" as const, pieTablar: 10, m3: 0.003 };
     expect(agruparPor([cm], "largo").grupos[0].label).toBe("3 m");
     expect(agruparPor([cm], "seccion").grupos[0].label).toBe("5×20 cm");
+  });
+});
+
+describe("resumenPorEspecie", () => {
+  it("una entrada por especie con su desglose por tipo y total", () => {
+    const rows = [
+      pieza(2, 2, 8, 10, "Tornillo"), // Comercial
+      pieza(1, 2, 8, 4, "Tornillo"),  // Corta comercial
+      pieza(3, 2, 6, 10, "Cedro"),    // Comercial
+    ];
+    const bloques = resumenPorEspecie(rows, 4);
+    expect(bloques.map((b) => b.especie)).toEqual(["Tornillo", "Cedro"]); // Tornillo pesa más
+    const tornillo = bloques.find((b) => b.especie === "Tornillo")!;
+    expect(tornillo.tipos.map((t) => t.label).sort()).toEqual(["Comercial", "Corta comercial"]);
+    expect(tornillo.total.cantidad).toBe(3);
+    // el total de la especie = suma de sus tipos
+    const sumaPt = tornillo.tipos.reduce((a, t) => a + t.pieTablar, 0);
+    expect(tornillo.total.pieTablar).toBeCloseTo(sumaPt, 1);
+    expect(tornillo.total.valor).toBeCloseTo(tornillo.total.pieTablar * 4, 0);
+  });
+
+  it("lote vacío da lista vacía", () => {
+    expect(resumenPorEspecie([])).toEqual([]);
   });
 });
 

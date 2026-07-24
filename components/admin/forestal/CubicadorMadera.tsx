@@ -27,7 +27,8 @@ import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import LiquidacionModal from "./LiquidacionModal";
 import EnviarLibroModal from "./EnviarLibroModal";
-import { clasificarTipo, tipoCorto, tonoTipo } from "@/lib/forestal/cubicacion-tipo";
+import { clasificarTipo } from "@/lib/forestal/cubicacion-tipo";
+import { TipoBadge, tipoBadgeCls } from "./tipo-badge";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -93,14 +94,6 @@ function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number,
     }
     synth.speak(u);
   } catch { /* TTS no disponible */ }
-}
-
-/** Clases del badge de la columna Tipo según el tono del DS. */
-function tipoBadgeCls(tono: "success" | "info" | "warning" | "neutral"): string {
-  if (tono === "success") return "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]";
-  if (tono === "info") return "bg-[var(--data-info-100)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]";
-  if (tono === "warning") return "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]";
-  return "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
 }
 
 /** Leyenda de los tipos comerciales por medida (SERFOR mide esp·anc·largo). */
@@ -1300,9 +1293,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                       {r.espesor}×{r.ancho}×{r.largo}
                     </td>
                     <td className="px-3 py-2">
-                      <span title={`Según sus medidas (espesor·ancho·largo): ${tipo}`} className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold ${tipoBadgeCls(tonoTipo(tipo))}`}>
-                        {tipoCorto(tipo)}
-                      </span>
+                      <TipoBadge tipo={tipo} />
                     </td>
                     <td className="px-3 py-2">
                       <select

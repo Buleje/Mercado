@@ -8,7 +8,7 @@
  */
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Wrench, Calculator, Activity, Ruler, Gauge } from "@buleje/design-system/icons";
+import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
@@ -20,12 +20,14 @@ const cargando = (
 const CubicadorMadera = dynamic(() => import("./CubicadorMadera"), { ssr: false, loading: () => cargando });
 const CubicadorTrozas = dynamic(() => import("./CubicadorTrozas"), { ssr: false, loading: () => cargando });
 const CalculadoraRendimiento = dynamic(() => import("./CalculadoraRendimiento"), { ssr: false, loading: () => cargando });
+const CubicacionResumenes = dynamic(() => import("./CubicacionResumenes"), { ssr: false, loading: () => cargando });
 
-type Tool = "cubicador" | "trozas" | "rendimiento";
+type Tool = "cubicador" | "trozas" | "rendimiento" | "resumenes";
 const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
 const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }[] = [
   { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Aserrada: pie tablar + m³ por voz" },
   { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza: Smalian en patio, contra la GTF" },
+  { key: "resumenes", label: "Resúmenes", icon: BarChart3, hint: "Tablas por especie y tipo del lote cubicado" },
   { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Coeficiente de aserrío (%) con tu histórico del Libro" },
 ];
 const TOOL_TAB_ITEMS = TOOLS.map((t) => ({ id: t.key, label: t.label, icon: t.icon, title: t.hint }));
@@ -55,6 +57,7 @@ export default function ForestalHerramientas() {
       <div className="mt-6">
         {tool === "cubicador" && <CubicadorMadera />}
         {tool === "trozas" && <CubicadorTrozas />}
+        {tool === "resumenes" && <CubicacionResumenes />}
         {tool === "rendimiento" && <CalculadoraRendimiento />}
       </div>
     </div>

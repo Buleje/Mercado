@@ -126,6 +126,34 @@ export function agruparPor(rows: PiezaCubicada[], dim: DimensionResumen, precio:
   };
 }
 
+export interface BloqueEspecie {
+  especie: string;
+  /** Desglose por tipo comercial dentro de la especie (ordenado por PT). */
+  tipos: GrupoResumen[];
+  total: { cantidad: number; pieTablar: number; m3: number; valor: number };
+}
+
+/**
+ * Reporte cruzado especie × tipo: una entrada por especie con su desglose por
+ * tipo comercial. Para leer "el Tornillo: cuánto comercial, cuánta paquetería…".
+ * Reusa agruparPor("tipo") sobre las filas de cada especie.
+ */
+export function resumenPorEspecie(rows: PiezaCubicada[], precio: PrecioPt = 0): BloqueEspecie[] {
+  const porEspecie = new Map<string, PiezaCubicada[]>();
+  for (const r of rows) {
+    const e = r.especie?.trim() || "Sin especie";
+    const lista = porEspecie.get(e);
+    if (lista) lista.push(r);
+    else porEspecie.set(e, [r]);
+  }
+  const bloques = [...porEspecie.entries()].map(([especie, rs]) => {
+    const g = agruparPor(rs, "tipo", precio);
+    return { especie, tipos: g.grupos, total: g.total };
+  });
+  bloques.sort((a, b) => b.total.pieTablar - a.total.pieTablar || a.especie.localeCompare(b.especie));
+  return bloques;
+}
+
 /** CSV del resumen agrupado (para el contador o el cliente). */
 export function resumenACsv(resumen: ResumenLote, dim: DimensionResumen, conValor: boolean): string {
   const cab = [ETIQUETA_DIMENSION[dim].replace("Por ", ""), "Piezas", "PieTablar", "m3", "%", ...(conValor ? ["ValorS/"] : [])];
