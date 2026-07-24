@@ -83,6 +83,27 @@ export async function exportarPDF(rows: PiezaCubicada[], opts: ExportOpts): Prom
   doc.save(`cubicacion-${fecha()}.pdf`);
 }
 
+/**
+ * Plantilla de importación como .xlsx REAL — cada columna en su propia celda.
+ * Un CSV se abre en una sola celda cuando el Excel del usuario usa ";" de
+ * separador (locale es-PE); el .xlsx no depende del separador. Sin filas de
+ * datos: solo los encabezados, listos para llenar.
+ */
+export async function descargarPlantillaImport(headers: string[]): Promise<void> {
+  const ExcelJS = (await import("exceljs")).default;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Cubicación");
+  ws.columns = headers.map((h) => ({ header: h, key: h.toLowerCase(), width: Math.max(12, h.length + 6) }));
+  const hdr = ws.getRow(1);
+  hdr.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  hdr.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF008060" } };
+  hdr.alignment = { vertical: "middle", horizontal: "center" };
+  hdr.height = 22;
+  ws.views = [{ state: "frozen", ySplit: 1 }];
+  const buf = await wb.xlsx.writeBuffer();
+  descargar(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "plantilla-cubicacion.xlsx");
+}
+
 /** PDF de la liquidación por especie (comprobante para el comprador). */
 export async function exportarLiquidacionPDF(datos: DatosLiquidacion, liq: Liquidacion): Promise<void> {
   const { jsPDF } = await import("jspdf");

@@ -12,6 +12,7 @@ import { useCallback, useRef, useState } from "react";
 import { AlertTriangle, Check, Download, FileSpreadsheet, Loader2, Upload, X } from "@buleje/design-system/icons";
 import { parsearFilasImportadas, PLANTILLA_IMPORT, type PiezaImportada, type ResultadoImport } from "@/lib/forestal/cubicacion-import";
 import { leerArchivoAFilas } from "@/lib/forestal/cubicacion-import-file";
+import { descargarPlantillaImport } from "@/lib/forestal/cubicador-export";
 
 const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -43,13 +44,14 @@ export default function ImportarCubicacionModal({
     }
   }, []);
 
+  const [bajando, setBajando] = useState(false);
   const descargarPlantilla = () => {
-    const filas = [PLANTILLA_IMPORT.headers, ...PLANTILLA_IMPORT.ejemplo];
-    const csv = "﻿" + filas.map((f) => f.join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-    const a = document.createElement("a");
-    a.href = url; a.download = "plantilla-cubicacion.csv";
-    a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    // .xlsx real: cada columna en su celda (un CSV se abre en una sola celda con
+    // el separador ";" del Excel es-PE). Sin datos: solo los encabezados.
+    setBajando(true);
+    descargarPlantillaImport(PLANTILLA_IMPORT.headers)
+      .catch(() => setErrorGeneral("No se pudo generar la plantilla. Probá de nuevo."))
+      .finally(() => setBajando(false));
   };
 
   const totalPt = resultado?.piezas.reduce((a, p) => a + p.pieTablar, 0) ?? 0;
@@ -84,8 +86,8 @@ export default function ImportarCubicacionModal({
           <button type="button" onClick={() => inputRef.current?.click()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95">
             <Upload className="h-4 w-4" /> Elegir archivo
           </button>
-          <button type="button" onClick={descargarPlantilla} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-            <Download className="h-4 w-4" /> Descargar plantilla
+          <button type="button" onClick={descargarPlantilla} disabled={bajando} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50">
+            {bajando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Descargar plantilla (Excel)
           </button>
           {nombreArchivo && <span className="truncate text-xs text-[var(--text-tertiary)]">{nombreArchivo}</span>}
         </div>
