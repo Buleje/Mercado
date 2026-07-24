@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, Lock, Unlock, X } from "@buleje/design-system/icons";
+import { Mic, MicOff, Calculator, Table, Trash2, Plus, Scale, Volume2, VolumeX, Check, RotateCcw, Square, Coins, Settings, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, Lock, Unlock, X, FileSpreadsheet } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   cubicarPieza, mejoresNumeros, detectarComando, PT_POR_M3, ESPECIES_MADERA,
@@ -23,6 +23,7 @@ import {
 import { exportarPDF, exportarExcel } from "@/lib/forestal/cubicador-export";
 import { hoyISO, nombreSugerido, type CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import CubicacionesGuardadas from "./CubicacionesGuardadas";
+import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
@@ -115,6 +116,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [cubicacionActual, setCubicacionActual] = useState<{ id: string; nombre: string } | null>(null);
   const [showGuardar, setShowGuardar] = useState(false);
   const [showHistorial, setShowHistorial] = useState(false);
+  const [showImportar, setShowImportar] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [guardadoOk, setGuardadoOk] = useState<string | null>(null);
   const [historialToken, setHistorialToken] = useState(0);
@@ -206,6 +208,15 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3 };
     setRows((prev) => { const next = [...prev, row]; saveLocal(next); return next; });
     setLastAdded(row);
+  }, []);
+
+  /** Suma un lote entero de una (importación de Excel): las piezas ya vienen
+   *  cubicadas; se les da id propio para no chocar con las de la sesión. */
+  const agregarVarias = useCallback((nuevas: PiezaCubicada[]) => {
+    if (nuevas.length === 0) return;
+    const conId = nuevas.map((p) => ({ ...p, id: nuevoId() }));
+    setRows((prev) => { const next = [...prev, ...conId]; saveLocal(next); return next; });
+    setLastAdded(conId[conId.length - 1]);
   }, []);
 
   // Borra la última fila (comando de voz "elimina el último"). Estable.
@@ -733,6 +744,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             <Calculator className="h-4 w-4 text-[var(--accent)]" /> Cubicador de madera por voz
           </h3>
           <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setShowImportar(true)} title="Importar un Excel/CSV de piezas al lote" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
+              <FileSpreadsheet className="h-3.5 w-3.5" /> Importar Excel
+            </button>
             <button type="button" onClick={() => setShowAjustes((v) => !v)} aria-pressed={showAjustes} title="Ajustes de voz y comandos" className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition ${showAjustes ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
               <Settings className="h-3.5 w-3.5" /> Ajustes
             </button>
@@ -1205,6 +1219,13 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           <Conv label="Referencia" value={`1 m³ = ${PT_POR_M3} PT`} hint={<><Scale className="mr-1 inline h-3 w-3" />pie tablar</>} />
         </div>
       </div>
+
+      {showImportar && (
+        <ImportarCubicacionModal
+          onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
+          onCerrar={() => setShowImportar(false)}
+        />
+      )}
     </div>
   );
 }
