@@ -9,7 +9,7 @@
  * PURO: sin DOM. Los "errores" son lo que invalida el documento; los "avisos"
  * son lo que un fiscalizador va a preguntar.
  */
-import { PT_POR_M3, toInches, toFeet, type PiezaCubicada } from "./cubicacion";
+import { toInches, toFeet, type PiezaCubicada } from "./cubicacion";
 import type { Anexo04, DatosAnexo04 } from "./anexo04-serfor";
 
 /** Lo que el despacho del Libro CTP declara amparar con esa GTF. */
