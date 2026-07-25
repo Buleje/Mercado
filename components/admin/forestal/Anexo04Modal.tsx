@@ -16,7 +16,7 @@ import { CardTitle } from "@buleje/design-system";
 import { Download, FileSpreadsheet, FileText, Minus, Plus, Printer, X } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo, type DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
-import { validarAnexo04, anexoPresentable } from "@/lib/forestal/anexo04-validacion";
+import { validarAnexo04, anexoPresentable, type DeclaradoEnLibro } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
 import { exportarAnexo04PDF } from "@/lib/forestal/anexo04-pdf";
 import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
@@ -48,7 +48,7 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales, ctpEntryId,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales, ctpEntryId, declarado,
 }: {
   /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
@@ -57,6 +57,8 @@ export default function Anexo04Modal({
   gtfInicial?: string;
   /** Despacho del Libro que origina la emisión (queda en el historial). */
   ctpEntryId?: string;
+  /** Lo que esa línea del Libro declara amparar: el anexo no puede pasarse. */
+  declarado?: DeclaradoEnLibro | null;
   observacionesIniciales?: string;
   /** Descarga el PDF interno detallado (el de siempre, con precios y tipos). */
   onPdfDetallado?: () => void;
@@ -107,7 +109,7 @@ export default function Anexo04Modal({
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
   // fiscalizador va a preguntar (avisos). No bloquea: la hoja en blanco para
   // llenar a mano es un uso legítimo del formato.
-  const avisos = useMemo(() => validarAnexo04(datos, anexo, filas), [datos, anexo, filas]);
+  const avisos = useMemo(() => validarAnexo04(datos, anexo, filas, declarado), [datos, anexo, filas, declarado]);
   const presentable = anexoPresentable(avisos);
 
   /**

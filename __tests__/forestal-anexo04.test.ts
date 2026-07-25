@@ -256,3 +256,48 @@ describe("filtrarEmisiones — buscar en la bandeja", () => {
     expect(filtrarEmisiones(LISTA, "camión")).toHaveLength(0);
   });
 });
+
+describe("cotejo anexo ↔ guía del Libro", () => {
+  const DATOS = {
+    numero: "2-19-0461363", gtf: "19-001-0000052", empresa: "Maderera SAC",
+    observaciones: "", firmante: "Brandon", documento: "71234567", cargo: "Jefe",
+    unidadV: "pt", modo: "oficial",
+  } as const;
+  const anexoDe = (piezas: PiezaCubicada[]) => construirAnexo04(piezas, DATOS);
+  const UNA = [pieza(10, 2, 8, 12)];            // 10 × (2×8×12/12) = 160 PT
+  const sinCotejo = validarAnexo04(DATOS, anexoDe(UNA), UNA).length;
+
+  it("cuadra con la guía: no agrega nada", () => {
+    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 160, unidad: "pt" });
+    expect(avisos).toHaveLength(sinCotejo);
+  });
+
+  it("el anexo detalla MÁS que la guía = error (blanqueo de volumen)", () => {
+    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 100, unidad: "pt" });
+    const cotejo = avisos.find((a) => /amparando/.test(a.mensaje));
+    expect(cotejo?.nivel).toBe("error");
+    expect(cotejo?.mensaje).toContain("60");
+    expect(anexoPresentable(avisos)).toBe(false);
+  });
+
+  it("el anexo detalla MENOS que la guía = aviso (puede haber producto sin cubicar)", () => {
+    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 200, unidad: "pt" });
+    const cotejo = avisos.find((a) => /faltan/.test(a.mensaje));
+    expect(cotejo?.nivel).toBe("aviso");
+    expect(anexoPresentable(avisos)).toBe(true);
+  });
+
+  it("tolera el redondeo (0,5 %) y compara en m³ cuando la guía va en m³", () => {
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 160.5, unidad: "pt" })).toHaveLength(sinCotejo);
+    const m3 = anexoDe(UNA).totalM3;
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: m3, unidad: "m3" })).toHaveLength(sinCotejo);
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: m3 / 2, unidad: "m3" })
+      .some((a) => a.nivel === "error")).toBe(true);
+  });
+
+  it("sin unidad comparable o sin dato no inventa un cotejo", () => {
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 1, unidad: "kg" })).toHaveLength(sinCotejo);
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 0, unidad: "pt" })).toHaveLength(sinCotejo);
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, null)).toHaveLength(sinCotejo);
+  });
+});

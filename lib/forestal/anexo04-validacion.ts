@@ -9,8 +9,18 @@
  * PURO: sin DOM. Los "errores" son lo que invalida el documento; los "avisos"
  * son lo que un fiscalizador va a preguntar.
  */
-import { toInches, toFeet, type PiezaCubicada } from "./cubicacion";
+import { PT_POR_M3, toInches, toFeet, type PiezaCubicada } from "./cubicacion";
 import type { Anexo04, DatosAnexo04 } from "./anexo04-serfor";
+
+/** Lo que el despacho del Libro CTP declara amparar con esa GTF. */
+export interface DeclaradoEnLibro {
+  cantidad: number;
+  /** Unidad de la línea del libro: "pt" | "m3" (otras no se comparan). */
+  unidad: string | null;
+}
+
+/** Tolerancia de redondeo: por debajo de esto, anexo y guía son lo mismo. */
+const TOLERANCIA = 0.005; // 0,5 %
 
 export type NivelAviso = "error" | "aviso";
 
@@ -55,6 +65,8 @@ export function validarAnexo04(
   datos: DatosAnexo04,
   anexo: Anexo04,
   piezas: PiezaCubicada[],
+  /** Línea de despacho desde la que se emite (cotejo anexo ↔ guía). */
+  declarado?: DeclaradoEnLibro | null,
 ): AvisoAnexo04[] {
   const avisos: AvisoAnexo04[] = [];
   const vacio = (v: string | undefined) => !v || !v.trim();
@@ -101,7 +113,43 @@ export function validarAnexo04(
     avisos.push({ nivel: "error", mensaje: "El (3) volumen total dio 0: revisá las medidas." });
   }
 
+  avisos.push(...cotejarConLibro(anexo, piezas, declarado));
+
   return avisos.sort((a, b) => (a.nivel === b.nivel ? 0 : a.nivel === "error" ? -1 : 1));
+}
+
+/**
+ * Coteja lo que suma el anexo contra lo que la línea de despacho declara amparar.
+ *
+ * Por MÁS es ERROR y por menos es aviso, a propósito: un anexo que detalla más
+ * madera de la que dice la guía es exactamente el hueco por donde se blanquea
+ * volumen (misma lógica que los invariantes del Libro — `≤`, nunca `==`). Que
+ * detalle de menos es corriente y legítimo: el despacho puede llevar producto
+ * que no pasó por el cubicador.
+ */
+function cotejarConLibro(anexo: Anexo04, piezas: PiezaCubicada[], declarado?: DeclaradoEnLibro | null): AvisoAnexo04[] {
+  if (!declarado || piezas.length === 0) return [];
+  const unidad = (declarado.unidad ?? "").toLowerCase();
+  if (unidad !== "pt" && unidad !== "m3") return [];   // sin unidad comparable, no se inventa
+  const guia = Number(declarado.cantidad);
+  if (!Number.isFinite(guia) || guia <= 0) return [];
+
+  const enAnexo = unidad === "pt" ? anexo.totalPt : anexo.totalM3;
+  const dif = enAnexo - guia;
+  const rel = Math.abs(dif) / guia;
+  if (rel <= TOLERANCIA) return [];
+
+  const u = unidad === "pt" ? "PT" : "m³";
+  const n = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 3 });
+  return dif > 0
+    ? [{
+        nivel: "error",
+        mensaje: `El anexo detalla ${n(enAnexo)} ${u} y la guía declara ${n(guia)} ${u}: está amparando ${n(dif)} ${u} de más.`,
+      }]
+    : [{
+        nivel: "aviso",
+        mensaje: `El anexo detalla ${n(enAnexo)} ${u} de los ${n(guia)} ${u} de la guía (faltan ${n(-dif)} ${u}).`,
+      }];
 }
 
 /** ¿Se puede presentar tal como está? (sin errores; los avisos no invalidan). */
