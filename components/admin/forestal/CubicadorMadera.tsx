@@ -27,6 +27,7 @@ import CubicacionesGuardadas from "./CubicacionesGuardadas";
 import ImportarCubicacionModal from "./ImportarCubicacionModal";
 import LiquidacionModal from "./LiquidacionModal";
 import EnviarLibroModal from "./EnviarLibroModal";
+import Anexo04Modal from "./Anexo04Modal";
 import { clasificarTipo, ORDEN_TIPO, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge, tipoBadgeCls } from "./tipo-badge";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
@@ -137,6 +138,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [showHistorial, setShowHistorial] = useState(false);
   const [showImportar, setShowImportar] = useState(false);
   const [showLiquidacion, setShowLiquidacion] = useState(false);
+  const [showPdf, setShowPdf] = useState(false); // vista previa del ANEXO N° 04
   const [showEnviarModal, setShowEnviarModal] = useState(false);
   const [loteCreado, setLoteCreado] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -1143,7 +1145,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               <button type="button" onClick={compartirWhatsApp} title="Mandar el resumen por WhatsApp" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
               </button>
-              <button type="button" onClick={() => descargarConAviso(exportarPDF(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }), "PDF generado", "No se pudo generar el PDF.")} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">PDF</button>
+              <button type="button" onClick={() => setShowPdf(true)} title="Vista previa del ANEXO N° 04 (SERFOR) antes de descargar" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FileText className="h-3.5 w-3.5" /> PDF</button>
               <button type="button" onClick={() => descargarConAviso(exportarExcel(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }), "Excel generado", "No se pudo generar el Excel.")} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Excel</button>
               <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
               <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)]">Vaciar</button>
@@ -1555,6 +1557,19 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           clienteInicial={form.cliente}
           notaInicial={form.notas}
           onCerrar={() => setShowLiquidacion(false)}
+        />
+      )}
+
+      {showPdf && (
+        <Anexo04Modal
+          rows={rows}
+          especieGlobal={especie || undefined}
+          onPdfDetallado={() => descargarConAviso(
+            exportarPDF(rowsRef.current, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined }),
+            "PDF detallado generado", "No se pudo generar el PDF.",
+          )}
+          onAviso={(msg, tono) => pushToast({ tono, msg })}
+          onCerrar={() => setShowPdf(false)}
         />
       )}
 
