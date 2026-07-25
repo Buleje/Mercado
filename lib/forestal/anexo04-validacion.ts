@@ -17,6 +17,8 @@ export interface DeclaradoEnLibro {
   cantidad: number;
   /** Unidad de la línea del libro: "pt" | "m3" (otras no se comparan). */
   unidad: string | null;
+  /** Piezas declaradas en la guía, si la línea las trae. */
+  piezas?: number | null;
 }
 
 /** Tolerancia de redondeo: por debajo de esto, anexo y guía son lo mismo. */
@@ -134,22 +136,28 @@ function cotejarConLibro(anexo: Anexo04, piezas: PiezaCubicada[], declarado?: De
   const guia = Number(declarado.cantidad);
   if (!Number.isFinite(guia) || guia <= 0) return [];
 
+  const avisos: AvisoAnexo04[] = [];
+  const n = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 3 });
+
   const enAnexo = unidad === "pt" ? anexo.totalPt : anexo.totalM3;
   const dif = enAnexo - guia;
-  const rel = Math.abs(dif) / guia;
-  if (rel <= TOLERANCIA) return [];
-
   const u = unidad === "pt" ? "PT" : "m³";
-  const n = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 3 });
-  return dif > 0
-    ? [{
-        nivel: "error",
-        mensaje: `El anexo detalla ${n(enAnexo)} ${u} y la guía declara ${n(guia)} ${u}: está amparando ${n(dif)} ${u} de más.`,
-      }]
-    : [{
-        nivel: "aviso",
-        mensaje: `El anexo detalla ${n(enAnexo)} ${u} de los ${n(guia)} ${u} de la guía (faltan ${n(-dif)} ${u}).`,
-      }];
+  if (Math.abs(dif) / guia > TOLERANCIA) {
+    avisos.push(dif > 0
+      ? { nivel: "error", mensaje: `El anexo detalla ${n(enAnexo)} ${u} y la guía declara ${n(guia)} ${u}: está amparando ${n(dif)} ${u} de más.` }
+      : { nivel: "aviso", mensaje: `El anexo detalla ${n(enAnexo)} ${u} de los ${n(guia)} ${u} de la guía (faltan ${n(-dif)} ${u}).` });
+  }
+
+  // Las piezas se cuentan, no se miden: acá no hay redondeo que tolerar.
+  const piezasGuia = Number(declarado.piezas);
+  if (Number.isFinite(piezasGuia) && piezasGuia > 0 && anexo.totalPiezas !== piezasGuia) {
+    const difP = anexo.totalPiezas - piezasGuia;
+    avisos.push(difP > 0
+      ? { nivel: "error", mensaje: `El anexo lista ${n(anexo.totalPiezas)} piezas y la guía declara ${n(piezasGuia)}: ${n(difP)} de más.` }
+      : { nivel: "aviso", mensaje: `El anexo lista ${n(anexo.totalPiezas)} de las ${n(piezasGuia)} piezas de la guía (faltan ${n(-difP)}).` });
+  }
+
+  return avisos;
 }
 
 /** ¿Se puede presentar tal como está? (sin errores; los avisos no invalidan). */

@@ -301,3 +301,33 @@ describe("cotejo anexo ↔ guía del Libro", () => {
     expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, null)).toHaveLength(sinCotejo);
   });
 });
+
+describe("cotejo por piezas (se cuentan, no se miden)", () => {
+  const DATOS = {
+    numero: "1", gtf: "1", empresa: "X", observaciones: "", firmante: "Y",
+    documento: "1", cargo: "Z", unidadV: "pt", modo: "oficial",
+  } as const;
+  const UNA = [pieza(10, 2, 8, 12)];             // 10 piezas, 160 PT
+  const conCotejo = (piezasGuia: number) =>
+    validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, { cantidad: 160, unidad: "pt", piezas: piezasGuia });
+
+  it("mismas piezas que la guía: nada que decir", () => {
+    expect(conCotejo(10)).toEqual([]);
+  });
+
+  it("el anexo lista más piezas que la guía = error", () => {
+    const a = conCotejo(4).find((x) => /piezas/.test(x.mensaje));
+    expect(a?.nivel).toBe("error");
+    expect(a?.mensaje).toContain("6 de más");
+  });
+
+  it("lista menos piezas = aviso (el despacho puede llevar producto sin cubicar)", () => {
+    const a = conCotejo(25).find((x) => /piezas/.test(x.mensaje));
+    expect(a?.nivel).toBe("aviso");
+    expect(anexoPresentable(conCotejo(25))).toBe(true);
+  });
+
+  it("sin piezas declaradas no se coteja (null = no se sabe, nunca 0)", () => {
+    expect(validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, { cantidad: 160, unidad: "pt", piezas: null })).toEqual([]);
+  });
+});

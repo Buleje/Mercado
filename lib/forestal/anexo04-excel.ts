@@ -9,6 +9,7 @@
  */
 import type { Worksheet } from "exceljs";
 import { PT_POR_M3, type PiezaCubicada } from "./cubicacion";
+import type { AnexoEmitido } from "./anexo04-registro";
 import {
   construirAnexo04, BLOQUES_POR_HOJA, TEXTO_LEGAL, ETIQUETAS_FIRMA,
   type Anexo04, type DatosAnexo04, type HojaAnexo04,
@@ -202,4 +203,70 @@ export async function exportarAnexo04Excel(rows: PiezaCubicada[], datos: DatosAn
   a.download = `anexo04-productos-transformados${datos.gtf ? `-${datos.gtf.replace(/[^\w-]+/g, "")}` : ""}.xlsx`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/**
+ * Bandeja de emitidos a .xlsx — el "libro de anexos" que el regente archiva y
+ * que en una fiscalización responde "¿qué anexos emitiste este mes?" sin abrir
+ * uno por uno. Una fila por emisión, con totales al pie.
+ */
+export async function exportarBandejaAnexos(lista: AnexoEmitido[]): Promise<void> {
+  const ExcelJS = (await import("exceljs")).default;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Cubicador de Buleje";
+  const ws = wb.addWorksheet("Anexos emitidos");
+  ws.columns = [
+    { header: "(1) N°", key: "numero", width: 18 },
+    { header: "(2) GTF N°", key: "gtf", width: 18 },
+    { header: "Fecha", key: "fecha", width: 12 },
+    { header: "Hojas", key: "hojas", width: 7 },
+    { header: "Piezas", key: "piezas", width: 9 },
+    { header: "Pie tablar", key: "pt", width: 13 },
+    { header: "m³", key: "m3", width: 11 },
+    { header: "Emisor (14)", key: "firmante", width: 24 },
+    { header: "Documento (15)", key: "documento", width: 14 },
+    { header: "Cargo (16)", key: "cargo", width: 20 },
+    { header: "Empresa", key: "empresa", width: 26 },
+    { header: "Despacho del Libro", key: "ctp", width: 26 },
+    { header: "Observaciones", key: "obs", width: 40 },
+  ];
+  estilarCabecera(ws);
+  for (const a of lista) {
+    ws.addRow({
+      numero: a.numero, gtf: a.gtf, fecha: a.fecha, hojas: a.hojas,
+      piezas: a.totalPiezas, pt: a.totalPt, m3: a.totalM3,
+      firmante: a.firmante, documento: a.documento, cargo: a.cargo,
+      empresa: a.empresa, ctp: a.ctpEntryId ?? "", obs: a.observaciones,
+    });
+  }
+  const total = ws.addRow({
+    numero: "TOTAL", hojas: lista.reduce((s, a) => s + a.hojas, 0),
+    piezas: lista.reduce((s, a) => s + a.totalPiezas, 0),
+    pt: Math.round(lista.reduce((s, a) => s + a.totalPt, 0) * 100) / 100,
+    m3: Math.round(lista.reduce((s, a) => s + a.totalM3, 0) * 1000) / 1000,
+  });
+  total.font = { bold: true };
+  ws.getColumn("pt").numFmt = "#,##0.00";
+  ws.getColumn("m3").numFmt = "#,##0.000";
+  ws.views = [{ state: "frozen", ySplit: 1 }];
+  ws.autoFilter = { from: "A1", to: `M1` };
+
+  const buf = await wb.xlsx.writeBuffer();
+  const url = URL.createObjectURL(new Blob([buf], { type: MIME_XLSX }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `anexos-emitidos-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/** Fila 1 en verde del formato, congelada. */
+function estilarCabecera(ws: Worksheet): void {
+  const head = ws.getRow(1);
+  head.height = 20;
+  head.eachCell((c) => {
+    c.font = { bold: true, size: 10 };
+    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE } };
+    c.alignment = { vertical: "middle", horizontal: "center" };
+  });
 }

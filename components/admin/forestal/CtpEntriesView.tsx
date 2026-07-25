@@ -44,6 +44,10 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   const [anexoEntry, setAnexoEntry] = useState<CtpEntry | null>(null);
   /** Despachos que YA tienen anexo emitido (se marcan en la fila). */
   const [conAnexo, setConAnexo] = useState<Set<string>>(new Set());
+  /** Bandeja de anexos emitidos abierta desde la barra (consulta, sin despacho). */
+  const [verBandeja, setVerBandeja] = useState(false);
+  /** Cuántos anexos hay en la bandeja (el badge del botón). */
+  const [totalAnexos, setTotalAnexos] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
@@ -85,10 +89,13 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
     if (section !== "despacho") return;
     fetch("/api/admin/forestal/anexos", { credentials: "include", cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { anexos: [] }))
-      .then((j: { anexos?: { ctpEntryId?: string }[] }) =>
-        setConAnexo(new Set((j.anexos ?? []).map((a) => a.ctpEntryId).filter(Boolean) as string[])))
+      .then((j: { anexos?: { ctpEntryId?: string }[] }) => {
+        const lista = j.anexos ?? [];
+        setConAnexo(new Set(lista.map((a) => a.ctpEntryId).filter(Boolean) as string[]));
+        setTotalAnexos(lista.length);
+      })
       // Sin bandeja no se marca nada: es un indicador, no un bloqueo.
-      .catch(() => setConAnexo(new Set()));
+      .catch(() => { setConAnexo(new Set()); setTotalAnexos(0); });
   }, [section]);
   useEffect(cargarAnexos, [cargarAnexos]);
 
@@ -184,6 +191,19 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
         <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
         </button>
+        {section === "despacho" && (
+          <button
+            type="button"
+            onClick={() => setVerBandeja(true)}
+            title="Los ANEXOS N° 04 ya emitidos: re-imprimir, buscar o bajar el libro en Excel"
+            className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          >
+            <FileText className="h-5 w-5" /> Anexos emitidos
+            {totalAnexos > 0 && (
+              <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent)]">{totalAnexos}</span>
+            )}
+          </button>
+        )}
         {section === "produccion" && (
           <button type="button" onClick={() => setShowSim(true)} title="Previsualizá producido, costo y margen antes de registrar una corrida" className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--brand-ink)] hover:bg-[var(--surface-canvas)]">
             <Calculator className="h-5 w-5" /> Simular
@@ -352,13 +372,21 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       {loading && <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>}
 
       {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); }} />}
+      {verBandeja && (
+        <Anexo04Modal
+          rows={[]}
+          abrirHistorial
+          onCerrar={() => { setVerBandeja(false); cargarAnexos(); }}
+        />
+      )}
+
       {anexoEntry && (
         <Anexo04Modal
           rows={[]}
           especieGlobal={anexoEntry.speciesCommon ?? undefined}
           gtfInicial={anexoEntry.gtfNumber ?? ""}
           ctpEntryId={anexoEntry.id}
-          declarado={{ cantidad: Number(anexoEntry.quantity ?? 0), unidad: anexoEntry.unit }}
+          declarado={{ cantidad: Number(anexoEntry.quantity ?? 0), unidad: anexoEntry.unit, piezas: anexoEntry.pieces }}
           observacionesIniciales={[anexoEntry.productType, anexoEntry.destino ? `Destino: ${anexoEntry.destino}` : ""].filter(Boolean).join(" · ")}
           onCerrar={() => { setAnexoEntry(null); cargarAnexos(); }}
         />

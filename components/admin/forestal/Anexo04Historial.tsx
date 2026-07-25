@@ -7,10 +7,11 @@
  * fiscalización piden el anexo que se entregó, no la cubicación del día.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, History, Loader2, RotateCcw, Search, Trash2 } from "@buleje/design-system/icons";
+import { Download, FileSpreadsheet, History, Loader2, RotateCcw, Search, Trash2 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { etiquetaEmision, filtrarEmisiones, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 import { fmtAnexo } from "@/lib/forestal/anexo04-serfor";
+import { exportarBandejaAnexos } from "@/lib/forestal/anexo04-excel";
 
 const fecha = (iso: string) => {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" }); }
@@ -86,6 +87,19 @@ export default function Anexo04Historial({
 
   return (
     <>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+          {lista.length} anexo{lista.length === 1 ? "" : "s"} emitido{lista.length === 1 ? "" : "s"}
+        </span>
+        <button
+          type="button"
+          onClick={() => exportarBandejaAnexos(lista).catch(() => onError?.("No se pudo generar el Excel de la bandeja."))}
+          title="Bajar el libro de anexos emitidos (para el archivo del regente)"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+        </button>
+      </div>
       {lista.length > 4 && (
         <label className="mb-2 flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-2.5">
           <Search className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />

@@ -48,7 +48,7 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales, ctpEntryId, declarado,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales, ctpEntryId, declarado, abrirHistorial = false,
 }: {
   /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
@@ -59,6 +59,8 @@ export default function Anexo04Modal({
   ctpEntryId?: string;
   /** Lo que esa línea del Libro declara amparar: el anexo no puede pasarse. */
   declarado?: DeclaradoEnLibro | null;
+  /** Abre con la bandeja de emitidos desplegada (consulta, no emisión). */
+  abrirHistorial?: boolean;
   observacionesIniciales?: string;
   /** Descarga el PDF interno detallado (el de siempre, con precios y tipos). */
   onPdfDetallado?: () => void;
@@ -74,7 +76,7 @@ export default function Anexo04Modal({
   const [piezasGuardadas, setPiezasGuardadas] = useState<PiezaCubicada[] | null>(null);
   /** Especie predominante de la cubicación elegida (fallback de los bloques). */
   const [especieOrigen, setEspecieOrigen] = useState<string | undefined>();
-  const [verHistorial, setVerHistorial] = useState(false);
+  const [verHistorial, setVerHistorial] = useState(abrirHistorial);
   const [historialToken, setHistorialToken] = useState(0);
   const areaRef = useRef<HTMLDivElement>(null);
   const hojasRef = useRef<HTMLDivElement>(null);
