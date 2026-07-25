@@ -13,7 +13,7 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Download, FileSpreadsheet, FileText, Minus, Plus, Printer, X } from "@buleje/design-system/icons";
+import { FileText, Minus, Plus, X } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo, type DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import { validarAnexo04, anexoPresentable, type DeclaradoEnLibro } from "@/lib/forestal/anexo04-validacion";
@@ -25,12 +25,12 @@ import Anexo04Campos from "./Anexo04Campos";
 import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
 import Anexo04Historial, { ICONO_HISTORIAL } from "./Anexo04Historial";
 import Anexo04Checklist from "./Anexo04Checklist";
+import Anexo04Acciones from "./Anexo04Acciones";
 import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
+import { useAnexosEmitidos } from "@/hooks/use-anexos-emitidos";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
-
-const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]";
 
 /** Imprime un HTML independiente vía iframe oculto (sin popup). */
 function imprimirHtml(html: string) {
@@ -78,6 +78,10 @@ export default function Anexo04Modal({
   const [especieOrigen, setEspecieOrigen] = useState<string | undefined>();
   const [verHistorial, setVerHistorial] = useState(abrirHistorial);
   const [historialToken, setHistorialToken] = useState(0);
+  /** Los emitidos alimentan la bandeja Y el checklist (N° repetido, volumen ya
+   *  amparado por otra emisión de la misma guía): por eso se cargan siempre. */
+  const { lista: emitidos, cargando: cargandoEmitidos, quitar } = useAnexosEmitidos(historialToken);
+
   const areaRef = useRef<HTMLDivElement>(null);
   const hojasRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +115,10 @@ export default function Anexo04Modal({
   // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
   // fiscalizador va a preguntar (avisos). No bloquea: la hoja en blanco para
   // llenar a mano es un uso legítimo del formato.
-  const avisos = useMemo(() => validarAnexo04(datos, anexo, filas, declarado), [datos, anexo, filas, declarado]);
+  const avisos = useMemo(
+    () => validarAnexo04(datos, anexo, filas, { declarado, emitidos, ctpEntryId }),
+    [datos, anexo, filas, declarado, emitidos, ctpEntryId],
+  );
   const presentable = anexoPresentable(avisos);
 
   /**
@@ -217,14 +224,17 @@ export default function Anexo04Modal({
                 className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-2 text-xs font-bold transition ${verHistorial ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
               >
                 <ICONO_HISTORIAL className="h-4 w-4" /> Anexos emitidos
+                {emitidos.length > 0 && <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 font-mono">{emitidos.length}</span>}
               </button>
               {verHistorial && (
                 <div className="mt-2">
                   <Anexo04Historial
-                    recargarToken={historialToken}
+                    lista={emitidos}
+                    cargando={cargandoEmitidos}
                     ctpEntryId={ctpEntryId}
                     onCargar={cargarEmision}
                     onDescargar={reDescargar}
+                    onQuitar={quitar}
                     onError={(msg) => onAviso?.(msg, "error")}
                   />
                 </div>
@@ -269,29 +279,14 @@ export default function Anexo04Modal({
           </div>
         </div>
 
-        {/* Acciones */}
-        <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-          {onPdfDetallado && (
-            <button type="button" onClick={onPdfDetallado} title="El PDF interno de siempre: tipos, precios y subtotales" className={BTN}>
-              <FileText className="h-4 w-4" /> PDF detallado (interno)
-            </button>
-          )}
-          <button type="button" onClick={descargarExcel} title="El mismo anexo en Excel, con fórmulas para editarlo antes de imprimir" className={BTN}>
-            <FileSpreadsheet className="h-4 w-4" /> Excel del anexo
-          </button>
-          <button type="button" onClick={imprimir} className={BTN}>
-            <Printer className="h-4 w-4" /> Imprimir
-          </button>
-          <button
-            type="button"
-            onClick={descargar}
-            disabled={generando}
-            title={presentable ? "Descargar el ANEXO N° 04" : "Se puede descargar igual (para llenar a mano), pero le faltan datos obligatorios"}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-60"
-          >
-            <Download className="h-4 w-4" /> {generando ? "Generando…" : presentable ? "Descargar PDF" : "Descargar igual"}
-          </button>
-        </div>
+        <Anexo04Acciones
+          presentable={presentable}
+          generando={generando}
+          onPdfDetallado={onPdfDetallado}
+          onExcel={descargarExcel}
+          onImprimir={imprimir}
+          onDescargar={descargar}
+        />
       </div>
     </div>
   );

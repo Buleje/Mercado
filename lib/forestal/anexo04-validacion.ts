@@ -11,6 +11,7 @@
  */
 import { toInches, toFeet, type PiezaCubicada } from "./cubicacion";
 import type { Anexo04, DatosAnexo04 } from "./anexo04-serfor";
+import { claveEmision, type AnexoEmitido } from "./anexo04-registro";
 
 /** Lo que el despacho del Libro CTP declara amparar con esa GTF. */
 export interface DeclaradoEnLibro {
@@ -23,6 +24,16 @@ export interface DeclaradoEnLibro {
 
 /** Tolerancia de redondeo: por debajo de esto, anexo y guía son lo mismo. */
 const TOLERANCIA = 0.005; // 0,5 %
+
+/** Contexto de la emisión: contra qué se coteja el papel que se va a firmar. */
+export interface ContextoEmision {
+  /** Línea de despacho desde la que se emite. */
+  declarado?: DeclaradoEnLibro | null;
+  /** Anexos ya emitidos del tenant (N° repetido y volumen ya amparado). */
+  emitidos?: AnexoEmitido[];
+  /** Despacho actual: acumula sólo los anexos de ESA guía. */
+  ctpEntryId?: string;
+}
 
 export type NivelAviso = "error" | "aviso";
 
@@ -67,9 +78,9 @@ export function validarAnexo04(
   datos: DatosAnexo04,
   anexo: Anexo04,
   piezas: PiezaCubicada[],
-  /** Línea de despacho desde la que se emite (cotejo anexo ↔ guía). */
-  declarado?: DeclaradoEnLibro | null,
+  ctx: ContextoEmision = {},
 ): AvisoAnexo04[] {
+  const { declarado, emitidos = [], ctpEntryId } = ctx;
   const avisos: AvisoAnexo04[] = [];
   const vacio = (v: string | undefined) => !v || !v.trim();
 
@@ -115,7 +126,8 @@ export function validarAnexo04(
     avisos.push({ nivel: "error", mensaje: "El (3) volumen total dio 0: revisá las medidas." });
   }
 
-  avisos.push(...cotejarConLibro(anexo, piezas, declarado));
+  avisos.push(...cotejarConLibro(anexo, piezas, declarado, otrosDelDespacho(datos, emitidos, ctpEntryId)));
+  avisos.push(...numeroRepetido(datos, emitidos));
 
   return avisos.sort((a, b) => (a.nivel === b.nivel ? 0 : a.nivel === "error" ? -1 : 1));
 }
@@ -129,7 +141,12 @@ export function validarAnexo04(
  * detalle de menos es corriente y legítimo: el despacho puede llevar producto
  * que no pasó por el cubicador.
  */
-function cotejarConLibro(anexo: Anexo04, piezas: PiezaCubicada[], declarado?: DeclaradoEnLibro | null): AvisoAnexo04[] {
+function cotejarConLibro(
+  anexo: Anexo04,
+  piezas: PiezaCubicada[],
+  declarado: DeclaradoEnLibro | null | undefined,
+  otros: AnexoEmitido[],
+): AvisoAnexo04[] {
   if (!declarado || piezas.length === 0) return [];
   const unidad = (declarado.unidad ?? "").toLowerCase();
   if (unidad !== "pt" && unidad !== "m3") return [];   // sin unidad comparable, no se inventa
@@ -148,6 +165,19 @@ function cotejarConLibro(anexo: Anexo04, piezas: PiezaCubicada[], declarado?: De
       : { nivel: "aviso", mensaje: `El anexo detalla ${n(enAnexo)} ${u} de los ${n(guia)} ${u} de la guía (faltan ${n(-dif)} ${u}).` });
   }
 
+  // Σ de TODOS los anexos de esa guía ≤ lo declarado. Un anexo solo puede
+  // cerrar perfecto y aun así duplicar volumen si ya se emitió otro antes.
+  if (otros.length > 0) {
+    const previo = otros.reduce((sum, a) => sum + (unidad === "pt" ? a.totalPt : a.totalM3), 0);
+    const acumulado = previo + enAnexo;
+    if ((acumulado - guia) / guia > TOLERANCIA) {
+      avisos.push({
+        nivel: "error",
+        mensaje: `Esta guía ya tiene ${otros.length} anexo${otros.length === 1 ? "" : "s"} por ${n(previo)} ${u}: entre todos amparan ${n(acumulado)} ${u} de los ${n(guia)} ${u} declarados.`,
+      });
+    }
+  }
+
   // Las piezas se cuentan, no se miden: acá no hay redondeo que tolerar.
   const piezasGuia = Number(declarado.piezas);
   if (Number.isFinite(piezasGuia) && piezasGuia > 0 && anexo.totalPiezas !== piezasGuia) {
@@ -158,6 +188,32 @@ function cotejarConLibro(anexo: Anexo04, piezas: PiezaCubicada[], declarado?: De
   }
 
   return avisos;
+}
+
+/**
+ * Otros anexos ya emitidos para el MISMO despacho, sin contar la versión previa
+ * de este mismo papel: re-bajar un anexo corregido no puede acusarse a sí mismo
+ * (la bandeja hace upsert por N° + GTF, así que esa fila es este documento).
+ */
+function otrosDelDespacho(datos: DatosAnexo04, emitidos: AnexoEmitido[], ctpEntryId?: string): AnexoEmitido[] {
+  if (!ctpEntryId) return [];
+  const propia = claveEmision(datos.numero, datos.gtf);
+  return emitidos.filter((a) => a.ctpEntryId === ctpEntryId && claveEmision(a.numero, a.gtf) !== propia);
+}
+
+/**
+ * El (1) N° identifica al documento: repetirlo en otra guía deja dos papeles
+ * distintos con el mismo número, y ninguna ARFFS lo perdona.
+ */
+function numeroRepetido(datos: DatosAnexo04, emitidos: AnexoEmitido[]): AvisoAnexo04[] {
+  const numero = datos.numero.trim().toLowerCase();
+  if (!numero) return [];
+  const choque = emitidos.find(
+    (a) => a.numero.trim().toLowerCase() === numero && a.gtf.trim().toLowerCase() !== datos.gtf.trim().toLowerCase(),
+  );
+  return choque
+    ? [{ nivel: "error", mensaje: `El N° ${datos.numero} ya se usó en la GTF ${choque.gtf || "(sin GTF)"}: usá el siguiente correlativo.` }]
+    : [];
 }
 
 /** ¿Se puede presentar tal como está? (sin errores; los avisos no invalidan). */

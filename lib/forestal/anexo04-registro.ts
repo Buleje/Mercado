@@ -100,6 +100,24 @@ export function filtrarEmisiones(lista: AnexoEmitido[], termino: string): AnexoE
   );
 }
 
+/** Meses (AAAA-MM) con emisiones, del más reciente al más viejo. */
+export function mesesDeEmisiones(lista: AnexoEmitido[]): string[] {
+  return [...new Set(lista.map((a) => (a.fecha ?? "").slice(0, 7)).filter((m) => /^\d{4}-\d{2}$/.test(m)))]
+    .sort((a, b) => b.localeCompare(a));
+}
+
+/** Sólo las emisiones de ese mes (AAAA-MM). Vacío = todas. */
+export const emisionesDelMes = (lista: AnexoEmitido[], mes: string): AnexoEmitido[] =>
+  mes ? lista.filter((a) => (a.fecha ?? "").startsWith(mes)) : lista;
+
+/** "2026-07" → "julio 2026", para el selector del período. */
+export function etiquetaMes(mes: string): string {
+  const [y, m] = mes.split("-").map(Number);
+  if (!y || !m) return mes;
+  const nombre = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("es-PE", { month: "long", timeZone: "UTC" });
+  return `${nombre} ${y}`;
+}
+
 /** Etiqueta corta para la bandeja: "N° 2-19-0461363 · GTF 19-001-0000052". */
 export function etiquetaEmision(e: AnexoEmitido): string {
   const partes = [e.numero ? `N° ${e.numero}` : null, e.gtf ? `GTF ${e.gtf}` : null].filter(Boolean);

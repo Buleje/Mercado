@@ -12,7 +12,9 @@ import {
 } from "@/lib/forestal/anexo04-serfor";
 import { formulaV } from "@/lib/forestal/anexo04-excel";
 import { validarAnexo04, anexoPresentable } from "@/lib/forestal/anexo04-validacion";
-import { filtrarEmisiones, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
+import {
+  filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes, type AnexoEmitido,
+} from "@/lib/forestal/anexo04-registro";
 
 let seq = 0;
 function pieza(cantidad: number, espesor: number, ancho: number, largo: number, especie = "Tornillo"): PiezaCubicada {
@@ -268,12 +270,12 @@ describe("cotejo anexo ↔ guía del Libro", () => {
   const sinCotejo = validarAnexo04(DATOS, anexoDe(UNA), UNA).length;
 
   it("cuadra con la guía: no agrega nada", () => {
-    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 160, unidad: "pt" });
+    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: { cantidad: 160, unidad: "pt" } });
     expect(avisos).toHaveLength(sinCotejo);
   });
 
   it("el anexo detalla MÁS que la guía = error (blanqueo de volumen)", () => {
-    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 100, unidad: "pt" });
+    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: { cantidad: 100, unidad: "pt" } });
     const cotejo = avisos.find((a) => /amparando/.test(a.mensaje));
     expect(cotejo?.nivel).toBe("error");
     expect(cotejo?.mensaje).toContain("60");
@@ -281,24 +283,24 @@ describe("cotejo anexo ↔ guía del Libro", () => {
   });
 
   it("el anexo detalla MENOS que la guía = aviso (puede haber producto sin cubicar)", () => {
-    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 200, unidad: "pt" });
+    const avisos = validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: { cantidad: 200, unidad: "pt" } });
     const cotejo = avisos.find((a) => /faltan/.test(a.mensaje));
     expect(cotejo?.nivel).toBe("aviso");
     expect(anexoPresentable(avisos)).toBe(true);
   });
 
   it("tolera el redondeo (0,5 %) y compara en m³ cuando la guía va en m³", () => {
-    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 160.5, unidad: "pt" })).toHaveLength(sinCotejo);
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: { cantidad: 160.5, unidad: "pt" } })).toHaveLength(sinCotejo);
     const m3 = anexoDe(UNA).totalM3;
-    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: m3, unidad: "m3" })).toHaveLength(sinCotejo);
-    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: m3 / 2, unidad: "m3" })
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: { cantidad: m3, unidad: "m3" } })).toHaveLength(sinCotejo);
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: { cantidad: m3 / 2, unidad: "m3" } })
       .some((a) => a.nivel === "error")).toBe(true);
   });
 
   it("sin unidad comparable o sin dato no inventa un cotejo", () => {
-    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 1, unidad: "kg" })).toHaveLength(sinCotejo);
-    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { cantidad: 0, unidad: "pt" })).toHaveLength(sinCotejo);
-    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, null)).toHaveLength(sinCotejo);
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: { cantidad: 1, unidad: "kg" } })).toHaveLength(sinCotejo);
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: { cantidad: 0, unidad: "pt" } })).toHaveLength(sinCotejo);
+    expect(validarAnexo04(DATOS, anexoDe(UNA), UNA, { declarado: null })).toHaveLength(sinCotejo);
   });
 });
 
@@ -309,7 +311,7 @@ describe("cotejo por piezas (se cuentan, no se miden)", () => {
   } as const;
   const UNA = [pieza(10, 2, 8, 12)];             // 10 piezas, 160 PT
   const conCotejo = (piezasGuia: number) =>
-    validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, { cantidad: 160, unidad: "pt", piezas: piezasGuia });
+    validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, { declarado: { cantidad: 160, unidad: "pt", piezas: piezasGuia } });
 
   it("mismas piezas que la guía: nada que decir", () => {
     expect(conCotejo(10)).toEqual([]);
@@ -328,6 +330,90 @@ describe("cotejo por piezas (se cuentan, no se miden)", () => {
   });
 
   it("sin piezas declaradas no se coteja (null = no se sabe, nunca 0)", () => {
-    expect(validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, { cantidad: 160, unidad: "pt", piezas: null })).toEqual([]);
+    expect(validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, { declarado: { cantidad: 160, unidad: "pt", piezas: null } })).toEqual([]);
+  });
+});
+
+describe("invariantes del conjunto de anexos", () => {
+  const DATOS = {
+    numero: "2-19-0000010", gtf: "GTF-1", empresa: "X", observaciones: "",
+    firmante: "Y", documento: "1", cargo: "Z", unidadV: "pt", modo: "oficial",
+  } as const;
+  const UNA = [pieza(10, 2, 8, 12)];              // 160 PT · 10 piezas
+  const anexo = construirAnexo04(UNA, DATOS);
+  const emitido = (over: Partial<AnexoEmitido>): AnexoEmitido => ({
+    id: "e1", numero: "2-19-0000009", gtf: "GTF-1", fecha: "2026-07-20", empresa: "X",
+    firmante: "Y", documento: "1", cargo: "Z", observaciones: "", unidadV: "pt", modo: "oficial",
+    hojas: 1, totalPiezas: 10, totalPt: 100, totalM3: 0.24, piezas: [], createdAt: "2026-07-20T10:00:00Z",
+    ...over,
+  });
+
+  it("dos anexos de la misma guía no pueden amparar más que ella", () => {
+    // La guía declara 200 PT; ya se emitió uno por 100 y este suma 160.
+    const avisos = validarAnexo04(DATOS, anexo, UNA, {
+      declarado: { cantidad: 200, unidad: "pt" },
+      emitidos: [emitido({ ctpEntryId: "desp-1", totalPt: 100 })],
+      ctpEntryId: "desp-1",
+    });
+    const acumulado = avisos.find((a) => /entre todos amparan/.test(a.mensaje));
+    expect(acumulado?.nivel).toBe("error");
+    expect(acumulado?.mensaje).toContain("260");
+  });
+
+  it("re-emitir el MISMO anexo (mismo N° + GTF) no se acusa a sí mismo", () => {
+    const avisos = validarAnexo04(DATOS, anexo, UNA, {
+      declarado: { cantidad: 160, unidad: "pt" },
+      emitidos: [emitido({ numero: DATOS.numero, gtf: DATOS.gtf, ctpEntryId: "desp-1", totalPt: 160 })],
+      ctpEntryId: "desp-1",
+    });
+    expect(avisos).toEqual([]);
+  });
+
+  it("los anexos de OTRO despacho no cuentan para esta guía", () => {
+    const avisos = validarAnexo04(DATOS, anexo, UNA, {
+      declarado: { cantidad: 160, unidad: "pt" },
+      emitidos: [emitido({ ctpEntryId: "otro-despacho", totalPt: 5000 })],
+      ctpEntryId: "desp-1",
+    });
+    expect(avisos).toEqual([]);
+  });
+
+  it("el mismo N° en otra GTF es un documento duplicado = error", () => {
+    const avisos = validarAnexo04(DATOS, anexo, UNA, {
+      emitidos: [emitido({ numero: DATOS.numero, gtf: "GTF-OTRA" })],
+    });
+    const dup = avisos.find((a) => /ya se usó/.test(a.mensaje));
+    expect(dup?.nivel).toBe("error");
+    expect(dup?.mensaje).toContain("GTF-OTRA");
+  });
+
+  it("el mismo N° en la MISMA GTF es la corrección del mismo papel", () => {
+    const avisos = validarAnexo04(DATOS, anexo, UNA, {
+      emitidos: [emitido({ numero: DATOS.numero, gtf: DATOS.gtf })],
+    });
+    expect(avisos).toEqual([]);
+  });
+});
+
+describe("bandeja por mes", () => {
+  const e = (fecha: string): AnexoEmitido => ({
+    id: fecha, numero: fecha, gtf: "G", fecha, empresa: "", firmante: "", documento: "", cargo: "",
+    observaciones: "", unidadV: "pt", modo: "oficial", hojas: 1, totalPiezas: 1, totalPt: 1, totalM3: 0.01,
+    piezas: [], createdAt: `${fecha}T00:00:00Z`,
+  });
+  const LISTA = [e("2026-07-25"), e("2026-07-02"), e("2026-06-30")];
+
+  it("lista los meses con emisiones, del más reciente al más viejo", () => {
+    expect(mesesDeEmisiones(LISTA)).toEqual(["2026-07", "2026-06"]);
+  });
+
+  it("filtra por mes y sin mes devuelve todo", () => {
+    expect(emisionesDelMes(LISTA, "2026-07")).toHaveLength(2);
+    expect(emisionesDelMes(LISTA, "2026-06")).toHaveLength(1);
+    expect(emisionesDelMes(LISTA, "")).toHaveLength(3);
+  });
+
+  it("etiqueta el mes en español", () => {
+    expect(etiquetaMes("2026-07")).toMatch(/julio 2026/i);
   });
 });
