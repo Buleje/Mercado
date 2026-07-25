@@ -30,6 +30,7 @@ export const ANEXO04_CSS = `
 .anx-banner b { font-size: 10.7px; }
 .anx-banner i { font-style: normal; font-weight: 700; font-size: 12px; }
 .anx-instr { display: flex; align-items: center; padding-left: 3px; font-size: 7.3px; }
+.anx-logo { object-fit: contain; object-position: left center; }
 .anx-empresa { display: flex; align-items: center; font-size: 11.3px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .anx-titulo { display: flex; align-items: center; justify-content: center; font-size: 11.3px; font-weight: 700; }
 .anx-campos { font-size: 8.7px; line-height: 20px; text-align: right; }
@@ -135,8 +136,12 @@ export default function Anexo04Hoja({
         Para el llenado del presente Anexo se utilizarán las instrucciones adjuntas.
       </div>
 
-      {/* Emisor · título · datos (1)(2)(3) */}
-      <div className="anx-empresa" style={caja(m + 2, g.yInfo + 8, 150, 20)}>{datos.empresa.toUpperCase()}</div>
+      {/* Logo · emisor · título · datos (1)(2)(3) */}
+      {datos.logo && (
+        // eslint-disable-next-line @next/next/no-img-element -- dataURL local del tenant, no pasa por el optimizador
+        <img src={datos.logo} alt="" className="anx-logo" style={caja(g.logoBox.x, g.logoBox.y, g.logoBox.w, g.logoBox.h)} />
+      )}
+      <div className="anx-empresa" style={caja(g.xEmpresa(Boolean(datos.logo)), g.yInfo + 8, g.wEmpresa(Boolean(datos.logo)), 20)}>{datos.empresa.toUpperCase()}</div>
       <div className="anx-titulo" style={caja(m + 150, g.yInfo + 6, g.contentW - 340, 20)}>LISTA DE PRODUCTOS TRANSFORMADOS</div>
       <div className="anx-campos" style={caja(m + g.contentW - 210, g.yInfo + 8, 210, 52)}>
         <div><b>(1) N°:</b> <span>{datos.numero || "…………………"}</span></div>

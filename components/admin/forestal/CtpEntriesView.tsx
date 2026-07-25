@@ -7,9 +7,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Plus, RefreshCw, Search, Boxes, Truck, AlertCircle, X as XIcon,
-  Scale, PackageCheck, PackagePlus, Link2, Calculator,
+  Scale, PackageCheck, PackagePlus, Link2, Calculator, FileText,
   ArrowUp, ArrowDown, ArrowUpDown,
 } from "@buleje/design-system/icons";
 import { StatCard, CardTitle } from "@buleje/design-system";
@@ -22,6 +23,9 @@ import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import CtpSimuladorModal from "./CtpSimuladorModal";
+
+// El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
+const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
 import { type CtpEntry, type CtpSection, Th, Td, n2 } from "./ctp-section-shared";
 
 const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta: string; empty: string }> = {
@@ -36,6 +40,8 @@ const n4 = (v: string | null) => (v == null ? "—" : Number(v).toFixed(4));
 export function CtpEntriesView({ section, period }: { section: CtpSection; period: CtpPeriod }) {
   const meta = SECTION_META[section];
   const [entries, setEntries] = useState<CtpEntry[]>([]);
+  /** Despacho para el que se está emitiendo el ANEXO N° 04 de la GTF. */
+  const [anexoEntry, setAnexoEntry] = useState<CtpEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
@@ -262,6 +268,17 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
                         <PackagePlus className="h-3.5 w-3.5" />
                         {toProductId === e.id ? "Creando…" : "Enviar a inventario"}
                       </button>
+                      {section === "despacho" && (
+                        <button
+                          type="button"
+                          onClick={() => setAnexoEntry(e)}
+                          title="Emitir el ANEXO N° 04 (lista de productos transformados) de esta GTF"
+                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          Anexo 04
+                        </button>
+                      )}
                       <button type="button" onClick={() => { setAnnulId(e.id); setAnnulReason(""); }} className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]">Anular</button>
                     </div>
                   ) : (
@@ -284,6 +301,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
               section={section}
               toProductId={toProductId}
               onChain={setChainEntry}
+              onAnexo={section === "despacho" ? setAnexoEntry : undefined}
               onSendInventory={sendToInventory}
               onAnnul={(id) => { setAnnulId(id); setAnnulReason(""); }}
             />
@@ -311,6 +329,16 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
       {loading && <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>}
 
       {showForm && <CtpEntryForm section={section} onClose={() => setShowForm(false)} onSaved={(o) => { if (!o?.keepOpen) setShowForm(false); load(); }} />}
+      {anexoEntry && (
+        <Anexo04Modal
+          rows={[]}
+          especieGlobal={anexoEntry.speciesCommon ?? undefined}
+          gtfInicial={anexoEntry.gtfNumber ?? ""}
+          observacionesIniciales={[anexoEntry.productType, anexoEntry.destino ? `Destino: ${anexoEntry.destino}` : ""].filter(Boolean).join(" · ")}
+          onCerrar={() => setAnexoEntry(null)}
+        />
+      )}
+
       {chainEntry && section === "despacho" && <CtpDespachoDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
       {chainEntry && section === "produccion" && <CtpProduccionDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
 

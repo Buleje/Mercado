@@ -30,12 +30,30 @@ export interface DatosAnexo04 {
   /** (16) Cargo que desempeña el emisor. */ cargo: string;
   /** Unidad de la columna V: pie tablar (como el formato llenado) o m³. */ unidadV: UnidadVolumen;
   /** "oficial" = 35 filas fijas por bloque; "compacto" = solo las usadas. */ modo: "oficial" | "compacto";
+  /** Logo del emisor (dataURL) — el formato oficial lo lleva arriba a la izquierda. */ logo?: string;
+  /** Proporción ancho/alto del logo, para no deformarlo al encajarlo. */ logoAspect?: number;
 }
 
 export const DATOS_ANEXO04_DEFAULT: DatosAnexo04 = {
   numero: "", gtf: "", empresa: "", observaciones: "",
   firmante: "", documento: "", cargo: "", unidadV: "pt", modo: "oficial",
 };
+
+/** Firmante guardado: en el aserradero firman siempre los mismos 2 o 3. */
+export interface EmisorGuardado { firmante: string; documento: string; cargo: string }
+
+/**
+ * Siguiente correlativo a partir del último usado: incrementa el ÚLTIMO tramo
+ * numérico y le conserva los ceros a la izquierda ("2-19-0461363" → "2-19-0461364",
+ * "0009" → "0010"). Sin números, devuelve el mismo texto.
+ */
+export function siguienteCorrelativo(actual: string): string {
+  const m = actual.match(/(\d+)(\D*)$/);
+  if (!m) return actual;
+  const [, num, cola] = m;
+  const sig = String(Number(num) + 1).padStart(num.length, "0");
+  return actual.slice(0, m.index) + sig + cola;
+}
 
 // ─── Estructura de la hoja ──────────────────────────────────────────────────
 
@@ -206,6 +224,10 @@ export interface GeoHoja {
   yFirmas: number[];
   /** X donde arranca el bloque i (0..3). */ xBloque: (i: number) => number;
   /** X donde arranca la columna j dentro de un bloque. */ xCol: (i: number, j: number) => number;
+  /** Caja máxima del logo del emisor (arriba a la izquierda, como el oficial). */
+  logoBox: { x: number; y: number; w: number; h: number };
+  /** X donde arranca la razón social (corrida si hay logo). */ xEmpresa: (conLogo: boolean) => number;
+  /** Ancho disponible para la razón social. */ wEmpresa: (conLogo: boolean) => number;
 }
 
 /**
@@ -244,6 +266,9 @@ export function geometriaHoja(filas: number): GeoHoja {
     yFilas, hFila, filas, ySub, hSub, yObs, hObs, yLegal, yFirmas,
     xBloque: (i: number) => m + i * bloqueW,
     xCol: (i: number, j: number) => m + i * bloqueW + cols.slice(0, j).reduce((a, c) => a + c, 0),
+    logoBox: { x: m + 2, y: yInfo + 4, w: 56, h: 42 },
+    xEmpresa: (conLogo: boolean) => m + (conLogo ? 64 : 2),
+    wEmpresa: (conLogo: boolean) => (conLogo ? 84 : 150),
   };
 }
 

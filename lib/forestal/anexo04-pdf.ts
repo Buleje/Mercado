@@ -39,6 +39,12 @@ function textoAjustado(doc: jsPDF, s: string, x: number, y: number, maxW: number
   doc.text(txt, x, y);
 }
 
+/** Formato que espera jsPDF.addImage, leído del propio dataURL. */
+function formatoImagen(dataUrl: string): "PNG" | "JPEG" | "WEBP" {
+  const mime = dataUrl.slice(5, dataUrl.indexOf(";"));
+  return mime === "image/jpeg" ? "JPEG" : mime === "image/webp" ? "WEBP" : "PNG";
+}
+
 function lineaPunteada(doc: jsPDF, x1: number, y: number, x2: number) {
   doc.setLineDashPattern([1, 1], 0);
   doc.line(x1, y, x2, y);
@@ -59,8 +65,19 @@ function dibujarCabecera(doc: jsPDF, g: GeoHoja, datos: DatosAnexo04, anexo: Ane
   doc.rect(m, g.yInstr, g.contentW, g.hInstr, "FD");
   celdaTexto(doc, "Para el llenado del presente Anexo se utilizarán las instrucciones adjuntas.", m, g.yInstr, g.contentW, g.hInstr, 5.5, "left");
 
-  // Emisor (izquierda) + título (centro) + datos numerados (derecha).
-  if (datos.empresa) textoAjustado(doc, datos.empresa.toUpperCase(), m + 2, g.yInfo + 20, 150, 8.5, true);
+  // Logo (izquierda) + emisor + título (centro) + datos numerados (derecha).
+  const conLogo = Boolean(datos.logo);
+  if (datos.logo) {
+    const caja = g.logoBox;
+    const asp = datos.logoAspect && datos.logoAspect > 0 ? datos.logoAspect : 1;
+    // Encajar sin deformar: manda la dimensión que primero toca el borde.
+    const w = Math.min(caja.w, caja.h * asp);
+    const h = w / asp;
+    try {
+      doc.addImage(datos.logo, formatoImagen(datos.logo), caja.x, caja.y + (caja.h - h) / 2, w, h);
+    } catch { /* dataURL inválido → la hoja sale sin logo, no se rompe */ }
+  }
+  if (datos.empresa) textoAjustado(doc, datos.empresa.toUpperCase(), g.xEmpresa(conLogo), g.yInfo + 20, g.wEmpresa(conLogo), 8.5, true);
   celdaTexto(doc, "LISTA DE PRODUCTOS TRANSFORMADOS", m + 150, g.yInfo, g.contentW - 340, 24, 8.5, "center", true);
 
   const xr = m + g.contentW - 200;

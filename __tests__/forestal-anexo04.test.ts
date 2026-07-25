@@ -7,8 +7,10 @@
 import { describe, expect, it } from "vitest";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
-  construirAnexo04, geometriaHoja, fmtAnexo, fmtMedida, FILAS_OFICIAL, PAGINA,
+  construirAnexo04, geometriaHoja, fmtAnexo, fmtMedida, siguienteCorrelativo,
+  FILAS_OFICIAL, PAGINA,
 } from "@/lib/forestal/anexo04-serfor";
+import { formulaV } from "@/lib/forestal/anexo04-excel";
 
 let seq = 0;
 function pieza(cantidad: number, espesor: number, ancho: number, largo: number, especie = "Tornillo"): PiezaCubicada {
@@ -116,6 +118,21 @@ describe("formato numérico del anexo (coma decimal, sin miles)", () => {
   });
 });
 
+describe("siguienteCorrelativo — el N° avanza solo entre guías", () => {
+  it("incrementa el último tramo numérico conservando el formato", () => {
+    expect(siguienteCorrelativo("2-19-0461363")).toBe("2-19-0461364");
+    expect(siguienteCorrelativo("0009")).toBe("0010");
+    expect(siguienteCorrelativo("A-99")).toBe("A-100");   // se pasa de largo: crece
+    expect(siguienteCorrelativo("19-001-0000052")).toBe("19-001-0000053");
+  });
+
+  it("respeta un sufijo no numérico y no rompe sin números", () => {
+    expect(siguienteCorrelativo("N-0007/A")).toBe("N-0008/A");
+    expect(siguienteCorrelativo("")).toBe("");
+    expect(siguienteCorrelativo("SIN-NUMERO")).toBe("SIN-NUMERO");
+  });
+});
+
 describe("geometriaHoja — todo entra en la A4", () => {
   it("35 filas + subtotal quedan sobre el recuadro de observaciones", () => {
     const g = geometriaHoja(FILAS_OFICIAL);
@@ -131,9 +148,30 @@ describe("geometriaHoja — todo entra en la A4", () => {
     expect(g.xCol(3, 5) + g.cols[5]).toBeCloseTo(PAGINA.w - PAGINA.margen, 6);
   });
 
+  it("el logo no pisa la razón social ni el título del centro", () => {
+    const g = geometriaHoja(FILAS_OFICIAL);
+    expect(g.logoBox.x + g.logoBox.w).toBeLessThanOrEqual(g.xEmpresa(true));
+    expect(g.xEmpresa(true) + g.wEmpresa(true)).toBeLessThanOrEqual(PAGINA.margen + 150);
+    expect(g.logoBox.y + g.logoBox.h).toBeLessThanOrEqual(g.yBloqueHead);
+  });
+
   it("en compacto la fila es más alta y el recuadro estira hasta el pie", () => {
     const g = geometriaHoja(6);
     expect(g.hFila).toBeGreaterThan(geometriaHoja(FILAS_OFICIAL).hFila);
     expect(g.yObs + g.hObs).toBeCloseTo(g.yLegal - 8, 6);
+  });
+});
+
+describe("Excel del anexo — la fórmula de V apunta a las columnas correctas", () => {
+  it("bloque 1: cantidad B, espesor C, ancho D, largo E (N° es A)", () => {
+    expect(formulaV(0, 11, "pt")).toBe('IF(B11="",0,ROUND(B11*C11*D11*E11/12,3))');
+  });
+
+  it("bloque 3 arranca en la columna M: las referencias se corren de a 6", () => {
+    expect(formulaV(12, 11, "pt")).toBe('IF(N11="",0,ROUND(N11*O11*P11*Q11/12,3))');
+  });
+
+  it("en m³ multiplica por los factores de conversión, no divide por 12", () => {
+    expect(formulaV(0, 12, "m3")).toBe('IF(B12="",0,ROUND(B12*(C12*0.0254)*(D12*0.0254)*(E12*0.3048),3))');
   });
 });

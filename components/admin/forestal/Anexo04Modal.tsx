@@ -13,23 +13,22 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Download, FileText, Minus, Plus, Printer, X } from "@buleje/design-system/icons";
+import { Download, FileSpreadsheet, FileText, Minus, Plus, Printer, X } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
   construirAnexo04, fmtAnexo, DATOS_ANEXO04_DEFAULT, type DatosAnexo04,
 } from "@/lib/forestal/anexo04-serfor";
 import { exportarAnexo04PDF } from "@/lib/forestal/anexo04-pdf";
+import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
 import Anexo04Hoja, { ANEXO04_CSS } from "./Anexo04Hoja";
+import Anexo04Campos, { claveTenant } from "./Anexo04Campos";
+import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
-const claveDatos = () => {
-  let slug = "main";
-  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
-  return `buleje-anexo04-${slug}`;
-};
+/** El logo va en su propia clave: pesa ~50 KB y los datos se guardan por tecla. */
+const claveDatos = () => claveTenant("");
+const claveLogo = () => claveTenant("logo-");
 
-const INPUT = "h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
-const LABEL = "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]";
 
 /** Imprime un HTML independiente vía iframe oculto (sin popup). */
@@ -48,12 +47,16 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales,
 }: {
+  /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
   especieGlobal?: string;
+  /** GTF de salida con la que se abre el anexo (desde una línea del Libro). */
+  gtfInicial?: string;
+  observacionesIniciales?: string;
   /** Descarga el PDF interno detallado (el de siempre, con precios y tipos). */
-  onPdfDetallado: () => void;
+  onPdfDetallado?: () => void;
   onCerrar: () => void;
   onAviso?: (msg: string, tono: "success" | "error") => void;
 }) {
@@ -61,20 +64,47 @@ export default function Anexo04Modal({
   const [factor, setFactor] = useState(1);      // multiplica el ajuste automático
   const [fit, setFit] = useState(0.9);          // escala para que la hoja entre a lo ancho
   const [generando, setGenerando] = useState(false);
+  /** Origen de las medidas: el lote del cubicador o una cubicación guardada. */
+  const [origen, setOrigen] = useState(ORIGEN_ACTUAL);
+  const [piezasGuardadas, setPiezasGuardadas] = useState<PiezaCubicada[] | null>(null);
+  /** Especie predominante de la cubicación elegida (fallback de los bloques). */
+  const [especieOrigen, setEspecieOrigen] = useState<string | undefined>();
   const areaRef = useRef<HTMLDivElement>(null);
   const hojasRef = useRef<HTMLDivElement>(null);
 
-  // Cabecera guardada por tenant (se re-usa en cada guía).
+  // Cabecera guardada por tenant (se re-usa en cada guía); el logo, aparte.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(claveDatos());
-      if (raw) setDatos({ ...DATOS_ANEXO04_DEFAULT, ...(JSON.parse(raw) as Partial<DatosAnexo04>) });
+      const guardado = raw ? (JSON.parse(raw) as Partial<DatosAnexo04>) : {};
+      const logo = localStorage.getItem(claveLogo());
+      const aspect = Number(localStorage.getItem(`${claveLogo()}-aspect`));
+      setDatos({
+        ...DATOS_ANEXO04_DEFAULT, ...guardado,
+        ...(logo ? { logo, logoAspect: aspect > 0 ? aspect : 1 } : {}),
+        ...(gtfInicial ? { gtf: gtfInicial } : {}),
+        ...(observacionesIniciales ? { observaciones: observacionesIniciales } : {}),
+      });
     } catch { /* json corrupto → defaults */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar: después manda lo que edite el usuario
   }, []);
+
   const set = (patch: Partial<DatosAnexo04>) => {
     setDatos((d) => {
       const next = { ...d, ...patch };
-      try { localStorage.setItem(claveDatos(), JSON.stringify(next)); } catch { /* quota */ }
+      try {
+        const { logo, logoAspect, ...resto } = next;
+        localStorage.setItem(claveDatos(), JSON.stringify(resto));
+        if ("logo" in patch) {
+          if (logo) {
+            localStorage.setItem(claveLogo(), logo);
+            localStorage.setItem(`${claveLogo()}-aspect`, String(logoAspect ?? 1));
+          } else {
+            localStorage.removeItem(claveLogo());
+            localStorage.removeItem(`${claveLogo()}-aspect`);
+          }
+        }
+      } catch { /* quota: el logo es lo único grande */ onAviso?.("No se pudo guardar el logo (espacio del navegador lleno).", "error"); }
       return next;
     });
   };
@@ -99,18 +129,26 @@ export default function Anexo04Modal({
   // Ojo con las deps: sólo lo ESTRUCTURAL. Si dependiera de `datos` entero, cada
   // tecla en la razón social devolvería hojas nuevas y tiraría abajo el memo de
   // la grilla (840 celdas por hoja).
+  const filas = piezasGuardadas ?? rows;
+  const especie = piezasGuardadas ? especieOrigen : especieGlobal;
   const anexo = useMemo(
-    () => construirAnexo04(rows, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal }),
-    [rows, datos.unidadV, datos.modo, especieGlobal],
+    () => construirAnexo04(filas, { unidadV: datos.unidadV, modo: datos.modo }, { especieGlobal: especie }),
+    [filas, datos.unidadV, datos.modo, especie],
   );
   const escala = Math.max(0.25, fit * factor);
 
   const descargar = () => {
     setGenerando(true);
-    exportarAnexo04PDF(rows, datos, { especieGlobal })
+    exportarAnexo04PDF(filas, datos, { especieGlobal: especie })
       .then(() => onAviso?.("Anexo N° 04 descargado", "success"))
       .catch(() => onAviso?.("No se pudo generar el PDF.", "error"))
       .finally(() => setGenerando(false));
+  };
+
+  const descargarExcel = () => {
+    exportarAnexo04Excel(filas, datos, { especieGlobal: especie })
+      .then(() => onAviso?.("Excel del anexo descargado", "success"))
+      .catch(() => onAviso?.("No se pudo generar el Excel.", "error"));
   };
 
   const imprimir = () => {
@@ -147,62 +185,35 @@ export default function Anexo04Modal({
 
         <div className="grid gap-4 lg:grid-cols-[19rem_1fr]">
           {/* Datos del formato */}
-          <div className="space-y-2.5 lg:max-h-[74vh] lg:overflow-y-auto lg:pr-1">
-            <label className="block"><span className={LABEL}>Empresa / CTP emisor</span>
-              <input value={datos.empresa} onChange={(e) => set({ empresa: e.target.value })} placeholder="Razón social" className={`mt-1 ${INPUT}`} />
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block"><span className={LABEL}>(1) N°</span>
-                <input value={datos.numero} onChange={(e) => set({ numero: e.target.value })} placeholder="2-19-0461363" className={`mt-1 ${INPUT}`} />
-              </label>
-              <label className="block"><span className={LABEL}>(2) GTF N°</span>
-                <input value={datos.gtf} onChange={(e) => set({ gtf: e.target.value })} placeholder="19-001-0000052" className={`mt-1 ${INPUT}`} />
-              </label>
-            </div>
-            <label className="block"><span className={LABEL}>(12) Observaciones</span>
-              <textarea value={datos.observaciones} onChange={(e) => set({ observaciones: e.target.value })} rows={2} placeholder="—" className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
-            </label>
-            <label className="block"><span className={LABEL}>(14) Nombres y apellidos</span>
-              <input value={datos.firmante} onChange={(e) => set({ firmante: e.target.value })} placeholder="Del emisor" className={`mt-1 ${INPUT}`} />
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block"><span className={LABEL}>(15) Documento</span>
-                <input value={datos.documento} onChange={(e) => set({ documento: e.target.value })} inputMode="numeric" placeholder="DNI" className={`mt-1 ${INPUT}`} />
-              </label>
-              <label className="block"><span className={LABEL}>(16) Cargo</span>
-                <input value={datos.cargo} onChange={(e) => set({ cargo: e.target.value })} placeholder="Regente / Jefe de planta" className={`mt-1 ${INPUT}`} />
-              </label>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <label className="block"><span className={LABEL}>Columna (10) V</span>
-                <select value={datos.unidadV} onChange={(e) => set({ unidadV: e.target.value as DatosAnexo04["unidadV"] })} className={`mt-1 ${INPUT}`}>
-                  <option value="pt">Pie tablar</option>
-                  <option value="m3">m³</option>
-                </select>
-              </label>
-              <label className="block"><span className={LABEL}>Filas por bloque</span>
-                <select value={datos.modo} onChange={(e) => set({ modo: e.target.value as DatosAnexo04["modo"] })} className={`mt-1 ${INPUT}`}>
-                  <option value="oficial">35 (oficial)</option>
-                  <option value="compacto">Solo las usadas</option>
-                </select>
-              </label>
-            </div>
-            <p className="text-[length:var(--ts-2xs)] leading-relaxed text-[var(--text-tertiary)]">
-              Un bloque por especie + tipo de producto, sin mezclarse. Si una combinación pasa de 35 piezas, sigue en el bloque siguiente.
-            </p>
+          <div className="lg:max-h-[74vh] lg:overflow-y-auto lg:pr-1">
+            <Anexo04Campos datos={datos} onChange={set} onError={(msg) => onAviso?.(msg, "error")} />
           </div>
 
           {/* Preview del papel */}
           <div ref={areaRef} className="min-w-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Así se va a ver</span>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <Anexo04Origen
+                piezasActuales={rows.length}
+                valor={origen}
+                onCambio={(id, piezas, registro) => {
+                  setOrigen(id);
+                  setPiezasGuardadas(piezas);
+                  // La guardada trae su especie predominante: sirve de fallback para
+                  // las piezas que se cargaron sin especie propia.
+                  setEspecieOrigen(registro?.especie);
+                }}
+              />
               <div className="flex items-center gap-1">
                 <button type="button" onClick={() => setFactor((f) => Math.max(0.5, f - 0.25))} aria-label="Alejar" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Minus className="h-3.5 w-3.5" /></button>
                 <span className="w-12 text-center font-mono text-xs font-bold text-[var(--text-secondary)]">{Math.round(escala * 100)}%</span>
                 <button type="button" onClick={() => setFactor((f) => Math.min(3, f + 0.25))} aria-label="Acercar" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Plus className="h-3.5 w-3.5" /></button>
               </div>
             </div>
+            {filas.length === 0 && (
+              <p className="mb-2 rounded-lg border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+                Sin medidas: elegí una cubicación guardada arriba, o descargá la hoja en blanco para llenarla a mano.
+              </p>
+            )}
             <style>{ANEXO04_CSS}</style>
             <div className="max-h-[64vh] overflow-auto">
               <div ref={hojasRef} style={{ width: A4_PX * escala }}>
@@ -220,8 +231,13 @@ export default function Anexo04Modal({
 
         {/* Acciones */}
         <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-          <button type="button" onClick={onPdfDetallado} title="El PDF interno de siempre: tipos, precios y subtotales" className={BTN}>
-            <FileText className="h-4 w-4" /> PDF detallado (interno)
+          {onPdfDetallado && (
+            <button type="button" onClick={onPdfDetallado} title="El PDF interno de siempre: tipos, precios y subtotales" className={BTN}>
+              <FileText className="h-4 w-4" /> PDF detallado (interno)
+            </button>
+          )}
+          <button type="button" onClick={descargarExcel} title="El mismo anexo en Excel, con fórmulas para editarlo antes de imprimir" className={BTN}>
+            <FileSpreadsheet className="h-4 w-4" /> Excel del anexo
           </button>
           <button type="button" onClick={imprimir} className={BTN}>
             <Printer className="h-4 w-4" /> Imprimir
