@@ -87,6 +87,19 @@ export function construirEmision(input: EntradaEmision): AnexoEmitido {
 export const claveEmision = (numero: string, gtf: string): string =>
   `${numero.trim().toLowerCase()}||${gtf.trim().toLowerCase()}`;
 
+/**
+ * Filtra la bandeja por N°, GTF, firmante, empresa o fecha. Un aserradero con
+ * 200 emisiones necesita encontrar "la del camión de Lima" sin scrollear.
+ */
+export function filtrarEmisiones(lista: AnexoEmitido[], termino: string): AnexoEmitido[] {
+  const t = termino.trim().toLowerCase();
+  if (!t) return lista;
+  return lista.filter((a) =>
+    [a.numero, a.gtf, a.firmante, a.empresa, a.fecha, a.observaciones]
+      .some((campo) => (campo ?? "").toLowerCase().includes(t)),
+  );
+}
+
 /** Etiqueta corta para la bandeja: "N° 2-19-0461363 · GTF 19-001-0000052". */
 export function etiquetaEmision(e: AnexoEmitido): string {
   const partes = [e.numero ? `N° ${e.numero}` : null, e.gtf ? `GTF ${e.gtf}` : null].filter(Boolean);

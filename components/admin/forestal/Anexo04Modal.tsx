@@ -16,6 +16,7 @@ import { CardTitle } from "@buleje/design-system";
 import { Download, FileSpreadsheet, FileText, Minus, Plus, Printer, X } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo, type DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
+import { validarAnexo04, anexoPresentable } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
 import { exportarAnexo04PDF } from "@/lib/forestal/anexo04-pdf";
 import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
@@ -23,6 +24,7 @@ import Anexo04Hoja, { ANEXO04_CSS } from "./Anexo04Hoja";
 import Anexo04Campos from "./Anexo04Campos";
 import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
 import Anexo04Historial, { ICONO_HISTORIAL } from "./Anexo04Historial";
+import Anexo04Checklist from "./Anexo04Checklist";
 import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -102,6 +104,11 @@ export default function Anexo04Modal({
     [filas, datos.unidadV, datos.modo, especie],
   );
   const escala = Math.max(0.25, fit * factor);
+  // Checklist de emisión: lo que la ARFFS devuelve (errores) y lo que un
+  // fiscalizador va a preguntar (avisos). No bloquea: la hoja en blanco para
+  // llenar a mano es un uso legítimo del formato.
+  const avisos = useMemo(() => validarAnexo04(datos, anexo, filas), [datos, anexo, filas]);
+  const presentable = anexoPresentable(avisos);
 
   /**
    * Deja el papel registrado en la bandeja. Fire-and-forget: si el servidor
@@ -211,6 +218,7 @@ export default function Anexo04Modal({
                 <div className="mt-2">
                   <Anexo04Historial
                     recargarToken={historialToken}
+                    ctpEntryId={ctpEntryId}
                     onCargar={cargarEmision}
                     onDescargar={reDescargar}
                     onError={(msg) => onAviso?.(msg, "error")}
@@ -241,11 +249,7 @@ export default function Anexo04Modal({
                 <button type="button" onClick={() => setFactor((f) => Math.min(3, f + 0.25))} aria-label="Acercar" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Plus className="h-3.5 w-3.5" /></button>
               </div>
             </div>
-            {filas.length === 0 && (
-              <p className="mb-2 rounded-lg border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-xs font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
-                Sin medidas: elegí una cubicación guardada arriba, o descargá la hoja en blanco para llenarla a mano.
-              </p>
-            )}
+            <Anexo04Checklist avisos={avisos} presentable={presentable} />
             <style>{ANEXO04_CSS}</style>
             <div className="max-h-[64vh] overflow-auto">
               <div ref={hojasRef} style={{ width: A4_PX * escala }}>
@@ -274,8 +278,14 @@ export default function Anexo04Modal({
           <button type="button" onClick={imprimir} className={BTN}>
             <Printer className="h-4 w-4" /> Imprimir
           </button>
-          <button type="button" onClick={descargar} disabled={generando} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-60">
-            <Download className="h-4 w-4" /> {generando ? "Generando…" : "Descargar PDF"}
+          <button
+            type="button"
+            onClick={descargar}
+            disabled={generando}
+            title={presentable ? "Descargar el ANEXO N° 04" : "Se puede descargar igual (para llenar a mano), pero le faltan datos obligatorios"}
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" /> {generando ? "Generando…" : presentable ? "Descargar PDF" : "Descargar igual"}
           </button>
         </div>
       </div>

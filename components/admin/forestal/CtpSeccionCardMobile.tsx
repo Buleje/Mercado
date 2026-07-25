@@ -21,6 +21,8 @@ interface CtpSeccionCardMobileProps {
   onChain: (e: CtpEntry) => void;
   /** Emitir el ANEXO N° 04 de la GTF (solo despachos). */
   onAnexo?: (e: CtpEntry) => void;
+  /** Ese despacho ya tiene su anexo emitido. */
+  anexoEmitido?: boolean;
   onSendInventory: (id: string) => void;
   onAnnul: (id: string) => void;
 }
@@ -31,7 +33,7 @@ const fmtDate = (iso: string) => {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }); } catch { return iso; }
 };
 
-export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, onSendInventory, onAnnul }: CtpSeccionCardMobileProps) {
+export default function CtpSeccionCardMobile({ entry: e, section, toProductId, onChain, onAnexo, anexoEmitido, onSendInventory, onAnnul }: CtpSeccionCardMobileProps) {
   const anulado = e.status === "anulado";
   const KindIcon = section === "produccion" ? Boxes : Truck;
   const rend = section === "produccion" ? evaluarRendimiento(e.productType, e.rendimientoPct != null ? Number(e.rendimientoPct) : null) : null;
@@ -117,9 +119,11 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             <button
               type="button"
               onClick={() => onAnexo(e)}
-              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className={`inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold ${anexoEmitido
+                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
             >
-              <FileText className="h-3.5 w-3.5" /> Anexo 04
+              <FileText className="h-3.5 w-3.5" /> Anexo 04{anexoEmitido ? " ✓" : ""}
             </button>
           )}
           <button

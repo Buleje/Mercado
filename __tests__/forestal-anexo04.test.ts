@@ -11,6 +11,8 @@ import {
   FILAS_OFICIAL, PAGINA,
 } from "@/lib/forestal/anexo04-serfor";
 import { formulaV } from "@/lib/forestal/anexo04-excel";
+import { validarAnexo04, anexoPresentable } from "@/lib/forestal/anexo04-validacion";
+import { filtrarEmisiones, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 
 let seq = 0;
 function pieza(cantidad: number, espesor: number, ancho: number, largo: number, especie = "Tornillo"): PiezaCubicada {
@@ -173,5 +175,84 @@ describe("Excel del anexo — la fórmula de V apunta a las columnas correctas",
 
   it("en m³ multiplica por los factores de conversión, no divide por 12", () => {
     expect(formulaV(0, 12, "m3")).toBe('IF(B12="",0,ROUND(B12*(C12*0.0254)*(D12*0.0254)*(E12*0.3048),3))');
+  });
+});
+
+describe("validarAnexo04 — checklist antes de emitir", () => {
+  const COMPLETO = {
+    numero: "2-19-0461363", gtf: "19-001-0000052", empresa: "Maderera San Martín S.A.C.",
+    observaciones: "", firmante: "Brandon Buleje", documento: "71234567", cargo: "Jefe de planta",
+    unidadV: "pt", modo: "oficial",
+  } as const;
+
+  it("un anexo completo no tiene nada que reclamar", () => {
+    const anexo = construirAnexo04(LOTE, COMPLETO);
+    const avisos = validarAnexo04(COMPLETO, anexo, LOTE);
+    expect(avisos).toEqual([]);
+    expect(anexoPresentable(avisos)).toBe(true);
+  });
+
+  it("sin GTF, sin N° y sin firmante = errores que invalidan el papel", () => {
+    const datos = { ...COMPLETO, gtf: "", numero: "", firmante: "  " };
+    const avisos = validarAnexo04(datos, construirAnexo04(LOTE, datos), LOTE);
+    expect(avisos.filter((a) => a.nivel === "error")).toHaveLength(3);
+    expect(anexoPresentable(avisos)).toBe(false);
+    expect(avisos[0].mensaje).toMatch(/GTF|N°|firma/i);
+  });
+
+  it("falta el DNI o el cargo: avisa pero el anexo sigue siendo presentable", () => {
+    const datos = { ...COMPLETO, documento: "", cargo: "" };
+    const avisos = validarAnexo04(datos, construirAnexo04(LOTE, datos), LOTE);
+    expect(avisos.every((a) => a.nivel === "aviso")).toBe(true);
+    expect(anexoPresentable(avisos)).toBe(true);
+  });
+
+  it("piezas sin especie = error (el bloque (4) quedaría sin rotular)", () => {
+    const sinEspecie = [{ ...pieza(3, 2, 8, 10), especie: undefined }];
+    const avisos = validarAnexo04(COMPLETO, construirAnexo04(sinEspecie, COMPLETO), sinEspecie);
+    expect(avisos.some((a) => a.nivel === "error" && /Especie/.test(a.mensaje))).toBe(true);
+  });
+
+  it("lote vacío: avisa que la hoja sale en blanco", () => {
+    const avisos = validarAnexo04(COMPLETO, construirAnexo04([], COMPLETO), []);
+    expect(avisos.some((a) => /en blanco/.test(a.mensaje))).toBe(true);
+  });
+
+  it("medida dada vuelta (más gruesa que ancha): aviso, no error", () => {
+    const raras = [pieza(1, 8, 2, 10)];   // espesor 8" con ancho 2"
+    const avisos = validarAnexo04(COMPLETO, construirAnexo04(raras, COMPLETO), raras);
+    expect(avisos.some((a) => a.nivel === "aviso" && /fuera de lo común/.test(a.mensaje))).toBe(true);
+    expect(anexoPresentable(avisos)).toBe(true);
+  });
+
+  it("la paquetería corta legítima (6×6×1,5 pies) NO se marca como rara", () => {
+    // El validador de la VOZ sí la marcaría (exige largo ≥ 2 pies): el del anexo
+    // no puede, porque esa medida está en las GTF reales.
+    const corta = [pieza(44, 6, 6, 1.5)];
+    const avisos = validarAnexo04(COMPLETO, construirAnexo04(corta, COMPLETO), corta);
+    expect(avisos).toEqual([]);
+  });
+});
+
+describe("filtrarEmisiones — buscar en la bandeja", () => {
+  const emision = (numero: string, gtf: string, firmante: string): AnexoEmitido => ({
+    id: numero, numero, gtf, fecha: "2026-07-25", empresa: "Maderera SAC", firmante,
+    documento: "", cargo: "", observaciones: "", unidadV: "pt", modo: "oficial",
+    hojas: 1, totalPiezas: 10, totalPt: 100, totalM3: 0.24, piezas: [], createdAt: "2026-07-25T10:00:00Z",
+  });
+  const LISTA = [
+    emision("2-19-0461363", "19-001-0000052", "Brandon Buleje"),
+    emision("2-19-0461364", "19-001-0000053", "Rosa Laura"),
+  ];
+
+  it("busca por N°, GTF o firmante, sin importar mayúsculas", () => {
+    expect(filtrarEmisiones(LISTA, "0461364")).toHaveLength(1);
+    expect(filtrarEmisiones(LISTA, "0000052")[0].numero).toBe("2-19-0461363");
+    expect(filtrarEmisiones(LISTA, "rosa")[0].firmante).toBe("Rosa Laura");
+  });
+
+  it("término vacío devuelve todo; sin coincidencias devuelve nada", () => {
+    expect(filtrarEmisiones(LISTA, "   ")).toHaveLength(2);
+    expect(filtrarEmisiones(LISTA, "camión")).toHaveLength(0);
   });
 });
