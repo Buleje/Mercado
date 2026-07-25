@@ -36,6 +36,12 @@ export interface CubicacionRegistro {
   valor: number;
   totales: CubicacionTotales;
   piezas: PiezaCubicada[];
+  /** Línea de PRODUCCIÓN del Libro CTP que se creó desde esta cubicación
+   *  ("Enviar al Libro"). Es el hilo que permite, desde un despacho, encontrar
+   *  las medidas pieza por pieza que el Libro no guarda. */
+  ctpEntryId?: string;
+  /** GTF de salida asociada, si ya se conoce (informativo). */
+  gtfNumber?: string;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -99,6 +105,8 @@ export function construirRegistro(input: {
   notas?: string;
   precioPt?: number;
   piezas: Record<string, unknown>[];
+  ctpEntryId?: string;
+  gtfNumber?: string;
   createdAt?: string;
   createdBy?: string;
 }): CubicacionRegistro {
@@ -117,6 +125,8 @@ export function construirRegistro(input: {
     valor: r2(totales.pieTablar * precioPt),
     totales,
     piezas,
+    ctpEntryId: input.ctpEntryId?.trim().slice(0, 60) || undefined,
+    gtfNumber: input.gtfNumber?.trim().slice(0, 60) || undefined,
     createdAt: input.createdAt ?? ahora,
     updatedAt: ahora,
     createdBy: input.createdBy,

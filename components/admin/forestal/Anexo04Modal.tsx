@@ -15,19 +15,18 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Download, FileSpreadsheet, FileText, Minus, Plus, Printer, X } from "@buleje/design-system/icons";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
-import {
-  construirAnexo04, fmtAnexo, DATOS_ANEXO04_DEFAULT, type DatosAnexo04,
-} from "@/lib/forestal/anexo04-serfor";
+import { construirAnexo04, fmtAnexo, type DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
+import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
 import { exportarAnexo04PDF } from "@/lib/forestal/anexo04-pdf";
 import { exportarAnexo04Excel } from "@/lib/forestal/anexo04-excel";
 import Anexo04Hoja, { ANEXO04_CSS } from "./Anexo04Hoja";
-import Anexo04Campos, { claveTenant } from "./Anexo04Campos";
+import Anexo04Campos from "./Anexo04Campos";
 import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
+import Anexo04Historial, { ICONO_HISTORIAL } from "./Anexo04Historial";
+import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
-/** El logo va en su propia clave: pesa ~50 KB y los datos se guardan por tecla. */
-const claveDatos = () => claveTenant("");
-const claveLogo = () => claveTenant("logo-");
 
 const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]";
 
@@ -47,20 +46,22 @@ function imprimirHtml(html: string) {
 }
 
 export default function Anexo04Modal({
-  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales,
+  rows, especieGlobal, onPdfDetallado, onCerrar, onAviso, gtfInicial, observacionesIniciales, ctpEntryId,
 }: {
   /** Lote abierto en el cubicador; puede venir vacío (p. ej. desde el Libro CTP). */
   rows: PiezaCubicada[];
   especieGlobal?: string;
   /** GTF de salida con la que se abre el anexo (desde una línea del Libro). */
   gtfInicial?: string;
+  /** Despacho del Libro que origina la emisión (queda en el historial). */
+  ctpEntryId?: string;
   observacionesIniciales?: string;
   /** Descarga el PDF interno detallado (el de siempre, con precios y tipos). */
   onPdfDetallado?: () => void;
   onCerrar: () => void;
   onAviso?: (msg: string, tono: "success" | "error") => void;
 }) {
-  const [datos, setDatos] = useState<DatosAnexo04>(DATOS_ANEXO04_DEFAULT);
+  const [datos, set] = useAnexo04Datos({ gtfInicial, observacionesIniciales, onError: (msg) => onAviso?.(msg, "error") });
   const [factor, setFactor] = useState(1);      // multiplica el ajuste automático
   const [fit, setFit] = useState(0.9);          // escala para que la hoja entre a lo ancho
   const [generando, setGenerando] = useState(false);
@@ -69,45 +70,10 @@ export default function Anexo04Modal({
   const [piezasGuardadas, setPiezasGuardadas] = useState<PiezaCubicada[] | null>(null);
   /** Especie predominante de la cubicación elegida (fallback de los bloques). */
   const [especieOrigen, setEspecieOrigen] = useState<string | undefined>();
+  const [verHistorial, setVerHistorial] = useState(false);
+  const [historialToken, setHistorialToken] = useState(0);
   const areaRef = useRef<HTMLDivElement>(null);
   const hojasRef = useRef<HTMLDivElement>(null);
-
-  // Cabecera guardada por tenant (se re-usa en cada guía); el logo, aparte.
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(claveDatos());
-      const guardado = raw ? (JSON.parse(raw) as Partial<DatosAnexo04>) : {};
-      const logo = localStorage.getItem(claveLogo());
-      const aspect = Number(localStorage.getItem(`${claveLogo()}-aspect`));
-      setDatos({
-        ...DATOS_ANEXO04_DEFAULT, ...guardado,
-        ...(logo ? { logo, logoAspect: aspect > 0 ? aspect : 1 } : {}),
-        ...(gtfInicial ? { gtf: gtfInicial } : {}),
-        ...(observacionesIniciales ? { observaciones: observacionesIniciales } : {}),
-      });
-    } catch { /* json corrupto → defaults */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar: después manda lo que edite el usuario
-  }, []);
-
-  const set = (patch: Partial<DatosAnexo04>) => {
-    setDatos((d) => {
-      const next = { ...d, ...patch };
-      try {
-        const { logo, logoAspect, ...resto } = next;
-        localStorage.setItem(claveDatos(), JSON.stringify(resto));
-        if ("logo" in patch) {
-          if (logo) {
-            localStorage.setItem(claveLogo(), logo);
-            localStorage.setItem(`${claveLogo()}-aspect`, String(logoAspect ?? 1));
-          } else {
-            localStorage.removeItem(claveLogo());
-            localStorage.removeItem(`${claveLogo()}-aspect`);
-          }
-        }
-      } catch { /* quota: el logo es lo único grande */ onAviso?.("No se pudo guardar el logo (espacio del navegador lleno).", "error"); }
-      return next;
-    });
-  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCerrar(); };
@@ -137,12 +103,57 @@ export default function Anexo04Modal({
   );
   const escala = Math.max(0.25, fit * factor);
 
+  /**
+   * Deja el papel registrado en la bandeja. Fire-and-forget: si el servidor
+   * falla, el PDF ya se descargó y el operario no puede hacer nada al respecto
+   * — se avisa y sigue.
+   */
+  const registrarEmision = (piezas: PiezaCubicada[], d: DatosAnexo04) => {
+    if (piezas.length === 0) return;
+    fetch("/api/admin/forestal/anexos", {
+      method: "POST",
+      credentials: "include",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        numero: d.numero, gtf: d.gtf, empresa: d.empresa, firmante: d.firmante,
+        documento: d.documento, cargo: d.cargo, observaciones: d.observaciones,
+        unidadV: d.unidadV, modo: d.modo, especieGlobal: especie ?? null,
+        ctpEntryId: ctpEntryId ?? null, piezas,
+      }),
+    })
+      .then((r) => { if (r.ok) setHistorialToken((t) => t + 1); })
+      .catch((err) => onAviso?.(`El PDF salió, pero no quedó en el historial (${String(err).slice(0, 60)}).`, "error"));
+  };
+
   const descargar = () => {
     setGenerando(true);
     exportarAnexo04PDF(filas, datos, { especieGlobal: especie })
-      .then(() => onAviso?.("Anexo N° 04 descargado", "success"))
+      .then(() => {
+        onAviso?.("Anexo N° 04 descargado y registrado", "success");
+        registrarEmision(filas, datos);
+      })
       .catch(() => onAviso?.("No se pudo generar el PDF.", "error"))
       .finally(() => setGenerando(false));
+  };
+
+  /** Trae una emisión pasada al formulario (datos + medidas exactas). */
+  const cargarEmision = (a: AnexoEmitido) => {
+    set({
+      numero: a.numero, gtf: a.gtf, empresa: a.empresa, firmante: a.firmante,
+      documento: a.documento, cargo: a.cargo, observaciones: a.observaciones,
+      unidadV: a.unidadV, modo: a.modo,
+    });
+    setPiezasGuardadas(a.piezas);
+    setEspecieOrigen(undefined);
+    setOrigen(`emitido:${a.id}`);
+    setVerHistorial(false);
+  };
+
+  /** Re-descarga un anexo tal como se emitió, sin tocar lo que hay en pantalla. */
+  const reDescargar = (a: AnexoEmitido) => {
+    exportarAnexo04PDF(a.piezas, { ...datos, ...a }, {})
+      .then(() => onAviso?.("Anexo re-descargado", "success"))
+      .catch(() => onAviso?.("No se pudo generar el PDF.", "error"));
   };
 
   const descargarExcel = () => {
@@ -187,6 +198,26 @@ export default function Anexo04Modal({
           {/* Datos del formato */}
           <div className="lg:max-h-[74vh] lg:overflow-y-auto lg:pr-1">
             <Anexo04Campos datos={datos} onChange={set} onError={(msg) => onAviso?.(msg, "error")} />
+            <div className="mt-3 border-t-2 border-[var(--rule-soft)] pt-3">
+              <button
+                type="button"
+                onClick={() => setVerHistorial((v) => !v)}
+                aria-expanded={verHistorial}
+                className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border-2 text-xs font-bold transition ${verHistorial ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+              >
+                <ICONO_HISTORIAL className="h-4 w-4" /> Anexos emitidos
+              </button>
+              {verHistorial && (
+                <div className="mt-2">
+                  <Anexo04Historial
+                    recargarToken={historialToken}
+                    onCargar={cargarEmision}
+                    onDescargar={reDescargar}
+                    onError={(msg) => onAviso?.(msg, "error")}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Preview del papel */}
@@ -195,6 +226,7 @@ export default function Anexo04Modal({
               <Anexo04Origen
                 piezasActuales={rows.length}
                 valor={origen}
+                despachoId={ctpEntryId}
                 onCambio={(id, piezas, registro) => {
                   setOrigen(id);
                   setPiezasGuardadas(piezas);

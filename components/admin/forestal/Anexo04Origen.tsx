@@ -20,28 +20,45 @@ const fecha = (iso: string) => {
 };
 
 export default function Anexo04Origen({
-  piezasActuales, valor, onCambio,
+  piezasActuales, valor, despachoId, onCambio,
 }: {
   /** Cuántas piezas tiene el lote abierto en el cubicador (0 = ninguno). */
   piezasActuales: number;
   valor: string;
+  /** Despacho del Libro desde el que se abrió: marca y auto-elige su cubicación. */
+  despachoId?: string;
   /** Devuelve el id elegido y las piezas de esa cubicación (null = lote actual). */
   onCambio: (id: string, piezas: PiezaCubicada[] | null, registro?: CubicacionRegistro) => void;
 }) {
   const [guardadas, setGuardadas] = useState<CubicacionRegistro[]>([]);
+  const [sugeridas, setSugeridas] = useState<string[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     let vivo = true;
-    fetch("/api/admin/forestal/cubicaciones", { credentials: "include", cache: "no-store" })
+    const url = despachoId
+      ? `/api/admin/forestal/cubicaciones?despachoId=${encodeURIComponent(despachoId)}`
+      : "/api/admin/forestal/cubicaciones";
+    fetch(url, { credentials: "include", cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { cubicaciones: [] }))
-      .then((j: { cubicaciones?: CubicacionRegistro[] }) => { if (vivo) setGuardadas(j.cubicaciones ?? []); })
+      .then((j: { cubicaciones?: CubicacionRegistro[]; sugeridas?: string[] }) => {
+        if (!vivo) return;
+        const lista = j.cubicaciones ?? [];
+        const ids = j.sugeridas ?? [];
+        // Las que originaron ESTE despacho van primero y se eligen solas: es el
+        // caso normal cuando la madera se cubicó con la herramienta.
+        setGuardadas([...lista.filter((c) => ids.includes(c.id)), ...lista.filter((c) => !ids.includes(c.id))]);
+        setSugeridas(ids);
+        const auto = lista.find((c) => ids.includes(c.id));
+        if (auto && piezasActuales === 0) onCambio(auto.id, auto.piezas, auto);
+      })
       // Sin historial (o sin red) el selector queda con el lote actual: es una
       // ayuda, no un requisito para emitir el anexo.
       .catch(() => { if (vivo) setGuardadas([]); })
       .finally(() => { if (vivo) setCargando(false); });
     return () => { vivo = false; };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- se pide una vez por despacho
+  }, [despachoId]);
 
   const elegir = (id: string) => {
     if (id === ORIGEN_ACTUAL) { onCambio(id, null); return; }
@@ -64,6 +81,7 @@ export default function Anexo04Origen({
         </option>
         {guardadas.map((c) => (
           <option key={c.id} value={c.id}>
+            {sugeridas.includes(c.id) ? "★ de este despacho · " : ""}
             {c.nombre} · {fecha(c.fecha)} · {c.totales.piezas} pzas{c.cliente ? ` · ${c.cliente}` : ""}
           </option>
         ))}

@@ -774,6 +774,35 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         codigoLote = jl?.lote?.codigo ?? "creado";
         setLoteCreado(codigoLote);
       }
+      // 3) Dejar el hilo cubicación → corrida del Libro. Sin esto, el ANEXO N° 04
+      //    de un despacho futuro no tiene de dónde sacar las medidas pieza por
+      //    pieza (el Libro guarda especie y volumen, no E·A·L). Se guarda sola
+      //    la cubicación si todavía no estaba guardada.
+      if (entryId) {
+        void fetch("/api/admin/forestal/cubicaciones", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...csrfHeaders() },
+          credentials: "include",
+          body: JSON.stringify({
+            id: cubicacionActual?.id || undefined,
+            nombre: cubicacionActual?.nombre
+              || nombreSugerido(speciesCommon || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }),
+            fecha: form.fecha || hoyISO(),
+            cliente: form.cliente.trim() || undefined,
+            especie: speciesCommon || undefined,
+            precioPt: precio,
+            piezas: rowsRef.current,
+            ctpEntryId: entryId,
+          }),
+        })
+          .then((res) => res.json().catch(() => ({})))
+          .then((jc: { cubicacion?: { id: string; nombre: string } }) => {
+            if (jc?.cubicacion) setCubicacionActual({ id: jc.cubicacion.id, nombre: jc.cubicacion.nombre });
+            setHistorialToken((t) => t + 1);
+          })
+          .catch((err) => setErrMsg(`Quedó en el Libro, pero no se pudo vincular la cubicación: ${String(err).slice(0, 80)}`));
+      }
+
       setEnviado(true);
       setShowEnviarModal(false);
       pushToast({ tono: "success", msg: "Enviado al Libro CTP", detail: codigoLote ? `Lote ${codigoLote}` : undefined });

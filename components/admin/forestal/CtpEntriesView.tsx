@@ -334,6 +334,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
           rows={[]}
           especieGlobal={anexoEntry.speciesCommon ?? undefined}
           gtfInicial={anexoEntry.gtfNumber ?? ""}
+          ctpEntryId={anexoEntry.id}
           observacionesIniciales={[anexoEntry.productType, anexoEntry.destino ? `Destino: ${anexoEntry.destino}` : ""].filter(Boolean).join(" · ")}
           onCerrar={() => setAnexoEntry(null)}
         />

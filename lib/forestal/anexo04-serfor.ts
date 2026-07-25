@@ -32,7 +32,18 @@ export interface DatosAnexo04 {
   /** "oficial" = 35 filas fijas por bloque; "compacto" = solo las usadas. */ modo: "oficial" | "compacto";
   /** Logo del emisor (dataURL) — el formato oficial lo lleva arriba a la izquierda. */ logo?: string;
   /** Proporción ancho/alto del logo, para no deformarlo al encajarlo. */ logoAspect?: number;
+  /** Firma escaneada (dataURL): se dibuja SOBRE la línea (13). */ firma?: string;
+  firmaAspect?: number;
+  /** Sello de la empresa (dataURL): junto a la firma, como en el papel. */ sello?: string;
+  selloAspect?: number;
 }
+
+/** Las tres imágenes que puede llevar la hoja, con su campo de proporción. */
+export const IMAGENES_ANEXO = [
+  { campo: "logo", aspecto: "logoAspect", label: "Logo" },
+  { campo: "firma", aspecto: "firmaAspect", label: "Firma" },
+  { campo: "sello", aspecto: "selloAspect", label: "Sello" },
+] as const;
 
 export const DATOS_ANEXO04_DEFAULT: DatosAnexo04 = {
   numero: "", gtf: "", empresa: "", observaciones: "",
@@ -226,6 +237,10 @@ export interface GeoHoja {
   /** X donde arranca la columna j dentro de un bloque. */ xCol: (i: number, j: number) => number;
   /** Caja máxima del logo del emisor (arriba a la izquierda, como el oficial). */
   logoBox: { x: number; y: number; w: number; h: number };
+  /** Caja de la firma escaneada: apoyada SOBRE la línea (13). */
+  firmaBox: { x: number; y: number; w: number; h: number };
+  /** Caja del sello, a la izquierda de la firma (como se sella a mano). */
+  selloBox: { x: number; y: number; w: number; h: number };
   /** X donde arranca la razón social (corrida si hay logo). */ xEmpresa: (conLogo: boolean) => number;
   /** Ancho disponible para la razón social. */ wEmpresa: (conLogo: boolean) => number;
 }
@@ -267,6 +282,9 @@ export function geometriaHoja(filas: number): GeoHoja {
     xBloque: (i: number) => m + i * bloqueW,
     xCol: (i: number, j: number) => m + i * bloqueW + cols.slice(0, j).reduce((a, c) => a + c, 0),
     logoBox: { x: m + 2, y: yInfo + 4, w: 56, h: 42 },
+    // La firma se apoya sobre la línea (13) — la primera de las cuatro.
+    firmaBox: { x: m + contentW - 150, y: yFirmas[0] - 34, w: 130, h: 32 },
+    selloBox: { x: m + contentW - 232, y: yFirmas[0] - 40, w: 74, h: 46 },
     xEmpresa: (conLogo: boolean) => m + (conLogo ? 64 : 2),
     wEmpresa: (conLogo: boolean) => (conLogo ? 84 : 150),
   };

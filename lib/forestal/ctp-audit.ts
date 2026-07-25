@@ -41,7 +41,11 @@ export type CtpAuditEntity =
   | "ForestPlantaZona"
   // KV: cubicaciones guardadas del cubicador — la medición del lote, previa al
   // libro (al libro entra después como producción, con su propio registro).
-  | "ForestCubicacion";
+  | "ForestCubicacion"
+  // KV: ANEXO N° 04 emitido (lista de productos transformados de la GTF). No es
+  // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
+  // el mismo documento ante una fiscalización.
+  | "ForestAnexo04";
 
 /**
  * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
@@ -88,7 +92,11 @@ export type CtpAuditAction =
   // Cubicaciones guardadas del cubicador (la medición del lote, previa al libro)
   | "ctp_cubicacion_create"
   | "ctp_cubicacion_update"
-  | "ctp_cubicacion_delete";
+  | "ctp_cubicacion_delete"
+  // ANEXO N° 04 emitido con la GTF (lista de productos transformados)
+  | "ctp_anexo04_emit"
+  | "ctp_anexo04_update"
+  | "ctp_anexo04_delete";
 
 /**
  * Registra un evento del libro. No se await-ea a propósito: la auditoría no

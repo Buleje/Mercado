@@ -14,6 +14,7 @@ import { ArrowRight, Check, ImageIcon, Trash2, UserPlus, X } from "@buleje/desig
 import {
   siguienteCorrelativo, type DatosAnexo04, type EmisorGuardado,
 } from "@/lib/forestal/anexo04-serfor";
+import { claveTenant } from "@/hooks/use-anexo04-datos";
 
 const INPUT = "h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 const LABEL = "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
@@ -22,12 +23,6 @@ const MINI = "inline-flex h-11 shrink-0 items-center gap-1 rounded-xl border-2 b
 /** Lado máximo del logo guardado: entra nítido en la hoja sin inflar localStorage. */
 const LOGO_MAX_PX = 320;
 const LOGO_MAX_BYTES = 5_000_000;
-
-export const claveTenant = (sufijo: string) => {
-  let slug = "main";
-  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
-  return `buleje-anexo04-${sufijo}${slug}`;
-};
 
 /** Lee el archivo, lo reduce a `LOGO_MAX_PX` y devuelve dataURL + proporción. */
 async function leerLogo(file: File): Promise<{ src: string; aspect: number }> {
@@ -49,6 +44,36 @@ async function leerLogo(file: File): Promise<{ src: string; aspect: number }> {
   return { src: canvas.toDataURL("image/png"), aspect: img.width / img.height };
 }
 
+/** Botón-miniatura que sube/quita una de las imágenes de la hoja. */
+function ImagenCampo({ src, label, alto = "h-11 w-14", onArchivo, onQuitar }: {
+  src?: string; label: string; alto?: string;
+  onArchivo: (f?: File) => void; onQuitar: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => { onArchivo(e.target.files?.[0]); e.target.value = ""; }} />
+      <button
+        type="button"
+        onClick={() => ref.current?.click()}
+        title={src ? `Cambiar ${label.toLowerCase()}` : `Subir ${label.toLowerCase()}`}
+        aria-label={`${src ? "Cambiar" : "Subir"} ${label.toLowerCase()}`}
+        className={`flex ${alto} items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]`}
+      >
+        {src
+          // eslint-disable-next-line @next/next/no-img-element -- dataURL local, no pasa por el optimizador
+          ? <img src={src} alt={label} className="max-h-full max-w-full object-contain" />
+          : <ImageIcon className="h-5 w-5" />}
+      </button>
+      {src && (
+        <button type="button" onClick={onQuitar} aria-label={`Quitar ${label.toLowerCase()}`} className="rounded-lg p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function Anexo04Campos({
   datos, onChange, onError,
 }: {
@@ -57,7 +82,6 @@ export default function Anexo04Campos({
   onError?: (msg: string) => void;
 }) {
   const [emisores, setEmisores] = useState<EmisorGuardado[]>([]);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -78,13 +102,14 @@ export default function Anexo04Campos({
     persistirEmisores([nuevo, ...emisores.filter((e) => e.firmante.toLowerCase() !== nuevo.firmante.toLowerCase())].slice(0, 8));
   };
 
-  const subirLogo = async (file?: File) => {
+  /** Sube logo, firma o sello: mismo camino (validar → reducir → guardar). */
+  const subirImagen = async (file: File | undefined, campo: "logo" | "firma" | "sello", campoAspecto: "logoAspect" | "firmaAspect" | "selloAspect") => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) { onError?.("El logo tiene que ser una imagen."); return; }
+    if (!file.type.startsWith("image/")) { onError?.("Tiene que ser una imagen."); return; }
     if (file.size > LOGO_MAX_BYTES) { onError?.("La imagen pesa demasiado (máx 5 MB)."); return; }
     try {
       const { src, aspect } = await leerLogo(file);
-      onChange({ logo: src, logoAspect: aspect });
+      onChange({ [campo]: src, [campoAspecto]: aspect } as Partial<DatosAnexo04>);
     } catch { onError?.("No se pudo leer la imagen."); }
   };
 
@@ -94,24 +119,13 @@ export default function Anexo04Campos({
       <div>
         <span className={LABEL}>Logo y razón social del emisor</span>
         <div className="mt-1 flex items-center gap-2">
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void subirLogo(e.target.files?.[0]); e.target.value = ""; }} />
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            title={datos.logo ? "Cambiar el logo" : "Subir el logo de la empresa"}
-            className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-          >
-            {datos.logo
-              // eslint-disable-next-line @next/next/no-img-element -- dataURL local, no pasa por el optimizador
-              ? <img src={datos.logo} alt="Logo del emisor" className="max-h-full max-w-full object-contain" />
-              : <ImageIcon className="h-5 w-5" />}
-          </button>
+          <ImagenCampo
+            src={datos.logo}
+            label="Logo"
+            onArchivo={(f) => void subirImagen(f, "logo", "logoAspect")}
+            onQuitar={() => onChange({ logo: undefined, logoAspect: undefined })}
+          />
           <input value={datos.empresa} onChange={(e) => onChange({ empresa: e.target.value })} placeholder="Razón social" className={INPUT} />
-          {datos.logo && (
-            <button type="button" onClick={() => onChange({ logo: undefined, logoAspect: undefined })} aria-label="Quitar el logo" className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]">
-              <X className="h-4 w-4" />
-            </button>
-          )}
         </div>
       </div>
 
@@ -157,6 +171,29 @@ export default function Anexo04Campos({
         <label className="block"><span className={LABEL}>(16) Cargo</span>
           <input value={datos.cargo} onChange={(e) => onChange({ cargo: e.target.value })} placeholder="Regente / Jefe de planta" className={`mt-1 ${INPUT}`} />
         </label>
+      </div>
+
+      {/* Firma escaneada y sello: se imprimen sobre la línea (13) */}
+      <div>
+        <span className={LABEL}>(13) Firma y sello escaneados</span>
+        <div className="mt-1 flex items-center gap-2">
+          <ImagenCampo
+            src={datos.firma}
+            label="Firma"
+            alto="h-11 w-24"
+            onArchivo={(f) => void subirImagen(f, "firma", "firmaAspect")}
+            onQuitar={() => onChange({ firma: undefined, firmaAspect: undefined })}
+          />
+          <ImagenCampo
+            src={datos.sello}
+            label="Sello"
+            onArchivo={(f) => void subirImagen(f, "sello", "selloAspect")}
+            onQuitar={() => onChange({ sello: undefined, selloAspect: undefined })}
+          />
+          <span className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
+            Salen impresos sobre la línea de firma. Mejor en PNG con fondo transparente.
+          </span>
+        </div>
       </div>
 
       {emisores.length > 0 && (

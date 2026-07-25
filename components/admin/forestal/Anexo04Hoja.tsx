@@ -30,7 +30,7 @@ export const ANEXO04_CSS = `
 .anx-banner b { font-size: 10.7px; }
 .anx-banner i { font-style: normal; font-weight: 700; font-size: 12px; }
 .anx-instr { display: flex; align-items: center; padding-left: 3px; font-size: 7.3px; }
-.anx-logo { object-fit: contain; object-position: left center; }
+.anx-logo { object-fit: contain; object-position: center; }
 .anx-empresa { display: flex; align-items: center; font-size: 11.3px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .anx-titulo { display: flex; align-items: center; justify-content: center; font-size: 11.3px; font-weight: 700; }
 .anx-campos { font-size: 8.7px; line-height: 20px; text-align: right; }
@@ -157,6 +157,14 @@ export default function Anexo04Hoja({
         <b>(12) OBSERVACIONES:</b>
         <p>{datos.observaciones}</p>
       </div>
+      {datos.sello && (
+        // eslint-disable-next-line @next/next/no-img-element -- dataURL local del tenant
+        <img src={datos.sello} alt="" className="anx-logo" style={caja(g.selloBox.x, g.selloBox.y, g.selloBox.w, g.selloBox.h)} />
+      )}
+      {datos.firma && (
+        // eslint-disable-next-line @next/next/no-img-element -- dataURL local del tenant
+        <img src={datos.firma} alt="" className="anx-logo" style={caja(g.firmaBox.x, g.firmaBox.y, g.firmaBox.w, g.firmaBox.h)} />
+      )}
       {ETIQUETAS_FIRMA.map((lbl, i) => (
         <div key={lbl} className="anx-firma" style={caja(xFirma, g.yFirmas[i] - 12, 210, 26)}>
           <div style={{ height: px(11) }}>{valores[i]}</div>

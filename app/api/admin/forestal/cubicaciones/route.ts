@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { ForestCubicacionesDB } from "@/lib/db/forest-cubicaciones.db";
+import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
@@ -39,6 +40,10 @@ const saveSchema = z.object({
   especie: z.string().trim().max(60).nullish(),
   notas: z.string().trim().max(600).nullish(),
   precioPt: z.coerce.number().nonnegative().max(999999).optional(),
+  /** Línea de producción del Libro creada desde esta cubicación (el hilo que
+   *  después permite emitir el ANEXO N° 04 de un despacho con sus medidas). */
+  ctpEntryId: z.string().trim().max(60).nullish(),
+  gtfNumber: z.string().trim().max(60).nullish(),
   // Una cubicación de patio no pasa de unos cientos de filas; el tope protege
   // el KV (es un JSON) sin estorbar el uso real.
   piezas: z.array(piezaSchema).min(1).max(1000),
@@ -63,6 +68,16 @@ export const GET = withApiHandler("forestal-cubicaciones-get", async (req: NextR
   if (guard) return guard;
   try {
     const cubicaciones = await ForestCubicacionesDB.list(auth.tenantId);
+    // ?despachoId= — cuáles de estas cubicaciones originaron ese despacho. El
+    // Libro guarda especie/volumen pero NO las medidas pieza por pieza; el hilo
+    // es despacho → corridas de producción → cubicación que las creó.
+    const despachoId = new URL(req.url).searchParams.get("despachoId");
+    if (despachoId) {
+      const origenes = await ForestCtpDespachoDB.listByDespacho(auth.tenantId, despachoId);
+      const producciones = new Set(origenes.map((o) => o.produccionEntryId));
+      const sugeridas = cubicaciones.filter((c) => c.ctpEntryId && producciones.has(c.ctpEntryId)).map((c) => c.id);
+      return NextResponse.json({ cubicaciones, sugeridas });
+    }
     return NextResponse.json({ cubicaciones });
   } catch (err) {
     logger.error("[cubicaciones.GET] failed", { error: String(err), tenantId: auth.tenantId });
@@ -97,6 +112,8 @@ export const POST = withApiHandler("forestal-cubicaciones-post", async (req: Nex
         cliente: parsed.data.cliente ?? undefined,
         especie: parsed.data.especie ?? undefined,
         notas: parsed.data.notas ?? undefined,
+        ctpEntryId: parsed.data.ctpEntryId ?? undefined,
+        gtfNumber: parsed.data.gtfNumber ?? undefined,
         piezas: parsed.data.piezas as unknown as Record<string, unknown>[],
       },
       auth.username ?? "unknown",

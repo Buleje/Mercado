@@ -39,6 +39,21 @@ function textoAjustado(doc: jsPDF, s: string, x: number, y: number, maxW: number
   doc.text(txt, x, y);
 }
 
+/**
+ * Dibuja una imagen (logo, firma o sello) CENTRADA y encajada en su caja, sin
+ * deformarla: manda la dimensión que primero toca el borde. Un dataURL inválido
+ * no rompe la hoja — sale sin la imagen.
+ */
+function imagenEnCaja(doc: jsPDF, src: string | undefined, aspect: number | undefined, caja: { x: number; y: number; w: number; h: number }) {
+  if (!src) return;
+  const asp = aspect && aspect > 0 ? aspect : 1;
+  const w = Math.min(caja.w, caja.h * asp);
+  const h = w / asp;
+  try {
+    doc.addImage(src, formatoImagen(src), caja.x + (caja.w - w) / 2, caja.y + (caja.h - h) / 2, w, h);
+  } catch { /* dataURL inválido → se omite la imagen, la hoja sigue siendo válida */ }
+}
+
 /** Formato que espera jsPDF.addImage, leído del propio dataURL. */
 function formatoImagen(dataUrl: string): "PNG" | "JPEG" | "WEBP" {
   const mime = dataUrl.slice(5, dataUrl.indexOf(";"));
@@ -67,16 +82,7 @@ function dibujarCabecera(doc: jsPDF, g: GeoHoja, datos: DatosAnexo04, anexo: Ane
 
   // Logo (izquierda) + emisor + título (centro) + datos numerados (derecha).
   const conLogo = Boolean(datos.logo);
-  if (datos.logo) {
-    const caja = g.logoBox;
-    const asp = datos.logoAspect && datos.logoAspect > 0 ? datos.logoAspect : 1;
-    // Encajar sin deformar: manda la dimensión que primero toca el borde.
-    const w = Math.min(caja.w, caja.h * asp);
-    const h = w / asp;
-    try {
-      doc.addImage(datos.logo, formatoImagen(datos.logo), caja.x, caja.y + (caja.h - h) / 2, w, h);
-    } catch { /* dataURL inválido → la hoja sale sin logo, no se rompe */ }
-  }
+  imagenEnCaja(doc, datos.logo, datos.logoAspect, g.logoBox);
   if (datos.empresa) textoAjustado(doc, datos.empresa.toUpperCase(), g.xEmpresa(conLogo), g.yInfo + 20, g.wEmpresa(conLogo), 8.5, true);
   celdaTexto(doc, "LISTA DE PRODUCTOS TRANSFORMADOS", m + 150, g.yInfo, g.contentW - 340, 24, 8.5, "center", true);
 
@@ -154,6 +160,10 @@ function dibujarPie(doc: jsPDF, g: GeoHoja, datos: DatosAnexo04, anexo: Anexo04,
 
   const xF2 = m + g.contentW - 8;
   const xF1 = xF2 - 210;
+  // Sello y firma escaneada van sobre la línea (13), antes de las etiquetas.
+  imagenEnCaja(doc, datos.sello, datos.selloAspect, g.selloBox);
+  imagenEnCaja(doc, datos.firma, datos.firmaAspect, g.firmaBox);
+
   const valores = ["", datos.firmante, datos.documento, datos.cargo];
   g.yFirmas.forEach((y, i) => {
     lineaPunteada(doc, xF1, y, xF2);
