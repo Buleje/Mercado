@@ -25,7 +25,7 @@ import Anexo04Checklist from "./Anexo04Checklist";
 import Anexo04Preview from "./Anexo04Preview";
 import { ANEXO04_CSS } from "./Anexo04Hoja";
 import Anexo04Acciones from "./Anexo04Acciones";
-import type { AnexoEmitido } from "@/lib/forestal/anexo04-registro";
+import { inicioDeEmision, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 import { useAnexosEmitidos } from "@/hooks/use-anexos-emitidos";
 import { useAnexo04Salidas } from "@/hooks/use-anexo04-salidas";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
@@ -85,6 +85,25 @@ export default function Anexo04Modal({
 
   const areaRef = useRef<HTMLDivElement>(null);
   const hojasRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Punto de partida al abrir: si la guía ya tiene anexo se carga ese (vienen a
+   * re-imprimirlo), y si el N° guardado es el de la guía anterior se propone el
+   * siguiente libre. Corre una sola vez, cuando llega la bandeja.
+   */
+  const inicioAplicado = useRef(false);
+  useEffect(() => {
+    if (cargandoEmitidos || inicioAplicado.current) return;
+    inicioAplicado.current = true;
+    const inicio = inicioDeEmision(datos.numero, datos.gtf, emitidos, ctpEntryId);
+    if (inicio.emision) {
+      cargarEmision(inicio.emision);
+      onAviso?.(`Esta guía ya tenía el anexo N° ${inicio.emision.numero || "(sin numerar)"}: lo cargué para revisarlo o re-imprimirlo.`, "success");
+    } else if (inicio.numeroSugerido) {
+      set({ numero: inicio.numeroSugerido });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- una sola vez, con la bandeja ya cargada
+  }, [cargandoEmitidos]);
 
   // Autocompleta SÓLO lo que está vacío: si el operario escribió algo, manda él.
   const fichaAplicada = useRef(false);

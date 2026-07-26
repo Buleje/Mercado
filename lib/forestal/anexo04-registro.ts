@@ -123,6 +123,33 @@ export function siguienteLibre(base: string, emitidos: AnexoEmitido[], gtf: stri
   return candidato;
 }
 
+/**
+ * Con qué arranca el modal según lo que ya hay emitido. Dos casos reales:
+ *
+ * 1. La guía YA tiene anexo → lo más probable es que vengan a re-imprimirlo o a
+ *    corregirlo, no a emitir uno nuevo: se carga el más reciente.
+ * 2. El N° que quedó guardado es el de la guía anterior → ese número ya está
+ *    usado, y proponer el siguiente libre evita el error antes de que aparezca.
+ *
+ * Lo que el operario escriba después manda: esto sólo decide el punto de partida.
+ */
+export function inicioDeEmision(
+  numeroActual: string,
+  gtf: string,
+  emitidos: AnexoEmitido[],
+  ctpEntryId?: string,
+): { emision?: AnexoEmitido; numeroSugerido?: string } {
+  if (ctpEntryId) {
+    const deLaGuia = emitidos
+      .filter((a) => a.ctpEntryId === ctpEntryId)
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    if (deLaGuia.length > 0) return { emision: deLaGuia[0] };
+  }
+  if (!numeroActual.trim()) return {};
+  const libre = siguienteLibre(numeroActual, emitidos, gtf);
+  return libre === numeroActual ? {} : { numeroSugerido: libre };
+}
+
 /** Meses (AAAA-MM) con emisiones, del más reciente al más viejo. */
 export function mesesDeEmisiones(lista: AnexoEmitido[]): string[] {
   return [...new Set(lista.map((a) => (a.fecha ?? "").slice(0, 7)).filter((m) => /^\d{4}-\d{2}$/.test(m)))]

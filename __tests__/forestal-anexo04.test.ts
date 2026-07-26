@@ -14,6 +14,7 @@ import { formulaV } from "@/lib/forestal/anexo04-excel";
 import { validarAnexo04, anexoPresentable, type IdentidadCtp } from "@/lib/forestal/anexo04-validacion";
 import {
   filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes, siguienteLibre, construirEmision,
+  inicioDeEmision,
   type AnexoEmitido,
 } from "@/lib/forestal/anexo04-registro";
 
@@ -524,5 +525,36 @@ describe("cotejo con la Ficha legal del CTP", () => {
     expect(conFicha(null)).toEqual([]);
     expect(conFicha({})).toEqual([]);
     expect(conFicha({ razonSocial: "   " })).toEqual([]);
+  });
+});
+
+describe("inicioDeEmision — con qué arranca el modal", () => {
+  const emitido = (over: Partial<AnexoEmitido>): AnexoEmitido => ({
+    id: "e", numero: "2-19-0000001", gtf: "G-1", fecha: "2026-07-20", empresa: "", firmante: "",
+    documento: "", cargo: "", observaciones: "", unidadV: "pt", modo: "oficial", hojas: 1,
+    totalPiezas: 1, totalPt: 1, totalM3: 0.01, piezas: [], createdAt: "2026-07-20T10:00:00Z", ...over,
+  });
+
+  it("si la guía ya tiene anexo, se carga el más reciente", () => {
+    const viejo = emitido({ id: "v", numero: "A-1", ctpEntryId: "d1", createdAt: "2026-07-01T00:00:00Z" });
+    const nuevo = emitido({ id: "n", numero: "A-2", ctpEntryId: "d1", createdAt: "2026-07-20T00:00:00Z" });
+    const inicio = inicioDeEmision("X-9", "G-9", [viejo, nuevo], "d1");
+    expect(inicio.emision?.id).toBe("n");
+    expect(inicio.numeroSugerido).toBeUndefined();
+  });
+
+  it("los anexos de otras guías no cuentan", () => {
+    const otro = emitido({ ctpEntryId: "otra-guia" });
+    expect(inicioDeEmision("2-19-0000009", "G-9", [otro], "d1").emision).toBeUndefined();
+  });
+
+  it("si el N° guardado ya se usó en otra guía, propone el siguiente libre", () => {
+    const inicio = inicioDeEmision("2-19-0000001", "G-NUEVA", [emitido({ gtf: "G-1" })], "d2");
+    expect(inicio.numeroSugerido).toBe("2-19-0000002");
+  });
+
+  it("un N° libre se deja tal cual, y sin N° no propone nada", () => {
+    expect(inicioDeEmision("2-19-0000050", "G-9", [emitido({})], "d2")).toEqual({});
+    expect(inicioDeEmision("", "G-9", [emitido({})], "d2")).toEqual({});
   });
 });

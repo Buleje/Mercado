@@ -23,6 +23,7 @@ import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import CtpSimuladorModal from "./CtpSimuladorModal";
+import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
@@ -48,6 +49,9 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
   const [verBandeja, setVerBandeja] = useState(false);
   /** Cuántos anexos hay en la bandeja (el badge del botón). */
   const [totalAnexos, setTotalAnexos] = useState(0);
+  // Los avisos del anexo (descargó, no se pudo, cargué el ya emitido) necesitan
+  // dónde salir: sin esto el modal hablaba solo cuando se abría desde el Libro.
+  const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
@@ -397,6 +401,7 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
         <Anexo04Modal
           rows={[]}
           abrirHistorial
+          onAviso={(msg, tono) => pushToast({ tono, msg })}
           onCerrar={() => { setVerBandeja(false); cargarAnexos(); }}
         />
       )}
@@ -408,10 +413,13 @@ export function CtpEntriesView({ section, period }: { section: CtpSection; perio
           gtfInicial={anexoEntry.gtfNumber ?? ""}
           ctpEntryId={anexoEntry.id}
           declarado={{ cantidad: Number(anexoEntry.quantity ?? 0), unidad: anexoEntry.unit, piezas: anexoEntry.pieces }}
+          onAviso={(msg, tono) => pushToast({ tono, msg })}
           observacionesIniciales={[anexoEntry.productType, anexoEntry.destino ? `Destino: ${anexoEntry.destino}` : ""].filter(Boolean).join(" · ")}
           onCerrar={() => { setAnexoEntry(null); cargarAnexos(); }}
         />
       )}
+
+      <ActionToasts toasts={toasts} onDismiss={dismissToast} />
 
       {chainEntry && section === "despacho" && <CtpDespachoDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
       {chainEntry && section === "produccion" && <CtpProduccionDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
