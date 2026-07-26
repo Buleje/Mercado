@@ -221,6 +221,33 @@ export default function CubicacionResumenes() {
         </div>
       </div>
 
+      {/* 1. Por especie y tipo */}
+      <section>
+        <h4 className="mb-2 text-sm font-bold text-[var(--text-primary)]">Por especie y tipo</h4>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          {bloques.map((b) => (
+            <div key={b.especie} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="mb-2 flex items-baseline justify-between gap-2">
+                <span className="text-sm font-bold text-[var(--text-primary)]">{b.especie}</span>
+                <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{b.total.cantidad} pzas · {fmtPt(b.total.pieTablar)} PT{conValor ? ` · S/ ${soles(b.total.valor)}` : ""}</span>
+              </div>
+              <TablaGrupos grupos={b.tipos} total={b.total} primeraCol="Tipo" conValor={conValor} esTipo />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 2. General por especie */}
+      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <h4 className="mb-2 text-sm font-bold text-[var(--text-primary)]">General por especie</h4>
+        <TablaGrupos grupos={porEspecie.grupos} total={porEspecie.total} primeraCol="Especie" conValor={conValor} />
+      </section>
+
+      {/* 3. General por tipo */}
+      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <h4 className="mb-2 text-sm font-bold text-[var(--text-primary)]">General por tipo</h4>
+        <TablaGrupos grupos={porTipo.grupos} total={porTipo.total} primeraCol="Tipo" conValor={conValor} esTipo />
+      </section>
       {/* Meta de mix: qué se buscaba, contra lo que salió */}
       <ResumenMeta rows={rows} precioDe={precioDe} guardadas={guardadas} />
 
@@ -253,28 +280,6 @@ export default function CubicacionResumenes() {
         <TablaGrupos grupos={porDim.grupos} total={porDim.total} primeraCol={ETIQUETA_DIMENSION[dim].replace("Por ", "")} conValor={conValor} esTipo={dim === "tipo"} />
       </section>
 
-      {/* 1. Por especie y tipo */}
-      <section>
-        <h4 className="mb-2 text-sm font-bold text-[var(--text-primary)]">Por especie y tipo</h4>
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          {bloques.map((b) => (
-            <div key={b.especie} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-              <div className="mb-2 flex items-baseline justify-between gap-2">
-                <span className="text-sm font-bold text-[var(--text-primary)]">{b.especie}</span>
-                <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{b.total.cantidad} pzas · {fmtPt(b.total.pieTablar)} PT{conValor ? ` · S/ ${soles(b.total.valor)}` : ""}</span>
-              </div>
-              <TablaGrupos grupos={b.tipos} total={b.total} primeraCol="Tipo" conValor={conValor} esTipo />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 2. General por especie */}
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <h4 className="mb-2 text-sm font-bold text-[var(--text-primary)]">General por especie</h4>
-        <TablaGrupos grupos={porEspecie.grupos} total={porEspecie.total} primeraCol="Especie" conValor={conValor} />
-      </section>
-
       {/* 4. Comparar contra una cubicación guardada */}
       <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 print:hidden">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
@@ -288,11 +293,6 @@ export default function CubicacionResumenes() {
         <ResumenComparar rows={rows} precioDe={precioDe} conValor={conValor} dim={dim} guardadas={guardadas} cargando={cargandoGuardadas} />
       </section>
 
-      {/* 3. General por tipo */}
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <h4 className="mb-2 text-sm font-bold text-[var(--text-primary)]">General por tipo</h4>
-        <TablaGrupos grupos={porTipo.grupos} total={porTipo.total} primeraCol="Tipo" conValor={conValor} esTipo />
-      </section>
     </div>
   );
 }
