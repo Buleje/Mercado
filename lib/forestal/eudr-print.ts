@@ -15,6 +15,10 @@ export interface DdsEmisor {
   ruc?: string;
   codigoCtp?: string;
   registroArffs?: string;
+  arffs?: string;
+  direccion?: string;
+  /** Títulos habilitantes del CTP: la legalidad del origen se apoya en ellos. */
+  titulos?: { tipo: string; codigo: string; vencimiento?: string }[];
 }
 
 const esc = (s: unknown): string =>
@@ -22,10 +26,11 @@ const esc = (s: unknown): string =>
 const coord = (lat: number | null, lng: number | null, poly: boolean): string =>
   lat != null && lng != null ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : poly ? "polígono (GeoJSON adjunto)" : "— sin geolocalizar —";
 
-export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
-  const w = window.open("", "_blank", "width=900,height=1200");
-  if (!w) return;
-
+/**
+ * El DDS como documento autocontenido. Lo usan la impresión y el expediente
+ * ZIP: un solo layout, así el papel que se firma y el que viaja son el mismo.
+ */
+export function buildDdsHtml(dds: DdsData, emisor?: DdsEmisor): string {
   const negligible = dds.riesgo === "negligible";
   const fecha = new Date(dds.generadoAt).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
 
@@ -52,7 +57,7 @@ export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
     caption: "Parcelas de origen del despacho · verde = sin deforestación · satélite Esri World Imagery",
   });
 
-  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>DDS EUDR — despacho ${esc(dds.gtfSalida ?? dds.despachoId)}</title>
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>DDS EUDR — despacho ${esc(dds.gtfSalida ?? dds.despachoId)}</title>
   <style>
     *{box-sizing:border-box} body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:32px;line-height:1.5}
     h1{font-size:20px;margin:0 0 2px} h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:#555;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}
@@ -113,6 +118,12 @@ export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
       <div>Fecha y lugar</div>
     </div>
     <div class="foot">Documento generado por el módulo Libro de Operaciones CTP (ADR-140). Este DDS acompaña la colocación en el mercado de la UE; los datos de geolocalización deben corresponder a la parcela de cosecha real.</div>
-  </body></html>`);
+  </body></html>`;
+}
+
+export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
+  const w = window.open("", "_blank", "width=900,height=1200");
+  if (!w) return;
+  w.document.write(buildDdsHtml(dds, emisor));
   w.document.close();
 }

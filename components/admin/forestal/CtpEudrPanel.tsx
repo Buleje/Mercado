@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, CheckCircle2, XCircle, Download, FileText, Globe, Loader2, MapPin, PenTool, ShieldAlert, ShieldCheck } from "@buleje/design-system/icons";
+import { AlertCircle, CheckCircle2, XCircle, Download, FileText, Globe, Loader2, MapPin, Package, PenTool, ShieldAlert, ShieldCheck } from "@buleje/design-system/icons";
 import EudrGauge from "./EudrGauge";
 import CtpEudrMap from "./CtpEudrMap";
 import CtpOriginPolygonModal from "./CtpOriginPolygonModal";
@@ -19,7 +19,8 @@ import CtpOriginPolygonModal from "./CtpOriginPolygonModal";
 // porque Leaflet toca window. Marcar en el mapa = alternativa a tipear lat/lng.
 const GeolocationPickerModal = dynamic(() => import("@/components/marketplace/GeolocationPickerModal"), { ssr: false });
 import { csrfHeaders } from "@/lib/csrf-client";
-import { imprimirDds, type DdsEmisor } from "@/lib/forestal/eudr-print";
+import { buildDdsHtml, imprimirDds, type DdsEmisor } from "@/lib/forestal/eudr-print";
+import { construirExpedienteEudr, nombreExpediente } from "@/lib/forestal/eudr-expediente";
 import { origenGeolocalizado, computeCtpEudrReadiness, buildOriginsGeoJson, type DdsData, type OrigenGeo } from "@/lib/forestal/eudr-types";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 
@@ -36,6 +37,7 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
   const [error, setError] = useState<string | null>(null);
   const [savingCode, setSavingCode] = useState<string | null>(null);
   const [ddsBusy, setDdsBusy] = useState<string | null>(null);
+  const [zipBusy, setZipBusy] = useState<string | null>(null);
   const [ddsResult, setDdsResult] = useState<{ id: string; riesgo: string; gaps: string[] } | null>(null);
   const [selDesp, setSelDesp] = useState<string>("");
   const [draft, setDraft] = useState<Record<string, { lat: string; lng: string; df: boolean }>>({});
@@ -60,7 +62,11 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
       setGeo(gmap);
       setDespachos(Array.isArray(d.entries) ? d.entries : []);
       const ficha = f.ficha ?? f;
-      setEmisor({ razonSocial: ficha.razonSocial, ruc: ficha.ruc, codigoCtp: ficha.codigoCtp, registroArffs: ficha.registroArffs });
+      setEmisor({
+        razonSocial: ficha.razonSocial, ruc: ficha.ruc, codigoCtp: ficha.codigoCtp,
+        registroArffs: ficha.registroArffs, arffs: ficha.arffs, direccion: ficha.direccion,
+        titulos: Array.isArray(ficha.titulos) ? ficha.titulos : [],
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setOrigins([]);
@@ -106,6 +112,38 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSavingCode(null);
+    }
+  }
+
+  /**
+   * El expediente completo en un ZIP: la DDS sola no le sirve al importador —
+   * necesita también las parcelas, la cadena y quién es el operador.
+   */
+  async function bajarExpediente(id: string) {
+    setZipBusy(id); setError(null);
+    try {
+      const r = await fetch(`${EUDR}?despacho=${encodeURIComponent(id)}`, { credentials: "include" });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
+      const dds = j.dds as DdsData;
+      // jszip pesa: se carga sólo cuando alguien pide el expediente.
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      for (const f of construirExpedienteEudr(dds, emisor, { ddsHtml: buildDdsHtml(dds, emisor), baseUrl: window.location.origin })) {
+        zip.file(f.nombre, f.contenido);
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombreExpediente(dds);
+      a.click();
+      URL.revokeObjectURL(url);
+      setDdsResult({ id, riesgo: dds.riesgo, gaps: dds.gaps });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setZipBusy(null);
     }
   }
 
@@ -251,12 +289,24 @@ export default function CtpEudrPanel({ period }: { period: CtpPeriod }) {
           <button type="button" onClick={() => selDesp && void generarDds(selDesp)} disabled={!selDesp || ddsBusy === selDesp} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">
             {ddsBusy === selDesp ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} Generar DDS
           </button>
+          <button
+            type="button"
+            onClick={() => selDesp && void bajarExpediente(selDesp)}
+            disabled={!selDesp || zipBusy === selDesp}
+            title="ZIP con la DDS, las parcelas en GeoJSON, la cadena de custodia y los datos del operador"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+          >
+            {zipBusy === selDesp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Package className="h-4 w-4" />} Expediente completo (ZIP)
+          </button>
         </div>
         {ddsResult && ddsResult.id === selDesp && (
           <div className={`mt-4 rounded-xl border-2 p-3 text-sm ${ddsResult.riesgo === "negligible" ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]"}`}>
             <p className="flex items-center gap-2 font-bold">{ddsResult.riesgo === "negligible" ? <ShieldCheck className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />} Riesgo {ddsResult.riesgo === "negligible" ? "NEGLIGIBLE — apto para la UE" : "NO negligible"}</p>
             {ddsResult.gaps.length > 0 && <ul className="mt-1 list-disc pl-5 text-xs">{ddsResult.gaps.map((g, i) => <li key={i}>{g}</li>)}</ul>}
-            <p className="mt-1 text-xs opacity-80">El DDS se abrió para imprimir/PDF.</p>
+            <p className="mt-1 text-xs opacity-80">
+              El DDS se abre para imprimir/PDF. El expediente ZIP suma las parcelas en GeoJSON,
+              la cadena de custodia en CSV y los datos registrales del operador.
+            </p>
           </div>
         )}
         {despachos.length === 0 && <p className="mt-3 text-sm text-[var(--text-tertiary)]">No hay despachos en el período seleccionado.</p>}
