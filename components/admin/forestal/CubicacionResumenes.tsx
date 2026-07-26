@@ -10,10 +10,14 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, Download, PackageOpen } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
-  agruparPor, resumenPorEspecie, type GrupoResumen, type ResumenLote,
+  agruparPor, resumenPorEspecie, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION,
+  type DimensionResumen, type GrupoResumen, type ResumenLote,
 } from "@/lib/forestal/cubicacion-resumen";
+import { analizarLote } from "@/lib/forestal/cubicacion-insights";
+import { BarraComposicion, LecturaDelLote } from "./resumen-vistas";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
 
@@ -108,10 +112,22 @@ export default function CubicacionResumenes() {
     return () => window.removeEventListener("storage", onStorage);
   }, [recargar]);
 
+  /** Dimensión libre: la pregunta al vender casi nunca es "por especie". */
+  const [dim, setDim] = useState<DimensionResumen>("medida");
   const porEspecie = useMemo(() => agruparPor(rows, "especie", precioDe), [rows, precioDe]);
   const porTipo = useMemo(() => agruparPor(rows, "tipo", precioDe), [rows, precioDe]);
+  const porDim = useMemo(() => agruparPor(rows, dim, precioDe), [rows, dim, precioDe]);
   const bloques = useMemo(() => resumenPorEspecie(rows, precioDe), [rows, precioDe]);
+  const insights = useMemo(() => analizarLote(rows, precioDe), [rows, precioDe]);
   const total = porEspecie.total;
+
+  /** CSV de la vista libre (la de especie×tipo tiene su propio export). */
+  const exportarDimCSV = () => {
+    const url = URL.createObjectURL(new Blob([resumenACsv(porDim, dim, conValor)], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `resumen-${dim}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
 
   const exportarCSV = () => {
     const lineas: string[] = ["Especie,Tipo,Piezas,PieTablar,m3" + (conValor ? ",ValorS/" : "")];
@@ -146,9 +162,9 @@ export default function CubicacionResumenes() {
       {/* Encabezado + KPIs + acciones */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <BarChart3 className="h-4 w-4 text-[var(--accent)]" /> Resúmenes del lote
-          </h3>
+          </CardTitle>
           <div className="flex gap-2">
             <button type="button" onClick={recargar} title="Volver a leer el lote del cubicador" className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
               <RefreshCw className="h-3.5 w-3.5" /> Actualizar
@@ -164,7 +180,42 @@ export default function CubicacionResumenes() {
           <Kpi label="Metros cúbicos" value={`${fmtM3(total.m3)} m³`} />
           <Kpi label="Valor del lote" value={conValor ? `S/ ${soles(total.valor)}` : "—"} />
         </div>
+
+        {/* En qué se fue el volumen: dos barras que se leen de un vistazo */}
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <BarraComposicion grupos={porTipo.grupos} titulo="Composición por tipo (del pie tablar)" />
+          <BarraComposicion grupos={porEspecie.grupos} titulo="Composición por especie (del pie tablar)" />
+        </div>
       </div>
+
+      {/* Lectura del lote: lo accionable primero */}
+      {insights.length > 0 && (
+        <section>
+          <h4 className="mb-2 text-sm font-bold text-[var(--text-primary)]">Lectura del lote</h4>
+          <LecturaDelLote insights={insights} />
+        </section>
+      )}
+
+      {/* Vista libre: la pregunta del comprador suele ser por medida o largo */}
+      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-sm font-bold text-[var(--text-primary)]">Agrupado libre</h4>
+          <div className="flex items-center gap-2">
+            <select
+              value={dim}
+              onChange={(e) => setDim(e.target.value as DimensionResumen)}
+              aria-label="Dimensión del agrupado"
+              className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            >
+              {DIMENSIONES_RESUMEN.map((d) => <option key={d} value={d}>{ETIQUETA_DIMENSION[d]}</option>)}
+            </select>
+            <button type="button" onClick={exportarDimCSV} title="Bajar esta vista en CSV" className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <Download className="h-3.5 w-3.5" /> CSV
+            </button>
+          </div>
+        </div>
+        <TablaGrupos grupos={porDim.grupos} total={porDim.total} primeraCol={ETIQUETA_DIMENSION[dim].replace("Por ", "")} conValor={conValor} esTipo={dim === "tipo"} />
+      </section>
 
       {/* 1. Por especie y tipo */}
       <section>
