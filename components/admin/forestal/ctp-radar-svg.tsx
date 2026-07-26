@@ -106,7 +106,7 @@ export function Node({
   const parcial = n.status === "parcial";
   const muted = n.status === "muted";
   const accent = KIND_ACCENT[n.kind];
-  const fill = warn ? "var(--data-warning-50)" : muted ? "var(--surface-sunken)" : "var(--surface-raised)";
+  const fill = muted ? "var(--surface-sunken)" : "var(--surface-raised)";
   const stroke = match || pinned
     ? "var(--accent)"
     : n.cites ? "var(--data-error-500)"
@@ -140,6 +140,10 @@ export function Node({
         </>
       )}
       <rect width={NODE_W} height={NODE_H} rx={14} fill={fill} stroke={stroke} strokeWidth={match || pinned ? 2.5 : warn ? 2 : 1.5} strokeDasharray={n.grupo ? "7 3" : undefined} filter={dim ? undefined : "url(#ctp-node-shadow)"} />
+      {/* Tinte de alerta ENCIMA de la base opaca: el token `-50` es claro en los
+          dos temas y, con el título en --text-primary, en oscuro el nombre del
+          nodo desaparecía. Un 12% del -500 tiñe sin tapar el texto. */}
+      {warn && <rect width={NODE_W} height={NODE_H} rx={14} fill="var(--data-warning-500)" opacity={0.12} pointerEvents="none" />}
       {/* pill de acento por columna (inset, no borde a sangre) */}
       <rect x={9} y={11} width={3.5} height={NODE_H - 30} rx={1.75} fill={accent} />
       <text x={20} y={20} fontSize={11} fontWeight={700} fill="var(--text-primary)">{trunc(n.top, 22)}</text>
@@ -176,8 +180,8 @@ export function Node({
       )}
       {n.cites && (
         <>
-          <rect x={NODE_W - 54} y={NODE_H - 20} width={35} height={13} rx={6.5} fill="var(--data-error-100)" />
-          <text x={NODE_W - 36.5} y={NODE_H - 10.5} fontSize={7.5} fontWeight={800} fill="var(--data-error-700)" textAnchor="middle">CITES</text>
+          <rect x={NODE_W - 54} y={NODE_H - 20} width={35} height={13} rx={6.5} fill="var(--data-error-500)" opacity={0.16} />
+          <text x={NODE_W - 36.5} y={NODE_H - 10.5} fontSize={7.5} fontWeight={800} fill="var(--data-error-500)" textAnchor="middle">CITES</text>
         </>
       )}
     </g>
@@ -185,7 +189,7 @@ export function Node({
 }
 
 export function SummaryChip({
-  icon: Icon, tone, value, label, suffix, onClick, activo,
+  icon: Icon, tone, value, label, suffix, onClick, activo, pill,
 }: {
   icon: typeof CheckCircle2;
   tone: "success" | "warning" | "danger" | "info";
@@ -195,6 +199,9 @@ export function SummaryChip({
   /** Si se pasa, la ficha filtra el grafo al tocarla. */
   onClick?: () => void;
   activo?: boolean;
+  /** Píldora de una línea (h-9) en vez de tarjeta: para barras de estado donde
+   *  la altura es cara y las seis cifras tienen que caber juntas. */
+  pill?: boolean;
 }) {
   const dim = value === 0 || value === "0";
   // Clases LITERALES por tono: Tailwind resuelve en build, así que un
@@ -225,6 +232,20 @@ export function SummaryChip({
   const card = dim ? "border-[var(--rule-soft)] bg-[var(--surface-raised)]" : p.card;
   const accent = dim ? "text-[var(--text-tertiary)]" : p.accent;
   const badge = dim ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" : p.badge;
+
+  if (pill) {
+    const cls = `inline-flex h-9 items-center gap-2 rounded-full border-2 px-3 text-sm transition ${card} ${activo ? "ring-2 ring-[var(--accent)]" : ""}`;
+    const dentro = (
+      <>
+        <Icon className={`h-3.5 w-3.5 shrink-0 ${accent}`} aria-hidden="true" />
+        <b className={`font-mono tabular-nums ${accent}`}>{value}{suffix}</b>
+        <span className="whitespace-nowrap text-[var(--text-secondary)]">{label}</span>
+      </>
+    );
+    return onClick
+      ? <button type="button" onClick={onClick} aria-pressed={activo} className={`${cls} hover:brightness-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]`}>{dentro}</button>
+      : <span className={cls}>{dentro}</span>;
+  }
 
   const contenido = (
     <>

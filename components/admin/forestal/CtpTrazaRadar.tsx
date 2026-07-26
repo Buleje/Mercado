@@ -20,7 +20,7 @@
  * resto. Read-only, se alimenta de `ForestCtpDB.grafoTrazabilidad`.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   AlertTriangle,
@@ -28,6 +28,7 @@ import {
   Boxes,
   CheckCircle2,
   Clock,
+  Locate,
   Eye,
   FileDown,
   Gauge,
@@ -46,7 +47,8 @@ import {
   ZoomIn,
   ZoomOut,
 } from "@buleje/design-system/icons";
-import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { applyCtpPeriodParams, ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { VistaHeader } from "@/components/admin/shared/module-primitives";
 import { printCadenaCustodia } from "@/lib/forestal/ctp-traza-print";
 import {
   analizarRadar,
@@ -128,6 +130,11 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   const [expandidos, setExpandidos] = useState<ReadonlySet<string>>(new Set());
   /** Ingreso que se está siguiendo aguas abajo (vista de auditoría). */
   const [seguirId, setSeguirId] = useState<string | null>(null);
+  /** El lienzo scrolleable: hace falta para medirlo (ajustar) y para llevar la
+   *  vista hasta un nodo (recorrer huecos). */
+  const lienzoRef = useRef<HTMLDivElement>(null);
+  /** Por dónde va el recorrido de eslabones sin cerrar. */
+  const [huecoIdx, setHuecoIdx] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -444,13 +451,52 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   );
   const totalHuecos = huecoDespachos.length + huerfanaCorridas.length + despachosParciales.length;
 
+  /**
+   * Ajusta el zoom para que la cadena entre completa en el ancho disponible.
+   * Con veinte líneas, el +/- de a 15% es un juego de adivinanzas.
+   */
+  const ajustarAlAncho = useCallback(() => {
+    const cont = lienzoRef.current;
+    if (!cont || !layout) return;
+    const disponible = cont.clientWidth - 24; // p-3 a cada lado
+    const z = Number((disponible / layout.W).toFixed(2));
+    setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)));
+  }, [layout]);
+
+  /** Los eslabones sin cerrar, en el orden en que conviene resolverlos. */
+  const idsConProblema = useMemo(
+    () => [
+      ...huerfanaCorridas.map((c) => c.id),
+      ...huecoDespachos.map((d) => d.id),
+      ...despachosParciales.map((d) => d.id),
+    ],
+    [huerfanaCorridas, huecoDespachos, despachosParciales],
+  );
+
+  /**
+   * Lleva la vista al siguiente eslabón sin cerrar y lo fija. Con la cadena
+   * agrupada o con muchas líneas, encontrarlos a ojo es el trabajo lento.
+   */
+  const irAlSiguienteHueco = useCallback(() => {
+    if (idsConProblema.length === 0 || !layout) return;
+    const i = huecoIdx % idsConProblema.length;
+    const id = idsConProblema[i];
+    setPinned(id);
+    const nodo = layout.pos.get(id);
+    const cont = lienzoRef.current;
+    if (nodo && cont) {
+      cont.scrollTo({ left: Math.max(0, nodo.x * zoom - cont.clientWidth / 2), behavior: "smooth" });
+    }
+    setHuecoIdx(i + 1);
+  }, [idsConProblema, huecoIdx, layout, zoom]);
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm text-[var(--text-tertiary)]">
-          Cadena de custodia de <strong className="text-[var(--text-secondary)]">{period.label}</strong>: GTF de ingreso → corrida → despacho. Tocá un nodo para fijar de dónde salió y a dónde fue; la barra de cada línea es la parte con respaldo documental.
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
+      <VistaHeader
+        titulo="Cadena de custodia"
+        meta={ctpPeriodShortLabel(period)}
+        hint="GTF de ingreso → corrida → despacho. Tocá un nodo para fijar de dónde salió y a dónde fue; la barra de cada línea es la parte con respaldo documental."
+      >
           {g && !isEmpty && (
             <>
               <button type="button" onClick={exportarCsv} title="Planilla con el saldo de cada línea y el volumen de cada eslabón" className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
@@ -464,8 +510,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
           <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
           </button>
-        </div>
-      </div>
+      </VistaHeader>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
       {loading && !g && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Dibujando la cadena…</p></div>}
@@ -475,30 +520,36 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
         <>
           {/* Los dos números que un fiscalizador lee primero: cuánta salida traza
               hasta su GTF, y cuánto de lo que entró ya pasó por producción. */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            {a.totales.trazabilidadPct != null && (
-              <Medidor
-                pct={a.totales.trazabilidadPct}
-                titulo="Trazabilidad de la cadena"
-                detalle={`${a.totales.despachosCompletos} de ${g.despachos.length} despachos trazan hasta su GTF de ingreso`}
-              />
-            )}
-            {a.totales.consumoPct != null && (
-              <Medidor
-                pct={a.totales.consumoPct}
-                titulo="Materia prima consumida"
-                detalle={`${fmtNum(a.totales.consumidoM3)} de ${fmtNum(a.totales.ingresoM3)} m³ entraron a producción${a.totales.stockSinConsumirM3 > 0 ? ` · ${fmtNum(a.totales.stockSinConsumirM3)} m³ en patio` : ""}`}
-                neutro
-              />
-            )}
-          </div>
+          {/* Salud de la cadena en UNA tira: los dos porcentajes que lee un
+              fiscalizador y los cuatro conteos accionables. Antes eran dos
+              filas de tarjetas (≈250px) para seis cifras. */}
+          <div className="space-y-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {a.totales.trazabilidadPct != null && (
+                <Medidor
+                  pct={a.totales.trazabilidadPct}
+                  titulo="Trazabilidad"
+                  detalle={`${a.totales.despachosCompletos} de ${g.despachos.length} despachos llegan a su GTF`}
+                />
+              )}
+              {a.totales.consumoPct != null && (
+                <Medidor
+                  pct={a.totales.consumoPct}
+                  titulo="Materia prima consumida"
+                  detalle={`${fmtNum(a.totales.consumidoM3)} de ${fmtNum(a.totales.ingresoM3)} m³${a.totales.stockSinConsumirM3 > 0 ? ` · ${fmtNum(a.totales.stockSinConsumirM3)} en patio` : ""}`}
+                  neutro
+                />
+              )}
+            </div>
 
-          {/* Resumen de salud de la cadena — cada ficha es además un filtro. */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <SummaryChip icon={CheckCircle2} tone="success" value={a.totales.despachosCompletos} label="Despachos con cadena completa" />
-            <SummaryChip icon={AlertTriangle} tone="warning" value={a.totales.despachosHueco + a.totales.corridasHuerfanas} label="Eslabones sin origen" onClick={() => toggleFoco("huecos")} activo={foco === "huecos"} />
-            <SummaryChip icon={Boxes} tone="info" value={a.totales.despachosParciales} label="Despachos a medio atribuir" onClick={() => toggleFoco("parciales")} activo={foco === "parciales"} />
-            <SummaryChip icon={ShieldAlert} tone="danger" value={a.totales.citesCount} label="Ingresos CITES" onClick={() => toggleFoco("cites")} activo={foco === "cites"} />
+            {/* Píldoras, no tarjetas: cuatro tarjetas con ícono de 40px son 190px
+                de alto para cuatro números. Cada una filtra el grafo al tocarla. */}
+            <div className="flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] pt-2.5">
+              <SummaryChip pill icon={CheckCircle2} tone="success" value={a.totales.despachosCompletos} label="con cadena completa" />
+              <SummaryChip pill icon={AlertTriangle} tone="warning" value={a.totales.despachosHueco + a.totales.corridasHuerfanas} label="sin origen" onClick={() => toggleFoco("huecos")} activo={foco === "huecos"} />
+              <SummaryChip pill icon={Boxes} tone="info" value={a.totales.despachosParciales} label="a medio atribuir" onClick={() => toggleFoco("parciales")} activo={foco === "parciales"} />
+              <SummaryChip pill icon={ShieldAlert} tone="danger" value={a.totales.citesCount} label="ingresos CITES" onClick={() => toggleFoco("cites")} activo={foco === "cites"} />
+            </div>
           </div>
 
           {/* Tres lecturas del mismo período. Apiladas serían tres pantallas de
@@ -616,6 +667,24 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                 </span>
               )}
 
+              {/* Recorrer los eslabones sin cerrar de a uno: los fija y trae la
+                  vista hasta ellos. Buscarlos a ojo en una cadena larga es el
+                  trabajo lento del cierre de mes. */}
+              {idsConProblema.length > 0 && (
+                <button
+                  type="button"
+                  onClick={irAlSiguienteHueco}
+                  title="Fijar el siguiente eslabón sin cerrar y traer la vista hasta él"
+                  className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 text-xs font-bold text-[var(--data-warning-700)] transition hover:brightness-105 dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+                >
+                  <Locate className="h-3.5 w-3.5" />
+                  Ir al hueco
+                  <span className="font-mono tabular-nums">
+                    {(huecoIdx % idsConProblema.length) + 1}/{idsConProblema.length}
+                  </span>
+                </button>
+              )}
+
               {/* Orden de las columnas: por línea del libro, por urgencia o por tamaño. */}
               <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
                 <span className="flex h-full items-center gap-1.5 border-r-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)]">
@@ -638,6 +707,9 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                 </button>
                 <button type="button" title="Restablecer el tamaño" onClick={() => setZoom(1)} className="h-full border-x-2 border-[var(--rule-base)] px-2 font-mono text-xs font-bold tabular-nums text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                   {Math.round(zoom * 100)}%
+                </button>
+                <button type="button" title="Ajustar: que la cadena entre entera en la pantalla" aria-label="Ajustar al ancho" onClick={ajustarAlAncho} className="flex h-full w-9 items-center justify-center border-r-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+                  <Maximize2 className="h-4 w-4" />
                 </button>
                 <button type="button" title="Acercar" aria-label="Acercar" onClick={() => setZoom((z) => Math.min(ZOOM_MAX, Number((z + 0.15).toFixed(2))))} disabled={zoom >= ZOOM_MAX} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
                   <ZoomIn className="h-4 w-4" />
@@ -722,7 +794,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               Deslizá para ver toda la cadena <span aria-hidden>→</span> · tocá un nodo para el detalle
             </p>
             <div className="relative">
-            <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)]">
+            <div ref={lienzoRef} className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)]">
               {/* Click en el fondo = soltar el pin. */}
               <svg
                 viewBox={`0 0 ${layout.W} ${layout.H}`} width={layout.W * zoom} className="max-w-none" style={{ minWidth: zoom >= 1 ? "100%" : undefined }}
@@ -804,15 +876,15 @@ function Medidor({ pct, titulo, detalle, neutro }: { pct: number; titulo: string
   return (
     // La barra va debajo y a todo el ancho: al costado del texto el `flex-1`
     // colapsaba a un guioncito y la proporción dejaba de leerse.
-    <div className="space-y-3 rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-4">
-      <div className="flex items-center gap-3">
-        <span className={`font-mono text-4xl font-extrabold tabular-nums leading-none ${tono.texto}`}>{pct}%</span>
-        <div className="min-w-0 text-sm">
-          <p className="font-bold text-[var(--text-primary)]">{titulo}</p>
-          <p className="text-[var(--text-tertiary)]">{detalle}</p>
+    <div className="space-y-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
+      <div className="flex items-baseline gap-2">
+        <span className={`font-mono text-2xl font-extrabold tabular-nums leading-none ${tono.texto}`}>{pct}%</span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-[var(--text-primary)]">{titulo}</p>
+          <p className="text-xs text-[var(--text-tertiary)]">{detalle}</p>
         </div>
       </div>
-      <div className="h-2.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]" role="img" aria-label={`${pct}% — ${titulo}`}>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--rule-base)]" role="img" aria-label={`${pct}% — ${titulo}`}>
         <div className={`h-full rounded-full transition-[width] duration-[var(--dur-slow)] ${tono.barra}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
