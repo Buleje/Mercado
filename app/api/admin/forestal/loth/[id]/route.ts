@@ -4,7 +4,6 @@ import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
-import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { lothErrorResponse } from "@/lib/forestal/loth-api-errors";
 
@@ -89,7 +88,8 @@ export const DELETE = withApiHandler("forestal-loth-id-delete", async (
     await ForestLothDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
     return NextResponse.json({ ok: true });
   } catch (err) {
-    logger.error("[loth.DELETE] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Igual que el PATCH: los invariantes del libro (período cerrado, cadena
+    // rota) tienen que llegar con su motivo, no como "error interno".
+    return lothErrorResponse(err, "loth.DELETE", auth.tenantId);
   }
 });

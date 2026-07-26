@@ -713,6 +713,21 @@ export class ForestLothDB {
   /** Soft delete (solo errores de captura del sistema, no subsanación normativa). */
   static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
+
+    // P1 (cierre de período): borrar una línea de un mes cerrado altera el acta
+    // igual que anularla. `create` y `annul` ya lo validaban; esto quedó afuera.
+    const previa = await prisma.forestLothEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
+    if (previa) {
+      const cerradoDel = await ForestLothCierreDB.closedPeriodOf(tenantId, previa.entryDate);
+      if (cerradoDel) {
+        throw new LothInvariantError(
+          `El período ${cerradoDel.label} está cerrado: no se puede borrar una línea de un mes cerrado. Reabrilo primero.`,
+          "PERIODO_CERRADO",
+          { periodKey: cerradoDel.periodKey },
+        );
+      }
+    }
+
     const entry = await prisma.forestLothEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestLothEntryWhereUniqueInput,
       data: { deletedAt: new Date() },
