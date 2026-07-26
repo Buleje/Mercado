@@ -184,7 +184,35 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[900px]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[900px]"
+      footer={
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="cacao-venta-form"
+            disabled={!isValid || excedeLote || submitting}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Guardando
+              </>
+            ) : (
+              "Registrar venta"
+            )}
+          </button>
+        </div>
+      }
+    >
       <div className="flex h-full max-h-[90vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
@@ -390,7 +418,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                 </label>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <Field label="Variedad">
                   <select
                     value={variedad}
@@ -515,31 +543,6 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
           </div>
         </div>
 
-        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            form="cacao-venta-form"
-            disabled={!isValid || excedeLote || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Guardando
-              </>
-            ) : (
-              "Registrar venta"
-            )}
-          </button>
-        </footer>
       </div>
     </AdminModal>
   );

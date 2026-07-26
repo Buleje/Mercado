@@ -212,7 +212,79 @@ export default function CacaoProducerDrawer({
 
   return (
     <>
-    <AdminModal open onClose={onClose} variant="side" hideCloseButton className="!max-w-[480px]">
+    <AdminModal open onClose={onClose} variant="side" hideCloseButton className="!max-w-[480px]"
+      footer={
+        producer && !loading ? (
+        <div className="flex items-center justify-between gap-2 px-5 py-3.5">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => patch({ status: inactive ? "activo" : "inactivo" })}
+              className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3.5 text-sm font-bold ${inactive ? "border-[var(--data-success-500)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+            >
+              <Power className="h-4 w-4" /> {inactive ? "Activar" : "Desactivar"}
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!producer || !agg}
+                onClick={() => {
+                  if (!producer || !agg) return;
+                  const t = [
+                    `*Estado de cuenta — ${producer.nombre}*`,
+                    `Kg comprados: ${n2(agg.totalKg)} kg`,
+                    `A pagar: S/ ${n2(agg.totalPagado)}`,
+                    `Pagado: S/ ${n2(agg.montoPagado)}`,
+                    `Saldo: S/ ${n2(agg.saldo)}`,
+                    `Lotes: ${agg.loteCount}`,
+                  ].join("\n");
+                  shareCacaoText(`Estado de cuenta — ${producer.nombre}`, t);
+                }}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Compartir
+              </button>
+              <button
+                type="button"
+                disabled={lotes.length === 0}
+                onClick={() =>
+                  producer &&
+                  printCacaoLiquidacion(
+                    {
+                      nombre: producer.nombre,
+                      codigo: producer.codigo,
+                      dni: producer.dni,
+                      sector: producer.sector,
+                    },
+                    lotes.map((l) => ({
+                      loteCode: l.loteCode,
+                      fecha: l.fecha,
+                      variedad: l.variedad,
+                      pesoKg: l.pesoKg,
+                      grado: l.grado,
+                      humedadPct: l.humedadPct,
+                      totalPagado: l.totalPagado,
+                    })),
+                  )
+                }
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                <Printer className="h-4 w-4" />
+                Liquidación
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              >
+                Cerrar
+              </button>
+            </div>
+        </div>
+        ) : undefined
+      }
+    >
       <div className="flex h-full max-h-screen flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
@@ -553,76 +625,6 @@ export default function CacaoProducerDrawer({
             </>
           )}
         </div>
-
-        {producer && !loading && (
-          <footer className="flex shrink-0 items-center justify-between gap-2 border-t border-[var(--rule-base)] px-5 py-3.5">
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => patch({ status: inactive ? "activo" : "inactivo" })}
-              className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3.5 text-sm font-bold ${inactive ? "border-[var(--data-success-500)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
-            >
-              <Power className="h-4 w-4" /> {inactive ? "Activar" : "Desactivar"}
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={!producer || !agg}
-                onClick={() => {
-                  if (!producer || !agg) return;
-                  const t = [
-                    `*Estado de cuenta — ${producer.nombre}*`,
-                    `Kg comprados: ${n2(agg.totalKg)} kg`,
-                    `A pagar: S/ ${n2(agg.totalPagado)}`,
-                    `Pagado: S/ ${n2(agg.montoPagado)}`,
-                    `Saldo: S/ ${n2(agg.saldo)}`,
-                    `Lotes: ${agg.loteCount}`,
-                  ].join("\n");
-                  shareCacaoText(`Estado de cuenta — ${producer.nombre}`, t);
-                }}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Compartir
-              </button>
-              <button
-                type="button"
-                disabled={lotes.length === 0}
-                onClick={() =>
-                  producer &&
-                  printCacaoLiquidacion(
-                    {
-                      nombre: producer.nombre,
-                      codigo: producer.codigo,
-                      dni: producer.dni,
-                      sector: producer.sector,
-                    },
-                    lotes.map((l) => ({
-                      loteCode: l.loteCode,
-                      fecha: l.fecha,
-                      variedad: l.variedad,
-                      pesoKg: l.pesoKg,
-                      grado: l.grado,
-                      humedadPct: l.humedadPct,
-                      totalPagado: l.totalPagado,
-                    })),
-                  )
-                }
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-              >
-                <Printer className="h-4 w-4" />
-                Liquidación
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-              >
-                Cerrar
-              </button>
-            </div>
-          </footer>
-        )}
       </div>
     </AdminModal>
 

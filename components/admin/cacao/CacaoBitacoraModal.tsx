@@ -118,7 +118,19 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="centered-sm" hideCloseButton>
+    <AdminModal open onClose={onClose} variant="centered-sm" hideCloseButton
+      footer={
+        <div className="flex items-center justify-end px-5 py-3.5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+          >
+            Cerrar
+          </button>
+        </div>
+      }
+    >
       <div className="flex max-h-[88vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
@@ -296,15 +308,6 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
           </form>
         </div>
 
-        <footer className="flex shrink-0 items-center justify-end border-t border-[var(--rule-base)] px-5 py-3.5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-          >
-            Cerrar
-          </button>
-        </footer>
       </div>
     </AdminModal>
   );

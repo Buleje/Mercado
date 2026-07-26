@@ -177,7 +177,46 @@ export default function CacaoLoteDrawer({
   const hasCut = lote && cut.some((c) => c.v != null && c.v !== "");
 
   return (
-    <AdminModal open onClose={onClose} variant="side" hideCloseButton className="!max-w-[480px]">
+    <AdminModal open onClose={onClose} variant="side" hideCloseButton className="!max-w-[480px]"
+      footer={
+        lote && !loading ? (
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            >
+              Cerrar
+            </button>
+            {(() => {
+              if (!productorTel) return null;
+              const digits = productorTel.replace(/\D/g, "");
+              const intl = digits.length === 9 ? `51${digits}` : digits;
+              const grado = lote.grado ? (GRADO_LABEL[lote.grado as CacaoGrado] ?? "") : "";
+              const msg = `Hola ${lote.productorNombre ?? ""}, registramos tu lote ${lote.loteCode}: ${n2(lote.pesoKg)} kg${grado ? `, ${grado}` : ""}${lote.totalPagado ? `. Te pagamos S/ ${n2(lote.totalPagado)}` : ""}. ¡Gracias por tu cacao!`;
+              return (
+                <a
+                  href={`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:opacity-90"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </a>
+              );
+            })()}
+            <button
+              type="button"
+              onClick={() => printCacaoRecibo(lote, acopiador)}
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90"
+            >
+              <Printer className="h-4 w-4" /> Recibo
+            </button>
+        </div>
+        ) : undefined
+      }
+    >
       <div className="flex h-full max-h-screen flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
@@ -448,43 +487,6 @@ export default function CacaoLoteDrawer({
             </>
           )}
         </div>
-
-        {lote && !loading && (
-          <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-            >
-              Cerrar
-            </button>
-            {(() => {
-              if (!productorTel) return null;
-              const digits = productorTel.replace(/\D/g, "");
-              const intl = digits.length === 9 ? `51${digits}` : digits;
-              const grado = lote.grado ? (GRADO_LABEL[lote.grado as CacaoGrado] ?? "") : "";
-              const msg = `Hola ${lote.productorNombre ?? ""}, registramos tu lote ${lote.loteCode}: ${n2(lote.pesoKg)} kg${grado ? `, ${grado}` : ""}${lote.totalPagado ? `. Te pagamos S/ ${n2(lote.totalPagado)}` : ""}. ¡Gracias por tu cacao!`;
-              return (
-                <a
-                  href={`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:opacity-90"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </a>
-              );
-            })()}
-            <button
-              type="button"
-              onClick={() => printCacaoRecibo(lote, acopiador)}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90"
-            >
-              <Printer className="h-4 w-4" /> Recibo
-            </button>
-          </footer>
-        )}
       </div>
     </AdminModal>
   );

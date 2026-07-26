@@ -58,7 +58,14 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[860px]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[860px]"
+      footer={
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5">
+          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="submit" form="cacao-producer-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar productor"}</button>
+        </div>
+      }
+    >
       <div className="flex h-full max-h-[90vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
@@ -169,10 +176,6 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
           </div>
         </div>
 
-        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5">
-          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" form="cacao-producer-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar productor"}</button>
-        </footer>
       </div>
     </AdminModal>
   );

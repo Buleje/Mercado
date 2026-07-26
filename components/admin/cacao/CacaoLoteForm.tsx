@@ -458,7 +458,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <Field label="Variedad">
                     <select
                       value={variedad}
