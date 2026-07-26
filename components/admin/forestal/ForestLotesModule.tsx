@@ -13,7 +13,7 @@ import {
   Layers, Plus, RefreshCw, Search, PackageCheck, Boxes, Truck, Tag,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
-import LibroChrome from "./libro-chrome";
+import LibroChrome from "@/components/admin/shared/libro-chrome";
 import { useDebounce } from "@/hooks/use-debounce";
 import LoteForm from "./LoteForm";
 import LoteDetailModal from "./LoteDetailModal";

@@ -33,7 +33,7 @@ import {
   Coins,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
-import LibroChrome, { type LibroAction, type LibroGroup } from "./libro-chrome";
+import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { IconAction } from "./ctp-shared";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";

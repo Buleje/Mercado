@@ -41,7 +41,7 @@ import {
   Truck,
   Upload,
 } from "@buleje/design-system/icons";
-import LibroChrome, { type LibroAction, type LibroGroup } from "./libro-chrome";
+import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
 import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";

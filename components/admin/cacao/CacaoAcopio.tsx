@@ -24,9 +24,12 @@ import {
   ArrowDown,
   ArrowUpDown,
   Trees,
+  Ban,
 } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import LibroChrome, { type LibroAction } from "@/components/admin/shared/libro-chrome";
+import { IconAction, TablaSkeleton } from "@/components/admin/shared/module-primitives";
+import CacaoLoteCardMobile from "./CacaoLoteCardMobile";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -181,6 +184,9 @@ export default function CacaoAcopio() {
     url.searchParams.set(CACAO_VIEW_PARAM, v);
     window.history.replaceState(null, "", url.toString());
   }, []);
+
+  /** La cabina navega con strings; acá se valida contra las vistas reales. */
+  const irA = useCallback((v: string) => { if (isCacaoView(v)) selectView(v); }, [selectView]);
 
   // Deep-link inicial: leer ?cacaoView= tras montar (evita hydration mismatch).
   // El sidebar del admin navega a una sub-vista disparando el evento cacao:navigate.
@@ -350,68 +356,54 @@ export default function CacaoAcopio() {
   }
   const activeFilters = [fVariedad, fGrado, fFrom, fTo].filter(Boolean).length;
 
+  /** Lo que se baja una vez por campaña: plegado, no ocupando la cabecera. */
+  const acciones: LibroAction[] = [
+    {
+      id: "csv",
+      label: "Exportar lotes (CSV)",
+      hint: "Los lotes del filtro actual, con calidad y liquidación",
+      icon: Download,
+      disabled: lotes.length === 0,
+      onSelect: exportCsv,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Agrícola · Especialización"
-        title="Acopio & Beneficio de Cacao"
-        description="Libro de acopio de cacao en grano: productores, lotes, calidad (prueba de corte + humedad NTP-ISO) y liquidación al productor. Alineado a NTP 208.040."
-        icon={Leaf}
-      >
-        <CacaoAlertsBell onNavigate={selectView} />
-        {view === "acopio" && (
+    <LibroChrome
+      moduleId="cacao-acopio"
+      eyebrow="Agrícola · NTP 208.040"
+      title="Acopio & Beneficio de Cacao"
+      icon={Leaf}
+      groups={CACAO_VIEW_GROUPS}
+      view={view}
+      onView={irA}
+      status={<CacaoAlertsBell onNavigate={selectView} />}
+      tools={
+        view === "acopio" ? (
           <>
             <button
               type="button"
               onClick={() => load(view)}
               disabled={loading}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
               aria-label="Recargar"
+              title="Recargar los lotes"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              <span>Recargar</span>
             </button>
             <button
               type="button"
               onClick={() => setShowLote(true)}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-4 w-4" />
               Nuevo lote
             </button>
           </>
-        )}
-      </AdminModuleHeader>
-
-      {/* Sub-nav agrupado en 3 familias (Operación · Gestión · Inteligencia) para
-          no acumular 8 pestañas planas en una sola. En pantalla chica cada grupo
-          ocupa su fila y las pills crecen parejas (filas justificadas, sin borde
-          derecho irregular). */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b-2 border-[var(--rule-soft)] pb-3 max-sm:gap-y-2">
-        {CACAO_VIEW_GROUPS.map((group, gi) => (
-          <div key={group.id} className="flex items-center gap-1.5 max-sm:w-full max-sm:flex-wrap">
-            {gi > 0 && (
-              <span className="mr-2.5 hidden h-6 w-px bg-[var(--rule-base)] sm:block" aria-hidden />
-            )}
-            {group.views.map((v) => {
-              const Icon = v.icon;
-              const active = view === v.key;
-              return (
-                <button
-                  key={v.key}
-                  type="button"
-                  onClick={() => selectView(v.key)}
-                  title={v.hint}
-                  className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-bold transition max-sm:grow max-sm:justify-center max-sm:px-2 ${active ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"}`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{v.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+        ) : undefined
+      }
+      actions={acciones}
+    >
 
       {error && (
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
@@ -597,7 +589,10 @@ export default function CacaoAcopio() {
               })}
             </div>
           )}
-          <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          {/* Desktop: tabla. Móvil: cards a medida (abajo) — la conversión
+              automática `.admin-mobile-cards` dejaba tarjetas de 120px de ancho
+              con la fecha partida en tres líneas. */}
+          <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
             <table className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
@@ -688,31 +683,30 @@ export default function CacaoAcopio() {
                         {annul ? (
                           <span className="text-xs text-[var(--text-tertiary)]">—</span>
                         ) : (
-                          <div className="flex items-center justify-end gap-2">
+                          // Íconos: la columna de acciones no debe pesar más que
+                          // las ocho de datos (mismo criterio que los libros).
+                          <div className="flex items-center justify-end gap-1">
                             {tienePendiente(l) && (
-                              <button
-                                type="button"
+                              <IconAction
+                                icon={Wallet}
+                                tone="success"
+                                label={`Pagar al productor (debe S/ ${n2(saldoDe(l))})`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   openPay(l);
                                 }}
-                                className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-xs font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
-                              >
-                                <Wallet className="h-3.5 w-3.5" />
-                                Pagar
-                              </button>
+                              />
                             )}
-                            <button
-                              type="button"
+                            <IconAction
+                              icon={Ban}
+                              tone="danger"
+                              label="Anular el lote (queda visible con su motivo)"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setAnnulId(l.id);
                                 setAnnulReason("");
                               }}
-                              className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
-                            >
-                              Anular
-                            </button>
+                            />
                           </div>
                         )}
                       </Td>
@@ -751,6 +745,42 @@ export default function CacaoAcopio() {
                 </tfoot>
               )}
             </table>
+          </div>
+
+          {/* Móvil: una card por lote (dual-render del DS). */}
+          {rows.length > 0 && (
+            <div className="space-y-3 sm:hidden">
+              {rows.map((l) => (
+                <CacaoLoteCardMobile
+                  key={l.id}
+                  lote={l}
+                  fecha={fdate(l.fecha)}
+                  peso={n2(l.pesoKg)}
+                  saldo={l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
+                  pendiente={tienePendiente(l)}
+                  gradoBadge={<GradoBadge grado={l.grado} />}
+                  pagoBadge={l.totalPagado ? <PagoBadge estado={l.estadoPago} saldo={saldoDe(l)} /> : null}
+                  onOpen={() => setLoteDrawerId(l.id)}
+                  onPagar={() => openPay(l)}
+                  onAnular={() => { setAnnulId(l.id); setAnnulReason(""); }}
+                />
+              ))}
+              {/* El total también en móvil: es el número con el que se cierra el día. */}
+              <p className="flex items-center justify-between rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm">
+                <span className="font-bold text-[var(--text-secondary)]">Total · {rows.length} lote{rows.length === 1 ? "" : "s"}</span>
+                <span className="text-right">
+                  <b className="block font-mono tabular-nums text-[var(--text-primary)]">{n2(rowTotals.kg)} kg · S/ {n2(rowTotals.liquidacion)}</b>
+                  {rowTotals.saldo > 0 && (
+                    <span className="block text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                      S/ {n2(rowTotals.saldo)} por pagar
+                    </span>
+                  )}
+                </span>
+              </p>
+            </div>
+          )}
+
+          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] empty:hidden">
             <EmptyOrLoading
               loading={loading}
               empty={rows.length === 0}
@@ -980,7 +1010,7 @@ export default function CacaoAcopio() {
             </AdminModal>
           );
         })()}
-    </div>
+    </LibroChrome>
   );
 }
 
@@ -1100,13 +1130,9 @@ function EmptyOrLoading({
   cta?: { label: string; onClick: () => void };
   searchActive?: boolean;
 }) {
-  if (loading)
-    return (
-      <div className="p-8 text-center text-[var(--text-tertiary)]">
-        <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
-        <p className="mt-2 text-sm">Cargando…</p>
-      </div>
-    );
+  // Silueta de lo que viene, no un spinner con "Cargando…": el ojo ya sabe
+  // dónde va a aparecer cada dato y la vista no salta al llegar.
+  if (loading) return <TablaSkeleton filas={4} columnas={7} />;
   if (!empty) return null;
   if (searchActive)
     return (

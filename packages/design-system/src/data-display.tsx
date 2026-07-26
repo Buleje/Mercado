@@ -195,7 +195,10 @@ export function StatCard({
         <div className="flex-1 min-w-0">
           <Kicker>{label}</Kicker>
           <div
-            className="mt-2 text-[length:var(--ts-2xl)] font-extrabold tabular-nums leading-[var(--lh-tight)]"
+            // En 390px una grilla de 2 columnas deja ~165px por card: "S/ 1520.00"
+            // a --ts-2xl no entra y se cortaba a "S/". Un escalón menos en móvil
+            // lo mete completo; de `sm` para arriba nada cambia.
+            className="mt-2 text-[length:var(--ts-xl)] font-extrabold tabular-nums leading-[var(--lh-tight)] sm:text-[length:var(--ts-2xl)]"
             style={{ color: EMPHASIS_ACCENT[emphasis] }}
           >
             {value}

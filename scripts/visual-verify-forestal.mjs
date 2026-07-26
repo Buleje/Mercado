@@ -18,6 +18,8 @@ const THEME = process.env.THEME || "light";
 const MOBILE = process.env.MOBILE === "1";
 const TAB = process.env.TAB || "ctp-libro-operaciones";
 const STORE_KEY = process.env.STORE_KEY || "admin-last-tab-ctp-libro";
+/** Módulos que deep-linkean la vista por query (ej. cacao: ?cacaoView=beneficio). */
+const VIEW_PARAM = process.env.VIEW_PARAM || "";
 
 async function main() {
   await mkdir(OUT, { recursive: true });
@@ -52,8 +54,12 @@ async function main() {
       headers: { "content-type": "application/json", "x-tenant-id": SLUG },
       data: { username: "qaadmin", password: "Qa-admin-1234", tenantSlug: SLUG },
     });
-    await page.addInitScript((a) => { try { localStorage.setItem(a.k, a.v); } catch {} }, { k: STORE_KEY, v: view });
-    await page.goto(`${BASE}/admin?tab=${TAB}`, { waitUntil: "domcontentloaded", timeout: 120000 });
+    if (VIEW_PARAM) {
+      await page.goto(`${BASE}/admin?tab=${TAB}&${VIEW_PARAM}=${view}`, { waitUntil: "domcontentloaded", timeout: 120000 });
+    } else {
+      await page.addInitScript((a) => { try { localStorage.setItem(a.k, a.v); } catch {} }, { k: STORE_KEY, v: view });
+      await page.goto(`${BASE}/admin?tab=${TAB}`, { waitUntil: "domcontentloaded", timeout: 120000 });
+    }
     await page.waitForTimeout(view === VIEWS[0] ? 9000 : 4500);
     if (THEME === "dark") {
       await page.evaluate(() => { document.documentElement.classList.add("dark"); document.documentElement.setAttribute("data-theme", "dark"); });

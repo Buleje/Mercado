@@ -9,7 +9,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3 } from "@buleje/design-system/icons";
-import LibroChrome, { type LibroGroup } from "./libro-chrome";
+import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 
 const cargando = (
   <div className="flex h-64 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]">

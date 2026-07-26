@@ -15,6 +15,7 @@ import {
 import CacaoPreciosRegionales from "./CacaoPreciosRegionales";
 // Tabla de conversión día a día (sin recharts → eager, liviano)
 import CacaoTablaConversion from "./CacaoTablaConversion";
+import { VistaHeader } from "@/components/admin/shared/module-primitives";
 // Pulso del mercado: intradía + stats multi-horizonte (sin recharts → eager)
 import CacaoMarketPulse, { type LecturaSesion } from "./CacaoMarketPulse";
 import { computeMarketStats, buildLecturas } from "@/lib/cacao/cacao-lecturas";
@@ -178,29 +179,26 @@ export default function CacaoNoticiero() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">Agrícola · Mercado</p>
-          <SectionTitle className="mt-0.5 flex items-center gap-2">
-            Mercado del cacao
-            {p &&
-              (data?.stale ? (
-                <span
-                  title={data.staleAt ? `Último dato: ${relTime(data.staleAt)}` : "Fuente no disponible"}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-700)]"
-                >
-                  <AlertCircle className="h-3 w-3" /> Desactualizado
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-700)]">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--data-success-600)]" /> En vivo
-                </span>
-              ))}
-          </SectionTitle>
-          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Precio internacional, conversión a soles y noticias. Datos: ICE (Yahoo Finance) + Google Noticias{p ? ` · ${relTime(p.asOf) || "recién"}` : ""}.
-          </p>
-        </div>
+      {/* La identidad del módulo la da la cabina: acá basta el nombre de la
+          vista, el estado del dato y cuándo se leyó — el resto, en el tooltip. */}
+      <VistaHeader
+        titulo="Mercado del cacao"
+        meta={p ? relTime(p.asOf) || "recién" : undefined}
+        hint="Precio internacional, conversión a soles y noticias. Datos: ICE (Yahoo Finance) + Google Noticias."
+      >
+        {p &&
+          (data?.stale ? (
+            <span
+              title={data.staleAt ? `Último dato: ${relTime(data.staleAt)}` : "Fuente no disponible"}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-700)]"
+            >
+              <AlertCircle className="h-3 w-3" /> Desactualizado
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--data-success-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-success-700)]">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--data-success-600)]" /> En vivo
+            </span>
+          ))}
         <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
@@ -214,7 +212,7 @@ export default function CacaoNoticiero() {
           </button>
           <button type="button" onClick={refreshNow} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
         </div>
-      </div>
+      </VistaHeader>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo cargar el mercado:</strong> {error}</div></div>}
 
