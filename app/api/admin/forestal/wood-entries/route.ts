@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
@@ -221,13 +222,9 @@ export const POST = withApiHandler("forestal-wood-entries-post", async (req: Nex
     });
     return NextResponse.json({ entry }, { status: 201 });
   } catch (err) {
-    logger.error("[wood-entries.POST] failed", {
-      error: String(err),
-      tenantId: auth.tenantId,
-    });
-    return NextResponse.json(
-      { error: "internal_error" },
-      { status: 500 },
-    );
+    // Los invariantes del libro (período cerrado, GTF duplicada) llegan como
+    // CtpInvariantError: con un 500 el operario veía "error interno" al cargar
+    // un ingreso con fecha de un mes ya cerrado.
+    return ctpErrorResponse(err, "wood-entries.POST", auth.tenantId);
   }
 });

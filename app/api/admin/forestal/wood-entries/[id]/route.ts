@@ -5,6 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
+import { ctpErrorResponse } from "@/lib/forestal/ctp-api-errors";
 import { withApiHandler } from "@/lib/api-handler";
 
 /**
@@ -120,9 +121,7 @@ export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req
     if (parsed.data.action === "annul") {
       return NextResponse.json({ error: "annul_blocked", message: err instanceof Error ? err.message : "No se pudo anular el ingreso." }, { status: 422 });
     }
-    return NextResponse.json(
-      { error: "internal_error" },
-      { status: 500 },
-    );
+    // Editar un ingreso de un mes cerrado también es un invariante, no un bug.
+    return ctpErrorResponse(err, "wood-entries.PATCH", auth.tenantId);
   }
 });
