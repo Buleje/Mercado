@@ -57,6 +57,7 @@ import CtpPlantaView from "./CtpPlantaView";
 import CtpAsistente from "./CtpAsistente";
 import CtpAnalisis from "./CtpAnalisis";
 import CtpHealthChip from "./CtpHealthChip";
+import CtpPendientes from "./CtpPendientes";
 import { CTP_INGRESAR_GTF_KEY, CTP_MODULE_TAB_ID } from "./ctp-shared";
 
 type CtpView = "ingresos" | "produccion" | "despacho" | "radar" | "planta" | "saldos" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "ficha";
@@ -236,6 +237,12 @@ export default function CTPLibroOperaciones() {
           ) : undefined
         }
       >
+        {/* Lo que falta hacer, antes de la vista: el Libro tiene 12 pestañas y
+            la respuesta a "¿qué me falta?" estaba repartida entre todas. */}
+        <div className="mt-6">
+          <CtpPendientes period={period} onIr={(v) => setView(v as CtpView)} />
+        </div>
+
         <div className="mt-6">
           {view === "ingresos" && (
             <CtpIngresosView
