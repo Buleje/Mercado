@@ -8,7 +8,7 @@
  * RECALCULAN desde las piezas — lo que manda el cliente no se cree.
  */
 import type { PiezaCubicada } from "./cubicacion";
-import { construirAnexo04, type DatosAnexo04, type UnidadVolumen } from "./anexo04-serfor";
+import { construirAnexo04, siguienteCorrelativo, type DatosAnexo04, type UnidadVolumen } from "./anexo04-serfor";
 
 export interface AnexoEmitido {
   id: string;
@@ -98,6 +98,25 @@ export function filtrarEmisiones(lista: AnexoEmitido[], termino: string): AnexoE
     [a.numero, a.gtf, a.firmante, a.empresa, a.fecha, a.observaciones]
       .some((campo) => (campo ?? "").toLowerCase().includes(t)),
   );
+}
+
+/**
+ * Primer correlativo LIBRE a partir de `base`: el que no esté usado por otra
+ * GTF. Es lo que se le ofrece al operario cuando el N° que tiene cargado choca
+ * con un anexo ya emitido — corregirlo a mano invita a inventar un número.
+ */
+export function siguienteLibre(base: string, emitidos: AnexoEmitido[], gtf: string): string {
+  const propia = gtf.trim().toLowerCase();
+  const usado = (n: string) =>
+    emitidos.some((a) => a.numero.trim().toLowerCase() === n.trim().toLowerCase() && a.gtf.trim().toLowerCase() !== propia);
+  let candidato = base;
+  // Tope duro: un correlativo sin dígitos no avanza nunca (devuelve el mismo).
+  for (let i = 0; i < 500 && usado(candidato); i++) {
+    const sig = siguienteCorrelativo(candidato);
+    if (sig === candidato) break;
+    candidato = sig;
+  }
+  return candidato;
 }
 
 /** Meses (AAAA-MM) con emisiones, del más reciente al más viejo. */

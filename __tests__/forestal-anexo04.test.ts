@@ -13,7 +13,7 @@ import {
 import { formulaV } from "@/lib/forestal/anexo04-excel";
 import { validarAnexo04, anexoPresentable } from "@/lib/forestal/anexo04-validacion";
 import {
-  filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes, type AnexoEmitido,
+  filtrarEmisiones, mesesDeEmisiones, emisionesDelMes, etiquetaMes, siguienteLibre, type AnexoEmitido,
 } from "@/lib/forestal/anexo04-registro";
 
 let seq = 0;
@@ -415,5 +415,43 @@ describe("bandeja por mes", () => {
 
   it("etiqueta el mes en español", () => {
     expect(etiquetaMes("2026-07")).toMatch(/julio 2026/i);
+  });
+});
+
+describe("siguienteLibre — el correlativo que sí se puede usar", () => {
+  const e = (numero: string, gtf: string): AnexoEmitido => ({
+    id: numero + gtf, numero, gtf, fecha: "2026-07-25", empresa: "", firmante: "", documento: "",
+    cargo: "", observaciones: "", unidadV: "pt", modo: "oficial", hojas: 1, totalPiezas: 1,
+    totalPt: 1, totalM3: 0.01, piezas: [], createdAt: "2026-07-25T00:00:00Z",
+  });
+
+  it("si el N° está libre lo deja como está", () => {
+    expect(siguienteLibre("2-19-0461363", [], "GTF-1")).toBe("2-19-0461363");
+  });
+
+  it("salta los usados por otras guías hasta encontrar uno libre", () => {
+    const usados = [e("2-19-0461363", "GTF-A"), e("2-19-0461364", "GTF-B")];
+    expect(siguienteLibre("2-19-0461363", usados, "GTF-NUEVA")).toBe("2-19-0461365");
+  });
+
+  it("no se salta el suyo propio (mismo N° en la MISMA guía)", () => {
+    expect(siguienteLibre("2-19-0461363", [e("2-19-0461363", "GTF-A")], "GTF-A")).toBe("2-19-0461363");
+  });
+
+  it("un N° sin dígitos no entra en loop: devuelve el mismo", () => {
+    expect(siguienteLibre("SIN-NUMERO", [e("SIN-NUMERO", "GTF-A")], "GTF-B")).toBe("SIN-NUMERO");
+  });
+
+  it("el aviso de N° repetido trae la sugerencia lista para aplicar", () => {
+    const datos = {
+      numero: "2-19-0461363", gtf: "GTF-NUEVA", empresa: "X", observaciones: "",
+      firmante: "Y", documento: "1", cargo: "Z", unidadV: "pt", modo: "oficial",
+    } as const;
+    const piezas = [pieza(10, 2, 8, 12)];
+    const avisos = validarAnexo04(datos, construirAnexo04(piezas, datos), piezas, {
+      emitidos: [e("2-19-0461363", "GTF-A")],
+    });
+    const dup = avisos.find((a) => a.sugerencia);
+    expect(dup?.sugerencia).toEqual({ campo: "numero", valor: "2-19-0461364", label: "Usar 2-19-0461364" });
   });
 });

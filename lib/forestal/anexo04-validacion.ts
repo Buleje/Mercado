@@ -11,7 +11,7 @@
  */
 import { toInches, toFeet, type PiezaCubicada } from "./cubicacion";
 import type { Anexo04, DatosAnexo04 } from "./anexo04-serfor";
-import { claveEmision, type AnexoEmitido } from "./anexo04-registro";
+import { claveEmision, siguienteLibre, type AnexoEmitido } from "./anexo04-registro";
 
 /** Lo que el despacho del Libro CTP declara amparar con esa GTF. */
 export interface DeclaradoEnLibro {
@@ -41,6 +41,8 @@ export interface AvisoAnexo04 {
   nivel: NivelAviso;
   /** Qué falta o qué llama la atención, en una línea y en criollo. */
   mensaje: string;
+  /** Arreglo de un click, cuando el aviso tiene una respuesta obvia. */
+  sugerencia?: { campo: "numero"; valor: string; label: string };
 }
 
 /** Bloques sin especie identificada (el anexo pide (4) Especie sí o sí). */
@@ -211,9 +213,15 @@ function numeroRepetido(datos: DatosAnexo04, emitidos: AnexoEmitido[]): AvisoAne
   const choque = emitidos.find(
     (a) => a.numero.trim().toLowerCase() === numero && a.gtf.trim().toLowerCase() !== datos.gtf.trim().toLowerCase(),
   );
-  return choque
-    ? [{ nivel: "error", mensaje: `El N° ${datos.numero} ya se usó en la GTF ${choque.gtf || "(sin GTF)"}: usá el siguiente correlativo.` }]
-    : [];
+  if (!choque) return [];
+  const libre = siguienteLibre(datos.numero, emitidos, datos.gtf);
+  return [{
+    nivel: "error",
+    mensaje: `El N° ${datos.numero} ya se usó en la GTF ${choque.gtf || "(sin GTF)"}.`,
+    ...(libre !== datos.numero
+      ? { sugerencia: { campo: "numero" as const, valor: libre, label: `Usar ${libre}` } }
+      : {}),
+  }];
 }
 
 /** ¿Se puede presentar tal como está? (sin errores; los avisos no invalidan). */

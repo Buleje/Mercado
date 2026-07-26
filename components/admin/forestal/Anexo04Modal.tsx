@@ -205,6 +205,13 @@ export default function Anexo04Modal({
             <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
               Lista de productos transformados · {anexo.hojas.length} hoja{anexo.hojas.length === 1 ? "" : "s"} ·{" "}
               {anexo.totalPiezas} piezas · {fmtAnexo(anexo.totalM3)} m³
+              {declarado && declarado.cantidad > 0 && (
+                <span className="ml-1 text-[var(--text-secondary)]">
+                  {" · "}guía: {declarado.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 3 })}{" "}
+                  {declarado.unidad === "m3" ? "m³" : declarado.unidad?.toUpperCase() ?? ""}
+                  {declarado.piezas ? ` · ${declarado.piezas} pzas` : ""}
+                </span>
+              )}
             </p>
           </div>
           <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
@@ -263,7 +270,7 @@ export default function Anexo04Modal({
                 <button type="button" onClick={() => setFactor((f) => Math.min(3, f + 0.25))} aria-label="Acercar" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Plus className="h-3.5 w-3.5" /></button>
               </div>
             </div>
-            <Anexo04Checklist avisos={avisos} presentable={presentable} />
+            <Anexo04Checklist avisos={avisos} presentable={presentable} onSugerencia={(campo, valor) => set({ [campo]: valor })} />
             <style>{ANEXO04_CSS}</style>
             <div className="max-h-[64vh] overflow-auto">
               <div ref={hojasRef} style={{ width: A4_PX * escala }}>
