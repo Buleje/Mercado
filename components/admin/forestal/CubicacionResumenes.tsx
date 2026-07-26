@@ -9,7 +9,7 @@
  * Todo se deriva de las libs puras agruparPor / resumenPorEspecie.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, RefreshCw, Download, PackageOpen } from "@buleje/design-system/icons";
+import { BarChart3, RefreshCw, Download, PackageOpen, Printer } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import {
@@ -18,6 +18,7 @@ import {
 } from "@/lib/forestal/cubicacion-resumen";
 import { analizarLote } from "@/lib/forestal/cubicacion-insights";
 import { BarraComposicion, LecturaDelLote } from "./resumen-vistas";
+import ResumenComparar from "./ResumenComparar";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
 
@@ -71,6 +72,7 @@ function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo }: {
             <th className="px-3 py-2 text-right">m³</th>
             <th className="px-3 py-2 text-right">%</th>
             {conValor && <th className="px-3 py-2 text-right">Valor</th>}
+            {conValor && <th className="px-3 py-2 text-right" title="Lo que rinde cada pie tablar de ese grupo">S/ / PT</th>}
           </tr>
         </thead>
         <tbody>
@@ -84,6 +86,11 @@ function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo }: {
               <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(g.m3)}</td>
               <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{g.pctPt}%</td>
               {conValor && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--accent)]">S/ {soles(g.valor)}</td>}
+              {conValor && (
+                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  {g.pieTablar > 0 ? soles(g.valor / g.pieTablar) : "—"}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -95,6 +102,11 @@ function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo }: {
             <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(total.m3)}</td>
             <td className="px-3 py-2 text-right text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">100%</td>
             {conValor && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(total.valor)}</td>}
+            {conValor && (
+              <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                {total.pieTablar > 0 ? soles(total.valor / total.pieTablar) : "—"}
+              </td>
+            )}
           </tr>
         </tfoot>
       </table>
@@ -120,6 +132,13 @@ export default function CubicacionResumenes() {
   const bloques = useMemo(() => resumenPorEspecie(rows, precioDe), [rows, precioDe]);
   const insights = useMemo(() => analizarLote(rows, precioDe), [rows, precioDe]);
   const total = porEspecie.total;
+
+  /**
+   * Imprimir/PDF: se marca el contenedor y una regla @media print esconde el
+   * resto del admin. Sale por el diálogo del navegador — el mismo que ya genera
+   * los PDF de liquidación — sin sumar otra librería.
+   */
+  const imprimir = () => window.print();
 
   /** CSV de la vista libre (la de especie×tipo tiene su propio export). */
   const exportarDimCSV = () => {
@@ -158,7 +177,14 @@ export default function CubicacionResumenes() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="resumen-lote">
+      {/* Al imprimir queda sólo el resumen: el admin alrededor no aporta al papel. */}
+      <style>{`@media print {
+        body * { visibility: hidden; }
+        #resumen-lote, #resumen-lote * { visibility: visible; }
+        #resumen-lote { position: absolute; left: 0; top: 0; width: 100%; }
+        @page { size: A4 portrait; margin: 12mm; }
+      }`}</style>
       {/* Encabezado + KPIs + acciones */}
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -169,7 +195,10 @@ export default function CubicacionResumenes() {
             <button type="button" onClick={recargar} title="Volver a leer el lote del cubicador" className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
               <RefreshCw className="h-3.5 w-3.5" /> Actualizar
             </button>
-            <button type="button" onClick={exportarCSV} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+            <button type="button" onClick={imprimir} title="Imprimir o guardar como PDF para mandarle al comprador" className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] print:hidden">
+              <Printer className="h-3.5 w-3.5" /> Imprimir
+            </button>
+            <button type="button" onClick={exportarCSV} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] print:hidden">
               <Download className="h-3.5 w-3.5" /> CSV
             </button>
           </div>
@@ -237,6 +266,19 @@ export default function CubicacionResumenes() {
       <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <h4 className="mb-2 text-sm font-bold text-[var(--text-primary)]">General por especie</h4>
         <TablaGrupos grupos={porEspecie.grupos} total={porEspecie.total} primeraCol="Especie" conValor={conValor} />
+      </section>
+
+      {/* 4. Comparar contra una cubicación guardada */}
+      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 print:hidden">
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <h4 className="text-sm font-bold text-[var(--text-primary)]">¿Mejoró respecto del lote anterior?</h4>
+          {/* La comparación sigue la dimensión del agrupado libre: si no se dice,
+              el usuario no entiende por qué habla de medidas y no de tipos. */}
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            comparado <b className="text-[var(--text-secondary)]">{ETIQUETA_DIMENSION[dim].toLowerCase()}</b> — cambialo arriba
+          </span>
+        </div>
+        <ResumenComparar rows={rows} precioDe={precioDe} conValor={conValor} dim={dim} />
       </section>
 
       {/* 3. General por tipo */}
