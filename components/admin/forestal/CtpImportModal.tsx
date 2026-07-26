@@ -254,7 +254,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               disabled={phase === "parsing"}
               className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[var(--rule-strong)] bg-[var(--surface-canvas)] px-6 py-10 text-center transition-colors hover:border-[var(--brand-ink)] hover:bg-[var(--surface-sunken)] disabled:opacity-60"
             >
-              {phase === "parsing" ? <Loader2 className="h-9 w-9 animate-spin text-[var(--brand-ink)]" /> : <FileSpreadsheet className="h-9 w-9 text-[var(--brand-ink)]" />}
+              {phase === "parsing" ? <Loader2 className="h-9 w-9 animate-spin text-[var(--brand-ink)] dark:text-[var(--text-primary)]" /> : <FileSpreadsheet className="h-9 w-9 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />}
               <div>
                 <p className="text-base font-bold text-[var(--text-primary)]">{phase === "parsing" ? `Leyendo ${fileName}…` : "Elegí el Excel del libro (.xlsx)"}</p>
                 <p className="mt-1 text-sm text-[var(--text-tertiary)]">

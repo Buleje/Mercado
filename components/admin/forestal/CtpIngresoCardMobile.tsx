@@ -95,7 +95,7 @@ export default function CtpIngresoCardMobile(props: CtpIngresoCardMobileProps) {
             <button
               type="button"
               onClick={() => onDetail(e)}
-              className="font-mono text-sm font-bold text-[var(--brand-ink)] underline-offset-2 hover:underline"
+              className="font-mono text-sm font-bold text-[var(--brand-ink)] dark:text-[var(--text-primary)] underline-offset-2 hover:underline"
             >
               {e.gtfNumber}
             </button>

@@ -582,7 +582,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber }: Pr
                   </button>
                   <label
                     title="Escaneá una foto de la GTF para pre-llenar el ingreso con IA"
-                    className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition-colors ${scanning ? "border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70" : "border-[var(--brand-ink)] text-[var(--brand-ink)] hover:bg-[var(--surface-canvas)]"}`}
+                    className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition-colors ${scanning ? "border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70" : "border-[var(--brand-ink)] text-[var(--brand-ink)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}
                   >
                     {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />} Escanear
                     <input

@@ -37,7 +37,7 @@ export default function LothMapaDrawBar({
 }: Props) {
   return (
     <div className="absolute inset-x-3 top-3 z-30 flex flex-wrap items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)]/95 px-3 py-2 shadow-lg backdrop-blur">
-      <MapPin className="h-4 w-4 text-[var(--brand-ink)]" />
+      <MapPin className="h-4 w-4 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
       <span className="text-xs font-bold text-[var(--text-primary)]">
         Tocá para marcar · arrastrá para mover · click derecho borra ·{" "}
         <b className="font-mono tabular-nums">{count}</b>

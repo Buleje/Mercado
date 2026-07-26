@@ -132,7 +132,7 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
       <div className="flex max-h-[92vh] w-[min(94vw,900px)] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-[var(--brand-ink)]" />
+            <MapPin className="h-4 w-4 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
             <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Dibujar parcela · {originCode}</CardTitle>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="grid h-9 w-9 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">

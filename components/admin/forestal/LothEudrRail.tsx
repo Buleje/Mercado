@@ -104,7 +104,7 @@ export default function LothEudrRail({
       {/* Cross-check contra el área autorizada del POA */}
       {parcelaDeclarada && planAreaHa != null && planAreaHa > 0 && (
         <div className="flex items-start gap-2.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 py-3 text-xs">
-          <Trees className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-ink)]" />
+          <Trees className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
           <div className="text-[var(--text-secondary)]">
             Dibujaste <b className="text-[var(--text-primary)]">{areaHa.toFixed(1)} ha</b> · el POA{planParcelaCorta ? ` (${planParcelaCorta})` : ""} autoriza{" "}
             <b className="text-[var(--text-primary)]">{planAreaHa.toFixed(1)} ha</b>.{" "}

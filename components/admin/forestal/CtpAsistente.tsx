@@ -63,7 +63,7 @@ export default function CtpAsistente() {
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--brand-ink)] hover:bg-[var(--surface-canvas)]">
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--brand-ink)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
         <Sparkles className="h-4 w-4" /> Preguntá al Libro
       </button>
     );
@@ -72,7 +72,7 @@ export default function CtpAsistente() {
   return (
     <div className="rounded-2xl border-2 border-[var(--brand-ink)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Sparkles className="h-4 w-4 text-[var(--brand-ink)]" /> Asistente del Libro</span>
+        <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Sparkles className="h-4 w-4 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" /> Asistente del Libro</span>
         <button type="button" onClick={() => setOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)]" aria-label="Cerrar"><XIcon className="h-4 w-4" /></button>
       </div>
 

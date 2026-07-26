@@ -70,7 +70,7 @@ export default function SpeciesAggregateChart({ period }: { period: CtpPeriod })
     <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-[var(--brand-ink)]" />
+          <BarChart3 className="h-5 w-5 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
           <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
             Volumen por especie · {period.label}
           </CardTitle>
