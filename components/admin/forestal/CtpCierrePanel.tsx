@@ -74,7 +74,7 @@ export default function CtpCierrePanel({ estado }: { estado: CtpCierresState }) 
                         {c.reabierto ? <RotateCcw className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                       </span>
                       <div>
-                        <p className="text-sm font-bold capitalize text-[var(--text-primary)]">{c.label}{c.reabierto ? " · reabierto" : ""}</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)] first-letter:uppercase">{c.label}{c.reabierto ? " · reabierto" : ""}</p>
                         <p className="text-xs text-[var(--text-tertiary)]">Cerró {c.closedBy} · {fmtFecha(c.closedAt)} · {c.totales.corridasCongeladas} corridas congeladas{c.totales.corridasSinCostear ? ` · ${c.totales.corridasSinCostear} sin costear` : ""}{c.totales.especiesEnNegativo ? ` · ⚠ ${c.totales.especiesEnNegativo} especies en negativo` : ""}</p>
                         {c.reabierto && <p className="text-xs text-[var(--data-warning-700)]">Reabierto por {c.reabierto.by} · {c.reabierto.motivo}</p>}
                       </div>

@@ -30,6 +30,7 @@ import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { ForestCtpFichaDB } from "./forest-ctp-ficha.db";
 import { CtpInvariantError, ForestCtpConsumoDB, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { ForestAnexosDB } from "./forest-anexos.db";
 import { decidirMargen, type MargenMotivo } from "@/lib/forestal/ctp-pnl";
 
 const CACHE_PREFIX = "forest-ctp";
@@ -667,6 +668,13 @@ export class ForestCtpDespachoDB {
    * (ADR-135 D3). Sin auth: el id es un cuid no adivinable y solo se expone
    * la cadena de origen, NUNCA costos ni precios (mismo criterio que
    * /verificar/[code] de trozas). Anulado ⇒ se dice, no se esconde.
+   *
+   * Además de la cadena responde las tres preguntas que quedaban afuera y que
+   * son las que decide un comprador europeo o un fiscalizador:
+   *   · ¿QUIÉN transformó? → identidad registral del CTP (nunca datos
+   *     personales: ni DNI del representante, ni teléfono, ni email — Ley 29733).
+   *   · ¿El papel que traigo existe? → el ANEXO N° 04 emitido para este despacho.
+   *   · ¿Esto todavía puede cambiar? → si el mes está cerrado, es un acta.
    */
   static async verificacionPublica(tenantId: string, despachoEntryId: string) {
     if (!tenantId) throw new Error("tenantId is required");
@@ -681,8 +689,46 @@ export class ForestCtpDespachoDB {
     });
     if (!despacho) return null;
 
-    const trazabilidad = await ForestCtpDespachoDB.trazabilidadCompleta(tenantId, despachoEntryId);
-    return { despacho, trazabilidad };
+    const [trazabilidad, ficha, anexos, cerrado] = await Promise.all([
+      ForestCtpDespachoDB.trazabilidadCompleta(tenantId, despachoEntryId),
+      ForestCtpFichaDB.get(tenantId).catch(() => null),
+      ForestAnexosDB.list(tenantId).catch(() => []),
+      ForestCtpCierreDB.closedPeriodOf(tenantId, despacho.entryDate).catch(() => null),
+    ]);
+
+    const anexo = anexos.find((a) => a.ctpEntryId === despachoEntryId);
+
+    return {
+      despacho,
+      trazabilidad,
+      /** Sólo identidad registral del establecimiento — es lo que se verifica. */
+      establecimiento: ficha
+        ? {
+            nombreCtp: ficha.nombreCtp,
+            codigoCtp: ficha.codigoCtp,
+            razonSocial: ficha.razonSocial,
+            ruc: ficha.ruc,
+            arffs: ficha.arffs,
+            registroArffs: ficha.registroArffs,
+            region: ficha.region,
+            provincia: ficha.provincia,
+            distrito: ficha.distrito,
+          }
+        : null,
+      /** El anexo que viaja con la guía: se contrasta el papel contra el libro. */
+      anexo: anexo
+        ? {
+            numero: anexo.numero,
+            gtf: anexo.gtf,
+            fecha: anexo.fecha,
+            hojas: anexo.hojas,
+            totalPiezas: anexo.totalPiezas,
+            totalM3: anexo.totalM3,
+          }
+        : null,
+      /** Período cerrado = la línea ya no se puede editar ni anular. */
+      periodoCerrado: cerrado ? { label: cerrado.label, closedAt: cerrado.closedAt } : null,
+    };
   }
 
   /**
