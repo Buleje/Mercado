@@ -24,7 +24,7 @@ import {
   Film, Music, FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check,
   Camera, AlarmClock, Wand2, Tag, RotateCcw, MoreVertical, FileArchive, Loader2,
-  ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2,
+  ChevronRight, Pencil, FolderInput, MessageCircle, Palette, History, BellRing, PenLine, Share2, FolderTree,
   CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ import { isAnalyzableMime } from "@/lib/documents/analyzable-mime";
 import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import { TemplateGenerator } from "./TemplateGenerator";
 import { SendWhatsAppModal } from "./SendWhatsAppModal";
+import ImportarCarpetaModal from "./ImportarCarpetaModal";
 import { MoveToFolderModal } from "./MoveToFolderModal";
 import { FolderEditModal } from "./FolderEditModal";
 import { FolderShareModal } from "./FolderShareModal";
@@ -223,6 +224,8 @@ export default function DocumentosModule() {
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  /** Import masivo de una carpeta con su árbol. */
+  const [importandoCarpeta, setImportandoCarpeta] = useState(false);
   const [preview, setPreview] = useState<DbDocument | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
@@ -289,7 +292,7 @@ export default function DocumentosModule() {
 
   const {
     documents, folders, loading, error, refresh,
-    upload, scan, patch, bulk, restore, purge, createFolder, moveFolder, updateFolder, deleteFolder,
+    upload, scan, patch, bulk, restore, purge, createFolder, createFolderTree, existingNames, moveFolder, updateFolder, deleteFolder,
   } = useDocuments(filters);
 
   // ── Escaneo desde cámara (móvil) ──
@@ -466,6 +469,8 @@ export default function DocumentosModule() {
     () => (filterMode === "folder" && activeFolderId ? childrenMap.get(activeFolderId) ?? [] : []),
     [filterMode, activeFolderId, childrenMap]
   );
+  /** Dónde cae lo que se importa: la carpeta abierta, o la raíz si no hay ninguna. */
+  const destinoImport = filterMode === "folder" ? activeFolderId : null;
   const toggleExpand = (id: string) =>
     setExpandedFolders((prev) => {
       const next = new Set(prev);
@@ -839,6 +844,16 @@ export default function DocumentosModule() {
               <Upload className="h-4 w-4" /> Subir archivos
             </>
           )}
+        </button>
+        {/* Carpeta entera con su estructura: subir un año de contratos ordenado
+            en subcarpetas era crear cada carpeta a mano y arrastrar por tandas. */}
+        <button
+          type="button"
+          onClick={() => setImportandoCarpeta(true)}
+          title="Subir una carpeta completa respetando sus subcarpetas"
+          className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
+        >
+          <FolderTree className="h-4 w-4" /> Importar carpeta
         </button>
         <input
           ref={fileInputRef}
@@ -1706,6 +1721,22 @@ export default function DocumentosModule() {
           folders={folders}
           onMove={async (folderId) => { await bulk("move", [movingDoc.id], { folderId }); }}
           onClose={() => setMovingDoc(null)}
+        />
+      )}
+
+      {importandoCarpeta && (
+        <ImportarCarpetaModal
+          // Sólo cuando estás PARADO en una carpeta cuelga de ahí; en cualquier
+          // otra vista (recientes, favoritos, papelera) el destino es la raíz.
+          destino={destinoImport}
+          destinoNombre={destinoImport ? folderById.get(destinoImport)?.name : undefined}
+          // Reimportar la misma carpeta fusiona con la que ya está, no duplica.
+          existentes={folders}
+          crearArbol={createFolderTree}
+          yaSubidos={existingNames}
+          subir={upload}
+          onClose={() => setImportandoCarpeta(false)}
+          onListo={() => { void refresh(); }}
         />
       )}
 

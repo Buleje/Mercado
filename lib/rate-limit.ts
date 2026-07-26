@@ -391,6 +391,13 @@ export const RateLimitPresets = {
   // lo frena el lockout PER-USERNAME (5 fallos/15min), no este límite por IP.
   // Prod 20/h por IP corta credential-stuffing masivo sin lockear compañeros.
   LOGIN: { maxReqs: IS_DEV ? 100 : 20, windowSec: 60 * 60 },
+  // DRIVE — subida de documentos del panel admin. STRICT (10 cada 15 min) daba
+  // un drive que no podía recibir una carpeta: cada archivo es un request, así
+  // que importar 30 boletas moría al décimo. Quien llega acá ya pasó
+  // requireAdmin + CSRF; el límite es anti-abuso, no anti-uso. 400 archivos
+  // cada 15 min por IP+tenant cubre un import real y sigue cortando un bucle
+  // desbocado. El peso lo frena aparte MAX_UPLOAD_SIZE por archivo.
+  DRIVE: { maxReqs: 400, windowSec: 15 * 60 },
 } as const;
 
 /**

@@ -33,7 +33,7 @@ const ListQuery = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const rl = await applyRateLimit(req, "MODERATE", "documents:list");
+  const rl = await applyRateLimit(req, "GENEROUS", "documents:list");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -81,7 +81,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = await applyRateLimit(req, "STRICT", "documents:upload");
+  // DRIVE y no STRICT: cada archivo es un request y el drive recibe carpetas
+  // enteras — con 10 cada 15 min el importador moría al décimo (ADR-306).
+  const rl = await applyRateLimit(req, "DRIVE", "documents:upload");
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;

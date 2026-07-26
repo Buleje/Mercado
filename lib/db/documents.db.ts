@@ -577,6 +577,110 @@ export class DocumentsDB {
     return mapFolder(f);
   }
 
+  /**
+   * Crea de un saque el árbol de carpetas de un import ("Contratos/2026/…").
+   *
+   * Por qué en una sola llamada y no una por carpeta: subir una carpeta con 30
+   * subcarpetas eran 30 requests, y el rate limit del panel (20 cada 5 min)
+   * cortaba el import por la mitad, dejando medio árbol creado.
+   *
+   * Es IDEMPOTENTE: si la carpeta ya existe bajo ese padre (mismo nombre, sin
+   * distinguir mayúsculas) se reusa. Reimportar fusiona, no duplica.
+   *
+   * @param rutas rutas relativas al destino, con "/" — "Contratos/2026".
+   * @returns el id de cada ruta (incluidas las intermedias) y cuántas se crearon.
+   */
+  static async createFolderTree(
+    tenantId: string,
+    input: { parentId?: string | null; rutas: string[] },
+  ): Promise<{ idPorRuta: Record<string, string>; creadas: number }> {
+    const raiz = input.parentId ?? null;
+    if (raiz) {
+      // El destino tiene que ser una carpeta de ESTE tenant.
+      const padre = await prisma.documentFolder.findFirst({ where: { id: raiz, tenantId }, select: { id: true } });
+      if (!padre) throw new Error("parent_not_found");
+    }
+
+    // Índice de lo que ya existe: (padre, nombre en minúscula) → id.
+    const existentes = await prisma.documentFolder.findMany({
+      where: { tenantId },
+      select: { id: true, name: true, parentId: true },
+    });
+    // Separador NUL: no puede aparecer ni en un id ni en un nombre de carpeta.
+    const clave = (parentId: string | null, name: string) => `${parentId ?? ""}\u0000${name.trim().toLowerCase()}`;
+    const indice = new Map(existentes.map((f) => [clave(f.parentId, f.name), f.id]));
+
+    const idPorRuta: Record<string, string> = {};
+    let creadas = 0;
+
+    // Ordenar por profundidad garantiza que el padre se resuelva antes que el hijo.
+    const ordenadas = [...new Set(input.rutas)].sort((a, b) => a.split("/").length - b.split("/").length);
+    for (const ruta of ordenadas) {
+      const partes = ruta.split("/").map((p) => p.trim()).filter(Boolean);
+      let padreId: string | null = raiz;
+      let acumulada = "";
+      for (const nombre of partes) {
+        acumulada = acumulada ? `${acumulada}/${nombre}` : nombre;
+        const yaResuelta = idPorRuta[acumulada];
+        if (yaResuelta) { padreId = yaResuelta; continue; }
+
+        const existente = indice.get(clave(padreId, nombre));
+        if (existente) {
+          idPorRuta[acumulada] = existente;
+          padreId = existente;
+          continue;
+        }
+        const creada = await prisma.documentFolder.create({
+          data: { tenantId, name: nombre.slice(0, 80), parentId: padreId },
+          select: { id: true },
+        });
+        indice.set(clave(padreId, nombre), creada.id);
+        idPorRuta[acumulada] = creada.id;
+        padreId = creada.id;
+        creadas++;
+      }
+    }
+
+    return { idPorRuta, creadas };
+  }
+
+  /**
+   * Nombre y peso de los documentos que ya viven en cada carpeta.
+   *
+   * Lo usa el importador para no volver a subir lo mismo: reimportar una
+   * carpeta a la que le agregaste 3 archivos tiene que subir 3, no 300 otra vez.
+   * Se pide de todas las carpetas de un tirón (una query) en vez de una por
+   * carpeta. La clave "" es la raíz del drive.
+   */
+  static async listNamesInFolders(
+    tenantId: string,
+    folderIds: (string | null)[],
+  ): Promise<Record<string, { name: string; size: number }[]>> {
+    const ids = folderIds.filter((f): f is string => typeof f === "string");
+    const incluirRaiz = folderIds.includes(null);
+    if (ids.length === 0 && !incluirRaiz) return {};
+
+    const docs = await prisma.document.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        ...(incluirRaiz && ids.length > 0
+          ? { OR: [{ folderId: { in: ids } }, { folderId: null }] }
+          : incluirRaiz
+            ? { folderId: null }
+            : { folderId: { in: ids } }),
+      },
+      select: { folderId: true, name: true, originalName: true, size: true },
+    });
+
+    const out: Record<string, { name: string; size: number }[]> = {};
+    for (const d of docs) {
+      const k = d.folderId ?? "";
+      (out[k] ??= []).push({ name: d.originalName || d.name, size: d.size });
+    }
+    return out;
+  }
+
   static async updateFolder(
     tenantId: string,
     id: string,

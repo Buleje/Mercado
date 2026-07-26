@@ -14,7 +14,10 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:thumbnail");
+    // GENEROUS y no MODERATE: la grilla pide UNA miniatura por documento, sin
+    // que el usuario haga nada. Con 20 cada 5 min, una carpeta con 30 boletas
+    // mostraba la mitad de las tarjetas rotas (ADR-306).
+    const rl = await applyRateLimit(req, "GENEROUS", "documents:thumbnail");
     if (rl) return rl;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
@@ -47,7 +50,10 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       },
     });
   } catch (e) {
-    logger.error("[documents.thumbnail] error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json({ error: "thumbnail_failed" }, { status: 500 });
+    // Un PDF corrupto o de un formato que unpdf no sabe abrir no es una falla
+    // del servidor: la tarjeta cae al ícono y listo. Se loguea como warning
+    // para no ensuciar Sentry con documentos rotos que subió alguien.
+    logger.warn("[documents.thumbnail] no se pudo renderizar", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "thumbnail_failed" }, { status: 422 });
   }
 }

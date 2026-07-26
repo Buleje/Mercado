@@ -189,6 +189,7 @@ export {
   Stamp,
   Folder,
   FolderOpen,
+  FolderTree,
 
   // ── Science / AI / industry ──────────────────────────────────
   FlaskConical,
