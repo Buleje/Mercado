@@ -20,6 +20,8 @@ export interface DeclaradoEnLibro {
   unidad: string | null;
   /** Piezas declaradas en la guía, si la línea las trae. */
   piezas?: number | null;
+  /** De dónde sale el número: cambia el texto del aviso, no la regla. */
+  fuente?: "guia" | "corrida";
 }
 
 /** Tolerancia de redondeo: por debajo de esto, anexo y guía son lo mismo. */
@@ -170,14 +172,17 @@ function cotejarConLibro(
 
   const avisos: AvisoAnexo04[] = [];
   const n = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 3 });
+  const F = declarado.fuente === "corrida"
+    ? { la: "la corrida", La: "La corrida", declara: "produjo" }
+    : { la: "la guía", La: "La guía", declara: "declara" };
 
   const enAnexo = unidad === "pt" ? anexo.totalPt : anexo.totalM3;
   const dif = enAnexo - guia;
   const u = unidad === "pt" ? "PT" : "m³";
   if (Math.abs(dif) / guia > TOLERANCIA) {
     avisos.push(dif > 0
-      ? { nivel: "error", mensaje: `El anexo detalla ${n(enAnexo)} ${u} y la guía declara ${n(guia)} ${u}: está amparando ${n(dif)} ${u} de más.` }
-      : { nivel: "aviso", mensaje: `El anexo detalla ${n(enAnexo)} ${u} de los ${n(guia)} ${u} de la guía (faltan ${n(-dif)} ${u}).` });
+      ? { nivel: "error", mensaje: `El anexo detalla ${n(enAnexo)} ${u} y ${F.la} ${F.declara} ${n(guia)} ${u}: está amparando ${n(dif)} ${u} de más.` }
+      : { nivel: "aviso", mensaje: `El anexo detalla ${n(enAnexo)} ${u} de los ${n(guia)} ${u} de ${F.la} (faltan ${n(-dif)} ${u}).` });
   }
 
   // Σ de TODOS los anexos de esa guía ≤ lo declarado. Un anexo solo puede
@@ -188,7 +193,7 @@ function cotejarConLibro(
     if ((acumulado - guia) / guia > TOLERANCIA) {
       avisos.push({
         nivel: "error",
-        mensaje: `Esta guía ya tiene ${otros.length} anexo${otros.length === 1 ? "" : "s"} por ${n(previo)} ${u}: entre todos amparan ${n(acumulado)} ${u} de los ${n(guia)} ${u} declarados.`,
+        mensaje: `${F.La} ya tiene ${otros.length} anexo${otros.length === 1 ? "" : "s"} por ${n(previo)} ${u}: entre todos amparan ${n(acumulado)} ${u} de los ${n(guia)} ${u} declarados.`,
       });
     }
   }
@@ -198,8 +203,8 @@ function cotejarConLibro(
   if (Number.isFinite(piezasGuia) && piezasGuia > 0 && anexo.totalPiezas !== piezasGuia) {
     const difP = anexo.totalPiezas - piezasGuia;
     avisos.push(difP > 0
-      ? { nivel: "error", mensaje: `El anexo lista ${n(anexo.totalPiezas)} piezas y la guía declara ${n(piezasGuia)}: ${n(difP)} de más.` }
-      : { nivel: "aviso", mensaje: `El anexo lista ${n(anexo.totalPiezas)} de las ${n(piezasGuia)} piezas de la guía (faltan ${n(-difP)}).` });
+      ? { nivel: "error", mensaje: `El anexo lista ${n(anexo.totalPiezas)} piezas y ${F.la} ${F.declara} ${n(piezasGuia)}: ${n(difP)} de más.` }
+      : { nivel: "aviso", mensaje: `El anexo lista ${n(anexo.totalPiezas)} de las ${n(piezasGuia)} piezas de ${F.la} (faltan ${n(-difP)}).` });
   }
 
   return avisos;

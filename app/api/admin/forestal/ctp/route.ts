@@ -141,6 +141,16 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
           .map((r) => ({ id: r.id, action: r.action, detail: r.detail, user: r.user, createdAt: r.createdAt })),
       });
     }
+    // UNA línea por id. La usa el ANEXO N° 04 emitido desde el cubicador: la
+    // cubicación sabe de qué corrida salió, y el anexo no puede detallar más de
+    // lo que esa corrida produjo.
+    const entryId = url.searchParams.get("entryId");
+    if (entryId) {
+      const entry = await ForestCtpDB.getById(auth.tenantId, entryId);
+      return entry
+        ? NextResponse.json({ entry })
+        : NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
     // Reorden predictivo (all-time, ritmo últimos 90 días).
     if (url.searchParams.get("reorden") === "1") {
       return NextResponse.json({ reorden: await ForestCtpDB.proyeccionReorden(auth.tenantId) });

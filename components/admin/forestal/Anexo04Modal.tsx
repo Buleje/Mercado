@@ -28,6 +28,7 @@ import Anexo04Acciones from "./Anexo04Acciones";
 import { inicioDeEmision, type AnexoEmitido } from "@/lib/forestal/anexo04-registro";
 import { useAnexosEmitidos } from "@/hooks/use-anexos-emitidos";
 import { useAnexo04Salidas } from "@/hooks/use-anexo04-salidas";
+import { useAnexo04Contraste } from "@/hooks/use-anexo04-contraste";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
@@ -75,6 +76,8 @@ export default function Anexo04Modal({
   const [piezasGuardadas, setPiezasGuardadas] = useState<PiezaCubicada[] | null>(null);
   /** Especie predominante de la cubicación elegida (fallback de los bloques). */
   const [especieOrigen, setEspecieOrigen] = useState<string | undefined>();
+  /** Contra qué se coteja: la guía si vino del Libro, si no la corrida de origen. */
+  const { contraste, usarCorrida } = useAnexo04Contraste(declarado);
   const [verHistorial, setVerHistorial] = useState(abrirHistorial);
   const [historialToken, setHistorialToken] = useState(0);
   /** Los emitidos alimentan la bandeja Y el checklist (N° repetido, volumen ya
@@ -145,6 +148,8 @@ export default function Anexo04Modal({
     [filas, datos.unidadV, datos.modo, especie],
   );
   const escala = Math.max(0.25, fit * factor);
+
+
   const { generando, descargarPdf, descargarExcel, reDescargar, pdfDeLote } = useAnexo04Salidas({
     filas, datos, especieGlobal: especie, ctpEntryId, onAviso,
     onRegistrado: () => setHistorialToken((t) => t + 1),
@@ -153,8 +158,8 @@ export default function Anexo04Modal({
   // fiscalizador va a preguntar (avisos). No bloquea: la hoja en blanco para
   // llenar a mano es un uso legítimo del formato.
   const avisos = useMemo(
-    () => validarAnexo04(datos, anexo, filas, { declarado, emitidos, ctpEntryId, ficha }),
-    [datos, anexo, filas, declarado, emitidos, ctpEntryId, ficha],
+    () => validarAnexo04(datos, anexo, filas, { declarado: contraste, emitidos, ctpEntryId, ficha }),
+    [datos, anexo, filas, contraste, emitidos, ctpEntryId, ficha],
   );
   const presentable = anexoPresentable(avisos);
 
@@ -196,11 +201,11 @@ export default function Anexo04Modal({
             <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
               Lista de productos transformados · {anexo.hojas.length} hoja{anexo.hojas.length === 1 ? "" : "s"} ·{" "}
               {anexo.totalPiezas} piezas · {fmtAnexo(anexo.totalM3)} m³
-              {declarado && declarado.cantidad > 0 && (
+              {contraste && contraste.cantidad > 0 && (
                 <span className="ml-1 text-[var(--text-secondary)]">
-                  {" · "}guía: {declarado.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 3 })}{" "}
-                  {declarado.unidad === "m3" ? "m³" : declarado.unidad?.toUpperCase() ?? ""}
-                  {declarado.piezas ? ` · ${declarado.piezas} pzas` : ""}
+                  {" · "}{contraste.fuente === "corrida" ? "corrida" : "guía"}: {contraste.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 3 })}{" "}
+                  {contraste.unidad === "m3" ? "m³" : contraste.unidad?.toUpperCase() ?? ""}
+                  {contraste.piezas ? ` · ${contraste.piezas} pzas` : ""}
                 </span>
               )}
             </p>
@@ -260,6 +265,7 @@ export default function Anexo04Modal({
                     // La guardada trae su especie predominante: fallback para las
                     // piezas que se cargaron sin especie propia.
                     setEspecieOrigen(registro?.especie);
+                    void usarCorrida(registro?.ctpEntryId);
                   }}
                 />
               }

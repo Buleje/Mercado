@@ -558,3 +558,36 @@ describe("inicioDeEmision — con qué arranca el modal", () => {
     expect(inicioDeEmision("", "G-9", [emitido({})], "d2")).toEqual({});
   });
 });
+
+describe("cotejo contra la corrida de producción (sin despacho)", () => {
+  const DATOS = {
+    numero: "1", gtf: "G", empresa: "X", observaciones: "", firmante: "Y",
+    documento: "1", cargo: "Z", unidadV: "pt", modo: "oficial",
+  } as const;
+  const UNA = [pieza(10, 2, 8, 12)];   // 160 PT · 10 piezas
+
+  it("habla de la corrida, no de la guía, cuando el origen es producción", () => {
+    const avisos = validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, {
+      declarado: { cantidad: 100, unidad: "pt", fuente: "corrida" },
+    });
+    expect(avisos[0].nivel).toBe("error");
+    expect(avisos[0].mensaje).toContain("la corrida produjo");
+    expect(avisos[0].mensaje).not.toContain("guía");
+  });
+
+  it("la regla es la misma: detallar de más es error, de menos aviso", () => {
+    const menos = validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, {
+      declarado: { cantidad: 300, unidad: "pt", fuente: "corrida" },
+    });
+    expect(menos[0].nivel).toBe("aviso");
+    expect(menos[0].mensaje).toContain("de la corrida");
+    expect(anexoPresentable(menos)).toBe(true);
+  });
+
+  it("sin fuente explícita sigue hablando de la guía (compatibilidad)", () => {
+    const avisos = validarAnexo04(DATOS, construirAnexo04(UNA, DATOS), UNA, {
+      declarado: { cantidad: 100, unidad: "pt" },
+    });
+    expect(avisos[0].mensaje).toContain("la guía declara");
+  });
+});
